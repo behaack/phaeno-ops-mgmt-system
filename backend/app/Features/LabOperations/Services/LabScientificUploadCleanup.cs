@@ -4,6 +4,7 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using PhaenoPortal.App.Features.OrderManagement.Services;
 using PhaenoPortal.App.Infrastructure.Persistence;
+using PSeq.Operations.Laboratory.Domain;
 
 /// <summary>Deletes expired untrusted chunks, never an admitted scientific file.</summary>
 public sealed class LabScientificUploadCleanup(IServiceScopeFactory scopes, ILogger<LabScientificUploadCleanup> logger) : BackgroundService
@@ -25,6 +26,27 @@ public sealed class LabScientificUploadCleanup(IServiceScopeFactory scopes, ILog
     }
     public static async Task CleanAsync(PSeqOperationsDbContext db, IOperationalFileStorage storage, DateTime now, CancellationToken ct)
     {
+        var archiveIds = await db.Set<LabFastqArchive>().AsNoTracking().Where(a => a.ExpiresAtUtc <= now && (a.StorageKey != null || a.ChunksJson != "[]"))
+            .OrderBy(a => a.ExpiresAtUtc).Select(a => a.Id).Take(25).ToListAsync(ct);
+        foreach (var id in archiveIds) {
+            await using var tx = await SampleShippingPackingData.BeginAsync(db, "fastq-archive:" + id, ct);
+            var archive = await db.Set<LabFastqArchive>().SingleAsync(a => a.Id == id, ct);
+            if (archive.ExpiresAtUtc > now) continue;
+            using var parts = JsonDocument.Parse(archive.ChunksJson);
+            foreach (var part in parts.RootElement.EnumerateArray()) await storage.DeleteIfExistsAsync(part.GetProperty("Key").GetString()!, ct);
+            if (archive.StorageKey != null) await storage.DeleteIfExistsAsync(archive.StorageKey, ct);
+            archive.Expire(); await db.SaveChangesAsync(ct); if (tx is not null) await tx.CommitAsync(ct);
+        }
+        var fastqIds = await db.Set<LabFastqUpload>().AsNoTracking().Where(u => u.ChunksJson != "[]" && (u.ExpiresAtUtc <= now || u.LabScientificFileId != null))
+            .OrderBy(u => u.ExpiresAtUtc).Select(u => u.Id).Take(50).ToListAsync(ct);
+        foreach (var id in fastqIds) {
+            await using var tx = await SampleShippingPackingData.BeginAsync(db, "fastq-upload:" + id, ct);
+            var upload = await db.Set<LabFastqUpload>().SingleAsync(u => u.Id == id, ct);
+            if (upload.ExpiresAtUtc > now && !upload.LabScientificFileId.HasValue) continue;
+            using var parts = JsonDocument.Parse(upload.ChunksJson);
+            foreach (var part in parts.RootElement.EnumerateArray()) await storage.DeleteIfExistsAsync(part.GetProperty("Key").GetString()!, ct);
+            upload.ClearStagingChunks(); await db.SaveChangesAsync(ct); if (tx is not null) await tx.CommitAsync(ct);
+        }
         var ids = await db.LabScientificUploads.AsNoTracking().Where(u => u.ExpiresAtUtc <= now
             || u.CompletedFileId != null && u.ChunksJson != "[]").OrderBy(u => u.ExpiresAtUtc).Select(u => u.Id).Take(50).ToListAsync(ct);
         foreach (var id in ids)

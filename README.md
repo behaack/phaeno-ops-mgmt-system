@@ -335,10 +335,41 @@ Portal frontend.
 1. Navigate to the backend directory
 2. Restore dependencies: `dotnet restore PSeq.Operations.slnx`
 3. Restore local tools: `dotnet tool restore`
-4. Configure PostgreSQL through `ConnectionStrings:DefaultConnection`
+4. Create and configure this computer's local API settings as described below
 5. Apply migrations: `dotnet tool run dotnet-ef database update --project .\app\PSeq.Operations.Api.csproj --startup-project .\app\PSeq.Operations.Api.csproj`
 6. Build the solution: `dotnet build PSeq.Operations.slnx`
 7. Run tests: `dotnet test PSeq.Operations.slnx`
+
+#### Settings for each development computer
+
+Each computer keeps its own `backend/app/appsettings.Development.json`. This
+file is ignored by Git and excluded from published API builds. The tracked
+`appsettings.json` contains shared defaults and empty placeholders for values
+that must be configured per environment.
+
+From the repository root, create the local file if it does not already exist:
+
+```powershell
+if (-not (Test-Path .\backend\app\appsettings.Development.json)) {
+    Copy-Item .\backend\app\appsettings.Development.example.json .\backend\app\appsettings.Development.json
+}
+```
+
+Edit the new file with this computer's PostgreSQL connection in
+`ConnectionStrings:DefaultConnection`, the Clerk Development settings, and
+`Invitations:PublicBaseUrl` for the local Portal frontend. The database connection
+has the form `Host=localhost;Port=5432;Database=phaeno_ops;Username=<user>;Password=<password>`;
+replace the host, port, database, user, and password with this computer's values.
+Configure `Bootstrap` only when linking the initial administrator of a new
+development database, and `EmailServiceSettings` when using Mailgun locally.
+Additional machine-specific paths or integration settings belong in this same
+ignored file. Keep credentials on each computer or in a secure secret store.
+
+The API loads this file when running in `Development`; the checked-in launch
+profiles select that environment. EF migration commands also use the local
+Development file by default. Environment variables and command-line settings
+override JSON settings for both the API and migrations. Existing local files
+should be retained when updating the checkout.
 
 ### Frontend Setup
 

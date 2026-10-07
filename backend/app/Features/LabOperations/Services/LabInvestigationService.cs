@@ -9,6 +9,7 @@ using PSeq.Operations.Laboratory.Domain;
 /// <summary>Bounded, specimen-scoped evidence reads. A failed source fails the request; it never becomes an empty success.</summary>
 public sealed class LabInvestigationService(PSeqOperationsDbContext db)
 {
+    private sealed record ScientificAssessment(Guid Id, IReadOnlyList<LabScientificRequirementStatus> Requirements);
     public async Task<LabInvestigationDto> ReadAsync(Guid workId, Guid specimenId, CancellationToken ct, int limit = 1000)
     {
         var specimen = await db.LabSpecimens.AsNoTracking().SingleOrDefaultAsync(x => x.Id == specimenId && x.LabWorkOrderId == workId, ct)
@@ -51,8 +52,10 @@ public sealed class LabInvestigationService(PSeqOperationsDbContext db)
         var performanceDecisions = await Read("performanceDecisions", db.LabPerformanceDecisions.AsNoTracking().Where(x => proposalIds.Contains(x.Id)).OrderBy(x => x.ReviewedAtUtc).ThenBy(x => x.Id));
         var runIds = db.LabAnalysisRuns.Where(x => x.LabWorkOrderId == workId && x.LabSpecimenId == specimenId).Select(x => x.Id);
         var analysisInputs = await Read("analysisInputs", db.LabAnalysisInputs.AsNoTracking().Where(x => runIds.Contains(x.LabAnalysisRunId)).OrderBy(x => x.Id));
-        var scientificRequirements = runs.Select(run => new { id = run.Id, requirements = LabScientificRequirements.Assess(run,
-            outputs.Where(output => analysisInputs.Any(input => input.LabAnalysisRunId == run.Id && input.LabSequencingOutputId == output.Id)).ToList()) }).ToList();
+        var scientificRequirements = new List<ScientificAssessment>();
+        foreach (var run in runs) scientificRequirements.Add(new(run.Id, await new LabResultLineageService(db).AssessScientificAsync(run,
+            outputs.Where(output => analysisInputs.Any(input => input.LabAnalysisRunId == run.Id && input.LabSequencingOutputId == output.Id)).ToList(), ct)));
+        await Read("assemblyQc", db.Set<LabAssemblyQc>().AsNoTracking().Where(q => runIds.Contains(q.LabAnalysisRunId)).OrderBy(q => q.RecordedAtUtc));
         evidence["scientificRequirements"] = scientificRequirements;
         var packagesQuery = db.ResultOutputPackages.AsNoTracking().Where(x => x.LabWorkOrderId == workId && x.OrganizationId == work.SubmittingOrganizationId
             && (x.LabSampleId == specimen.SubmittedSpecimenId || x.TrialSampleId == specimen.SubmittedSpecimenId));
@@ -104,7 +107,7 @@ public sealed class LabInvestigationService(PSeqOperationsDbContext db)
             new("Resource snapshots", materials.Any(x => x.ResourceSnapshotJson == null) || equipment.Any(x => x.ResourceSnapshotJson == null) ? "Legacy unknown" : materials.Count + equipment.Count == 0 ? "Pending work" : "Recorded", "Snapshots describe the resource when recorded; late entries do not prove its historical condition."),
             new("Result attribution", packages.Any(x => x.LabAnalysisRunId == null) || legacy.Any(x => x.LabAnalysisRunId == null) ? "Legacy unknown" : packages.Count + legacy.Count == 0 ? "Pending work" : "Recorded", $"{outputs.Count} sequencing outputs; {runs.Count} analyses. Open a result to check its exact input and tube chain."),
             new("Scientific requirements", runs.Count == 0 ? "Pending work" : runs.Any(x => x.RequirementsSnapshotJson is null) ? "Legacy unknown"
-                : scientificRequirements.Any(x => x.requirements.Any(r => r.Status == "Missing")) ? "Missing" : "Recorded",
+                : scientificRequirements.Any(x => x.Requirements.Any(r => r.Status == "Missing")) ? "Missing" : "Recorded",
                 "Profile 1 requires run/QC evidence, analysis versions/settings/references, times and exact inputs. Explained exceptions remain visible. Source attribution cannot be waived; coverage does not certify scientific validity."),
             new("Performance review", performanceProposals.Any(x => performanceDecisions.All(d => d.Id != x.Id)) ? "Pending work"
                 : steps.Any(step => step.Performance?.VerificationStatus == "PendingReview" && step.CorrectsRecordId is null

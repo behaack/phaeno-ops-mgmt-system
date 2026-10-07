@@ -1,5 +1,17 @@
 # Sequencing data assembly and job traceability
 
+## Local FASTQ intake and downstream UX — discovery, October 6, 2026
+
+The Owner requested local managed FASTQ uploads with explicit library/vendor
+result binding, assembly initiation, QC capture and Customer release. The Owner
+confirmed verified uploads before result save, tentative FASTQ configuration,
+and QC Pass/Fail/Hold with note/report and optional measurements. See the
+consolidated [delivery plan](SEQUENCING-RESULTS-TO-CUSTOMER-DELIVERY-PLAN.md).
+Its local-input scope supersedes the S3-first assumption below when implemented.
+Per-purchased-run separation, immutable attempts, actual times, MQTT direction,
+scientific approval and release remain authoritative. The real processing
+adapter remains unavailable; discovery does not enable it or alter files.
+
 Status: implementation authorized September 22, 2026, through the endpoint-independent boundary. The owner confirmed that a sample sequenced multiple times must have a **separate result for each sequencing run**. The owner subsequently requested recording and executing this plan as far as possible without the external endpoint contract, URL or credentials, then explicitly authorized commit, push and deployment. Shared/production migration approval remains separate; see the [release record](../operations/sequencing-assembly-release-20260922.md).
 
 September 24 messaging direction: the focused [POMS–DPS MQTT messaging plan](POMS-DPS-MQTT-MESSAGING-PLAN.md) supersedes this plan's proposed SignalR transport between POMS and the external processing service, including its acknowledgment and final-disposition retry details. SignalR is reserved for POMS-to-UI messaging. The MQTT plan is planning only; the endpoint-independent implementation checkpoint and all scientific, traceability, QC, release, and activation gates here remain unchanged.

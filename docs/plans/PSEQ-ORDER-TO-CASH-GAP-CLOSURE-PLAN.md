@@ -1,5 +1,18 @@
 # PSeq Order-to-Cash Gap-Closure Plan
 
+## Sequencing data through Customer delivery — discovery, October 6, 2026
+
+The Owner requested local managed FASTQ uploads tied to exact library sequencing
+results, assembly initiation, QC capture and Customer download publication. The
+Owner confirmed verified uploads before successful result save, tentative FASTQ
+configuration and initial QC decision/report capture with optional measurements.
+See the [delivery plan](SEQUENCING-RESULTS-TO-CUSTOMER-DELIVERY-PLAN.md).
+This direction supersedes the older raw-files-outside-POMS assumption for the
+new intake scope when implemented; current custody, exact scientific approval,
+release authority, retention and per-sample/run delivery remain authoritative.
+PSeq publication remains independent of payment. This discovery does not change
+data, runtime flags, processing adapters or Customer visibility.
+
 ## Finance sidebar — October 3, 2026
 
 The Product Owner requested moving Invoices and aging, Receipts, Customer billing, Import receipts and Reconciliation from the Finance tab bar into the shared far-left workspace sidebar. Finance lists and records now retain one capability-filtered sidebar, including the existing pin preference, narrow-screen drawer, keyboard controls and active section indication. Existing `/finance` routes, `financeSection`/Customer search state, record return paths, authorized queries and financial actions remain unchanged. This supersedes the September 19 tab-bar presentation. Update Phaeno help and focused navigation coverage; automated test execution remains request-only. No backend, persistence, migration, Git or deployment scope.

@@ -7,19 +7,48 @@ public class LabVendorResultsDomainTests
     private static LabNgsSendout New() => new(Guid.NewGuid(), "SIMULATED vendor", null, "{}", null);
 
     [Fact]
-    public void ResultsReceiptDoesNotInferSuccessAndFinalOutcomeCannotBeOverwritten()
+    public void ResultsCaptureDistinctTimesAndRequireNotesForCorrections()
+    {
+        var sendout = New(); var t = DateTime.UtcNow.AddHours(-1);
+        sendout.SetStatus(LabNgsSendoutStatus.Shipped, t);
+        sendout.SetStatus(LabNgsSendoutStatus.ReceivedByProvider, t.AddMinutes(1));
+        Assert.Throws<ArgumentException>(() => sendout.RecordResults("SIM-RUN", false, t.AddMinutes(2), t.AddMinutes(1), t.AddMinutes(5), LabVendorOutcome.Success, null));
+        sendout.RecordResults("SIM-RUN", false, t.AddMinutes(2), t.AddMinutes(4), t.AddMinutes(5), LabVendorOutcome.Success, null);
+        Assert.Equal(t.AddMinutes(4), sendout.SequencingCompletedAtUtc);
+        Assert.Equal(t.AddMinutes(5), sendout.ResultsReceivedAtUtc);
+        Assert.Equal(false, sendout.RunNotPerformed);
+        sendout.RecordResults("SIM-RUN", false, t.AddMinutes(2), t.AddMinutes(4), t.AddMinutes(5), LabVendorOutcome.Success, "Additional data handoff");
+        Assert.Throws<ArgumentException>(() => sendout.RecordResults("SIM-RUN", false, t.AddMinutes(2), t.AddMinutes(4), t.AddMinutes(6), LabVendorOutcome.Success, null));
+        sendout.RecordResults("SIM-RUN", false, t.AddMinutes(2), t.AddMinutes(4), t.AddMinutes(6), LabVendorOutcome.Failure, "SIMULATED corrected vendor report");
+        Assert.Equal(LabVendorOutcome.Failure, sendout.Outcome);
+        Assert.Equal(t.AddMinutes(6), sendout.ResultsReceivedAtUtc);
+    }
+
+    [Fact]
+    public void RunNotPerformedRequiresReasonAndRetainsAbsentRunTimes()
+    {
+        var sendout = New(); var t = DateTime.UtcNow.AddHours(-1);
+        sendout.SetStatus(LabNgsSendoutStatus.Shipped, t);
+        sendout.SetStatus(LabNgsSendoutStatus.ReceivedByProvider, t.AddMinutes(1));
+        Assert.Throws<ArgumentException>(() => sendout.RecordResults("SIM-NORUN", true, null, null, null, LabVendorOutcome.Failure, null));
+        sendout.RecordResults("SIM-NORUN", true, null, null, null, LabVendorOutcome.Failure, "SIMULATED rejected input; run not performed");
+        Assert.True(sendout.RunNotPerformed);
+        Assert.Null(sendout.SequencingStartedAtUtc); Assert.Null(sendout.SequencingCompletedAtUtc);
+        Assert.Null(sendout.ResultsReceivedAtUtc);
+        Assert.NotNull(sendout.OutcomeAtUtc);
+    }
+
+    [Fact]
+    public void SeparateSequencingAndResultsTransitionsAreNotAvailable()
     {
         var sendout = New(); var time = DateTime.UtcNow.AddMinutes(-1);
+        sendout.SetStatus(LabNgsSendoutStatus.Shipped, time);
+        sendout.SetStatus(LabNgsSendoutStatus.ReceivedByProvider, time);
+        Assert.Throws<InvalidOperationException>(() => sendout.SetStatus(LabNgsSendoutStatus.Sequencing, time));
         Assert.Throws<InvalidOperationException>(() => sendout.SetStatus(LabNgsSendoutStatus.ResultsReceived, time));
-        foreach (var stage in new[] { LabNgsSendoutStatus.Shipped, LabNgsSendoutStatus.ReceivedByProvider,
-            LabNgsSendoutStatus.Sequencing, LabNgsSendoutStatus.ResultsReceived }) sendout.SetStatus(stage, time);
+        Assert.Null(sendout.SequencingStartedAtUtc);
+        Assert.Null(sendout.ResultsReceivedAtUtc);
         Assert.Null(sendout.Outcome);
-        Assert.Equal(time, sendout.ResultsReceivedAtUtc);
-        Assert.Throws<ArgumentException>(() => sendout.FinalizeOutcome(LabVendorOutcome.Success, time.AddMinutes(-1), "SIMULATED report"));
-        sendout.FinalizeOutcome(LabVendorOutcome.Failure, time, "SIMULATED unsuccessful vendor run");
-        Assert.Equal(LabVendorOutcome.Failure, sendout.Outcome);
-        Assert.Equal(LabNgsSendoutStatus.Complete, sendout.Status);
-        Assert.Throws<InvalidOperationException>(() => sendout.FinalizeOutcome(LabVendorOutcome.Success, time, "Changed"));
     }
 
     [Fact]
@@ -32,6 +61,20 @@ public class LabVendorResultsDomainTests
         sendout.UpdateShipment("SIMULATED vendor dock", "SIMULATED carrier", "SIM-2", "RUN-1", time.AddDays(7));
         Assert.Equal("SIM-2", sendout.TrackingReference);
         Assert.Equal(time.AddDays(7), sendout.ExpectedCompletionAtUtc);
+    }
+
+    [Fact]
+    public void CompletedSendoutCannotFillPreviouslyMissingResults()
+    {
+        var sendout = New(); var time = DateTime.UtcNow.AddMinutes(-10);
+        sendout.SetStatus(LabNgsSendoutStatus.Shipped, time);
+        sendout.SetStatus(LabNgsSendoutStatus.ReceivedByProvider, time.AddMinutes(1));
+        typeof(LabNgsSendout).GetProperty(nameof(LabNgsSendout.Status))!.SetValue(sendout, LabNgsSendoutStatus.Complete);
+        Assert.Throws<InvalidOperationException>(() => sendout.RecordResults("SIM-RUN", false,
+            time.AddMinutes(2), time.AddMinutes(3), time.AddMinutes(4), LabVendorOutcome.Success, null));
+        Assert.Null(sendout.Outcome);
+        Assert.Null(sendout.SequencingStartedAtUtc);
+        Assert.Null(sendout.ResultsReceivedAtUtc);
     }
 
     [Theory]

@@ -1333,9 +1333,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             foreach (var status in new[]
             {
                 LabNgsSendoutStatus.Shipped,
-                LabNgsSendoutStatus.ReceivedByProvider,
-                LabNgsSendoutStatus.Sequencing,
-                LabNgsSendoutStatus.ResultsReceived
+                LabNgsSendoutStatus.ReceivedByProvider
             })
             {
                 var previousProjectionVersion = sharedJob.ProjectionVersion;
@@ -1348,13 +1346,12 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 Assert.Equal(LabWorkOrderStatus.DataProcessing, sharedJob.Status);
                 Assert.Equal(previousProjectionVersion + 1, sharedJob.ProjectionVersion);
                 var sendoutProgress = (await customerProgress.ReadAsync(scope.CustomerOrganization.Id, [fixture.OrderId], CancellationToken.None))[fixture.OrderId];
-                Assert.Equal(status is LabNgsSendoutStatus.Sequencing or LabNgsSendoutStatus.ResultsReceived
-                    ? "Sequencing" : "LibraryPrep", Assert.Single(sendoutProgress.Samples).Stage);
+                Assert.Equal("LibraryPrep", Assert.Single(sendoutProgress.Samples).Stage);
             }
             var statusHistory = await scope.DbContext.LabCustodyEvents.AsNoTracking()
                 .Where(item => item.LabNgsSendoutId == batch.SendoutId && item.EventCode.StartsWith("STATUS_"))
                 .OrderBy(item => item.OccurredAtUtc).ToListAsync();
-            Assert.Equal(4, statusHistory.Count);
+            Assert.Equal(2, statusHistory.Count);
             foreach (var entry in statusHistory)
             {
                 using var evidence = JsonDocument.Parse(entry.DetailsJson);
@@ -1363,29 +1360,51 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 Assert.Equal(staff.User.Id, entry.RecordedByUserId);
             }
             var batchWorkspace = JsonSerializer.SerializeToElement(await lab.BatchDetail(batch.Id, CancellationToken.None), new JsonSerializerOptions(JsonSerializerDefaults.Web));
-            Assert.Equal(6, batchWorkspace.GetProperty("custody").GetArrayLength());
+            Assert.Equal(4, batchWorkspace.GetProperty("custody").GetArrayLength());
             Assert.Equal(1, batchWorkspace.GetProperty("tubes").GetProperty("members").GetArrayLength());
-            var foreignException = await Assert.ThrowsAsync<OrderManagementException>(() => lab.FinalizeVendorOutcome(batch.SendoutId!.Value,
-                new(Guid.NewGuid(), batch.SendoutVersion!.Value, "Success", DateTime.UtcNow, "SIMULATED vendor report", [new(Guid.NewGuid(), "Failure", "SIMULATED failed library")]), default));
+            var received = DateTime.UtcNow;
+            var resultsRequest = new RecordVendorResultsRequest(Guid.NewGuid(), batch.SendoutVersion!.Value, "REFERENCE-NGS", false,
+                received, received, received, "Success", [new(sequencingMember.Id, "Failure", "SIMULATED low read yield")], [], "SIMULATED vendor report");
+            var foreignException = await Assert.ThrowsAsync<OrderManagementException>(() => lab.RecordVendorResults(batch.SendoutId!.Value,
+                resultsRequest with { Exceptions = [new(Guid.NewGuid(), "Failure", "SIMULATED foreign library")] }, default));
             Assert.Equal("vendor_exception_invalid", foreignException.ErrorCode);
-            var outcomeRequest = new FinalizeVendorOutcomeRequest(Guid.NewGuid(), batch.SendoutVersion!.Value, "Success", DateTime.UtcNow,
-                "SIMULATED vendor result report", [new(sequencingMember.Id, "Failure", "SIMULATED low read yield")]);
-            batch = await lab.FinalizeVendorOutcome(batch.SendoutId!.Value, outcomeRequest, default);
+            var foreignReference = await Assert.ThrowsAsync<OrderManagementException>(() => lab.RecordVendorResults(batch.SendoutId!.Value,
+                resultsRequest with { FastqSetIds = [Guid.NewGuid()] }, default));
+            Assert.Equal("fastq_coverage_required", foreignReference.ErrorCode);
+            var failedReference = await Assert.ThrowsAsync<OrderManagementException>(() => lab.RecordVendorResults(batch.SendoutId!.Value,
+                resultsRequest with { FastqSetIds = [sequencingMember.Id] }, default));
+            Assert.Equal("fastq_coverage_required", failedReference.ErrorCode);
+            Assert.Empty(await scope.DbContext.LabVendorResultReferences.Where(r => r.LabNgsSendoutId == batch.SendoutId).ToListAsync());
+            batch = await lab.RecordVendorResults(batch.SendoutId!.Value, resultsRequest, default);
             Assert.Equal("Success", batch.VendorOutcome);
+            Assert.Equal(received, batch.ResultsReceivedAtUtc);
+            Assert.Equal(1, batch.ResultsVersion);
             Assert.Equal(LabBatchStatus.Complete.ToString(), batch.Status);
-            var sameOutcome = await lab.FinalizeVendorOutcome(batch.SendoutId!.Value, outcomeRequest, default);
-            Assert.Equal(batch.Version, sameOutcome.Version);
+            var originalCompletion = batch.CompletedAtUtc;
+            await lab.RecordVendorResults(batch.SendoutId!.Value, resultsRequest, default);
+            Assert.Empty(await scope.DbContext.LabVendorResultReferences.Where(r => r.LabNgsSendoutId == batch.SendoutId).ToListAsync());
             Assert.Single(await scope.DbContext.LabVendorLibraryExceptions.Where(e => e.LabNgsSendoutId == batch.SendoutId).ToListAsync());
-            var changedOutcome = await Assert.ThrowsAsync<OrderManagementException>(() => lab.FinalizeVendorOutcome(batch.SendoutId!.Value, outcomeRequest with { Evidence = "Changed" }, default));
-            Assert.Equal("vendor_outcome_finalized", changedOutcome.ErrorCode);
-            var referenceRequest = new AddVendorResultReferenceRequest(Guid.NewGuid(), batch.SendoutVersion!.Value, sequencingMember.Id,
-                "SIMULATED manifest", "s3://simulated-results/batch/manifest.csv", "SIMULATED reference only");
-            batch = await lab.AddVendorResultReference(batch.SendoutId!.Value, referenceRequest, default);
-            await lab.AddVendorResultReference(batch.SendoutId!.Value, referenceRequest, default);
-            Assert.Single(await scope.DbContext.LabVendorResultReferences.Where(r => r.LabNgsSendoutId == batch.SendoutId).ToListAsync());
-            var changedReference = await Assert.ThrowsAsync<OrderManagementException>(() => lab.AddVendorResultReference(batch.SendoutId!.Value,
-                referenceRequest with { StorageReference = "s3://changed/location" }, default));
-            Assert.Equal("result_reference_replay_conflict", changedReference.ErrorCode);
+            var changedReplay = await Assert.ThrowsAsync<OrderManagementException>(() => lab.RecordVendorResults(batch.SendoutId!.Value,
+                resultsRequest with { Notes = "Changed" }, default));
+            Assert.Equal("vendor_results_replay_conflict", changedReplay.ErrorCode);
+            var correctedResults = resultsRequest with { RequestId = Guid.NewGuid(), Version = batch.SendoutVersion!.Value,
+                FastqSetIds = [], Notes = "SIMULATED corrected vendor report" };
+            batch = await lab.RecordVendorResults(batch.SendoutId!.Value, correctedResults, default);
+            Assert.Equal(originalCompletion, batch.CompletedAtUtc);
+            Assert.Equal(0, await scope.DbContext.LabVendorResultReferences.CountAsync(r => r.LabNgsSendoutId == batch.SendoutId));
+            Assert.Equal(2, batch.ResultsVersion);
+            var savedVersions = await scope.DbContext.LabVendorResultsVersions.AsNoTracking().Where(version => version.LabNgsSendoutId == batch.SendoutId)
+                .OrderBy(version => version.ResultVersion).ToListAsync();
+            Assert.Equal(2, savedVersions.Count);
+            Assert.Equal("SIMULATED vendor report", savedVersions[0].Note);
+            Assert.Contains("SIMULATED vendor report", savedVersions[0].SnapshotJson);
+            Assert.DoesNotContain("SIMULATED corrected vendor report", savedVersions[0].SnapshotJson);
+            var exactFirstVersion = await lab.VendorResultsVersion(batch.Id, 1, default);
+            Assert.Equal(1, exactFirstVersion.Version.ResultVersion);
+            Assert.False(exactFirstVersion.Version.IsCurrent);
+            Assert.Empty(exactFirstVersion.Snapshot.Locations);
+            Assert.Empty(exactFirstVersion.Snapshot.FastqSets!);
+            Assert.Equal("SIMULATED vendor report", exactFirstVersion.Snapshot.Notes);
 
             await scope.VerifyMixedProgressAsync(fixture.OrderId, workOrderId.Value, released: false);
 
@@ -1559,15 +1578,20 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 extraBatch.Start(DateTime.UtcNow);
                 var sendout = new LabNgsSendout(extraBatch.Id, "PRIVATE-PROVIDER", null, "{}", null);
                 DbContext.AddRange(extraBatch, new LabBatchMember(extraBatch.Id, workId, second.Id, DateTime.UtcNow), sendout);
-                foreach (var status in new[] { LabNgsSendoutStatus.Shipped, LabNgsSendoutStatus.ReceivedByProvider, LabNgsSendoutStatus.Sequencing })
+                foreach (var status in new[] { LabNgsSendoutStatus.Shipped, LabNgsSendoutStatus.ReceivedByProvider })
                 {
                     sendout.SetStatus(status, DateTime.UtcNow); await DbContext.SaveChangesAsync();
                     progress = await Read();
-                    Assert.Equal(status == LabNgsSendoutStatus.Sequencing ? "Sequencing" : "LibraryPrep",
+                    Assert.Equal("LibraryPrep",
                         progress.Samples.Single(value => value.SampleId == original.SubmittedSpecimenId).Stage);
                     Assert.Equal("Mixed", progress.CurrentStage);
                     Assert.DoesNotContain("PRIVATE-PROVIDER", JsonSerializer.Serialize(progress));
                 }
+                var resultTime = DateTime.UtcNow;
+                sendout.RecordResults("SIMULATED-RUN", false, resultTime, resultTime, resultTime, LabVendorOutcome.Success, null);
+                extraBatch.Complete(resultTime);
+                await DbContext.SaveChangesAsync();
+                Assert.Equal("Sequencing", (await Read()).Samples.Single(value => value.SampleId == original.SubmittedSpecimenId).Stage);
                 var package = new ResultOutputPackage(CustomerOrganization.Id, orderId, workId, original.SubmittedSpecimenId,
                     1, null, "simulated", Guid.NewGuid().ToString(), Guid.NewGuid().ToString(), "{}", new string('A', 64), 1);
                 DbContext.Add(package); await DbContext.SaveChangesAsync();

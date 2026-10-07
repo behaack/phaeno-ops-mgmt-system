@@ -21,8 +21,8 @@ internal static class VendorSendoutFixture
 
     public static void Complete(LabNgsSendout sendout, DateTime occurredAt)
     {
-        foreach (var status in new[] { LabNgsSendoutStatus.Shipped, LabNgsSendoutStatus.ReceivedByProvider,
-            LabNgsSendoutStatus.Sequencing, LabNgsSendoutStatus.ResultsReceived }) sendout.SetStatus(status, occurredAt);
-        sendout.FinalizeOutcome(LabVendorOutcome.Success, occurredAt, "SIMULATED vendor outcome for test fixture");
+        foreach (var status in new[] { LabNgsSendoutStatus.Shipped, LabNgsSendoutStatus.ReceivedByProvider }) sendout.SetStatus(status, occurredAt);
+        sendout.RecordResults("SIMULATED-FIXTURE-RUN", false, occurredAt, occurredAt, occurredAt,
+            LabVendorOutcome.Success, "SIMULATED vendor outcome for test fixture");
     }
 }

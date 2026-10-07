@@ -20,9 +20,9 @@ The [master-mix step assembly contract](plans/MASTER-MIX-PREPARATION-PLAN.md#ass
 | --- | ---: | ---: | ---: |
 | `public` | 1 | 2 | 0 |
 | `commercial_ops` | 147 | 2403 | 390 |
-| `lab_ops` | 82 | 1017 | 166 |
+| `lab_ops` | 88 | 1093 | 188 |
 | `website` | 5 | 51 | 4 |
-| **Total** | **235** | **3473** | **560** |
+| **Total** | **241** | **3549** | **582** |
 
 ## `public` schema
 
@@ -3257,6 +3257,71 @@ erDiagram
 
 ```mermaid
 erDiagram
+    lab_assembly_qc {
+        uuid id PK "not null"
+        character_varying_8 decision "not null"
+        jsonb input_coverage_json "not null"
+        uuid lab_analysis_run_id FK "not null"
+        uuid lab_assembly_job_id FK "not null"
+        uuid lab_scientific_file_id FK "not null"
+        jsonb measurements_json "not null"
+        character_varying_4000 note "not null"
+        timestamp_with_time_zone recorded_at_utc "not null"
+        uuid recorded_by_user_id FK "not null"
+        uuid result_output_package_id FK,UK "not null"
+        integer review_version UK "not null"
+    }
+    lab_fastq_archives {
+        uuid id PK "not null"
+        character_varying_64 chunk_manifest_sha256 "not null"
+        jsonb chunks_json "not null"
+        timestamp_with_time_zone expires_at_utc "not null"
+        character_varying_255 file_name "not null"
+        uuid lab_vendor_results_draft_id FK "not null"
+        jsonb manifest_json "nullable"
+        character_varying_64 sha256 "nullable"
+        bigint size_bytes "not null"
+        character_varying_1000 storage_key "nullable"
+        uuid user_id FK "not null"
+        integer version "not null"
+    }
+    lab_fastq_sets {
+        uuid id PK "not null"
+        timestamp_with_time_zone created_at_utc "not null"
+        uuid lab_batch_member_id FK,UK "not null"
+        uuid lab_library_id FK "not null"
+        uuid lab_specimen_id FK "not null"
+        uuid lab_vendor_results_draft_id FK "not null"
+        uuid lab_vendor_results_version_id FK "nullable"
+        uuid lab_work_order_id FK "not null"
+        character_varying_32 library_preparation_choice "not null"
+        jsonb policy_json "not null"
+        character_varying_16 read_layout "not null"
+        uuid recorded_by_user_id FK "not null"
+        integer sequencing_run_number "not null"
+        integer set_version UK "not null"
+    }
+    lab_fastq_uploads {
+        uuid id PK "not null"
+        integer archive_entry_index "nullable"
+        character_varying_64 chunk_manifest_sha256 "not null"
+        jsonb chunks_json "not null"
+        timestamp_with_time_zone expires_at_utc "not null"
+        character_varying_255 file_name "not null"
+        character_varying_255 group_description "not null"
+        integer group_number UK "not null"
+        uuid lab_fastq_archive_id FK "nullable"
+        uuid lab_fastq_set_id FK,UK "not null"
+        uuid lab_scientific_file_id FK "nullable"
+        character_varying_255 original_file_name "not null"
+        integer part_number UK "not null"
+        bigint read_count "nullable"
+        character_varying_64 read_identifiers_sha256 "nullable"
+        integer read_number UK "not null"
+        bigint size_bytes "not null"
+        uuid user_id FK "not null"
+        integer version "not null"
+    }
     lab_supplier_shipment_addresses {
         uuid id PK "not null"
         character_varying_200 address_line1 "not null"
@@ -3278,7 +3343,50 @@ erDiagram
         uuid updated_by_user_id "nullable"
         bigint version "not null"
     }
+    lab_vendor_results_drafts {
+        uuid id PK "not null"
+        timestamp_with_time_zone created_at_utc "not null"
+        timestamp_with_time_zone expires_at_utc "not null"
+        uuid lab_ngs_sendout_id FK "not null"
+        jsonb payload_json "not null"
+        timestamp_with_time_zone saved_at_utc "nullable"
+        bigint sendout_version "not null"
+        uuid user_id FK "not null"
+        integer version "not null"
+    }
+    lab_vendor_results_versions {
+        uuid id PK "not null"
+        uuid lab_ngs_sendout_id FK,UK "not null"
+        character_varying_4000 note "nullable"
+        timestamp_with_time_zone recorded_at_utc "not null"
+        character_varying_255 recorded_by_name "not null"
+        uuid recorded_by_user_id FK "not null"
+        integer result_version UK "not null"
+        jsonb snapshot_json "not null"
+    }
+    lab_analysis_runs ||--o{ lab_assembly_qc : "lab_analysis_run_id"
+    lab_assembly_jobs ||--o{ lab_assembly_qc : "lab_assembly_job_id"
+    lab_scientific_files ||--o{ lab_assembly_qc : "lab_scientific_file_id"
+    users ||--o{ lab_assembly_qc : "recorded_by_user_id"
+    result_output_packages ||--o{ lab_assembly_qc : "result_output_package_id"
+    lab_vendor_results_drafts ||--o{ lab_fastq_archives : "lab_vendor_results_draft_id"
+    users ||--o{ lab_fastq_archives : "user_id"
+    lab_batch_members ||--o{ lab_fastq_sets : "lab_batch_member_id"
+    lab_libraries ||--o{ lab_fastq_sets : "lab_library_id"
+    lab_specimens ||--o{ lab_fastq_sets : "lab_specimen_id"
+    lab_vendor_results_drafts ||--o{ lab_fastq_sets : "lab_vendor_results_draft_id"
+    lab_vendor_results_versions o|--o{ lab_fastq_sets : "lab_vendor_results_version_id"
+    lab_work_orders ||--o{ lab_fastq_sets : "lab_work_order_id"
+    users ||--o{ lab_fastq_sets : "recorded_by_user_id"
+    lab_fastq_archives o|--o{ lab_fastq_uploads : "lab_fastq_archive_id"
+    lab_fastq_sets ||--o{ lab_fastq_uploads : "lab_fastq_set_id"
+    lab_scientific_files o|--o{ lab_fastq_uploads : "lab_scientific_file_id"
+    users ||--o{ lab_fastq_uploads : "user_id"
     lab_suppliers ||--o{ lab_supplier_shipment_addresses : "supplier_id"
+    lab_ngs_sendouts ||--o{ lab_vendor_results_drafts : "lab_ngs_sendout_id"
+    users ||--o{ lab_vendor_results_drafts : "user_id"
+    lab_ngs_sendouts ||--o{ lab_vendor_results_versions : "lab_ngs_sendout_id"
+    users ||--o{ lab_vendor_results_versions : "recorded_by_user_id"
 ```
 
 ### Domain (1)
@@ -4210,6 +4318,8 @@ erDiagram
         timestamp_with_time_zone provider_received_at_utc "nullable"
         character_varying_255 provider_reference "nullable"
         timestamp_with_time_zone results_received_at_utc "nullable"
+        boolean run_not_performed "nullable"
+        timestamp_with_time_zone sequencing_completed_at_utc "nullable"
         timestamp_with_time_zone sequencing_started_at_utc "nullable"
         timestamp_with_time_zone shipped_at_utc "nullable"
         character_varying_50 status "not null"

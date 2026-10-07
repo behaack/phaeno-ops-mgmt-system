@@ -1,5 +1,114 @@
 # Backend Test Plan
 
+## Sequencing review fixes — October 6, 2026
+
+`LabVendorResultSafetyTests` covers unchanged input identity retention, unrelated
+library exceptions and material reference/time changes. The PostgreSQL
+`FastqDeliveryReceiptsRecoveryVersionsDispatchQcAndWithdrawalRemainConsistent`
+journey exercises actual ZIP and individual bytes, scan retry, stored checksums,
+entry/portion replay and conflicts, partial coverage denial, file-set locking,
+sealed-set admission denial, note-only identity retention, reviewed draft recovery,
+superseded queued dispatch rejection, exact QC Fail/Hold/Pass and withdrawal before
+vendor correction. Run only on an isolated local verification database; fixtures
+are marked synthetic and rolled back. Existing governed Customer download tests
+cover actual stream completion, partial/cancelled/failed transfers and cutoff.
+These checks do not establish real DPS, independent scientific or hosted acceptance.
+
+## FASTQ/ZIP intake and assembly QC — October 6, 2026
+
+LabFastqValidationTests covers bounded record parsing, roles, empty/truncated content and mate/order mismatch. LabFastqArchiveInspectionTests covers relative names, report separation, traversal/absolute paths, duplicate names and expansion bounds. Commercial vendor receipt sources now use current file-set commands and preserve failed-library no-file version/replay coverage. Required further connected cases: actual chunk/import replay and conflicts, cross-member/run denial, final atomic receipt rollback, current-input invalidation, exact QC Pass/Fail/Hold and independent approval/release. Sources are compiled; automated execution remains unrequested. This supersedes required-location capture and the retired results modal contracts.
+
+## Numbered vendor results versions — October 6, 2026
+
+`LabVendorResultsVersionTests` covers an unchanged v1 snapshot and required notes
+for v2. The commercial handoff regression checks sequential v1/v2 creation,
+unchanged replay without extra versions, retained initial snapshot/note/location,
+and exact v1 read after v2 with IsCurrent false. Numbering is unique per sendout
+under the existing lock/concurrency boundary. The additive version table/ERD and
+one-time local v1 copy are verified separately. Sources compile; automated suites
+remain unexecuted. No application-side legacy initialization is added.
+
+## Vendor result modification with notes — October 6, 2026
+
+The Owner authorized editing a current recorded result. Require a fresh note,
+preserve the prior metadata/exception/completion snapshot in an appended correction
+event, protect role/version/locks and unchanged replay, and update current outcome
+and times atomically. Existing reference history remains. No-run scientific-output
+contradictions are rejected in correction and output registration. Missing-result
+legacy completion still has no repair path. Updated domain/controller regressions
+are compiled; suites remain request-only. This supersedes immutable-result checks.
+
+## Removal of vendor results recovery — October 6, 2026
+
+The current command closes no-run jobs with server entry time and null actual
+run/receipt timestamps, requires Failure/reason/no references and does not advance
+customer sequencing/data processing. The real saved no-run flag drives summaries.
+Successful-library location coverage is enforced against existing plus submitted
+references. Failed-batch references/Success exceptions and failed-member paths are
+rejected. Updated regression sources compile; automated execution is unrequested.
+
+The Owner withdrew legacy repair. Removed obsolete outcome/reference methods and
+requests, retrospective completion and missing-results backfill. Domain capture
+requires Vendor received; a completed sendout accepts only the exact stored
+metadata for later handoff additions. Updated domain and fixture regressions to
+use the atomic command; the incomplete-completed-record case rejects capture.
+Separate Sequencing/ResultsReceived transitions are rejected at both boundaries.
+Suites remain request-only. The one-record local rollback is verified separately
+in the [rollback checkpoint](../testing/runs/2026-10-06-vendor-results-rollback.md).
+Earlier recovery test descriptions below are historical and superseded.
+
+## Combined vendor results receipt — October 6, 2026
+
+This checkpoint supersedes the separate final-outcome and storage routes below.
+`LabVendorResultsDomainTests` covers distinct run/receipt times, immutable recorded
+facts and an unperformed failed run with a required reason and absent run times.
+The commercial handoff PostgreSQL journey uses `RecordVendorResults` for one
+atomic receipt with library exceptions and optional locations; it checks foreign
+membership rejection, unchanged replay, changed replay and later handoff additions.
+Route coverage registers this command and excludes the two superseded endpoints.
+Generic status transitions permit only shipment and vendor receipt, preventing
+final-stage writes from bypassing results capture. Automated execution remains
+request-only. The additive migration is applied only to the configured local
+development database; the ERD includes both nullable fields. See the
+[current verification record](../testing/runs/2026-10-06-combined-vendor-results.md).
+
+## Combined vendor results receipt — October 6, 2026
+
+This checkpoint supersedes the separate final-outcome and storage routes below.
+`LabVendorResultsDomainTests` covers distinct run/receipt times, immutable recorded
+facts and an unperformed failed run with a required reason and absent run times.
+The commercial handoff PostgreSQL journey uses `RecordVendorResults` for one
+atomic receipt with library exceptions and optional locations; it checks foreign
+membership rejection, unchanged replay, changed replay and later handoff additions.
+Route coverage registers this command and excludes the two superseded endpoints.
+Generic status transitions permit only shipment and vendor receipt, preventing
+final-stage writes from bypassing results capture. Automated execution remains
+request-only. The additive migration is applied only to the configured local
+development database; the ERD includes both nullable fields. See the
+[current verification record](../testing/runs/2026-10-06-combined-vendor-results.md).
+
+## Missing outcome on completed records — October 6, 2026
+
+`LabVendorResultsDomainTests` covers one retrospective decision on a completed
+sendout: active work is rejected, actual UTC/time/evidence constraints apply,
+recorded shipment/receipt values remain unchanged, absent sequencing/results
+timestamps stay absent and a second decision is rejected. Controller source keeps
+role/lock/version/replay checks, skips batch completion for the completed-record
+case and audits the preserved completion. Compile coverage applies; suites are
+not executed. Database-backed preservation, stale/replay and member-exception
+acceptance remain for the next requested PostgreSQL test checkpoint.
+
+## Sequencing storage scope entry — October 6, 2026
+
+The commercial handoff PostgreSQL regression now uses the atomic storage command:
+foreign membership rejects all submitted rows without a partial insert, new
+descriptions are system-owned, member and whole-batch additions retain history,
+identical retries create no duplicates and changed replays fail. Route coverage
+names `AddVendorResultReferences`. Compile coverage applies; automated execution
+is deferred under the request-only policy. Review multiple valid rows, invalid
+locations, duplicate IDs/members, mixed scopes, stale versions and unauthorized
+writes at the next requested database-backed test checkpoint.
+
 ## Independent batch send-out progression — October 5, 2026
 
 `LabSendoutProgressTests` covers forward Job milestones, one projection version

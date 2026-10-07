@@ -136,7 +136,7 @@ public partial class SampleShippingPostgresTests
 
     private sealed record RestoreFixture(Guid WorkId, Guid SpecimenId, Guid PackageId, Guid RunId, Guid RecordId, string Barcode, string StorageKey, string FileSha256);
 
-    private static async Task<RestoreFixture> SeedRestoreEvidence(ShippingTestScope scope, IOperationalFileStorage files, int sampleCount = 1)
+    private static async Task<RestoreFixture> SeedRestoreEvidence(ShippingTestScope scope, IOperationalFileStorage files, int sampleCount = 1, bool includeResult = true)
     {
         var db = scope.DbContext; var now = LabEvidenceTime.UtcNow; var actor = scope.PlatformUser.Id;
         var order = new LabServiceOrder(scope.CustomerOrganization.Id, scope.CustomerOrganization.Departments.Single(d => d.IsDefault).Id,
@@ -171,6 +171,7 @@ public partial class SampleShippingPostgresTests
         var batch = new LabOperationalBatch("RESTORE-SEQ-" + scope.Suffix, "TEST sequencing", null); batch.Start(now);
         var sendout = new LabNgsSendout(batch.Id, "TEST provider", "TEST submission", JsonSerializer.Serialize(new { members = new[] { new { libraryId = library.Id, libraryKey = library.LibraryKey, containerBarcode = output.Barcode } } }), null);
         VendorSendoutFixture.Complete(sendout, now); db.AddRange(batch, sendout, new LabBatchMember(batch.Id, work.Id, library.Id, now)); await db.SaveChangesAsync();
+        if (!includeResult) return new(work.Id, specimen.Id, Guid.Empty, Guid.Empty, record.Id, source.Barcode, stored.StorageKey, stored.Sha256);
         await using var rawBytes = new MemoryStream(Encoding.UTF8.GetBytes("TEST ONLY sequencing bytes"));
         var rawFile = await files.SaveAsync(rawBytes, ".bin", 1024, default);
         var receipt = new LabScientificFile(work.Id, specimen.Id, "restore-sequencing.txt", rawFile.StorageKey, rawFile.Sha256, rawFile.SizeBytes, actor, now);

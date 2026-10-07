@@ -1,4 +1,16 @@
 # Managed scientific files
+
+## FASTQ library-result intake extension — discovery, October 6, 2026
+
+The Owner requested local FASTQ uploads as the vendor-result handoff, followed
+by assembly, QC and Customer release. Successful vendor results must not save
+until required files finish upload and verification. The planned file-set identity, generated
+names, completeness checks, tentative configurable sizes/layouts and current 1 GiB hard limit
+are recorded in the [delivery plan](SEQUENCING-RESULTS-TO-CUSTOMER-DELIVERY-PLAN.md).
+Reuse managed-file custody while implementing explicitly current-model bindings;
+do not infer or automatically import historical location declarations. This
+extension is proposed and does not claim current large-file/provider support.
+
 Status: implemented and deployed to production; authenticated specimen upload/download walkthrough remains unverified.
 
 ## Approved behavior

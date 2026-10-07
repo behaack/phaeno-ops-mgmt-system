@@ -57,7 +57,7 @@ public sealed class LabResultLineageService(PSeqOperationsDbContext db)
             throw Invalid("The sequencing library needs its own recorded derived container.");
         var sendout = await db.LabNgsSendouts.SingleOrDefaultAsync(x => x.Id == request.LabNgsSendoutId, ct)
             ?? throw Invalid("Select the sendout that carried this library.");
-        if (sendout.Status is LabNgsSendoutStatus.Preparing or LabNgsSendoutStatus.Exception)
+        if (sendout.Status is LabNgsSendoutStatus.Preparing or LabNgsSendoutStatus.Exception || sendout.RunNotPerformed == true)
             throw Invalid("The sendout must have proceeded to sequencing without an unresolved exception.");
         using var manifest = JsonDocument.Parse(sendout.ManifestJson);
         if (!manifest.RootElement.TryGetProperty("members", out var members) || members.ValueKind != JsonValueKind.Array)
@@ -102,6 +102,8 @@ public sealed class LabResultLineageService(PSeqOperationsDbContext db)
             && x.ProviderRunReference == normalized.ProviderRunReference && x.ExternalFileReference == normalized.ExternalFileReference
             && x.SampleMappingReference == normalized.SampleMappingReference && x.Sha256 != normalized.Sha256, ct))
             throw Invalid("A different checksum is already recorded for this output. Reference that output explicitly as a correction.");
+        var vendorResultsVersion = await db.LabVendorResultsVersions.AsNoTracking().Where(version => version.LabNgsSendoutId == sendout.Id)
+            .OrderByDescending(version => version.ResultVersion).Select(version => new { version.Id, version.ResultVersion }).FirstOrDefaultAsync(ct);
         var snapshot = JsonSerializer.Serialize(new
         {
             schemaVersion = sequencingChain is null ? 1 : 2, specimen.Id, specimen.SubmittedSpecimenId, specimen.AccessionNumber,
@@ -109,6 +111,7 @@ public sealed class LabResultLineageService(PSeqOperationsDbContext db)
             sourceBarcode = sourceChain[^1].Barcode, libraryId = library.Id, library.LibraryKey,
             library.PreparationExecutionId, sourceChain, libraryChain, sequencingChain,
             sendoutId = sendout.Id, sendout.ProviderName, sendout.ProviderReference,
+            vendorResultsVersionId = vendorResultsVersion?.Id, vendorResultsVersionNumber = vendorResultsVersion?.ResultVersion,
             sendout.LabOperationalBatchId, submittedMember = matching[0]
         }, JsonOptions);
         var output = new LabSequencingOutput(normalized.Id, specimen.LabWorkOrderId, specimen.Id, attempt.Id,
@@ -165,6 +168,7 @@ public sealed class LabResultLineageService(PSeqOperationsDbContext db)
             || inputs.Select(x => x.SourceContainerId).Distinct().Count() != 1)
             throw Invalid("Every analysis input must belong to this specimen, job and one producing tube attempt.");
         RequireSinglePurchasedRun(inputs);
+        await RequireCurrentFastqInputsAsync(inputs, ct);
         var attempt = await RequireSuccessfulAttemptAsync(inputs[0].LabSpecimenAttemptId, specimen, ct);
         if (inputs.Any(x => x.SourceContainerId != attempt.SourceContainerId)) throw Invalid("The analysis inputs have conflicting source tubes.");
         if (request.PreviousAnalysisRunId.HasValue && !await db.LabAnalysisRuns.AnyAsync(x => x.Id == request.PreviousAnalysisRunId
@@ -193,7 +197,7 @@ public sealed class LabResultLineageService(PSeqOperationsDbContext db)
 
     public async Task<LabAnalysisRun?> RequireResultAsync(Guid? analysisRunId, bool required,
         Guid organizationId, Guid? workOrderId, Guid submittedSampleId, CancellationToken ct, bool requireScientificEvidence = false,
-        bool allowPendingAssemblyLink = false)
+        bool allowPendingAssemblyLink = false, bool allowPendingQc = false, Guid? qcPackageId = null)
     {
         required |= requireScientificEvidence;
         if (!analysisRunId.HasValue && !required) return null;
@@ -215,6 +219,14 @@ public sealed class LabResultLineageService(PSeqOperationsDbContext db)
             || x.LabSpecimenAttemptId != attempt.Id || x.SourceContainerId != attempt.SourceContainerId))
             throw Invalid("The analysis lacks a complete, consistent input-to-tube chain.");
         RequireSinglePurchasedRun(inputs);
+        await RequireCurrentFastqInputsAsync(inputs, ct);
+        foreach (var input in inputs.Where(i => i.ProviderKey == "vendor-fastq")) {
+            var current = await db.LabVendorResultsVersions.AsNoTracking().Where(v => v.LabNgsSendoutId == input.LabNgsSendoutId)
+                .OrderByDescending(v => v.ResultVersion).FirstOrDefaultAsync(ct);
+            var snapshot = current is null ? null : JsonSerializer.Deserialize<VendorResultsSnapshot>(current.SnapshotJson, JsonOptions);
+            if (snapshot?.RunNotPerformed != false || snapshot.FastqSets?.Any(s => s.Files.Any(f => f.OutputId == input.Id)) != true)
+                throw Invalid("This analysis uses superseded or failed vendor-result inputs. Review the corrected files and create a new assembly/reanalysis before advancing.");
+        }
         var assemblyJobs = await db.Set<LabAssemblyJob>().AsNoTracking().Where(j => j.LabAnalysisRunId == run.Id
             || j.ProviderKey == run.ProviderKey && j.ProviderJobId == run.RunReference).Take(2).ToListAsync(ct);
         if (assemblyJobs.Count > 1) throw Invalid("The analysis has conflicting assembly execution bindings.");
@@ -226,7 +238,9 @@ public sealed class LabResultLineageService(PSeqOperationsDbContext db)
             throw Invalid("Record a new analysis with the approved scientific evidence profile before registering this new result. Historical analyses are not silently reclassified.");
         if (run.RequirementsSnapshotJson is not null)
         {
-            var missing = LabScientificRequirements.Assess(run, inputs).Where(x => x.Status == "Missing").Select(x => x.Label).ToArray();
+            var assessment = await AssessScientificAsync(run, inputs, ct, qcPackageId);
+            var pendingInputQc = inputs.Where(i => i.ProviderKey == "vendor-fastq").Select(i => $"sequencing.{i.Id}.qc").ToHashSet();
+            var missing = assessment.Where(x => x.Status == "Missing" && !(allowPendingQc && pendingInputQc.Contains(x.Key))).Select(x => x.Label).ToArray();
             if (missing.Length > 0) throw Invalid("Required scientific evidence is missing: " + string.Join("; ", missing) + ". Record linked correction/reanalysis evidence before review or release.");
         }
         await new LabPerformanceReviewService(db).RequireReviewedAsync(attempt.Id, run.RequirementsSnapshotJson is not null, ct);
@@ -238,9 +252,14 @@ public sealed class LabResultLineageService(PSeqOperationsDbContext db)
     public async Task RequirePackageAsync(ResultOutputPackage package, CancellationToken ct, PSeqOrderToCashOptions? policy = null)
     {
         policy ??= new PSeqOrderToCashOptions();
+        if (package.LabAnalysisRunId.HasValue && await db.Set<LabAssemblyJob>().AnyAsync(j => j.LabAnalysisRunId == package.LabAnalysisRunId, ct)) {
+            var qc = await db.Set<LabAssemblyQc>().AsNoTracking().Where(q => q.ResultOutputPackageId == package.Id)
+                .OrderByDescending(q => q.ReviewVersion).FirstOrDefaultAsync(ct);
+            if (qc?.Decision != "Pass") throw Invalid("Record a passing QC review for this exact assembly output package before scientific approval or Customer release.");
+        }
         if (!package.TraceabilityRequired && !policy.RequireResultTraceability && !policy.RequireScientificEvidence) return;
         await RequireResultAsync(package.LabAnalysisRunId, true, package.OrganizationId,
-            package.LabWorkOrderId, (package.LabSampleId ?? package.TrialSampleId)!.Value, ct, policy.RequireScientificEvidence);
+            package.LabWorkOrderId, (package.LabSampleId ?? package.TrialSampleId)!.Value, ct, policy.RequireScientificEvidence, qcPackageId: package.Id);
         var artifacts = await db.ResultArtifacts.AsNoTracking().Where(x => x.ResultOutputPackageId == package.Id).ToListAsync(ct);
         if (artifacts.Count != package.ExpectedArtifactCount || artifacts.Any(x => string.IsNullOrWhiteSpace(x.ResultLocator)))
             throw Invalid("The result package needs its complete artifact-to-analysis attribution before review or release.");
@@ -252,6 +271,35 @@ public sealed class LabResultLineageService(PSeqOperationsDbContext db)
         if (!release.TraceabilityRequired && !policy.RequireResultTraceability && !policy.RequireScientificEvidence) return;
         await RequireResultAsync(release.LabAnalysisRunId, true, release.OrganizationId, null, release.LabSampleId, ct, policy.RequireScientificEvidence);
         if (string.IsNullOrWhiteSpace(release.ResultLocator)) throw Invalid("The result file needs an explicit result locator before release.");
+    }
+
+    public async Task<IReadOnlyList<LabScientificRequirementStatus>> AssessScientificAsync(LabAnalysisRun run,
+        IReadOnlyList<LabSequencingOutput> inputs, CancellationToken ct, Guid? packageId = null)
+    {
+        var qc = await db.Set<LabAssemblyQc>().AsNoTracking().Where(q => q.LabAnalysisRunId == run.Id && (!packageId.HasValue || q.ResultOutputPackageId == packageId))
+            .OrderByDescending(q => q.RecordedAtUtc).ThenByDescending(q => q.ReviewVersion).FirstOrDefaultAsync(ct);
+        var evidence = new Dictionary<Guid, string>();
+        if (qc?.Decision == "Pass") foreach (var id in JsonSerializer.Deserialize<Guid[]>(qc.InputCoverageJson)!) evidence[id] = LabScientificFiles.Prefix + qc.LabScientificFileId;
+        return LabScientificRequirements.Assess(run, inputs, evidence);
+    }
+
+    public async Task RequireCurrentFastqInputsAsync(IReadOnlyList<LabSequencingOutput> inputs, CancellationToken ct)
+    {
+        var sendouts = inputs.Where(i => i.ProviderKey == "vendor-fastq").GroupBy(i => i.LabNgsSendoutId).OrderBy(g => g.Key).ToArray();
+        if (sendouts.Length > 0 && db.Database.IsRelational() && db.Database.CurrentTransaction is null)
+            throw Invalid("Current FASTQ eligibility must be checked within the operation's transaction.");
+        foreach (var sendout in sendouts) await SampleShippingPackingData.LockAsync(db, "lab-sendout:" + sendout.Key, ct);
+        foreach (var sendout in sendouts) {
+            var current = await db.LabVendorResultsVersions.AsNoTracking().Where(v => v.LabNgsSendoutId == sendout.Key)
+                .OrderByDescending(v => v.ResultVersion).FirstOrDefaultAsync(ct);
+            var snapshot = current is null ? null : JsonSerializer.Deserialize<VendorResultsSnapshot>(current.SnapshotJson, JsonOptions);
+            var sets = snapshot?.FastqSets ?? [];
+            if (snapshot?.RunNotPerformed != false || sendout.Any(i => !sets.Any(s => s.Files.Any(f => f.OutputId == i.Id))))
+                throw Invalid("The selected FASTQ inputs are superseded or failed. Review the current vendor results before continuing.");
+            var selected = sendout.Select(i => i.Id).ToHashSet();
+            if (sets.Where(s => s.Files.Any(f => selected.Contains(f.OutputId))).Any(s => s.Files.Any(f => !selected.Contains(f.OutputId))))
+                throw Invalid("Select every file in each required FASTQ file set, including its read mates and parts.");
+        }
     }
 
     public static int RequireSinglePurchasedRun(IReadOnlyCollection<LabSequencingOutput> inputs)

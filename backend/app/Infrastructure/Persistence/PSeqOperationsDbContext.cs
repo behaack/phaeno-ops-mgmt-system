@@ -281,6 +281,7 @@ public sealed partial class PSeqOperationsDbContext(
     public DbSet<LabNgsSendout> LabNgsSendouts { get; set; }
     public DbSet<LabVendorLibraryException> LabVendorLibraryExceptions { get; set; }
     public DbSet<LabVendorResultReference> LabVendorResultReferences { get; set; }
+    public DbSet<LabVendorResultsVersion> LabVendorResultsVersions { get; set; }
     public DbSet<LabCustodyEvent> LabCustodyEvents { get; set; }
     public DbSet<LabException> LabExceptions { get; set; }
     public DbSet<LabOperationsOutboxEvent> LabOperationsOutboxEvents { get; set; }
@@ -589,6 +590,7 @@ public sealed partial class PSeqOperationsDbContext(
         LabOperationsModelConfiguration.Configure(modelBuilder, this.persistenceOptions.LaboratorySchema);
         LabKitAssemblyModelConfiguration.Configure(modelBuilder, this.persistenceOptions.LaboratorySchema);
         LabAssemblyModelConfiguration.Configure(modelBuilder, this.persistenceOptions.LaboratorySchema);
+        LabFastqModelConfiguration.Configure(modelBuilder, this.persistenceOptions.LaboratorySchema);
         LabPreparationModelConfiguration.Configure(modelBuilder, this.persistenceOptions.LaboratorySchema);
         LabMasterMixModelConfiguration.Configure(modelBuilder, this.persistenceOptions.LaboratorySchema);
         WebsiteModelConfiguration.Configure(modelBuilder, this.persistenceOptions.WebsiteSchema);

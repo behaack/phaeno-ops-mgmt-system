@@ -1,5 +1,127 @@
 # Playwright E2E Test Plan
 
+## Sequencing review recovery and corrections — October 6, 2026
+
+Before hosted acceptance, exercise expired/outdated Restart draft with reviewed
+retained files, interrupted ZIP reselection, notes-only/unaffected-library edits
+without unnecessary assembly, a concurrent final save/admission, queued input
+correction before dispatch, active-processing denial and withdrawal of an affected
+published package before correction. Verify withdrawal actually denies Customer
+download and a replacement retains lineage. Focused frontend and isolated API/
+PostgreSQL regressions cover these boundaries; no real-DPS or hosted browser
+scientific journey has been executed for this slice.
+
+## FASTQ ZIP through Customer handoff — October 6, 2026
+
+Prepare connected acceptance for a marked multi-library batch ZIP and individual pairs: scan/content failure, unknown/misassigned names, paired/read-order gaps, interruption/reselect, stale draft/save, immutable current/earlier results, failed/no-run exemptions, complete assembly inputs and unavailable provider guidance. Successful real processing must register exact completed outputs before QC; verify Pass/Fail/Hold, required report/note, reviewer separation and published per-sample/run Customer downloads/retention. Browser form/staging checks do not establish actual provider, scientific, hosted or production acceptance. Execution remains request-only.
+
+## Numbered vendor results versions — October 6, 2026
+
+Verify current version badge/values, Edit results with mandatory note, and immutable
+v1 after v2. Each history link opens that exact saved version; no edit controls
+appear there and returning to Current batch shows the latest version. Check
+authors/dates/notes, all member outcomes and declared locations, scoped not-found
+reads, narrow containment and role denial. Manual local v1 preservation/read proof
+does not claim an executed automated v2 save/replay/concurrency suite. Tests remain
+request-only; no invented vendor evidence for connected saves.
+
+## Vendor results correction — October 6, 2026
+
+Review the current recorded result's editable vendor reference, dates, outcome,
+member exceptions and no-run checkbox. Saving without a fresh note must fail;
+typed changes/notes survive validation and stale errors. Existing declarations
+count toward required successful-library coverage. A correction retains its
+previous metadata and explanatory note in Result changes, keeps original custody
+entries, and preserves scientific approval/release. Never invent provider evidence
+for a valid connected save during visual review. Automated suites remain request-only.
+
+## Vendor fixture rollback — October 6, 2026
+
+Latest form checks: 704px desktop maximum and 320px containment; checkbox visible
+before outcome selection; no-run leaves only reference/checkbox/required reason;
+normal Batch outcome Fail hides exception/location controls below it, retaining
+notes; per-library failure disables its location and removes its required marker.
+Every successful location is required with a visible marker, persistent accessible
+name and associated error. Verify hidden/disabled drafts are not submitted and
+no-run closure is labeled Run not performed without claimed run/receipt evidence.
+
+The Owner authorized a one-time local reversal for PH-BAT-20261004-TAHDCRV5.
+Confirm Vendor received / InProgress, three complete stages and one results next
+step, four retained shipment/receipt history entries, six unchanged tube pairs,
+no run/receipt/outcome/completion facts and no former exception or storage
+reference. Open Record results: run times are empty, receipt is editable with its
+normal current-time draft default, outcome is unselected and no legacy-repair
+instructions remain. Cancel without saving results. Record source compilation,
+lint and manual local evidence in the [rollback checkpoint](../testing/runs/2026-10-06-vendor-results-rollback.md).
+Automated suites remain request-only; earlier recovery expectations are withdrawn.
+
+## Combined vendor results receipt — October 6, 2026
+
+This checkpoint supersedes the separate outcome/storage review below. Review
+Prepare shipment → Shipped → Vendor received → Results received in list and
+detail, with library outcomes separate. The Next step description begins Record
+results and wraps beside one trailing button; its header-menu duplicate is absent.
+Open/close the combined modal and verify focus return. Inspect vendor reference,
+distinct run/completion/receipt times, default library outcome and reasoned
+exceptions, optional whole-batch/per-library paths and Run not performed requiring
+a reason when all libraries failed. Preserve old unknown run facts and immutable
+recorded values. Check desktop and 320-pixel layouts without saving invented
+vendor evidence. Authenticated local API activation and manual presentation
+evidence are recorded in the [current verification record](../testing/runs/2026-10-06-combined-vendor-results.md).
+Automated E2E execution and provider/physical/scientific acceptance remain deferred.
+
+## Combined vendor results receipt — October 6, 2026
+
+This checkpoint supersedes the separate outcome/storage review below. Review
+Prepare shipment → Shipped → Vendor received → Results received in list and
+detail, with library outcomes separate. The Next step description begins Record
+results and wraps beside one trailing button; its header-menu duplicate is absent.
+Open/close the combined modal and verify focus return. Inspect vendor reference,
+distinct run/completion/receipt times, default library outcome and reasoned
+exceptions, optional whole-batch/per-library paths and Run not performed requiring
+a reason when all libraries failed. Preserve old unknown run facts and immutable
+recorded values. Check desktop and 320-pixel layouts without saving invented
+vendor evidence. Authenticated local API activation and manual presentation
+evidence are recorded in the [current verification record](../testing/runs/2026-10-06-combined-vendor-results.md).
+Automated E2E execution and provider/physical/scientific acceptance remain deferred.
+
+## Sequencing detail and missing outcomes — October 6, 2026
+
+Review the existing completed record without an outcome and the fully recorded
+Success batch: one header Actions menu, no nested list card, saved completion
+explicit, known/missing stage evidence distinguished, and no active stage on
+closed records. Eligible operators receive Record final outcome with actual
+time/evidence/member exceptions and a preservation explanation. Close without
+saving; no fixture decision or scientific/physical work is authorized by this
+presentation review. Check list/header action parity, Add data location icon/title,
+keyboard focus return, desktop/phone reflow and semantic theme tokens. The
+completed-record save handler needs local API activation before connected saving.
+
+## Sequencing batch actions and storage scope — October 6, 2026
+
+Inspect the real components using labeled synthetic records: read-only View
+libraries with an eye icon and no manual Custody event action; editable Prepare
+sequencing tubes before sendout; Whole batch with one data location; Per library
+with one identified row per member, partial entry and preserved scope drafts.
+Use the shared pill toggle for scope selection, with its rounded container,
+primary selected state and keyboard radio behavior.
+The storage dialog omits Data description and is approximately 15% wider on
+desktop (36.8rem); confirm phone margins and absence of horizontal overflow.
+Per-library rows omit repeated visible location labels, use the Sequencing data
+location placeholder and retain a hidden label naming each library. Check that
+filled inputs still have their unique accessible names and inline errors.
+The storage action is Add data location with a folder-plus icon; confirm the
+matching dialog title, one shared Actions indicator, keyboard opening and focus
+return without recording a new data location.
+Check validation, keyboard radio navigation, dirty dismissal/focus return,
+desktop/320-pixel reflow and light/dark themes. Preview saves must be intercepted
+and do not establish database, provider, physical or scientific acceptance.
+Automated suites and connected database writes remain deferred for this change.
+The existing local demo records were inspected without saving a valid command;
+validation submissions were blocked in the form and preview entries discarded.
+The connected UI review passes; see the
+[verification record](../testing/runs/2026-10-06-sequencing-batch-actions-storage.md).
+
 ## Phase sample-stage counts and completion checks — October 5, 2026
 
 Manual presentation review: mixed cohort with seven sequencing and three ready

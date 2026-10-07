@@ -17,7 +17,8 @@ public static class LabScientificRequirements
             explainedExceptions = ExceptionKeys, approval = "Scientific review remains required; source attribution cannot be waived." }, JsonOptions);
     }
 
-    public static IReadOnlyList<LabScientificRequirementStatus> Assess(LabAnalysisRun run, IReadOnlyList<LabSequencingOutput> inputs)
+    public static IReadOnlyList<LabScientificRequirementStatus> Assess(LabAnalysisRun run, IReadOnlyList<LabSequencingOutput> inputs,
+        IReadOnlyDictionary<Guid, string>? reviewedInputQc = null)
     {
         if (run.RequirementsSnapshotJson is null) return [new("profile", "Scientific requirements", "Legacy unknown", "No scientific requirement profile was pinned to this analysis.")];
         using var profile = JsonDocument.Parse(run.RequirementsSnapshotJson);
@@ -39,8 +40,8 @@ public static class LabScientificRequirements
         foreach (var input in inputs)
         {
             var metadata = Read(input.ScientificEvidenceJson); var prefix = $"sequencing.{input.Id}.";
-            Check(prefix, "qc", $"Sequencing QC · {input.ExternalFileReference}", !string.IsNullOrWhiteSpace(metadata?.QcSummary)
-                && (metadata.QcMetrics?.Count > 0 || metadata.Documents?.Any(x => x.Role == "qc") == true), metadata, true);
+            Check(prefix, "qc", $"Sequencing QC · {input.ExternalFileReference}", reviewedInputQc?.ContainsKey(input.Id) == true
+                || !string.IsNullOrWhiteSpace(metadata?.QcSummary) && (metadata.QcMetrics?.Count > 0 || metadata.Documents?.Any(x => x.Role == "qc") == true), metadata, true);
             Check(prefix, "runTimes", $"Sequencing start and completion · {input.ExternalFileReference}", metadata?.RunStartedAtUtc is not null && metadata.RunCompletedAtUtc is not null, metadata);
         }
         // Source/run identities, checksums and result locators are unwaivable and validated by the lineage boundary.

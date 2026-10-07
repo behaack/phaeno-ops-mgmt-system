@@ -304,11 +304,15 @@ public sealed partial class LabOperationsController
             .ToDictionaryAsync(item => item.LabOperationalBatchId, cancellationToken);
         var exceptions = await dbContext.LabVendorLibraryExceptions.AsNoTracking().GroupBy(e => e.LabNgsSendoutId)
             .Select(group => new { Id = group.Key, Count = group.Count() }).ToDictionaryAsync(e => e.Id, e => e.Count, cancellationToken);
+        var resultVersions = await dbContext.LabVendorResultsVersions.AsNoTracking().GroupBy(version => version.LabNgsSendoutId)
+            .Select(group => new { Id = group.Key, Version = group.Max(version => version.ResultVersion) })
+            .ToDictionaryAsync(version => version.Id, version => version.Version, cancellationToken);
         return batches.Select(batch =>
         {
             sendouts.TryGetValue(batch.Id, out var sendout);
             return MapBatch(batch, counts.GetValueOrDefault(batch.Id), sendout?.Status.ToString(), sendout?.Id, sendout?.Version, sendout,
-                sendout is null ? 0 : exceptions.GetValueOrDefault(sendout.Id));
+                sendout is null ? 0 : exceptions.GetValueOrDefault(sendout.Id),
+                sendout is not null && resultVersions.TryGetValue(sendout.Id, out var resultVersion) ? resultVersion : null);
         }).ToList();
     }
 
@@ -411,11 +415,12 @@ public sealed partial class LabOperationsController
             item.RetirementReason, item.RetiredAtUtc, item.RetiredByUserId);
 
     private static LabBatchDto MapBatch(LabOperationalBatch item, int memberCount, string? sendoutStatus,
-        Guid? sendoutId = null, long? sendoutVersion = null, LabNgsSendout? sendout = null, int exceptionCount = 0) =>
+        Guid? sendoutId = null, long? sendoutVersion = null, LabNgsSendout? sendout = null, int exceptionCount = 0, int? resultsVersion = null) =>
         new(item.Id, item.BatchNumber, item.Name, item.BatchType, item.Status.ToString(),
             item.StartedAtUtc, item.CompletedAtUtc, item.Notes,
             memberCount, sendoutId, sendoutStatus, sendoutVersion, item.Version,
-            sendout?.Outcome?.ToString(), sendout?.ProviderName, sendout?.TrackingReference, sendout?.ExpectedCompletionAtUtc, exceptionCount);
+            sendout?.Outcome?.ToString(), sendout?.ProviderName, sendout?.TrackingReference, sendout?.ExpectedCompletionAtUtc, exceptionCount,
+            sendout?.ResultsReceivedAtUtc, sendout?.RunNotPerformed, resultsVersion);
 
     private static LabContainerDto MapContainer(LabContainer item) =>
         new(item.Id, item.LabSpecimenId, item.ParentContainerId, item.Kind.ToString(), item.Barcode,

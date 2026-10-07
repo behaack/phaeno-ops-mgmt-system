@@ -80,7 +80,8 @@ public sealed record LabBatchDto(
     DateTime? StartedAtUtc, DateTime? CompletedAtUtc, string? Notes,
     int MemberCount, Guid? SendoutId, string? SendoutStatus, long? SendoutVersion, long Version,
     string? VendorOutcome = null, string? ProviderName = null, string? TrackingReference = null,
-    DateTime? ExpectedCompletionAtUtc = null, int LibraryExceptionCount = 0);
+    DateTime? ExpectedCompletionAtUtc = null, int LibraryExceptionCount = 0,
+    DateTime? ResultsReceivedAtUtc = null, bool? RunNotPerformed = null, int? ResultsVersion = null);
 
 public sealed record LabOperationsDashboardDto(
     IReadOnlyList<LabWorkOrderSummaryDto> WorkOrders,
@@ -259,10 +260,25 @@ public sealed record UpdateVendorShipmentRequest(long Version, string? Carrier,
     string? TrackingReference, string? ProviderReference, DateTime? ExpectedCompletionAtUtc, string Evidence,
     Guid? VendorShipmentAddressId = null, long? VendorShipmentAddressVersion = null);
 public sealed record VendorLibraryExceptionRequest(Guid MemberId, string Outcome, string Reason);
-public sealed record FinalizeVendorOutcomeRequest(Guid RequestId, long Version, string Outcome,
-    DateTime OccurredAtUtc, string Evidence, IReadOnlyList<VendorLibraryExceptionRequest> Exceptions);
-public sealed record AddVendorResultReferenceRequest(Guid RequestId, long Version, Guid? MemberId,
-    string Label, string StorageReference, string? Notes);
+public sealed record RecordVendorResultsRequest(Guid RequestId, long Version, string VendorJobReference,
+    bool RunNotPerformed, DateTime? RunStartedAtUtc, DateTime? RunCompletedAtUtc, DateTime? ResultsReceivedAtUtc,
+    string Outcome, IReadOnlyList<VendorLibraryExceptionRequest> Exceptions, IReadOnlyList<Guid> FastqSetIds,
+    string? Notes, Guid? DraftId = null, int? DraftVersion = null, bool FilesConfirmed = false);
+public sealed record VendorResultsFastqFileSnapshot(Guid FileId, Guid UploadId, Guid OutputId, string OriginalFileName,
+    string FileName, int GroupNumber, int ReadNumber, int PartNumber, string GroupDescription, long SizeBytes, string Sha256, long ReadCount,
+    Guid? ArchiveId = null, int? ArchiveEntryIndex = null, string? ArchiveEntryPath = null);
+public sealed record VendorResultsFastqSetSnapshot(Guid SetId, Guid MemberId, string LibraryKey, int SequencingRunNumber,
+    string ReadLayout, int SetVersion, IReadOnlyList<VendorResultsFastqFileSnapshot> Files);
+public sealed record VendorResultsLibrarySnapshot(Guid MemberId, Guid LibraryId, string LibraryKey, string Outcome, string? Reason);
+public sealed record VendorResultsLocationSnapshot(Guid Id, Guid? MemberId, string Label, string StorageReference, string? Notes);
+public sealed record VendorResultsSnapshot(Guid BatchId, string BatchNumber, string BatchName, Guid SendoutId,
+    string ProviderName, string VendorJobReference, bool RunNotPerformed, DateTime? RunStartedAtUtc,
+    DateTime? RunCompletedAtUtc, DateTime? ResultsReceivedAtUtc, string Outcome, string? Notes,
+    DateTime? BatchCompletedAtUtc, string ManifestJson, IReadOnlyList<VendorResultsLibrarySnapshot> Libraries,
+    IReadOnlyList<VendorResultsLocationSnapshot> Locations, IReadOnlyList<VendorResultsFastqSetSnapshot>? FastqSets = null);
+public sealed record VendorResultsVersionSummary(Guid Id, int ResultVersion, DateTime RecordedAtUtc,
+    Guid RecordedByUserId, string RecordedByName, string? Note, bool IsCurrent);
+public sealed record VendorResultsVersionDetail(VendorResultsVersionSummary Version, VendorResultsSnapshot Snapshot);
 public sealed record CustodyEventRequest(Guid? LabContainerId, string EventCode,
     string LocationOrParty, string DetailsJson);
 public sealed record CreateExceptionRequest(Guid? LabSpecimenId, Guid? LabProtocolExecutionId,

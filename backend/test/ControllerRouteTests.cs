@@ -68,8 +68,9 @@ public sealed class ControllerRouteTests
         Assert.DoesNotContain(actions, action => action!.ControllerName == "LabServiceOrders"
             && action.ActionName is "CustomerSpecimenHolds" or "RequestSpecimenHold");
         Assert.Contains(actions, action => action!.ControllerName == "LabOperations" && action.ActionName == "ReadCustomerHolds");
-        foreach (var name in new[] { "SequencingVendors", "UpdateVendorShipment", "AddVendorResultReference", "FinalizeVendorOutcome" })
+        foreach (var name in new[] { "SequencingVendors", "UpdateVendorShipment", "RecordVendorResults", "VendorResultsVersions", "VendorResultsVersion" })
             Assert.Contains(actions, action => action!.ControllerName == "LabOperations" && action.ActionName == name);
+        Assert.DoesNotContain(actions, action => action!.ControllerName == "LabOperations" && action.ActionName is "AddVendorResultReferences" or "FinalizeVendorOutcome");
         foreach (var name in new[] { "CreateAddress", "UpdateAddress" })
             Assert.Contains(actions, action => action!.ControllerName == "LabSupplierCatalog" && action.ActionName == name);
         Assert.Contains(actions, action => action!.ControllerName == "LabOperations" && action.ActionName == "ResolveCustomerHold");

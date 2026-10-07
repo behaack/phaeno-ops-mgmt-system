@@ -246,7 +246,17 @@ functional production-activation gates.
 
 ## Configuration ownership
 
-Keep environment-specific values outside source control. `appsettings.Development.json`, `.env`, and `.env.*` are ignored local configuration files. Prefer environment variables, ASP.NET Core user secrets for local work, and the selected deployment platform's secret store for shared environments.
+Keep environment-specific values outside source control. Each development computer
+keeps its own ignored `backend/app/appsettings.Development.json`; create it from
+the tracked, credential-free `appsettings.Development.example.json` and configure
+that computer's database, Clerk Development instance, frontend URL, and any local
+paths or provider credentials. See [Backend Setup](../README.md#backend-setup).
+The shared `appsettings.json` keeps environment-specific database credentials and
+the invitation frontend URL empty. Development settings are excluded from API
+publish output, and the example is excluded from both build and publish output.
+`.env` and `.env.*` are also ignored local configuration files. Prefer environment
+variables and the selected deployment platform's secret store for shared
+environments.
 
 | Section or variable | Purpose | Production expectation |
 | --- | --- | --- |

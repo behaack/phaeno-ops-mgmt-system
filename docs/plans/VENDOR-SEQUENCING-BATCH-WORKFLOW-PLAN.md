@@ -1,5 +1,227 @@
 # Vendor sequencing batch workflow
 
+## FASTQ upload and downstream handoff — discovery, October 6, 2026
+
+The Owner requested replacing declared locations with local managed FASTQ
+uploads and completing assembly, QC and Customer-download handoffs. The Owner
+confirmed uploads must complete before successful results save, tentative
+configurable FASTQ limits/layouts and first-version QC decision/report capture. See
+[Sequencing results to Customer delivery](SEQUENCING-RESULTS-TO-CUSTOMER-DELIVERY-PLAN.md)
+for the accepted direction, planned workflow, naming/identity contract, current
+foundations and data boundaries. Required-location capture
+remains implemented until the replacement is built. No current results,
+files or history were converted during discovery.
+
+## Numbered results versions — October 6, 2026
+
+The Owner authorized numbered, immutable results snapshots. Initial capture saves
+v1; every edit saves the next number with a required note. The batch list/detail
+show the current number and current values. Results versions appears after record
+details; each link opens that exact version at its own read-only URL and never
+redirects to a newer one. Editing the current result explains which version is
+being reviewed and which version will be created. No pending draft or approval
+lifecycle is introduced for this operational evidence; scientific approval and
+release remain separate.
+
+Engineering: `LabVendorResultsVersion` stores the complete immutable metadata,
+library decisions, applicable declared locations and frozen manifest, plus author,
+recording time and note. A unique sendout/number index and the existing family
+lock/version guard serialize numbering and replay. Current sendout fields are an
+atomic current-value projection for operational reads; the saved snapshots are
+the version history. No application-side legacy backfill is added. Scientific
+capture includes the exact saved result-version identity/number in its immutable
+lineage snapshot when one exists.
+
+The additive migration creates only the new history table and indexes/FKs. Apply
+only to the configured local development database, update the complete ERD, and
+preserve the existing valid local test result as v1 with a one-time scoped copy.
+This copy changes no current result values or earlier custody entries. Reset or
+reseed would lose the Owner's entered result and notes and was not selected.
+The unrelated incomplete test record remains untouched. Production migration,
+publishing and Git mutations are not authorized.
+
+## Combined results receipt — October 6, 2026
+
+This Owner-approved scope supersedes the separate Sequencing, Results received
+and Success/Failure workflow steps. The public workflow is Prepare shipment →
+Shipped → Vendor received → Results received. Record results replaces Add data
+location and the separate final-outcome action. One atomic command captures vendor
+job reference, actual run start/completion, actual results receipt, the default
+library Success/Fail outcome with explicit member exceptions, notes and optional
+whole-batch/per-library permanent data locations. Success/Fail is library evidence,
+not a workflow status or scientific approval. Locations may arrive later and remain
+unverified; missing successful-library handoffs remain visible.
+
+The Owner confirmed Run not performed with a required reason and no run times
+when all submitted libraries failed. Record this explicitly; do not manufacture
+run times. Add nullable sequencing completion and run-not-performed fields so
+existing data stays unchanged/unknown. Generate an additive EF migration and ERD,
+verify the target and apply only to the configured local development database.
+The schema change performs no reset or conversion. Production migration,
+publishing and deployment are not authorized. The subsequent local fixture rollback
+is scoped separately below.
+
+The Owner confirmed the no-run terminal status is Run not performed. Do not save
+run or results-receipt timestamps for this path; closure and disposition use the
+server recording time. No-run members must not count as sequenced or advance the
+work order to DataProcessing. The summary exposes the saved run-not-performed fact
+for consistent list/filter/detail/final-step presentation. No migration is needed:
+the existing timestamp fields already permit null.
+
+Reason run not performed appears as a required textarea directly below its
+checkbox, before Results received and the library list. It uses the existing
+results-note evidence, without a duplicate notes field for initial no-run capture.
+On a recorded no-run job, show the previous reason as context and allow a fresh
+required explanation for the correction in that same location;
+hide receipt time, library outcomes, exceptions, locations and result notes while
+selected. The no-run form contains only vendor reference, checkbox and reason.
+Keep Run not performed visible from the outset. Selecting it sets the default
+outcome to Fail and removes draft Success exceptions; disable outcome/exception
+changes while selected, with a visible whole-batch explanation. Unchecking it
+restores run-time entry and normal outcome choices without discarding the reason.
+
+The visible outcome label is Batch outcome. Fail hides all following fields except
+Results notes and supplies no exceptions or references. Success permits only
+Failure exceptions. Keep failed libraries identified in Per library locations;
+disable their location input, explain that no location is required and exclude
+any retained draft path from validation and the command. The API also rejects
+Success exceptions/locations for failed batches and locations for failed members.
+The Owner requested more room: the results modal now uses a 44rem desktop maximum
+(704px), retaining the shared phone margins and scrolling regions.
+
+Data locations are required for every successful library. Whole batch requires
+one covering location; Per library requires every successful member's location.
+Failed members and no-run batches are exempt. Existing recorded references count
+toward coverage when appending handoff notes or further locations. Enforce coverage
+in the form and API, and never send hidden/disabled location drafts.
+Per-library rows retain the Owner's hidden location labels and show a visible
+shared required marker beside the library/tube identity when a location is still
+required. Failed rows have neither a required marker nor a required/active input.
+
+Results are captured atomically only after vendor receipt. The Owner subsequently
+authorized modification of current recorded results with a required explanatory
+note. No completed-record backfill or
+legacy repair path is supported. Stable command IDs/hash, staff authorization,
+sendout/batch locks and optimistic concurrency protect the atomic save and replay.
+Keep four-stage presentation consistent in list/detail/filter/next step.
+
+Current recorded results are editable: vendor reference, run/receipt times, batch
+outcome, member exceptions and the no-run decision. Require a fresh note for every
+save of an existing result. Save the previous complete result/exception/completion
+snapshot, the new request, actor, entry time and note in an appended correction
+event; exact replay remains idempotent and changed replay conflicts. Preserve
+declared location history and ordinary role/lock/version controls. Correct batch
+completion when the receipt/no-run disposition changes. A no-run-to-performed
+correction advances the work milestone; never roll back a shared work order or
+alter scientific approval/release. No-run selection is prohibited when scientific
+outputs reference the sendout, and a no-run sendout cannot supply a new output.
+The detail history exposes a Result changes comparison. This current-record edit
+flow supersedes the earlier immutability rule and is not a legacy repair path.
+Once a result exists, the action and modal title are Edit results with a pencil
+icon. Initial capture retains Record results with the folder-plus icon; completed
+forms use Save changes and require the correction note.
+
+The Owner requested a direct Record results button at the trailing end of the
+Next step description row. The description omits Choose Actions and wraps in the
+remaining width; narrow layouts may wrap the button to the trailing end below.
+While that primary next-step control is present, omit its duplicate header-menu
+item. Lists and fully recorded details retain Record results in Actions for later
+handoffs. Dialog close returns focus to its actual invoking control, falling back
+to header Actions after the next-step button disappears on successful recording.
+
+## Owner-directed rollback and removal of legacy repair — October 6, 2026
+
+The Owner explicitly requested removal of code intended to fix legacy records,
+and a one-time local data patch reversing the preceding workflow for the six-library
+batch PH-BAT-20261004-TAHDCRV5. Remove the retrospective completed-outcome method,
+superseded outcome/storage controller methods, DTOs and clients, completed-results
+gap filling, the completeness flag and historical UI/filter special cases.
+Keep the current atomic workflow and immutable later data-location additions.
+No persisted model change or migration is needed for this removal.
+
+Return only this batch to Vendor received / InProgress, preserving shipment,
+vendor receipt, Catalog snapshots, physical tube transfers, membership and vendor
+reference. Clear its simulated run/receipt/outcome and batch completion fields;
+remove the three superseded simulated custody events, one exception and one
+reference. Preserve an exact pre-patch recovery snapshot, use reviewed identities
+and version guards in one transaction, increment batch/sendout versions and audit
+the authorized rollback. Leave the shared work order/projection and other batch
+unchanged. Verify the configured local database and updated modal, without
+recording new vendor results. See the [rollback checkpoint](../testing/runs/2026-10-06-vendor-results-rollback.md).
+
+## Earlier batch detail checkpoint — recovery behavior withdrawn by Owner
+
+The Owner identified a completed list record whose workflow appeared to stop at
+vendor receipt, a redundant list card inside its single-record detail page, and
+an informational Next step with no available outcome action. The detail header
+now owns the batch identity, status, recorded start/completion times and one
+shared Actions control. The list and detail use the same action component; remove
+the nested list card. Draft library scanning remains available in its own
+collapsed control.
+
+The temporary missing-outcome recovery behavior was withdrawn by the Owner.
+The shared detail header, removed duplicate list card and draft scanner remain.
+
+## Approved batch actions and storage entry — October 6, 2026
+
+The Owner approved **Prepare sequencing tubes** while an Operator can prepare
+the physical pairs, and **View libraries** with an eye icon when the records are
+read-only. The view retains library identity, source and sequencing tube barcodes,
+transferred volume and transfer evidence. Remove the manual **Custody event**
+menu action and form; preserve recorded history and automatic stage evidence.
+
+External storage omits **Data description** from the dialog, as the Owner requested.
+The API continues assigning **Sequencing results** automatically. The dialog uses
+the shared pill toggle for **Whole batch / Per library**. The Owner explicitly
+requested the toggle instead of the rectangular tab-like control. Whole batch records one
+sequencing data location. Per library presents every member with its library and
+sequencing-tube identity and its own location. Blank rows remain pending and do
+not block saving available locations; at least one location is required.
+Additional references and correction notes remain append-only.
+The Owner also requested an approximately 15% wider storage modal. Its desktop
+maximum increases from 32rem to 36.8rem; the shared narrow-screen margins remain.
+This width applies to external storage only.
+
+Owner-approved visible-label exception: each identified Per library row has one
+location input, so repeating its visible label adds unnecessary clutter. Show
+**Sequencing data location** as the placeholder and retain a persistent hidden
+label naming that library, error association and the surrounding library/tube
+context. The Whole batch field retains its visible label. This bounded exception
+does not change the application-wide visible-label default for other forms.
+
+The storage action and dialog use the shorter **Add data location** title with
+a decorative folder-plus icon on the action. The whole-batch save label matches;
+Per library retains **Add library locations**. Permissions, scope and save behavior
+are unchanged.
+
+The Portal/API contract changes to one atomic storage-reference command containing
+the selected scope, reviewed sendout version, notes and stable per-row request IDs.
+Validate the entire command before saving, enforce membership and permanent
+locations, and accept identical retries without duplicates. New descriptions are
+assigned by the API. Reuse existing reference rows; no persisted-model change,
+migration, data conversion or deletion is needed. Keep Operator/Supervisor
+authorization, audit actor/time and finalization gates. This scope does not
+authorize Git publishing, deployment or scientific/data-provider operations.
+
+Verification: compile the solution, frontend typecheck and scoped lint,
+documentation generation and whitespace checks; inspect desktop/narrow and
+light/dark rendering, scope switching, validation, preserved drafts and focus.
+Update existing regressions for the command and labels. Automated execution
+remains deferred under the request-only test policy.
+
+Implementation and local review are complete. The solution compiles without
+warnings/errors; frontend typecheck, scoped lint and documentation checks pass.
+Connected browser inspection covers the storage form, scope drafts,
+validation, library identities, read-only view, removed custody action,
+keyboard/focus, light/dark and desktop/tablet/320-pixel rendering. Preview entries
+were discarded without a valid storage save. Multi-row database save/replay
+acceptance and automated execution remain deferred. See the
+[verification record](../testing/runs/2026-10-06-sequencing-batch-actions-storage.md).
+The isolated solution build passes. Activation in the existing local API session
+is pending a Visual Studio debug restart: IIS Express/Visual Studio lock the
+development assemblies, so the normal-output build cannot replace them. Preserve
+that session and distinguish the rendered UI evidence from active API save support.
+
 ## Graphical send-out progress — October 5, 2026
 
 The Owner requested graphical steps and checks for completed steps, using the

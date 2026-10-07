@@ -78,6 +78,7 @@ export type ResultPackage = {
     customerSampleId: string | null; retentionSnapshotId: string | null;
     scientificReviewer: string | null; scientificallyApprovedAtUtc: string | null;
     releaseDefinitionKey: string | null; releaseDefinitionVersion: number | null;
+    assemblyQc?: { jobId: string; reviewVersion: number; decision: string; note: string; reviewedBy: string; recordedAtUtc: string } | null;
   } | null
 }
 

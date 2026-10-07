@@ -25,11 +25,26 @@ public sealed partial class LabOperationsController
         if (specimenId.HasValue) query = query.Where(o => o.LabSpecimenId == specimenId);
         // Corrections replace input choices, never remove their retained history.
         query = query.Where(o => !dbContext.LabSequencingOutputs.Any(c => c.CorrectsOutputId == o.Id));
-        return await (from output in query join sample in dbContext.LabSpecimens on output.LabSpecimenId equals sample.Id
+        var candidates = await (from output in query join sample in dbContext.LabSpecimens on output.LabSpecimenId equals sample.Id
+            join library in dbContext.LabLibraries on output.LabLibraryId equals library.Id
             orderby output.RecordedAtUtc descending
             select new { output.Id, output.LabWorkOrderId, output.LabSpecimenId, sampleName = sample.AccessionNumber,
-                sequencingRunNumber = output.SequencingRunNumber ?? 1, output.LabSpecimenAttemptId,
-                output.ProviderRunReference, output.SampleMappingReference, output.SizeBytes, output.Sha256 }).Take(1000).ToListAsync(ct);
+                sequencingRunNumber = output.SequencingRunNumber ?? 1, output.LabSpecimenAttemptId, library.LibraryKey,
+                output.ProviderRunReference, output.SampleMappingReference, output.SizeBytes, output.Sha256,
+                output.ProviderKey, output.ExternalFileReference, output.LabNgsSendoutId }).Take(1000).ToListAsync(ct);
+        var sendoutIds = candidates.Where(c => c.ProviderKey == "vendor-fastq").Select(c => c.LabNgsSendoutId).Distinct().ToArray();
+        var current = await dbContext.LabVendorResultsVersions.AsNoTracking().Where(v => sendoutIds.Contains(v.LabNgsSendoutId)
+            && !dbContext.LabVendorResultsVersions.Any(newer => newer.LabNgsSendoutId == v.LabNgsSendoutId && newer.ResultVersion > v.ResultVersion))
+            .Select(v => v.SnapshotJson).ToListAsync(ct);
+        var ids = current.SelectMany(json => JsonSerializer.Deserialize<DTOs.VendorResultsSnapshot>(json, JsonOptions)!.FastqSets ?? [])
+            .SelectMany(set => set.Files).Select(file => file.OutputId).ToHashSet();
+        var references = candidates.Select(c => c.ExternalFileReference).ToArray();
+        var files = await dbContext.LabScientificFiles.AsNoTracking().Where(f => references.Contains(LabScientificFiles.Prefix + f.Id.ToString()))
+            .Select(f => new { f.Id, f.FileName }).ToDictionaryAsync(f => LabScientificFiles.Prefix + f.Id, f => f.FileName, ct);
+        return candidates.Where(c => c.ProviderKey != "vendor-fastq" || ids.Contains(c.Id)).Select(c => new { c.Id, c.LabWorkOrderId,
+            c.LabSpecimenId, c.sampleName, c.sequencingRunNumber, c.LabSpecimenAttemptId, c.LibraryKey,
+            c.ProviderRunReference, c.SampleMappingReference, c.SizeBytes, c.Sha256, fileName = files.GetValueOrDefault(c.ExternalFileReference) }).ToList();
+
     }
 
     [HttpGet("assembly-jobs/{jobId:guid}")]

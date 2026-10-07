@@ -42,6 +42,13 @@ Open **Order Ops → Result release**. The queue starts with **Ready for release
 
 Corrections create a new package, scientific approval, and release version. Preserve notification, Customer download, retention warning/cutoff/grace/deletion, withdrawal, and authorized reissue evidence.
 
+If vendor run details, library outcomes or FASTQ files must change after approval
+or publication, withdraw the affected package first. The vendor edit is blocked
+until that decision is recorded; it cannot silently leave a contradictory package
+available to the Customer. Withdrawn, previously published packages can still be
+identified as the source of a replacement. Notes-only vendor edits retain
+unchanged inputs and their analysis links.
+
 Related-workspace links follow your access: **View commercial order** is available to platform administrators, while **View scientific review** requires laboratory access. The package still shows its Customer, Job, sample and approval context when a related workspace is unavailable to you.
 
 ## Review governed result retention
@@ -111,3 +118,5 @@ Released package schedules link to retained receipts. Receipts preserve file
 manifests, checksums, deadline/completion/deletion facts and reissue lineage after
 byte deletion. For preservation, quarantine, or linking a newly approved reissue,
 use [Configuration and recovery](/docs/phaeno/configuration-and-recovery).
+
+For assembly-produced packages, the release detail shows the exact latest QC decision and its reviewer/date. A passing package-specific QC review and independent scientific approval precede **Actions → Release to Customer**. Publication makes the approved version available in the Customer Job’s Files and results; retained internal evidence is separate from Customer file expiry.

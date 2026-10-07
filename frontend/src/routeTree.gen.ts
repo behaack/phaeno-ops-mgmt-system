@@ -108,12 +108,16 @@ import { Route as OrderOperationsLabServicesIntakeOrderIdRouteImport } from './r
 import { Route as OrderOperationsFinanceKindRecordIdRouteImport } from './routes/order-operations.finance.$kind.$recordId'
 import { Route as OrderOperationsDraftsOrderIdEditRouteImport } from './routes/order-operations.drafts.$orderId.edit'
 import { Route as LabOperationsStepsStepIdEditRouteImport } from './routes/lab-operations.steps.$stepId.edit'
+import { Route as LabOperationsBatchesBatchIdRecordResultsRouteImport } from './routes/lab-operations.batches.$batchId_.record-results'
+import { Route as LabOperationsAssemblyJobsJobIdRecordQcRouteImport } from './routes/lab-operations.assembly-jobs.$jobId_.record-qc'
+import { Route as LabOperationsAssemblyJobsJobIdQcRouteImport } from './routes/lab-operations.assembly-jobs.$jobId_.qc'
 import { Route as LabOperationsWorkOrderIdSpecimensSpecimenIdRouteImport } from './routes/lab-operations.$workOrderId_.specimens.$specimenId'
 import { Route as LabOperationsWorkOrderIdContainersContainerIdRouteImport } from './routes/lab-operations.$workOrderId_.containers.$containerId'
 import { Route as OrderOperationsLabServicesTrialsTrialIdScopeRouteImport } from './routes/order-operations.lab-services.trials.$trialId.scope'
 import { Route as OrderOperationsLabServicesDraftsOrderIdEditRouteImport } from './routes/order-operations.lab-services.drafts.$orderId.edit'
 import { Route as LabOperationsWorkflowsWorkflowIdVersionsNewRouteImport } from './routes/lab-operations.workflows.$workflowId.versions.new'
 import { Route as LabOperationsProtocolsProtocolIdVersionsNewRouteImport } from './routes/lab-operations.protocols.$protocolId.versions.new'
+import { Route as LabOperationsBatchesBatchIdResultsResultVersionRouteImport } from './routes/lab-operations.batches.$batchId_.results.$resultVersion'
 import { Route as LabOperationsWorkflowsWorkflowIdVersionsVersionIdEditRouteImport } from './routes/lab-operations.workflows.$workflowId.versions.$versionId.edit'
 import { Route as LabOperationsProtocolsProtocolIdVersionsVersionIdEditRouteImport } from './routes/lab-operations.protocols.$protocolId.versions.$versionId.edit'
 import { Route as LabOperationsWorkOrderIdSpecimensSpecimenIdEvidenceKindRecordIdRouteImport } from './routes/lab-operations.$workOrderId_.specimens.$specimenId_.evidence.$kind.$recordId'
@@ -659,6 +663,24 @@ const LabOperationsStepsStepIdEditRoute =
     path: '/edit',
     getParentRoute: () => LabOperationsStepsStepIdRoute,
   } as any)
+const LabOperationsBatchesBatchIdRecordResultsRoute =
+  LabOperationsBatchesBatchIdRecordResultsRouteImport.update({
+    id: '/batches/$batchId_/record-results',
+    path: '/batches/$batchId/record-results',
+    getParentRoute: () => LabOperationsRoute,
+  } as any)
+const LabOperationsAssemblyJobsJobIdRecordQcRoute =
+  LabOperationsAssemblyJobsJobIdRecordQcRouteImport.update({
+    id: '/assembly-jobs/$jobId_/record-qc',
+    path: '/assembly-jobs/$jobId/record-qc',
+    getParentRoute: () => LabOperationsRoute,
+  } as any)
+const LabOperationsAssemblyJobsJobIdQcRoute =
+  LabOperationsAssemblyJobsJobIdQcRouteImport.update({
+    id: '/assembly-jobs/$jobId_/qc',
+    path: '/assembly-jobs/$jobId/qc',
+    getParentRoute: () => LabOperationsRoute,
+  } as any)
 const LabOperationsWorkOrderIdSpecimensSpecimenIdRoute =
   LabOperationsWorkOrderIdSpecimensSpecimenIdRouteImport.update({
     id: '/$workOrderId_/specimens/$specimenId',
@@ -693,6 +715,12 @@ const LabOperationsProtocolsProtocolIdVersionsNewRoute =
   LabOperationsProtocolsProtocolIdVersionsNewRouteImport.update({
     id: '/protocols/$protocolId/versions/new',
     path: '/protocols/$protocolId/versions/new',
+    getParentRoute: () => LabOperationsRoute,
+  } as any)
+const LabOperationsBatchesBatchIdResultsResultVersionRoute =
+  LabOperationsBatchesBatchIdResultsResultVersionRouteImport.update({
+    id: '/batches/$batchId_/results/$resultVersion',
+    path: '/batches/$batchId/results/$resultVersion',
     getParentRoute: () => LabOperationsRoute,
   } as any)
 const LabOperationsWorkflowsWorkflowIdVersionsVersionIdEditRoute =
@@ -807,6 +835,9 @@ export interface FileRoutesByFullPath {
   '/trial-projects/$trialId/scope': typeof TrialProjectsTrialIdScopeRoute
   '/lab-operations/$workOrderId/containers/$containerId': typeof LabOperationsWorkOrderIdContainersContainerIdRoute
   '/lab-operations/$workOrderId/specimens/$specimenId': typeof LabOperationsWorkOrderIdSpecimensSpecimenIdRoute
+  '/lab-operations/assembly-jobs/$jobId/qc': typeof LabOperationsAssemblyJobsJobIdQcRoute
+  '/lab-operations/assembly-jobs/$jobId/record-qc': typeof LabOperationsAssemblyJobsJobIdRecordQcRoute
+  '/lab-operations/batches/$batchId/record-results': typeof LabOperationsBatchesBatchIdRecordResultsRoute
   '/lab-operations/steps/$stepId/edit': typeof LabOperationsStepsStepIdEditRoute
   '/order-operations/drafts/$orderId/edit': typeof OrderOperationsDraftsOrderIdEditRoute
   '/order-operations/finance/$kind/$recordId': typeof OrderOperationsFinanceKindRecordIdRoute
@@ -818,6 +849,7 @@ export interface FileRoutesByFullPath {
   '/order-operations/partner-services/data-assembly/$orderId': typeof OrderOperationsPartnerServicesDataAssemblyOrderIdRoute
   '/order-operations/partner-services/pseq-kits/$orderId': typeof OrderOperationsPartnerServicesPseqKitsOrderIdRoute
   '/purchasing/products/$supplierId/$productId': typeof PurchasingProductsSupplierIdProductIdRoute
+  '/lab-operations/batches/$batchId/results/$resultVersion': typeof LabOperationsBatchesBatchIdResultsResultVersionRoute
   '/lab-operations/protocols/$protocolId/versions/new': typeof LabOperationsProtocolsProtocolIdVersionsNewRoute
   '/lab-operations/workflows/$workflowId/versions/new': typeof LabOperationsWorkflowsWorkflowIdVersionsNewRoute
   '/order-operations/lab-services/drafts/$orderId/edit': typeof OrderOperationsLabServicesDraftsOrderIdEditRoute
@@ -917,6 +949,9 @@ export interface FileRoutesByTo {
   '/trial-projects/$trialId/scope': typeof TrialProjectsTrialIdScopeRoute
   '/lab-operations/$workOrderId/containers/$containerId': typeof LabOperationsWorkOrderIdContainersContainerIdRoute
   '/lab-operations/$workOrderId/specimens/$specimenId': typeof LabOperationsWorkOrderIdSpecimensSpecimenIdRoute
+  '/lab-operations/assembly-jobs/$jobId/qc': typeof LabOperationsAssemblyJobsJobIdQcRoute
+  '/lab-operations/assembly-jobs/$jobId/record-qc': typeof LabOperationsAssemblyJobsJobIdRecordQcRoute
+  '/lab-operations/batches/$batchId/record-results': typeof LabOperationsBatchesBatchIdRecordResultsRoute
   '/lab-operations/steps/$stepId/edit': typeof LabOperationsStepsStepIdEditRoute
   '/order-operations/drafts/$orderId/edit': typeof OrderOperationsDraftsOrderIdEditRoute
   '/order-operations/finance/$kind/$recordId': typeof OrderOperationsFinanceKindRecordIdRoute
@@ -928,6 +963,7 @@ export interface FileRoutesByTo {
   '/order-operations/partner-services/data-assembly/$orderId': typeof OrderOperationsPartnerServicesDataAssemblyOrderIdRoute
   '/order-operations/partner-services/pseq-kits/$orderId': typeof OrderOperationsPartnerServicesPseqKitsOrderIdRoute
   '/purchasing/products/$supplierId/$productId': typeof PurchasingProductsSupplierIdProductIdRoute
+  '/lab-operations/batches/$batchId/results/$resultVersion': typeof LabOperationsBatchesBatchIdResultsResultVersionRoute
   '/lab-operations/protocols/$protocolId/versions/new': typeof LabOperationsProtocolsProtocolIdVersionsNewRoute
   '/lab-operations/workflows/$workflowId/versions/new': typeof LabOperationsWorkflowsWorkflowIdVersionsNewRoute
   '/order-operations/lab-services/drafts/$orderId/edit': typeof OrderOperationsLabServicesDraftsOrderIdEditRoute
@@ -1028,6 +1064,9 @@ export interface FileRoutesById {
   '/trial-projects/$trialId/scope': typeof TrialProjectsTrialIdScopeRoute
   '/lab-operations/$workOrderId_/containers/$containerId': typeof LabOperationsWorkOrderIdContainersContainerIdRoute
   '/lab-operations/$workOrderId_/specimens/$specimenId': typeof LabOperationsWorkOrderIdSpecimensSpecimenIdRoute
+  '/lab-operations/assembly-jobs/$jobId_/qc': typeof LabOperationsAssemblyJobsJobIdQcRoute
+  '/lab-operations/assembly-jobs/$jobId_/record-qc': typeof LabOperationsAssemblyJobsJobIdRecordQcRoute
+  '/lab-operations/batches/$batchId_/record-results': typeof LabOperationsBatchesBatchIdRecordResultsRoute
   '/lab-operations/steps/$stepId/edit': typeof LabOperationsStepsStepIdEditRoute
   '/order-operations/drafts/$orderId/edit': typeof OrderOperationsDraftsOrderIdEditRoute
   '/order-operations/finance/$kind/$recordId': typeof OrderOperationsFinanceKindRecordIdRoute
@@ -1039,6 +1078,7 @@ export interface FileRoutesById {
   '/order-operations/partner-services/data-assembly/$orderId': typeof OrderOperationsPartnerServicesDataAssemblyOrderIdRoute
   '/order-operations/partner-services/pseq-kits/$orderId': typeof OrderOperationsPartnerServicesPseqKitsOrderIdRoute
   '/purchasing/products/$supplierId/$productId': typeof PurchasingProductsSupplierIdProductIdRoute
+  '/lab-operations/batches/$batchId_/results/$resultVersion': typeof LabOperationsBatchesBatchIdResultsResultVersionRoute
   '/lab-operations/protocols/$protocolId/versions/new': typeof LabOperationsProtocolsProtocolIdVersionsNewRoute
   '/lab-operations/workflows/$workflowId/versions/new': typeof LabOperationsWorkflowsWorkflowIdVersionsNewRoute
   '/order-operations/lab-services/drafts/$orderId/edit': typeof OrderOperationsLabServicesDraftsOrderIdEditRoute
@@ -1140,6 +1180,9 @@ export interface FileRouteTypes {
     | '/trial-projects/$trialId/scope'
     | '/lab-operations/$workOrderId/containers/$containerId'
     | '/lab-operations/$workOrderId/specimens/$specimenId'
+    | '/lab-operations/assembly-jobs/$jobId/qc'
+    | '/lab-operations/assembly-jobs/$jobId/record-qc'
+    | '/lab-operations/batches/$batchId/record-results'
     | '/lab-operations/steps/$stepId/edit'
     | '/order-operations/drafts/$orderId/edit'
     | '/order-operations/finance/$kind/$recordId'
@@ -1151,6 +1194,7 @@ export interface FileRouteTypes {
     | '/order-operations/partner-services/data-assembly/$orderId'
     | '/order-operations/partner-services/pseq-kits/$orderId'
     | '/purchasing/products/$supplierId/$productId'
+    | '/lab-operations/batches/$batchId/results/$resultVersion'
     | '/lab-operations/protocols/$protocolId/versions/new'
     | '/lab-operations/workflows/$workflowId/versions/new'
     | '/order-operations/lab-services/drafts/$orderId/edit'
@@ -1250,6 +1294,9 @@ export interface FileRouteTypes {
     | '/trial-projects/$trialId/scope'
     | '/lab-operations/$workOrderId/containers/$containerId'
     | '/lab-operations/$workOrderId/specimens/$specimenId'
+    | '/lab-operations/assembly-jobs/$jobId/qc'
+    | '/lab-operations/assembly-jobs/$jobId/record-qc'
+    | '/lab-operations/batches/$batchId/record-results'
     | '/lab-operations/steps/$stepId/edit'
     | '/order-operations/drafts/$orderId/edit'
     | '/order-operations/finance/$kind/$recordId'
@@ -1261,6 +1308,7 @@ export interface FileRouteTypes {
     | '/order-operations/partner-services/data-assembly/$orderId'
     | '/order-operations/partner-services/pseq-kits/$orderId'
     | '/purchasing/products/$supplierId/$productId'
+    | '/lab-operations/batches/$batchId/results/$resultVersion'
     | '/lab-operations/protocols/$protocolId/versions/new'
     | '/lab-operations/workflows/$workflowId/versions/new'
     | '/order-operations/lab-services/drafts/$orderId/edit'
@@ -1360,6 +1408,9 @@ export interface FileRouteTypes {
     | '/trial-projects/$trialId/scope'
     | '/lab-operations/$workOrderId_/containers/$containerId'
     | '/lab-operations/$workOrderId_/specimens/$specimenId'
+    | '/lab-operations/assembly-jobs/$jobId_/qc'
+    | '/lab-operations/assembly-jobs/$jobId_/record-qc'
+    | '/lab-operations/batches/$batchId_/record-results'
     | '/lab-operations/steps/$stepId/edit'
     | '/order-operations/drafts/$orderId/edit'
     | '/order-operations/finance/$kind/$recordId'
@@ -1371,6 +1422,7 @@ export interface FileRouteTypes {
     | '/order-operations/partner-services/data-assembly/$orderId'
     | '/order-operations/partner-services/pseq-kits/$orderId'
     | '/purchasing/products/$supplierId/$productId'
+    | '/lab-operations/batches/$batchId_/results/$resultVersion'
     | '/lab-operations/protocols/$protocolId/versions/new'
     | '/lab-operations/workflows/$workflowId/versions/new'
     | '/order-operations/lab-services/drafts/$orderId/edit'
@@ -2108,6 +2160,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LabOperationsStepsStepIdEditRouteImport
       parentRoute: typeof LabOperationsStepsStepIdRoute
     }
+    '/lab-operations/batches/$batchId_/record-results': {
+      id: '/lab-operations/batches/$batchId_/record-results'
+      path: '/batches/$batchId/record-results'
+      fullPath: '/lab-operations/batches/$batchId/record-results'
+      preLoaderRoute: typeof LabOperationsBatchesBatchIdRecordResultsRouteImport
+      parentRoute: typeof LabOperationsRoute
+    }
+    '/lab-operations/assembly-jobs/$jobId_/record-qc': {
+      id: '/lab-operations/assembly-jobs/$jobId_/record-qc'
+      path: '/assembly-jobs/$jobId/record-qc'
+      fullPath: '/lab-operations/assembly-jobs/$jobId/record-qc'
+      preLoaderRoute: typeof LabOperationsAssemblyJobsJobIdRecordQcRouteImport
+      parentRoute: typeof LabOperationsRoute
+    }
+    '/lab-operations/assembly-jobs/$jobId_/qc': {
+      id: '/lab-operations/assembly-jobs/$jobId_/qc'
+      path: '/assembly-jobs/$jobId/qc'
+      fullPath: '/lab-operations/assembly-jobs/$jobId/qc'
+      preLoaderRoute: typeof LabOperationsAssemblyJobsJobIdQcRouteImport
+      parentRoute: typeof LabOperationsRoute
+    }
     '/lab-operations/$workOrderId_/specimens/$specimenId': {
       id: '/lab-operations/$workOrderId_/specimens/$specimenId'
       path: '/$workOrderId/specimens/$specimenId'
@@ -2148,6 +2221,13 @@ declare module '@tanstack/react-router' {
       path: '/protocols/$protocolId/versions/new'
       fullPath: '/lab-operations/protocols/$protocolId/versions/new'
       preLoaderRoute: typeof LabOperationsProtocolsProtocolIdVersionsNewRouteImport
+      parentRoute: typeof LabOperationsRoute
+    }
+    '/lab-operations/batches/$batchId_/results/$resultVersion': {
+      id: '/lab-operations/batches/$batchId_/results/$resultVersion'
+      path: '/batches/$batchId/results/$resultVersion'
+      fullPath: '/lab-operations/batches/$batchId/results/$resultVersion'
+      preLoaderRoute: typeof LabOperationsBatchesBatchIdResultsResultVersionRouteImport
       parentRoute: typeof LabOperationsRoute
     }
     '/lab-operations/workflows/$workflowId/versions/$versionId/edit': {
@@ -2322,6 +2402,10 @@ interface LabOperationsRouteChildren {
   LabOperationsStockKitsKitIdRoute: typeof LabOperationsStockKitsKitIdRoute
   LabOperationsWorkOrderIdContainersContainerIdRoute: typeof LabOperationsWorkOrderIdContainersContainerIdRoute
   LabOperationsWorkOrderIdSpecimensSpecimenIdRoute: typeof LabOperationsWorkOrderIdSpecimensSpecimenIdRoute
+  LabOperationsAssemblyJobsJobIdQcRoute: typeof LabOperationsAssemblyJobsJobIdQcRoute
+  LabOperationsAssemblyJobsJobIdRecordQcRoute: typeof LabOperationsAssemblyJobsJobIdRecordQcRoute
+  LabOperationsBatchesBatchIdRecordResultsRoute: typeof LabOperationsBatchesBatchIdRecordResultsRoute
+  LabOperationsBatchesBatchIdResultsResultVersionRoute: typeof LabOperationsBatchesBatchIdResultsResultVersionRoute
   LabOperationsProtocolsProtocolIdVersionsNewRoute: typeof LabOperationsProtocolsProtocolIdVersionsNewRoute
   LabOperationsWorkflowsWorkflowIdVersionsNewRoute: typeof LabOperationsWorkflowsWorkflowIdVersionsNewRoute
   LabOperationsProtocolsProtocolIdVersionsVersionIdEditRoute: typeof LabOperationsProtocolsProtocolIdVersionsVersionIdEditRoute
@@ -2353,6 +2437,13 @@ const LabOperationsRouteChildren: LabOperationsRouteChildren = {
     LabOperationsWorkOrderIdContainersContainerIdRoute,
   LabOperationsWorkOrderIdSpecimensSpecimenIdRoute:
     LabOperationsWorkOrderIdSpecimensSpecimenIdRoute,
+  LabOperationsAssemblyJobsJobIdQcRoute: LabOperationsAssemblyJobsJobIdQcRoute,
+  LabOperationsAssemblyJobsJobIdRecordQcRoute:
+    LabOperationsAssemblyJobsJobIdRecordQcRoute,
+  LabOperationsBatchesBatchIdRecordResultsRoute:
+    LabOperationsBatchesBatchIdRecordResultsRoute,
+  LabOperationsBatchesBatchIdResultsResultVersionRoute:
+    LabOperationsBatchesBatchIdResultsResultVersionRoute,
   LabOperationsProtocolsProtocolIdVersionsNewRoute:
     LabOperationsProtocolsProtocolIdVersionsNewRoute,
   LabOperationsWorkflowsWorkflowIdVersionsNewRoute:

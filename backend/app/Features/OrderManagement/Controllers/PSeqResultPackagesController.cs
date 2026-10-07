@@ -44,7 +44,8 @@ public sealed record ResultPackageDto(
 public sealed record ResultPackageContextDto(string OrganizationName, string? OrderNumber,
     string? CustomerReference, string? CustomerSampleId, Guid? RetentionSnapshotId,
     string? ScientificReviewer, DateTime? ScientificallyApprovedAtUtc,
-    string? ReleaseDefinitionKey, int? ReleaseDefinitionVersion);
+    string? ReleaseDefinitionKey, int? ReleaseDefinitionVersion, ResultPackageQcSummary? AssemblyQc = null);
+public sealed record ResultPackageQcSummary(Guid JobId, int ReviewVersion, string Decision, string Note, string ReviewedBy, DateTime RecordedAtUtc);
 public sealed record ResultArtifactDto(
     Guid Id, string LogicalRole, string FileName, string ContentType, long SizeBytes,
     string Sha256, string ScanState, DateTime? ScanCompletedAtUtc, DateTime? DeletedAtUtc, string? ResultLocator = null);
@@ -79,6 +80,8 @@ public sealed partial class PSeqResultPipelineController(
             Encoding.ASCII.GetBytes(request.ManifestSha256.Trim().ToUpperInvariant())))
             throw Invalid("result_manifest_checksum_mismatch", "The manifest checksum does not match its normalized content.");
 
+        await using var resultTransaction = dbContext.Database.IsRelational() && dbContext.Database.CurrentTransaction is null
+            ? await dbContext.Database.BeginTransactionAsync(cancellationToken) : null;
         var existing = await dbContext.ResultOutputPackages.AsNoTracking()
             .SingleOrDefaultAsync(item => item.IdempotencyKey == request.IdempotencyKey, cancellationToken);
         if (existing is not null)
@@ -112,7 +115,7 @@ public sealed partial class PSeqResultPipelineController(
         if (request.CorrectsPackageId.HasValue && !await dbContext.ResultOutputPackages.AnyAsync(item =>
             item.Id == request.CorrectsPackageId.Value && item.LabSampleId == request.LabSampleId && item.TrialSampleId == request.TrialSampleId
             && item.OrganizationId == request.OrganizationId && item.LabWorkOrderId == request.LabWorkOrderId
-            && item.State == ResultOutputPackageState.Released, cancellationToken))
+            && item.ReleasedAtUtc.HasValue && (item.State == ResultOutputPackageState.Released || item.State == ResultOutputPackageState.Withdrawn), cancellationToken))
             throw Invalid("result_correction_target_invalid", "A correction must reference a released package for the same sample.");
 
         {
@@ -126,7 +129,7 @@ public sealed partial class PSeqResultPipelineController(
                     throw Invalid("result_correction_reason_required", "Include correctionReason (up to 2,000 characters) in the checksummed manifest for a replacement result.");
             }
             await new LabResultLineageService(dbContext).RequireResultAsync(request.LabAnalysisRunId, true,
-                request.OrganizationId, request.LabWorkOrderId, (request.LabSampleId ?? request.TrialSampleId)!.Value, cancellationToken, Rollout.RequireScientificEvidence);
+                request.OrganizationId, request.LabWorkOrderId, (request.LabSampleId ?? request.TrialSampleId)!.Value, cancellationToken, Rollout.RequireScientificEvidence, allowPendingQc: true);
         }
         var packageVersion = await dbContext.ResultOutputPackages
             .CountAsync(item => request.TrialSampleId.HasValue ? item.TrialSampleId == request.TrialSampleId : item.LabSampleId == request.LabSampleId, cancellationToken) + 1;
@@ -157,6 +160,7 @@ public sealed partial class PSeqResultPipelineController(
             throw Conflict("result_package_registration_conflict",
                 "Another result package was registered at the same time. Retry this request without changing its idempotency key.");
         }
+        if (resultTransaction is not null) await resultTransaction.CommitAsync(cancellationToken);
         return new ResultPackageRegistrationDto(await MapAsync(package, cancellationToken),
             transfer.ObjectStorageUploadTargets);
     }
@@ -203,6 +207,7 @@ public sealed partial class PSeqResultPipelineController(
     {
         RequirePipelineAuthentication();
         RequireGovernedResultsConfiguration();
+        await using var resultTransaction = await SampleShippingPackingData.BeginAsync(dbContext, "package-scan:" + packageId, cancellationToken);
         var package = await dbContext.ResultOutputPackages.SingleOrDefaultAsync(item => item.Id == packageId, cancellationToken)
             ?? throw Missing();
         if (package.State != ResultOutputPackageState.Scanning)
@@ -211,7 +216,7 @@ public sealed partial class PSeqResultPipelineController(
         if (package.TraceabilityRequired || Rollout.RequireResultTraceability || Rollout.RequireScientificEvidence)
         {
             await new LabResultLineageService(dbContext).RequireResultAsync(package.LabAnalysisRunId, true,
-                package.OrganizationId, package.LabWorkOrderId, (package.LabSampleId ?? package.TrialSampleId)!.Value, cancellationToken, Rollout.RequireScientificEvidence);
+                package.OrganizationId, package.LabWorkOrderId, (package.LabSampleId ?? package.TrialSampleId)!.Value, cancellationToken, Rollout.RequireScientificEvidence, allowPendingQc: true);
             if (artifacts.Any(x => string.IsNullOrWhiteSpace(x.ResultLocator)))
                 throw Invalid("result_locator_required", "Every artifact needs an explicit result locator before scientific review.");
         }
@@ -237,6 +242,7 @@ public sealed partial class PSeqResultPipelineController(
             package.Fail(checksumsMatch ? "malware_scan_rejected" : "artifact_checksum_mismatch",
                 checksumsMatch ? "One or more artifacts failed malware scanning." : "One or more artifact checksums did not match the manifest.");
         await dbContext.SaveChangesAsync(cancellationToken);
+        if (resultTransaction is not null) await resultTransaction.CommitAsync(cancellationToken);
         return await MapAsync(package, cancellationToken);
     }
 
@@ -372,14 +378,22 @@ public sealed class PSeqResultReleaseController(
         var approvals = await dbContext.LabScientificApprovals.AsNoTracking().Where(item => approvalIds.Contains(item.Id)).ToDictionaryAsync(item => item.Id, token);
         var reviewerIds = approvals.Values.Select(item => item.ApprovedByUserId).Distinct().ToList();
         var reviewers = await dbContext.Users.AsNoTracking().Where(item => reviewerIds.Contains(item.Id)).ToDictionaryAsync(item => item.Id, item => item.FirstName + " " + item.LastName, token);
+        var qcReviews = await (from qc in dbContext.Set<PSeq.Operations.Laboratory.Domain.LabAssemblyQc>().AsNoTracking()
+            join user in dbContext.Users on qc.RecordedByUserId equals user.Id
+            where packageIds.Contains(qc.ResultOutputPackageId)
+            orderby qc.ReviewVersion descending
+            select new { qc.ResultOutputPackageId, qc.LabAssemblyJobId, qc.ReviewVersion, qc.Decision, qc.Note, qc.RecordedAtUtc,
+                author = user.FirstName + " " + user.LastName }).ToListAsync(token);
         return packages.ToDictionary(item => item.Id, item => {
             var order = item.LabServiceOrderId.HasValue ? orders.GetValueOrDefault(item.LabServiceOrderId.Value) : null;
             var approval = item.ScientificApprovalId.HasValue ? approvals.GetValueOrDefault(item.ScientificApprovalId.Value) : null;
+            var qc = qcReviews.FirstOrDefault(q => q.ResultOutputPackageId == item.Id);
             return new ResultPackageContextDto(organizations.GetValueOrDefault(item.OrganizationId, "Organization"),
                 order?.OrderNumber, order?.CustomerReference, item.LabSampleId.HasValue ? samples.GetValueOrDefault(item.LabSampleId.Value) : null,
                 snapshots.TryGetValue(item.Id, out var snapshotId) ? snapshotId : null,
                 approval is null ? null : reviewers.GetValueOrDefault(approval.ApprovedByUserId, "Former reviewer"),
-                approval?.ApprovedAtUtc, approval?.ReleaseDefinitionKey, approval?.ReleaseDefinitionVersion);
+                approval?.ApprovedAtUtc, approval?.ReleaseDefinitionKey, approval?.ReleaseDefinitionVersion,
+                qc is null ? null : new(qc.LabAssemblyJobId, qc.ReviewVersion, qc.Decision, qc.Note, qc.author, qc.RecordedAtUtc));
         });
     }
 
@@ -395,6 +409,7 @@ public sealed class PSeqResultReleaseController(
         if (package.TrialProjectId.HasValue) throw new OrderManagementException("trial_release_required", "Release Trial results from the owning Trial Project.", StatusCodes.Status409Conflict);
         EnsureVersion(package.Version, request.Version);
         var now = DateTime.UtcNow;
+        await using var resultTransaction = await SampleShippingPackingData.BeginAsync(dbContext, "result-publication:" + packageId, cancellationToken);
         await new LabResultLineageService(dbContext).RequirePackageAsync(package, cancellationToken, options.Value);
         package.Release(actor.Id, now);
         await new LabOperations.Services.LabJobDeliveryRecorder(dbContext).RecordAsync(package.LabWorkOrderId,
@@ -421,6 +436,7 @@ public sealed class PSeqResultReleaseController(
             "PSeq result available", $"A scientifically approved PSeq result package is available for Job {orderContext.OrderNumber}. "
                 + $"Open the Job in the Portal:\n{(invitations?.Value ?? new InvitationOptions()).PublicBaseUrl.TrimEnd('/')}/lab-services/{package.LabServiceOrderId.Value}", orderContext.DepartmentId));
         await dbContext.SaveChangesAsync(cancellationToken);
+        if (resultTransaction is not null) await resultTransaction.CommitAsync(cancellationToken);
         return await Get(package.Id, cancellationToken);
     }
 

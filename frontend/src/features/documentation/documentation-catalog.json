@@ -608,7 +608,7 @@
       "title": "Results and billing",
       "summary": "Download scientifically released PSeq results, review retention, and find invoices independently of result access.",
       "order": 40,
-      "reviewedAt": "2026-10-01",
+      "reviewedAt": "2026-10-06",
       "navigationGroup": "laboratory-work",
       "contentType": "guide",
       "topicIds": [
@@ -1494,7 +1494,7 @@
       "title": "PSeq billing, cash, and result release",
       "summary": "Review PSeq invoices, record and reconcile cash, release scientifically approved results, and distinguish disabled capabilities from loading failures.",
       "order": 45,
-      "reviewedAt": "2026-10-03",
+      "reviewedAt": "2026-10-06",
       "navigationGroup": "order-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1569,7 +1569,7 @@
       "title": "Laboratory operations",
       "summary": "Find laboratory work, receive purchased kits and stock, assemble Phaeno kits and reagents, record scientific evidence, and trace result delivery.",
       "order": 50,
-      "reviewedAt": "2026-10-04",
+      "reviewedAt": "2026-10-06",
       "navigationGroup": "laboratory-operations",
       "contentType": "overview",
       "topicIds": [
@@ -1645,7 +1645,7 @@
       "title": "Service workflows, protocol control, and execution",
       "summary": "Configure service, reagent, and master-mix workflows; record controlled Lab steps and material use.",
       "order": 54,
-      "reviewedAt": "2026-10-05",
+      "reviewedAt": "2026-10-06",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1711,9 +1711,9 @@
       "slug": "lab-libraries-batches-sequencing",
       "parentSlug": "lab-operations",
       "title": "Libraries, batches, and sequencing",
-      "summary": "Track library tubes and aliquots, ship vendor sequencing batches, record ETA and final outcomes with library exceptions, and retain external storage references.",
+      "summary": "Track library/tube lineage, record vendor results with verified batch ZIP or individual FASTQ uploads, initiate assembly, record QC and hand off approved Customer packages.",
       "order": 56,
-      "reviewedAt": "2026-10-05",
+      "reviewedAt": "2026-10-06",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1727,7 +1727,8 @@
         "lab libraries batches sequencing",
         "vendor sequencing shipment tracking ETA",
         "batch success failure library exceptions",
-        "external result storage references"
+        "batch ZIP FASTQ upload read pairs library mapping",
+        "assembly QC Pass Fail Hold Customer release"
       ],
       "aliases": [
         "QC",
@@ -1785,7 +1786,7 @@
       "title": "Scientific approval and release readiness",
       "summary": "Review output packages, source-tube lineage and scientific evidence requirements, resolve performer/time reviews, and record independent scientific approval.",
       "order": 58,
-      "reviewedAt": "2026-10-03",
+      "reviewedAt": "2026-10-06",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [

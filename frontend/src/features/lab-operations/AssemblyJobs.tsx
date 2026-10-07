@@ -1,11 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useSearch } from '@tanstack/react-router'
-import { ChevronDown } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
-import { cancelAssembly, getAssemblyJob, getAssemblyJobs, linkAssemblyAnalysis, type AssemblyDetail, type AssemblyJob } from '#/api/lab-assembly'
+import { cancelAssembly, getAssemblyInputs, getAssemblyJob, getAssemblyJobs, linkAssemblyAnalysis, type AssemblyDetail, type AssemblyJob } from '#/api/lab-assembly'
 import { getLabOperationsError } from '#/api/lab-operations'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Badge } from '#/components/ui/badge'
@@ -31,11 +30,27 @@ export function DataAssemblyWorkspace({ apiEnabled }: { apiEnabled: boolean }) {
   const search = useSearch({ from: '/lab-operations' })
   const navigate = useNavigate()
   const tab = search.assemblyTab ?? 'runs'
+  const { session } = usePhaenoSession()
   return <Tabs value={tab} onValueChange={value => void navigate({ to: '/lab-operations', search: p => ({ ...p, section: 'assembly', assemblyTab: value === 'cases' ? 'cases' : 'runs' }), resetScroll: false })}>
     <TabsList className="grid w-full grid-cols-2"><TabsTrigger value="runs">Sequencing runs</TabsTrigger><TabsTrigger value="cases">Assembly cases</TabsTrigger></TabsList>
-    <TabsContent value="runs"><AssemblyJobsList enabled={apiEnabled} search={search.assemblySearch ?? ''} onSearch={value => void navigate({ to: '/lab-operations', search: p => ({ ...p, section: 'assembly', assemblyTab: 'runs', assemblySearch: value || undefined }), replace: true, resetScroll: false })} /></TabsContent>
+    <TabsContent value="runs">{session?.capabilities.canOperateLabWork ? <ReadyAssemblyInputs enabled={apiEnabled} /> : null}<AssemblyJobsList enabled={apiEnabled} search={search.assemblySearch ?? ''} onSearch={value => void navigate({ to: '/lab-operations', search: p => ({ ...p, section: 'assembly', assemblyTab: 'runs', assemblySearch: value || undefined }), replace: true, resetScroll: false })} /></TabsContent>
     <TabsContent value="cases"><LabManufacturingQueue workflow="assembly" apiEnabled={apiEnabled} /></TabsContent>
   </Tabs>
+}
+
+function ReadyAssemblyInputs({ enabled }: { enabled: boolean }) {
+  const inputs = useQuery({ queryKey: ['assembly-inputs'], queryFn: () => getAssemblyInputs(), enabled })
+  const queue = useQuery({ queryKey: ['assembly-jobs'], queryFn: () => getAssemblyJobs(), enabled })
+  const [selected, setSelected] = useState<{ work: string; specimen: string } | null>(null)
+  const groups = [...new Map((inputs.data ?? []).map(i => [`${i.labSpecimenId}:${i.sequencingRunNumber}:${i.labSpecimenAttemptId}`, i])).entries()]
+  return <Card className="mb-5"><CardHeader><CardTitle>Sequencing inputs</CardTitle></CardHeader><CardContent className="space-y-3">
+    {inputs.isPending && enabled ? <p role="status">Loading available input sets…</p> : null}
+    {inputs.error ? <p role="alert">{getLabOperationsError(inputs.error, 'Sequencing inputs could not be loaded.')}</p> : null}
+    {!inputs.isPending && !groups.length ? <p className="text-sm text-muted-foreground">Record vendor results with complete verified FASTQ files to prepare assembly inputs.</p> : null}
+    {groups.map(([key, first]) => <div key={key} className="flex min-w-0 flex-wrap items-start justify-between gap-3 border-b py-3"><div className="min-w-0"><Link to="/lab-operations/$workOrderId/specimens/$specimenId" params={{ workOrderId: first.labWorkOrderId, specimenId: first.labSpecimenId }} search={p => ({ ...p, section: 'jobs' })} className="break-words text-sm font-medium text-primary hover:underline">{first.sampleName} · Run {first.sequencingRunNumber}</Link><p className="text-xs text-muted-foreground">{inputs.data?.filter(i => i.labSpecimenId === first.labSpecimenId && i.sequencingRunNumber === first.sequencingRunNumber && i.labSpecimenAttemptId === first.labSpecimenAttemptId).length} input files · {first.providerRunReference}</p></div><Button disabled={!queue.data?.availability.available || queue.data.jobs.some(j => !j.isTerminal && j.labSpecimenId === first.labSpecimenId && j.sequencingRunNumber === first.sequencingRunNumber)} onClick={() => setSelected({ work: first.labWorkOrderId, specimen: first.labSpecimenId })}>Start assembly</Button></div>)}
+    {queue.data && !queue.data.availability.available ? <p className="text-sm text-muted-foreground">{queue.data.availability.message}</p> : null}
+    {selected && queue.data ? <AssemblyStartDialog workOrderId={selected.work} specimenId={selected.specimen} availability={queue.data.availability} onClose={() => setSelected(null)} /> : null}
+  </CardContent></Card>
 }
 
 export function AssemblyJobProgress({ job }: { job: AssemblyJob }) {
@@ -77,24 +92,27 @@ export function AssemblyJobPage({ jobId }: { jobId: string }) {
   useAssemblyNotifications([jobId])
   const { session, authProvider } = usePhaenoSession()
   const allowed = Boolean(session?.capabilities.canManageLabOperations)
+  const navigate = useNavigate()
   const [action, setAction] = useState<'retry' | 'cancel' | 'analysis' | null>(null)
   const query = useQuery({ queryKey: ['assembly-job', jobId], queryFn: () => getAssemblyJob(jobId), enabled: allowed && authProvider !== 'mock',
     refetchInterval: q => q.state.data && (!q.state.data.job.isTerminal || q.state.data.job.attentionReason) ? 5000 : false })
   const data = query.data
   const job = data?.job
   if (!allowed) return <main className="page-wrap px-4 py-8"><h1 className="text-xl font-semibold">Laboratory access required</h1></main>
-  const actions: { label: string; action: 'retry' | 'cancel' | 'analysis' }[] = data && job && data.canOperate ? [
+  const actions: { label: string; action: 'retry' | 'cancel' | 'analysis' | 'qc' }[] = data && job && data.canOperate ? [
     ...(job.isTerminal && !job.attentionReason && data.availability.available ? [{ label: 'Repeat assembly', action: 'retry' as const }] : []),
     ...(!job.isTerminal && !job.cancellationRequested && (job.state === 'Queued' || data.availability.supportsCancellation) ? [{ label: 'Request cancellation', action: 'cancel' as const }] : []),
     ...(job.state === 'Succeeded' && !job.attentionReason && !job.labAnalysisRunId && data.analyses.length ? [{ label: 'Link completed analysis', action: 'analysis' as const }] : []),
+    ...(job.state === 'Succeeded' && job.labAnalysisRunId && !job.attentionReason ? [{ label: 'Review QC', action: 'qc' as const }] : []),
   ] : []
+  const openAction = (action: typeof actions[number]['action']) => action === 'qc' ? void navigate({ to: '/lab-operations/assembly-jobs/$jobId/qc', params: { jobId }, search: p => ({ ...p, section: 'assembly', assemblyTab: 'runs' }) }) : setAction(action)
   return <main className="page-wrap space-y-5 px-4 py-8">
     <Link className={linkStyle} to="/lab-operations" search={p => ({ ...p, section: 'assembly', assemblyTab: 'runs' })}>Back to sequencing assembly</Link>
     {query.error ? <Alert variant="destructive"><AlertTitle>Assembly could not be refreshed</AlertTitle><AlertDescription>{getLabOperationsError(query.error, 'Refresh to recover the saved job.')}<Button variant="outline" onClick={() => void query.refetch()}>Refresh</Button></AlertDescription></Alert> : null}
     {!data ? <p role="status">{authProvider === 'mock' ? 'Use a connected Phaeno session to view this job.' : 'Loading assembly job…'}</p> : null}
     {data && job ? <>
       <header className="flex flex-wrap items-start justify-between gap-3"><div><h1 className="text-2xl font-semibold">{job.sampleName} · Run {job.sequencingRunNumber}</h1><p className="text-sm text-muted-foreground">Assembly attempt · {data.recipe.name} {data.recipe.version}</p></div>
-        {actions.length === 1 ? <Button onClick={() => setAction(actions[0].action)}>{actions[0].label}</Button> : actions.length > 1 ? <ActionMenu><DropdownMenuTrigger asChild><Button variant="outline">Actions<ChevronDown /></Button></DropdownMenuTrigger><DropdownMenuContent align="end">{actions.map(item => <DropdownMenuItem key={item.action} onSelect={() => setAction(item.action)}>{item.label}</DropdownMenuItem>)}</DropdownMenuContent></ActionMenu> : null}
+        {actions.length === 1 ? <Button onClick={() => openAction(actions[0].action)}>{actions[0].label}</Button> : actions.length > 1 ? <ActionMenu><DropdownMenuTrigger asChild><Button variant="outline">Actions</Button></DropdownMenuTrigger><DropdownMenuContent align="end">{actions.map(item => <DropdownMenuItem key={item.action} onSelect={() => openAction(item.action)}>{item.label}</DropdownMenuItem>)}</DropdownMenuContent></ActionMenu> : null}
       </header>
       {job.attentionReason ? <Alert><AlertTitle>Attention required</AlertTitle><AlertDescription>{job.attentionReason}</AlertDescription></Alert> : null}
       {!data.availability.available ? <Alert><AlertDescription>{data.availability.message}</AlertDescription></Alert> : null}
@@ -116,7 +134,7 @@ export function AssemblyJobPage({ jobId }: { jobId: string }) {
       <Card><CardHeader><CardTitle>Inputs and results</CardTitle></CardHeader><CardContent className="space-y-3 text-sm">
         <p>{data.inputs.length} registered sequencing input{data.inputs.length === 1 ? '' : 's'} · exact input identities retained.</p>
         {data.inputs.map((input, i) => <div key={input.sequencingOutputId} className="break-all border-b pb-2"><p>Input {i + 1} · {input.sizeBytes.toLocaleString()} bytes</p><p className="text-xs text-muted-foreground">SHA-256: {input.sha256}</p></div>)}
-        <p>{job.labAnalysisRunId ? 'Completed analysis linked. Scientific QC and customer release are managed in the sample workspace.' : job.state === 'Succeeded' ? 'Execution succeeded. Completed-analysis evidence and verified result files must be registered and linked before review.' : 'Results become eligible for inspection only after successful assembly and output verification.'}</p>
+        <p>{job.labAnalysisRunId ? 'Completed analysis linked. Review the exact output package and record QC before scientific approval and Customer release.' : job.state === 'Succeeded' ? 'Execution succeeded. Completed-analysis evidence and verified result files must be registered and linked before review.' : 'Results become eligible for inspection only after successful assembly and output verification.'}</p>
         <Link className={linkStyle} to="/lab-operations/$workOrderId/specimens/$specimenId" params={{ workOrderId: job.labWorkOrderId, specimenId: job.labSpecimenId }} search={p => ({ ...p, section: 'jobs' })}>Open sample and scientific evidence</Link>
       </CardContent></Card>
       <Card><CardHeader><CardTitle>Job history</CardTitle></CardHeader><CardContent><ol className="space-y-3 text-sm">{data.events.map(event => <li key={event.id} className="border-b pb-2"><span className="font-medium">{assemblyStateLabel(event.kind)}</span><p className="text-xs text-muted-foreground">Recorded {date(event.recordedAtUtc)}</p></li>)}</ol></CardContent></Card>

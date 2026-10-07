@@ -28,7 +28,11 @@ export function useOrderDecisionDismissal(dirty: boolean, busy: boolean, onClose
     if (blocker.status === 'blocked') blocker.proceed()
     else onClose()
   }
-  return { close, confirmation: <Dialog open={discardOpen || blocker.status === 'blocked'} onOpenChange={open => { if (!open) keepEditing() }}>
+  function allowNavigation() {
+    navigationApproved.current = true
+    if (blocker.status === 'blocked') blocker.reset()
+  }
+  return { close, allowNavigation, confirmation: <Dialog open={discardOpen || blocker.status === 'blocked'} onOpenChange={open => { if (!open) keepEditing() }}>
     <DialogContent onOpenAutoFocus={event => { event.preventDefault(); document.getElementById(keepId)?.focus() }}>
       <DialogHeader><DialogTitle>{busy ? wording.scope === 'quote decision' ? 'Quote decision is being sent' : 'Request is being sent' : `Discard unsaved ${wording.scope}?`}</DialogTitle></DialogHeader>
       <div><DialogDescription>{busy ? 'Wait for this request to finish before leaving. Your request is still being processed.' : wording.description}</DialogDescription></div>

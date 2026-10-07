@@ -178,6 +178,11 @@ public sealed class LabAssemblyProcessor(PSeqOperationsDbContext db, LabAssembly
     private async Task VerifyFrozenInputsAsync(LabAssemblyJob job, CancellationToken ct)
     {
         var frozen = JsonSerializer.Deserialize<AssemblyFrozenInputs>(job.InputsJson, LabAssemblyService.Json)!;
+        var ids = frozen.Inputs.Select(i => i.SequencingOutputId).ToArray();
+        var inputs = await db.LabSequencingOutputs.AsNoTracking().Where(o => ids.Contains(o.Id)
+            && o.LabWorkOrderId == job.LabWorkOrderId && o.LabSpecimenId == job.LabSpecimenId).ToListAsync(ct);
+        if (inputs.Count != ids.Length) throw LabAssemblyService.Error("An assembly input is missing or outside this sample's scope.", 409);
+        await new LabResultLineageService(db).RequireCurrentFastqInputsAsync(inputs, ct);
         var receipt = await provider.VerifyInputsAsync(frozen.Inputs, ct);
         LabAssemblyService.ValidateVerification(frozen.Inputs, receipt, time.GetUtcNow().UtcDateTime);
         if (!receipt.Files.OrderBy(f => f.SequencingOutputId).SequenceEqual(frozen.Verification.Files.OrderBy(f => f.SequencingOutputId)))

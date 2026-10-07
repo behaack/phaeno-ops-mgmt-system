@@ -1057,6 +1057,16 @@ public sealed class LabOperationalBatch : LabAuditedEntity
         CompletedAtUtc = utcNow;
     }
 
+    public void CorrectResultCompletion(DateTime completedAtUtc)
+    {
+        if (Status != LabBatchStatus.Complete || !CompletedAtUtc.HasValue)
+            throw new InvalidOperationException("Only a recorded batch completion can be corrected.");
+        if (completedAtUtc.Kind != DateTimeKind.Utc || completedAtUtc > DateTime.UtcNow
+            || StartedAtUtc.HasValue && completedAtUtc < StartedAtUtc.Value)
+            throw new ArgumentException("The corrected completion must follow batch preparation and cannot be in the future.");
+        CompletedAtUtc = completedAtUtc;
+    }
+
     public void ReturnEmptyToDraft(int memberCount, bool hasSendout)
     {
         if (Status != LabBatchStatus.InProgress || CompletedAtUtc.HasValue || memberCount != 0 || hasSendout)
@@ -1144,6 +1154,8 @@ public sealed class LabNgsSendout : LabAuditedEntity
     public string? Carrier { get; private set; }
     public string? TrackingReference { get; private set; }
     public DateTime? SequencingStartedAtUtc { get; private set; }
+    public DateTime? SequencingCompletedAtUtc { get; private set; }
+    public bool? RunNotPerformed { get; private set; }
     public DateTime? ResultsReceivedAtUtc { get; private set; }
     public LabVendorOutcome? Outcome { get; private set; }
     public DateTime? OutcomeAtUtc { get; private set; }
@@ -1173,19 +1185,15 @@ public sealed class LabNgsSendout : LabAuditedEntity
         {
             LabNgsSendoutStatus.Preparing => LabNgsSendoutStatus.Shipped,
             LabNgsSendoutStatus.Shipped => LabNgsSendoutStatus.ReceivedByProvider,
-            LabNgsSendoutStatus.ReceivedByProvider => LabNgsSendoutStatus.Sequencing,
-            LabNgsSendoutStatus.Sequencing => LabNgsSendoutStatus.ResultsReceived,
             _ => (LabNgsSendoutStatus?)null
         };
-        if (status != next) throw new InvalidOperationException("Record each vendor stage in order; finalize the outcome after results are received.");
-        var previousAt = ResultsReceivedAtUtc ?? SequencingStartedAtUtc ?? ProviderReceivedAtUtc ?? ShippedAtUtc;
+        if (status != next) throw new InvalidOperationException("Record shipment and vendor receipt in order; use Record results for the run and results receipt.");
+        var previousAt = ProviderReceivedAtUtc ?? ShippedAtUtc;
         if (utcNow.Kind != DateTimeKind.Utc || utcNow > DateTime.UtcNow || previousAt.HasValue && utcNow < previousAt.Value)
             throw new ArgumentException("Record the actual UTC event time, on or after the previous stage and no later than now.");
         Status = status;
         if (status == LabNgsSendoutStatus.Shipped) ShippedAtUtc ??= utcNow;
         if (status == LabNgsSendoutStatus.ReceivedByProvider) ProviderReceivedAtUtc ??= utcNow;
-        if (status == LabNgsSendoutStatus.Sequencing) SequencingStartedAtUtc = utcNow;
-        if (status == LabNgsSendoutStatus.ResultsReceived) ResultsReceivedAtUtc = utcNow;
     }
 
     public void UpdateShipment(string destination, string? carrier, string? trackingReference,
@@ -1229,16 +1237,48 @@ public sealed class LabNgsSendout : LabAuditedEntity
         Destination = address.DestinationText();
     }
 
-    public void FinalizeOutcome(LabVendorOutcome outcome, DateTime occurredAtUtc, string note)
+    public void RecordResults(string jobReference, bool runNotPerformed, DateTime? startedAtUtc,
+        DateTime? completedAtUtc, DateTime? receivedAtUtc, LabVendorOutcome outcome, string? notes,
+        DateTime? recordedAtUtc = null)
     {
-        if (Status != LabNgsSendoutStatus.ResultsReceived || Outcome.HasValue)
-            throw new InvalidOperationException("Receive the results before recording one final batch outcome.");
-        if (!Enum.IsDefined(outcome)) throw new ArgumentException("A valid outcome is required.");
-        if (occurredAtUtc.Kind != DateTimeKind.Utc || occurredAtUtc < ResultsReceivedAtUtc || occurredAtUtc > DateTime.UtcNow)
-            throw new ArgumentException("The outcome time must follow results receipt and cannot be in the future.");
-        OutcomeNote = Required(note, nameof(note), 4000);
+        if (!Enum.IsDefined(outcome)) throw new ArgumentException("Choose a valid library outcome.");
+        var reference = Required(jobReference, nameof(jobReference), 255);
+        var note = Optional(notes, 4000);
+        if (Status == LabNgsSendoutStatus.Complete)
+        {
+            if (!RunNotPerformed.HasValue || !Outcome.HasValue)
+                throw new InvalidOperationException("There is no recorded vendor result to modify.");
+            if (string.IsNullOrWhiteSpace(note))
+                throw new ArgumentException("Explain the change to the recorded result in results notes.");
+        }
+        if (Status is not (LabNgsSendoutStatus.ReceivedByProvider or LabNgsSendoutStatus.Complete))
+            throw new InvalidOperationException("Record vendor receipt before recording results.");
+        var recordedAt = recordedAtUtc ?? DateTime.UtcNow;
+        if (recordedAt.Kind != DateTimeKind.Utc || recordedAt > DateTime.UtcNow)
+            throw new ArgumentException("Record the UTC entry time, no later than now.");
+        if (runNotPerformed)
+        {
+            if (startedAtUtc.HasValue || completedAtUtc.HasValue || receivedAtUtc.HasValue
+                || outcome != LabVendorOutcome.Failure || string.IsNullOrWhiteSpace(note))
+                throw new ArgumentException("Run not performed requires Fail, a reason and no run or results receipt times.");
+        }
+        else
+        {
+            if (receivedAtUtc is not { Kind: DateTimeKind.Utc } receipt || receipt > recordedAt
+                || ProviderReceivedAtUtc.HasValue && receipt < ProviderReceivedAtUtc)
+                throw new ArgumentException("Record actual results receipt in UTC, after vendor receipt and no later than now.");
+            if (startedAtUtc is not { Kind: DateTimeKind.Utc } start || completedAtUtc is not { Kind: DateTimeKind.Utc } end
+                || end < start || end > receipt || ProviderReceivedAtUtc.HasValue && start < ProviderReceivedAtUtc)
+                throw new ArgumentException("Record actual UTC run start and completion in order, before results receipt.");
+        }
+        ProviderReference = reference;
+        RunNotPerformed = runNotPerformed;
+        SequencingStartedAtUtc = startedAtUtc;
+        SequencingCompletedAtUtc = completedAtUtc;
+        ResultsReceivedAtUtc = receivedAtUtc;
         Outcome = outcome;
-        OutcomeAtUtc = occurredAtUtc;
+        OutcomeAtUtc = runNotPerformed ? recordedAt : receivedAtUtc;
+        OutcomeNote = note;
         Status = LabNgsSendoutStatus.Complete;
     }
 }
@@ -1267,6 +1307,15 @@ public sealed class LabCustodyEvent
         DetailsJson = string.IsNullOrWhiteSpace(detailsJson) ? "{}" : detailsJson;
         RecordedByUserId = actorUserId;
         OccurredAtUtc = utcNow;
+    }
+
+    public static LabCustodyEvent ForCommand(Guid commandId, Guid sendoutId, string eventCode,
+        string party, string detailsJson, Guid actorId, DateTime occurredAtUtc)
+    {
+        if (commandId == Guid.Empty) throw new ArgumentException("A command identity is required.");
+        var entry = new LabCustodyEvent(sendoutId, null, eventCode, party, detailsJson, actorId, occurredAtUtc);
+        entry.Id = commandId;
+        return entry;
     }
 }
 

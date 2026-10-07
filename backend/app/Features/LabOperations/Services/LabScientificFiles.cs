@@ -47,9 +47,9 @@ public static class LabScientificFiles
 
     // Verify all bytes before returning a stream; never serve an unverified prefix.
     public static async Task<FileStream> OpenVerifiedAsync(IOperationalFileStorage storage,
-        string key, string sha256, long size, CancellationToken ct)
+        string key, string sha256, long size, CancellationToken ct, long maximumBytes = MaximumBytes)
     {
-        if (size is <= 0 or > MaximumBytes) throw Invalid();
+        if (size <= 0 || size > maximumBytes) throw Invalid();
         var options = new FileStreamOptions { Mode = FileMode.CreateNew, Access = FileAccess.ReadWrite, Share = FileShare.None,
             Options = FileOptions.Asynchronous | FileOptions.SequentialScan | FileOptions.DeleteOnClose };
         if (!OperatingSystem.IsWindows()) options.UnixCreateMode = UnixFileMode.UserRead | UnixFileMode.UserWrite;

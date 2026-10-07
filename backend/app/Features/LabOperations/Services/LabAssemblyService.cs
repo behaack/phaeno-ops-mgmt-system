@@ -22,7 +22,8 @@ public sealed record AssemblyJobDto(Guid Id, Guid LabWorkOrderId, Guid LabSpecim
     string? ProviderJobId, Guid RequestedByUserId, long Version, AssemblyProgress? Progress);
 
 public sealed class LabAssemblyService(PSeqOperationsDbContext db, ILabAssemblyProvider provider,
-    LabAssemblyProgress progress, IOptions<LabAssemblyOptions> options, IOptions<PSeqOrderToCashOptions> policy, TimeProvider time)
+    LabAssemblyProgress progress, IOptions<LabAssemblyOptions> options, IOptions<PSeqOrderToCashOptions> policy, TimeProvider time,
+    IOperationalFileStorage? fileStorage = null)
 {
     public static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
     private static readonly string[] TerminalStates = ["Succeeded", "Failed", "Terminated", "CancelledBeforeStart"];
@@ -85,6 +86,7 @@ public sealed class LabAssemblyService(PSeqOperationsDbContext db, ILabAssemblyP
         if (inputs.Count != normalized.SequencingOutputIds.Count || LabResultLineageService.RequireSinglePurchasedRun(inputs) != request.SequencingRunNumber
             || inputs.Select(o => o.LabSpecimenAttemptId).Distinct().Count() != 1 || inputs.Select(o => o.SourceContainerId).Distinct().Count() != 1)
             throw Error("Assembly inputs must belong to this sample, one producing tube attempt and one purchased sequencing run.");
+        await new LabResultLineageService(db).RequireCurrentFastqInputsAsync(inputs, ct);
         var specimen = await db.LabSpecimens.AsNoTracking().SingleAsync(s => s.Id == request.LabSpecimenId, ct);
         var allocations = await new LabSequencingRunProgress(db).AllocationsAsync(workId, ct);
         if (request.SequencingRunNumber < 1 || request.SequencingRunNumber > allocations.GetValueOrDefault(specimen.SubmittedSpecimenId, 1))
@@ -93,6 +95,14 @@ public sealed class LabAssemblyService(PSeqOperationsDbContext db, ILabAssemblyP
         if (source.State != LabSpecimenAttemptState.Succeeded || !source.StartedAtUtc.HasValue)
             throw Error("The inputs require a successfully completed preparation attempt.");
         var frozen = inputs.OrderBy(o => o.Id).Select(o => new AssemblyInput(o.Id, o.ExternalFileReference, o.Sha256, o.SizeBytes)).ToArray();
+        foreach (var input in frozen.Where(i => i.ExternalFileReference.StartsWith(LabScientificFiles.Prefix, StringComparison.Ordinal))) {
+            if (fileStorage is null || !Guid.TryParse(input.ExternalFileReference[LabScientificFiles.Prefix.Length..], out var fileId))
+                throw Error("Managed input storage must be available before assembly can start.");
+            var file = await db.LabScientificFiles.AsNoTracking().SingleOrDefaultAsync(f => f.Id == fileId && f.LabWorkOrderId == workId && f.LabSpecimenId == specimen.Id, ct);
+            if (file is null || file.SizeBytes != input.SizeBytes || !string.Equals(file.Sha256, input.Sha256, StringComparison.OrdinalIgnoreCase))
+                throw Error("The managed input receipt conflicts with the frozen sequencing input.");
+            await using var verified = await LabScientificFiles.OpenVerifiedAsync(fileStorage, file.StorageKey, file.Sha256, file.SizeBytes, ct, file.SizeBytes);
+        }
         var verification = await provider.VerifyInputsAsync(frozen, ct);
         ValidateVerification(frozen, verification, Now);
         var job = new LabAssemblyJob(request.Id, workId, specimen.Id, work.SubmittingOrganizationId, request.SequencingRunNumber,
@@ -137,7 +147,7 @@ public sealed class LabAssemblyService(PSeqOperationsDbContext db, ILabAssemblyP
             throw Error("Refresh and reconcile the successful assembly before linking its analysis.", 409);
         var specimen = await db.LabSpecimens.SingleAsync(s => s.Id == job.LabSpecimenId, ct);
         var run = await new LabResultLineageService(db).RequireResultAsync(request.AnalysisRunId, true,
-            job.OrganizationId, workId, specimen.SubmittedSpecimenId, ct, true, allowPendingAssemblyLink: true);
+            job.OrganizationId, workId, specimen.SubmittedSpecimenId, ct, true, allowPendingAssemblyLink: true, allowPendingQc: true);
         var inputIds = await db.LabAnalysisInputs.Where(i => i.LabAnalysisRunId == request.AnalysisRunId).Select(i => i.LabSequencingOutputId).ToListAsync(ct);
         var frozen = JsonSerializer.Deserialize<AssemblyFrozenInputs>(job.InputsJson, Json)!;
         var evidence = run!.ScientificEvidenceJson is null ? null : JsonSerializer.Deserialize<LabScientificEvidence>(run.ScientificEvidenceJson, Json);
@@ -204,10 +214,15 @@ public sealed class LabAssemblyService(PSeqOperationsDbContext db, ILabAssemblyP
         foreach (var input in inputs)
         {
             var file = receipt.Files.SingleOrDefault(f => f.SequencingOutputId == input.SequencingOutputId);
-            if (file is null || !string.Equals(file.Sha256, input.Sha256, StringComparison.OrdinalIgnoreCase) || file.SizeBytes != input.SizeBytes
-                || string.IsNullOrWhiteSpace(file.Bucket) || string.IsNullOrWhiteSpace(file.Key)
+            if (file is null || !string.Equals(file.Sha256, input.Sha256, StringComparison.OrdinalIgnoreCase) || file.SizeBytes != input.SizeBytes)
+                throw Error("The verified files must match every registered input's identity, checksum and size.");
+            if (file.StorageKind == "ManagedLocal") {
+                if (!input.ExternalFileReference.StartsWith(LabScientificFiles.Prefix, StringComparison.Ordinal)
+                    || !Guid.TryParse(input.ExternalFileReference[LabScientificFiles.Prefix.Length..], out var id) || file.ManagedFileId != id)
+                    throw Error("The processing adapter must confirm access to the exact managed local input identity.");
+            } else if (file.StorageKind != "ObjectStorage" || string.IsNullOrWhiteSpace(file.Bucket) || string.IsNullOrWhiteSpace(file.Key)
                 || (string.IsNullOrWhiteSpace(file.VersionId) || file.VersionId == "null") && !file.ImmutableObject)
-                throw Error("The verified S3 objects must match every registered input's identity, checksum and size.");
+                throw Error("Object inputs require exact immutable object identities.");
         }
     }
 

@@ -49,7 +49,7 @@ it('explains why an empty draft cannot start and disables its empty tube workspa
   expect(await screen.findByText('Add passing libraries from Library prep or Scan libraries before starting this batch.')).toBeTruthy()
   fireEvent.keyDown(screen.getByRole('button', { name: 'Actions' }), { key: 'Enter' })
   expect((await screen.findByRole('menuitem', { name: 'Begin shipment preparation' })).getAttribute('aria-disabled')).toBe('true')
-  expect(screen.getByRole('menuitem', { name: 'Sequencing tubes' }).getAttribute('aria-disabled')).toBe('true')
+  expect(screen.getByRole('menuitem', { name: 'Prepare sequencing tubes' }).getAttribute('aria-disabled')).toBe('true')
 })
 
 it('requires a correction reason before returning an empty active batch to draft', async () => {

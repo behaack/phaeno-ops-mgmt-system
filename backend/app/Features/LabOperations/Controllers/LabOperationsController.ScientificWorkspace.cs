@@ -50,7 +50,7 @@ public sealed partial class LabOperationsController
         var barcode = await dbContext.LabContainers.Where(c => c.Id == library.LibraryContainerId).Select(c => c.Barcode).SingleAsync(ct);
         var needle = JsonSerializer.Serialize(new { members = new[] { new { libraryId } } });
         var rows = await dbContext.LabNgsSendouts.AsNoTracking().Where(s => EF.Functions.JsonContains(s.ManifestJson, needle)
-                && s.Status != LabNgsSendoutStatus.Preparing && s.Status != LabNgsSendoutStatus.Exception)
+                && s.Status != LabNgsSendoutStatus.Preparing && s.Status != LabNgsSendoutStatus.Exception && s.RunNotPerformed != true)
             .OrderBy(s => s.CreatedAt).ThenBy(s => s.Id).Take(1001).ToListAsync(ct);
         if (rows.Count > 1000) throw Conflict("sendout_history_limit", "Too many matching sendouts to show safely.");
         return rows.Where(s => {

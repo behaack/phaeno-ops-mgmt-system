@@ -10,7 +10,7 @@ export type AssemblyJob = {
   attentionReason: string | null; previousJobId: string | null; retryReason: string | null; labAnalysisRunId: string | null
   outputsDeclared: boolean; providerKey: string; providerJobId: string | null; requestedByUserId: string; version: number; progress: AssemblyProgress | null
 }
-export type AssemblyInputChoice = { id: string; labWorkOrderId: string; labSpecimenId: string; sampleName: string | null; sequencingRunNumber: number; labSpecimenAttemptId: string; providerRunReference: string; sampleMappingReference: string; sizeBytes: number; sha256: string }
+export type AssemblyInputChoice = { libraryKey?: string; fileName?: string | null; id: string; labWorkOrderId: string; labSpecimenId: string; sampleName: string | null; sequencingRunNumber: number; labSpecimenAttemptId: string; providerRunReference: string; sampleMappingReference: string; sizeBytes: number; sha256: string }
 export type AssemblyQueue = { availability: AssemblyAvailability; canOperate: boolean; jobs: AssemblyJob[] }
 export type AssemblyDetail = {
   delivery: { kind: string; attemptCount: number; lastAttemptAtUtc: string | null; nextAttemptAtUtc: string | null;

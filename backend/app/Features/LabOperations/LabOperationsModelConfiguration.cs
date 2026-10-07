@@ -688,6 +688,18 @@ public static class LabOperationsModelConfiguration
             entity.HasOne<LabBatchMember>().WithMany().HasForeignKey(e => e.LabBatchMemberId).OnDelete(DeleteBehavior.Restrict);
         });
 
+        modelBuilder.Entity<LabVendorResultsVersion>(entity =>
+        {
+            entity.ToTable("lab_vendor_results_versions", laboratorySchema);
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.SnapshotJson).HasColumnType("jsonb").IsRequired();
+            entity.Property(e => e.Note).HasMaxLength(4000);
+            entity.Property(e => e.RecordedByName).HasMaxLength(255).IsRequired();
+            entity.HasIndex(e => new { e.LabNgsSendoutId, e.ResultVersion }).IsUnique();
+            entity.HasOne<LabNgsSendout>().WithMany().HasForeignKey(e => e.LabNgsSendoutId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<PSeq.Operations.Commercial.Accounts.Domain.User>().WithMany().HasForeignKey(e => e.RecordedByUserId).OnDelete(DeleteBehavior.Restrict);
+        });
+
         modelBuilder.Entity<LabCustodyEvent>(entity =>
         {
             entity.ToTable("lab_custody_events", laboratorySchema);

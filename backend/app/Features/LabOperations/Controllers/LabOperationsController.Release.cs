@@ -106,6 +106,8 @@ public sealed partial class LabOperationsController
             LabRole.Operator, LabRole.Supervisor);
         if (!Enum.TryParse<LabNgsSendoutStatus>(request.Status, true, out var status))
             throw Invalid("sendout_status_invalid", "The sequencing sendout status is invalid.");
+        if (status is not (LabNgsSendoutStatus.Shipped or LabNgsSendoutStatus.ReceivedByProvider))
+            throw Conflict("sendout_transition_invalid", "Use Record results to record the vendor run, library outcomes and results receipt together.");
         var recordedAt = DateTime.UtcNow;
         if (request.OccurredAtUtc is not { Kind: DateTimeKind.Utc } occurredAt || occurredAt > recordedAt)
             throw Invalid("sendout_time_invalid", "Record the actual occurrence time in UTC, no later than now.");
@@ -120,8 +122,6 @@ public sealed partial class LabOperationsController
         {
             LabNgsSendoutStatus.Preparing => LabNgsSendoutStatus.Shipped,
             LabNgsSendoutStatus.Shipped => LabNgsSendoutStatus.ReceivedByProvider,
-            LabNgsSendoutStatus.ReceivedByProvider => LabNgsSendoutStatus.Sequencing,
-            LabNgsSendoutStatus.Sequencing => LabNgsSendoutStatus.ResultsReceived,
             _ => (LabNgsSendoutStatus?)null
         };
         if (status != expected)
@@ -132,7 +132,7 @@ public sealed partial class LabOperationsController
         var previousAt = latest ?? sendout.ProviderReceivedAtUtc ?? sendout.ShippedAtUtc;
         if (previousAt.HasValue && occurredAt < previousAt.Value)
             throw Invalid("sendout_time_out_of_order", "The occurrence time must be on or after the preceding sendout event.");
-        if (status is LabNgsSendoutStatus.Shipped or LabNgsSendoutStatus.Sequencing)
+        if (status == LabNgsSendoutStatus.Shipped)
             await RequireBatchAttemptReadinessAsync(sendout.LabOperationalBatchId, cancellationToken);
         if (status == LabNgsSendoutStatus.Shipped && (string.IsNullOrWhiteSpace(sendout.Carrier) || string.IsNullOrWhiteSpace(sendout.TrackingReference) || string.IsNullOrWhiteSpace(sendout.Destination)))
             throw Conflict("shipment_details_required", "Record the destination, carrier and tracking reference before marking the batch shipped.");
@@ -252,6 +252,7 @@ public sealed partial class LabOperationsController
     public async Task<LabWorkOrderDetailDto> ApproveScientificReview(Guid workOrderId,
         [FromBody] ScientificApprovalRequest request, CancellationToken cancellationToken)
     {
+        await using var resultTransaction = await SampleShippingPackingData.BeginAsync(dbContext, "scientific-approval:" + workOrderId, cancellationToken);
         var actor = await requestContext.RequireAsync(HttpContext, cancellationToken,
             LabRole.ScientificReviewer);
         var work = await RequireWorkOrderAsync(workOrderId, cancellationToken);
@@ -353,6 +354,7 @@ public sealed partial class LabOperationsController
             scientificApprovalId: approval.Id,
             resultOutputPackageId: outputPackage?.Id);
         await dbContext.SaveChangesAsync(cancellationToken);
+        if (resultTransaction is not null) await resultTransaction.CommitAsync(cancellationToken);
         return await WorkOrder(work.Id, cancellationToken);
     }
 }

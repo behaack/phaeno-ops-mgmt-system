@@ -152,6 +152,15 @@ builder.Services.AddScoped<PhaenoPortal.App.Features.Trials.Services.TrialResult
 builder.Services.AddScoped<ILabOperationsProvider, InternalLabOperationsProvider>();
 builder.Services.AddScoped<LabOperationsRequestContext>();
 builder.Services.Configure<LabAssemblyOptions>(builder.Configuration.GetSection(LabAssemblyOptions.SectionName));
+builder.Services.AddOptions<LabFastqOptions>().Bind(builder.Configuration.GetSection(LabFastqOptions.SectionName))
+    .PostConfigure(o => {
+        // Configuration arrays replace the tentative defaults; binding must not append duplicate layouts.
+        var layouts = builder.Configuration.GetSection("LabFastq:AllowedReadLayouts");
+        var compression = builder.Configuration.GetSection("LabFastq:AllowedCompression");
+        if (layouts.Exists()) o.AllowedReadLayouts = layouts.Get<string[]>() ?? [];
+        if (compression.Exists()) o.AllowedCompression = compression.Get<string[]>() ?? [];
+    })
+    .Validate(o => o.IsValid(), "Review the tentative LabFastq configuration limits and supported layouts.").ValidateOnStart();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<ILabAssemblyProvider, UnavailableLabAssemblyProvider>();
 builder.Services.AddSignalR(options => options.MaximumReceiveMessageSize = 16 * 1024);

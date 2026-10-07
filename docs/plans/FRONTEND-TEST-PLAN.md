@@ -1,5 +1,126 @@
 # Frontend Test Plan
 
+## Sequencing review fixes — October 6, 2026
+
+The focused workspace and ZIP mapping slice has nine passing tests. It covers
+explicit outdated-draft restart, fresh identity/current entries, a three-region
+confirmation and initial Keep reviewing focus, protected approved-package context,
+same-ZIP attribution/retry identity, completed-receipt restoration, exclusions,
+ambiguous matching and report separation, alongside the initial no-run/completeness
+and draft-save cases. TypeScript and scoped lint are separate static checks.
+Connected byte receipt, dispatch/QC gates and Customer transfer accounting belong
+to the isolated backend journey; actual DPS/browser file-chooser acceptance remains
+separate and must not be claimed from these component tests.
+
+## Results upload workspace, ZIP and QC — October 6, 2026
+
+VendorResultsWorkspacePage.test.tsx replaces the retired modal regression: no-run reason with null times/no sets, successful receipt blocked without verified sets, and incomplete draft save without receipt. Review batch ZIP/individual toggle, per-library run/layout/preparation, explicit ZIP mapping/exclusions, selected-file progress/resume, required note/confirmation, protected dirty navigation and successful save return. QC is view-first with dedicated capture and report/input coverage; release has one contextual Actions menu and meaningful confirmation body. Type/lint and manual UI checkpoints are distinct from request-only automated suites.
+
+## Numbered vendor results versions — October 6, 2026
+
+Review the current Results vN badge in list/detail, Edit results explaining the
+next version, required note, history with author/time/note, and exact-version URL.
+The exact saved version is read-only and Current batch returns to the latest
+workspace. The route excludes nesting beneath the batch workspace so it cannot
+silently show current values instead of its snapshot. Typed fixtures include the
+version number; full TypeScript and scoped lint are the requested checkpoint.
+Automated suites remain unexecuted.
+
+## Vendor result modification with notes — October 6, 2026
+
+Current recorded reference/time/outcome/exception/no-run fields are editable.
+Results notes is required for each existing-result save, with Save changes and
+explicit preservation wording. Existing references satisfy coverage without
+requiring duplicate declarations. The dialog regression covers rejected empty
+notes and a reviewed reference correction with a note. Detail history renders
+before/after metadata, exception reasons and notes from the correction event.
+Sources are typechecked; automated suites remain unexecuted. Earlier immutable
+presentation expectations below are superseded by the Owner's edit request.
+
+## Removal of vendor results recovery — October 6, 2026
+
+Subsequent refinements: the modal is 44rem wide on desktop. Batch outcome replaces
+the default label; Fail leaves only notes below it. No-run capture keeps a visible
+checkbox and required inline reason, hides all result fields and sends null times
+and no references. Successful-library locations are required at the selected
+batch/library scope; failed rows are disabled, unmarked and excluded. The shared
+required marker is visible in successful row headings despite hidden repeated
+labels. Existing dialog regressions now cover no-run payload/hidden fields and
+retained failed-location draft exclusion; source is compiled, not executed.
+
+Removed the completed-results completeness flag, old client methods and historical
+recovery labels/filter. Next step records initial results only after Vendor
+received; a completed, recorded batch uses its menu for later locations. Updated
+workflow/progress cases to use current atomic records and four stages, with no
+special incomplete-history summary. Sources are typechecked; suites remain
+unexecuted. Review the rolled-back batch's empty run fields, editable receipt,
+unselected outcome and absent former exception/location. See the
+[rollback checkpoint](../testing/runs/2026-10-06-vendor-results-rollback.md).
+Earlier recovery descriptions below are superseded.
+
+## Combined vendor results receipt — October 6, 2026
+
+This checkpoint supersedes the separate outcome/storage expectations below.
+`RecordVendorResultsDialog.test.tsx` covers one combined command with distinct
+run and receipt times and an unperformed failed job requiring a reason, without
+fabricated run times or mandatory locations. The shared workflow and progress
+cases now expect four stages and distinguish receipt from library Success/Fail.
+Preparation-dialog tests retain vendor/catalog selection and frozen-manifest
+review. Test sources are typechecked; automated suites remain unexecuted.
+Manually inspect the direct trailing Next step Record results button, wrapping
+description, no duplicate header action and focus return to the actual opener.
+Review scope-toggle draft retention, library exceptions, immutable recorded values,
+desktop/320-pixel reflow and the unchanged view-only library action. See the
+[current verification record](../testing/runs/2026-10-06-combined-vendor-results.md).
+
+## Combined vendor results receipt — October 6, 2026
+
+This checkpoint supersedes the separate outcome/storage expectations below.
+`RecordVendorResultsDialog.test.tsx` covers one combined command with distinct
+run and receipt times and an unperformed failed job requiring a reason, without
+fabricated run times or mandatory locations. The shared workflow and progress
+cases now expect four stages and distinguish receipt from library Success/Fail.
+Preparation-dialog tests retain vendor/catalog selection and frozen-manifest
+review. Test sources are typechecked; automated suites remain unexecuted.
+Manually inspect the direct trailing Next step Record results button, wrapping
+description, no duplicate header action and focus return to the actual opener.
+Review scope-toggle draft retention, library exceptions, immutable recorded values,
+desktop/320-pixel reflow and the unchanged view-only library action. See the
+[current verification record](../testing/runs/2026-10-06-combined-vendor-results.md).
+
+## Sequencing detail and missing outcomes — October 6, 2026
+
+`SequencingSendoutProgress.test.tsx` distinguishes completed records from gaps in
+stage evidence, has no active stage on closed work and retains an explicit Failure
+decision. `vendor-workflow.test.ts` checks closure-label precedence and missing
+outcome eligibility; `VendorBatchDialog.test.tsx` checks preservation wording and
+the completed-record submit label. Source is typechecked; suites are unexecuted.
+Inspect the single detail header/status/Actions, removed nested list card,
+unchanged list and draft scanner, recorded-stage summary and genuine outcome
+next step. Existing outcome/stage/transfer forms retain their guards and focus.
+
+## Sequencing batch actions and storage scope — October 6, 2026
+
+`VendorBatchDialog.test.tsx` covers permanent-location validation, scope draft preservation, multiple
+entered library locations in one command and blank unavailable rows. Scope
+radio selectors also apply to the shared `PillToggle`; inspect its rounded
+appearance, arrow-key selection and focus after validation. No new test is needed
+for the bounded control replacement and no suite execution is authorized.
+The Owner subsequently removed Data description from the dialog. Its obsolete
+read-only/value assertions are removed; visual review confirms the field's absence.
+Per-library location selectors now use the unique hidden labels naming each
+library. Review the placeholder-only visual presentation in these identified
+rows, persistent accessible names after entry and associated errors. Whole batch
+retains its visible location label. No new implementation-mirroring test is added.
+The whole-batch submit and dirty-dialog selectors use Add data location. Review
+the matching menu/dialog title and one decorative folder-plus icon; the action
+keeps its existing permissions and status gates. No suite execution is requested.
+Existing dirty-form coverage uses the new field label; the empty-batch regression expects
+Prepare sequencing tubes. Suites remain unexecuted under the request-only policy.
+Manually review View libraries with one decorative eye icon, read-only tube
+evidence, absence of the manual Custody event action, single/multiple Actions
+behavior and modal close/focus return.
+
 ## Graphical laboratory sample completion — October 5, 2026
 
 `lab-phase-progress.test.ts` covers seven sequencing / three ready-for-preparation

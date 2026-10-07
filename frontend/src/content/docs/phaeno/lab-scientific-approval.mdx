@@ -34,6 +34,23 @@ Open the saved scientific record to download its managed files. POMS checks thei
 
 Historical references remain visible and are explicitly labelled **Not stored in POMS**. They are not automatically imported or verified. Upload the original file when recording an attributed correction. A retained historical settings fingerprint also does not establish file custody.
 
+## Review assembly QC
+
+For assembly-produced results, open the exact attempt’s **Review QC** action.
+The producing operator records Pass / Fail / Hold with a required decision note,
+an uploaded report and optional measurements against one verified output package.
+Pass requires explicit confirmation that the report covers the assembly output
+and all its saved sequencing inputs. This retained report coverage supplies the
+input-QC evidence; it does not waive software/settings/reference versions, actual
+times, source lineage or the reviewer’s scientific judgment.
+
+Review the package’s latest QC version and its report. Fail or Hold blocks approval
+and release. A later decision creates another numbered review with its note,
+author and time; it cannot edit a prior approval’s package. Automatic scientific
+measurement thresholds remain unconfigured until laboratory criteria are agreed.
+QC contributors remain subject to the existing independent scientific reviewer
+rule. The exact package needs Pass before it can be approved or published.
+
 ## Record the approval
 
 Choose **Record scientific approval**, then select the complete output package by Customer sample, version, and file count. Review its file names and manifest checksum. POMS uses the service workflow for the release definition and records the reviewer and approval time. Enter an optional Customer-visible QC summary using ordinary text. Approval pins that immutable package; it does not upload or alter artifacts.

@@ -20,10 +20,13 @@ public sealed partial class LabOperationsController
         var actors = await dbContext.Users.AsNoTracking().Where(item => actorIds.Contains(item.Id))
             .ToDictionaryAsync(item => item.Id, item => item.FirstName + " " + item.LastName, ct);
         var exceptions = sendout is null ? [] : await dbContext.LabVendorLibraryExceptions.AsNoTracking().Where(e => e.LabNgsSendoutId == sendout.Id).ToListAsync(ct);
-        return new { batch = MapBatch(batch, tubes.Members.Count, sendout?.Status.ToString(), sendout?.Id, sendout?.Version, sendout, exceptions.Count), tubes,
+        var resultsVersion = sendout is null ? null : await dbContext.LabVendorResultsVersions.AsNoTracking().Where(version => version.LabNgsSendoutId == sendout.Id)
+            .Select(version => (int?)version.ResultVersion).MaxAsync(ct);
+        return new { batch = MapBatch(batch, tubes.Members.Count, sendout?.Status.ToString(), sendout?.Id, sendout?.Version, sendout, exceptions.Count, resultsVersion), tubes,
             sendout = sendout is null ? null : new { sendout.Id, sendout.ProviderName, sendout.ProviderReference, sendout.ManifestJson,
                 sendout.ExpectedCompletionAtUtc, sendout.ShippedAtUtc, sendout.ProviderReceivedAtUtc, sendout.Destination,
-                sendout.Carrier, sendout.TrackingReference, sendout.SequencingStartedAtUtc, sendout.ResultsReceivedAtUtc,
+                sendout.Carrier, sendout.TrackingReference, sendout.SequencingStartedAtUtc, sendout.SequencingCompletedAtUtc,
+                sendout.RunNotPerformed, sendout.ResultsReceivedAtUtc,
                 sendout.VendorSupplierId, sendout.VendorProductId, sendout.VendorProductName, sendout.VendorShipmentAddressId,
                 sendout.VendorShipmentAddressLabel, sendout.VendorShipmentAddressVersion,
                 outcome = sendout.Outcome?.ToString(), sendout.OutcomeAtUtc, sendout.OutcomeNote },

@@ -6,7 +6,8 @@ using PSeq.Operations.Laboratory.Domain;
 public sealed record AssemblyRecipe(string Key, string Name, string Version, string ParametersJson);
 public sealed record AssemblyProviderAvailability(bool Available, string Message, bool SupportsCancellation, IReadOnlyList<AssemblyRecipe> Recipes);
 public sealed record AssemblyInput(Guid SequencingOutputId, string ExternalFileReference, string Sha256, long SizeBytes);
-public sealed record VerifiedAssemblyInput(Guid SequencingOutputId, string Bucket, string Key, string? VersionId, string Sha256, long SizeBytes, bool ImmutableObject = false);
+public sealed record VerifiedAssemblyInput(Guid SequencingOutputId, string Bucket, string Key, string? VersionId, string Sha256, long SizeBytes,
+    bool ImmutableObject = false, string StorageKind = "ObjectStorage", Guid? ManagedFileId = null);
 public sealed record AssemblyInputVerification(string ManifestSha256, DateTime VerifiedAtUtc, IReadOnlyList<VerifiedAssemblyInput> Files);
 public sealed record AssemblyProviderSnapshot(string ProviderJobId, string State, DateTime? StartedAtUtc = null,
     DateTime? StoppedAtUtc = null, DateTime? DispositionAtUtc = null, string? Reason = null,

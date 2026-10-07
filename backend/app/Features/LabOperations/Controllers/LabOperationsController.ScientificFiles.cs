@@ -77,7 +77,9 @@ public sealed partial class LabOperationsController
         await RequireSpecimenAsync(workOrderId, specimenId, ct);
         var file = await dbContext.LabScientificFiles.AsNoTracking().SingleOrDefaultAsync(
             f => f.Id == fileId && f.LabWorkOrderId == workOrderId && f.LabSpecimenId == specimenId, ct) ?? throw Missing();
-        var content = await LabScientificFiles.OpenVerifiedAsync(storage, file.StorageKey, file.Sha256, file.SizeBytes, ct);
+        var maximumBytes = await dbContext.Set<LabFastqUpload>().AnyAsync(u => u.LabScientificFileId == file.Id, ct)
+            ? file.SizeBytes : LabScientificFiles.MaximumBytes;
+        var content = await LabScientificFiles.OpenVerifiedAsync(storage, file.StorageKey, file.Sha256, file.SizeBytes, ct, maximumBytes);
         try
         {
             dbContext.LabWorkEvents.Add(new LabWorkEvent(workOrderId, specimenId, "ScientificFileDownloadRequested", DateTime.UtcNow,
