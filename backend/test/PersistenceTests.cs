@@ -213,7 +213,17 @@ public class PersistenceTests
             .Where(entityType => entityType.ClrType.Assembly == laboratoryAssembly)
             .ToList();
 
-        Assert.Equal(81, laboratoryEntities.Count);
+        Assert.Equal(87, laboratoryEntities.Count);
+        Assert.Equal("lab_vendor_results_versions", dbContext.Model.FindEntityType(typeof(LabVendorResultsVersion))?.GetTableName());
+        Assert.Equal("lab_vendor_results_drafts", dbContext.Model.FindEntityType(typeof(LabVendorResultsDraft))?.GetTableName());
+        Assert.Equal("lab_fastq_sets", dbContext.Model.FindEntityType(typeof(LabFastqSet))?.GetTableName());
+        Assert.Equal("lab_fastq_uploads", dbContext.Model.FindEntityType(typeof(LabFastqUpload))?.GetTableName());
+        Assert.Equal("lab_fastq_archives", dbContext.Model.FindEntityType(typeof(LabFastqArchive))?.GetTableName());
+        Assert.Equal("lab_assembly_qc", dbContext.Model.FindEntityType(typeof(LabAssemblyQc))?.GetTableName());
+        AssertUniqueIndex<LabVendorResultsVersion>(dbContext, nameof(LabVendorResultsVersion.LabNgsSendoutId), nameof(LabVendorResultsVersion.ResultVersion));
+        AssertUniqueIndex<LabFastqSet>(dbContext, nameof(LabFastqSet.LabBatchMemberId), nameof(LabFastqSet.SetVersion));
+        AssertUniqueIndex<LabFastqUpload>(dbContext, nameof(LabFastqUpload.LabFastqSetId), nameof(LabFastqUpload.GroupNumber), nameof(LabFastqUpload.ReadNumber), nameof(LabFastqUpload.PartNumber));
+        AssertUniqueIndex<LabAssemblyQc>(dbContext, nameof(LabAssemblyQc.ResultOutputPackageId), nameof(LabAssemblyQc.ReviewVersion));
         Assert.Equal("lab_supplier_shipment_addresses", dbContext.Model.FindEntityType(typeof(LabSupplierShipmentAddress))?.GetTableName());
         Assert.Equal("lab_vendor_library_exceptions", dbContext.Model.FindEntityType(typeof(LabVendorLibraryException))?.GetTableName());
         Assert.Equal("lab_vendor_result_references", dbContext.Model.FindEntityType(typeof(LabVendorResultReference))?.GetTableName());
@@ -307,6 +317,22 @@ public class PersistenceTests
             .Where(foreignKey => foreignKey.PrincipalEntityType.ClrType.Assembly != laboratoryAssembly);
         Assert.All(crossSchemaForeignKeys, foreignKey =>
         {
+            var scientificActors = new Dictionary<Type, string> {
+                [typeof(LabVendorResultsVersion)] = nameof(LabVendorResultsVersion.RecordedByUserId),
+                [typeof(LabVendorResultsDraft)] = nameof(LabVendorResultsDraft.UserId),
+                [typeof(LabFastqSet)] = nameof(LabFastqSet.RecordedByUserId),
+                [typeof(LabFastqUpload)] = nameof(LabFastqUpload.UserId),
+                [typeof(LabFastqArchive)] = nameof(LabFastqArchive.UserId),
+                [typeof(LabAssemblyQc)] = nameof(LabAssemblyQc.RecordedByUserId)
+            };
+            if (scientificActors.TryGetValue(foreignKey.DeclaringEntityType.ClrType, out var actorProperty)) {
+                var packageBinding = foreignKey.DeclaringEntityType.ClrType == typeof(LabAssemblyQc)
+                    && foreignKey.Properties.Single().Name == nameof(LabAssemblyQc.ResultOutputPackageId);
+                Assert.Equal(packageBinding ? typeof(ResultOutputPackage) : typeof(User), foreignKey.PrincipalEntityType.ClrType);
+                Assert.Equal([packageBinding ? nameof(LabAssemblyQc.ResultOutputPackageId) : actorProperty], foreignKey.Properties.Select(p => p.Name));
+                Assert.Equal(DeleteBehavior.Restrict, foreignKey.DeleteBehavior);
+                return;
+            }
             if (foreignKey.DeclaringEntityType.ClrType == typeof(LabBatchMember))
             {
                 Assert.Equal(typeof(QboCatalogItem), foreignKey.PrincipalEntityType.ClrType);

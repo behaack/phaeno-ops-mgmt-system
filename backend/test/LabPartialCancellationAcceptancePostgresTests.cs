@@ -24,7 +24,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         var prepared = await scope.CreateChangeCustomerController().FinalizeSampleRoster(fixture.OrderId,
             new(finished.Version, true, firstPhaseId), default);
         // Explicit simulated dispatch completes the first phase's shipping prerequisite.
-        var sent = await scope.DbContext.SampleShipments.SingleAsync();
+        var sent = await scope.DbContext.SampleShipments.SingleAsync(shipment => shipment.AuthorizationSourceId == fixture.OrderId);
         scope.DbContext.Entry(sent).Property(shipment => shipment.ShippedAt).CurrentValue = DateTime.UtcNow;
         await scope.DbContext.SaveChangesAsync();
         var second = await scope.AddReferenceSampleAsync(fixture.OrderId, prepared.Version);

@@ -20,9 +20,9 @@ The [master-mix step assembly contract](plans/MASTER-MIX-PREPARATION-PLAN.md#ass
 | --- | ---: | ---: | ---: |
 | `public` | 1 | 2 | 0 |
 | `commercial_ops` | 147 | 2403 | 390 |
-| `lab_ops` | 88 | 1093 | 188 |
+| `lab_ops` | 88 | 1094 | 189 |
 | `website` | 5 | 51 | 4 |
-| **Total** | **241** | **3549** | **582** |
+| **Total** | **241** | **3550** | **583** |
 
 ## `public` schema
 
@@ -3533,7 +3533,8 @@ erDiagram
     lab_vendor_library_exceptions {
         uuid id PK "not null"
         uuid lab_batch_member_id FK,UK "not null"
-        uuid lab_ngs_sendout_id FK,UK "not null"
+        uuid lab_ngs_sendout_id FK "not null"
+        uuid lab_vendor_results_version_id FK,UK "not null"
         character_varying_50 outcome "not null"
         character_varying_4000 reason "not null"
     }
@@ -3563,6 +3564,7 @@ erDiagram
     lab_work_orders ||--o{ lab_scientific_uploads : "lab_work_order_id"
     lab_batch_members ||--o{ lab_vendor_library_exceptions : "lab_batch_member_id"
     lab_ngs_sendouts ||--o{ lab_vendor_library_exceptions : "lab_ngs_sendout_id"
+    lab_vendor_results_versions ||--o{ lab_vendor_library_exceptions : "lab_vendor_results_version_id"
 ```
 
 ### Domain (1) (1) (1)

@@ -102,7 +102,7 @@ describe('inline tray scanning', () => {
     submit(input, 'UNKNOWN')
     await waitFor(() => expect(screen.getByRole('alert')).toBeTruthy())
     expect(input).toHaveProperty('value', 'UNKNOWN')
-    expect(document.activeElement).toBe(input)
+    await waitFor(() => expect(document.activeElement).toBe(input))
     submit(input, 'EXISTING')
     expect(screen.getByRole('alert').textContent).toContain('already in the tray')
     expect(scan).toHaveBeenCalledTimes(1)

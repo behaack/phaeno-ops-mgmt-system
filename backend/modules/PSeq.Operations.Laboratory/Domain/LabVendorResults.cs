@@ -8,14 +8,16 @@ public sealed class LabVendorLibraryException
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid LabNgsSendoutId { get; private set; }
     public Guid LabBatchMemberId { get; private set; }
+    public Guid LabVendorResultsVersionId { get; private set; }
     public LabVendorOutcome Outcome { get; private set; }
     public string Reason { get; private set; } = null!;
     private LabVendorLibraryException() { }
-    public LabVendorLibraryException(Guid sendoutId, Guid memberId, LabVendorOutcome outcome, string reason)
+    public LabVendorLibraryException(Guid sendoutId, Guid memberId, Guid resultVersionId, LabVendorOutcome outcome, string reason)
     {
-        if (sendoutId == Guid.Empty || memberId == Guid.Empty || !Enum.IsDefined(outcome)) throw new ArgumentException("Sendout, member and outcome are required.");
+        if (sendoutId == Guid.Empty || memberId == Guid.Empty || resultVersionId == Guid.Empty || !Enum.IsDefined(outcome)) throw new ArgumentException("Sendout, member, result version and outcome are required.");
         LabNgsSendoutId = sendoutId;
         LabBatchMemberId = memberId;
+        LabVendorResultsVersionId = resultVersionId;
         Outcome = outcome;
         Reason = LabAuditedEntity.Required(reason, nameof(reason), 4000);
     }

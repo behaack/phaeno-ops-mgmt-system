@@ -19,7 +19,9 @@ public sealed partial class LabOperationsController
         var actorIds = events.Select(item => item.RecordedByUserId).Concat(references.Select(r => r.RecordedByUserId)).Distinct().ToArray();
         var actors = await dbContext.Users.AsNoTracking().Where(item => actorIds.Contains(item.Id))
             .ToDictionaryAsync(item => item.Id, item => item.FirstName + " " + item.LastName, ct);
-        var exceptions = sendout is null ? [] : await dbContext.LabVendorLibraryExceptions.AsNoTracking().Where(e => e.LabNgsSendoutId == sendout.Id).ToListAsync(ct);
+        var latestVersionId = sendout is null ? Guid.Empty : await dbContext.LabVendorResultsVersions.AsNoTracking().Where(v => v.LabNgsSendoutId == sendout.Id)
+            .OrderByDescending(v => v.ResultVersion).Select(v => v.Id).FirstOrDefaultAsync(ct);
+        var exceptions = sendout is null ? [] : await dbContext.LabVendorLibraryExceptions.AsNoTracking().Where(e => e.LabNgsSendoutId == sendout.Id && e.LabVendorResultsVersionId == latestVersionId).ToListAsync(ct);
         var resultsVersion = sendout is null ? null : await dbContext.LabVendorResultsVersions.AsNoTracking().Where(version => version.LabNgsSendoutId == sendout.Id)
             .Select(version => (int?)version.ResultVersion).MaxAsync(ct);
         return new { batch = MapBatch(batch, tubes.Members.Count, sendout?.Status.ToString(), sendout?.Id, sendout?.Version, sendout, exceptions.Count, resultsVersion), tubes,

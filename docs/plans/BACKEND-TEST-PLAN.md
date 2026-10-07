@@ -14,6 +14,17 @@ are marked synthetic and rolled back. Existing governed Customer download tests
 cover actual stream completion, partial/cancelled/failed transfers and cutoff.
 These checks do not establish real DPS, independent scientific or hosted acceptance.
 
+The complete model-boundary regression explicitly verifies all 87 Laboratory
+entities, the six sequencing/result/QC tables, their unique indexes and only the
+approved restricted actor/package foreign keys across schemas. Full connected
+release verification uses the existing `phaeno_release_verification_` loopback
+database prefix; do not widen the concurrency-test safety guards.
+
+The connected operator journey verifies immutable per-version library exception
+facts, latest-only batch readers and continued rejection of direct deletion. Its
+timestamp fixture uses database precision; phase-cancellation shipment selection
+is scoped to the fixture order instead of unrelated seeded data.
+
 ## FASTQ/ZIP intake and assembly QC — October 6, 2026
 
 LabFastqValidationTests covers bounded record parsing, roles, empty/truncated content and mate/order mismatch. LabFastqArchiveInspectionTests covers relative names, report separation, traversal/absolute paths, duplicate names and expansion bounds. Commercial vendor receipt sources now use current file-set commands and preserve failed-library no-file version/replay coverage. Required further connected cases: actual chunk/import replay and conflicts, cross-member/run denial, final atomic receipt rollback, current-input invalidation, exact QC Pass/Fail/Hold and independent approval/release. Sources are compiled; automated execution remains unrequested. This supersedes required-location capture and the retired results modal contracts.

@@ -34,8 +34,9 @@ public sealed partial class LabOperationsController
         await SampleShippingPackingData.LockAsync(dbContext, $"lab-sequencing-batch:{sendout.LabOperationalBatchId}", ct);
         var batch = await dbContext.LabOperationalBatches.SingleAsync(b => b.Id == sendout.LabOperationalBatchId, ct);
         var firstReceipt = sendout.Status == LabNgsSendoutStatus.ReceivedByProvider && batch.Status == LabBatchStatus.InProgress;
-        var currentResultVersion = await dbContext.LabVendorResultsVersions.Where(version => version.LabNgsSendoutId == sendout.Id)
-            .Select(version => (int?)version.ResultVersion).MaxAsync(ct) ?? 0;
+        var latestVersion = await dbContext.LabVendorResultsVersions.AsNoTracking().Where(version => version.LabNgsSendoutId == sendout.Id)
+            .OrderByDescending(version => version.ResultVersion).FirstOrDefaultAsync(ct);
+        var currentResultVersion = latestVersion?.ResultVersion ?? 0;
         if (!firstReceipt && (sendout.Status != LabNgsSendoutStatus.Complete || batch.Status != LabBatchStatus.Complete))
             throw Conflict("batch_not_active", "Record results after vendor receipt, or modify an existing recorded result with a note.");
         if (!firstReceipt && string.IsNullOrWhiteSpace(request.Notes))
@@ -55,7 +56,7 @@ public sealed partial class LabOperationsController
             if (!members.Contains(entry.MemberId) || !Enum.TryParse<LabVendorOutcome>(entry.Outcome, true, out var memberOutcome)
                 || !Enum.IsDefined(memberOutcome) || memberOutcome == outcome)
                 throw Invalid("vendor_exception_invalid", "Each exception must name this batch's library and the opposite outcome.");
-            exceptions.Add(VendorValue(() => new LabVendorLibraryException(sendout.Id, entry.MemberId, memberOutcome, entry.Reason)));
+            exceptions.Add(VendorValue(() => new LabVendorLibraryException(sendout.Id, entry.MemberId, request.RequestId, memberOutcome, entry.Reason)));
         }
         var failedCount = outcome == LabVendorOutcome.Failure ? members.Count - exceptions.Count : exceptions.Count;
         if (request.RunNotPerformed && failedCount != members.Count)
@@ -65,7 +66,8 @@ public sealed partial class LabOperationsController
             throw Invalid("vendor_run_not_performed_invalid", "A run not performed has no run times or results receipt.");
         if (outcome == LabVendorOutcome.Failure && (exceptions.Count != 0 || request.FastqSetIds.Count != 0))
             throw Invalid("vendor_failure_details_invalid", "A failed batch has no Success exceptions or FASTQ input sets.");
-        var oldExceptions = await dbContext.LabVendorLibraryExceptions.AsNoTracking().Where(e => e.LabNgsSendoutId == sendout.Id).ToListAsync(ct);
+        var previousVersionId = latestVersion?.Id ?? Guid.Empty;
+        var oldExceptions = await dbContext.LabVendorLibraryExceptions.AsNoTracking().Where(e => e.LabNgsSendoutId == sendout.Id && e.LabVendorResultsVersionId == previousVersionId).ToListAsync(ct);
         if (request.RunNotPerformed && await dbContext.LabSequencingOutputs.AnyAsync(output => output.LabNgsSendoutId == sendout.Id, ct))
             throw Conflict("vendor_run_has_scientific_output", "This run has registered scientific outputs and cannot be changed to Run not performed.");
         if (outcome == LabVendorOutcome.Failure && members.Count > exceptions.Count && !sendout.Outcome.HasValue && string.IsNullOrWhiteSpace(request.Notes))
@@ -89,8 +91,6 @@ public sealed partial class LabOperationsController
         {
             if (previous.RunNotPerformed != request.RunNotPerformed || previous.ResultsReceivedAtUtc != request.ResultsReceivedAtUtc)
                 batch.CorrectResultCompletion(request.RunNotPerformed ? recordedAt : request.ResultsReceivedAtUtc!.Value);
-            var replacedExceptions = await dbContext.LabVendorLibraryExceptions.Where(exception => exception.LabNgsSendoutId == sendout.Id).ToListAsync(ct);
-            dbContext.LabVendorLibraryExceptions.RemoveRange(replacedExceptions);
         }
         dbContext.LabVendorLibraryExceptions.AddRange(exceptions);
         var snapshotMembers = await (from member in dbContext.LabBatchMembers.AsNoTracking()

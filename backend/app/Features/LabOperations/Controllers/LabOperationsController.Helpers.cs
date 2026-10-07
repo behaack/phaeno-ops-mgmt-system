@@ -302,7 +302,8 @@ public sealed partial class LabOperationsController
             .ToDictionaryAsync(item => item.Id, item => item.Count, cancellationToken);
         var sendouts = await dbContext.LabNgsSendouts.AsNoTracking()
             .ToDictionaryAsync(item => item.LabOperationalBatchId, cancellationToken);
-        var exceptions = await dbContext.LabVendorLibraryExceptions.AsNoTracking().GroupBy(e => e.LabNgsSendoutId)
+        var exceptions = await dbContext.LabVendorLibraryExceptions.AsNoTracking().Where(e => dbContext.LabVendorResultsVersions.Any(v => v.Id == e.LabVendorResultsVersionId
+            && !dbContext.LabVendorResultsVersions.Any(newer => newer.LabNgsSendoutId == v.LabNgsSendoutId && newer.ResultVersion > v.ResultVersion))).GroupBy(e => e.LabNgsSendoutId)
             .Select(group => new { Id = group.Key, Count = group.Count() }).ToDictionaryAsync(e => e.Id, e => e.Count, cancellationToken);
         var resultVersions = await dbContext.LabVendorResultsVersions.AsNoTracking().GroupBy(version => version.LabNgsSendoutId)
             .Select(group => new { Id = group.Key, Version = group.Max(version => version.ResultVersion) })

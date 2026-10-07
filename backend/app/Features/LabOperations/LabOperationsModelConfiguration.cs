@@ -671,7 +671,8 @@ public static class LabOperationsModelConfiguration
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Outcome).HasConversion<string>().HasMaxLength(50).IsRequired();
             entity.Property(e => e.Reason).HasMaxLength(4000).IsRequired();
-            entity.HasIndex(e => new { e.LabNgsSendoutId, e.LabBatchMemberId }).IsUnique();
+            entity.HasIndex(e => new { e.LabVendorResultsVersionId, e.LabBatchMemberId }).IsUnique();
+            entity.HasOne<LabVendorResultsVersion>().WithMany().HasForeignKey(e => e.LabVendorResultsVersionId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<LabNgsSendout>().WithMany().HasForeignKey(e => e.LabNgsSendoutId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<LabBatchMember>().WithMany().HasForeignKey(e => e.LabBatchMemberId).OnDelete(DeleteBehavior.Restrict);
         });

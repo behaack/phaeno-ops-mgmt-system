@@ -92,9 +92,9 @@ public class LabVendorResultsDomainTests
     {
         var sendoutId = Guid.NewGuid(); var memberId = Guid.NewGuid(); var actorId = Guid.NewGuid(); var time = DateTime.UtcNow;
         var reference = new LabVendorResultReference(Guid.NewGuid(), sendoutId, memberId, "Manifest", "s3://simulated/batch/manifest.csv", "Reference only", actorId, time);
-        var exception = new LabVendorLibraryException(sendoutId, memberId, LabVendorOutcome.Failure, "SIMULATED low read yield");
+        var exception = new LabVendorLibraryException(sendoutId, memberId, Guid.NewGuid(), LabVendorOutcome.Failure, "SIMULATED low read yield");
         Assert.Equal(memberId, reference.LabBatchMemberId); Assert.Equal(actorId, reference.RecordedByUserId);
         Assert.Equal(time, reference.RecordedAtUtc); Assert.Equal(sendoutId, exception.LabNgsSendoutId);
-        Assert.Throws<ArgumentException>(() => new LabVendorLibraryException(sendoutId, memberId, LabVendorOutcome.Failure, " "));
+        Assert.Throws<ArgumentException>(() => new LabVendorLibraryException(sendoutId, memberId, Guid.NewGuid(), LabVendorOutcome.Failure, " "));
     }
 }

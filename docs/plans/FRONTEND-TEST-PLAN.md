@@ -12,6 +12,11 @@ Connected byte receipt, dispatch/QC gates and Customer transfer accounting belon
 to the isolated backend journey; actual DPS/browser file-chooser acceptance remains
 separate and must not be claimed from these component tests.
 
+Result release regressions open the shared Actions menu before checking navigation
+or publication. The router-link test double preserves DOM/ref props so keyboard
+focus and menuitem roles are tested faithfully. Rejected tray scans retain their
+barcode and restore focus after the acknowledged asynchronous error render.
+
 ## Results upload workspace, ZIP and QC — October 6, 2026
 
 VendorResultsWorkspacePage.test.tsx replaces the retired modal regression: no-run reason with null times/no sets, successful receipt blocked without verified sets, and incomplete draft save without receipt. Review batch ZIP/individual toggle, per-library run/layout/preparation, explicit ZIP mapping/exclusions, selected-file progress/resume, required note/confirmation, protected dirty navigation and successful save return. QC is view-first with dedicated capture and report/input coverage; release has one contextual Actions menu and meaningful confirmation body. Type/lint and manual UI checkpoints are distinct from request-only automated suites.

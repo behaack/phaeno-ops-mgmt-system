@@ -1362,7 +1362,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             var batchWorkspace = JsonSerializer.SerializeToElement(await lab.BatchDetail(batch.Id, CancellationToken.None), new JsonSerializerOptions(JsonSerializerDefaults.Web));
             Assert.Equal(4, batchWorkspace.GetProperty("custody").GetArrayLength());
             Assert.Equal(1, batchWorkspace.GetProperty("tubes").GetProperty("members").GetArrayLength());
-            var received = DateTime.UtcNow;
+            var received = LabEvidenceTime.UtcNow;
             var resultsRequest = new RecordVendorResultsRequest(Guid.NewGuid(), batch.SendoutVersion!.Value, "REFERENCE-NGS", false,
                 received, received, received, "Success", [new(sequencingMember.Id, "Failure", "SIMULATED low read yield")], [], "SIMULATED vendor report");
             var foreignException = await Assert.ThrowsAsync<OrderManagementException>(() => lab.RecordVendorResults(batch.SendoutId!.Value,
@@ -1388,11 +1388,22 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 resultsRequest with { Notes = "Changed" }, default));
             Assert.Equal("vendor_results_replay_conflict", changedReplay.ErrorCode);
             var correctedResults = resultsRequest with { RequestId = Guid.NewGuid(), Version = batch.SendoutVersion!.Value,
-                FastqSetIds = [], Notes = "SIMULATED corrected vendor report" };
+                Exceptions = [new(sequencingMember.Id, "Failure", "SIMULATED revised failure reason")], FastqSetIds = [], Notes = "SIMULATED corrected vendor report" };
             batch = await lab.RecordVendorResults(batch.SendoutId!.Value, correctedResults, default);
             Assert.Equal(originalCompletion, batch.CompletedAtUtc);
             Assert.Equal(0, await scope.DbContext.LabVendorResultReferences.CountAsync(r => r.LabNgsSendoutId == batch.SendoutId));
             Assert.Equal(2, batch.ResultsVersion);
+            var retainedExceptions = await scope.DbContext.LabVendorLibraryExceptions.Where(e => e.LabNgsSendoutId == batch.SendoutId).ToListAsync();
+            Assert.Equal(2, retainedExceptions.Count);
+            var originalException = Assert.Single(retainedExceptions, e => e.LabVendorResultsVersionId == resultsRequest.RequestId);
+            Assert.Equal("SIMULATED low read yield", originalException.Reason);
+            Assert.Equal("SIMULATED revised failure reason", Assert.Single(retainedExceptions, e => e.LabVendorResultsVersionId == correctedResults.RequestId).Reason);
+            var currentDetail = JsonSerializer.SerializeToElement(await lab.BatchDetail(batch.Id, default), new JsonSerializerOptions(JsonSerializerDefaults.Web));
+            Assert.Equal(1, currentDetail.GetProperty("libraryExceptions").GetArrayLength());
+            Assert.Equal("SIMULATED revised failure reason", currentDetail.GetProperty("libraryExceptions")[0].GetProperty("reason").GetString());
+            scope.DbContext.LabVendorLibraryExceptions.Remove(originalException);
+            await Assert.ThrowsAsync<InvalidOperationException>(() => scope.DbContext.SaveChangesAsync());
+            scope.DbContext.Entry(originalException).State = EntityState.Unchanged;
             var savedVersions = await scope.DbContext.LabVendorResultsVersions.AsNoTracking().Where(version => version.LabNgsSendoutId == batch.SendoutId)
                 .OrderBy(version => version.ResultVersion).ToListAsync();
             Assert.Equal(2, savedVersions.Count);
