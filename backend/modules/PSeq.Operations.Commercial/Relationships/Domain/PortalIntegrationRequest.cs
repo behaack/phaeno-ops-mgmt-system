@@ -63,30 +63,38 @@ public sealed class PortalIntegrationRequest : IAudit, IConcurrency
         }
     }
 
-    public void Decide(bool approved, string reason, Guid actorUserId, DateTime utcNow)
+    public void Decide(bool approved, string? reason, Guid actorUserId, DateTime utcNow)
     {
         if (Status != PortalIntegrationRequestStatus.PendingReview)
         {
             throw new InvalidOperationException("Only a pending request can be reviewed.");
         }
 
+        var optionalApprovalNote = approved && RequestType is (
+            PortalIntegrationRequestType.Onboarding or PortalIntegrationRequestType.Evaluation
+            or PortalIntegrationRequestType.Offboarding or PortalIntegrationRequestType.ServiceChange);
+        var decisionReason = optionalApprovalNote
+            ? RelationshipText.Optional(reason, 2000)
+            : RelationshipText.Required(reason, nameof(reason), 2000);
+
         Status = approved ? PortalIntegrationRequestStatus.Approved : PortalIntegrationRequestStatus.Declined;
         ReviewedByUserId = actorUserId;
         ReviewedAt = utcNow;
-        DecisionReason = RelationshipText.Required(reason, nameof(reason), 2000);
+        DecisionReason = decisionReason;
     }
 
-    public void MarkApplied(string notes, Guid actorUserId, DateTime utcNow)
+    public void MarkApplied(string? notes, Guid actorUserId, DateTime utcNow)
     {
         if (Status != PortalIntegrationRequestStatus.Approved)
         {
             throw new InvalidOperationException("Only an approved request can be marked applied.");
         }
 
+        var applicationNotes = RelationshipText.Optional(notes, 2000);
         Status = PortalIntegrationRequestStatus.Applied;
         AppliedByUserId = actorUserId;
         AppliedAt = utcNow;
-        ApplicationNotes = RelationshipText.Required(notes, nameof(notes), 2000);
+        ApplicationNotes = applicationNotes;
     }
 
     public void AssociateOrganization(Guid organizationId)
@@ -111,10 +119,11 @@ public sealed class PortalIntegrationRequest : IAudit, IConcurrency
             throw new InvalidOperationException("This request can no longer be cancelled.");
         }
 
+        var cancellationReason = RelationshipText.Required(reason, nameof(reason), 2000);
         Status = PortalIntegrationRequestStatus.Cancelled;
         ReviewedByUserId = actorUserId;
         ReviewedAt = utcNow;
-        DecisionReason = RelationshipText.Required(reason, nameof(reason), 2000);
+        DecisionReason = cancellationReason;
     }
 
     public void MarkCreated(DateTime utcNow, Guid? actorUserId)

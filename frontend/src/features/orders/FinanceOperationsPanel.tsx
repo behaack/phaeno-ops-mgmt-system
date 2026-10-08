@@ -1,0 +1,113 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Link, useNavigate, useSearch } from '@tanstack/react-router'
+import { useRef, useState, type ReactNode } from 'react'
+import * as finance from '#/api/pseq-order-to-cash'
+import { getOrderErrorMessage } from '#/api/order-management'
+import { Button } from '#/components/ui/button'
+import { Badge } from '#/components/ui/badge'
+import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
+import { Label } from '#/components/ui/label'
+import { Input } from '#/components/ui/input'
+import { FinanceSidebar } from './FinanceSidebar'
+import { getFinanceSections } from './finance-sections'
+import { usePhaenoSession } from '#/features/auth/session-context'
+import { FinanceActionDialog, type FinanceAction } from './FinanceActionDialog'
+import { FinancePhaseInvoice } from './FinancePhaseInvoice'
+import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
+import { FinanceReceiptImport } from './FinanceReceiptImport'
+import { FinanceCloseoutReport } from './FinanceCloseoutReport'
+import { FinanceAllocationHistory, FinanceReconciliationDetails } from './FinanceCorrections'
+
+export type FinanceRecord = { kind: 'invoice' | 'receipt' | 'customer' | 'reconciliation'; id: string }
+const money = (value: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value)
+
+export function FinanceOperationsPanel({ apiEnabled, canBill, canManageCash, canReconcile, canViewCommercialOrder = false, record }: { apiEnabled: boolean; canBill: boolean; canManageCash: boolean; canReconcile: boolean; canViewCommercialOrder?: boolean; record?: FinanceRecord }) {
+  const client = useQueryClient()
+  const navigate = useNavigate()
+  const search = useSearch({ strict: false })
+  const available = getFinanceSections({ canBill, canManageCash, canReconcile })
+  const section = available.find(item => item.value === search.financeSection)?.value ?? available[0]?.value
+  const customerId = search.financeCustomer ?? ''
+  const recordAllowed = !record || (record.kind === 'invoice' || record.kind === 'customer' ? canBill : record.kind === 'receipt' ? canManageCash : canManageCash || canReconcile)
+  const needsInvoices = record?.kind === 'invoice' || (!record && section === 'invoices')
+  const needsReceipts = record?.kind === 'receipt' || (!record && (section === 'receipts' || section === 'reconciliation'))
+  const receiptCustomerId = !record && section === 'receipts' ? customerId : ''
+  const needsBatches = record?.kind === 'reconciliation' || (!record && section === 'reconciliation')
+  const customers = useQuery({ queryKey: ['accounts-receivable', 'customers'], queryFn: finance.listAccountsReceivableCustomers, enabled: apiEnabled && recordAllowed })
+  const invoices = useQuery({ queryKey: ['accounts-receivable', 'invoices', record?.id, customerId], queryFn: () => finance.listInvoices(false, record?.kind === 'invoice' ? record.id : undefined, !record ? customerId || undefined : undefined), enabled: apiEnabled && canBill && needsInvoices })
+  const receipts = useQuery({ queryKey: ['accounts-receivable', 'receipts', record?.id, receiptCustomerId], queryFn: () => finance.listPaymentReceipts(false, record?.kind === 'receipt' ? record.id : undefined, receiptCustomerId || undefined), enabled: apiEnabled && canManageCash && needsReceipts })
+  const batches = useQuery({ queryKey: ['accounts-receivable', 'reconciliations', record?.id], queryFn: () => finance.listReconciliations(record?.kind === 'reconciliation' ? record.id : undefined), enabled: apiEnabled && (canManageCash || canReconcile) && needsBatches })
+  const aging = useQuery({ queryKey: ['accounts-receivable', 'aging'], queryFn: finance.getAgingSummary, enabled: apiEnabled && canBill && !record && section === 'invoices' })
+  const invoice = invoices.data?.find(item => record?.kind === 'invoice' && item.id === record.id)
+  const payment = receipts.data?.find(item => record?.kind === 'receipt' && item.id === record.id)
+  const customer = customers.data?.find(item => record?.kind === 'customer' && item.organizationId === record.id)
+  const batch = batches.data?.find(item => record?.kind === 'reconciliation' && item.id === record.id)
+  const [action, setAction] = useState<FinanceAction | null>(null)
+  const actionTrigger = useRef<HTMLElement | null>(null)
+  function openAction(next: FinanceAction, trigger: HTMLElement) { actionTrigger.current = trigger; setAction(next) }
+  const refresh = async () => { await Promise.all([client.invalidateQueries({ queryKey: ['accounts-receivable'] }), client.invalidateQueries({ queryKey: ['operational-attention'] }), client.invalidateQueries({ queryKey: ['customer-order-readiness'] })]) }
+  const exportReport = useMutation({ mutationFn: finance.exportAccountsReceivableReport })
+  const downloadEvidence = useMutation({ mutationFn: () => finance.downloadPaymentEvidence(payment!) })
+  const changeBatch = useMutation({ mutationFn: (operation: 'submit' | 'approve') => operation === 'submit' ? finance.submitReconciliation(batch!.id, batch!.version) : finance.approveReconciliation(batch!.id, batch!.version), onSuccess: refresh })
+  const customerNames = new Map(customers.data?.map(item => [item.organizationId, item.organizationName]))
+  const customerName = (id: string) => customerNames.get(id) ?? 'Customer unavailable'
+  const customerSearch = search.financeSearch ?? (customerId ? customerNames.get(customerId) ?? '' : '')
+  const normalizedCustomerSearch = customerSearch.trim().toLocaleLowerCase()
+  const matchesCustomer = (id: string) => (!customerId || id === customerId) && (!normalizedCustomerSearch || customerName(id).toLocaleLowerCase().includes(normalizedCustomerSearch))
+  const visibleInvoices = invoices.data?.filter(item => matchesCustomer(item.organizationId)) ?? []
+  const visibleReceipts = receipts.data?.filter(item => matchesCustomer(item.organizationId)) ?? []
+  const visibleCustomers = customers.data?.filter(item => matchesCustomer(item.organizationId)) ?? []
+  const customerFilter = <div className="mt-3 flex flex-wrap items-end gap-3">
+    <div className="min-w-0 flex-1 basis-60"><Label htmlFor="finance-customer-search">Search customers</Label><Input id="finance-customer-search" className="mt-2" value={customerSearch} placeholder="Customer name" onChange={event => { const value = event.currentTarget.value; void navigate({ to: '/finance', replace: true, search: previous => ({ ...previous, financeCustomer: undefined, financeSearch: value || undefined }) }) }} /></div>
+    <Button variant="outline" onClick={() => { void navigate({ to: '/finance', search: previous => ({ ...previous, financeCustomer: undefined, financeSearch: undefined }) }) }}>Clear filter</Button>
+  </div>
+  const currentQuery = record ? record.kind === 'invoice' ? invoices : record.kind === 'receipt' ? receipts : record.kind === 'customer' ? customers : batches : section === 'invoices' ? invoices : section === 'receipts' ? receipts : section === 'reconciliation' ? batches : customers
+  const loading = currentQuery.isLoading
+  const error = currentQuery.error
+  const actionError = exportReport.error ?? downloadEvidence.error ?? changeBatch.error
+  const title = invoice?.invoiceNumber ?? payment?.receiptNumber ?? customer?.organizationName ?? batch?.batchNumber
+  const recordLink = (kind: FinanceRecord['kind'], id: string, label: string) => <Link className="font-medium text-primary hover:underline" to="/finance/$kind/$recordId" params={{ kind, recordId: id }} search={previous => ({ ...previous, financeSection: section, financeCustomer: customerId || undefined })}>{label}</Link>
+  if (!recordAllowed) return <div className="space-y-4"><Button asChild variant="outline"><Link to="/finance" search={previous => ({ ...previous,  })}>Back to Finance</Link></Button><p>This record is unavailable in your current Finance view.</p></div>
+  return <div className="space-y-5">
+    {record ? <Button asChild variant="outline"><Link to="/finance" search={previous => previous}>Back to Finance</Link></Button> : null}
+    <section aria-label={record ? 'Finance record' : available.find(item => item.value === section)?.label ?? 'Finance information'} className="space-y-5">
+    {error ? <Failure title="Finance information is unavailable" error={error} retry={() => { void currentQuery.refetch() }} retrying={currentQuery.isFetching} /> : null}
+    {customers.error && currentQuery !== customers ? <Failure title="Customer information is unavailable" error={customers.error} retry={() => { void customers.refetch() }} retrying={customers.isFetching} /> : null}
+    {actionError ? <Failure title="Finance action was not completed" error={actionError} /> : null}
+    {loading ? <p role="status">Loading Finance records…</p> : null}
+    {record && !loading && !error && !title ? <p>This record is unavailable in your current Finance view.</p> : null}
+    {record && title ? <Card><CardHeader className={customer ? 'grid-cols-[minmax(0,1fr)_auto] gap-x-3' : undefined}>
+      <CardTitle className={customer ? 'min-w-0 self-center wrap-anywhere' : undefined}>{title}</CardTitle>
+      {customer ? <CardAction className="row-span-1"><Button onClick={event => openAction('billing', event.currentTarget)}>Edit billing and tax</Button></CardAction> : null}
+      <CardDescription className={customer ? 'col-span-2' : undefined}>{invoice ? customerName(invoice.organizationId) : payment ? customerName(payment.organizationId) : customer ? 'Billing and tax setup for this Customer' : 'Cash reconciliation'}</CardDescription>
+    </CardHeader><CardContent className="space-y-5">
+      {invoice ? <><Summary entries={[['Status', invoice.status], ['Issued', invoice.issuedOn], ['Due', invoice.dueOn], ['Total', money(invoice.total)], ['Applied', money(invoice.appliedTotal)], ['Balance', money(invoice.balance)]]} />{canViewCommercialOrder ? <Button asChild variant="outline"><Link to="/order-operations/lab-services/orders/$orderId" params={{ orderId: invoice.labServiceOrderId }}>Open order</Link></Button> : null}{canBill && !['Voided', 'WrittenOff'].includes(invoice.status) ? <Button className="ml-2" onClick={event => openAction('adjustment', event.currentTarget)}>Record adjustment</Button> : null}</> : null}
+      {payment ? <><Summary entries={[['Status', payment.status], ['Payer', payment.payer], ['Received', payment.receivedOn], ['Amount', money(payment.amount)], ['Unapplied', money(payment.unappliedAmount)], ['Method', payment.method], ['Bank reference', payment.bankReference], ['Source', payment.source]]} /><div className="flex flex-wrap gap-2">{payment.unappliedAmount > 0 && payment.status !== 'Reversed' ? <Button onClick={event => openAction('allocation', event.currentTarget)}>Allocate to invoice</Button> : null}{payment.status !== 'Reversed' && payment.appliedAmount === 0 ? <Button variant="outline" onClick={event => openAction('reversal', event.currentTarget)}>Reverse receipt</Button> : null}<Button variant="outline" disabled={downloadEvidence.isPending} onClick={() => downloadEvidence.mutate()}>Download evidence</Button></div></> : null}
+      {payment ? <FinanceAllocationHistory receiptId={payment.id} apiEnabled={apiEnabled && canManageCash} onSaved={refresh} /> : null}
+      {customer ? <Summary entries={[['Billing contact', customer.billingContactName ?? 'Not configured'], ['Billing email', customer.billingContactEmail ?? 'Not configured'], ['Payment terms', `${customer.paymentTermsDays} days`], ['Tax decision', customer.taxDecision === 'NonTaxable' ? 'Non-taxable' : customer.taxDecision ?? 'Not configured'], ['Finance approval', customer.financeApprovedAtUtc ? 'Approved' : 'Required']]} /> : null}
+      {batch ? <><Summary entries={[['Status', batch.status], ['Period end', batch.periodEnd], ['Ledger', money(batch.ledgerReceiptTotal)], ['Bank', money(batch.bankTotal)], ['Difference', money(batch.difference)]]} />{batch.status === 'Approved' || batch.closeoutReportJson ? <FinanceCloseoutReport batch={batch} /> : null}<div className="flex gap-2">{canManageCash && batch.status === 'Draft' ? <Button disabled={batch.difference !== 0 || changeBatch.isPending} onClick={() => changeBatch.mutate('submit')}>Submit balanced batch</Button> : null}{canReconcile && batch.status === 'Submitted' ? <Button disabled={changeBatch.isPending} onClick={() => changeBatch.mutate('approve')}>Approve independently</Button> : null}</div></> : null}
+      {batch ? <FinanceReconciliationDetails batchId={batch.id} apiEnabled={apiEnabled} canManageCash={canManageCash} onSaved={refresh} /> : null}
+    </CardContent></Card> : null}
+    {!record && section === 'invoices' ? <Card className="gap-0 py-0"><CardHeader className="border-b bg-muted/50 p-4"><div className="flex flex-wrap items-start justify-between gap-3"><CardTitle>Invoices and aging</CardTitle><FinancePhaseInvoice enabled={apiEnabled && canBill} customerId={customerId} onSaved={refresh} /></div><CardDescription>Open an invoice to review the order and record an adjustment.</CardDescription>{customerFilter}</CardHeader><CardContent className="space-y-4 p-4">{aging.isError ? <Failure title="Aging unavailable" error={aging.error} retry={() => { void aging.refetch() }} retrying={aging.isFetching} /> : null}{aging.data ? <><p className="text-xs text-muted-foreground">Aging across all Customers</p><Summary entries={[['Current', money(aging.data.current)], ['1–30 days', money(aging.data.days1To30)], ['31–60 days', money(aging.data.days31To60)], ['61–90 days', money(aging.data.days61To90)], ['Over 90 days', money(aging.data.over90)]]} /></> : null}<div className="divide-y">{visibleInvoices.map(item => <Row key={item.id} title={recordLink('invoice', item.id, item.invoiceNumber)} detail={`${customerName(item.organizationId)} · Due ${item.dueOn} · ${money(item.balance)} outstanding`} status={item.status} />)}</div>{!loading && !error && !visibleInvoices.length ? <Empty>No invoices match this view.</Empty> : null}<ActionMenu><DropdownMenuTrigger asChild><Button variant="outline" disabled={!apiEnabled || exportReport.isPending}>Actions</Button></DropdownMenuTrigger><DropdownMenuContent><DropdownMenuItem onSelect={() => exportReport.mutate('invoices')}>Export all invoices</DropdownMenuItem><DropdownMenuItem onSelect={() => exportReport.mutate('aging')}>Export aging</DropdownMenuItem></DropdownMenuContent></ActionMenu></CardContent></Card> : null}
+    {!record && section === 'receipts' ? <Card className="gap-0 py-0"><CardHeader className="border-b bg-muted/50 p-4"><div className="flex flex-wrap justify-between gap-3"><CardTitle>Receipts</CardTitle><Button disabled={!apiEnabled || customers.isLoading || customers.isError} onClick={event => openAction('receipt', event.currentTarget)}>Record receipt</Button></div><CardDescription>Open a receipt to review evidence, allocate cash, or reverse an unapplied receipt.</CardDescription>{customerFilter}</CardHeader><CardContent className="p-4"><div className="divide-y">{visibleReceipts.map(item => <Row key={item.id} title={recordLink('receipt', item.id, item.receiptNumber)} detail={`${customerName(item.organizationId)} · ${item.payer} · ${money(item.unappliedAmount)} unapplied`} status={item.status} />)}</div>{!loading && !error && !visibleReceipts.length ? <Empty>No receipts match this view.</Empty> : null}<div className="mt-4 flex flex-wrap gap-2"><Button variant="outline" disabled={!apiEnabled || exportReport.isPending} onClick={() => exportReport.mutate('receipts')}>Export all receipts</Button><Button variant="outline" disabled={!apiEnabled || exportReport.isPending} onClick={() => exportReport.mutate('unapplied-cash')}>Export unapplied cash</Button></div></CardContent></Card> : null}
+    {!record && section === 'customers' ? <Card className="gap-0 py-0"><CardHeader className="border-b bg-muted/50 p-4"><CardTitle>Customer billing</CardTitle><CardDescription>Maintain billing details once per Customer. A change requires a fresh Finance tax approval.</CardDescription>{customerFilter}</CardHeader><CardContent className="divide-y px-4">{visibleCustomers.map(item => <Row key={item.organizationId} title={recordLink('customer', item.organizationId, item.organizationName)} detail={`${item.billingContactEmail ?? 'Billing contact needed'} · ${item.paymentTermsDays} day terms`} status={item.financeApprovedAtUtc ? 'Approved' : 'Needs setup'} />)}{!loading && !error && !visibleCustomers.length ? <Empty>No Customers match this view.</Empty> : null}</CardContent></Card> : null}
+    {!record && section === 'imports' ? <FinanceReceiptImport apiEnabled={apiEnabled && !customers.isLoading && !customers.isError} customerId={customerId} customers={customers.data ?? []} onSaved={refresh} /> : null}
+    {!record && section === 'reconciliation' ? <Card><CardHeader><div className="flex flex-wrap justify-between gap-3"><CardTitle>Reconciliation</CardTitle>{canManageCash ? <Button disabled={!apiEnabled || receipts.isLoading || receipts.isError || customers.isLoading || customers.isError} onClick={event => openAction('reconciliation', event.currentTarget)}>New reconciliation</Button> : null}</div><CardDescription>Review a batch, submit it when balanced, and have a different Cash Reconciler approve it.</CardDescription></CardHeader><CardContent>{canManageCash && receipts.error ? <Failure title="Receipts for a new reconciliation are unavailable" error={receipts.error} retry={() => { void receipts.refetch() }} retrying={receipts.isFetching} /> : null}<div className="divide-y">{batches.data?.map(item => <Row key={item.id} title={recordLink('reconciliation', item.id, item.batchNumber)} detail={`${item.periodEnd} · Ledger ${money(item.ledgerReceiptTotal)} · Difference ${money(item.difference)}`} status={item.status} />)}</div>{!loading && !error && !batches.data?.length ? <Empty>No reconciliation batches yet.</Empty> : null}<Button className="mt-4" variant="outline" disabled={!apiEnabled || exportReport.isPending} onClick={() => exportReport.mutate('reconciliations')}>Export reconciliations</Button></CardContent></Card> : null}
+    </section>
+    {action ? <FinanceActionDialog action={action} apiEnabled={apiEnabled} customerId={customerId} customers={customers.data ?? []} receipts={receipts.data ?? []} invoice={invoice} payment={payment} customer={customer} returnFocus={actionTrigger.current} onClose={() => setAction(null)} onSaved={refresh} /> : null}
+  </div>
+}
+
+export function FinanceRecordPage({ record }: { record: FinanceRecord }) {
+  const { session, authProvider } = usePhaenoSession()
+  const canBill = Boolean(session?.capabilities.canManagePSeqBilling)
+  const canManageCash = Boolean(session?.capabilities.canManagePSeqCash)
+  const canReconcile = Boolean(session?.capabilities.canReconcilePSeqCash)
+  const recordSection = record.kind === 'invoice' ? 'invoices' : record.kind === 'receipt' ? 'receipts' : record.kind === 'customer' ? 'customers' : 'reconciliation'
+  return <main className="py-8"><FinanceSidebar recordSection={recordSection}><div className="page-wrap px-4"><h1 className="mb-5 text-3xl font-semibold">Finance</h1><FinanceOperationsPanel apiEnabled={authProvider !== 'mock' && (canBill || canManageCash || canReconcile)} canBill={canBill} canManageCash={canManageCash} canReconcile={canReconcile} canViewCommercialOrder={Boolean(session?.capabilities.canManageOrderConfiguration)} record={record} /></div></FinanceSidebar></main>
+}
+function Summary({ entries }: { entries: Array<[string, string]> }) { return <dl className="grid gap-4 sm:grid-cols-3">{entries.map(([label, value]) => <div key={label}><dt className="text-xs text-muted-foreground">{label}</dt><dd className="mt-1 break-words font-medium">{value}</dd></div>)}</dl> }
+function Row({ title, detail, status }: { title: ReactNode; detail: string; status: string }) { return <div className="flex flex-wrap items-center justify-between gap-3 py-4"><div>{title}<p className="mt-1 text-sm text-muted-foreground">{detail}</p></div><Badge variant="outline">{status}</Badge></div> }
+function Empty({ children }: { children: ReactNode }) { return <p className="py-6 text-sm text-muted-foreground">{children}</p> }
+function Failure({ title, error, retry, retrying }: { title: string; error: unknown; retry?: () => void; retrying?: boolean }) { return <Alert variant="destructive"><AlertTitle>{title}</AlertTitle><AlertDescription><p>{getOrderErrorMessage(error, 'Try again. Your entered values are retained.')}</p>{retry ? <Button className="mt-2" variant="outline" disabled={retrying} onClick={retry}>{retrying ? 'Retrying…' : 'Retry'}</Button> : null}</AlertDescription></Alert> }

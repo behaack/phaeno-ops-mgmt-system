@@ -34,6 +34,9 @@ public sealed class CrmCompany : IAudit, IConcurrency
     public User Owner { get; private set; } = null!;
     public Guid? AccessOrganizationId { get; private set; }
     public Organization? AccessOrganization { get; private set; }
+    /// <summary>Inactive internal department setup; never an approved access grant.</summary>
+    public Guid? SetupOrganizationId { get; private set; }
+    public Organization? SetupOrganization { get; private set; }
     public bool IsActive { get; private set; } = true;
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
     public Guid? CreatedByUserId { get; private set; }
@@ -153,6 +156,14 @@ public sealed class CrmCompany : IAudit, IConcurrency
         Aliases = NormalizeTags(Aliases.Append(alias), 255);
     }
 
+    public void SetUpDepartments(Guid organizationId)
+    {
+        if (organizationId == Guid.Empty) throw new ArgumentException("A department organization is required.", nameof(organizationId));
+        if (AccessOrganizationId.HasValue || (SetupOrganizationId.HasValue && SetupOrganizationId != organizationId))
+            throw new InvalidOperationException("This Company already has an organization for its departments.");
+        SetupOrganizationId = organizationId;
+    }
+
     public void EnablePortalAccess(Guid organizationId)
     {
         if (organizationId == Guid.Empty)
@@ -165,24 +176,29 @@ public sealed class CrmCompany : IAudit, IConcurrency
             throw new InvalidOperationException("Portal access is already enabled for this Company.");
         }
 
+        if (SetupOrganizationId.HasValue && SetupOrganizationId != organizationId)
+            throw new InvalidOperationException("Enable access using this Company's existing department setup.");
         AccessOrganizationId = organizationId;
+        SetupOrganizationId = null;
     }
 
     public void TransferPortalAccessTo(CrmCompany target)
     {
         ArgumentNullException.ThrowIfNull(target);
-        if (!AccessOrganizationId.HasValue)
+        if (!AccessOrganizationId.HasValue && !SetupOrganizationId.HasValue)
         {
             return;
         }
 
-        if (target.AccessOrganizationId.HasValue)
+        if (target.AccessOrganizationId.HasValue || target.SetupOrganizationId.HasValue)
         {
-            throw new InvalidOperationException("Both Companies already have Portal access. Resolve access before merging them.");
+            throw new InvalidOperationException("Both Companies have department or Portal data. Resolve that data before merging them.");
         }
 
         target.AccessOrganizationId = AccessOrganizationId;
+        target.SetupOrganizationId = SetupOrganizationId;
         AccessOrganizationId = null;
+        SetupOrganizationId = null;
     }
 
     public void Deactivate() => IsActive = false;

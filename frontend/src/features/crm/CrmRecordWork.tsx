@@ -1,10 +1,10 @@
+import { useCrmPermissions } from './use-crm-permissions';
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarPlus, MessageSquarePlus } from "lucide-react";
 import { useState } from "react";
 
 import {
   apiErrorMessage,
-  changeCrmTaskStatus,
   createCrmActivity,
   createCrmTask,
   listCrmActivities,
@@ -35,6 +35,8 @@ import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
 import { Textarea } from "#/components/ui/textarea";
 import { CrmOwnerSelect } from "./CrmOwnerSelect";
+import { CrmTaskActions, useCrmTaskDialogs } from "./CrmTaskActions";
+import { refreshCrmTaskViews } from "./crm-task-queries";
 
 type RecordLinks = {
   companyId?: string;
@@ -44,6 +46,7 @@ type RecordLinks = {
 };
 
 export function CrmRecordWork({ links }: { links: RecordLinks }) {
+  const taskActions = useCrmTaskDialogs();
   const client = useQueryClient();
   const [activityOpen, setActivityOpen] = useState(false);
   const [taskOpen, setTaskOpen] = useState(false);
@@ -57,12 +60,7 @@ export function CrmRecordWork({ links }: { links: RecordLinks }) {
     queryKey: ["crm-record-tasks", key],
     queryFn: () => listCrmTasks({ ...links, pageSize: 50 }),
   });
-  const refresh = async () =>
-    Promise.all([
-      client.invalidateQueries({ queryKey: ["crm-activities", key] }),
-      client.invalidateQueries({ queryKey: ["crm-record-tasks", key] }),
-      client.invalidateQueries({ queryKey: ["crm-dashboard"] }),
-    ]);
+  const refresh = () => refreshCrmTaskViews(client);
   const activityMutation = useMutation({
     mutationFn: createCrmActivity,
     onSuccess: async () => {
@@ -77,16 +75,11 @@ export function CrmRecordWork({ links }: { links: RecordLinks }) {
       await refresh();
     },
   });
-  const taskStatus = useMutation({
-    mutationFn: ({ id, version }: { id: string; version: number }) =>
-      changeCrmTaskStatus(id, "Completed", null, version),
-    onSuccess: refresh,
-  });
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
-      <Card>
-        <CardHeader>
+      <Card className="gap-0 py-0">
+        <CardHeader className="border-b bg-muted/50 p-4">
           <CardTitle>Activity timeline</CardTitle>
           <CardDescription>
             Notes, calls, meetings, email, status changes, and Portal handoffs.
@@ -102,7 +95,7 @@ export function CrmRecordWork({ links }: { links: RecordLinks }) {
             </Button>
           </CardAction>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-3 p-4">
           {(activities.data?.items ?? []).map((activity) => (
             <article key={activity.id} className="rounded-lg border p-3">
               <div className="flex flex-wrap items-center gap-2">
@@ -126,20 +119,20 @@ export function CrmRecordWork({ links }: { links: RecordLinks }) {
           ) : null}
         </CardContent>
       </Card>
-      <Card>
-        <CardHeader>
+      <Card className="gap-0 py-0">
+        <CardHeader className="border-b bg-muted/50 p-4">
           <CardTitle>Tasks</CardTitle>
           <CardDescription>
             Durable follow-up, reminders, and recurring work.
           </CardDescription>
           <CardAction>
-            <Button size="sm" variant="outline" onClick={() => setTaskOpen(true)}>
+            <Button data-crm-new-task size="sm" variant="outline" onClick={() => setTaskOpen(true)}>
               <CalendarPlus data-icon="inline-start" />
               New task
             </Button>
           </CardAction>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-3 p-4">
           {(tasks.data?.items ?? []).map((task) => (
             <div
               key={task.id}
@@ -162,18 +155,7 @@ export function CrmRecordWork({ links }: { links: RecordLinks }) {
                   · {task.priority}
                 </p>
               </div>
-              {task.status !== "Completed" && task.status !== "Cancelled" ? (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={taskStatus.isPending}
-                  onClick={() =>
-                    taskStatus.mutate({ id: task.id, version: task.version })
-                  }
-                >
-                  Complete
-                </Button>
-              ) : null}
+              <CrmTaskActions task={task} actions={taskActions} />
             </div>
           ))}
           {!tasks.isLoading && !(tasks.data?.items.length ?? 0) ? (
@@ -197,6 +179,7 @@ export function CrmRecordWork({ links }: { links: RecordLinks }) {
         onOpenChange={setTaskOpen}
         onSubmit={(value) => taskMutation.mutate({ ...value, ...links })}
       />
+      {taskActions.dialogs}
     </div>
   );
 }
@@ -220,6 +203,7 @@ function ActivityDialog({
     visibility: "Internal" | "Restricted";
   }) => void;
 }) {
+  const { canAdminister } = useCrmPermissions();
   const [type, setType] = useState<CrmActivityType>("Note");
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -300,7 +284,7 @@ function ActivityDialog({
                 className="h-9 rounded-md border bg-background px-3 text-sm"
               >
                 <option value="Internal">Internal</option>
-                <option value="Restricted">Restricted</option>
+                {canAdminister ? <option value="Restricted">Restricted</option> : null}
               </select>
             </Field>
           </div>

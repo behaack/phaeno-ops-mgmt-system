@@ -118,17 +118,24 @@ The backend uses Entity Framework Core with PostgreSQL through the Npgsql provid
 - Current business-model target: Commercial/current-flow and Lab projection
   entities map to `commercial_ops`; Laboratory execution entities map to
   `lab_ops`; Website intake entities map to `website`; no default schema is used
-- Laboratory schema: `lab_ops`, with 27 explicitly mapped Laboratory tables
+- Laboratory schema: `lab_ops`, with 77 explicitly mapped Laboratory tables
 - EF migrations history table: `public.__ef_migrations_history`
 - Connection string key: `ConnectionStrings:DefaultConnection`
 
-The verified disposable Development database is named `phaeno_ops`. It was
-rebuilt on 2026-07-16 from `InitialPSeqOperations` and extended through the
-current feature migrations. The latest sample-shipping migrations are
-`AddSampleShippingFoundation` and `AddRegisteredSampleTubeWorkflow`; both were
-applied to the confirmed local database. The current model contains 63 tables
-in `commercial_ops`, 27 Laboratory tables in `lab_ops`, two Website tables
-in `website`, and migration history in `public`; it has no `portal` schema.
+The current baseline is `20260928192920_InitialCleanPortal`.
+It creates 139 tables in `commercial_ops`, 77 in `lab_ops` and five in `website`,
+with migration history in `public`; it has no `portal` schema. Apply it only to
+a new empty database. It refuses populated application schemas or prior migration
+history, and refuses destructive downgrade. The
+[September 28 local reset](docs/plans/LOCAL-CLEAN-DATABASE-20260928-PLAN.md)
+records the applied baseline, verified backup and single administrator seed.
+The September 19 preservation runbook is historical release evidence; its
+preservation selection does not define the current clean local seed.
+A future production-hosted test reset needs its own approved preservation list
+and replacement-database cutover. Keep credentials and bootstrap administrator
+settings in ignored environment-specific configuration. Fresh databases get
+built-in reference defaults; catalog products and operational configuration are
+created through normal administration.
 
 Use environment configuration for non-development database credentials. In ASP.NET Core configuration, the connection string can be supplied with `ConnectionStrings__DefaultConnection`.
 
@@ -328,10 +335,41 @@ Portal frontend.
 1. Navigate to the backend directory
 2. Restore dependencies: `dotnet restore PSeq.Operations.slnx`
 3. Restore local tools: `dotnet tool restore`
-4. Configure PostgreSQL through `ConnectionStrings:DefaultConnection`
+4. Create and configure this computer's local API settings as described below
 5. Apply migrations: `dotnet tool run dotnet-ef database update --project .\app\PSeq.Operations.Api.csproj --startup-project .\app\PSeq.Operations.Api.csproj`
 6. Build the solution: `dotnet build PSeq.Operations.slnx`
 7. Run tests: `dotnet test PSeq.Operations.slnx`
+
+#### Settings for each development computer
+
+Each computer keeps its own `backend/app/appsettings.Development.json`. This
+file is ignored by Git and excluded from published API builds. The tracked
+`appsettings.json` contains shared defaults and empty placeholders for values
+that must be configured per environment.
+
+From the repository root, create the local file if it does not already exist:
+
+```powershell
+if (-not (Test-Path .\backend\app\appsettings.Development.json)) {
+    Copy-Item .\backend\app\appsettings.Development.example.json .\backend\app\appsettings.Development.json
+}
+```
+
+Edit the new file with this computer's PostgreSQL connection in
+`ConnectionStrings:DefaultConnection`, the Clerk Development settings, and
+`Invitations:PublicBaseUrl` for the local Portal frontend. The database connection
+has the form `Host=localhost;Port=5432;Database=phaeno_ops;Username=<user>;Password=<password>`;
+replace the host, port, database, user, and password with this computer's values.
+Configure `Bootstrap` only when linking the initial administrator of a new
+development database, and `EmailServiceSettings` when using Mailgun locally.
+Additional machine-specific paths or integration settings belong in this same
+ignored file. Keep credentials on each computer or in a secure secret store.
+
+The API loads this file when running in `Development`; the checked-in launch
+profiles select that environment. EF migration commands also use the local
+Development file by default. Environment variables and command-line settings
+override JSON settings for both the API and migrations. Existing local files
+should be retained when updating the checkout.
 
 ### Frontend Setup
 

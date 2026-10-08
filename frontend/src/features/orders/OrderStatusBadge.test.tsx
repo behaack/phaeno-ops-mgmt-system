@@ -7,7 +7,7 @@ describe('OrderStatusBadge', () => {
   it('renders workflow statuses as readable labels', () => {
     render(<OrderStatusBadge status="SubmittedForQuote" />)
 
-    expect(screen.getByText('Submitted For Quote')).toBeTruthy()
+    expect(screen.getByText('Submitted for pricing')).toBeTruthy()
   })
 
   it('humanizes acronym and hyphen boundaries consistently', () => {

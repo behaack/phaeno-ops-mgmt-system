@@ -13,6 +13,7 @@ export default tseslint.config(
       'node_modules/**',
       'playwright-report/**',
       'test-results/**',
+      'tmp/**',
       'coverage/**',
       'src/routeTree.gen.ts',
     ],
@@ -20,6 +21,11 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
   jsxA11y.flatConfigs.recommended,
+  {
+    files: ['scripts/**/*.mjs'],
+    languageOptions: { globals: globals.node },
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^_' }] },
+  },
   {
     files: ['**/*.{ts,tsx}'],
     languageOptions: {

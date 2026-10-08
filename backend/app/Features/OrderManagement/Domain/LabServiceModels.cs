@@ -3,8 +3,9 @@ namespace PhaenoPortal.App.Features.OrderManagement.Domain;
 using PSeq.Operations.Commercial.Common.Persistence;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PSeq.Operations.Commercial.Relationships.Domain;
+using System.Text.Json;
 
-public sealed class LabServiceOrder : IAudit, IConcurrency
+public sealed partial class LabServiceOrder : IAudit, IConcurrency
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid OrganizationId { get; private set; }
@@ -17,11 +18,32 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
     public string? Description { get; private set; }
     public bool HasMixedBiologicalSources { get; private set; }
     public string? SharedBiologicalSource { get; private set; }
+    public Guid? SampleTypeDefinitionId { get; private set; }
+    public Guid? ShippingProcedureRevisionId { get; private set; }
+    public string? ShippingSafetyHoldReason { get; private set; }
+    public DateTime? ShippingSafetyHeldAt { get; private set; }
+    public Guid? ShippingSafetyHeldByUserId { get; private set; }
+    public DateTime? ShippingSafetyHoldResolvedAt { get; private set; }
+    public Guid? ShippingSafetyHoldResolvedByUserId { get; private set; }
+    public string? SampleTypeMaterialClassSnapshot { get; private set; }
+    public Guid? ShippingDestinationId { get; private set; }
+    public DateTime? ShippingDestinationAssignedAt { get; private set; }
     public int RequestedSpecimenCount { get; private set; }
+    public int? SequencingRunCount { get; private set; }
+    [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+    public int RequestedSequencingRunCount => SequencingRunCount ?? RequestedSpecimenCount;
+    public string? TubeUsePolicyKey { get; private set; }
+    public int? TubeUsePolicyVersion { get; private set; }
     public string StorageRequirements { get; private set; } = null!;
     public string SafetyDeclaration { get; private set; } = null!;
     public string SubmissionInstructionsSnapshot { get; private set; } = string.Empty;
     public string? PlacementSnapshotJson { get; private set; }
+    public LabServiceEntryMode EntryMode { get; private set; } = LabServiceEntryMode.ManualQuote;
+    public Guid? LabServiceOfferingId { get; private set; }
+    public Guid? RequestedCatalogItemId { get; private set; }
+    public string? ConfiguredCommercialSnapshotJson { get; private set; }
+    public string? CommercialDraftJson { get; private set; }
+    public string? CustomerDraftJson { get; private set; }
     public decimal? ProposedUnitPrice { get; private set; }
     public string? PriceProposalNote { get; private set; }
     public Guid? PriceProposedByUserId { get; private set; }
@@ -47,6 +69,8 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
     public DateTime UpdatedAt { get; private set; } = DateTime.UtcNow;
     public Guid? UpdatedByUserId { get; private set; }
     public long Version { get; private set; } = 1;
+    public int PhasePlanRevision { get; private set; } = 1;
+    public ICollection<LabJobPhase> Phases { get; } = [];
     public ICollection<LabSample> Samples { get; } = [];
     public ICollection<LabServiceSourceGroup> SourceGroups { get; } = [];
     public ICollection<LabServiceQuote> Quotes { get; } = [];
@@ -73,12 +97,16 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
         OrganizationId = organizationId;
         DepartmentId = departmentId;
         SourceRequestId = sourceRequestId;
+        EntryMode = sourceRequestId.HasValue ? LabServiceEntryMode.SalesAssisted : LabServiceEntryMode.ManualQuote;
         OrderNumber = OrderText.Required(orderNumber, nameof(orderNumber), 50);
         CustomerReference = OrderText.Required(customerReference, "Job name", 255);
         NormalizedJobName = NormalizeJobName(CustomerReference);
         Description = OrderText.Optional(description, 2000);
         SetRequestedSpecimenCount(requestedSpecimenCount);
+        if (Phases.Count == 0) Phases.Add(new LabJobPhase(Id, 1, "Phase 1", requestedSpecimenCount));
         SetBiologicalSourceProfile(hasMixedBiologicalSources, sharedBiologicalSource);
+        TubeUsePolicyKey = "run_one_with_failure_fallback";
+        TubeUsePolicyVersion = 1;
         StorageRequirements = OrderText.Required(storageRequirements, "Storage requirements", 2000);
         SafetyDeclaration = OrderText.Required(safetyDeclaration, "Safety declaration", 2000);
         SubmissionInstructionsSnapshot = OrderText.Optional(submissionInstructionsSnapshot, 8000) ?? string.Empty;
@@ -99,8 +127,126 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
             hasMixedBiologicalSources, sharedBiologicalSource, storageRequirements,
             safetyDeclaration, submissionInstructionsSnapshot) { }
 
+    public void AdvancePhasePlan() => PhasePlanRevision++;
+
+    public static LabServiceOrder CreateCommercialDraft(Guid organizationId, Guid departmentId,
+        string orderNumber, CommercialLabOrderDraft draft, Guid? sourceRequestId, string instructions)
+    {
+        CommercialDraftRules.Validate(draft, false);
+        if (organizationId == Guid.Empty || departmentId == Guid.Empty) throw new ArgumentException("Select a Customer and Department.");
+        var order = new LabServiceOrder
+        {
+            OrganizationId = organizationId, DepartmentId = departmentId, SourceRequestId = sourceRequestId,
+            OrderNumber = orderNumber, EntryMode = sourceRequestId.HasValue ? LabServiceEntryMode.SalesAssisted : LabServiceEntryMode.ManualQuote,
+            SubmissionInstructionsSnapshot = instructions, StorageRequirements = "", SafetyDeclaration = ""
+        };
+        order.SaveCommercialDraft(draft);
+        return order;
+    }
+
+    public CommercialLabOrderDraft? ReadCommercialDraft() => CommercialDraftJson is null ? null
+        : JsonSerializer.Deserialize<CommercialLabOrderDraft>(CommercialDraftJson, CommercialDraftRules.Json);
+
+    public void SaveCommercialDraft(CommercialLabOrderDraft draft)
+    {
+        EnsureStatus(LabServiceOrderStatus.DraftRequest);
+        if (SubmittedAt.HasValue || Phases.Count > 0 || Samples.Count > 0) throw new InvalidOperationException("Only an unsubmitted commercial Draft can be edited here.");
+        CommercialDraftRules.Validate(draft, false);
+        CustomerReference = draft.JobName.Trim(); NormalizedJobName = NormalizeJobName(CustomerReference);
+        Description = OrderText.Optional(draft.Notes, 2000);
+        StorageRequirements = draft.StorageRequirements?.Trim() ?? "";
+        SafetyDeclaration = draft.SafetyDeclaration?.Trim() ?? "";
+        RequestedSpecimenCount = draft.Phases.Sum(p => p.Sources.Sum(s => s.SpecimenCount));
+        SequencingRunCount = draft.Phases.Sum(p => p.Sources.Sum(s => s.SpecimenCount) * (p.RunsPerSample ?? 0));
+        CommercialDraftJson = JsonSerializer.Serialize(draft, CommercialDraftRules.Json);
+    }
+
+    public void MaterializeCommercialDraft(Guid actorId, DateTime now, string sampleTypeStorageRequirements)
+    {
+        EnsureStatus(LabServiceOrderStatus.DraftRequest);
+        var draft = ReadCommercialDraft() ?? throw new InvalidOperationException("Save the commercial Draft first.");
+        CommercialDraftRules.Validate(draft, true);
+        if (!draft.CatalogItemId.HasValue || draft.CatalogItemId == Guid.Empty)
+            throw new ArgumentException("Select a catalog service before submitting for pricing.");
+        StorageRequirements = OrderText.Required(draft.StorageRequirements ?? sampleTypeStorageRequirements,
+            "Storage requirements", 2000);
+        foreach (var group in draft.Phases.SelectMany(p => p.Sources).GroupBy(s => LabServiceSourceGroup.Normalize(s.BiologicalSource)))
+            SourceGroups.Add(new LabServiceSourceGroup(Id, group.First().BiologicalSource, group.Sum(s => s.SpecimenCount)));
+        SetBiologicalSourceProfile(SourceGroups.Count > 1, SourceGroups.First().BiologicalSource);
+        SetSequencingRunCount(draft.Phases.Sum(p => p.Sources.Sum(s => s.SpecimenCount) * p.RunsPerSample!.Value));
+        for (var i = 0; i < draft.Phases.Count; i++)
+        {
+            var entry = draft.Phases[i];
+            var phase = new LabJobPhase(Id, i + 1, draft.UsesPhases ? entry.Name : "Phase 1",
+                entry.Sources.Sum(s => s.SpecimenCount), entry.TurnaroundBusinessDays);
+            phase.SetScope(new(entry.Sources.Select(s => new PhaseSourceScope(s.BiologicalSource.Trim(), s.SpecimenCount)).ToArray(),
+                entry.RunsPerSample, entry.Sources.Sum(s => s.SpecimenCount) * entry.RunsPerSample!.Value));
+            phase.SetPriceProposal(entry.ProposePrice ? entry.ProposedUnitPrice : null,
+                entry.ProposePrice ? entry.PricingNote : null, actorId, now,
+                entry.ProposePrice ? entry.ProposedAdditionalRunPrice : null);
+            Phases.Add(phase);
+        }
+        Submit(actorId, now);
+        RequestedCatalogItemId = draft.CatalogItemId;
+        CommercialDraftJson = null;
+    }
+
     public static string NormalizeJobName(string? jobName)
         => OrderText.Required(jobName, "Job name", 255).ToUpperInvariant();
+
+    public void SelectSampleType(Guid sampleTypeDefinitionId, string materialClass)
+    {
+        if (sampleTypeDefinitionId == Guid.Empty)
+            throw new ArgumentException("Select one sample type for this Job.", nameof(sampleTypeDefinitionId));
+        SampleTypeDefinitionId = sampleTypeDefinitionId;
+        SampleTypeMaterialClassSnapshot = OrderText.Required(materialClass, nameof(materialClass), 100);
+    }
+
+    public void PinShippingProcedure(Guid revisionId)
+    {
+        if (revisionId == Guid.Empty || !SampleTypeDefinitionId.HasValue)
+            throw new ArgumentException("A selected Sample type and exact Shipping procedure revision are required.");
+        if (ShippingProcedureRevisionId.HasValue && ShippingProcedureRevisionId != revisionId)
+            throw new InvalidOperationException("A placed Job's Shipping procedure revision cannot change.");
+        ShippingProcedureRevisionId = revisionId;
+    }
+
+    public void PlaceShippingSafetyHold(string reason, Guid actorId, DateTime utcNow)
+    {
+        if (!PlacedAt.HasValue || ShippingSafetyHeldAt.HasValue && !ShippingSafetyHoldResolvedAt.HasValue)
+            throw new InvalidOperationException("Only an unheld placed Job can receive a shipping safety hold.");
+        if (actorId == Guid.Empty || utcNow.Kind != DateTimeKind.Utc)
+            throw new ArgumentException("Record the safety-hold actor and UTC time.");
+        ShippingSafetyHoldReason = OrderText.Required(reason, "Safety-hold reason", 2000);
+        ShippingSafetyHeldAt = utcNow;
+        ShippingSafetyHeldByUserId = actorId;
+        ShippingSafetyHoldResolvedAt = null;
+        ShippingSafetyHoldResolvedByUserId = null;
+    }
+
+    public void ResolveShippingSafetyHold(string reason, Guid actorId, DateTime utcNow)
+    {
+        if (!ShippingSafetyHeldAt.HasValue || ShippingSafetyHoldResolvedAt.HasValue)
+            throw new InvalidOperationException("This Job has no active shipping safety hold.");
+        if (actorId == Guid.Empty || utcNow.Kind != DateTimeKind.Utc)
+            throw new ArgumentException("Record the safety-hold resolution actor and UTC time.");
+        OrderText.Required(reason, "Safety-hold resolution reason", 2000);
+        ShippingSafetyHoldResolvedAt = utcNow;
+        ShippingSafetyHoldResolvedByUserId = actorId;
+    }
+
+    [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+    public bool HasActiveShippingSafetyHold => ShippingSafetyHeldAt.HasValue && !ShippingSafetyHoldResolvedAt.HasValue;
+
+    public void AssignShippingDestination(Guid destinationId, DateTime assignedAt)
+    {
+        if (destinationId == Guid.Empty || assignedAt.Kind != DateTimeKind.Utc)
+            throw new ArgumentException("Choose a destination revision and a UTC assignment time.");
+        if (ShippingDestinationId.HasValue && ShippingDestinationId != destinationId)
+            throw new InvalidOperationException("This Order's ship-to destination is already fixed.");
+        ShippingDestinationId ??= destinationId;
+        ShippingDestinationAssignedAt ??= assignedAt;
+    }
 
     public void UpdateDraft(
         string? customerReference,
@@ -116,9 +262,29 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
         NormalizedJobName = NormalizeJobName(CustomerReference);
         Description = OrderText.Optional(description, 2000);
         SetRequestedSpecimenCount(requestedSpecimenCount);
+        var currentPhases = Phases.Where(p => p.SupersededAtUtc == null).ToArray();
+        if (currentPhases.Length == 1 && currentPhases[0].ScopeJson is null)
+        {
+            var phase = currentPhases[0];
+            phase.Configure(phase.Position, phase.Name, requestedSpecimenCount,
+                phase.TurnaroundBusinessDays, phase.AcceptedSubtotal, phase.CarriedInvoicedSubtotal, phase.PriceLinesJson);
+        }
         SetBiologicalSourceProfile(hasMixedBiologicalSources, sharedBiologicalSource);
+        TubeUsePolicyKey = "run_one_with_failure_fallback";
+        TubeUsePolicyVersion = 1;
         StorageRequirements = OrderText.Required(storageRequirements, "Storage requirements", 2000);
         SafetyDeclaration = OrderText.Required(safetyDeclaration, "Safety declaration", 2000);
+    }
+
+    public void SetSequencingRunCount(int? count)
+    {
+        EnsureStatus(LabServiceOrderStatus.DraftRequest, LabServiceOrderStatus.ChangesRequested);
+        if (count.HasValue && (count < RequestedSpecimenCount || count > 10000))
+            throw new ArgumentOutOfRangeException(nameof(count), "Sample-sequencing runs must cover every sample and cannot exceed 10,000.");
+        SequencingRunCount = count;
+        TubeUsePolicyKey = RequestedSequencingRunCount > RequestedSpecimenCount
+            ? "run_authorized_with_failure_fallback" : "run_one_with_failure_fallback";
+        TubeUsePolicyVersion = 1;
     }
 
     public void UpdatePriceProposal(decimal? proposedUnitPrice, string? proposalNote, Guid actorUserId, DateTime utcNow)
@@ -173,7 +339,38 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
         SetStatus(LabServiceOrderStatus.SubmittedForQuote, null, null);
     }
 
+    public void RevisePendingRequest()
+    {
+        EnsureStatus(LabServiceOrderStatus.SubmittedForQuote, LabServiceOrderStatus.QuoteInPreparation);
+        if (CurrentQuoteId.HasValue || AcceptedQuoteId.HasValue || PlacedAt.HasValue)
+            throw new InvalidOperationException("Issued pricing must be decided before changing the request.");
+        SetStatus(LabServiceOrderStatus.ChangesRequested, null, null);
+    }
+
     public void BeginQuotePreparation() => Transition(LabServiceOrderStatus.SubmittedForQuote, LabServiceOrderStatus.QuoteInPreparation);
+
+    public ConfiguredLabServiceSnapshot? ReadConfiguredSnapshot() => ConfiguredCommercialSnapshotJson is null
+        ? null : JsonSerializer.Deserialize<ConfiguredLabServiceSnapshot>(ConfiguredCommercialSnapshotJson);
+
+    public void PlaceStandard(Guid quoteId, ConfiguredLabServiceSnapshot snapshot, string placementSnapshotJson, DateTime utcNow)
+    {
+        EnsureStatus(LabServiceOrderStatus.DraftRequest, LabServiceOrderStatus.ChangesRequested);
+        if (SourceRequestId.HasValue || ProposedUnitPrice.HasValue)
+            throw new InvalidOperationException("Sales-assisted work and negotiated prices require the manual quote path.");
+        if (Samples.Count != 0 || SourceGroups.Count == 0 || SourceGroups.Sum(group => group.SpecimenCount) != RequestedSpecimenCount
+            || snapshot.SpecimenCount != RequestedSpecimenCount || (snapshot.SequencingRunCount ?? snapshot.SpecimenCount) != RequestedSequencingRunCount || snapshot.OfferingId == Guid.Empty
+            || snapshot.CommittedAtUtc != utcNow || utcNow.Kind != DateTimeKind.Utc)
+            throw new InvalidOperationException("Review a complete Job profile and current standard offering before placement.");
+        var quote = Quotes.SingleOrDefault(value => value.Id == quoteId);
+        if (quote?.Status != QuoteStatus.Accepted || quote.Total != snapshot.Total || quote.Currency != snapshot.Currency)
+            throw new InvalidOperationException("An accepted matching standard commercial snapshot is required.");
+        EntryMode = LabServiceEntryMode.ConfiguredDirect;
+        LabServiceOfferingId = snapshot.OfferingId;
+        ConfiguredCommercialSnapshotJson = JsonSerializer.Serialize(snapshot);
+        CurrentQuoteId = quoteId; AcceptedQuoteId = quoteId; PlacedAt = utcNow;
+        PlacementSnapshotJson = OrderText.Json(placementSnapshotJson);
+        SetStatus(LabServiceOrderStatus.PlacedAwaitingSamples, null, null);
+    }
 
     public void RequestChanges(string tenantSafeReason, string? internalNote)
     {
@@ -207,10 +404,45 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
     public void AcceptQuote(Guid quoteId, DateTime utcNow)
         => AcceptQuote(quoteId, utcNow, "{}");
 
+    public bool CanRespondToInitialQuote => Status == LabServiceOrderStatus.QuoteIssued
+        && !AcceptedQuoteId.HasValue && !PlacedAt.HasValue
+        && Quotes.Any(quote => quote.Id == CurrentQuoteId && quote.Purpose == QuotePurpose.Initial
+            && quote.Status is QuoteStatus.Issued or QuoteStatus.Expired
+            && quote.AcceptedAt is null && quote.SupersededByQuoteId is null);
+
+    public void ProposeQuoteChanges(Guid quoteId, string reason)
+    {
+        RequireCurrentInitialQuote(quoteId);
+        var proposal = OrderText.Required(reason, "Proposed changes", 2000);
+        SetStatus(LabServiceOrderStatus.QuoteInPreparation, proposal, null);
+    }
+
+    public void DeclineInitialQuote(Guid quoteId, string reason)
+    {
+        RequireCurrentInitialQuote(quoteId);
+        var decisionReason = OrderText.Required(reason, "Reason", 2000);
+        Quotes.Single(quote => quote.Id == quoteId).DeclineInitial();
+        WithdrawOrCancel(decisionReason);
+    }
+
+    private void RequireCurrentInitialQuote(Guid quoteId)
+    {
+        if (!CanRespondToInitialQuote || CurrentQuoteId != quoteId)
+            throw new InvalidOperationException("Review the current unaccepted quote before making this decision.");
+    }
+
     public void MarkWorkStarted()
     {
         EnsureStatus(LabServiceOrderStatus.PlacedAwaitingSamples, LabServiceOrderStatus.InProgress, LabServiceOrderStatus.ResultsAvailable);
         if (Status != LabServiceOrderStatus.ResultsAvailable) SetStatus(LabServiceOrderStatus.InProgress, null, null);
+    }
+
+    public void RecordLaboratoryReceipt()
+    {
+        if (Status == LabServiceOrderStatus.PlacedAwaitingSamples) MarkWorkStarted();
+        else if (Status is LabServiceOrderStatus.OnHold or LabServiceOrderStatus.CancellationRequested
+            && ResumeStatus == LabServiceOrderStatus.PlacedAwaitingSamples)
+            ResumeStatus = LabServiceOrderStatus.InProgress;
     }
 
     public void MarkResultsAvailable()
@@ -258,11 +490,13 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
 
     public void Complete(DateTime utcNow)
     {
-        EnsureStatus(LabServiceOrderStatus.InProgress, LabServiceOrderStatus.ResultsAvailable);
-        if (Samples.Any(sample => !sample.IsTerminal()))
-            throw new InvalidOperationException("Every sample must be terminal before the job can be completed.");
+        EnsureStatus(LabServiceOrderStatus.PlacedAwaitingSamples, LabServiceOrderStatus.InProgress, LabServiceOrderStatus.ResultsAvailable);
+        var current = Phases.Where(p => p.SupersededAtUtc == null).ToArray();
+        if (HasPendingChangeRoster || current.Length == 0 || current.Any(p => p.CancelledAtUtc == null &&
+            (!p.FirstDeliveredAtUtc.HasValue || Samples.Count(s => s.LabJobPhaseId == p.Id) != p.SampleCount)))
+            throw new InvalidOperationException("Every non-cancelled phase must deliver all required sample results before this Job closes.");
         CompletedAt = utcNow;
-        SetStatus(LabServiceOrderStatus.Completed, null, null);
+        SetStatus(current.All(p => p.CancelledAtUtc.HasValue) ? LabServiceOrderStatus.Cancelled : LabServiceOrderStatus.Completed, null, null);
     }
 
     public void WithdrawOrCancel(string reason)
@@ -284,7 +518,61 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
 
     public bool IsTerminal() => Status is LabServiceOrderStatus.Completed or LabServiceOrderStatus.Cancelled or LabServiceOrderStatus.Declined;
 
-    public bool CanEditSampleRoster => Status == LabServiceOrderStatus.PlacedAwaitingSamples && !SampleRosterFinalizedAt.HasValue;
+    public bool CanProposeChange => AcceptedQuoteId.HasValue && Status is
+        LabServiceOrderStatus.PlacedAwaitingSamples or LabServiceOrderStatus.InProgress or LabServiceOrderStatus.ResultsAvailable;
+
+    public bool HasPendingChangeRoster => Quotes.Any(q => q.AcceptedAmendmentSnapshotJson is not null && !q.ChangeRosterFinalizedAt.HasValue);
+
+    public bool CanEditSampleRoster => CanProposeChange && (!SampleRosterFinalizedAt.HasValue || HasPendingChangeRoster);
+
+    public void AcceptAdditionalScope(LabChangeScope scope)
+    {
+        if (!CanProposeChange || scope.OriginalQuoteId != AcceptedQuoteId || scope.BaseSpecimenCount != RequestedSpecimenCount)
+            throw new InvalidOperationException("The accepted Job scope changed. Request a current Change quote.");
+        if (scope.AdditionalSources.Count == 0 || scope.AdditionalSources.Any(s => s.SpecimenCount < 1)
+            || scope.AdditionalSources.Select(s => LabServiceSourceGroup.Normalize(s.BiologicalSource)).Distinct().Count() != scope.AdditionalSources.Count)
+            throw new InvalidOperationException("Specify positive additional counts for unique biological sources.");
+        var additionalRuns = scope.AdditionalSequencingRunCount ?? scope.AdditionalSources.Sum(s => s.SpecimenCount);
+        if (additionalRuns < scope.AdditionalSources.Sum(s => s.SpecimenCount) || additionalRuns > 10000 - RequestedSequencingRunCount)
+            throw new InvalidOperationException("Additional runs must cover the new samples without exceeding 10,000 total runs.");
+        var totalRuns = RequestedSequencingRunCount + additionalRuns;
+        SetRequestedSpecimenCount(RequestedSpecimenCount + scope.AdditionalSources.Sum(s => s.SpecimenCount));
+        SequencingRunCount = totalRuns;
+        foreach (var source in scope.AdditionalSources)
+        {
+            var existing = SourceGroups.SingleOrDefault(g => g.NormalizedBiologicalSource == LabServiceSourceGroup.Normalize(source.BiologicalSource));
+            if (existing is null) SourceGroups.Add(new LabServiceSourceGroup(Id, source.BiologicalSource, source.SpecimenCount));
+            else existing.Update(existing.BiologicalSource, existing.SpecimenCount + source.SpecimenCount);
+        }
+        SetBiologicalSourceProfile(SourceGroups.Count > 1, SourceGroups.FirstOrDefault()?.BiologicalSource);
+    }
+
+    public bool HasAcceptedSampleSourceCounts
+    {
+        get
+        {
+            var scope = ReadPreparationScope();
+            var samples = Samples.Where(s => RequiresPreparation(s.LabJobPhaseId)).ToArray();
+            return scope.Sources.Count > 0 && samples.Length == scope.Sources.Sum(s => s.SpecimenCount)
+                && samples.Sum(s => s.SequencingRunCount) == scope.SequencingRunCount
+                && scope.Sources.All(group => samples.Count(sample => LabServiceSourceGroup.Normalize(sample.BiologicalSource)
+                    == LabServiceSourceGroup.Normalize(group.BiologicalSource)) == group.SpecimenCount);
+        }
+    }
+
+    public void EnsureSampleSourceCapacity(string biologicalSource, Guid? existingSampleId = null)
+    {
+        var normalized = LabServiceSourceGroup.Normalize(biologicalSource);
+        var existing = existingSampleId.HasValue ? Samples.SingleOrDefault(sample => sample.Id == existingSampleId.Value) : null;
+        // Metadata edits must remain possible while a legacy invalid roster is corrected.
+        if (existing is not null && LabServiceSourceGroup.Normalize(existing.BiologicalSource) == normalized) return;
+        var group = SourceGroups.SingleOrDefault(source => source.NormalizedBiologicalSource == normalized)
+            ?? throw new InvalidOperationException("Select a biological source accepted with this Job.");
+        var count = Samples.Count(sample => sample.Id != existingSampleId
+            && LabServiceSourceGroup.Normalize(sample.BiologicalSource) == normalized);
+        if (count >= group.SpecimenCount)
+            throw new InvalidOperationException($"'{group.BiologicalSource}' already has {count} of {group.SpecimenCount} accepted samples. Choose a source with space or correct the existing samples.");
+    }
 
     public void EnsureSampleRosterEditable()
     {
@@ -292,29 +580,53 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
             throw new InvalidOperationException("Samples can be changed only after price acceptance and before the sample list is finalized.");
     }
 
+    public void EnsureSampleRunCountMatchesPricing(int count)
+    {
+        if (RequestedSequencingRunCount == RequestedSpecimenCount && count != 1)
+            throw new InvalidOperationException("The accepted pricing includes one sequencing run per sample. Extra tubes do not add runs.");
+    }
+
+    public void ConfirmTubeUsePolicy()
+    {
+        EnsureSampleRosterEditable();
+        if (TubeUsePolicyKey is not null && ((TubeUsePolicyKey != "run_one_with_failure_fallback" && TubeUsePolicyKey != "run_authorized_with_failure_fallback") || TubeUsePolicyVersion != 1))
+            throw new InvalidOperationException("The recorded tube-use instruction cannot be replaced.");
+        TubeUsePolicyKey ??= "run_one_with_failure_fallback";
+        TubeUsePolicyVersion = 1;
+    }
+
     public void FinalizeSampleRoster(Guid actorUserId, DateTime utcNow)
     {
         EnsureSampleRosterEditable();
-        if (Samples.Count != RequestedSpecimenCount)
-            throw new InvalidOperationException($"Enter exactly {RequestedSpecimenCount} samples before finalizing the sample list.");
+        var scope = ReadPreparationScope();
+        var samples = Samples.Where(s => RequiresPreparation(s.LabJobPhaseId)).ToArray();
+        var requiredCount = scope.Sources.Sum(s => s.SpecimenCount);
+        if (samples.Length != requiredCount || requiredCount == 0)
+            throw new InvalidOperationException($"Enter exactly {requiredCount} non-cancelled samples before finalizing the sample list.");
+        if (samples.Sum(sample => sample.SequencingRunCount) != scope.SequencingRunCount)
+            throw new InvalidOperationException($"Allocate exactly {scope.SequencingRunCount} non-cancelled sample-sequencing runs before finalizing the sample list.");
+        if (SourceGroups.Count == 0)
+            throw new InvalidOperationException("The accepted biological-source counts are unavailable. Contact Phaeno before finalizing the sample list.");
         var duplicate = Samples.GroupBy(sample => sample.CustomerSampleId.Trim(), StringComparer.OrdinalIgnoreCase)
             .FirstOrDefault(group => group.Count() > 1);
         if (duplicate is not null)
             throw new InvalidOperationException($"Customer sample ID '{duplicate.Key}' is used more than once.");
         if (Samples.Any(sample => sample.Quantity <= 0 || decimal.Truncate(sample.Quantity) != sample.Quantity))
             throw new InvalidOperationException("Every sample must declare a positive whole-number tube count.");
-        foreach (var group in SourceGroups)
+        foreach (var group in scope.Sources)
         {
-            var actual = Samples.Count(sample => string.Equals(
+            var actual = samples.Count(sample => string.Equals(
                 LabServiceSourceGroup.Normalize(sample.BiologicalSource),
-                group.NormalizedBiologicalSource,
+                LabServiceSourceGroup.Normalize(group.BiologicalSource),
                 StringComparison.Ordinal));
             if (actual != group.SpecimenCount)
                 throw new InvalidOperationException(
                     $"Biological source '{group.BiologicalSource}' requires {group.SpecimenCount} samples; {actual} are entered.");
         }
-        SampleRosterFinalizedByUserId = actorUserId;
-        SampleRosterFinalizedAt = utcNow;
+        SampleRosterFinalizedByUserId ??= actorUserId;
+        SampleRosterFinalizedAt ??= utcNow;
+        foreach (var change in Quotes.Where(q => q.AcceptedAmendmentSnapshotJson is not null && !q.ChangeRosterFinalizedAt.HasValue))
+            change.FinalizeChangeRoster(utcNow);
     }
 
     private void SetBiologicalSourceProfile(bool hasMixedBiologicalSources, string? sharedBiologicalSource)
@@ -327,9 +639,13 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
 
     private void SetRequestedSpecimenCount(int requestedSpecimenCount)
     {
-        if (requestedSpecimenCount is < 1 or > 100)
-            throw new ArgumentOutOfRangeException(nameof(requestedSpecimenCount), "Requested specimen count must be between 1 and 100.");
+        if (requestedSpecimenCount is < 1 or > 10000)
+            throw new ArgumentOutOfRangeException(nameof(requestedSpecimenCount), "Requested specimen count must be between 1 and 10,000.");
         RequestedSpecimenCount = requestedSpecimenCount;
+        var current = Phases.Where(p => p.SupersededAtUtc == null).ToArray();
+        if (!AcceptedQuoteId.HasValue && current.Length == 1 && current[0].SampleCount != requestedSpecimenCount)
+            current[0].Configure(1, current[0].Name, requestedSpecimenCount, current[0].TurnaroundBusinessDays,
+                current[0].AcceptedSubtotal, current[0].CarriedInvoicedSubtotal, current[0].PriceLinesJson);
     }
 
     private void Transition(LabServiceOrderStatus from, LabServiceOrderStatus to)
@@ -444,9 +760,11 @@ public sealed class LabSample : IAudit, IConcurrency
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid LabServiceOrderId { get; private set; }
+    public Guid? LabJobPhaseId { get; private set; }
     public string CustomerSampleId { get; private set; } = null!;
     public string MaterialType { get; private set; } = null!;
     public string BiologicalSource { get; private set; } = null!;
+    public int SequencingRunCount { get; private set; } = 1;
     public decimal Quantity { get; private set; }
     public string QuantityUnit { get; private set; } = null!;
     public string StorageRequirements { get; private set; } = null!;
@@ -523,6 +841,20 @@ public sealed class LabSample : IAudit, IConcurrency
         AnalysisDefinitionIdsJson = OrderText.Json(analysisDefinitionIdsJson);
     }
 
+    public void AssignPhase(Guid phaseId)
+    {
+        if (phaseId == Guid.Empty || CustomerShippedAt.HasValue || ReceivedAt.HasValue || Status != LabSampleStatus.Expected)
+            throw new InvalidOperationException("Only unsent, unreceived samples can change phase assignment.");
+        LabJobPhaseId = phaseId;
+    }
+
+    public void SetSequencingRunCount(int count)
+    {
+        if (Status != LabSampleStatus.Expected) throw new InvalidOperationException("Only an expected sample can be edited.");
+        if (count is < 1 or > 10000) throw new ArgumentOutOfRangeException(nameof(count), "Enter between one and 10,000 sample-sequencing runs.");
+        SequencingRunCount = count;
+    }
+
     public void RecordCustomerShipment(string? carrier, string? trackingNumber, DateTime? shippedAt)
     {
         Carrier = OrderText.Optional(carrier, 255);
@@ -543,6 +875,34 @@ public sealed class LabSample : IAudit, IConcurrency
         EnsureStatus(LabSampleStatus.Received);
         AccessionId = OrderText.Required(accessionId, nameof(accessionId), 100);
         Status = LabSampleStatus.Accessioned;
+    }
+
+    public bool ApplyLaboratoryIntake(DateTime receivedAtUtc, string? accessionId)
+    {
+        if (IsTerminal()) return false;
+        var changed = false;
+        if (!ReceivedAt.HasValue) { ReceivedAt = receivedAtUtc; changed = true; }
+        if (!string.IsNullOrWhiteSpace(accessionId))
+        {
+            var normalized = OrderText.Required(accessionId, nameof(accessionId), 100);
+            if (AccessionId is not null && AccessionId != normalized)
+                throw new InvalidOperationException("The laboratory accession differs from the saved sample identity.");
+            if (AccessionId is null) { AccessionId = normalized; changed = true; }
+        }
+        var current = Status == LabSampleStatus.OnHold ? ResumeStatus : Status;
+        var target = current switch
+        {
+            LabSampleStatus.Expected or LabSampleStatus.Received when AccessionId is not null => LabSampleStatus.Accessioned,
+            LabSampleStatus.Expected => LabSampleStatus.Received,
+            _ => current
+        };
+        if (target != current && target.HasValue)
+        {
+            if (Status == LabSampleStatus.OnHold) ResumeStatus = target;
+            else Status = target.Value;
+            changed = true;
+        }
+        return changed;
     }
 
     public void TransitionTo(LabSampleStatus target, string? tenantSafeReason, string? internalNote)
@@ -581,7 +941,18 @@ public sealed class LabSample : IAudit, IConcurrency
         InternalNote = OrderText.Optional(internalNote, 4000);
     }
 
-    public bool IsTerminal() => Status is LabSampleStatus.Completed or LabSampleStatus.Rejected;
+    public bool ApplyLaboratoryOutcome(LabSampleStatus outcome, string? safeReason)
+    {
+        if (outcome is not (LabSampleStatus.Completed or LabSampleStatus.Failed or LabSampleStatus.Rejected or LabSampleStatus.Cancelled))
+            throw new ArgumentException("A final laboratory outcome is required.", nameof(outcome));
+        if (Status == outcome || Status == LabSampleStatus.OnHold) return false;
+        if (IsTerminal()) throw new InvalidOperationException("A recorded terminal sample outcome cannot be replaced.");
+        Status = outcome; ResumeStatus = null;
+        TenantSafeReason = OrderText.Optional(safeReason, 2000);
+        return true;
+    }
+
+    public bool IsTerminal() => Status is LabSampleStatus.Completed or LabSampleStatus.Rejected or LabSampleStatus.Failed or LabSampleStatus.Cancelled;
 
     private static bool IsAllowed(LabSampleStatus from, LabSampleStatus to) =>
         (from, to) switch
@@ -606,6 +977,9 @@ public sealed class LabSample : IAudit, IConcurrency
 
 public sealed class LabResultRelease : IAudit, IConcurrency
 {
+    public Guid? LabAnalysisRunId { get; private set; }
+    public bool TraceabilityRequired { get; private set; }
+    public string? ResultLocator { get; private set; }
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid OrganizationId { get; private set; }
     public Guid LabServiceOrderId { get; private set; }
@@ -637,7 +1011,7 @@ public sealed class LabResultRelease : IAudit, IConcurrency
         string provenance,
         string qcStatus,
         string manifestJson,
-        DateTime generatedAt)
+        DateTime generatedAt, Guid? labAnalysisRunId = null, bool traceabilityRequired = false, string? resultLocator = null)
     {
         if (releaseVersion <= 0) throw new ArgumentOutOfRangeException(nameof(releaseVersion));
         OrganizationId = organizationId;
@@ -650,16 +1024,22 @@ public sealed class LabResultRelease : IAudit, IConcurrency
         QcStatus = OrderText.Required(qcStatus, nameof(qcStatus), 500);
         ManifestJson = OrderText.Json(manifestJson);
         GeneratedAt = generatedAt;
+        LabAnalysisRunId = labAnalysisRunId;
+        TraceabilityRequired = traceabilityRequired || labAnalysisRunId.HasValue;
+        ResultLocator = resultLocator is null ? null : OrderText.Required(resultLocator, nameof(resultLocator), 1000);
+        RequireLineage();
     }
 
     public void MarkReady(bool holdForPayment)
     {
+        RequireLineage();
         if (ReleaseStatus is FileReleaseStatus.Released or FileReleaseStatus.Withdrawn) return;
         ReleaseStatus = holdForPayment ? FileReleaseStatus.PaymentHold : FileReleaseStatus.Ready;
     }
 
     public bool Release(DateTime utcNow)
     {
+        RequireLineage();
         if (ReleaseStatus == FileReleaseStatus.Released) return false;
         if (ReleaseStatus == FileReleaseStatus.Withdrawn)
             throw new InvalidOperationException("A withdrawn result release cannot be released again.");
@@ -668,6 +1048,13 @@ public sealed class LabResultRelease : IAudit, IConcurrency
         ReleaseStatus = FileReleaseStatus.Released;
         ReleasedAt = utcNow;
         return true;
+    }
+    private void RequireLineage()
+    {
+        // Legacy/default-off releases retain their current behavior, including payment-hold release.
+        if (!TraceabilityRequired && !LabAnalysisRunId.HasValue) return;
+        if (!LabAnalysisRunId.HasValue || LabAnalysisRunId.Value == Guid.Empty || string.IsNullOrWhiteSpace(ResultLocator))
+            throw new InvalidOperationException("Record the producing analysis, result locator and source-tube lineage before releasing this result.");
     }
     public void Withdraw() => ReleaseStatus = FileReleaseStatus.Withdrawn;
     public void MarkCreated(DateTime utcNow, Guid? actorUserId) { CreatedAt = utcNow; CreatedByUserId = actorUserId; }

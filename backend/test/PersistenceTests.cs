@@ -205,7 +205,7 @@ public class PersistenceTests
     }
 
     [Fact]
-    public void PSeqOperationsDbContextMapsCompleteLaboratoryModelWithoutCommercialForeignKeys()
+    public void PSeqOperationsDbContextMapsCompleteLaboratoryModelWithOnlyApprovedCrossSchemaForeignKeys()
     {
         using var dbContext = CreateDbContext();
         var laboratoryAssembly = typeof(LaboratoryAssembly).Assembly;
@@ -213,7 +213,56 @@ public class PersistenceTests
             .Where(entityType => entityType.ClrType.Assembly == laboratoryAssembly)
             .ToList();
 
-        Assert.Equal(30, laboratoryEntities.Count);
+        Assert.Equal(87, laboratoryEntities.Count);
+        Assert.Equal("lab_vendor_results_versions", dbContext.Model.FindEntityType(typeof(LabVendorResultsVersion))?.GetTableName());
+        Assert.Equal("lab_vendor_results_drafts", dbContext.Model.FindEntityType(typeof(LabVendorResultsDraft))?.GetTableName());
+        Assert.Equal("lab_fastq_sets", dbContext.Model.FindEntityType(typeof(LabFastqSet))?.GetTableName());
+        Assert.Equal("lab_fastq_uploads", dbContext.Model.FindEntityType(typeof(LabFastqUpload))?.GetTableName());
+        Assert.Equal("lab_fastq_archives", dbContext.Model.FindEntityType(typeof(LabFastqArchive))?.GetTableName());
+        Assert.Equal("lab_assembly_qc", dbContext.Model.FindEntityType(typeof(LabAssemblyQc))?.GetTableName());
+        AssertUniqueIndex<LabVendorResultsVersion>(dbContext, nameof(LabVendorResultsVersion.LabNgsSendoutId), nameof(LabVendorResultsVersion.ResultVersion));
+        AssertUniqueIndex<LabFastqSet>(dbContext, nameof(LabFastqSet.LabBatchMemberId), nameof(LabFastqSet.SetVersion));
+        AssertUniqueIndex<LabFastqUpload>(dbContext, nameof(LabFastqUpload.LabFastqSetId), nameof(LabFastqUpload.GroupNumber), nameof(LabFastqUpload.ReadNumber), nameof(LabFastqUpload.PartNumber));
+        AssertUniqueIndex<LabAssemblyQc>(dbContext, nameof(LabAssemblyQc.ResultOutputPackageId), nameof(LabAssemblyQc.ReviewVersion));
+        Assert.Equal("lab_supplier_shipment_addresses", dbContext.Model.FindEntityType(typeof(LabSupplierShipmentAddress))?.GetTableName());
+        Assert.Equal("lab_vendor_library_exceptions", dbContext.Model.FindEntityType(typeof(LabVendorLibraryException))?.GetTableName());
+        Assert.Equal("lab_vendor_result_references", dbContext.Model.FindEntityType(typeof(LabVendorResultReference))?.GetTableName());
+        Assert.Equal("lab_container_barcodes", dbContext.Model.FindEntityType(typeof(LabContainerBarcode))?.GetTableName());
+        Assert.Equal("lab_biological_material_transfers", dbContext.Model.FindEntityType(typeof(LabBiologicalMaterialTransfer))?.GetTableName());
+        Assert.Equal("lab_assembly_jobs", dbContext.Model.FindEntityType(typeof(LabAssemblyJob))?.GetTableName());
+        Assert.Equal("lab_assembly_events", dbContext.Model.FindEntityType(typeof(LabAssemblyEvent))?.GetTableName());
+        Assert.Equal("lab_scientific_files", dbContext.Model.FindEntityType(typeof(LabScientificFile))?.GetTableName());
+        Assert.Equal("lab_scientific_uploads", dbContext.Model.FindEntityType(typeof(LabScientificUpload))?.GetTableName());
+        Assert.Equal("lab_customer_holds", dbContext.Model.FindEntityType(typeof(LabCustomerHold))?.GetTableName());
+        Assert.Equal("lab_sequencing_outputs", dbContext.Model.FindEntityType(typeof(LabSequencingOutput))?.GetTableName());
+        Assert.Equal("lab_analysis_runs", dbContext.Model.FindEntityType(typeof(LabAnalysisRun))?.GetTableName());
+        Assert.Equal("lab_analysis_inputs", dbContext.Model.FindEntityType(typeof(LabAnalysisInput))?.GetTableName());
+        Assert.Equal("lab_product_types", dbContext.Model.FindEntityType(typeof(LabProductType))?.GetTableName());
+        Assert.Equal("lab_supplier_products", dbContext.Model.FindEntityType(typeof(LabSupplierProduct))?.GetTableName());
+        Assert.Equal("lab_reagent_workflows", dbContext.Model.FindEntityType(typeof(LabReagentWorkflow))?.GetTableName());
+        Assert.Equal("lab_reagent_manufacturing_runs", dbContext.Model.FindEntityType(typeof(LabReagentManufacturingRun))?.GetTableName());
+        Assert.Equal("lab_reagent_run_steps", dbContext.Model.FindEntityType(typeof(LabReagentRunStep))?.GetTableName());
+        Assert.Equal("lab_reagent_material_uses", dbContext.Model.FindEntityType(typeof(LabReagentMaterialUse))?.GetTableName());
+        Assert.Equal("lab_master_mix_workflows", dbContext.Model.FindEntityType(typeof(LabMasterMixWorkflow))?.GetTableName());
+        Assert.Equal("lab_master_mix_preparations", dbContext.Model.FindEntityType(typeof(LabMasterMixPreparation))?.GetTableName());
+        Assert.Equal("lab_master_mix_steps", dbContext.Model.FindEntityType(typeof(LabMasterMixStepRecord))?.GetTableName());
+        Assert.Equal("lab_master_mix_ingredients", dbContext.Model.FindEntityType(typeof(LabMasterMixIngredientUse))?.GetTableName());
+        Assert.Equal("lab_master_mix_tray_uses", dbContext.Model.FindEntityType(typeof(LabMasterMixTrayUse))?.GetTableName());
+        Assert.Equal("lab_master_mix_corrections", dbContext.Model.FindEntityType(typeof(LabMasterMixCorrection))?.GetTableName());
+        AssertUniqueIndex<LabReagentWorkflow>(dbContext, nameof(LabReagentWorkflow.MaterialDefinitionId));
+        Assert.Equal("lab_steps", dbContext.Model.FindEntityType(typeof(LabStep))?.GetTableName());
+        Assert.Equal("lab_step_versions", dbContext.Model.FindEntityType(typeof(LabStepVersion))?.GetTableName());
+        Assert.Equal("lab_job_deadline_changes", dbContext.Model.FindEntityType(typeof(LabJobDeadlineChange))?.GetTableName());
+        Assert.Equal("lab_business_calendars", dbContext.Model.FindEntityType(typeof(LabBusinessCalendar))?.GetTableName());
+        Assert.Equal("lab_holidays", dbContext.Model.FindEntityType(typeof(LabHoliday))?.GetTableName());
+        Assert.Equal("lab_timing_policies", dbContext.Model.FindEntityType(typeof(LabTimingPolicy))?.GetTableName());
+        Assert.Equal("lab_stage_durations", dbContext.Model.FindEntityType(typeof(LabStageDuration))?.GetTableName());
+        Assert.Equal("lab_job_timing_policies", dbContext.Model.FindEntityType(typeof(LabJobTimingPolicy))?.GetTableName());
+        Assert.Equal("lab_forecast_transitions", dbContext.Model.FindEntityType(typeof(LabForecastTransition))?.GetTableName());
+        Assert.Equal("lab_forecast_snapshots", dbContext.Model.FindEntityType(typeof(LabForecastSnapshot))?.GetTableName());
+        var timingHistory = dbContext.Model.FindEntityType(typeof(LabWorkTimingChange));
+        Assert.Equal("lab_work_timing_changes", timingHistory?.GetTableName());
+        Assert.Equal(typeof(LabServiceOrder).Assembly, timingHistory?.ClrType.Assembly);
         Assert.Equal("lab_service_workflows", dbContext.Model.FindEntityType(typeof(LabServiceWorkflow))?.GetTableName());
         Assert.Equal("lab_service_workflow_versions", dbContext.Model.FindEntityType(typeof(LabServiceWorkflowVersion))?.GetTableName());
         Assert.Equal("lab_service_workflow_stages", dbContext.Model.FindEntityType(typeof(LabServiceWorkflowStage))?.GetTableName());
@@ -236,10 +285,17 @@ public class PersistenceTests
             "lab_provider_command_receipts",
             dbContext.Model.FindEntityType(typeof(LabProviderCommandReceipt))?.GetTableName());
         Assert.Equal("lab_role_assignments", dbContext.Model.FindEntityType(typeof(LabRoleAssignment))?.GetTableName());
+        Assert.Equal("lab_role_invitation_intents", dbContext.Model.FindEntityType(typeof(LabRoleInvitationIntent))?.GetTableName());
         Assert.Equal("lab_containers", dbContext.Model.FindEntityType(typeof(LabContainer))?.GetTableName());
         Assert.Equal("lab_protocols", dbContext.Model.FindEntityType(typeof(LabProtocol))?.GetTableName());
         Assert.Equal("lab_protocol_versions", dbContext.Model.FindEntityType(typeof(LabProtocolVersion))?.GetTableName());
         Assert.Equal("lab_protocol_executions", dbContext.Model.FindEntityType(typeof(LabProtocolExecution))?.GetTableName());
+        Assert.Equal("lab_specimen_attempts", dbContext.Model.FindEntityType(typeof(LabSpecimenAttempt))?.GetTableName());
+        Assert.Equal("lab_attempt_command_receipts", dbContext.Model.FindEntityType(typeof(LabAttemptCommandReceipt))?.GetTableName());
+        Assert.Equal("lab_tray_formats", dbContext.Model.FindEntityType(typeof(LabTrayFormat))?.GetTableName());
+        Assert.Equal("lab_preparation_batches", dbContext.Model.FindEntityType(typeof(LabPreparationBatch))?.GetTableName());
+        Assert.Equal("lab_preparation_members", dbContext.Model.FindEntityType(typeof(LabPreparationMember))?.GetTableName());
+        Assert.Equal("lab_preparation_records", dbContext.Model.FindEntityType(typeof(LabPreparationRecord))?.GetTableName());
         Assert.Equal("lab_material_definitions", dbContext.Model.FindEntityType(typeof(LabMaterialDefinition))?.GetTableName());
         Assert.Equal("lab_suppliers", dbContext.Model.FindEntityType(typeof(LabSupplier))?.GetTableName());
         Assert.Equal("lab_storage_locations", dbContext.Model.FindEntityType(typeof(LabStorageLocation))?.GetTableName());
@@ -256,9 +312,52 @@ public class PersistenceTests
         Assert.Equal("lab_exceptions", dbContext.Model.FindEntityType(typeof(LabException))?.GetTableName());
         Assert.Equal("lab_operations_outbox_events", dbContext.Model.FindEntityType(typeof(LabOperationsOutboxEvent))?.GetTableName());
         Assert.All(laboratoryEntities, entityType => Assert.Equal("lab_ops", entityType.GetSchema()));
-        Assert.DoesNotContain(
-            laboratoryEntities.SelectMany(entityType => entityType.GetForeignKeys()),
-            foreignKey => foreignKey.PrincipalEntityType.ClrType.Assembly != laboratoryAssembly);
+        var crossSchemaForeignKeys = laboratoryEntities
+            .SelectMany(entityType => entityType.GetForeignKeys())
+            .Where(foreignKey => foreignKey.PrincipalEntityType.ClrType.Assembly != laboratoryAssembly);
+        Assert.All(crossSchemaForeignKeys, foreignKey =>
+        {
+            var scientificActors = new Dictionary<Type, string> {
+                [typeof(LabVendorResultsVersion)] = nameof(LabVendorResultsVersion.RecordedByUserId),
+                [typeof(LabVendorResultsDraft)] = nameof(LabVendorResultsDraft.UserId),
+                [typeof(LabFastqSet)] = nameof(LabFastqSet.RecordedByUserId),
+                [typeof(LabFastqUpload)] = nameof(LabFastqUpload.UserId),
+                [typeof(LabFastqArchive)] = nameof(LabFastqArchive.UserId),
+                [typeof(LabAssemblyQc)] = nameof(LabAssemblyQc.RecordedByUserId)
+            };
+            if (scientificActors.TryGetValue(foreignKey.DeclaringEntityType.ClrType, out var actorProperty)) {
+                var packageBinding = foreignKey.DeclaringEntityType.ClrType == typeof(LabAssemblyQc)
+                    && foreignKey.Properties.Single().Name == nameof(LabAssemblyQc.ResultOutputPackageId);
+                Assert.Equal(packageBinding ? typeof(ResultOutputPackage) : typeof(User), foreignKey.PrincipalEntityType.ClrType);
+                Assert.Equal([packageBinding ? nameof(LabAssemblyQc.ResultOutputPackageId) : actorProperty], foreignKey.Properties.Select(p => p.Name));
+                Assert.Equal(DeleteBehavior.Restrict, foreignKey.DeleteBehavior);
+                return;
+            }
+            if (foreignKey.DeclaringEntityType.ClrType == typeof(LabBatchMember))
+            {
+                Assert.Equal(typeof(QboCatalogItem), foreignKey.PrincipalEntityType.ClrType);
+                Assert.Equal([nameof(LabBatchMember.SequencingCatalogItemId)], foreignKey.Properties.Select(property => property.Name));
+                Assert.Equal(DeleteBehavior.Restrict, foreignKey.DeleteBehavior);
+                return;
+            }
+            if (foreignKey.DeclaringEntityType.ClrType == typeof(LabJobDeadlineChange))
+            {
+                Assert.Equal(typeof(LabJobPhase), foreignKey.PrincipalEntityType.ClrType);
+                Assert.Equal([nameof(LabJobDeadlineChange.LabJobPhaseId)], foreignKey.Properties.Select(property => property.Name));
+                Assert.Equal(DeleteBehavior.Restrict, foreignKey.DeleteBehavior);
+                return;
+            }
+            Assert.Contains(foreignKey.DeclaringEntityType.ClrType, new[]
+            {
+                typeof(LabKitAssemblyWorkflow),
+                typeof(LabKitAssemblyWorkflowRevision),
+                typeof(LabKitAssemblyRun),
+                typeof(LabKitAssemblyStepRecord),
+                typeof(LabKitAssemblyUse)
+            });
+            Assert.Contains(foreignKey.PrincipalEntityType.ClrType,
+                new[] { typeof(User), typeof(SampleShippingStockKit) });
+        });
     }
 
     [Fact]
@@ -475,7 +574,9 @@ public class PersistenceTests
             nameof(ResultOutputPackage.LabSampleId),
             nameof(ResultOutputPackage.PackageVersion));
         AssertUniqueIndex<Invoice>(dbContext, nameof(Invoice.InvoiceNumber));
-        AssertUniqueIndex<Invoice>(dbContext, nameof(Invoice.LabServiceOrderId));
+        var invoiceOrderIndex = Assert.Single(dbContext.Model.FindEntityType(typeof(Invoice))!.GetIndexes(),
+            index => index.Properties.Select(property => property.Name).SequenceEqual([nameof(Invoice.LabServiceOrderId)]));
+        Assert.False(invoiceOrderIndex.IsUnique); // Finance may issue separate accepted phase portions.
         AssertUniqueIndex<PaymentReceipt>(
             dbContext,
             nameof(PaymentReceipt.Source),
@@ -540,12 +641,14 @@ public class PersistenceTests
     }
 
     [Fact]
-    public void PSeqOrderToCashMigrationIsDiscoveredWithoutConnectingToPostgres()
+    public void MigrationHistoryStartsAtCleanBaselineWithoutConnectingToPostgres()
     {
         using var dbContext = CreateDbContext();
-        Assert.Contains(
-            dbContext.Database.GetMigrations(),
-            migration => migration == "20260829204102_AddPSeqOrderToCashGapClosure");
+        var migrations = dbContext.Database.GetMigrations().ToArray();
+        Assert.NotEmpty(migrations);
+        Assert.Equal("20260928192920_InitialCleanPortal", migrations[0]);
+        Assert.Single(migrations, migration => migration.EndsWith("_InitialCleanPortal", StringComparison.Ordinal));
+        Assert.All(migrations.Skip(1), migration => Assert.True(string.CompareOrdinal(migration, migrations[0]) > 0));
     }
 
     private static void AssertUniqueIndex<TEntity>(

@@ -1,5 +1,26 @@
 import { expect, test, type Page } from '@playwright/test'
 
+test('moves workspace navigation into the user menu at tablet widths', async ({ page }) => {
+  await page.goto('/')
+  await page.waitForLoadState('networkidle')
+  const header = page.locator('[data-portal-header]')
+  for (const width of [768, 1024]) {
+    await page.setViewportSize({ width, height: 850 })
+    const dashboard = header.getByRole('link', { name: 'Dashboard', exact: true })
+    if (width < 1024) await expect(dashboard).toBeHidden()
+    else await expect(dashboard).toBeVisible()
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    const menu = header.getByRole('button', { name: 'Open user menu', exact: true })
+    await menu.focus()
+    await page.keyboard.press('Enter')
+    const menuDashboard = page.getByRole(width < 1024 ? 'link' : 'menuitem', { name: 'Dashboard', exact: true })
+    if (width < 1024) await expect(menuDashboard).toBeVisible()
+    else await expect(menuDashboard).toBeHidden()
+    await page.keyboard.press('Escape')
+    await expect(menu).toBeFocused()
+  }
+})
+
 test('uses POMS branding in the internal Phaeno context', async ({ page }) => {
   await page.goto('/')
 
@@ -79,9 +100,11 @@ test('uses Portal branding in an external organization context', async ({ page }
   await expect(
     page.getByText(/Copyright © \d{4} Phaeno Inc\./),
   ).toBeVisible()
-  await expect(
-    page.getByText('Support and policy links coming soon.'),
-  ).toBeVisible()
+  const documentationLink = page.getByRole('contentinfo').getByRole('link', {
+    name: 'Help and documentation',
+  })
+  await expect(documentationLink).toBeVisible()
+  await expect(documentationLink).toHaveAttribute('href', '/docs')
   await expect(
     page.getByText('TanStack Start, Query, Shadcn, Axios'),
   ).toHaveCount(0)
@@ -103,9 +126,9 @@ test('uses Portal branding in an external organization context', async ({ page }
   await expect(page.getByText('Partner links', { exact: true })).toHaveCount(0)
   await expect(
     page.getByRole('link', { name: 'Open Data Library' }),
-  ).toBeVisible()
+  ).toHaveCount(0)
   await expect(
-    page.getByRole('link', { name: 'Open lab services' }),
+    page.getByRole('link', { name: 'View all lab services' }),
   ).toBeVisible()
   await expect(
     page.getByRole('link', { name: 'Open sample shipping' }),
@@ -131,13 +154,48 @@ test('keeps workspace navigation concise and groups the user menu', async ({
     await expect(
       header.getByRole('link', { name: 'Order ops' }),
     ).toBeVisible()
-    await expect(header.getByRole('link', { name: 'Docs' })).toBeVisible()
     await expect(
       header.getByRole('link', { name: 'Portal accounts' }),
     ).toHaveCount(0)
     await expect(
-      header.getByRole('link', { name: 'Order configuration' }),
+      header.getByRole('link', { name: 'Order settings' }),
     ).toHaveCount(0)
+  }
+
+  await expect(header.getByRole('link', { name: /^(Docs|Documentation)$/ })).toHaveCount(0)
+
+  const moreLabels = ['Finance', 'Purchasing', 'Equipment', 'Data provisioning', 'Legacy integrations']
+  const moreTrigger = header.getByRole('button', { name: 'More workspaces', exact: true })
+  if (isMobile) {
+    await expect(moreTrigger).toBeHidden()
+  } else {
+    await moreTrigger.focus()
+    await moreTrigger.press('Enter')
+    await expect(page.getByRole('menuitem')).toHaveText(moreLabels)
+    await expect(page.getByRole('menuitem', { name: 'Finance', exact: true })).toBeFocused()
+    await page.keyboard.press('ArrowDown')
+    await expect(page.getByRole('menuitem', { name: 'Purchasing', exact: true })).toBeFocused()
+    await page.keyboard.press('ArrowUp')
+    await expect(page.getByRole('menuitem', { name: 'Finance', exact: true })).toBeFocused()
+    await page.keyboard.press('Escape')
+    for (const label of moreLabels) {
+      await moreTrigger.press('Enter')
+      await page.getByRole('menuitem', { name: label, exact: true }).focus()
+      await page.keyboard.press('Tab')
+      await expect(page.getByRole('menu')).toHaveCount(0)
+      await expect(header.getByRole('button', { name: 'Open user menu', exact: true })).toBeFocused()
+      await moreTrigger.press('Enter')
+      await page.getByRole('menuitem', { name: label, exact: true }).focus()
+      await page.keyboard.press('Shift+Tab')
+      await expect(page.getByRole('menu')).toHaveCount(0)
+      await expect(header.getByRole('link', { name: 'Lab ops', exact: true })).toBeFocused()
+    }
+    await moreTrigger.press('Enter')
+    await page.keyboard.press('Escape')
+    await expect(moreTrigger).toBeFocused()
+    await expect(page.getByRole('menu')).toHaveCount(0)
+    await page.keyboard.press('Tab')
+    await expect(header.getByRole('button', { name: 'Open user menu', exact: true })).toBeFocused()
   }
 
   const userMenuTrigger = page.getByRole('button', { name: 'Open user menu' })
@@ -145,24 +203,35 @@ test('keeps workspace navigation concise and groups the user menu', async ({
   await userMenuTrigger.press('Enter')
 
   if (isMobile) {
-    await expect(page.getByText('Workspace', { exact: true })).toBeVisible()
-    await expect(page.getByRole('menuitem', { name: 'Docs' })).toBeVisible()
+    await verifyMobileNavigationTray(page)
+    return
   }
 
-  await expect(page.getByText('Administration', { exact: true })).toBeVisible()
+  await expect(page.getByText('Workspace', { exact: true })).toHaveCount(0)
+  for (const label of moreLabels) {
+    const destination = page.getByRole('menuitem', { name: label, exact: true })
+    await expect(destination).toHaveCount(0)
+  }
+  const mobileMore = page.getByRole('menuitem', { name: 'More', exact: true })
+  const mobileSettings = page.getByRole('menuitem', { name: 'Settings', exact: true })
+  await expect(mobileMore).toBeHidden()
+  await expect(mobileSettings).toBeHidden()
+
+  for (const heading of ['Display', 'Administration', 'Resources']) {
+    await expect(page.getByText(heading, { exact: true })).toHaveCount(0)
+  }
   await expect(
     page.getByRole('menuitem', { name: 'Portal accounts' }),
   ).toHaveCount(0)
   await expect(
-    page.getByRole('menuitem', { name: 'Order configuration' }),
+    page.getByRole('menuitem', { name: 'Order settings' }),
   ).toBeVisible()
-  await expect(page.getByText('Resources', { exact: true })).toBeVisible()
-  await expect(
-    page.getByRole('menuitem', { name: 'Data provisioning' }),
-  ).toBeVisible()
-  if (!isMobile) {
-    await expect(page.getByRole('menuitem', { name: 'Docs' })).toHaveCount(0)
-  }
+  await expect(page.getByRole('menuitem', { name: 'Documentation', exact: true })).toHaveCount(1)
+  await expect(page.getByRole('menuitem', { name: 'Documentation', exact: true })).toBeVisible()
+  await expect(page.getByRole('menuitem', { name: 'User management', exact: true })).toBeVisible()
+  const menuLabels = (await page.getByRole('menuitem').allTextContents()).map(label => label.trim())
+  expect(menuLabels.indexOf('User management')).toBe(menuLabels.indexOf('Documentation') + 1)
+  await expect(page.getByRole('menuitem', { name: 'Docs', exact: true })).toHaveCount(0)
 
   const displayChoices = page.getByRole('menuitemradio')
   await expect(displayChoices).toHaveCount(3)
@@ -179,7 +248,7 @@ test('keeps workspace navigation concise and groups the user menu', async ({
     '[role="menuitemradio"][data-state="checked"]',
   )
   await expect(selectedDisplayChoice).toHaveCount(1)
-  await page.getByRole('menuitem', { name: 'Order configuration' }).focus()
+  await page.getByRole('menuitem', { name: 'Order settings' }).focus()
   const selectedDisplayBackground = await selectedDisplayChoice.evaluate(
     (choice) => getComputedStyle(choice).backgroundColor,
   )
@@ -226,7 +295,7 @@ test('keeps workspace navigation concise and groups the user menu', async ({
   })
   await darkThemeChoice.focus()
   await darkThemeChoice.press('ArrowDown')
-  const nextMenuItemName = isMobile ? 'Dashboard' : 'Order configuration'
+  const nextMenuItemName = isMobile ? 'Dashboard' : 'Order settings'
   await expect(
     page.getByRole('menuitem', { name: nextMenuItemName }),
   ).toBeFocused()
@@ -240,13 +309,6 @@ test('keeps workspace navigation concise and groups the user menu', async ({
       page.locator('body').evaluate((body) => getComputedStyle(body).overflow),
     )
     .toBe('hidden')
-  const displayLabelBox = await page
-    .getByText('Display', { exact: true })
-    .boundingBox()
-  const administrationLabelBox = await page
-    .getByText('Administration', { exact: true })
-    .boundingBox()
-  expect(displayLabelBox?.y).toBeLessThan(administrationLabelBox?.y ?? 0)
   const displayChoiceBoxes = await displayChoices.evaluateAll((items) =>
     items.map((item) => item.getBoundingClientRect().toJSON()),
   )
@@ -262,12 +324,72 @@ test('keeps workspace navigation concise and groups the user menu', async ({
   await darkThemeChoice.focus()
   await darkThemeChoice.press('Escape')
   await expect(page.getByRole('menu')).toHaveCount(0)
+  await expect(userMenuTrigger).toBeFocused()
   await expect
     .poll(() =>
       page.locator('body').evaluate((body) => getComputedStyle(body).overflow),
     )
     .not.toBe('hidden')
 })
+
+async function verifyMobileNavigationTray(page: Page) {
+  const tray = page.getByRole('dialog', { name: 'Menu', exact: true })
+  await expect(tray).toBeVisible()
+  await expect(tray.getByRole('button', { name: 'Close user menu' })).toBeFocused()
+  await expect.poll(async () => (await tray.boundingBox())?.x).toBe(0)
+  const bounds = await tray.boundingBox()
+  expect(bounds?.width).toBe(page.viewportSize()?.width)
+  expect(Math.abs((bounds?.height ?? 0) - (page.viewportSize()?.height ?? 0))).toBeLessThanOrEqual(1)
+  await expect(page.getByRole('menu')).toHaveCount(0)
+  for (const heading of ['Workspace', 'Display', 'Administration', 'Resources']) {
+    await expect(tray.getByText(heading, { exact: true })).toHaveCount(0)
+  }
+  await expect(tray.getByRole('radio')).toHaveCount(3)
+  const more = tray.getByRole('button', { name: 'More', exact: true })
+  const settings = tray.getByRole('button', { name: 'Settings', exact: true })
+  await expect(more).toHaveAttribute('aria-expanded', 'false')
+  await expect(settings).toHaveAttribute('aria-expanded', 'false')
+  await expect(tray.getByRole('link', { name: 'Purchasing', exact: true })).toHaveCount(0)
+  await expect(tray.getByRole('link', { name: 'Order settings', exact: true })).toHaveCount(0)
+  const navigation = tray.getByRole('navigation', { name: 'Mobile navigation' })
+  const links = (await navigation.getByRole('link').allTextContents()).map(label => label.trim())
+  expect(links.indexOf('User management')).toBe(links.indexOf('Documentation') + 1)
+  await more.press('Enter')
+  await expect(more).toHaveAttribute('aria-expanded', 'true')
+  await expect(tray.getByRole('group', { name: 'More', exact: true }).getByRole('link')).toHaveText(['Finance', 'Purchasing', 'Equipment', 'Data provisioning', 'Legacy integrations'])
+  await more.press('ArrowDown')
+  await expect(tray.getByRole('link', { name: 'Finance', exact: true })).toBeFocused()
+  await page.keyboard.press('Tab')
+  await expect(tray.getByRole('link', { name: 'Purchasing', exact: true })).toBeFocused()
+  await page.keyboard.press('Shift+Tab')
+  await expect(tray.getByRole('link', { name: 'Finance', exact: true })).toBeFocused()
+  await settings.click()
+  await expect(settings).toBeFocused()
+  await expect(more).toHaveAttribute('aria-expanded', 'false')
+  await expect(settings).toHaveAttribute('aria-expanded', 'true')
+  await settings.press('ArrowDown')
+  await expect(tray.getByRole('link', { name: 'Order settings', exact: true })).toBeFocused()
+  await page.keyboard.press('Escape')
+  await expect(tray).toHaveCount(0)
+  const trigger = page.getByRole('button', { name: 'Open user menu', exact: true })
+  await expect(trigger).toBeFocused()
+  const triggerBounds = await trigger.boundingBox()
+  expect((page.viewportSize()?.width ?? 0) - (triggerBounds?.x ?? 0) - (triggerBounds?.width ?? 0)).toBeLessThanOrEqual(9)
+  expect(triggerBounds?.width).toBeGreaterThanOrEqual(44)
+  await trigger.press('Enter')
+  await expect(more).toHaveAttribute('aria-expanded', 'false')
+  await expect(settings).toHaveAttribute('aria-expanded', 'false')
+  await settings.press('Space')
+  await expect(settings).toHaveAttribute('aria-expanded', 'true')
+  await tray.getByRole('button', { name: 'Close user menu' }).click()
+  await expect(tray).toHaveCount(0)
+  await expect(trigger).toBeFocused()
+  await trigger.click()
+  await more.click()
+  await tray.getByRole('link', { name: 'Purchasing', exact: true }).click()
+  await expect(tray).toHaveCount(0)
+  await expect(page).toHaveURL(/\/purchasing(?:\?|$)/)
+}
 
 async function openDashboardNavigation(page: Page) {
   const navigation = page.getByRole('navigation', {

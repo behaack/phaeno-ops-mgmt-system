@@ -52,20 +52,23 @@ test("reviews Portal access in CRM without a separate customer directory", async
     return notFound(route);
   });
 
-  await page.goto("/customers");
+  await page.goto("/crm/requests");
   await expect(
     page.getByRole("heading", { name: "Company request review" }),
   ).toBeVisible();
+  await expect(page.locator('header a[href="/crm"]')).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("button", { name: /^Requests/, includeHidden: true })).toHaveAttribute("aria-current", "page");
   await expect(page.getByRole("link", { name: "Atlas Research" })).toHaveAttribute(
     "href",
-    `/crm/companies/${companyId}`,
+    `/crm/companies/${companyId}?section=requests`,
   );
   await expect(page.getByText("Portal accounts", { exact: true })).toHaveCount(0);
   await expect(page.getByRole("button", { name: /New Portal account/i })).toHaveCount(
     0,
   );
 
-  await page.getByRole("button", { name: "Approve and enable access" }).click();
+  await page.getByRole("button", { name: /^Actions for/ }).click();
+  await page.getByRole("menuitem", { name: "Approve and enable access" }).click();
   const dialog = page.getByRole("dialog", {
     name: "Approve and enable Portal access",
   });
@@ -74,7 +77,7 @@ test("reviews Portal access in CRM without a separate customer directory", async
   );
   await expectNoSeriousAccessibilityViolations(page, dialog);
   await dialog
-    .getByLabel(/Approval reason/)
+    .getByLabel('Approval note (optional)')
     .fill("Commercial onboarding approved.");
   await dialog
     .getByRole("button", { name: "Approve and enable access" })
@@ -82,11 +85,28 @@ test("reviews Portal access in CRM without a separate customer directory", async
 
   await expect(dialog).toHaveCount(0);
   await expect(
-    page.getByText("No Company requests are waiting for review."),
+    page.getByText("No Company requests in this view."),
   ).toBeVisible();
 });
 
-test("resolves a legacy access link to the canonical Company workspace", async ({
+test("retains Requests queue context in the canonical CRM route", async ({ page }) => {
+  await page.route(apiRequestPattern, async (route) => {
+    if (route.request().method() === "GET") return envelope(route, []);
+    return notFound(route);
+  });
+
+  await page.goto(`/crm/requests?section=work&requestId=${requestId}`);
+  await expect(page.getByRole("heading", { name: "Company request review" })).toBeVisible();
+  const destination = new URL(page.url());
+  expect(destination.pathname).toBe("/crm/requests");
+  expect(destination.searchParams.get("section")).toBe("work");
+  expect(destination.searchParams.get("requestId")).toBe(requestId);
+  await expect(page.getByRole("tab", { name: /Approved \/ needs work/ })).toHaveAttribute("aria-selected", "true");
+  await expect(page.locator('header a[href="/crm"]')).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("button", { name: /^Requests/, includeHidden: true })).toHaveAttribute("aria-current", "page");
+});
+
+test("opens the canonical Company workspace with its access scope", async ({
   page,
 }) => {
   const eligibleRequest = relationshipRequest();
@@ -98,9 +118,7 @@ test("resolves a legacy access link to the canonical Company workspace", async (
 
     if (
       method === "GET" &&
-      (url.pathname ===
-        `/api/platform/crm/companies/by-access/${organizationId}` ||
-        url.pathname === `/api/platform/crm/companies/${companyId}`)
+      url.pathname === `/api/platform/crm/companies/${companyId}`
     ) {
       return envelope(route, company());
     }
@@ -206,19 +224,20 @@ test("resolves a legacy access link to the canonical Company workspace", async (
     return notFound(route);
   });
 
-  await page.goto(`/customers/${organizationId}`);
+  await page.goto(`/crm/companies/${companyId}`);
   await expect(page.getByRole("heading", { name: "Atlas Research" })).toBeVisible();
   await expect(page.getByText("Company", { exact: true })).toBeVisible();
-  await page.getByRole("tab", { name: "Departments & services" }).click();
+  await page.getByRole("tab", { name: "Services", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Portal access and services" }),
   ).toBeVisible();
   await expect(page.getByRole("link", { name: "Back to companies" })).toBeVisible();
   await expect(page.getByText("Back to Portal accounts")).toHaveCount(0);
 
-  await page.getByRole("tab", { name: "Services", exact: true }).click();
+  await page.getByRole("tab", { name: "Entitlements", exact: true }).click();
   await expect(page.getByText("PSeq Lab Service", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "End now" }).click();
+  await page.getByRole("button", { name: "Actions for PSeq Lab Service" }).click();
+  await page.getByRole("menuitem", { name: "End now" }).click();
   const endDialog = page.getByRole("dialog", {
     name: "End service entitlement",
   });
@@ -229,7 +248,7 @@ test("resolves a legacy access link to the canonical Company workspace", async (
   await expect(page.getByRole("tab", { name: "Users", exact: true })).toHaveCount(0);
   await page.getByRole("tab", { name: "People", exact: true }).click();
   await expect(page.getByText("No people are associated with this Company.")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Associate contact" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add existing person" })).toBeVisible();
 });
 
 async function expectNoSeriousAccessibilityViolations(

@@ -73,6 +73,13 @@ export type ResultPackage = {
   retentionState: string | null
   version: number
   artifacts: ResultArtifact[]
+  context?: {
+    organizationName: string; orderNumber: string | null; customerReference: string | null;
+    customerSampleId: string | null; retentionSnapshotId: string | null;
+    scientificReviewer: string | null; scientificallyApprovedAtUtc: string | null;
+    releaseDefinitionKey: string | null; releaseDefinitionVersion: number | null;
+    assemblyQc?: { jobId: string; reviewVersion: number; decision: string; note: string; reviewedBy: string; recordedAtUtc: string } | null;
+  } | null
 }
 
 export type CustomerResultPackage = {
@@ -193,6 +200,11 @@ export type ReconciliationBatch = {
   version: number
 }
 
+export type PaymentAllocation = { id: string; paymentReceiptId: string; invoiceId: string; amount: number; allocatedByUserId: string; allocatedAtUtc: string; isReversed: boolean; version: number; reversedByUserId: string | null; reversedAtUtc: string | null; reversalReason: string | null }
+export type PaymentAllocationHistory = { allocation: PaymentAllocation; invoice: InvoiceReceivable; receipt: PaymentReceipt; allocatedByName: string; reversedByName: string | null }
+export type ReconciliationDraftSnapshot = { periodEnd: string; ledgerReceiptTotal: number; bankTotal: number; paymentReceiptIds: string[]; paymentAllocationIds: string[]; invoiceAdjustmentIds: string[] }
+export type ReconciliationDetail = { batch: ReconciliationBatch; receipts: PaymentReceipt[]; items: { sourceType: string; sourceId: string; reference: string; amount: number }[]; changes: { actorName: string; change: { action: string; actorUserId: string; atUtc: string; reason: string; before: ReconciliationDraftSnapshot; after: ReconciliationDraftSnapshot } }[] }
+
 export async function listStageEligibleCustomers() {
   return getJson<StageEligibleCustomer[]>('/platform/pseq-staging/customers')
 }
@@ -237,6 +249,10 @@ export async function listResultPackages(state?: string) {
   return getJson<ResultPackage[]>('/platform/pseq-result-packages', {
     params: { state: state || undefined },
   })
+}
+
+export async function getResultPackage(id: string) {
+  return getJson<ResultPackage>(`/platform/pseq-result-packages/${id}`)
 }
 
 export async function releaseResultPackage(id: string, version: number) {
@@ -290,9 +306,9 @@ export async function downloadCustomerResultArtifact(
   URL.revokeObjectURL(url)
 }
 
-export async function listInvoices(openOnly = false) {
+export async function listInvoices(openOnly = false, invoiceId?: string, organizationId?: string) {
   return getJson<InvoiceReceivable[]>('/platform/accounts-receivable/invoices', {
-    params: { openOnly },
+    params: { openOnly, invoiceId, organizationId },
   })
 }
 
@@ -353,9 +369,9 @@ export async function getAgingSummary() {
   return getJson<AgingSummary>('/platform/accounts-receivable/aging')
 }
 
-export async function listPaymentReceipts(unappliedOnly = false) {
+export async function listPaymentReceipts(unappliedOnly = false, receiptId?: string, organizationId?: string) {
   return getJson<PaymentReceipt[]>('/platform/accounts-receivable/receipts', {
-    params: { unappliedOnly },
+    params: { unappliedOnly, receiptId, organizationId },
   })
 }
 
@@ -374,11 +390,39 @@ export async function recordPaymentReceipt(input: {
   return postJson<PaymentReceipt>('/platform/accounts-receivable/receipts', input)
 }
 
-export async function listMatchingInvoices(receiptId: string) {
+export async function recordPaymentReceiptWithEvidence(input: Omit<Parameters<typeof recordPaymentReceipt>[0], 'evidenceStorageKey'>, file: File, idempotencyKey: string) {
+  const data = new FormData()
+  data.append('payload', JSON.stringify({ ...input, evidenceStorageKey: '' }))
+  data.append('file', file)
+  return unwrap((await api.post<ApiEnvelope<PaymentReceipt>>('/platform/accounts-receivable/receipts/with-evidence', data, { headers: { 'Content-Type': 'multipart/form-data', 'Idempotency-Key': idempotencyKey } })).data)
+}
+
+export async function downloadPaymentEvidence(receipt: PaymentReceipt) {
+  const response = await api.get<Blob>(`/platform/accounts-receivable/receipts/${receipt.id}/evidence`, { responseType: 'blob' })
+  const url = URL.createObjectURL(response.data)
+  const link = document.createElement('a')
+  link.href = url
+  const extension = String(response.headers['content-disposition'] ?? '').match(/filename="?[^";]*\.(pdf|png|jpe?g|txt|json)"?(?:;|$)/i)?.[1]?.toLowerCase() ?? 'bin'
+  link.download = `${receipt.receiptNumber}-evidence.${extension}`
+  link.click()
+  URL.revokeObjectURL(url)
+}
+
+export async function listMatchingInvoices(receiptId: string, search?: string, page?: number, invoiceId?: string) {
   return getJson<InvoiceReceivable[]>(
     `/platform/accounts-receivable/receipts/${receiptId}/matching-suggestions`,
+    { params: { search, page, invoiceId } },
   )
 }
+
+export const listPaymentAllocations = (receiptId: string) => getJson<PaymentAllocationHistory[]>(`/platform/accounts-receivable/receipts/${receiptId}/allocations`)
+export const reversePaymentAllocation = (allocationId: string, input: { reason: string; allocationVersion: number; receiptVersion: number; invoiceVersion: number }) =>
+  postJson<PaymentAllocation>(`/platform/accounts-receivable/allocations/${allocationId}/reverse`, input)
+export const getReconciliation = (batchId: string) => getJson<ReconciliationDetail>(`/platform/accounts-receivable/reconciliations/${batchId}`)
+export const editReconciliationDraft = (batchId: string, input: { version: number; reason: string; periodEnd: string; bankTotal: number; paymentReceiptIds: string[]; paymentAllocationIds: string[]; invoiceAdjustmentIds: string[] }) =>
+  postJson<ReconciliationDetail>(`/platform/accounts-receivable/reconciliations/${batchId}/draft`, input)
+export const cancelReconciliationDraft = (batchId: string, version: number, reason: string) =>
+  postJson<ReconciliationDetail>(`/platform/accounts-receivable/reconciliations/${batchId}/cancel`, { version, reason })
 
 export async function allocatePayment(
   receiptId: string,
@@ -449,9 +493,9 @@ export async function confirmPaymentImport(id: string, version: number) {
   )
 }
 
-export async function listReconciliations() {
+export async function listReconciliations(batchId?: string) {
   return getJson<ReconciliationBatch[]>(
-    '/platform/accounts-receivable/reconciliations',
+    '/platform/accounts-receivable/reconciliations', { params: { batchId } },
   )
 }
 

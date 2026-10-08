@@ -39,12 +39,14 @@ Phaeno Portal is desktop-first and fully responsive.
 - Optimize complex creation, editing, analysis, and record management for laptops and desktops.
 - Keep tablets fully functional.
 - On phones, prioritize lookup, status review, notifications, and simple actions instead of compressing complex tables and long forms into unusable replicas.
-- Render navigation once per viewport: inline when wide and in the menu when narrow.
+- Render primary navigation once per viewport: inline when wide and in the menu when narrow. Documentation stays in the user menu at every screen size. On narrow screens, that menu is a full-width tray sliding in from the right, with a fixed title and visible Close action, a scrolling body, modal focus containment, Escape dismissal, and focus return to its trigger. Respect reduced motion. Keep the mobile header divider full width, center the logo and menu control vertically, and keep the hamburger at the toolbar edge with an 8 px inset and a 44 px touch target.
 - Preserve information and functionality during zoom and reflow. Allow two-dimensional scrolling only where the content genuinely requires it, such as a complex data table or scientific visualization.
 
 ## Information architecture and navigation
 
 Use task-oriented entry points with record-centered workspaces.
+
+- User dropdown labels use sentence case: capitalize only the first word, preserving acronyms and product names such as CRM and PSeq (for example, Order settings, Sample shipping settings, and Sign out).
 
 - The home experience should answer, "What needs my attention?"
 - The POMS home uses the shared far-left sidebar as one **Order Operations / Lab
@@ -53,12 +55,18 @@ Use task-oriented entry points with record-centered workspaces.
   and Prospect access administration, and public Website intake without
   stacking the dashboards. Show one panel at a time, emphasize attention or intake counts
   and representative priority work, and route users to the full owning
-  workspace when one exists. Web Operations keeps mailing-list signups and demo
-  requests read-only on the dashboard and is visible only to Phaeno platform
-  administrators. External organization dashboards do not expose this internal
+  workspace when one exists. Web Operations shows mailing-list signups, demo
+  requests, and email delivery to Phaeno platform administrators. Intake records
+  remain view-first; bounded unsubscribe, completion, email resend actions require explicit confirmation with the affected recipient
+  or intake identified. Show queued work, provider acceptance, and failed attempts
+  distinctly; provider acceptance does not establish inbox delivery. External
+  organization dashboards do not expose this internal
   selector.
 - Work queues surface pending tasks, exceptions, recent activity, and important status changes.
-- Primary navigation uses recognizable business and scientific areas rather than technical modules.
+- **Lab ops** keeps **Jobs** first as the ungrouped work overview. Use CRM-style **SAMPLE PROCESSING**, **RESULTS**, **LAB PREPARATIONS**, and **KITS & FULFILLMENT** headings. Sample receipt and accession contain incoming work; transportation kit requests are a separate destination beside kit inventory. Keep Results & scientific review separate from permission-controlled Result release, and label physical PSeq work **PSeq kit fulfillment**.
+- Primary navigation uses recognizable business and scientific areas rather than technical modules. Phaeno **Order Ops** retains one sidebar with CRM-style **LAB SERVICES** and **PARTNER SERVICES** group headings. The first contains **Order intake** and **Trial projects**; the second contains **PSeq kits** and **Data assembly**. These section and record routes remain beneath `/order-operations`, with subject-domain segments. **Lab ops** owns execution, scientific review and a separately authorized Result release section. **Dashboard → Needs attention** summarizes cross-workflow blockers and opens their full queue through View all. Finance and Legacy integrations belong in More. Routes and record links reflect these subject domains; retained bookmarks redirect to the canonical destination.
+- Phaeno's wide-screen toolbar places secondary workspaces under **More**, ordered **Finance**, **Purchasing**, **Equipment**, **Data provisioning**, then **Legacy integrations**. On narrow screens, show these links inside a collapsible **More** row in the user tray. Put available configuration links inside a collapsible **Settings** row. Workspace links appear directly without a Workspace heading. Both sections start collapsed on each menu opening, expand within the menu width, and allow only one section open at a time. Preserve Enter/Space toggling, Up/Down movement among visible items, Escape dismissal, and accessible expanded state. Preserve destination permissions, active-route indication, and one visible entry per viewport; hide More when none of its destinations are available. Expanded section headers remain neutral. Indent text-only child links beside a subtle vertical guide and reserve the selection background for the current destination. When collapsed, emphasize a section title if it contains the current destination.
+- Place **Documentation** in the user menu for Prospect, Customer, Partner, and Phaeno users at every screen size. It opens the guides for the current organization and retains the existing audience access rules. Customer organization administrators reach user management through **Customer settings → People and access**; for other authorized audiences, place **User management** directly beneath Documentation. Keep section dividers without visible Display, Administration, or Resources headings; theme choices retain their accessible group name.
 - Do not expose an organization-context search or act-as switcher in the user
   menu. Phaeno users manage external organizations through the Accounts
   workspace, while external users remain in the organization context
@@ -73,8 +81,8 @@ Use task-oriented entry points with record-centered workspaces.
   possible request outcome alongside product and service, relationship, and
   work outcomes. Creating or editing the Company alone grants no access,
   readiness, service entitlement, or executable work.
-- Multi-section workspaces use one shared sidebar anchored to the far-left viewport edge beneath the primary toolbar. On wide screens it may remain pinned; when unpinned, a fine pointer may preview the same rail from the viewport edge. The persistent edge tab provides keyboard, click, and touch access. On narrow or coarse-pointer layouts, the rail stays open until the user selects a section, toggles the tab, or presses Escape.
-- The unpinned rail is non-modal: it does not add a backdrop, trap focus, blur the page, or move content. A pinned rail preserves the normal centered page position when it fits in the available left margin and reflows the page only when the rail would otherwise overlap it.
+- Multi-section workspaces use one shared sidebar anchored to the far-left viewport edge beneath the primary toolbar. On wide screens it may remain pinned; when unpinned, a fine pointer may preview the same rail from the viewport edge. The persistent edge tab provides keyboard, click, and touch access. On narrow or coarse-pointer layouts, the rail stays open until the user selects a section, toggles the tab, or presses Escape. On narrow screens, clicking or tapping outside the sidebar also closes it and allows the clicked page control to work normally.
+- The unpinned rail is non-modal: it does not add a backdrop, trap focus, blur the page, or move content. A pinned rail preserves the normal centered page position when it fits in the available left margin and reflows the page only when the rail would otherwise overlap it. Apply the same clearance to the shared footer so its copyright and help link remain visible.
 - Remember the sidebar pin preference as a low-risk presentation setting, and show pin controls only on wide layouts. Keep section selection, keyboard focus, Escape behavior, and accessible names intact across pinned and unpinned states, and do not render duplicate navigation for one viewport.
 - Searchable lists provide access to core records.
 - Selecting a major record opens a dedicated detail workspace with stable identity, status, actions, and related information.
@@ -97,9 +105,12 @@ This is the application-wide default for new work and for touched existing workf
 
 ## Lists and tables
 
+For records with numbered content revisions, follow the application-wide [revision strategy](revision-strategy.md). The main list line must identify the revision whose status and values it displays; link a newer pending revision separately and block another successor until that pending revision is resolved.
+
 Use tables by default for structured scientific and business records that users compare across common attributes.
 
 - Make the primary identifier a clear link to the detail workspace; avoid ambiguous whole-row clicking.
+- Style primary record links consistently across Portal lists and summaries: medium-weight primary-color text, an underline on hover or keyboard focus, and a visible focus outline. Use the shared record-link style rather than a permanent underline on one list and hover-only underline on another.
 - Put search, filters, sorting, and the primary create action in a predictable toolbar.
 - Place secondary row actions in a consistent overflow menu.
 - Keep active filters visible and provide a clear `Clear all` action.
@@ -114,10 +125,11 @@ Use tables by default for structured scientific and business records that users 
 Use one coherent, view-first workspace for a major record.
 
 - A compact header shows identity, status, essential context, and actions.
-- Show one dominant primary action; place secondary actions in an `Actions` menu.
+- When a record or version has multiple action options, group them in one `Actions` dropdown. Keep page-level creation and form Save/Cancel controls separate.
 - Present high-value summary information first.
 - Group related information by meaningful user tasks rather than database structure.
 - Use tabs only for substantial areas; keep a small number of fields on the main page.
+- Use the shared Portal tab components for consistent sizing and states: 36 px minimum tab height, 12 px horizontal and 6 px vertical padding, 14 px text with 20 px line height, 3 px list inset and 4 px gaps. A single-line tab strip is 42 px tall. Keep the same rounded corners, selected surface, disabled treatment and visible keyboard focus across workspaces. Let long labels and responsive grids grow without clipping; pages may arrange tabs but must not override their control height, typography or padding. Respect reduced-motion preferences.
 - Use simple rows and dividers for related records instead of layers of nested cards.
 - Keep record identity and essential status visible while users move among related information.
 - Editing is an intentional action. Do not make every field permanently editable.
@@ -157,6 +169,7 @@ Prioritize clarity and error prevention over maximum visual compactness.
 - Use a single-column reading flow by default.
 - Use two columns only for short, naturally paired fields such as start/end dates.
 - Place persistent labels above controls; placeholders never replace labels.
+- Keep single-line text, search and select controls the same height within a form. Use shared `Field` spacing and `NativeSelect`/`Input` sizing rather than per-screen height and margin overrides. Adjacent fields must align at their control edges with the same label-to-control gap.
 - Group fields by the user's mental model and workflow, not the data model.
 - Use concise helper text only when it prevents a likely mistake.
 - Place helper text immediately below its field label and before the control.
@@ -166,7 +179,7 @@ Prioritize clarity and error prevention over maximum visual compactness.
   structure and spacing do not drift between forms.
 - Mark genuinely required controls with actual required validation and the
   established ruby-red `*`. Keep the marker visually adjacent to its label,
-  without the standard label-to-control gap. Every form with required controls
+  without the standard label-to-control gap. Required markers flow inline with the label and stay attached to its final word when it wraps; do not place the marker in a separate flex column. Long checkbox labels use readable line spacing and keep the checkbox aligned with the first line. Every form with required controls
   includes a visible `* Required` legend. In modal forms, place that legend in
   the modal footer before the action group in reading order.
 - Prepopulate safe defaults from known context, but never assume consequential scientific or business values silently.
@@ -212,12 +225,16 @@ Each page, modal, or workflow has one visually dominant primary action.
   description. Reserve a full-width card action for a deliberately prominent
   call to action whose width communicates hierarchy rather than compensating
   for layout.
-- Use quieter styling for secondary actions and move infrequent actions into an `Actions` menu.
+- Group multiple record or version actions in an `Actions` dropdown, including status transitions. When exactly one action is shown, surface it as a directly labeled button; do not hide it in an Actions dropdown. Preserve its disabled state when prerequisites are unmet. Keep menus wide enough for clear labels and aligned to the trailing edge of the record or version row.
+- Owner-approved exception: Customer/Partner Lab Job and phase cancellation requests remain inside a neutral **Actions** dropdown even when cancellation is the only available action. Cancellation is an exceptional task and must not dominate the ordinary Job/phase workflow. Use a red destructive menu item and destructive confirmation action; keep the Actions trigger neutral. Use the shared `ActionMenu` with `keepSingleActionInMenu` for this documented exception. Other sole actions remain directly labeled buttons.
+- Every labeled Actions dropdown shows one trailing down-chevron. The shared `ActionMenu` owns this cue so screens do not have to supply it. A direct action has no dropdown chevron. Keep the icon decorative so it does not change the button's accessible name.
 - Hide actions the user is never authorized to perform.
 - Disable a temporarily unavailable action only when knowing it exists is useful, and explain the blocking condition.
 - Use destructive styling only for the action that causes harm, not for Cancel or ordinary navigation.
 - Confirm destructive, irreversible, externally visible, or consequential workflow-transition actions.
 - Name the affected record and consequence in confirmation text.
+- Use a Portal HTML dialog for in-page confirmations, with initial focus on the cancel action and focus return to the invoking control or a surviving adjacent control. Do not use browser system confirmations for these actions; browser-required unload prompts remain browser-managed.
+- Confirmation dialogs have a title header, a visible body explaining affected scope and consequences, and an action footer. Explanations belong in the body; do not render a header and footer with no meaningful body between them.
 - Require typed confirmation only for exceptionally consequential bulk or irreversible operations.
 - Prefer undo over confirmation when an action is safely reversible.
 - Reserve icon-only controls for universally familiar actions and provide accessible names and tooltips.
@@ -232,6 +249,7 @@ Feedback is immediate, contextual, and durable.
 - Keep existing data visible during refresh when it remains trustworthy.
 - Do not block an entire page for an operation affecting one section.
 - Errors remain visible until dismissed or resolved.
+- Use amber for warnings and pending prerequisites, and red for errors and failed actions. State the condition and its consequence in text; color alone must not convey severity.
 - Use plain language and an actionable next step; never present raw server messages or stack traces.
 - Long-running jobs show a named status, current stage, start time, and available next action. Users may leave without cancelling the job.
 - Status indicators combine text with color or iconography; color never carries meaning alone.

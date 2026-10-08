@@ -203,9 +203,9 @@ public sealed class CrmLead : IAudit, IConcurrency
 
     private void EnsureMutable()
     {
-        if (Status == CrmLeadStatus.Converted)
+        if (Status is CrmLeadStatus.Converted or CrmLeadStatus.Disqualified)
         {
-            throw new InvalidOperationException("A converted lead is retained as immutable history.");
+            throw new InvalidOperationException("Converted and disqualified leads are retained as immutable history.");
         }
     }
 

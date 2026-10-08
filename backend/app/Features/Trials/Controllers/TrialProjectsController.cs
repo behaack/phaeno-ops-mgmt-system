@@ -28,12 +28,21 @@ public sealed class TrialProjectsController(PSeqOperationsDbContext db, TrialAcc
     public async Task<TrialDetailDto> Create([FromBody] TrialCreateRequest request, CancellationToken token)
     {
         var actor = await access.ReadAsync(HttpContext, token); RequireStaff(actor);
-        return await ExecuteAsync(actor, $"trial-create:{request.CrmHandoffId}", request, async () =>
+        await access.RequireCreateAsync(actor, token);
+        return await ExecuteAsync(actor, $"trial-create:{request.CompanyId}", request, async () =>
         {
             var trial = await workflow.CreateAsync(actor, request, token); await db.SaveChangesAsync(token);
             return await reader.DetailAsync(trial, actor, token);
         }, token);
     }
+    [HttpPost("{id:guid}/scope/draft")]
+    public Task<TrialDetailDto> SaveScopeDraft(Guid id, [FromBody] TrialScopeDraftRequest request, CancellationToken token) =>
+        MutateAsync(id, request, async (trial, actor) =>
+        {
+            await workflow.SaveDraftAsync(trial, actor, request, token);
+            PhaenoPortal.App.Features.Accounts.Services.AccountAudit.Add(db, HttpContext, nameof(TrialProject), trial.Id,
+                "TrialScopeDraftSaved", null, actor.User.Id, new { trial.CurrentScopeRevision, trial.DraftSavedAtUtc });
+        }, token);
     [HttpPost("{id:guid}/scope")]
     public Task<TrialDetailDto> Scope(Guid id, [FromBody] TrialScopeRequest request, CancellationToken token) =>
         MutateAsync(id, request, (trial, actor) => workflow.ProposeAsync(trial, actor, request, token), token);
@@ -46,9 +55,9 @@ public sealed class TrialProjectsController(PSeqOperationsDbContext db, TrialAcc
     [HttpPost("{id:guid}/samples")]
     public Task<TrialDetailDto> Submit(Guid id, [FromBody] TrialSubmitRequest request, CancellationToken token) =>
         MutateAsync(id, request, (trial, actor) => workflow.SubmitAsync(trial, actor, request, token), token);
-    [HttpPost("{id:guid}/actions/{action}")]
-    public Task<TrialDetailDto> Act(Guid id, string action, [FromBody] TrialActionRequest request, CancellationToken token) =>
-        MutateAsync(id, new { action, request }, (trial, actor) => workflow.ActAsync(trial, actor, action, request, token), token);
+    [HttpPost("{id:guid}/actions/{operation}")]
+    public Task<TrialDetailDto> Act(Guid id, string operation, [FromBody] TrialActionRequest request, CancellationToken token) =>
+        MutateAsync(id, new { action = operation, request }, (trial, actor) => workflow.ActAsync(trial, actor, operation, request, token), token);
 
     [HttpPost("{id:guid}/crm/retry")]
     public async Task<TrialDetailDto> RetryCrm(Guid id, CancellationToken token)
@@ -61,6 +70,8 @@ public sealed class TrialProjectsController(PSeqOperationsDbContext db, TrialAcc
     [HttpPost("configuration/authorities")]
     public async Task<TrialConfigurationDto> AssignAuthority([FromBody] TrialAuthorityRequest request, CancellationToken token)
     {
+        if (request.Domain != TrialApprovalDomain.ScientificOperations)
+            throw Error("trial_authority_domain_invalid", "Assign Commercial leadership in Phaeno user management. Trial configuration manages Scientific Operations authority only.");
         var actor = await access.ReadAsync(HttpContext, token); RequireStaff(actor);
         return await ExecuteAsync(actor, $"trial-authority:{request.Domain}", request, async () =>
         {

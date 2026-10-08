@@ -1,7 +1,10 @@
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { ArrowLeft, CheckCircle2, Pencil, XCircle } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 import {
   apiErrorMessage,
   changeCrmLead,
@@ -35,7 +38,9 @@ import {
 } from "#/components/ui/dialog";
 import { Label } from "#/components/ui/label";
 import { Input } from "#/components/ui/input";
+import { FieldError } from "#/components/ui/field";
 import { Textarea } from "#/components/ui/textarea";
+import { CrmActionsMenu } from "./CrmActionsMenu";
 import { CrmCustomFields } from "./CrmCustomFields";
 import { CrmLeadDialog } from "./CrmLeadDialog";
 import { CrmRecordWork } from "./CrmRecordWork";
@@ -113,7 +118,7 @@ export function CrmLeadDetailPage({ leadId }: { leadId: string }) {
   return (
     <main className="page-wrap space-y-6 px-4 py-8">
       <Button asChild variant="ghost" size="sm">
-        <Link to="/crm/leads">
+        <Link to="/crm/leads" search={previous => previous}>
           <ArrowLeft data-icon="inline-start" />
           Back to leads
         </Link>
@@ -130,44 +135,21 @@ export function CrmLeadDetailPage({ leadId }: { leadId: string }) {
             {lead.ownerName}
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {mutable ? (
-            <Button variant="outline" onClick={() => setEditOpen(true)}>
-              <Pencil data-icon="inline-start" />
-              Edit
-            </Button>
-          ) : null}
-          {lead.status === "New" ? (
-            <Button
-              variant="outline"
-              onClick={() =>
-                status.mutate({
-                  action: "working",
-                  explanation: "Work started.",
-                })
-              }
-            >
-              Start working
-            </Button>
-          ) : null}
-          {lead.status === "New" || lead.status === "Working" ? (
-            <>
-              <Button onClick={() => setDecision("qualify")}>
-                <CheckCircle2 data-icon="inline-start" />
-                Qualify
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={() => setDecision("disqualify")}
-              >
-                <XCircle data-icon="inline-start" />
-                Disqualify
-              </Button>
-            </>
-          ) : null}
-          {lead.status === "Qualified" ? (
-            <Button onClick={() => setConvertOpen(true)}>Convert lead</Button>
-          ) : null}
+        <div className="flex items-start">
+          <CrmActionsMenu label={`Actions for ${lead.displayName}`} items={[
+            mutable && { label: "Edit", onSelect: () => setEditOpen(true) },
+            lead.status === "New" && {
+              label: "Start working", disabled: status.isPending,
+              onSelect: () => status.mutate({ action: "working", explanation: "Work started." }),
+            },
+            (lead.status === "New" || lead.status === "Working") && {
+              label: "Qualify", disabled: status.isPending, onSelect: () => setDecision("qualify"),
+            },
+            (lead.status === "New" || lead.status === "Working") && {
+              label: "Disqualify", destructive: true, disabled: status.isPending, onSelect: () => setDecision("disqualify"),
+            },
+            lead.status === "Qualified" && { label: "Convert lead", onSelect: () => setConvertOpen(true) },
+          ]} />
         </div>
       </section>
       {edit.error || status.error || convert.error ? (
@@ -378,12 +360,40 @@ function ConfirmConvert({
   onOpenChange: (open: boolean) => void;
   onConfirm: (input: LeadConversionInput) => void;
 }) {
-  const [existingCompanyId, setExistingCompanyId] = useState("");
-  const [createCompany, setCreateCompany] = useState(lead.kind === "Company");
+  const [companySelection, setCompanySelection] = useState(
+    lead.kind === "Company" ? "create" : "",
+  );
+  const createCompany = companySelection === "create";
+  const existingCompanyId = createCompany ? null : companySelection || null;
   const [createContact, setCreateContact] = useState(
     lead.kind === "Individual",
   );
   const [createOpportunity, setCreateOpportunity] = useState(true);
+  const needsCompanyName = createCompany && !lead.companyName?.trim();
+  const form = useForm({
+    defaultValues: {
+      companyName: "",
+      opportunityName: `${lead.displayName} opportunity`,
+      pipelineId: "",
+    },
+    resolver: zodResolver(z.object({
+      companyName: z.string().trim(),
+      opportunityName: z.string().trim(),
+      pipelineId: z.string(),
+    }).superRefine((values, context) => {
+      if (needsCompanyName && !values.companyName) {
+        context.addIssue({ code: "custom", path: ["companyName"], message: "Enter a company name." });
+      }
+      if (needsCompanyName && values.companyName.length > 255) {
+        context.addIssue({ code: "custom", path: ["companyName"], message: "Use 255 characters or fewer." });
+      }
+      if (createOpportunity && !values.opportunityName) {
+        context.addIssue({ code: "custom", path: ["opportunityName"], message: "Enter an opportunity name." });
+      }
+    })),
+    mode: "onBlur",
+    reValidateMode: "onChange",
+  });
   const companyAvailable = Boolean(existingCompanyId) || createCompany;
   const hasConversionOutput =
     companyAvailable || createContact || createOpportunity;
@@ -391,22 +401,18 @@ function ConfirmConvert({
     <Dialog open onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            const data = new FormData(event.currentTarget);
+          noValidate
+          onSubmit={form.handleSubmit((values) => {
             onConfirm({
-              existingCompanyId: existingCompanyId || null,
-              createCompany: !existingCompanyId && createCompany,
+              existingCompanyId,
+              createCompany,
+              companyName: needsCompanyName ? values.companyName : null,
               createContact,
               createOpportunity,
-              opportunityName: createOpportunity
-                ? String(data.get("opportunityName") ?? "").trim() || null
-                : null,
-              pipelineId: createOpportunity
-                ? String(data.get("pipelineId") ?? "") || null
-                : null,
+              opportunityName: createOpportunity ? values.opportunityName : null,
+              pipelineId: createOpportunity ? values.pipelineId || null : null,
             });
-          }}
+          })}
         >
           <DialogHeader>
             <DialogTitle>Convert qualified lead</DialogTitle>
@@ -423,31 +429,46 @@ function ConfirmConvert({
           ) : null}
           <div className="grid gap-4">
             <div className="grid gap-1.5">
-              <Label htmlFor="lead-existing-company">Existing Company</Label>
+              <Label htmlFor="lead-company">Company</Label>
               <select
-                id="lead-existing-company"
-                value={existingCompanyId}
-                onChange={(event) => {
-                  setExistingCompanyId(event.target.value);
-                  if (event.target.value) setCreateCompany(false);
-                }}
+                id="lead-company"
+                value={companySelection}
+                onChange={(event) => setCompanySelection(event.target.value)}
+                aria-describedby={
+                  createCompany && !needsCompanyName ? "lead-company-description" : undefined
+                }
                 className="h-9 rounded-md border bg-background px-3 text-sm"
               >
-                <option value="">Do not associate an existing Company</option>
+                <option value="">No company</option>
+                <option value="create">Create company</option>
                 {companies.map((company) => (
                   <option key={company.id} value={company.id}>
                     {company.name}
                   </option>
                 ))}
               </select>
+              {createCompany && !needsCompanyName ? (
+                <p
+                  id="lead-company-description"
+                  className="text-sm text-muted-foreground"
+                >
+                  Company name: {lead.companyName}
+                </p>
+              ) : null}
             </div>
-            {!existingCompanyId ? (
-              <CheckRow
-                id="lead-create-company"
-                checked={createCompany}
-                onChange={setCreateCompany}
-                label={`Create Company ${lead.companyName ?? lead.displayName}`}
-              />
+            {needsCompanyName ? (
+              <div className="grid gap-1.5">
+                <Label htmlFor="lead-company-name">Company name *</Label>
+                <Input
+                  id="lead-company-name"
+                  required
+                  maxLength={255}
+                  {...form.register("companyName")}
+                  aria-invalid={Boolean(form.formState.errors.companyName)}
+                  aria-describedby={form.formState.errors.companyName ? "lead-company-name-error" : undefined}
+                />
+                <FieldError id="lead-company-name-error">{form.formState.errors.companyName?.message}</FieldError>
+              </div>
             ) : null}
             <CheckRow
               id="lead-create-contact"
@@ -469,16 +490,18 @@ function ConfirmConvert({
                   </Label>
                   <Input
                     id="lead-opportunity-name"
-                    name="opportunityName"
                     required
-                    defaultValue={`${lead.displayName} opportunity`}
+                    {...form.register("opportunityName")}
+                    aria-invalid={Boolean(form.formState.errors.opportunityName)}
+                    aria-describedby={form.formState.errors.opportunityName ? "lead-opportunity-name-error" : undefined}
                   />
+                  <FieldError id="lead-opportunity-name-error">{form.formState.errors.opportunityName?.message}</FieldError>
                 </div>
                 <div className="grid gap-1.5">
                   <Label htmlFor="lead-pipeline">Pipeline</Label>
                   <select
                     id="lead-pipeline"
-                    name="pipelineId"
+                    {...form.register("pipelineId")}
                     className="h-9 rounded-md border bg-background px-3 text-sm"
                   >
                     <option value="">Default pipeline</option>

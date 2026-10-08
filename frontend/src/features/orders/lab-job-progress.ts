@@ -1,0 +1,324 @@
+import { hasCompleteSampleIdentification } from './sample-source-capacity'
+import type { LabServiceOrder, Quote } from '#/api/order-management'
+import type { SampleShipmentWorkflow, SampleShippingCrosswalkItem } from '#/api/sample-shipping'
+import type { ShipmentKitSupply } from '#/api/transportation-kit-requests'
+import type { TransportationKitRequest } from '#/api/transportation-kit-requests'
+import type { LabSampleTubeWorkspace } from '#/api/order-management'
+
+export type LabJobProgressStepId = 'confirm-order' | 'samples' | 'kits' | 'containers' | 'tubes' | 'receive-kits' | 'prepare' | 'send'
+export type LabJobProgressState = 'not-started' | 'complete' | 'in-progress' | 'waiting-for-you' | 'waiting-for-administrator' | 'waiting-for-phaeno' | 'waiting-for-delivery' | 'needs-attention' | 'unavailable'
+export type LabJobProgressOwner = 'You' | 'Your administrator' | 'Phaeno' | 'Carrier'
+export type LabJobProgressStep = {
+  id: LabJobProgressStepId
+  label: string
+  state: LabJobProgressState
+  owner: LabJobProgressOwner
+  detail: string
+  statusLabel?: string
+  actionLabel?: string
+}
+export type LabJobProgressException = { label: string; detail: string; owner: LabJobProgressOwner }
+export type LabJobProgress = {
+  steps: LabJobProgressStep[]
+  nextStep: LabJobProgressStep | null
+  allSent: boolean
+  /** Null until the full required tube list is allocated without a remaining pool. */
+  shipmentCount: number | null
+  exception: LabJobProgressException | null
+}
+export type LabJobProgressInput = {
+  order: LabServiceOrder
+  /** The complete source-family response, before any visible list pagination. */
+  shipments: SampleShipmentWorkflow[]
+  shippingState: 'loading' | 'unavailable' | 'ready'
+  canManageShipping: boolean
+  canAcceptOrder: boolean
+  kitSupply?: ShipmentKitSupply
+  kitRequest?: TransportationKitRequest | null
+  kitState?: 'loading' | 'unavailable' | 'ready'
+  pairWorkspace?: LabSampleTubeWorkspace
+  pairState?: 'loading' | 'unavailable' | 'ready'
+  now?: number
+}
+
+export const labJobProgressStateLabels: Record<LabJobProgressState, string> = {
+  'not-started': 'Not started', complete: 'Complete', 'in-progress': 'In progress',
+  'waiting-for-you': 'Waiting for you', 'waiting-for-administrator': 'Waiting for your administrator',
+  'waiting-for-phaeno': 'Waiting for Phaeno', 'waiting-for-delivery': 'Waiting for delivery',
+  'needs-attention': 'Needs attention', unavailable: 'Not available',
+}
+
+const labels: Record<LabJobProgressStepId, string> = {
+  'confirm-order': 'Confirm pricing', samples: 'Identify and finalize samples',
+  kits: 'Have transportation kits ready', containers: 'Assign containers', tubes: 'Match samples to tubes',
+  send: 'Send and record shipments',
+  'receive-kits': 'Receive transportation kits', prepare: 'Prepare sample shipment',
+}
+export function transportationKitStageLabel(status?: TransportationKitRequest['status'] | null) {
+  if (status === 'Pending') return 'Preparing your transportation kits'
+  if (status === 'PartiallyDispatched' || status === 'Dispatched') return 'Receive transportation kits'
+  if (status === 'Received') return 'Transportation kits received'
+  if (status === 'Cancelled') return 'Kit order cancelled'
+  return 'Transportation kits'
+}
+const hasDate = (value: string | null | undefined) => !!value && Number.isFinite(Date.parse(value))
+const positiveInteger = (value: number | undefined): value is number => Number.isInteger(value) && value! > 0
+const present = (value: string | null | undefined) => !!value?.trim()
+const customerOwner = (allowed: boolean): LabJobProgressOwner => allowed ? 'You' : 'Your administrator'
+const customerState = (allowed: boolean): LabJobProgressState => allowed ? 'waiting-for-you' : 'waiting-for-administrator'
+const count = (value: number, singular: string) => `${value} ${singular}${value === 1 ? '' : 's'}`
+
+/** Display evidence only. The existing server-backed commands still decide whether a write is allowed. */
+export function buildLabJobProgress(input: LabJobProgressInput): LabJobProgress {
+  if (!input.order.placedAt || input.order.usesPairedPreparation) return buildPairedLabJobProgress(input)
+  const { order, shippingState, canManageShipping, canAcceptOrder } = input
+  const owner = customerOwner(canManageShipping)
+  const readyState = customerState(canManageShipping)
+  const step = (id: LabJobProgressStepId, state: LabJobProgressState, detail: string, stepOwner = owner): LabJobProgressStep => ({ id, label: labels[id], state, owner: stepOwner, detail })
+  const accepted = hasDate(order.placedAt) || order.quotes.some(quote => quote.status === 'Accepted' || hasDate(quote.acceptedAt))
+  const finalized = hasDate(order.sampleRosterFinalizedAt)
+  const samples = order.samples
+  const expected = expectedTubes(order)
+  const sampleCountKnown = Number.isInteger(order.requestedSpecimenCount) && order.requestedSpecimenCount > 0
+  const sampleDetail = sampleCountKnown ? `${samples.length} of ${order.requestedSpecimenCount} sample IDs saved.` : 'The accepted sample count is not available.'
+  const identified = accepted && !finalized && hasCompleteSampleIdentification(order)
+  const steps = [
+    confirmationStep(order, accepted, canAcceptOrder, input.now ?? Date.now()),
+    step('samples', finalized ? 'complete' : !accepted ? 'not-started' : readyState,
+      finalized ? `Sample list finalized.${expected === null ? ' The required tube count is not available.' : ` ${count(samples.length, 'sample')} · ${count(expected, 'tube')}.`}`
+        : !accepted ? `${sampleDetail} Confirm the order before finalizing the sample list.`
+          : identified ? `${sampleDetail} ${canManageShipping ? 'Review the sample IDs and tube counts, then finalize the list.' : 'Your administrator can review and finalize the sample list.'}`
+          : `${sampleDetail} ${canManageShipping ? 'Enter the agreed samples and finalize the list.' : 'Your administrator can enter and finalize the sample list.'}`),
+  ]
+  if (identified) {
+    steps[1].label = 'Review and finalize sample list'
+    steps[1].actionLabel = 'Review and finalize list'
+  }
+  const exception = orderException(order)
+
+  if (shippingState !== 'ready') {
+    const detail = shippingState === 'loading' ? 'Checking shipping progress…' : 'Shipping progress is not available. Refresh or ask Phaeno for help.'
+    for (const id of ['kits', 'containers', 'tubes', 'send'] as const) steps.push(step(id, 'unavailable', detail))
+    return finish(steps, false, exception)
+  }
+
+  const family = input.shipments.filter(shipment => shipment.organizationId === order.organizationId
+    && (shipment.authorizationSource === 'CustomerLabServiceOrder' || shipment.authorizationSource === 'CustomerPromotionalOrder')
+    && shipment.authorizationSourceId === order.id && shipment.status !== 'Cancelled')
+  const active = family.filter(shipment => shipment.crosswalk.length > 0 || positiveInteger(shipment.expectedTubeCount))
+  const pools = active.filter(isUnallocated)
+  const containers = active.filter(shipment => !isUnallocated(shipment))
+  const rows = active.flatMap(shipment => shipment.crosswalk)
+  const countsAgree = expected !== null && active.every(shipment => shipment.orderExpectedTubeCount === undefined || shipment.orderExpectedTubeCount === expected)
+    && active.every(shipment => shipment.expectedTubeCount === undefined || shipment.expectedTubeCount === shipment.crosswalk.length)
+  const knownSlots = countsAgree && completeRosterCoverage(order, rows)
+  const assigned = containers.filter(hasAssignedKit)
+  const allocatedTubes = assigned.reduce((total, shipment) => total + shipment.crosswalk.length, 0)
+  const fullyAllocatedScope = knownSlots && pools.length === 0 && containers.length > 0
+  const shipmentCount = fullyAllocatedScope ? containers.length : null
+  const singleShipment = shipmentCount === 1
+  const allAllocated = fullyAllocatedScope && assigned.length === containers.length
+  const matched = rows.filter(isMatched)
+  const uniqueMatches = new Set(matched.map(row => row.registeredSampleTubeId)).size === matched.length
+    && new Set(matched.map(row => row.supplierTubeBarcode!.trim())).size === matched.length
+  const allMatched = fullyAllocatedScope && matched.length === expected && uniqueMatches
+  const issued = containers.filter(shipment => hasCurrentInsert(shipment))
+  const insertsComplete = fullyAllocatedScope && issued.length === containers.length
+  const sent = containers.filter(shipment => hasDate(shipment.shippedAt))
+  const allSent = fullyAllocatedScope && sent.length === containers.length
+  const knownCount = (value: number) => expected === null || !countsAgree ? 'The required tube count is not available.' : `${value} of ${expected} tubes`
+  const supply = currentSupply(input.kitSupply, order, active)
+  const kitsComplete = knownSlots && active.length > 0
+    && active.every(shipment => hasAssignedKit(shipment) || (shipment.id === supply?.shipmentId && hasAvailableSupply(supply, shipment)))
+
+  steps.push(kitStep({ step, finalized, active, supply, complete: kitsComplete, readyState, owner }))
+  steps.push(step('containers', allAllocated ? 'complete' : !finalized ? 'not-started' : expected === null ? 'unavailable' : !countsAgree || !knownSlots && rows.length > 0 ? 'needs-attention' : readyState,
+    allAllocated ? `${count(containers.length, 'container')} assigned for all ${count(expected!, 'tube')}.`
+      : !finalized ? 'Finalize the sample list before assigning containers.'
+        : !countsAgree || !knownSlots && rows.length > 0 ? 'Container totals need review. Open the shipping workspace to check the complete sample list.'
+          : `${knownCount(allocatedTubes)}${expected !== null && countsAgree ? ' allocated.' : ''} Assign the remaining tubes to physical containers.`))
+  steps.push(step('tubes', allMatched ? 'complete' : !uniqueMatches ? 'needs-attention' : matched.length > 0 ? 'in-progress' : !allAllocated ? 'not-started' : readyState,
+    allMatched ? `All ${count(expected!, 'tube')} have saved barcode matches.`
+      : !uniqueMatches ? 'A tube match appears more than once. Review the affected containers.'
+        : `${knownCount(matched.length)}${expected !== null && countsAgree ? ' matched.' : ''} ${allAllocated ? 'Scan each remaining registered tube.' : 'Finish assigning containers before matching the remaining tubes.'}`))
+  const singleSendGuidance = !allMatched
+    ? 'Complete the tube matches before preparing the shipping insert and sending the shipment.'
+    : insertsComplete ? 'Print the current shipping insert and place it inside the container, then hand the shipment to the carrier and record it here.'
+      : 'Review and confirm the shipping insert, then print it and place it inside the container. Hand the shipment to the carrier and record it here.'
+  const multipleSendGuidance = !allMatched
+    ? 'Finish assigning containers and matching their tubes before preparing shipping inserts and sending them.'
+    : insertsComplete ? 'Print each current shipping insert and place it inside its container, then hand each shipment to the carrier and record it here.'
+      : `${issued.length} of ${shipmentCount} shipping inserts confirmed. Review and confirm the remaining shipping inserts, then print each current insert and place it inside its container. Hand each shipment to the carrier and record it here.`
+  const sendDetail = singleShipment
+    ? allSent ? 'Your shipment is recorded as sent. Track receipt and laboratory progress below.'
+      : `Your shipment has not been recorded as sent. ${singleSendGuidance}`
+    : allSent ? `All ${count(containers.length, 'shipment')} recorded as sent. Track receipt and laboratory progress below.`
+      : `${shipmentCount === null ? `${count(sent.length, 'shipment')} recorded as sent; the final shipment count is not yet confirmed` : `${sent.length} of ${shipmentCount} shipments recorded as sent`}. ${multipleSendGuidance}`
+  steps.push({ ...step('send', allSent ? 'complete' : sent.length > 0 || issued.length > 0 ? 'in-progress' : !allMatched ? 'not-started' : readyState, sendDetail),
+    label: singleShipment ? 'Send and record your shipment' : labels.send })
+  return finish(steps, allSent, exception, shipmentCount)
+}
+
+function buildPairedLabJobProgress(input: LabJobProgressInput): LabJobProgress {
+  const { order, canManageShipping, canAcceptOrder } = input
+  const owner = customerOwner(canManageShipping)
+  const readyState = customerState(canManageShipping)
+  const accepted = hasDate(order.placedAt) || order.quotes.some(quote => quote.status === 'Accepted' || hasDate(quote.acceptedAt))
+  const first = { ...confirmationStep(order, accepted, canAcceptOrder, input.now ?? Date.now()), label: 'Confirm price and order' }
+  const step = (id: LabJobProgressStepId, state: LabJobProgressState, detail: string, stepOwner = owner): LabJobProgressStep => ({ id, label: labels[id], state, owner: stepOwner, detail })
+  const request = input.kitRequest
+  const kitStatusLabel = !accepted || input.kitState !== 'ready' ? undefined
+    : request?.status === 'Received' ? request.kits.length === 1 ? 'Kit received' : 'Kits received'
+      : request?.kits.some(kit => kit.receivedAt) ? 'Some kits received'
+        : request?.status === 'Dispatched' ? request.kits.length === 1 ? 'Kit sent' : 'Kits sent'
+          : request?.status === 'PartiallyDispatched' ? request.kits.length === 1 ? 'One kit sent' : 'Some kits sent'
+            : request?.status === 'Pending' ? 'Kit order received by Phaeno'
+              : request?.status === 'Cancelled' ? 'Kit order cancelled'
+                : input.pairState === 'ready' && ((input.pairWorkspace?.kits.length ?? 0) > 0 || hasDate(order.sampleRosterFinalizedAt)) ? 'Kit received' : undefined
+  const pairs = input.pairWorkspace?.pairs.length ?? 0
+  const expected = order.requestedSpecimenCount
+  const shipments = input.shipments.filter(item => item.authorizationSourceId === order.id && item.status !== 'Cancelled')
+  const sent = shipments.filter(item => hasDate(item.shippedAt))
+  const allSent = shipments.length > 0 && sent.length === shipments.length && hasDate(order.sampleRosterFinalizedAt)
+  const kits = !accepted ? step('receive-kits', 'not-started', 'Confirm the order first.')
+    : input.kitState !== 'ready' || input.pairState !== 'ready'
+      ? step('receive-kits', 'unavailable', 'Checking kit fulfillment and physical receipt…')
+      : request?.status === 'Received' || !request && ((input.pairWorkspace?.kits.length ?? 0) > 0 || hasDate(order.sampleRosterFinalizedAt))
+        ? step('receive-kits', 'complete', request ? 'All dispatched kits were physically confirmed received.' : 'Compatible received stock covers this Job.')
+        : request?.status === 'Dispatched'
+          ? step('receive-kits', readyState, 'Track the kits and confirm each physical kit after it arrives.')
+          : request?.status === 'PartiallyDispatched'
+            ? step('receive-kits', 'waiting-for-phaeno', 'Some kits are on the way; Phaeno is preparing the rest.', 'Phaeno')
+            : request?.status === 'Pending'
+              ? step('receive-kits', 'waiting-for-phaeno', 'Phaeno is preparing the kit configuration for this Job.', 'Phaeno')
+              : step('receive-kits', 'needs-attention', 'No available received kits were found. Ask Phaeno to review kit fulfillment.', 'Phaeno')
+  const finalized = hasDate(order.sampleRosterFinalizedAt)
+  const prepare = finalized
+    ? step('prepare', 'complete', `${expected} Sample IDs and their physical tube barcodes were confirmed together.`)
+    : !accepted ? step('prepare', 'not-started', 'Confirm the order and receive kits first.')
+      : input.pairState !== 'ready' ? step('prepare', 'unavailable', 'Checking saved sample/tube pairs…')
+        : kits.state !== 'complete' && pairs === 0 ? step('prepare', 'not-started', 'Confirm physical kit receipt before entering Sample IDs and tube barcodes.')
+          : step('prepare', pairs > 0 ? 'in-progress' : readyState,
+            `${pairs} of ${expected} Sample ID/tube pairs saved. Enter and verify one pair at a time.`)
+  const send = allSent ? step('send', 'complete', `All ${shipments.length} return shipments were recorded as sent.`)
+    : !finalized ? step('send', 'not-started', 'Confirm every Sample ID/tube pair before reviewing the shipping insert.')
+      : input.shippingState !== 'ready' ? step('send', 'unavailable', 'Checking return shipments…')
+        : step('send', readyState, `${sent.length} of ${shipments.length} physical kit shipments recorded as sent. Review each insert, pack and record carrier handoff.`)
+  const kitActionLabel = request?.status === 'PartiallyDispatched' || request?.status === 'Dispatched'
+    ? 'Record receipt' : 'View kit order'
+  return finish([first, { ...kits, label: accepted ? transportationKitStageLabel(request?.status) : labels['receive-kits'],
+    statusLabel: kitStatusLabel, actionLabel: kitActionLabel }, prepare, send], allSent, orderException(order), finalized ? shipments.length : null)
+}
+
+function confirmationStep(order: LabServiceOrder, accepted: boolean, allowed: boolean, now: number): LabJobProgressStep {
+  const base = { id: 'confirm-order' as const, label: labels['confirm-order'] }
+  if (accepted) return { ...base, state: 'complete', owner: customerOwner(allowed), detail: 'The order is confirmed.' }
+  const current = currentQuote(order.quotes)
+  const expired = current?.status === 'Expired' || current?.status === 'Issued' && hasDate(current.expiresAt) && Date.parse(current.expiresAt) <= now
+  if (expired) return { ...base, state: 'waiting-for-phaeno', owner: 'Phaeno', detail: 'The quote has expired. Ask Phaeno to provide a current quote before confirming the order.' }
+  if (order.canPlaceStandardOrder || current?.status === 'Issued') {
+    if (allowed && !order.canPlaceStandardOrder && !order.canAcceptQuote) return { ...base, state: 'needs-attention', owner: 'You', detail: order.quoteAcceptanceBlockedReason?.trim() || 'Review the order or quote blockers before accepting.' }
+    return { ...base, label: 'Confirm pricing', state: customerState(allowed), owner: customerOwner(allowed), detail: allowed ? 'Review the scope and pricing, then accept or decline it.' : 'Your administrator can review and accept or decline the pricing.' }
+  }
+  if (['SubmittedForQuote', 'QuoteInPreparation', 'QuoteIssued'].includes(order.status)) {
+    return { ...base, label: 'Waiting for pricing', state: 'waiting-for-phaeno', owner: 'Phaeno', detail: 'Phaeno is reviewing your request and preparing pricing for you to accept or decline.' + (order.canEdit || order.canWithdraw ? ' Use Actions to modify or withdraw your request while you wait.' : '') }
+  }
+  const canPrepareOrder = allowed || order.canEdit || order.canSubmit
+  return { ...base, state: customerState(canPrepareOrder), owner: customerOwner(canPrepareOrder), detail: order.status === 'ChangesRequested' ? 'Review the requested changes and resubmit the order for pricing.' : 'Complete the order details and submit for pricing, or review the configured standard order.' }
+}
+
+function currentQuote(quotes: Quote[]) {
+  const published = quotes.filter(quote => ['Issued', 'Expired', 'Accepted'].includes(quote.status))
+  return (published.length ? published : quotes).reduce<Quote | null>((latest, quote) => !latest || quote.revision > latest.revision ? quote : latest, null)
+}
+
+function expectedTubes(order: LabServiceOrder) {
+  if (!positiveInteger(order.requestedSpecimenCount) || order.samples.length !== order.requestedSpecimenCount
+    || !order.samples.every(sample => positiveInteger(sample.quantity))
+    || new Set(order.samples.map(sample => sample.id)).size !== order.samples.length) return null
+  return order.samples.reduce((total, sample) => total + sample.quantity, 0)
+}
+
+function completeRosterCoverage(order: LabServiceOrder, rows: SampleShippingCrosswalkItem[]) {
+  if (expectedTubes(order) === null) return false
+  // Tube ordinals repeat across split shipments; persisted slot identities do not.
+  const keys = rows.map(row => row.tubeSlotId)
+  if (keys.some(key => !key) || new Set(keys).size !== keys.length) return false
+  const bySample = new Map<string, number>()
+  rows.forEach(row => bySample.set(row.submittedSpecimenId, (bySample.get(row.submittedSpecimenId) ?? 0) + 1))
+  return bySample.size === order.samples.length && order.samples.every(sample => bySample.get(sample.id) === sample.quantity)
+}
+
+function isUnallocated(shipment: SampleShipmentWorkflow) {
+  return shipment.isPackingPool === true || (!shipment.container && !shipment.returnKit && shipment.status === 'Preparing')
+}
+
+function hasAssignedKit(shipment: SampleShipmentWorkflow) {
+  if (isUnallocated(shipment) || !shipment.crosswalk.length) return false
+  const assigned = shipment.assignedContainer
+  const physical = assigned && present(assigned.stockKitId) && ['Assigned', 'InUse'].includes(assigned.status)
+    && (!assigned.assignedJobId || assigned.assignedJobId === shipment.authorizationSourceId)
+    && (!assigned.reservedShipmentId || assigned.reservedShipmentId === shipment.id)
+    && (!assigned.boundShipmentId || assigned.boundShipmentId === shipment.id)
+    && assigned.container.definitionId === shipment.container?.definitionId && assigned.container.capacity >= shipment.crosswalk.length
+  const legacy = shipment.returnKit && shipment.returnKit.sampleShipmentId === shipment.id && hasDate(shipment.returnKit.fulfilledAt)
+    && shipment.returnKit.requiredTubeCount >= shipment.crosswalk.length
+  return !!physical || !!legacy
+}
+
+function isMatched(row: SampleShippingCrosswalkItem) { return present(row.registeredSampleTubeId) && present(row.supplierTubeBarcode) }
+function hasCurrentInsert(shipment: SampleShipmentWorkflow) {
+  const insert = shipment.currentPacket
+  return !!insert && present(insert.id) && positiveInteger(insert.revision) && hasDate(insert.issuedAt) && insert.isVoided === false
+}
+
+function currentSupply(supply: ShipmentKitSupply | undefined, order: LabServiceOrder, active: SampleShipmentWorkflow[]) {
+  if (!supply || supply.jobId !== order.id || !supply.deliveryLocationId) return undefined
+  const shipment = active.find(value => value.id === supply.shipmentId)
+  return shipment && supply.shipmentVersion === shipment.version && supply.tubeCount === shipment.crosswalk.length
+    && (!shipment.departureDeliveryLocationId || shipment.departureDeliveryLocationId === supply.deliveryLocationId) ? supply : undefined
+}
+
+function hasAvailableSupply(supply: ShipmentKitSupply, shipment: SampleShipmentWorkflow) {
+  // This recommendation covers the shortage AFTER received location stock, not the full tube list.
+  const recommendation = supply.recommendation
+  return supply.inventoryStatus === 'RecordedForLocation' && shipment.crosswalk.length > 0 && recommendation.isComplete
+    && recommendation.tubeCount === 0 && recommendation.unallocatedTubes === 0 && recommendation.containerCount === 0
+    && recommendation.containers.length === 0 && supply.recordedStock.some(stock => stock.availableQuantity > 0)
+}
+
+function kitStep({ step, finalized, active, supply, complete, readyState, owner }: {
+  step: (id: LabJobProgressStepId, state: LabJobProgressState, detail: string, owner?: LabJobProgressOwner) => LabJobProgressStep
+  finalized: boolean; active: SampleShipmentWorkflow[]; supply: ShipmentKitSupply | undefined; complete: boolean
+  readyState: LabJobProgressState; owner: LabJobProgressOwner
+}) {
+  if (complete) return step('kits', 'complete', 'Transportation kits are assigned or sufficient compatible received stock is available for every required container.')
+  if (!finalized) return step('kits', 'not-started', 'Finalize the samples to check which transportation kits are needed.')
+  if (!active.length) return step('kits', 'unavailable', 'Shipping setup is not available yet. Ask Phaeno to check this Job.', 'Phaeno')
+  const request = supply?.request
+  if (request && request.status !== 'Cancelled' && request.status !== 'Received') {
+    const delivery = request.canConfirmReceipt
+      ? step('kits', readyState, 'Wait for the ordered containers to arrive. Confirm each kit’s receipt only after it physically arrives at your kit receiving location.', owner)
+      : request.status === 'Dispatched'
+        ? step('kits', 'waiting-for-delivery', 'Your containers are on the way to your kit receiving location. Wait for them to arrive before confirming receipt.', 'Carrier')
+        : request.status === 'PartiallyDispatched'
+          ? step('kits', 'waiting-for-phaeno', 'Some containers are on the way; Phaeno is preparing the rest. Confirm each kit’s receipt only after it physically arrives.', 'Phaeno')
+          : step('kits', 'waiting-for-phaeno', 'Phaeno is preparing your containers for delivery. Wait for them to arrive before confirming receipt.', 'Phaeno')
+    return { ...delivery, label: 'Wait for containers to arrive', actionLabel: 'View kit delivery' }
+  }
+  return step('kits', readyState, 'Check received kits at your container location. Use compatible received stock, or request the kits you still need.')
+}
+
+function orderException(order: LabServiceOrder): LabJobProgressException | null {
+  const reason = order.tenantSafeReason?.trim()
+  if (order.status === 'Cancelled' || order.status === 'Declined') return { label: order.status === 'Cancelled' ? 'Order cancelled' : 'Order declined', owner: 'Phaeno', detail: reason || 'This order is not proceeding. Earlier recorded preparation remains visible; unfinished steps are not complete.' }
+  if (order.status === 'CancellationRequested') return { label: 'Cancellation requested', owner: 'Phaeno', detail: reason || 'Phaeno is reviewing the cancellation request. Check with Phaeno before sending further samples.' }
+  if (order.status === 'OnHold') return { label: 'Order on hold', owner: 'Phaeno', detail: reason || 'Review the hold details with Phaeno before continuing. Previously completed preparation remains recorded.' }
+  if (order.status === 'Completed') return { label: 'Order completed', owner: 'Phaeno', detail: 'Review laboratory progress and results below. Preparation is checked off only where its saved evidence is available.' }
+  return null
+}
+
+function finish(steps: LabJobProgressStep[], allSent: boolean, exception: LabJobProgressException | null, shipmentCount: number | null = null): LabJobProgress {
+  if (exception || allSent) return { steps, nextStep: null, allSent, shipmentCount, exception }
+  return { steps, nextStep: steps.find(step => step.state !== 'complete') ?? null, allSent, shipmentCount, exception }
+}

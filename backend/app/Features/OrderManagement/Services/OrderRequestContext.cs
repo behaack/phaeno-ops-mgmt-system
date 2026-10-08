@@ -29,6 +29,21 @@ public sealed class OrderRequestContext(
         OrganizationKind requiredKind,
         bool requireOrganizationAdmin,
         CancellationToken cancellationToken)
+        => await RequireTenantKindsAsync(httpContext, [requiredKind], requireOrganizationAdmin, cancellationToken);
+
+    public async Task<OrderTenantContext> RequireLabServiceTenantAsync(HttpContext httpContext,
+        bool requireDepartmentAdmin, CancellationToken cancellationToken)
+    {
+        var tenant = await RequireTenantKindsAsync(httpContext, [OrganizationKind.Customer, OrganizationKind.Partner], requireDepartmentAdmin, cancellationToken);
+        if (tenant.Organization.Kind == OrganizationKind.Partner
+            && !await LabServiceOrderingEligibility.HasPartnerAccessAsync(dbContext, tenant.Organization.Id, tenant.Department.Id, cancellationToken))
+            throw new OrderManagementException("order_not_found", "The requested order resource was not found.", StatusCodes.Status404NotFound);
+        return tenant;
+    }
+
+    private async Task<OrderTenantContext> RequireTenantKindsAsync(
+        HttpContext httpContext, IReadOnlyList<OrganizationKind> requiredKinds,
+        bool requireOrganizationAdmin, CancellationToken cancellationToken)
     {
         var actor = await AccountAccess.ReadActiveActorAsync(
             httpContext,
@@ -54,7 +69,7 @@ public sealed class OrderRequestContext(
             && candidate.IsActive
             && candidate.Organization is { IsActive: true });
 
-        if (membership?.Organization == null || membership.Organization.Kind != requiredKind)
+        if (membership?.Organization == null || !requiredKinds.Contains(membership.Organization.Kind))
         {
             throw new OrderManagementException(
                 "order_not_found",
@@ -108,12 +123,15 @@ public sealed class OrderRequestContext(
             && candidate.IsActive
             && candidate.Organization is { IsActive: true });
         if (membership?.Organization == null
-            || membership.Organization.Kind is not (OrganizationKind.Prospect or OrganizationKind.Customer))
+            || membership.Organization.Kind is not (OrganizationKind.Prospect or OrganizationKind.Customer or OrganizationKind.Partner))
             throw new OrderManagementException(
                 "sample_shipment_not_found",
                 "The requested sample-shipping resource was not found.",
                 StatusCodes.Status404NotFound);
         var department = await ResolveDepartmentAsync(httpContext, membership, cancellationToken);
+        if (membership.Organization.Kind == OrganizationKind.Partner
+            && !await LabServiceOrderingEligibility.HasPartnerAccessAsync(dbContext, membership.OrganizationId, department.Id, cancellationToken))
+            throw new OrderManagementException("sample_shipment_not_found", "The requested sample-shipping resource was not found.", StatusCodes.Status404NotFound);
         var isDepartmentAdmin = membership.IsOrganizationAdmin
             || await dbContext.OrganizationDepartmentMemberships.AsNoTracking().AnyAsync(value =>
                 value.OrganizationMembershipId == membership.Id
@@ -210,6 +228,21 @@ public sealed class OrderRequestContext(
         return actor;
     }
 
+    public async Task<User> RequireCommercialOrderAsync(
+        HttpContext httpContext, bool enforceBusinessRoles, bool readOnly,
+        CancellationToken cancellationToken)
+    {
+        var actor = await AccountAccess.ReadActiveActorAsync(httpContext, dbContext,
+            externalIdentityContext, cancellationToken)
+            ?? throw new OrderManagementException("active_actor_required", "An active portal user is required.", StatusCodes.Status401Unauthorized);
+        if (!actor.Memberships.Any(value => value.IsActive
+            && value.Organization is { IsActive: true, Kind: OrganizationKind.Phaeno }))
+            throw new OrderManagementException("business_role_required", "Active Phaeno commercial access is required.", StatusCodes.Status403Forbidden);
+        if (readOnly && AccountAuthorization.IsPlatformAdmin(actor)) return actor;
+        if (!enforceBusinessRoles) return await RequirePlatformAdminAsync(httpContext, cancellationToken);
+        return await RequireBusinessRoleAsync(httpContext, BusinessRole.CommercialOperator, true, cancellationToken);
+    }
+
     public async Task<User> RequireBusinessRoleAsync(
         HttpContext httpContext,
         BusinessRole role,
@@ -242,6 +275,17 @@ public sealed class OrderRequestContext(
         }
 
         return actor;
+    }
+
+    public async Task<User> RequirePackageReaderAsync(HttpContext httpContext,
+        bool enforceBusinessRoles, CancellationToken cancellationToken)
+    {
+        var actor = await AccountAccess.ReadActiveActorAsync(httpContext, dbContext,
+            externalIdentityContext, cancellationToken)
+            ?? throw new OrderManagementException("active_actor_required", "Sign in to view this package.", StatusCodes.Status401Unauthorized);
+        if (AccountAuthorization.IsPlatformAdmin(actor)) return actor;
+        return await RequireBusinessRoleAsync(httpContext, BusinessRole.ResultReleaseManager,
+            enforceBusinessRoles, cancellationToken);
     }
 
     public async Task<User> RequireAnyBusinessRoleAsync(
@@ -306,7 +350,7 @@ public sealed class OrderRequestContext(
         {
             var segments = SplitRelativePath(path, assemblyPrefix);
             if (HttpMethods.IsGet(request.Method))
-                return segments is [] or [_];
+                return segments is [] or [_] or [_, "processing-runs", _, "outputs"];
             if (!HttpMethods.IsPost(request.Method)) return false;
             return segments is [_, "begin-intake"]
                 or [_, "accept-intake"]

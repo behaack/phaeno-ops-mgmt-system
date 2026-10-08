@@ -1,5 +1,301 @@
 # Prospect Trial Project Plan
 
+## Subject workspace navigation — October 3, 2026
+
+The approved [navigation restructure](WORKSPACE-NAVIGATION-RESTRUCTURE-PLAN.md) groups Lab Order intake and Trials under LAB SERVICES and commercial Kit/Data assembly work under PARTNER SERVICES within Order Ops, governed result release to Lab ops, cross-workflow attention to the Dashboard, and Finance/Legacy integrations to More. Canonical list and record routes follow their subject domains; existing bookmarks redirect. Role isolation, scientific review, approval, billing, records and backend contracts remain intact. No persistence change or migration.
+
+## October 3, 2026 — Source guidance spacing
+
+Reduce the shared Trial source guidance to the standard small helper-text size
+(`text-xs`) and tighten the gap below **Source / quantity** from 12px to 4px.
+Keep existing spacing between guidance, source rows and the calculated total.
+Show **Biological source** and **Samples** column headings once and align all
+rows beneath them at desktop and mobile widths. Use a trash-can icon to remove a
+row, retaining its accessible name and the last-row disabled rule.
+This applies to creation and scope editing and changes presentation only; the
+audience guides remain accurate without a content change.
+
+## October 2, 2026 — Order workflow and source quantities
+
+The owner confirms that Trials follow the order workflow without billing. Keep
+direct Company/Department creation, Trial scope approval and Prospect acceptance;
+use the shared sample-shipping, physical-receipt, laboratory and governed result
+release capabilities. Do not create a paid order or introduce quote, invoice,
+payment or credit gates. Business Development still requires Commercial leadership
+approval; a Commercial leadership or Platform administrator submission approves
+its completed scope directly.
+
+Creation and scope editing now require one current extracted-RNA **Sample type**
+and the same **Source / quantity** format as orders. Allow any number of source
+rows, each with a biological source and a positive whole-number sample quantity.
+Add/remove rows while retaining at least one row. Source labels describe the
+organism/species and tissue or cell type; case and repeated whitespace do not make
+distinct sources. The total sample allowance is calculated from the rows, not
+entered independently. This supersedes the separate planned-count creation field.
+Name, **Objective / Description**, Company/Department and inclusive submission
+dates remain required. Incomplete staff scope drafts may retain unfinished rows.
+
+Freeze the sample type's identity, version, name, quantity unit and quantity limits,
+plus source/count rows, in each submitted scope revision. Approval verifies current
+catalog eligibility and available shipping instructions. Prospect scope review
+shows the type and quantities; sample submission uses that type and offers only
+the approved biological sources. Enforce each source's original-sample quantity
+across all submissions, as well as the total allowance. Slots cannot move between
+sources without a revised approved and accepted scope. A revision cannot remove a
+submitted original's source or reduce its quantity below originals already
+submitted. A replacement retains the failed original's source and consumes the
+existing one-time replacement authorization, without increasing original slots.
+An unavailable or changed sample type blocks submission until scope review.
+Actual coded references, tubes, material quantities, safety/storage declarations
+and analysis-specific metadata remain sample-submission details.
+
+### Trial source persistence contract
+
+The existing `trial_projects.draft_scope_json` stores nullable `SampleTypeId` and
+`Sources` (`BiologicalSource`, nullable `SpecimenCount`), with derived nullable
+`SampleAllowance`. `trial_scopes.values_json` stores required `SampleType`
+(`Id`, `Version`, `Name`, `QuantityUnit`, `MinimumQuantity`, `MaximumQuantity`) and
+required `Sources` with positive `SpecimenCount`; its frozen `SampleAllowance`
+equals their sum. Catalog identifiers inside these JSON documents are logical
+references, not new database foreign keys. No EF tables, columns or relationships
+change, so no new EF migration is required. Update the ERD contract notes with the
+same implementation.
+
+The configured local database was checked before implementation: zero Trial
+projects, drafts and scope revisions. No existing Trial data is rewritten. Update
+all current callers and fixtures together without legacy fallback. Any later
+hosted release must inspect Trial data and settle any required conversion or reset
+under the separate release gate before applying this changed JSON contract.
+
+Acceptance covers variable rows, duplicate/invalid counts, derived totals, draft
+resume/retry, frozen type/version, approved source selection, per-source quotas,
+replacement lineage, shared Lab/shipment authorization, no paid-order creation,
+and desktop/mobile accessible forms. Verification is recorded in the
+[source workflow receipt](../testing/runs/2026-10-02-trial-source-quantity-workflow-verification.md).
+
+## October 2, 2026 — Creation details and Order settings
+
+The owner requires a Trial name, **Objective / Description**, positive whole-number
+planned sample count and submission window when creating a Trial. Both creation
+and scope editing use calendar dates, with the closing date included and single-day
+windows allowed. Continue the scientific scope afterward through **Resume draft**.
+Save the initial details atomically in the existing shared scope draft; creation
+still grants no approval, Prospect access, allowance or laboratory authorization.
+Staff list/detail views use the draft name until a submitted scope exists, while
+Prospect views do not expose unfinished drafts. Existing draft JSON supports these
+fields, so this refinement adds no persisted model change or EF migration.
+
+Move **Trial configuration** into the **Order settings** sidebar, preserve existing
+Trial staff permissions without granting broader order configuration access, and
+redirect the old configuration bookmark to the new section. Keep **Create Trial**
+visible to Business Development, Commercial leadership and Platform administrators.
+A stale local IIS API session projection caused the missing button; activate the
+current local API build rather than broadening permissions. Company search results
+use a bounded portal so the modal body cannot clip choices behind its footer.
+
+Calendar input dates map to existing UTC opening and exclusive closing boundaries;
+the latter is midnight after the selected closing date. Render those boundaries as
+the selected calendar dates, without converting them through the viewer's local
+time zone. This preserves the complete selected closing day and existing backend
+submission-window enforcement. Historical scope revisions remain immutable.
+
+The creation API now requires the initial details. Update all in-repository callers
+and tests together; do not add company-only compatibility fallback. No existing
+Trial data is reset or rewritten. Required details, Department rules, atomic draft
+persistence, role boundaries, date round trips, retry preservation, keyboard search,
+modal discard and desktop/mobile accessibility form the acceptance checks.
+
+Verification is recorded in the
+[local receipt](../testing/runs/2026-10-02-trial-creation-details-and-settings-verification.md).
+
+## October 2, 2026 — Administrator and leadership direct approval
+
+The owner expands direct creation to active Phaeno Platform administrators and
+Commercial leadership, alongside Business Development. Administrator or
+Commercial leadership submission of a complete scope also records its Commercial
+approval in that same operation; no separate decision or approver is required.
+Business Development without either authority still submits for Commercial
+leadership review. This is based on the submitting user's current permission,
+not a permanent exemption attached to the Trial or its original creator.
+
+Creation remains an incomplete draft until scope submission. Direct approval
+preserves all current Prospect access, Department, production workflow, versioned
+catalog, hold, scope validation, concurrency and idempotency checks. Prospect
+acceptance and scientific operating/release authorization remain separate. Save
+draft never approves scope. Revoked leadership cannot directly approve a later
+submission; active Platform administrators retain their authorized access.
+
+Reuse the existing Commercial decision, event/audit and notification records for
+direct approval; do not add a persisted bypass flag or rewrite historical Trials.
+Expose the backend-derived submission capability and label its scope action
+**Approve and submit scope**. Other staff retain **Submit scope for approval**.
+Expand session creation capability and the create endpoint together. This is a
+bounded Trial authorization/API/UI change with no dependency or identity-provider
+change and no new persisted model or EF migration. Update current help and role
+instructions, regression coverage and living test plans in the same change.
+Git publishing and hosted deployment remain outside this local checkpoint.
+
+Local implementation and successful checks are recorded in the
+[verification receipt](../testing/runs/2026-10-02-trial-direct-approval-verification.md).
+
+This decision supersedes the exclusive creation and administrator-substitution
+restrictions in the earlier October 2 section below.
+
+## October 2, 2026 — Direct Business Development creation and leadership approval
+
+The owner replaced the CRM-request/Opportunity prerequisite. An active Phaeno
+Business Development user creates a Trial directly for a searchable Company.
+Automatically select its sole active Department; require explicit selection
+when several exist. A Company with no departments can start a draft, but must
+complete Prospect access/department setup before submitting its scientific scope.
+The creator is the recorded Sales owner. Opportunity and CRM request links become
+nullable historical references; the new creation API accepts Company/Department,
+never creates a surrogate request or Opportunity, and uses actor-bound idempotency.
+
+Add Business Development and Commercial leadership as explicit additive Phaeno
+business roles, assignable/invitable through the existing administrator workflow.
+Both can access CRM and Trials, without acquiring billing, cash, service-pricing,
+result-release, account-approval or user-administration powers. Only active Business
+Development creates Trials; only active Commercial leadership decides submitted
+Trial scopes. Administrator status or a previous named Commercial authority does
+not substitute for either role. Existing Commercial Operator remains distinct.
+
+The owner explicitly requires Commercial leadership approval only. One affirmative
+Commercial decision authorizes the scope for Prospect acceptance; Scientific
+Operations no longer approves Trial scope. Retain separate scientific operating,
+catalog, hold/disposition and result-release authorization. Request changes requires
+a fresh scope revision; decline closes the Trial. Role removal immediately prevents
+new decisions. Preserve historical decisions and authority references; role-based
+Commercial decisions have no named-authority foreign key. Previously submitted
+scopes with a recorded Commercial decision require resubmission rather than a
+second decision or rewriting their history. Approved Trials retain their frozen
+scope and past acceptance.
+
+This supersedes the prior CRM-request creation decision, two-domain Trial approval
+and Opportunity prerequisite throughout this plan. Update UI, API, role/session
+controls, guides, complete ERD and regressions together. The additive migration
+makes existing parent/decision references nullable and adds Opportunity Department;
+it performs no reset, backfill, role grant or decision-state conversion. Apply only
+to configured local development; hosted release remains separately gated.
+
+Local implementation is complete. The
+[verification receipt](../testing/runs/2026-10-02-direct-trial-workflow-verification.md)
+records the applied local migration, passing focused regressions, full frontend
+unit suite, desktop/mobile browser coverage and remaining hosted release boundary.
+
+## September 15 scientific and workflow acceptance
+
+TRI-05/06 pass simulated software scope: partial member archive, exact bytes/manifest, missing-replacement denial, complete retention, incomplete closure, held/once-only disposition, CRM replay, actual Customer conversion and access-close guards. Actual material/scientific/provider acceptance stays separate. Trial emails omit their workspace URL (SC-01), so WEB-05 remains failed. No production Trial behavior changed. [Evidence](../testing/runs/2026-09-15-scientific-ten-software-acceptance.md).
+
+September 14 ten-case connected UAT: lifecycle commands (hold/close/replacement) returned 404 because the route parameter action collided with MVC action selection. Rename only the internal route parameter to operation; the public URL, roles, payload and idempotency fingerprint remain unchanged. The real endpoint-routing regression fails before and passes after correction. Phaeno/Prospect guides reviewed: existing lifecycle instructions remain accurate. Connected follow-up and full-case crosswalk are in ../testing/runs/2026-09-14-ten-case-execution.md.
+
+September 14 connected UAT found that canonical `extracted_rna` was excluded from Trial choices and submission. Both checks now normalize underscores as well as spaces/hyphens. The canonical batch-submission regression reproduced the defect and passed after correction; existing spaced-label approval/submission also passed. Actual isolated configuration now offers the retained RNA type. Eligible analysis configuration remains absent, so no whole Trial case is closed. Phaeno/Prospect guides reviewed; existing instructions remain accurate. [Evidence](../testing/runs/2026-09-14-acceptance-closure.md).
+
+## Trial desktop/mobile browser checkpoint — September 14, 2026
+
+All 12 Trial browser cases passed unchanged: scope/catalog/material terms, Prospect acceptance and coded sample submission with conflict recovery, changed-scope renewed acceptance, result history/failed-download refresh, exact Company request handoff and draft Escape behavior. Deterministic API fixtures, not live provider or completed Trial acceptance. Included in the [40-case commercial/access run](../testing/runs/2026-09-12-laboratory-uat-closeout.md#september-14-commercial-trial-and-department-browser-slice).
+
+## Trial grouped regression checkpoint — September 14, 2026
+
+Trial backend coverage ran with commercial handoff (66 distinct checks passing after focused retests); all 19 Trial frontend checks pass. Release/retention fixtures now arrange the resolved specimen state required by current readiness; three frontend test files use labels tolerant of required-marker spacing. These are fixture corrections, not product-rule changes. Synthetic release fixtures do not establish a real laboratory/provider journey. Full signed-in and physical acceptance remains separate in [the UAT ledger](../testing/runs/2026-09-12-laboratory-uat-closeout.md#september-14-grouped-handoff-shipping-and-trial-verification).
+
+## Preparation eligibility verification — September 14, 2026
+
+The laboratory UAT continuation added PostgreSQL preparation-command coverage for held Trials, all five terminal Trial states, stale approval and stale acceptance. Seven commands across eight conditions reject without changing tray/history, Trial/Job/attempt/tube state or library/work-event counts; a valid-state move succeeds once. The 56 negative checks use a disposable local database and synthetic tray arrangement; they do not establish signed-in/physical Trial execution or genuine completion. Existing approval/submission and scientific-hold regressions also pass. No behavior or shared schema change. See [the continuation record](../testing/runs/2026-09-12-laboratory-uat-closeout.md#september-14-trial-preparation-guards-and-reviewer-keyboard-check).
+
+## Tube-use instruction at sample submission — September 11, 2026
+
+New Trial sample submissions display and confirm run-one/failure-fallback and send V2 Lab authorization with that policy. Each authorization snapshot retains the instruction; extra tubes remain reserves rather than extra analyses. Existing Trial scopes, approvals, replacement authorizations and historical V1 lab records are not rewritten. Existing Trial hold rules remain separate from the blocked customer-specimen-hold proposal. See [tube attempts](SPECIMEN-TUBE-ATTEMPT-PLAN.md). New Trial submission acceptance Not run.
+
+## Resumable shared staff scope draft - 2026-09-07
+
+The authorized remaining-work review adds explicit **Save draft** and **Resume
+draft** separately from **Submit scope for approval**. The existing immutable
+`TrialScope` revisions require full scientific validation and cannot safely serve
+as incomplete drafts. A Trial therefore retains one shared staff draft in
+nullable `DraftScopeJson`, `DraftSavedByUserId`, and `DraftSavedAtUtc` fields.
+The typed JSON bounds text, catalog selections, identifiers, and entered numeric
+and date values while allowing missing information. A selected Department must
+belong to the Company's active Prospect access; an approved Trial's Department
+cannot change. Initial draft planning does not require binding Portal access.
+
+Existing authorized Trial staff may save and resume the shared draft, using the
+Trial's optimistic version and idempotent mutation boundary. The last saver and
+time appear only to staff. Draft saves record account audit metadata without
+creating a scientific scope, approval milestone, invitation, Lab authorization,
+shipment, or external timeline entry. Current/approved/accepted revisions and
+status remain unchanged. Full versioned submission performs the existing
+scientific, access, allowance, and frozen-material checks, then creates the
+immutable revision and clears the draft atomically. Terminal Trials reject both
+actions; held Trials retain existing scope-planning behavior while approval and
+operational hold rules remain enforced.
+
+The dedicated scope route remains justified by its scientific sections and
+resumability. Draft/resume, action-specific validation, dirty/pending protection,
+failed-save retention, and reviewed-version concurrency are covered in authored
+frontend regression sources. Domain sources cover incomplete draft isolation,
+accepted-scope/hold preservation, terminal/value rejection, and successful
+submission clearing. PostgreSQL reference sources cover durable shared draft
+readback, staff/Prospect separation, version and Department guards, lack of new
+authority, and pre-binding draft planning. Suites have not been run for this
+slice. The additive migration and ERD update are coordinated with the parent
+remaining-work change; this section does not claim migration application,
+deployment, or populated acceptance.
+
+## External workflow continuity - 2026-09-07
+
+The authorized consistency-review repairs are recorded in
+[External order workflow continuity](EXTERNAL-ORDER-WORKFLOW-CONTINUITY-2026-09-07.md).
+This connects exact Customer sample lists and shared shipments, preserves Partner
+drafts and Assembly corrections, restores Trial shipment context, and aligns
+external list navigation and audience-specific help. No persisted model or
+shared-database change is included.
+
+## Trial dialog choice scrolling - 2026-09-07
+
+Trial bounded-action selectors now use the existing Radix popover primitive to render choices outside the scrolling dialog body. The redundant inner form scroll region is removed. While a floating choice list is open, the containing dialog body pauses scrolling; after dismissal it resumes. Keyboard focus stays on the input for arrow/Enter selection, Tab moves to the next field, and first Escape dismisses only the choices. Other selector consumers retain their existing presentation. No dependency, API or authority changes.
+
+## Optional approver assignment note - 2026-09-07
+
+The Product Owner replaced the required assignment Reason with an optional Note.
+Both primary assignment and delegate designation accept omitted, empty or
+whitespace-only notes. Provided notes retain the existing trim and length rules.
+The existing reason storage/API field is retained for compatibility; no persisted
+model or migration changes. Authority eligibility, actor/time history, independent
+approvals and revocation reasons are unchanged. Verification is limited to build,
+typecheck, scoped lint, documentation consistency and a synthetic dialog review;
+automated suites and live authority assignment are not part of this change.
+
+## Trial navigation and list presentation - 2026-09-07
+
+The Product Owner requested that Phaeno Trial projects sit under Order ops and
+that the list presentation be corrected. Phaeno users now reach Trials through
+the shared Order operations sidebar; the existing Trial list, configuration,
+detail and scope URLs remain valid and keep Order ops active. Authorized external
+organizations retain their Trial navigation and existing capabilities.
+
+The list uses the standard page width, an aligned responsive search/status/owner
+toolbar, debounced search requests, Clear all with focus returned to Search,
+separate unfiltered and filtered empty states, and owner-choice failure recovery.
+The narrow sidebar trigger has space above the heading. Existing CRM intake,
+scientific scope, approvals and sample/result rules are unchanged. Success for
+this slice is discoverable navigation, aligned controls, and recoverable filters
+without changing the Trial's commercial or scientific meaning.
+
+Validation: frontend typecheck, scoped lint, generated documentation and whitespace
+checks; local synthetic browser review at desktop and 390-pixel phone width in
+light/dark themes, filter reset, sidebar navigation, Escape and dialog focus return.
+Automated test suites were not run, per repository scope. Populated records,
+real-session acceptance and production deployment are outside this presentation
+checkpoint. No backend behavior, migration, dependency or Git mutation is included.
+
+The authorized 2026-09-05 [review gap closure](REVIEW-GAP-CLOSURE-2026-09-05.md)
+extends the existing Trial workflow with batch sample entry, visible sample-type
+requirements, current-scope conflict recovery, download availability and
+retention feedback, unsaved-work protection, and contextual CRM request creation.
+The existing batch endpoint and scientific authorization boundaries are retained.
+Verification and delivery boundaries are recorded in that review plan.
+
 Keep this file updated as Prospect trial-project requirements are supplied and
 decisions are made.
 
@@ -1226,3 +1522,5 @@ or reserved provider identifiers as implemented Trial behavior before verificati
 - Detailed final checks and remaining rollout gates are recorded in
   `TRIAL-INTEGRATION-CLOSEOUT.md`. Do not infer production readiness from local
   tests or from the previously deployed Portal closeout.
+
+September 14 ten-case closeout: TRI-01/02/03/04 pass for isolated software acceptance. Connected draft/revisions, independent authority approvals, bounded submission, hold/custody and one replacement lineage complete. Trial packing joins the existing guard transaction, preserving advisory lock and rollback; no nested-transaction 500. Temporary Commercial delegation revoked; original authorities unchanged. [Full evidence and limits](../testing/runs/2026-09-14-ten-case-execution.md).

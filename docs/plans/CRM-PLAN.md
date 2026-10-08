@@ -1,5 +1,475 @@
 # First-Party CRM Plan
 
+## October 2, 2026 — Searchable Opportunity Company and Department scope
+
+The owner requires Company search in New/Edit Opportunity and an explicit
+Department choice when the selected Company has multiple active departments.
+Reuse the server-searched CRM Company combobox; do not preload a capped Company
+list. Preserve the selected Company name when editing or opening from Company
+Sales. Load only department identifiers/names through a CRM-authorized endpoint,
+including internal department setup before online access.
+
+Persist a nullable DepartmentId on the Opportunity. One active department is
+selected automatically; multiple require a deliberate selection; zero permit
+Company-level commercial work. Company changes clear the previous selection.
+The API enforces active department ownership on create/edit before writing.
+Lead conversion and import auto-select a sole Department; multiple Departments
+require the ordinary Opportunity form rather than bypassing the selection rule.
+Existing Opportunities remain Company-level until edited, when the current
+selection rule applies. The additive FK/index migration performs no backfill,
+deletion or reset. Apply only to the configured local development database;
+hosted migration/deployment remains separately gated. Update the complete ERD,
+Phaeno help, regression coverage and living plans.
+
+The Opportunities list enables creation after its default pipeline selection is
+loaded and reflected in the URL. This prevents filter initialization from
+remounting the page and closing a newly opened creation modal. Department
+validation keeps focus on the missing selection; successful creation opens the
+dedicated detail workspace. Desktop/light and mobile/dark browser coverage checks
+search, required selection, saved scope, aligned controls and accessibility.
+Local implementation and verification are recorded in the
+[verification receipt](../testing/runs/2026-10-02-direct-trial-workflow-verification.md).
+
+## October 2, 2026 — Sales-created Trial requests
+
+Superseded later in the same conversation: Business Development creates Trials
+directly without a CRM request or Opportunity, with Commercial leadership-only
+approval. See [the Trial plan](PROSPECT-TRIAL-PROJECT-PLAN.md#october-2-2026--direct-business-development-creation-and-leadership-approval).
+The searchable Company and required multi-Department Opportunity form scope
+above remains requested.
+
+The owner authorized Sales to create the CRM request that begins a Trial. Use
+the existing active Phaeno Commercial Operator role rather than requiring
+Platform Administrator. Sales opens Company → Requests → Create request,
+links an active Opportunity belonging to that Company, and submits one pending
+Trial Project request. Success means Sales can see the request status and open
+the existing Start Trial workflow without an administrator preparing the request.
+
+Authorization scope: Commercial Operators may list Trial requests for a Company
+and create Trial Project requests only. Platform administrators retain the other
+Company request types and the central decision/completion queue. Existing Trial
+approval authorities, Prospect acceptance, access grants, service entitlements
+and audit/concurrency controls remain authoritative. The request grants no
+access or permission to perform scientific work.
+
+Use the existing CRM access check, filter non-administrator Company request
+reads to Trial Project, and reject other request types before any write. Expose
+the permitted Company tab and bounded creation form, visibly require the Trial
+Opportunity, and default an unlinked Company's proposed relationship to
+Prospect. Add focused permission/form regressions and update Phaeno help and
+living test plans. No model, migration, dependency or authentication provider
+change is needed.
+
+## September 29, 2026 — Company list headers
+
+Use the established muted, bordered list header and padded content treatment in
+the Company People, Sales, Requests, Departments, Activity, and Tasks lists and
+the Services entitlement list. Apply it to both department states, before and
+after Portal access is enabled. Keep row content, permissions, and workflows
+unchanged; group concurrent request and entitlement row actions under the
+standard Actions menu. The semantic muted color must work in light and dark
+themes. Scoped ESLint, TypeScript, generated-help consistency, and whitespace
+checks pass; browser layout review remains open.
+
+## September 22, 2026 — Company request completion notes
+
+Completed work is optional; cancellation still requires a reason. Completion keeps
+current readiness checks, confirmation, actor/time and concurrency. The checklist
+distinguishes all-done progress from items needing manual review and emphasizes the
+completion instruction. Scope and acceptance are recorded in
+[Company request work and progress](CRM-REQUEST-WORK-PROGRESS-PLAN.md).
+
+The release documentation review aligns both Company requests and approvals and
+Company access and user administration with optional completion notes, required
+decline/cancellation reasons and automatic completion of access-only requests.
+
+## September 22, 2026 — Contact directory heading action
+
+The existing **New contact** button now sits at the right end of the **Contact
+directory** heading row, matching the Company directory. The description spans
+the row below. The creation dialog, permissions and search behavior are unchanged;
+the Phaeno guide identifies the new button location. Automated suites remain
+request-only for this placement change.
+
+Verification: the signed-in local browser confirmed one button aligned with the
+heading at the right edge in desktop and narrow layouts. The existing dialog
+opened, and Cancel restored focus to the moved button. TypeScript, scoped ESLint,
+generated-help consistency and whitespace checks passed. No records were saved.
+
+## September 22, 2026 — Commit/push deployment hold
+
+The owner authorized committing and pushing the department-setup and optional
+approval-note changes, with deployment explicitly held. Both `frontend/vercel.json`
+and `website/vercel.json` disable automatic Git deployments only for
+`codex/portal-documentation-search-release`, covering the Portal and both Website
+projects connected to this repository. Keep this branch hold until deployment is
+authorized; remove the matching entries when automatic deployment is approved
+again. The manual backend deployment workflow and shared/production migrations
+remain uninvoked by this publishing task.
+
+## September 22, 2026 — Optional approval notes
+
+Platform administrators reviewing Company requests can approve online access
+(onboarding, evaluation or offboarding) and service changes without entering a
+reason. **Approval note (optional)** remains visible in the dialog. Every decline still
+requires a nonblank reason. Relationship-change and sales-assisted-order
+approvals retain their required reasons; completion and cancellation rules are
+unchanged. The decision, reviewer and timestamp remain recorded with or without
+a note. Success means the ordinary approval can be confirmed without typing,
+while an unexplained decline cannot be submitted or saved.
+
+The existing decision payload accepts an omitted/null reason; domain validation
+applies the rule before changing decision state. Existing nullable storage needs
+no migration. Permissions, concurrency and approval consequences are unchanged.
+Regression sources cover all request types, empty/whitespace notes, note length,
+retained decision identity and invalid-decision state. Automated execution
+remains request-only.
+
+Verification: solution build including regression sources passed with zero
+warnings/errors using separate output folders because the running Visual
+Studio/IIS Express session locked the normal output. Frontend TypeScript,
+scoped ESLint and generated-help consistency passed. A simulated browser
+preview verified the always-visible optional note, blank and annotated
+approvals, required decline feedback and successful decline with a reason,
+focus return, desktop light and 390 px dark layouts. Live decision persistence
+and automated suites were not exercised. Restart/rebuild the local API to use
+the updated backend validation.
+
+## September 22, 2026 — Departments before online access
+
+The owner approved direct department setup from Company → Departments → Add
+department, without an online-access request. Platform administrators retain
+ownership of this action. Success means saving and maintaining departments on
+an active Company with no request, invitation, membership or service grant.
+
+Implementation scope: retain the existing department model and editor. The first
+save atomically creates an inactive, Company-owned setup Organization and the
+department. A separate nullable `SetupOrganizationId` distinguishes internal
+setup from approved `AccessOrganizationId`; merely opening or cancelling the
+editor writes nothing. Existing department configuration operations permit this
+scope only for platform administrators of an active Company. Membership and
+invitation operations keep their active-organization requirements. Direct
+reactivation of a setup Organization is blocked. Online-access approval promotes
+the same Organization, retaining department identities, references and settings.
+Company setup and approval serialize against the same Company lock. Company
+merge preserves a single setup scope and rejects combining two occupied scopes.
+
+This supersedes the Departments request-based empty state recorded below;
+Services and online-access approvals retain their existing workflow. A nullable
+foreign key and unique index require an additive migration; no existing data is
+backfilled or activated. Shared/production migration, deployment and Git changes
+are outside this implementation authorization. Automated suites remain
+request-only; regression sources and verification results are recorded below.
+
+Implemented locally with migration `20260922163113_AddCompanyDepartmentSetup`.
+The migration adds only the nullable setup foreign key and unique index and was
+applied to the verified local Development database `phaeno_ops_clean_20260919`
+on localhost:5432. No other migration was pending; no shared or production
+migration was applied. The ERD matches the updated snapshot.
+
+Verification: solution build including regression sources passed with zero
+warnings/errors; frontend TypeScript, scoped ESLint, generated-help consistency,
+model/migration consistency and whitespace checks passed. A simulated browser
+preview verified direct creation, the existing editor, saved department display,
+no membership controls before approval, cancel/Escape focus restoration,
+desktop light theme and the 390 px dark-theme form without horizontal overflow.
+The final preview reported no browser errors. Automated tests and a real
+Company-to-approved-access journey were not run; the PostgreSQL regression
+sources cover that transition. The reported CS0246 is resolved by the missing
+exception namespace import.
+
+## Company request history search and pagination — September 19, 2026
+
+Owner limited this change to Completed / history. Add a read-only, platform-admin history endpoint with database filtering by company name, request number, summary, decision and completion notes; case-insensitive literal matching, newest-updated ordering with ID tie-breaker, 25-row pages, bounded page sizes and stale-page clamping. The active queues remain unpaginated and load only active requests; legacy API callers retain their existing response. History search/page stay in CRM route state; searching resets page, direct request links retain their exact target, and only history shows the search/paginator. No schema, permission or migration changes. Regression sources cover authorization, page boundaries, global search, empty matches, pinned requests and active/history separation. Automated suites remain request-only.
+
+Verification: solution build (including regression sources), frontend TypeScript, scoped lint, generated-help consistency and whitespace checks passed. After the owner rebuilt/restarted the local API, signed-in history loaded the two existing completed requests; mixed-case summary search returned one match, an unmatched search returned zero, and Clear filter restored both. Pagination showed page 1 of 1 with disabled boundaries. Multiple-page navigation remains covered by authored regression sources, not claimed as live execution; no fixture records were created and automated suites were not run.
+
+## September 19, 2026 — Department-led Companies
+
+The owner approved optional organization administrators, department-aware onboarding/readiness,
+and assigned-Department purchasing, changed-price decisions and Trial acceptance. Company-wide
+setup remains with authorized Phaeno staff where no organization administrator exists. See
+[the request work plan](CRM-REQUEST-WORK-PROGRESS-PLAN.md#september-19-follow-up--department-led-administration)
+for scope, acceptance and verification. Earlier organization-admin-only commercial rules in
+this plan are superseded for the assigned Department only.
+
+
+## September 19, 2026 — Organization access heading action
+
+Manage access now places the existing Organization access Actions menu at the right end of its heading row. Role descriptions, confirmation behavior and permissions are unchanged. Local browser DOM measurements confirmed vertical alignment and right-edge placement; TypeScript, scoped ESLint and whitespace checks passed. Existing access help remains accurate. No automated suites were run or access records changed.
+
+## September 19, 2026 — Compact Company directory header
+
+The New company button now sits at the right end of the Company directory title row. The separate Companies are the customer record notice is removed; the directory description retains the concise reminder that creating a Company alone does not grant access or start work. The existing creation dialog, search and permissions are unchanged.
+
+## September 19, 2026 — Company header Actions
+
+Company headers now group Change owner, Edit, Merge and Deactivate/Reactivate under the shared Actions menu. Content-sized width with a 192px minimum keeps all labels on one line. Existing permissions, reviewed record snapshots, confirmations and API calls are unchanged. Dialogs open after focus returns to the persistent trigger.
+
+## September 19, 2026 — Separate Company Departments and Services
+
+The owner requested separate Company tabs and consistent tab formatting. Departments owns
+Organization defaults, department settings/members and Customer delivery locations. Services
+owns the existing Portal access/readiness, service entitlements and retention panels. Both
+remain administrator-only and retain the existing request-based empty state when access is
+not enabled. Existing `section=departments` links continue to open Departments; the new
+`section=services` opens Services. Request-work service links/instructions follow the new tab.
+The inner service tab strip uses the same full-width, left-aligned, content-sized triggers as
+the Company strip, keeping words intact on desktop and wrapping whole tabs on narrow screens.
+No API, schema, permission, Department Code or dropdown-width changes are part of this slice.
+The inner tabs are Overview, Entitlements and Retention, distinguishing Entitlements from the
+Company Services tab. Validation passed: TypeScript, scoped ESLint, generated-help consistency
+(56 guides, hash 19aa1f8f1b31) and whitespace checks. Signed-in local navigation confirmed
+Department-only content, the Services direct link, readiness/entitlement/retention panels and
+keyboard tab selection. DOM measurements confirmed full-parent-width strips and intact labels
+at desktop and a measured 433px narrow viewport, with no horizontal page overflow. Screenshot
+capture timed out; no visual screenshot proof is claimed. No business records changed.
+Automated suites were not requested or run; existing browser-source selectors were updated.
+
+## September 19, 2026 — Request work and completion requirements
+
+See [the request work progress plan](CRM-REQUEST-WORK-PROGRESS-PLAN.md). Approved requests now show live, type-specific work and waiting states. Completion uses a read-only server readiness check and revalidates the same minimum requirements on submission. Company request actions use the shared Actions menu. No schema or permission changes.
+
+## September 18, 2026 — CRM Settings navigation
+
+CRM configuration now opens from Administration → CRM Settings in the user dropdown, immediately after Lab Settings. The former Administration sidebar item is removed; the settings page uses the CRM Settings heading and retains its existing tools and address at `/crm/administration`, including direct links from data-quality warnings. It renders independently of the operational CRM sidebar. CRM access and administrator capabilities remain required, and unauthorized direct links do not mount configuration content. User-dropdown labels use sentence case (only the first word capitalized), preserving CRM and PSeq capitalization; this corrects the initial title-case interpretation. No API, authorization policy, or persisted data changes.
+
+## September 16, 2026 — Clear Home attention states
+
+Home uses No items need attention with a neutral check icon only after a successful dashboard load with zero visible counts. Nonzero categories are highlighted, explain their exact backend predicate and offer Review; zero/unknown categories are neutral nonlinks. Loading and errors cannot masquerade as all clear. Recent opportunity changes remain separate reference activity. Data warnings include duplicate company names/contact emails and required custom-field omissions; missing optional Opportunity amounts do not create warnings. Existing filters and permissions are preserved.
+
+Signed-in local browser DOM verification confirmed all five zero counts, the No items need attention heading, explanatory rules and zero attention links. Screenshot capture timed out; populated/loading/error regression cases were updated but not executed. TypeScript, scoped ESLint, documentation consistency and whitespace checks pass. No business data changed.
+
+## September 16, 2026 — Combined pipeline summary
+
+Only multiple available active pipelines expose the Pipeline selector and All pipelines option, independently of the 30-day filter. One pipeline is automatically selected and its selector stays hidden. All pipelines displays one noninteractive All opportunities total from the paginated queue response's full matching count, not the current page length; the existing pipeline/stage context remains visible in each desktop/mobile queue row. Choosing a specific pipeline restores selectable stage summaries. Switching pipeline scope resets stage and pagination atomically. Saved views/export keep an empty pipeline filter for combined scope; the URL uses an explicit all selection so default initialization cannot overwrite it. Search and stale-work filtering apply to both count and queue. Older all-pipeline stale links remain supported. No API or database changes.
+
+Verification covers one pipeline with/without stale filtering, combined count beyond a page, specific/all switching and hidden-stage reset, filtering and queue pipeline/stage context. Automated tests are not run unless requested.
+
+Verified manually in a disposable local preview of the real page with 36 records across two pipelines: the combined total stays 36 on page 2, search reduces it to 1, stale filtering reduces it to 18, specific pipeline restores stage cards, selecting All clears a stage filter, and combined rows show pipeline/stage context. With only one pipeline, the selector stays hidden with stale filtering on/off and an existing All selection normalizes to that pipeline. Unpriced counts remain visible when qualifying records remain (15 with stale filtering versus 30 without). TypeScript, scoped ESLint, documentation consistency and whitespace checks pass. Preview data was local only; no business records were created or changed. Preview files/server were removed.
+
+## September 16, 2026 — Opportunity filter toolbar
+
+Clear filter is always visible at the end of the filter row, after the Pipeline dropdown when shown. On narrow screens with Pipeline visible, search spans the first row and Pipeline/Clear filter share the next. Disable it when no other filters or later queue page need clearing; stage-only selection does not enable it because All stages handles that reset. When enabled, clearing also resets the stage while preserving the pipeline. Other CRM pages retain their existing labels and visibility behavior.
+
+Hide the Pipeline dropdown for one active pipeline, including with stale-work aggregation. Preserve automatic pipeline selection. Search applies after the existing 250ms delay and Enter submits immediately; there is no redundant Search button.
+
+The earlier local browser check verified automatic search, reset behavior, single-pipeline dropdown hiding and the All pipelines exception. The local browser confirmed Clear filter stays visible and disabled with no applicable filters, enables after typing and returns to disabled after reset. Final local browser verification confirms Search, Pipeline, Clear filter left-to-right with aligned control bottoms; without Pipeline, Search is followed by the disabled Clear filter button. Scoped lint, documentation and whitespace checks pass. No automated tests added or run for these bounded presentation changes.
+
+## September 16, 2026 — CRM Actions menus
+
+Lead headers, pipeline headers and stage rows group their existing actions in an Actions dropdown. Preserve status-based availability, disabled/default guards and existing dialogs; destructive actions remain styled distinctly. Restore focus to the persistent menu trigger before opening dialogs and on cancellation. Page-level creation stays separate.
+
+Verified in the signed-in local Portal: pipeline menu contains Edit, disabled default Deactivate and Add stage; stage menu supports keyboard Edit; lead menu contains Edit, Qualify and Disqualify for a Working lead. Pipeline/stage edit and lead qualification dialogs opened and cancelled without writes, restoring focus to their Actions buttons after closing. TypeScript, scoped ESLint, documentation consistency and whitespace checks pass. Automated tests were not run.
+
+## September 16, 2026 — Empty pipeline deletion
+
+Administrators may delete active or inactive nondefault pipelines only with no stages (including inactive stages) and no Opportunity history. The owner explicitly selected this strict definition of empty. A named confirmation dialog protects the action; the server checks permissions, version and dependencies. Restrictive foreign keys prevent a concurrent insert from making deletion unsafe. Central auditing retains the delete event. No schema change or migration is needed. Stage summary percentages now use 0.65rem text beside unchanged stage names, keeping each percentage together when wrapping.
+
+Verification: backend Release solution build (including regression test compilation), frontend TypeScript, scoped ESLint, documentation consistency and whitespace checks pass. Automated tests and connected deletion acceptance were not run; no live pipeline was deleted. Changes remain local and uncommitted.
+
+Follow-up font correction: the earlier edit did not reach the component. Applied the percentage class and verified the signed-in local Opportunities page visually and via computed styles: stage names 14px, percentages 10.4px, including zero-count stages. Scoped ESLint and whitespace checks pass.
+
+## September 16, 2026 — Opportunity stage summary and queue
+
+Approved replacement for the large-pipeline board: show a compact, wrapping stage
+summary after the Opportunity view filter card and immediately before one
+paginated queue. Summary buttons display the configured stage
+probability after its name (except All stages), a numeric count without a suffix
+or empty-stage sentence, totals by
+recorded currency and unpriced count; zero amounts remain priced. All stages
+clears the queue's stage filter. Summary buttons are the sole stage filter; remove
+the redundant Stage dropdown. Read percentages from the pipeline stage configuration,
+with summary probability as fallback, so older summary responses cannot suppress
+percentages; render them independently of count, including 0%.
+Pipeline, search and stale-only filters scope
+both views; page and stage selection never reduce the summary. Queue rows show
+identity, Company, stage, amount, expected close, owner and next action, with
+compact mobile rows. Existing URLs and saved views retain their filters; obsolete
+board preferences are ignored. Detail navigation retains filter/page context.
+
+Add a same-permission read-only stage-summary API that aggregates in PostgreSQL
+before paging and shares list filtering. Include configured empty stages and
+populated retired stages so summary counts reconcile. No database model,
+migration, dependency or authorization changes. Preserve the pending Lead
+conversion Company-name change in this workspace.
+
+Verification: backend Release solution build (including new regression cases),
+frontend TypeScript and scoped ESLint pass. Debug build output was locked by the
+owner's running Visual Studio/IIS application, which was left running. A disposable
+36-record preview of the real page verified a single summary row at 1280px,
+wrapping/no horizontal overflow at 390px, light/dark states, numeric-only counts,
+probabilities, empty-stage presentation, per-currency/unpriced values, pagination
+without reducing totals, stage selection resetting page, All stages and Clear all.
+The Stage dropdown is absent. The subsequent summary reorder places filters
+before the summary and queue; source order, scoped lint and whitespace were checked.
+Automated tests and connected database/browser
+acceptance were not run. No live records were modified; changes remain local.
+
+## September 16, 2026 — Missing Company name during Lead conversion
+
+When Create company is selected, reuse and display the Lead's recorded company
+name. Only when that name is missing, show a required Company name field in the
+same modal. Preserve the entered draft when switching company choices or when
+saving fails. Do not substitute the person's display name for an organization.
+Add an optional CompanyName to the conversion command, used only when the Lead
+has no recorded company name. Validate a trimmed nonempty name of at most 255
+characters and check that actual name for duplicates before saving. Keep the
+original Lead details as captured history. Existing-company and contact-only
+conversion do not require a new name. No database model or migration changes.
+
+Verification: backend solution build (including new regression cases), frontend
+TypeScript, scoped ESLint, generated-help consistency and diff whitespace checks
+pass. Automated tests and browser/connected conversion acceptance were not run.
+This change is local and has not been committed or deployed.
+
+## September 16, 2026 — Lead conversion Company selection
+
+Replace the separate create-Company checkbox with one Company dropdown containing
+No company, Create company and existing Companies. Preserve the Company-lead
+default of creating a Company and the Individual-lead default of no selection.
+Show the proposed name below Create company. One selection determines the existing
+Company ID or create flag, preserving contact-only conversion and the requirement
+for a Company when creating an Opportunity. Existing duplicate checks and the API
+contract remain unchanged. The staff guide and generated help are updated.
+TypeScript, scoped ESLint, help consistency and diff whitespace checks pass.
+Automated tests and browser acceptance were not run; the change is local.
+
+## September 16, 2026 — Task editing and rescheduling
+
+Approved scope: Commercial and administrator users who already maintain CRM
+tasks can edit title, description, owner, priority, due date and reminder from
+the queue and related-record task list through Actions > Edit task. Status
+changes remain a separate action. Completed and Cancelled tasks are immutable
+for ordinary editing and workflow changes; reviewed Company/Contact merge
+relinking remains supported. Record actor/time and before/after title, scheduling,
+owner, priority and interval changes as an immutable Task event in the linked
+record timeline; note description edits without duplicating long text. Refresh task lists, attention
+and reports after saving. Preserve drafts on failures and stale-version conflicts.
+
+Keep existing recurrence semantics: completion creates the next occurrence from
+the current task's due date, reminder offset and recurrence interval, using its
+current details and owner. The editor explains that rescheduling shifts the next
+occurrence; interval changes and independently anchored series are outside this
+slice. Use the existing versioned PUT endpoint and add a same-permission task GET
+for conflict recovery. No persisted model, migration, dependency, authentication,
+deployment or Git change is required. Add focused coverage; do not execute tests
+unless requested.
+
+Implemented locally. Backend solution build (including added tests), frontend
+typecheck, scoped ESLint and diff whitespace checks pass. A disposable browser
+preview of the actual editor verified desktop/390px phone reflow, light/dark
+themes, populated fields, initial focus, pristine Save, keyboard date editing,
+reverting to pristine, reminder validation and return focus. No saved business
+records were modified. Automated tests, connected save/history acceptance,
+concurrent-edit browser acceptance and deployment remain unrun.
+
+## September 16, 2026 — Requests route belongs to CRM
+
+Company request review now uses `/crm/requests` under the existing CRM shell,
+so both the main CRM menu and Requests sidebar item remain selected. Sidebar,
+Company, Dashboard and order-intake links use the canonical route. Legacy
+`/customers` queue links redirect with replacement history and preserve validated
+search context and fragments; `/customers/$customerId` compatibility is retained.
+The request workflow, API contracts and authorization are unchanged. Updated the
+staff guide and added routing/navigation regression coverage; test execution is
+not requested.
+
+Verification: frontend TypeScript, scoped ESLint and diff whitespace checks pass.
+Route and documentation artifacts were regenerated. Browser verification and
+automated tests were not run; this change has not been deployed.
+
+## September 16, 2026 — Responsive queue filters
+
+The Leads and Tasks queues place Search and Status on the same row from the
+768px breakpoint, with Search using the remaining width. Tasks retains its
+wrapping overdue and seven-day controls beside Status. Narrow screens retain
+Search on its own row. Labels, filter state and behavior are unchanged; the
+existing Leads and Activities/Tasks guide instructions remain accurate.
+Verification: source review and diff whitespace check; browser verification and
+test execution were not performed for this presentation-only change.
+
+## September 15, 2026 — Company People hard-bounce recovery
+
+ACC-01/02 simulated acceptance found Company People allowed resend after hard bounce while User management already directed revoke/reissue. The existing Person access dialog now disables resend and explains reviewed revoke, Contact email correction and new invitation. Four focused access-dialog tests plus explicit Research invitation/session checks cover the flow. No authentication boundary, backend invitation behavior or Contact/User identity model changed. [Acceptance evidence and retained provider gates](../testing/runs/2026-09-15-invitation-software-acceptance.md).
+
+## September 14, 2026 — Intake access continuation
+
+The owner-approved Commercial intake access correction aligns the read-only order-handoff list with existing CRM Commercial access. Handoff creation, review and administrative actions retain their original checks. Connected P-PRICE read and external denial pass; see the [next-ten UAT checkpoint](../testing/runs/2026-09-14-next-ten-uat.md).
+
+
+## CRM administration acceptance and invalid import guard — September 14, 2026
+
+CRM-06 is closed on the isolated baseline: actual mixed/corrected import and replay, required and restricted custom fields, personal/shared views, filtered export/audit and retained controlled merge evidence. Invalid import commit now returns a validation error before constructing any business rows; the regression and actual connected retry pass. Disposable fields/views were deactivated and import/export/merge history retained. The current guide already states that invalid rows block commit. [Full step crosswalk](../testing/runs/2026-09-14-next-ten-uat.md).
+
+
+## Company association draft protection and CRM-01 closure — September 14, 2026
+
+The connected Company/Contact case exposed silent loss of an Add existing person draft on a second Escape. The dialog now applies the established unsaved-navigation and dismissal guard, preserves a declined dismissal, blocks closing during save, and resets discarded local selections when reopened. The first Escape still closes search choices. The Company workspace regression covers decline/discard/reopen and existing recovery paths (8 passed); real signed-in desktop/tablet/phone checks confirm the nested Escape behavior without writes. TypeScript, scoped lint and generated-help consistency pass. The staff guide and review date are updated. Actual Company/relationship, outreach validation/reset, immutable history, legacy restrictions and suppression-preserving admin merge/export complete CRM-01 on the isolated baseline. See the [complete step crosswalk](../testing/runs/2026-09-14-acceptance-closure.md). No broad test suite was substituted for acceptance.
+
+## Opportunity stage response correction — September 14, 2026
+
+Connected CRM-03 reproduced a stage move that committed the new stage/history, then returned HTTP 500 because EF rejected marking an already loaded non-null Stage navigation as unloaded. The controller now returns a fresh, untracked read of the saved Opportunity. The original move is retained once; the walkthrough resumes from that saved stage. A rollback-scoped PostgreSQL controller regression reproduced the original exception, then passed saved-stage/probability/version readback, stale replay without duplicate history, loss and reopening after the correction. The existing Opportunity guide already describes the intended transition/history behavior and needs no changed user instructions. See the [acceptance run](../testing/runs/2026-09-14-acceptance-closure.md).
+
+
+## Lead closure defects — September 14, 2026
+
+Connected CRM-02 found two defects. Converted Leads were automatically inactive but the queue omitted inactive records even with All statuses/Converted selected; the queue now requests retained inactive history. Disqualified Leads hid editing in the UI but the backend still accepted profile/status changes; the domain now applies its immutable-history guard to both terminal states. Supported reviewed Company/Contact merge relinking remains available for converted history.
+
+Added a PostgreSQL controller regression for disqualified profile/working/qualification/replacement-reason/conversion denials with unchanged lead/activity snapshots. It reproduced the defect before correction, then passed together with the existing conversion/merge-identity domain test (2 passed). Converted-history list/detail/return checks pass on desktop and mobile (4 focused E2E cases); TypeScript and scoped lint pass. The actual failed UAT edit is retained as evidence, and a fresh terminal Lead is used for signed-in verification. No Portal access, invitation or executable work is created by this CRM-only journey. The staff Lead guide and generated corpus were updated. [Connected evidence](../testing/runs/2026-09-14-acceptance-closure.md).
+
+## Outreach decision completion — September 8, 2026
+
+The Product Owner approved completing Communication preference during the guided
+ACC-01 walkthrough. Sales staff need a clear outreach decision and its evidence;
+Portal invitees and customers must keep their separately requested operational
+messages. The walkthrough is paused with Joe Blow's email edit unsaved.
+
+Scope: three visible states (Not established, Allowed, Suppressed), explicit
+permission source/date/explanation and suppression reason, immutable system
+activity for each decision, legacy-value preservation, fail-closed eligibility,
+and consistent editor/detail/list/export/help presentation. Legacy permission
+without reviewed evidence is not eligible. An email change invalidates an allowed
+decision; merging cannot silently remove suppression. Ordinary profile edits do
+not manufacture evidence or turn an invitation request into outreach permission.
+
+CRM currently has no outreach queue/sender. Existing invitation, quote, order,
+result, security and requested Website-brief delivery remain separate. The UI
+explicitly states that recorded outreach decisions do not block sending in other
+tools. No new sender/campaign integration or automatic Website-consent linkage is
+authorized here. Future outreach must re-evaluate eligibility at enqueue and send,
+including already queued work after suppression; there is no current CRM queue to
+cancel. This is not represented as implemented delivery enforcement.
+
+Use additive nullable Contact evidence fields and existing immutable System
+activities for actor/time and before/after evidence; retain old preference/basis
+values. Apply reviewed migration only to verified local development database.
+Update ERD, guide/catalog and focused living test coverage. No Git mutation,
+shared migration, production deployment, invitation or business submission is
+included. Verification will use focused checks at one checkpoint, then restore
+the same unsaved Contact editor for the observed walkthrough.
+
+Completed local checkpoint: migration `20260908161948_AddCrmOutreachEvidence`
+was reviewed (three nullable columns only), applied to verified
+`localhost/phaeno_ops`, and confirmed in EF history. Release build, frontend
+typecheck/lint, documentation freshness, and diff whitespace checks passed.
+Focused tests passed: 13 frontend and 30 backend, including one transactional
+database persistence/history check that rolled back its fixtures. ERD, staff
+guide, catalog/corpus, manual CRM-01 variants and living test plans are updated.
+Signed-in Contact loading recovered after the migration. The editor was visually
+verified at the user's desktop size and restored with Joe Blow's unsaved
+`bhaack@emmaus-ocia.org` email, Not established status, and decision checkbox
+unchecked. No Contact save or invitation was submitted by this task. Populated
+outreach acceptance variants and responsive/device receipt checks remain open.
+
+## Portal consistency closeout — 2026-09-07
+
+Authorized by the Product Owner's “Address all items” instruction. Company People now owns external membership and invitation lifecycle actions using existing authorized APIs and the shared invitation editor, including first Organization-admin designation, Department roles, resend/revoke, and deactivation. Company Contact creation saves its association atomically; Sales opens the shared Opportunity editor with Company context. Existing Contact/User identities remain distinct.
+
+The Requests queue retains approved work and completed history. Approved Prospect-to-Customer/Partner conversion preserves the requested target and is applied with request completion in one transaction. Other reclassifications remain unsupported. Company readiness reuses the department-aware Intake checks and staged requirement presentation; historical manual readiness is no longer shown as an executable status. CRM primary lists page server results, retain URL context, and debounce searches. Data provisioning links to canonical Company access creation and preserves pending grant selections; its old creation endpoint is retired without changing existing organizations or grants.
+
+No database model, authentication boundary, dependency, migration, deployment, or Git mutation is part of this closeout. Focused regression coverage was added/updated; suite execution remains unrequested. A separate desktop browser fixture with all API writes disabled verified administrator invitation choices, unsent-draft protection, access-change confirmations and keyboard focus, invitation recovery actions, approved request completion/conversion dialogs, and contextual Contact/Opportunity editors. It sent no invitations and saved no business records. The temporary fixture/server/tab were removed after review. Parent task records final build, lint, and remaining live acceptance evidence.
+
 Keep this file updated as POMS's standalone customer-relationship-management
 capability is discovered, designed, implemented, and verified.
 
@@ -8,6 +478,13 @@ dependencies, authentication changes, external email or calendar connections,
 deployment, and test execution retain their normal approval boundaries.
 
 ## Status
+
+- The 2026-09-05 [review gap closure](REVIEW-GAP-CLOSURE-2026-09-05.md)
+  addresses Company relationship loading/error/empty-state distinctions and
+  preserves an exact Company Trial request through the creation handoff.
+  Trial Project handoffs now have their own implemented Trial workspace;
+  historical references below to review-only Trial handoffs are superseded by
+  `TRIAL-INTEGRATION-CLOSEOUT.md`. Verification is recorded in the review plan.
 
 - On 2026-09-04 the Company workspace was reorganized into Overview, People,
   Sales, Departments & services, Requests, and Activity. People unifies CRM
@@ -28,9 +505,9 @@ deployment, and test execution retain their normal approval boundaries.
   previewed/idempotent imports, audited exports, and explicit Portal handoffs
   and Company-owned Portal access.
 - The CRM workspace now uses the shared far-left responsive sidebar for Home,
-  Companies, Contacts, Leads, Opportunities, Tasks, Requests, Reports, and
-  Administration. The destinations are grouped as Relationships, Sales,
-  Follow-up, Insights, and Administration so the complete CRM remains available
+  Companies, Contacts, Leads, Opportunities, Tasks, Requests, and Reports.
+  CRM Settings is available from the user dropdown. The workspace destinations are grouped as Relationships, Sales,
+  Follow-up and Insights so the complete CRM remains available
   without presenting every record type as an unrelated top-level concept.
   Phaeno CRM help is organized as one expandable subject with independently
   routed workflow, administration, handoff, and recovery guides. This
@@ -341,9 +818,9 @@ They do not replace or directly mutate their owning domains.
 - Add a first-class **CRM** area to Phaeno navigation rather than overloading
   **Accounts**.
 - Use the shared far-left responsive workspace sidebar for CRM Home, Companies,
-  Contacts, Leads, Opportunities, Tasks, Requests, Reports, and Administration.
+  Contacts, Leads, Opportunities, Tasks, Requests, and Reports.
   Group the complete destination set into Relationships, Sales, Follow-up,
-  Insights, and Administration. Preserve the active section on list and detail
+  and Insights. Open CRM Settings from the user dropdown after Lab Settings. Preserve the active section on list and detail
   routes and do not duplicate these items in a horizontal section bar.
 - CRM landing answers: what needs attention, which opportunities changed, what
   is overdue, and how the pipeline is performing.
@@ -466,8 +943,9 @@ commercial history.
 - A Company can exist without Portal access; when access is enabled, its
   internal tenant scope belongs to exactly that Company.
 - CRM-to-Portal handoffs are explicit, authorized, idempotent, and audited.
-- No CRM action directly grants membership, service entitlement, Trial Project
-  execution, order commitment, or laboratory work.
+- CRM service-change approval saves the reviewed dated entitlement in the
+  same decision, while membership, Trial Project execution, order commitment,
+  and laboratory work retain their owning workflows.
 - CRM search, lists, details, boards, reports, imports, and exports enforce the
   approved field and capability boundaries.
 - Duplicate detection and merge preserve identifiers, relationships, history,
@@ -497,8 +975,7 @@ Owner identifies a different product need.
 - One seeded **General Sales** pipeline provides Discovery, Qualified,
   Proposal, Negotiation, Won, Lost, and Abandoned stages. Administrators can
   add pipelines and stages without changing the domain model.
-- CRM access uses the existing active Phaeno platform-administrator boundary.
-  A future broader commercial role requires an explicit capability decision.
+- CRM access permits active Phaeno CommercialOperator staff and platform administrators. The September 7 remaining-items authorization approved the narrow matrix recorded below; no Clerk, role schema, or feature-flag dependency was added.
 - Required identity and transition fields are enforced by domain and API
   validation; typed custom fields may add required internal metadata.
 - Activities are Internal or Restricted. CRM data remains unavailable to
@@ -523,3 +1000,37 @@ These capabilities are not rejected from the first-party CRM. They follow the
 core CRM and require explicit privacy, consent, authorization, operational, and
 provider decisions before implementation. External CRM synchronization remains
 a separate optional-adapter decision rather than a first-party CRM phase.
+
+## September 7 remaining-items closeout: Commercial CRM and attention continuity
+
+Authorized by the Product Owner's “Address remaining items as appropriate” and the settled minimum Commercial permission matrix. CRM now reuses the existing active `CommercialOperator` assignment with an active user and active Phaeno membership, independently of the order-to-cash feature flag. Additive Session `canAccessCrm` and `canAdministerCrm` capabilities drive CRM navigation and visible actions. The API independently enforces the same active membership/role checks. There is no persisted-model, role-assignment, Clerk authentication, or migration change in this CRM scope.
+
+| Surface/action | CommercialOperator | Platform administrator |
+| --- | --- | --- |
+| Company/Contact profile, ownership, associations; Leads and conversion; Opportunities, stage/contact roles; Tasks | Read and maintain | Read and maintain |
+| Internal Activities and Internal custom values; configured pipelines; Reports and CRM search | Read and maintain values/activity; read configuration/reports | Full existing access |
+| Personal saved views; apply existing shared views | Own personal views; read shared views | Existing management and publication |
+| Company/Contact active-state lifecycle and merges | Denied | Existing administrative rules |
+| Portal identities, memberships, invitations, Departments/services, Company Requests and completion | Denied | Existing administrative rules |
+| Pipelines/field definitions, Restricted Activity/custom values, imports/exports, shared-view publication | Denied | Existing administrative rules |
+
+A minimal CRM-owned owner directory returns only active Phaeno names/email/identifiers and does not expose the User administration endpoint. Commercial Company People queries the existing Contact relationships, without requesting Portal membership, invitation, or identity data. Administrative Company tabs, lifecycle/merge, Opportunity handoff, export/shared publication, and Restricted visibility controls are hidden for Commercial staff. External staff, inactive memberships/users, and revoked roles remain denied. Company lifecycle confirmation now distinguishes a CRM-only record from actual suspension/restoration of the Company's existing Portal access and cannot dismiss while pending.
+
+Home attention cards use the same backend predicates as their filtered lists and exports: unfinished overdue Tasks, unfinished Tasks due now through seven days, active Leads lacking a next action excluding Converted/Disqualified, and active open Opportunities unchanged for more than 30 days across pipelines. Filters remain in URL state and saved views; Home search failures are announced with a local retry and cannot masquerade as a successful empty search.
+
+Focused regression sources cover nonadministrator positive CRM writes and negative administrative/Portal/sensitive access, role revocation/external admin denial, flag-independent Session capabilities, exact attention boundaries, Home links and retry, and Commercial People without forbidden background requests. Scope also updates existing administrator fixtures. Root coordinates integrated regression execution, release evidence, documentation metadata/corpus generation, and living test plans. Signed-in production Commercial acceptance remains separate from local checks.
+
+
+Connected CRM-03/04 are closed for isolated software acceptance. Populated Opportunity/Reports column headings now stay together inside their existing scrollable tables; desktop/tablet/phone read-only checks, TypeScript and scoped lint pass. No change to reporting semantics or user instructions.
+
+## September 15 UAT Company save recovery
+
+SYS-01 reproduced a Company edit conflict in two authorized sessions: the stale save retained the draft but offered no recovery. Load the current record after a conflict, show changes since the editor opened, and require explicit review before a deliberate save using its current version. Keep entered values intact, provide a retry when the current record cannot load, and protect pending saves from dismissal, navigation and repeat submission. This is a Company editor correction within the authorized UAT gap-fix scope; permissions and the API contract stay as implemented. Verify real-session conflict/recovery and committed-response loss, with focused form regression coverage and updated Phaeno help.
+
+Implemented and verified: both actual-session recovery variants pass, as do all 10 focused form/snapshot tests, TypeScript, scoped lint and generated documentation checks. Independent saved-state readback shows one committed Company version after response loss. [Closure evidence](../testing/runs/2026-09-15-kit-and-system-recovery-uat.md).
+
+## Customer Lab service negotiated pricing — September 30, 2026
+
+The Add negotiated price Service dropdown includes active catalog services only. The API supplies current catalog status and rejects creation against an inactive service, including stale selections. Existing negotiated records retain their inactive service identity and can still be edited with service/scope fixed. The selector explains when no active Lab services are available. This requires an API rebuild/restart, with no database migration.
+
+Source implementation adds Commercial-owned negotiated Lab service rates to Company → Services. Organization and selected-Department rates resolve to the lower negotiated price; service access remains an entitlement concern. Active UTC effective windows are scoped to one catalog service, audited, versioned and guarded against overlaps. Admin reads use existing platform permissions and edits use existing Commercial permissions. This is separate from Partner kit offerings. See ORDER-MANAGEMENT-PLAN.md for the new Customer Draft/review workflow, additive migration and unverified activation gates. No tests/builds, migration application or deployment were performed.

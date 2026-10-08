@@ -1,3 +1,4 @@
+import { useCrmPermissions } from './use-crm-permissions';
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BookmarkPlus } from "lucide-react";
 import { useState } from "react";
@@ -34,6 +35,7 @@ export function CrmSavedViewBar({
   currentFilter: SavedFilter;
   onApply: (filter: SavedFilter) => void;
 }) {
+  const { canAdminister } = useCrmPermissions();
   const client = useQueryClient();
   const [open, setOpen] = useState(false);
   const [shared, setShared] = useState(false);
@@ -49,7 +51,7 @@ export function CrmSavedViewBar({
         name,
         recordType,
         filterJson: JSON.stringify(currentFilter),
-        isShared: shared,
+        isShared: canAdminister && shared,
       }),
     onSuccess: async (view) => {
       setOpen(false);
@@ -108,14 +110,14 @@ export function CrmSavedViewBar({
           <BookmarkPlus data-icon="inline-start" />
           Save current view
         </Button>
-        <Button
+        {canAdminister ? <Button
           type="button"
           variant="ghost"
           disabled={exportCurrent.isPending}
           onClick={() => exportCurrent.mutate()}
         >
           {exportCurrent.isPending ? "Exporting…" : "Export current view"}
-        </Button>
+        </Button> : null}
         {applyError ? (
           <p className="w-full text-sm text-destructive">{applyError}</p>
         ) : null}
@@ -161,7 +163,7 @@ export function CrmSavedViewBar({
                   maxLength={150}
                 />
               </div>
-              <div className="flex items-center gap-2">
+              {canAdminister ? <div className="flex items-center gap-2">
                 <Checkbox
                   id={`${recordType}-view-shared`}
                   checked={shared}
@@ -173,7 +175,7 @@ export function CrmSavedViewBar({
                 >
                   Share with CRM staff
                 </Label>
-              </div>
+              </div> : null}
             </div>
             <DialogFooter>
               <span className="mr-auto text-xs text-muted-foreground">

@@ -47,9 +47,11 @@ public static class CrmModelConfiguration
             entity.HasIndex(value => new { value.IsActive, value.Name });
             entity.HasIndex(value => value.LifecycleState);
             entity.HasIndex(value => value.AccessOrganizationId).IsUnique();
+            entity.HasIndex(value => value.SetupOrganizationId).IsUnique();
             entity.HasOne(value => value.Owner).WithMany().HasForeignKey(value => value.OwnerUserId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(value => value.MergedIntoCompany).WithMany().HasForeignKey(value => value.MergedIntoCompanyId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(value => value.AccessOrganization).WithOne().HasForeignKey<CrmCompany>(value => value.AccessOrganizationId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(value => value.SetupOrganization).WithOne().HasForeignKey<CrmCompany>(value => value.SetupOrganizationId).OnDelete(DeleteBehavior.Restrict);
         });
     }
 
@@ -63,10 +65,15 @@ public static class CrmModelConfiguration
             entity.Property(value => value.Email).HasMaxLength(255);
             entity.Property(value => value.NormalizedEmail).HasMaxLength(255);
             entity.Property(value => value.Phone).HasMaxLength(50);
-            entity.Property(value => value.LegacyJobTitle).HasMaxLength(150);
             ConfigureEnum(entity.Property(value => value.CommunicationPreference), 50);
             entity.Property(value => value.LawfulContactBasis).HasMaxLength(255);
             entity.Property(value => value.CommunicationNotes).HasMaxLength(1000);
+            entity.Property(value => value.OutreachPermissionSource).HasMaxLength(50);
+            entity.Property(value => value.OutreachSuppressionReason).HasMaxLength(50);
+            entity.Ignore(value => value.IsOutreachSuppressed);
+            entity.Ignore(value => value.HasReviewedOutreachPermission);
+            entity.Ignore(value => value.OutreachStatus);
+            entity.Ignore(value => value.CanReceiveOutreach);
             ConfigureTags(entity.Property(value => value.Tags));
             ConfigureTags(entity.Property(value => value.Aliases));
             ConfigureAudit(entity);
@@ -206,8 +213,10 @@ public static class CrmModelConfiguration
             entity.HasIndex(value => value.OpportunityNumber).IsUnique();
             entity.HasIndex(value => new { value.PipelineId, value.StageId });
             entity.HasIndex(value => new { value.CompanyId, value.IsActive });
+            entity.HasIndex(value => value.DepartmentId);
             entity.HasIndex(value => value.ExpectedCloseDate);
             entity.HasOne(value => value.Company).WithMany().HasForeignKey(value => value.CompanyId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(value => value.Department).WithMany().HasForeignKey(value => value.DepartmentId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(value => value.Pipeline).WithMany().HasForeignKey(value => value.PipelineId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(value => value.Stage).WithMany().HasForeignKey(value => value.StageId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(value => value.Owner).WithMany().HasForeignKey(value => value.OwnerUserId).OnDelete(DeleteBehavior.Restrict);

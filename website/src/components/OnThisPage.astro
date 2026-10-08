@@ -1,0 +1,73 @@
+---
+interface Props {
+  links: { href: string; label: string }[]
+}
+
+const { links } = Astro.props
+---
+
+<nav class="on-this-page" aria-label="On this page" data-phaeno-search-ignore>
+  <span class="on-this-page__label">On this page</span>
+  <ul>
+    {links.map(({ href, label }) => <li><a href={href}>{label}</a></li>)}
+  </ul>
+</nav>
+
+<style>
+.on-this-page {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-6);
+  width: 100%;
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  padding: var(--space-4) var(--page-gutter);
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-copy);
+}
+
+.on-this-page__label {
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-semibold);
+}
+
+.on-this-page ul {
+  display: flex;
+  flex: 1 1 32rem;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.on-this-page li {
+  width: auto;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.on-this-page a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--space-8);
+  padding-block: var(--space-1);
+  color: var(--color-action-secondary);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.on-this-page a:hover {
+  color: var(--color-brand-strong);
+}
+
+.on-this-page a:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+</style>

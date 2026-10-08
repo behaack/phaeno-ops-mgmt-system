@@ -1,6 +1,9 @@
 namespace PhaenoPortal.App.Features.OrderManagement.Controllers;
 
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Options;
+using PhaenoPortal.App.Features.Accounts.Services;
+using PSeq.Operations.Commercial.Accounts.Application;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
@@ -14,7 +17,8 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 [Route("api/platform/orders")]
 public sealed class PlatformOrdersController(
     PSeqOperationsDbContext dbContext,
-    OrderRequestContext requestContext) : ControllerBase
+    OrderRequestContext requestContext,
+    IOptions<PSeqOrderToCashOptions> orderToCashOptions) : ControllerBase
 {
     [HttpGet]
     public async Task<PagedResult<CommercialOrderListItemDto>> List(
@@ -31,29 +35,42 @@ public sealed class PlatformOrdersController(
         [FromQuery] DateTime? updatedTo = null,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        [FromQuery] bool quoteExtensionRequested = false)
     {
-        await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        var actor = await requestContext.RequireCommercialOrderAsync(HttpContext,
+            orderToCashOptions.Value.BusinessRoles || orderToCashOptions.Value.DualControlEnforced, true, cancellationToken);
+        if (!AccountAuthorization.IsPlatformAdmin(actor))
+        {
+            if (!string.IsNullOrWhiteSpace(orderType) && orderType != "PSeqLabService")
+                throw new OrderManagementException("platform_capability_required", "This queue requires platform administration.", StatusCodes.Status403Forbidden);
+            orderType = "PSeqLabService";
+        }
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 100);
         var normalizedType = orderType?.Trim();
         var now = DateTime.UtcNow;
+        var matchingOrganizations = string.IsNullOrWhiteSpace(search) ? new List<Guid>() : await dbContext.Organizations.AsNoTracking()
+            .Where(item => EF.Functions.ILike(item.Name, "%" + search.Trim() + "%"))
+            .Select(item => item.Id).ToListAsync(cancellationToken);
         var items = new List<CommercialOrderListItemDto>();
 
         if (Includes(normalizedType, "PSeqLabService"))
         {
             var query = dbContext.LabServiceOrders.AsNoTracking().Where(item => !item.IsDiscarded);
             if (activeIntake) query = query.Where(item =>
-                item.Status == LabServiceOrderStatus.SubmittedForQuote
+                item.Status == LabServiceOrderStatus.DraftRequest
+                || item.Status == LabServiceOrderStatus.SubmittedForQuote
                 || item.Status == LabServiceOrderStatus.ChangesRequested
                 || item.Status == LabServiceOrderStatus.QuoteInPreparation
-                || item.Status == LabServiceOrderStatus.QuoteIssued);
+                || item.Status == LabServiceOrderStatus.QuoteIssued
+                || item.Status == LabServiceOrderStatus.OnHold);
             if (organizationId.HasValue) query = query.Where(item => item.OrganizationId == organizationId.Value);
             if (!string.IsNullOrWhiteSpace(search))
             {
                 var term = search.Trim();
-                query = query.Where(item => item.OrderNumber.Contains(term)
-                    || item.CustomerReference.Contains(term)
+                query = query.Where(item => matchingOrganizations.Contains(item.OrganizationId) || EF.Functions.ILike(item.OrderNumber, "%" + term + "%")
+                    || EF.Functions.ILike(item.CustomerReference, "%" + term + "%")
                     || (item.Description != null && item.Description.Contains(term)));
             }
             if (assignedToUserId.HasValue) query = query.Where(item => item.AssignedToUserId == assignedToUserId.Value);
@@ -72,7 +89,8 @@ public sealed class PlatformOrdersController(
                     && item.Status != LabServiceOrderStatus.Completed
                     && item.Status != LabServiceOrderStatus.Cancelled
                     && item.Status != LabServiceOrderStatus.Declined,
-                item.ProposedUnitPrice, item.ProposedUnitPrice == null ? null : "USD")).ToListAsync(cancellationToken));
+                item.ProposedUnitPrice, item.ProposedUnitPrice == null ? null : "USD",
+                item.Status == LabServiceOrderStatus.QuoteIssued && dbContext.LabServiceQuoteExtensionRequests.Any(request => request.LabServiceOrderId == item.Id && request.ResolvedAt == null))).ToListAsync(cancellationToken));
         }
 
         if (Includes(normalizedType, "PSeqKit"))
@@ -80,13 +98,14 @@ public sealed class PlatformOrdersController(
             var query = dbContext.PartnerReagentOrders.AsNoTracking().Where(item => !item.IsDiscarded);
             if (activeIntake) query = query.Where(item =>
                 item.Status == ReagentOrderStatus.Placed
-                || item.Status == ReagentOrderStatus.UnderReview);
+                || item.Status == ReagentOrderStatus.UnderReview
+                || item.Status == ReagentOrderStatus.OnHold);
             if (organizationId.HasValue) query = query.Where(item => item.OrganizationId == organizationId.Value);
             if (!string.IsNullOrWhiteSpace(search))
             {
                 var term = search.Trim();
-                query = query.Where(item => item.OrderNumber.Contains(term)
-                    || (item.PurchaseOrderNumber != null && item.PurchaseOrderNumber.Contains(term))
+                query = query.Where(item => matchingOrganizations.Contains(item.OrganizationId) || EF.Functions.ILike(item.OrderNumber, "%" + term + "%")
+                    || (item.PurchaseOrderNumber != null && EF.Functions.ILike(item.PurchaseOrderNumber, "%" + term + "%"))
                     || dbContext.PartnerReagentOrderLines.Any(line => line.PartnerReagentOrderId == item.Id
                         && (line.Description.Contains(term) || line.ExternalItemId.Contains(term))));
             }
@@ -116,15 +135,16 @@ public sealed class PlatformOrdersController(
                 || item.Status == AssemblyRequestStatus.IntakeValidation
                 || item.Status == AssemblyRequestStatus.ChangesRequested
                 || item.Status == AssemblyRequestStatus.QuoteInPreparation
-                || item.Status == AssemblyRequestStatus.QuoteIssued);
+                || item.Status == AssemblyRequestStatus.QuoteIssued
+                || item.Status == AssemblyRequestStatus.OnHold);
             if (organizationId.HasValue) query = query.Where(item => item.OrganizationId == organizationId.Value);
             if (!string.IsNullOrWhiteSpace(search))
             {
                 var term = search.Trim();
-                query = query.Where(item => item.RequestNumber.Contains(term)
-                    || item.ProjectReference.Contains(term)
-                    || (item.PurchaseOrderNumber != null && item.PurchaseOrderNumber.Contains(term))
-                    || item.ProfileNameSnapshot.Contains(term));
+                query = query.Where(item => matchingOrganizations.Contains(item.OrganizationId) || EF.Functions.ILike(item.RequestNumber, "%" + term + "%")
+                    || EF.Functions.ILike(item.ProjectReference, "%" + term + "%")
+                    || (item.PurchaseOrderNumber != null && EF.Functions.ILike(item.PurchaseOrderNumber, "%" + term + "%"))
+                    || EF.Functions.ILike(item.ProfileNameSnapshot, "%" + term + "%"));
             }
             if (assignedToUserId.HasValue) query = query.Where(item => item.AssignedToUserId == assignedToUserId.Value);
             if (unassigned) query = query.Where(item => item.AssignedToUserId == null);
@@ -149,6 +169,7 @@ public sealed class PlatformOrdersController(
             items = items.Where(item => string.Equals(item.Status, status.Trim(), StringComparison.OrdinalIgnoreCase)).ToList();
         }
 
+        if (quoteExtensionRequested) items = items.Where(item => item.HasPendingQuoteExtension).ToList();
         var ordered = items.OrderByDescending(item => item.UpdatedAt).ToList();
         return new PagedResult<CommercialOrderListItemDto>(
             ordered.Skip((page - 1) * pageSize).Take(pageSize).ToList(),

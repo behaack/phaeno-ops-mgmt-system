@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Features.LabOperations.DTOs;
+using PhaenoPortal.App.Features.OrderManagement.Services;
 
 public sealed partial class LabOperationsController
 {
@@ -13,18 +14,87 @@ public sealed partial class LabOperationsController
     public async Task<LabBatchDto> CreateSendout(Guid batchId,
         [FromBody] CreateSendoutRequest request, CancellationToken cancellationToken)
     {
-        await requestContext.RequireAsync(HttpContext, cancellationToken,
+        var actor = await requestContext.RequireAsync(HttpContext, cancellationToken,
             LabRole.Operator, LabRole.Supervisor);
+        await using var transaction = await SampleShippingPackingData.BeginAsync(dbContext, $"lab-sequencing-batch:{batchId}", cancellationToken);
         var batch = await dbContext.LabOperationalBatches.SingleOrDefaultAsync(item => item.Id == batchId, cancellationToken)
             ?? throw Missing();
+        EnsureVersion(batch.Version, request.BatchVersion);
         if (batch.Status != LabBatchStatus.InProgress)
             throw Conflict("batch_not_active", "The sequencing batch must be active before sendout.");
-        if (!await dbContext.LabBatchMembers.AnyAsync(item => item.LabOperationalBatchId == batch.Id, cancellationToken))
+        if (await dbContext.LabNgsSendouts.AnyAsync(s => s.LabOperationalBatchId == batchId, cancellationToken))
+            throw Conflict("sendout_already_exists", "This batch already has a saved sendout. Open its existing record.");
+        var affectedJobs = await dbContext.LabBatchMembers.AsNoTracking().Where(m => m.LabOperationalBatchId == batchId)
+            .Select(m => m.LabWorkOrderId).Distinct().OrderBy(id => id).ToListAsync(cancellationToken);
+        foreach (var workId in affectedJobs)
+            await SampleShippingPackingData.LockAsync(dbContext, $"lab-tube-receipt:{workId}", cancellationToken);
+        var tubeWorkspace = await ReadSequencingTubesAsync(batchId, cancellationToken);
+        if (tubeWorkspace.Members.Count == 0)
+            throw Conflict("batch_libraries_required", "An empty sequencing batch cannot create a sendout. Return the empty batch to draft and add libraries first.");
+        if (tubeWorkspace.Members.Any(m => m.SequencingTube is null || m.Transfer is null || m.SequencingTube.Status != "Available"))
+            throw Conflict("sequencing_transfers_required", "Record the transfer into a confirmed sequencing tube for every library before creating the sendout.");
+        foreach (var member in tubeWorkspace.Members)
+        {
+            if (!member.RequirementCaptured || !member.MinimumSequencingVolumeUl.HasValue)
+                throw Conflict("sequencing_minimum_required", "Every sequencing pair requires a captured Catalog requirement before sendout.");
+            RequireSequencingMinimum(member.Transfer!.Quantity, member.Transfer.QuantityUnit, member.MinimumSequencingVolumeUl.Value);
+            if (!member.SequencingTube!.Quantity.HasValue)
+                throw Conflict("sequencing_volume_unknown", "Verify the volume in every sequencing tube before sendout.");
+            RequireSequencingMinimum(member.SequencingTube.Quantity.Value, member.SequencingTube.QuantityUnit, member.MinimumSequencingVolumeUl.Value);
+        }
+        var tubeIds = tubeWorkspace.Members.Where(m => m.SequencingTube is not null).Select(m => m.SequencingTube!.Id).ToList();
+        var physicalTubes = await dbContext.LabContainers.Where(c => tubeIds.Contains(c.Id)).ToListAsync(cancellationToken);
+        foreach (var tube in physicalTubes)
+        {
+            if (tube.Status != LabContainerStatus.Available) throw Conflict("sequencing_tube_unavailable", "A submitted sequencing tube is no longer available.");
+            dbContext.Entry(tube).Property(c => c.UpdatedAt).IsModified = true;
+        }
+        var members = await (from member in dbContext.LabBatchMembers.AsNoTracking()
+            join library in dbContext.LabLibraries.AsNoTracking() on member.LabLibraryId equals library.Id
+            join container in dbContext.LabContainers.AsNoTracking() on library.LibraryContainerId equals container.Id
+            join tube in dbContext.LabContainers.AsNoTracking() on member.SequencingContainerId equals tube.Id
+            join transfer in dbContext.LabBiologicalMaterialTransfers.AsNoTracking() on member.MaterialTransferId equals transfer.Id
+            where member.LabOperationalBatchId == batch.Id
+            orderby library.LibraryKey
+            select new { memberId = member.Id, workOrderId = member.LabWorkOrderId, specimenId = library.LabSpecimenId,
+                libraryId = library.Id, libraryKey = library.LibraryKey,
+                libraryContainerId = container.Id, libraryContainerBarcode = container.Barcode,
+                sequencingContainerId = tube.Id, containerBarcode = tube.Barcode, materialTransferId = transfer.Id,
+                quantity = transfer.Quantity, quantityUnit = transfer.QuantityUnit,
+                catalogItemId = member.SequencingCatalogItemId, catalogVersion = member.SequencingCatalogVersion,
+                catalogServiceName = member.SequencingCatalogName, minimumSequencingVolumeUl = member.MinimumSequencingVolumeUl })
+            .ToListAsync(cancellationToken);
+        if (members.Count == 0)
             throw Conflict("batch_members_required", "Add at least one library before creating a sendout.");
-        var sendout = new LabNgsSendout(batch.Id, request.ProviderName, request.ProviderReference,
-            NormalizeJson(request.ManifestJson, "sendout_manifest_invalid"), request.ExpectedCompletionAtUtc);
+        await RequireBatchAttemptReadinessAsync(batch.Id, cancellationToken, requireSequencingQc: true);
+        var vendor = await RequireSequencingVendor(request.VendorSupplierId, request.VendorProductId, request.VendorShipmentAddressId,
+            request.VendorSupplierVersion, request.VendorProductVersion, request.VendorShipmentAddressVersion, cancellationToken);
+        using var supplementalDetails = JsonDocument.Parse(NormalizeJson(request.ManifestJson, "sendout_manifest_invalid"));
+        var manifest = JsonSerializer.Serialize(new
+        {
+            schemaVersion = 3,
+            batchNumber = batch.BatchNumber,
+            vendor = new { supplierId = vendor.Supplier.Id, supplierVersion = vendor.Supplier.Version, supplierName = vendor.Supplier.Name,
+                productId = vendor.Product.Id, productVersion = vendor.Product.Version, serviceName = vendor.Product.ProductNumber, serviceDescription = vendor.Product.Description,
+                shipmentAddress = LabSupplierCatalogController.Address(vendor.Address) },
+            members,
+            supplementalDetails = supplementalDetails.RootElement
+        });
+        var sendout = VendorValue(() => new LabNgsSendout(batch.Id, vendor.Supplier.Name, request.ProviderReference,
+            manifest, request.ExpectedCompletionAtUtc));
+        ValidateVendorEta(request.ExpectedCompletionAtUtc, DateTime.UtcNow);
+        VendorWrite(() => sendout.SelectVendor(vendor.Supplier, vendor.Product, vendor.Address));
+        VendorWrite(() => sendout.UpdateShipment(sendout.Destination!, request.Carrier, request.TrackingReference,
+            request.ProviderReference, request.ExpectedCompletionAtUtc));
         dbContext.LabNgsSendouts.Add(sendout);
+        var preparedAt = DateTime.UtcNow;
+        dbContext.LabCustodyEvents.Add(new LabCustodyEvent(sendout.Id, null, "SHIPMENT_PREPARED", sendout.ProviderName,
+            JsonSerializer.Serialize(new { evidence = "Shipment preparation saved; physical dispatch recorded separately.", sendout.Destination,
+                sendout.VendorSupplierId, sendout.VendorProductId, sendout.VendorProductName, shipmentAddress = LabSupplierCatalogController.Address(vendor.Address),
+                sendout.Carrier, sendout.TrackingReference, sendout.ProviderReference, sendout.ExpectedCompletionAtUtc, recordedAtUtc = preparedAt }, JsonOptions), actor.User.Id, preparedAt));
+        dbContext.Entry(batch).Property(b => b.UpdatedAt).IsModified = true;
         await dbContext.SaveChangesAsync(cancellationToken);
+        if (transaction is not null) await transaction.CommitAsync(cancellationToken);
         return (await ReadBatchesAsync(cancellationToken)).Single(item => item.Id == batch.Id);
     }
 
@@ -36,32 +106,66 @@ public sealed partial class LabOperationsController
             LabRole.Operator, LabRole.Supervisor);
         if (!Enum.TryParse<LabNgsSendoutStatus>(request.Status, true, out var status))
             throw Invalid("sendout_status_invalid", "The sequencing sendout status is invalid.");
+        if (status is not (LabNgsSendoutStatus.Shipped or LabNgsSendoutStatus.ReceivedByProvider))
+            throw Conflict("sendout_transition_invalid", "Use Record results to record the vendor run, library outcomes and results receipt together.");
+        var recordedAt = DateTime.UtcNow;
+        if (request.OccurredAtUtc is not { Kind: DateTimeKind.Utc } occurredAt || occurredAt > recordedAt)
+            throw Invalid("sendout_time_invalid", "Record the actual occurrence time in UTC, no later than now.");
+        if (string.IsNullOrWhiteSpace(request.Evidence) || request.Evidence.Trim().Length > 4000
+            || request.ProviderReference?.Length > 255)
+            throw Invalid("sendout_evidence_required", "Record provider or custody evidence (up to 4,000 characters) and a reference of at most 255 characters.");
+        await using var transaction = await SampleShippingPackingData.BeginAsync(dbContext, $"lab-sendout:{sendoutId}", cancellationToken);
         var sendout = await dbContext.LabNgsSendouts.SingleOrDefaultAsync(item => item.Id == sendoutId, cancellationToken)
             ?? throw Missing();
         EnsureVersion(sendout.Version, request.Version);
-        sendout.SetStatus(status, DateTime.UtcNow);
+        var expected = sendout.Status switch
+        {
+            LabNgsSendoutStatus.Preparing => LabNgsSendoutStatus.Shipped,
+            LabNgsSendoutStatus.Shipped => LabNgsSendoutStatus.ReceivedByProvider,
+            _ => (LabNgsSendoutStatus?)null
+        };
+        if (status != expected)
+            throw Conflict("sendout_transition_invalid", "Refresh the sendout and record its next status in sequence.");
+        var latest = await dbContext.LabCustodyEvents.AsNoTracking()
+            .Where(item => item.LabNgsSendoutId == sendoutId && item.EventCode.StartsWith("STATUS_"))
+            .Select(item => (DateTime?)item.OccurredAtUtc).MaxAsync(cancellationToken);
+        var previousAt = latest ?? sendout.ProviderReceivedAtUtc ?? sendout.ShippedAtUtc;
+        if (previousAt.HasValue && occurredAt < previousAt.Value)
+            throw Invalid("sendout_time_out_of_order", "The occurrence time must be on or after the preceding sendout event.");
+        if (status == LabNgsSendoutStatus.Shipped)
+            await RequireBatchAttemptReadinessAsync(sendout.LabOperationalBatchId, cancellationToken);
+        if (status == LabNgsSendoutStatus.Shipped && (string.IsNullOrWhiteSpace(sendout.Carrier) || string.IsNullOrWhiteSpace(sendout.TrackingReference) || string.IsNullOrWhiteSpace(sendout.Destination)))
+            throw Conflict("shipment_details_required", "Record the destination, carrier and tracking reference before marking the batch shipped.");
+        if (status == LabNgsSendoutStatus.ReceivedByProvider)
+        {
+            ValidateVendorEta(request.ExpectedCompletionAtUtc, occurredAt);
+            if (request.ExpectedCompletionAtUtc is null) throw Invalid("vendor_eta_required", "Record the vendor's expected completion time at receipt.");
+            sendout.UpdateShipment(sendout.Destination!, sendout.Carrier, sendout.TrackingReference,
+                request.ProviderReference ?? sendout.ProviderReference, request.ExpectedCompletionAtUtc);
+        }
+        var previousStatus = sendout.Status;
+        if (status != LabNgsSendoutStatus.ReceivedByProvider && request.ProviderReference is not null)
+            sendout.UpdateShipment(sendout.Destination!, sendout.Carrier, sendout.TrackingReference,
+                request.ProviderReference, sendout.ExpectedCompletionAtUtc);
+        sendout.SetStatus(status, occurredAt);
+        dbContext.LabCustodyEvents.Add(new LabCustodyEvent(sendout.Id, null, $"STATUS_{status}",
+            sendout.ProviderName, JsonSerializer.Serialize(new { kind = "sendout-status", previousStatus = previousStatus.ToString(),
+                status = status.ToString(), evidence = request.Evidence.Trim(), providerReference = request.ProviderReference?.Trim(),
+                expectedCompletionAtUtc = sendout.ExpectedCompletionAtUtc, carrier = sendout.Carrier, trackingReference = sendout.TrackingReference,
+                destination = sendout.Destination, recordedAtUtc = recordedAt }, JsonOptions),
+            actor.User.Id, occurredAt));
         var workOrderIds = await dbContext.LabBatchMembers.AsNoTracking()
             .Where(item => item.LabOperationalBatchId == sendout.LabOperationalBatchId)
             .Select(item => item.LabWorkOrderId).Distinct().ToListAsync(cancellationToken);
         var workOrders = await dbContext.LabWorkOrders.Where(item => workOrderIds.Contains(item.Id)).ToListAsync(cancellationToken);
         foreach (var work in workOrders)
         {
-            var milestone = status switch
-            {
-                LabNgsSendoutStatus.Shipped or LabNgsSendoutStatus.ReceivedByProvider
-                    or LabNgsSendoutStatus.Sequencing => LabWorkOrderStatus.AwaitingExternalSequencing,
-                LabNgsSendoutStatus.Complete => LabWorkOrderStatus.DataProcessing,
-                LabNgsSendoutStatus.Exception => LabWorkOrderStatus.OnHold,
-                _ => (LabWorkOrderStatus?)null
-            };
-            if (milestone.HasValue && work.Status != milestone.Value)
-            {
-                work.RecordMilestone(milestone.Value);
-                await EmitProjectionAsync(work, actor.User.Id, "SequencingStatusChanged", cancellationToken,
-                    sendout.ExpectedCompletionAtUtc);
-            }
+            work.RecordSendoutProgress(status);
+            await EmitProjectionAsync(work, actor.User.Id, "SequencingStatusChanged", cancellationToken,
+                sendout.ExpectedCompletionAtUtc);
         }
         await dbContext.SaveChangesAsync(cancellationToken);
+        if (transaction is not null) await transaction.CommitAsync(cancellationToken);
         return (await ReadBatchesAsync(cancellationToken)).Single(item => item.Id == sendout.LabOperationalBatchId);
     }
 
@@ -71,10 +175,23 @@ public sealed partial class LabOperationsController
     {
         var actor = await requestContext.RequireAsync(HttpContext, cancellationToken,
             LabRole.Operator, LabRole.Supervisor);
+        if (request.EventCode.Trim().StartsWith("STATUS_", StringComparison.OrdinalIgnoreCase)
+            || new[] { "VENDOR_OUTCOME", "SHIPMENT_PREPARED", "SHIPMENT_UPDATED" }.Contains(request.EventCode.Trim(), StringComparer.OrdinalIgnoreCase))
+            throw Invalid("custody_status_reserved", "Use the sendout status action to record a status and its actual time and evidence.");
         var sendout = await dbContext.LabNgsSendouts.AsNoTracking()
             .SingleOrDefaultAsync(item => item.Id == sendoutId, cancellationToken) ?? throw Missing();
         if (request.LabContainerId.HasValue)
         {
+            using var manifest = JsonDocument.Parse(sendout.ManifestJson);
+            if (manifest.RootElement.TryGetProperty("schemaVersion", out var schemaVersion))
+            {
+                if (schemaVersion.ValueKind != JsonValueKind.Number || !schemaVersion.TryGetInt32(out var schema) || schema is not (1 or 2 or 3))
+                    throw Invalid("custody_container_invalid", "The saved sendout has an unsupported manifest version.");
+                if (schema >= 2 && (!manifest.RootElement.TryGetProperty("members", out var submittedMembers) || submittedMembers.ValueKind != JsonValueKind.Array
+                    || !submittedMembers.EnumerateArray().Any(m => m.TryGetProperty("sequencingContainerId", out var id)
+                        && id.TryGetGuid(out var submittedId) && submittedId == request.LabContainerId.Value)))
+                    throw Invalid("custody_container_invalid", "Choose a sequencing tube recorded in this sendout's frozen manifest.");
+            }
             var container = await dbContext.LabContainers.AsNoTracking()
                 .SingleOrDefaultAsync(item => item.Id == request.LabContainerId, cancellationToken) ?? throw Missing();
             if (!await dbContext.LabBatchMembers.AsNoTracking().AnyAsync(item =>
@@ -135,11 +252,13 @@ public sealed partial class LabOperationsController
     public async Task<LabWorkOrderDetailDto> ApproveScientificReview(Guid workOrderId,
         [FromBody] ScientificApprovalRequest request, CancellationToken cancellationToken)
     {
+        await using var resultTransaction = await SampleShippingPackingData.BeginAsync(dbContext, "scientific-approval:" + workOrderId, cancellationToken);
         var actor = await requestContext.RequireAsync(HttpContext, cancellationToken,
             LabRole.ScientificReviewer);
         var work = await RequireWorkOrderAsync(workOrderId, cancellationToken);
         EnsureVersion(work.Version, request.WorkOrderVersion);
-        if (work.Status != LabWorkOrderStatus.ScientificReview && !(work.AuthorizationSource == LabAuthorizationSource.TrialProject && work.Status == LabWorkOrderStatus.ReadyForRelease))
+        if (work.Status != LabWorkOrderStatus.ScientificReview && !(requestContext.GovernedPSeqResultsEnabled
+            && work.Status == LabWorkOrderStatus.ReadyForRelease && request.ResultOutputPackageId.HasValue))
             throw Conflict("scientific_review_not_ready", "The work order must be in scientific review.");
         if (await dbContext.LabExceptions.AnyAsync(item => item.LabWorkOrderId == work.Id
             && item.Status == LabExceptionStatus.Open && item.IsBlocking, cancellationToken))
@@ -147,6 +266,7 @@ public sealed partial class LabOperationsController
         if (await dbContext.LabProtocolExecutions.AnyAsync(item => item.LabWorkOrderId == work.Id
             && item.Status != LabExecutionStatus.Completed && item.Status != LabExecutionStatus.Abandoned, cancellationToken))
             throw Conflict("execution_incomplete", "Every assigned protocol execution must be completed or abandoned before approval.");
+        await RequireSpecimenReviewReadinessAsync(work, cancellationToken);
         var actorContributed = await dbContext.LabWorkEvents.AsNoTracking().AnyAsync(item =>
             item.LabWorkOrderId == work.Id && item.ActorUserId == actor.User.Id
             && item.EventCode != "ScientificApprovalRecorded"
@@ -166,25 +286,59 @@ public sealed partial class LabOperationsController
             outputPackage = await dbContext.ResultOutputPackages.SingleOrDefaultAsync(item =>
                 item.Id == request.ResultOutputPackageId.Value
                 && item.LabWorkOrderId == work.Id, cancellationToken) ?? throw Missing();
+            await RequireSpecimenReviewReadinessAsync(work, cancellationToken, outputPackage.LabSampleId ?? outputPackage.TrialSampleId);
             if (outputPackage.State != ResultOutputPackageState.ReadyForReview)
                 throw Conflict("result_output_package_not_ready", "The output package must be complete, checksummed, and malware-clean before scientific approval.");
+            await new Services.LabResultLineageService(dbContext).RequirePackageAsync(outputPackage, cancellationToken, traceabilityOptions?.Value);
+        }
+        else if ((traceabilityOptions?.Value.RequireResultTraceability ?? true) || (traceabilityOptions?.Value.RequireScientificEvidence ?? true))
+        {
+            // The legacy upload path still needs the same evidence before job-level approval.
+            var sampleIds = await dbContext.LabSpecimens.Where(s => s.LabWorkOrderId == work.Id
+                && s.IntakeDisposition != LabSpecimenIntakeDisposition.Cancelled && s.ProcessingState != LabSpecimenProcessingState.Failed)
+                .Select(s => s.SubmittedSpecimenId).ToListAsync(cancellationToken);
+            var releases = await dbContext.LabResultReleases.Where(r => r.LabServiceOrderId == work.AuthorizationSourceId
+                && r.OrganizationId == work.SubmittingOrganizationId && sampleIds.Contains(r.LabSampleId)
+                && r.ReleaseStatus != PhaenoPortal.App.Features.OrderManagement.Domain.FileReleaseStatus.Withdrawn)
+                .OrderByDescending(r => r.ReleaseVersion).ToListAsync(cancellationToken);
+            if (sampleIds.Count == 0 || sampleIds.Any(id => releases.All(r => r.LabSampleId != id)))
+                throw Conflict("result_evidence_required", "Record an attributed result for every successful sample before scientific approval.");
+            var lineage = new Services.LabResultLineageService(dbContext);
+            foreach (var id in sampleIds)
+                await lineage.RequireReleaseAsync(releases.First(r => r.LabSampleId == id), cancellationToken, traceabilityOptions?.Value);
         }
         var approvalVersion = await dbContext.LabScientificApprovals
             .CountAsync(item => item.LabWorkOrderId == work.Id, cancellationToken) + 1;
-        if (work.Status != LabWorkOrderStatus.ReadyForRelease) work.RecordMilestone(LabWorkOrderStatus.ReadyForRelease);
-        else work.AdvanceProjectionVersion();
         var permittedQcProjectionJson = NormalizeOptionalJson(
             request.PermittedQcProjectionJson, "qc_projection_invalid");
         var approval = new LabScientificApproval(work.Id, approvalVersion,
             request.ReleaseDefinitionKey, request.ReleaseDefinitionVersion,
             permittedQcProjectionJson,
-            actor.User.Id, DateTime.UtcNow, work.ProjectionVersion, outputPackage?.Id);
+            actor.User.Id, DateTime.UtcNow, work.ProjectionVersion + 1, outputPackage?.Id);
         dbContext.LabScientificApprovals.Add(approval);
         if (outputPackage is not null)
         {
             outputPackage.RecordScientificApproval(approval.Id, actor.User.Id, DateTime.UtcNow);
             outputPackage.MarkReadyForRelease(approval.Id);
         }
+        var progress = new Services.LabSequencingRunProgress(dbContext);
+        var allocations = await progress.AllocationsAsync(work.Id, cancellationToken);
+        var approvedCounts = await progress.ApprovedCountsAsync(work.Id, cancellationToken);
+        var allPurchasedRunsApproved = allocations.Where(a => a.Value > 1).All(a => approvedCounts.GetValueOrDefault(a.Key) >= a.Value);
+        if (outputPackage is null && allocations.Any(a => a.Value > 1))
+        {
+            var analyses = await progress.AnalysisRunsAsync(work.Id, cancellationToken);
+            var releases = await dbContext.LabResultReleases.Where(r => r.LabServiceOrderId == work.AuthorizationSourceId
+                && r.OrganizationId == work.SubmittingOrganizationId && r.ReleaseStatus != PhaenoPortal.App.Features.OrderManagement.Domain.FileReleaseStatus.Withdrawn).ToListAsync(cancellationToken);
+            allPurchasedRunsApproved = allocations.Where(a => a.Value > 1).All(a => Services.LabSequencingRunProgress.Count(
+                releases.Where(r => r.LabSampleId == a.Key).Select(r => r.LabAnalysisRunId), analyses) >= a.Value);
+            if (!allPurchasedRunsApproved) throw Conflict("sequencing_runs_incomplete", "Record results for every purchased sequencing run before approving the job.");
+            foreach (var release in releases.Where(r => allocations.GetValueOrDefault(r.LabSampleId, 1) > 1))
+                await new Services.LabResultLineageService(dbContext).RequireReleaseAsync(release, cancellationToken, traceabilityOptions?.Value);
+        }
+        if (work.Status != LabWorkOrderStatus.ReadyForRelease && allPurchasedRunsApproved)
+            work.RecordMilestone(LabWorkOrderStatus.ReadyForRelease);
+        else work.AdvanceProjectionVersion();
         dbContext.LabWorkEvents.Add(new LabWorkEvent(work.Id, null, "ScientificApprovalRecorded",
             DateTime.UtcNow, actor.User.Id, JsonSerializer.Serialize(new
             {
@@ -200,6 +354,7 @@ public sealed partial class LabOperationsController
             scientificApprovalId: approval.Id,
             resultOutputPackageId: outputPackage?.Id);
         await dbContext.SaveChangesAsync(cancellationToken);
+        if (resultTransaction is not null) await resultTransaction.CommitAsync(cancellationToken);
         return await WorkOrder(work.Id, cancellationToken);
     }
 }

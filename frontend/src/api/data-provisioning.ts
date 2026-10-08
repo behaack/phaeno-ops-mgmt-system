@@ -353,6 +353,13 @@ export async function markSourceReady(id: string, version: number) {
   return unwrap(response.data)
 }
 
+export async function retrySourceFileScan(id: string, fileId: string, version: number) {
+  const response = await api.post<ApiEnvelope<SourceSample>>(
+    `/data-provisioning/source-samples/${id}/files/${fileId}/retry-scan`, { version },
+  )
+  return unwrap(response.data)
+}
+
 export async function archiveSource(id: string, version: number) {
   const response = await api.post<ApiEnvelope<SourceSample>>(
     `/data-provisioning/source-samples/${id}/archive`,
@@ -554,18 +561,6 @@ export async function listProvisioningActivity(organizationId?: string) {
     '/data-provisioning/activity',
     { params: { organizationId } },
   )
-  return unwrap(response.data)
-}
-
-export async function createProvisionedOrganization(input: {
-  name: string
-  description?: string
-  kind: Exclude<OrganizationKind, 'Phaeno'>
-  datasetVersionIds: string[]
-}) {
-  const response = await api.post<
-    ApiEnvelope<{ organization: Organization; packageGrants: ProvisioningResult[] }>
-  >('/data-provisioning/organizations', input)
   return unwrap(response.data)
 }
 

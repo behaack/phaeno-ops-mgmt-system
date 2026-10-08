@@ -2,36 +2,84 @@
 
 Materials and equipment records show what was used, in what quantity, and whether it was suitable at the time of execution. They support scientific traceability; they are not purchasing or accounts-payable records.
 
+New consumption and equipment-use records retain a dated copy of the resource details available when the use is recorded, including lot QC and expiry or equipment calibration. Later resource changes do not replace that saved evidence. Older use records may lack this copy. For late entries, the copy reflects the recording time; it does not prove what the resource record contained on an earlier date.
+
+## Find catalog products
+
+Open **More → Purchasing → Products**. Each product row shows its saved product type in a badge beside the name. Search products or suppliers, choose a **Product type**, and use **Show inactive** when needed. **All product types** is the default. The type choices include only active product types used in the catalog, even when **Show inactive** is selected. Search and inactive product visibility still apply. Filters update immediately. **Clear filters** restores the default list, and **Back to products** from a detail page restores your selected filters.
+
+## Maintain product types
+
+Open **More → Purchasing → Products → Product types**. **Tube**, **Shipping Container**, **Reagent**, and **Sequencing service** are built-in types with fixed names, active status, and kit use; their names have a **Built-in** badge and they have no Actions menu. The list shows each saved product type name without a second kit-role label; Reagent remains the Reagent product type. Custom types offer **Actions → Edit**, **Deactivate**, or **Activate** as appropriate. Inactive types remain available for review through **Show inactive**, while their products are excluded from new selections. New product types are automatically **Other**; the create/edit form has no kit-use field. Custom Other types can supply additional kit contents. Sequencing services are unavailable as physical kit contents, preparation materials or purchased inventory lots.
+
+## Maintain sequencing vendors and shipment addresses
+
+A Phaeno platform administrator opens **More → Purchasing → Suppliers**. Sequencing vendors use the same supplier records as other purchased products. Search by supplier, product type, address label or city; each supplier summary shows its sequencing service and active address counts. Open the supplier name to view its products and **Shipment addresses**.
+
+Choose **New address**, give the destination a recognizable label, and enter its street address, city and two-letter country code. Add the receiving team, second address line, region, postal code, phone and delivery instructions as applicable. A supplier can have multiple addresses, such as separate receiving laboratories. Address labels are unique within the supplier, including inactive addresses. Use an address's **Actions → Edit**, **Deactivate** or **Activate**; use **Show inactive addresses** to review retired destinations.
+
+Add an address first, then choose **New product** with type **Sequencing service** and enter the service name and description. Physical inventory units and expiration do not apply to this type. An active service requires at least one active vendor address. Before retiring the last address, add another active address or deactivate the vendor's sequencing services. Create a separate product when changing between a physical product and a sequencing service.
+
+Operators select the vendor, its service and its destination when preparing a sequencing shipment. Deactivating a supplier, service or address removes it from new selections; existing shipments retain the reviewed vendor name, service name and address. Correcting the catalog does not redirect a prepared shipment. A pre-dispatch address change is a separate, explicit shipment update with a reason. After dispatch, the destination is fixed.
+
+Tube and Shipping Container products default to inventory unit **each**: one unit is one physical item. On each Tube product, record the **Maximum sample amount** and its unit (µL or mL) separately from inventory unit. The maximum is the most material one physical tube can hold. Its unit must match the linked Sample type's minimum sample amount unit before a Customer can save a sample/tube pair. Editing an existing product retains its configured inventory unit; an unconfigured product defaults to **each**. Saving a unit cannot change the meaning of existing material lots. Once a tube product is used in a physical kit, changing its configured maximum or unit requires a new product identity.
+
 ## Receive and qualify material lots
 
-Choose the lot kind first:
+In **More → Purchasing → Purchased materials**, select a lot's name and lot number to open its details. The page shows material identity, supplier, available quantity and unit, storage, expiration or retest date, and the recorded QC status, date and failure reason. The list also retains prepared reagent lots for QC and traceability. Prepared reagents show their recorded source lots and quantities; select a source lot to inspect its details. Use **Back to purchased materials** to return to the list.
 
-- **Supplier lot** uses a controlled material identity, supplier, supplier lot number, and storage location.
-- **Prepared reagent** uses a controlled material identity, Phaeno lot number, storage location, and one or more source component lots. It does not use a supplier.
+Create purchased stock in **More → Purchasing → Purchased materials → New lot**:
 
-Select existing controlled records when available. If a material, supplier, or storage location is new, choose the corresponding **Create a new…** option and enter its name in the focused modal. The entered name returns as the selected option in the lot form. The new reference is created with the lot, and POMS assigns an immutable key to a new material. Retired reference records are retained for history but are not available for new lots.
+- Choose the external supplier, its exact catalog product, the printed supplier lot number, and a storage location. Changing the supplier clears the product selection. POMS links the product to its internal inventory identity automatically; there is no separate Material choice. A catalog administrator sets the product's inventory unit in **More → Purchasing → Products**. The lot form fills that unit automatically and new lots cannot use a different unit. Existing products without a verified unit must be configured before another lot can be received. Setting a unit for future receipts does not change amounts or units already recorded on older lots.
+- Start a Phaeno-made reagent lot in **Reagent manufacturing**. POMS assigns the lot number, associates it with the exact reagent product under the seeded **Phaeno** internal producer, and records the approved workflow revision. Phaeno is distinguished from external suppliers in **More → Purchasing → Products** and cannot be selected when receiving purchased stock.
 
-Record the available quantity and unit. Use **Expiration or retest date** when applicable; this is a date-only field and the lot remains valid through the end of that date. Exact time-sensitive use-by control is not represented by this field.
+Select existing records when available. For a new storage location, choose **Create a new…** and enter its name in the focused modal. The new reference is created with the purchased lot. Retired records remain in history but cannot be selected for new lots.
+
+Use **Lab settings → Storage locations** to search all named locations, including inactive ones. Operators can create a location. Supervisors and Operations Administrators can correct a name before any material lot uses it, or deactivate and reactivate it. A referenced location cannot be renamed; create a new location and deactivate the old one if the physical place has changed. Inactive locations remain visible on older lots but are unavailable for new lots. This list does not manage scanned tube or freezer-box positions.
+
+Record the amount received in the product's saved inventory unit. If the selected catalog product has **Can expire** enabled, **Expiration date** is required for a new purchased lot. Otherwise, use **Expiration or retest date** when applicable. This is a date-only field and the lot remains valid through the end of that date; a new material lot cannot be recorded with a date already in the past. Exact time-sensitive use-by control is not represented by this field. Changing a product's Can expire setting preserves dates already recorded on existing lots. Older lots without a date remain undated; assigning their catalog product does not invent an expiration date.
 
 New lots show **QC: Pending**. A laboratory supervisor uses **Record QC**, confirms the QC date, and selects **Pass QC** or **Fail QC** in the modal. A failed outcome requires a reason. Passing QC makes the lot eligible for controlled work when its expiration or retest date, availability, and other rules are also satisfied. Failing QC keeps the lot blocked. POMS also retains the operator and server-recorded audit time.
+
+For an older purchased lot without a product, open its details and choose **Actions → Assign product**. Confirm the product from the recorded supplier against the lot label before saving. If that product has a saved inventory unit, the historical lot's recorded unit must match it. The assignment cannot be replaced. Add or activate missing suppliers/products in **More → Purchasing → Products** first. Historical stock use is retained.
+
+A configured product in Library prep offers only eligible lots assigned to that exact product. An internally prepared reagent offers only prepared lots of its configured material definition. Unlinked purchased lots cannot satisfy a product-specific step. If no lots are offered, check the identity assignment, QC, expiry and available stock.
 
 Only lots with **Passed** or **Approved exception** QC may be consumed in controlled work.
 
 An approved exception must retain the decision, reason, approver, and applicable scope. Expired, failed, quarantined, or otherwise unavailable lots remain blocked.
 
-When a prepared reagent is created, select each exact source lot and quantity. Every source lot must be QC-approved, unexpired, and available in the entered unit. POMS records the lineage and subtracts the component quantities atomically.
+## Manufacture a Phaeno reagent
+
+First, a Phaeno platform administrator opens **More → Purchasing → Suppliers → Phaeno → New product** and defines the specific reagent name, description, and inventory unit. Its product type is always **Reagent**. The unit cannot be changed once saved; correcting a product name also updates its reagent identity. Next, a Protocol Administrator creates the ordered procedure under **Lab settings → Workflows → Reagent manufacturing**, selecting that product. Each reagent has at most one workflow identity, which can be revised. A different administrator approves each new revision; a platform administrator who authored it may instead record an override reason. An approved workflow and active product are required to start a run. In **Lab operations → Reagent manufacturing**, choose the reagent by name and its output storage location. POMS selects the approved workflow and product unit, assigns the Phaeno lot number, and creates a zero-stock output lot pending QC. The run is independent of customer samples and tubes. Record each procedure step in order and record each exact source-lot use as it happens. Saving a use immediately subtracts its quantity from the QC-approved, in-date source lot, even if the run is later abandoned. **Material exhausted** is available for the last usable source material. After all steps and at least one source use, enter the actual amount produced in the product's unit. If **Can expire** is enabled for this product, enter an expiration or retest date before completing the run. The completed lot remains QC Pending until a supervisor records its QC decision. A supervisor may abandon an unfinished run with a reason; its output lot stays unavailable and recorded source uses remain in history.
 
 ## Record consumption
 
-Start the assigned execution before recording consumption. Select the exact lot, quantity, and compatible unit required by the protocol. The portal blocks unit mismatches and consumption above the available quantity.
+Record the lot's starting amount when receiving it in **Purchased materials**. Start the assigned execution before recording consumption. Select the exact lot, actual quantity used, and compatible unit required by the protocol. Saving subtracts that quantity from the lot's available balance. The portal blocks unit mismatches and consumption above the available quantity.
+
+Select the optional **Material exhausted** checkbox when no usable stock remains, even if the calculated balance would be positive. Keep the actual amount used in the quantity field. POMS records that consumption and any remaining-balance adjustment separately in **Quantity history**, then sets available stock to zero. This option is initially unchecked and cannot clear an unknown-quantity hold; reconcile that lot first.
 
 Consumption is a durable scientific fact. Do not reduce or delete it to make inventory appear correct. Use an approved correction, adjustment, or exception that preserves the original entry and reason.
 
+## Reconcile an uncertain lot quantity
+
+When a sample's material amount is recorded as **Amount unknown**, POMS retains that fact and places the lot's quantity on hold. Known amounts from the same entry are deducted normally. The last recorded balance remains visible, but the lot cannot supply further work, including prepared reagents, until it is reconciled. Passing QC does not clear a quantity hold.
+
+A Supervisor or Operations Administrator opens the lot and chooses **Reconcile quantity**. Verify the physical remaining stock, enter the **Counted remaining quantity** in the lot's unit, and explain the reconciliation. The balance may be zero and cannot exceed the last recorded balance. Saving retains the before/after quantities, reason, operator and time in **Quantity history**, then clears the quantity hold. Earlier sample amounts remain unknown; reconciliation does not invent a sample quantity or undo known consumption.
+
+If the affected tube is also held, a Supervisor must separately review it and choose **Resolve hold** from its Library prep actions, with a reason. Reconcile its uncertain lot first. Neither inventory reconciliation nor resolving a hold makes a failed attempt usable again.
+
 ## Register equipment
 
-Enter the equipment name, then select an equipment type and location already used by the laboratory. Protocol equipment requirements also supply type choices, and active material-storage locations are available as location choices. If the required type or location is missing, choose **Create a new…**, enter its name in the focused modal, and use the returned selection.
+Open **More → Equipment** and select **New equipment**. Enter the equipment name, then select an equipment type and location already used by the laboratory. Protocol equipment requirements also supply type choices, and active material-storage locations are available as location choices. If the required type or location is missing, choose **Create a new…**, enter its name in the focused modal, and use the returned selection.
 
 POMS assigns the immutable asset code when the equipment is created. Record the **Last calibration date** and **Calibration due date** when applicable. These are date-only laboratory facts; a time of day is not required. The due date cannot be before the last calibration date, and a last calibration date cannot be in the future. Equipment must be active and calibration-current at the time it is used.
+
+## Retire equipment
+
+A Lab Supervisor or Operations Administrator can open an asset's **Actions → Retire equipment**, enter a required retirement reason, and confirm. Retirement prevents new equipment-use records, including backdated entries, while retaining the asset identity, calibration details and existing usage history. POMS records who retired the asset and when. Retirement cannot be undone through this screen.
+
+Retired assets are hidden by default. Select **Show retired** above the Equipment list to include them and read the retirement date and reason. Clear the checkbox to return to current equipment.
 
 ## Record equipment use
 

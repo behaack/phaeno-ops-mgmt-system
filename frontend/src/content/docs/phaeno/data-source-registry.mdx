@@ -12,9 +12,13 @@ Add required metadata, ownership and de-identification evidence, and approved fi
 
 The draft remains editable while validation is incomplete. Review every required field and file, then resolve validation or malware-scan failures before readiness.
 
+If a file's scan is **Unavailable** or **Pending**, restore the scanner and choose **Retry scan** on that draft file. Retry scans the same saved bytes and updates their scan state; it does not upload a replacement or grant access. A rejected file cannot be cleared by this action, and ready or archived sources cannot be rescanned here. Scan refresh preserves unsaved metadata. If your metadata save reports a changed revision, reload and review the current source before saving again.
+
 ## Mark the revision ready
 
-Ready is an irreversible revision boundary. A ready revision is immutable and can be selected for a curated snapshot. Later corrections create a new source revision; they never mutate the revision already used by a package.
+Save your draft changes before choosing **Mark ready**. Readiness uses the saved revision; the action stays unavailable while metadata is unsaved or a save, upload or scan retry is in progress.
+
+Ready is an irreversible revision boundary. A ready revision is immutable and can be selected for a curated snapshot. Later corrections require a new source record for a new curated package version; they never mutate the source already used by a package.
 
 ## Discard or archive safely
 

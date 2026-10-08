@@ -18,7 +18,6 @@ const optionalEmail = z.string().trim().max(255, m.tooLong(255)).refine(
 )
 const schema = z.object({
   name: z.string().trim().min(1, m.nameRequired).max(150, m.tooLong(150)),
-  code: z.string().trim().min(1, m.codeRequired).max(50, m.tooLong(50)),
   description: z.string().trim().max(1000, m.tooLong(1000)),
   purchaseOrderRequired: z.enum(['inherit', 'required', 'optional']),
   billingContactEmail: optionalEmail,
@@ -38,7 +37,7 @@ export function DepartmentSettingsDialog({ target, pending, error, onClose, onSu
   const [confirmDiscard, setConfirmDiscard] = useState(false)
   const department = target === 'new' ? null : target
   const form = useForm<Values>({ resolver: zodResolver(schema), mode: 'onBlur', defaultValues: {
-    name: department?.name ?? '', code: department?.code ?? '', description: department?.description ?? '',
+    name: department?.name ?? '', description: department?.description ?? '',
     purchaseOrderRequired: department?.purchaseOrderRequired == null ? 'inherit' : department.purchaseOrderRequired ? 'required' : 'optional',
     billingContactEmail: department?.billingContactEmail ?? '', notificationEmail: department?.notificationEmail ?? '',
     shippingInstructions: department?.shippingInstructions ?? '', resultDeliveryInstructions: department?.resultDeliveryInstructions ?? '',
@@ -51,7 +50,7 @@ export function DepartmentSettingsDialog({ target, pending, error, onClose, onSu
     else onClose()
   }
   const fields = [
-    ['name', m.name, 150], ['code', m.code, 50], ['description', m.description, 1000],
+    ['name', m.name, 150], ['description', m.description, 1000],
     ['billingContactEmail', m.billingContactEmail, 255], ['notificationEmail', m.notificationEmail, 255],
     ['shippingInstructions', m.shippingInstructions, 2000], ['resultDeliveryInstructions', m.resultDeliveryInstructions, 2000],
   ] as const
@@ -71,6 +70,9 @@ export function DepartmentSettingsDialog({ target, pending, error, onClose, onSu
           <DialogHeader>
             <DialogTitle>{target === 'new' ? m.addDepartment : m.editDepartment(department?.name ?? '')}</DialogTitle>
             <DialogDescription>{m.settingsDescription}</DialogDescription>
+            <p className="text-sm text-muted-foreground">
+              {department ? <>{m.reference}: <span className="font-medium text-foreground">{department.code}</span>. {m.referencePermanent}</> : m.referenceAssignedOnSave}
+            </p>
           </DialogHeader>
           {error ? <Alert variant="destructive"><AlertDescription>{apiErrorMessage(error)}</AlertDescription></Alert> : null}
           {confirmDiscard ? (
@@ -84,7 +86,7 @@ export function DepartmentSettingsDialog({ target, pending, error, onClose, onSu
           ) : null}
           <fieldset disabled={pending} className="grid gap-4">
             {fields.map(([name, label, maxLength]) => {
-              const required = name === 'name' || name === 'code'
+              const required = name === 'name'
               const multiline = name === 'description' || name.endsWith('Instructions')
               const fieldError = form.formState.errors[name]?.message
               const props = {

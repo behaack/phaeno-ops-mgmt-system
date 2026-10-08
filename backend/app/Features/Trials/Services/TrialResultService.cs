@@ -48,6 +48,7 @@ public sealed class TrialResultService(PSeqOperationsDbContext db, TrialWorkflow
         var files = new List<ManagedOperationalFile>();
         foreach (var package in packages)
         {
+            await new PhaenoPortal.App.Features.LabOperations.Services.LabResultLineageService(db).RequirePackageAsync(package, token, pseq.Value);
             var sample = trial.Samples.SingleOrDefault(value => value.Id == package.TrialSampleId && value.LabWorkOrderId == package.LabWorkOrderId) ?? throw Missing();
             var canReuseReleased = package.State == ResultOutputPackageState.Released && request.CompletePackage && !request.SupersedesReleaseId.HasValue;
             if (package.State != ResultOutputPackageState.ReadyForRelease && !canReuseReleased || !package.ScientificApprovalId.HasValue
@@ -106,6 +107,9 @@ public sealed class TrialResultService(PSeqOperationsDbContext db, TrialWorkflow
         var release = new TrialResultRelease(trial.Id, trial.OrganizationId.Value, trial.DepartmentId!.Value, version, trial.CurrentScopeRevision,
             manifest, request.CompletePackage, actor.User.Id, now, superseded?.Id);
         db.TrialResultReleases.Add(release);
+        foreach (var group in packages.GroupBy(p => p.LabWorkOrderId).OrderBy(g => g.Key))
+            await new LabOperations.Services.LabJobDeliveryRecorder(db).RecordAsync(group.Key,
+                group.Select(p => new LabOperations.Services.LabJobRelease(p.TrialSampleId!.Value, p.ReleasedAtUtc)).ToList(), token);
         if (request.CompletePackage)
         {
             var global = await db.ReleasedDeliverablePolicyDefaults.SingleOrDefaultAsync(value => value.IsActive, token)

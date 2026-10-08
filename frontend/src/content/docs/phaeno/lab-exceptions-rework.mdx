@@ -18,8 +18,18 @@ Do not delete a failed execution, consumed material, rejected library, or prior 
 
 The Customer request remains in Commercial review. For unreceived work, Lab Ops can report that cancellation is safe. Started work requires a bounded work-order or specimen-level decision based on receipt, consumption, execution, and sendout state.
 
-Do not force Lab work to cancelled merely because Commercial received a request. Return the Lab decision so Order Ops can approve, partially approve, or decline the Commercial cancellation and preserve any financial adjustment for the manual accounting handoff.
+Do not force Lab work to cancelled merely because Commercial received a request. Return the Lab decision so Order Ops can approve, partially approve, or decline the Commercial cancellation and preserve any financial adjustment for PSeq Finance or the applicable Partner accounting handoff.
 
 ## Recover projections
 
 Commercial receives only safe action counts, summaries, milestones, schedule health, and timing projections. If a projection is delayed, refresh and retry the durable event. Never copy internal exception data into Commercial tables or create a duplicate work order.
+
+## Customer-requested specimen holds
+
+Customers cannot request specimen pauses or resumption through the Portal at present. Existing requests and their history remain available in the Lab Job's **Specimen holds** card. An outstanding request blocks new attempts, new protocol executions, new sequencing handoffs, new analysis and result release for the selected sample. Jobs with an outstanding request appear blocked in the Jobs queue. Other samples can continue.
+
+A Lab Supervisor or Operations Administrator records the decision. Use **Confirm safe pause** only after checking the physical procedure and any external provider. Record what already happened before confirming a pause. Use **Cannot pause ongoing work** when necessary; this preserves the difference between a request and a physical stop, while continuing to block new work and release. Reasons are visible to the customer.
+
+For an existing resumption request, choose **Approve resumption** or **Keep paused**, with a reason and confirmation of the safe operational boundary. Resolve a separate Job hold or cancellation before approving resumption. Clearing this customer hold does not clear other restrictions: the normal authorization, material, protocol and quality gates are checked when work actually starts. No work starts automatically.
+
+**Hold history** retains requests and decisions. Holds do not rewrite prior evidence, revoke results already delivered, extend retention or change prices or deadlines. Handle those decisions through their separate approved workflows.

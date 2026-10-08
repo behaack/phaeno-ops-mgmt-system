@@ -16,7 +16,6 @@ import { cn } from '#/lib/utils'
 const PINNED_PREFERENCE_KEY = 'phaeno:workspace-sidebar-pinned'
 const WIDE_LAYOUT_QUERY = '(min-width: 64rem)'
 const HOVER_POINTER_QUERY = '(hover: hover) and (pointer: fine)'
-const SIDEBAR_TOP_PX = 84
 const SIDEBAR_WITH_TAB_PX = 292
 
 export type WorkspaceSidebarItem<Value extends string> = {
@@ -25,6 +24,7 @@ export type WorkspaceSidebarItem<Value extends string> = {
   description: string
   icon: LucideIcon
   group?: string
+  separatorBefore?: boolean
   count?: number
   countDescription?: string
 }
@@ -107,10 +107,37 @@ export function ResponsiveSidebar({
   }, [isPreviewOpen, showPinnedSidebar])
 
   useEffect(() => {
+    if (!isPreviewOpen || isWideLayout) return
+
+    function closeOnOutsidePointer(event: PointerEvent) {
+      const target = event.target
+      if (
+        !(target instanceof Node)
+        || sidebarRef.current?.contains(target)
+        || triggerRef.current?.contains(target)
+      ) return
+
+      const focusWasInsideSidebar = sidebarRef.current?.contains(document.activeElement)
+      setIsPreviewOpen(false)
+      if (focusWasInsideSidebar) {
+        requestAnimationFrame(() => {
+          // Let an outside control take focus; restore the tab only for a plain surface.
+          if (document.activeElement === document.body || sidebarRef.current?.contains(document.activeElement)) {
+            triggerRef.current?.focus()
+          }
+        })
+      }
+    }
+
+    document.addEventListener('pointerdown', closeOnOutsidePointer, true)
+    return () => document.removeEventListener('pointerdown', closeOnOutsidePointer, true)
+  }, [isPreviewOpen, isWideLayout])
+
+  useEffect(() => {
     if (!isPreviewOpen || showPinnedSidebar || !hoverPreviewEnabled) return
 
     function closeAfterPointerLeavesRail(event: MouseEvent) {
-      const pointerIsWithinRail = event.clientY >= SIDEBAR_TOP_PX
+      const pointerIsWithinRail = event.clientY >= (sidebarRef.current?.getBoundingClientRect().top ?? 84)
         && event.clientX <= SIDEBAR_WITH_TAB_PX
       if (pointerIsWithinRail || sidebarRef.current?.contains(document.activeElement)) return
       setIsPreviewOpen(false)
@@ -148,7 +175,7 @@ export function ResponsiveSidebar({
           <div
             data-sidebar-edge
             aria-hidden="true"
-            className="fixed top-[5.25rem] bottom-0 left-0 z-30 w-2"
+            className="fixed top-[var(--portal-header-height,5.25rem)] bottom-0 left-0 z-30 w-2"
             onMouseEnter={hoverPreviewEnabled ? openPreview : undefined}
             onMouseMove={hoverPreviewEnabled ? openPreview : undefined}
           />
@@ -163,7 +190,7 @@ export function ResponsiveSidebar({
               ? `Close ${workspaceLabel} navigation`
               : `Open ${workspaceLabel} navigation; current selection: ${activeLabel}`}
             className={cn(
-              'fixed top-[6.25rem] z-40 rounded-l-none border-l-0 bg-background shadow-md transition-[left] duration-200 motion-reduce:transition-none',
+              'fixed top-[calc(var(--portal-header-height,5.25rem)+1rem)] z-40 rounded-l-none border-l-0 bg-background shadow-md transition-[left] duration-200 motion-reduce:transition-none',
               isPreviewOpen ? 'left-64' : 'left-0',
             )}
             title={isPreviewOpen
@@ -182,12 +209,12 @@ export function ResponsiveSidebar({
         aria-hidden={!showSidebar}
         inert={!showSidebar ? true : undefined}
         className={cn(
-          'fixed top-[5.25rem] bottom-0 left-0 z-40 flex w-64 flex-col border-r bg-background p-3 text-foreground shadow-sm transition-transform duration-200 motion-reduce:transition-none',
+          'fixed top-[var(--portal-header-height,5.25rem)] bottom-0 left-0 z-40 flex w-64 flex-col border-r bg-background p-3 text-foreground shadow-sm transition-transform duration-200 motion-reduce:transition-none',
           showSidebar ? 'translate-x-0' : '-translate-x-full',
         )}
       >
         <header className="flex items-center justify-between gap-3 border-b pb-3">
-          <h2 className="truncate px-1 text-sm font-semibold">{workspaceLabel}</h2>
+          <h2 className="min-w-0 px-1 text-sm font-semibold">{workspaceLabel}</h2>
           {isWideLayout ? (
             <Button
               type="button"
@@ -246,6 +273,7 @@ function WorkspaceNavigation<Value extends string>({
 
                 return (
                   <li key={item.value}>
+                    {item.separatorBefore ? <hr className="mx-3 my-3 border-border" /> : null}
                     <button
                       type="button"
                       aria-current={isActive ? 'page' : undefined}

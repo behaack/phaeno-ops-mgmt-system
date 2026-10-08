@@ -72,9 +72,25 @@ describe('LabLabelDialog', () => {
 
     fireEvent.click(openPrint)
     expect(print).toHaveBeenCalledOnce()
-    expect(screen.getByText('Did the physical label print correctly?')).toBeTruthy()
+    expect(screen.getByText('Record the print outcome')).toBeTruthy()
+    expect(screen.queryByLabelText(/Scan printed tube barcode/)).toBeNull()
+    expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Record outcome' }).disabled).toBe(false)
+    fireEvent.click(screen.getByRole('button', { name: 'Record outcome' }))
+    await screen.findByText('Choose a print outcome.')
+    expect(api.recordLabContainerLabelPrint).not.toHaveBeenCalled()
+    fireEvent.change(screen.getByLabelText(/Print outcome/), { target: { value: 'Succeeded' } })
     expect(api.recordLabContainerLabelPrint).not.toHaveBeenCalled()
 
+    const printed = screen.getByRole('button', { name: 'Label printed' })
+    expect((printed as HTMLButtonElement).disabled).toBe(true)
+    fireEvent.change(screen.getByLabelText(/Scan printed tube barcode/), {
+      target: { value: 'PH-S-WRONG' },
+    })
+    expect(screen.getByText(/This scan does not match/)).toBeTruthy()
+    expect((printed as HTMLButtonElement).disabled).toBe(true)
+    fireEvent.change(screen.getByLabelText(/Scan printed tube barcode/), {
+      target: { value: `*${container.barcode.toLowerCase()}*` },
+    })
     fireEvent.click(screen.getByRole('button', { name: 'Label printed' }))
 
     await waitFor(() => expect(api.recordLabContainerLabelPrint).toHaveBeenCalledWith(
@@ -83,6 +99,7 @@ describe('LabLabelDialog', () => {
         reason: 'Initial container label',
         outcome: 'Succeeded',
         failureDetails: null,
+        scannedBarcode: `*${container.barcode.toLowerCase()}*`,
       },
     ))
     expect(onRecorded).toHaveBeenCalledOnce()
@@ -103,10 +120,17 @@ describe('LabLabelDialog', () => {
 
     await screen.findByLabelText(/Print reason/)
     fireEvent.click(screen.getByRole('button', { name: 'Open print dialog' }))
+    expect(screen.queryByRole('button', { name: 'Print again' })).toBeNull()
+    expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Close' }).disabled).toBe(true)
+    fireEvent.change(screen.getByLabelText(/Print outcome/), { target: { value: 'Failed' } })
+    expect(screen.queryByLabelText(/Scan printed tube barcode/)).toBeNull()
     const failed = screen.getByRole('button', { name: 'Record failed attempt' })
-    expect((failed as HTMLButtonElement).disabled).toBe(true)
+    expect((failed as HTMLButtonElement).disabled).toBe(false)
+    fireEvent.click(failed)
+    await screen.findByText('Describe why the label did not print.')
+    expect(api.recordLabContainerLabelPrint).not.toHaveBeenCalled()
 
-    fireEvent.change(screen.getByLabelText('Failure details'), {
+    fireEvent.change(screen.getByLabelText(/Failure details/), {
       target: { value: 'Printer was offline.' },
     })
     fireEvent.click(failed)
@@ -117,8 +141,13 @@ describe('LabLabelDialog', () => {
         reason: 'Initial container label',
         outcome: 'Failed',
         failureDetails: 'Printer was offline.',
+        scannedBarcode: null,
       },
     ))
+    const retry = await screen.findByRole('button', { name: 'Open print dialog' })
+    fireEvent.click(retry)
+    expect(print).toHaveBeenCalledTimes(2)
+    expect(api.recordLabContainerLabelPrint).toHaveBeenCalledTimes(1)
     print.mockRestore()
   })
 })

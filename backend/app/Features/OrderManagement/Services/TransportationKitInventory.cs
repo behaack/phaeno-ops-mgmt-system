@@ -1,0 +1,125 @@
+namespace PhaenoPortal.App.Features.OrderManagement.Services;
+
+using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
+using PSeq.Operations.Commercial.OrderManagement.Domain;
+using PhaenoPortal.App.Features.OrderManagement.DTOs;
+using PhaenoPortal.App.Infrastructure.Persistence;
+
+public static class TransportationKitInventory
+{
+    public static bool HasPreparedTubeRoster(SampleShippingStockKit kit)
+    {
+        if (!kit.AssemblyWorkflowRevisionId.HasValue || !kit.AssemblyCompletedAt.HasValue) return false;
+        try { kit.EnsureCompleteTubeRoster(); return true; }
+        catch (InvalidOperationException) { return false; }
+    }
+
+    public static bool IsPhysicallyUsable(SampleShippingStockKit kit, DateTime at)
+    {
+        try { kit.EnsurePhysicallyUsable(at); return true; }
+        catch (InvalidOperationException) { return false; }
+    }
+    public static bool IsExpirySnapshotUsable(string? snapshotJson, DateTime at)
+    {
+        if (snapshotJson is null || at.Kind != DateTimeKind.Utc) return false;
+        try
+        {
+            using var document = JsonDocument.Parse(snapshotJson);
+            if (document.RootElement.ValueKind != JsonValueKind.Array) return false;
+            foreach (var product in document.RootElement.EnumerateArray())
+            {
+                if (!product.TryGetProperty("canExpire", out var canExpire) || canExpire.ValueKind != JsonValueKind.True)
+                    continue;
+                if (!product.TryGetProperty("expirationDate", out var value) || value.ValueKind != JsonValueKind.String
+                    || !DateOnly.TryParse(value.GetString(), out var expirationDate)
+                    || expirationDate < DateOnly.FromDateTime(at)) return false;
+            }
+            return true;
+        }
+        catch (JsonException) { return false; }
+    }
+    public static IQueryable<SampleShippingStockKit> AtLocation(PSeqOperationsDbContext db, Guid organizationId, Guid departmentId, Guid? locationId)
+        => db.SampleShippingStockKits.AsNoTracking().Where(kit => locationId.HasValue && kit.OrganizationId == organizationId
+            && kit.DepartmentId == departmentId && kit.CustomerDeliveryLocationId == locationId && kit.FulfilledAt.HasValue);
+    public static IQueryable<SampleShippingStockKit> Available(PSeqOperationsDbContext db, SampleShipment shipment, Guid? locationId)
+        => ForShipment(db, AtLocation(db, shipment.OrganizationId, shipment.DepartmentId, locationId), shipment).Where(kit => kit.CustomerReceivedAt.HasValue
+            && !kit.ReservedSampleShipmentId.HasValue && !kit.BoundSampleShipmentId.HasValue && !kit.WithdrawnAt.HasValue);
+
+    public static IQueryable<SampleShippingStockKit> ForShipment(PSeqOperationsDbContext db,
+        IQueryable<SampleShippingStockKit> stock, SampleShipment shipment)
+    {
+        var specimenIds = shipment.Items.Select(i => i.SubmittedSpecimenId).ToArray();
+        var phaseIds = db.LabSamples.Where(s => s.LabServiceOrderId == shipment.AuthorizationSourceId
+            && specimenIds.Contains(s.Id) && s.LabJobPhaseId.HasValue).Select(s => s.LabJobPhaseId!.Value);
+        return stock.Where(k => !db.LabSampleTubeKitSelections.Any(s => s.StockKitId == k.Id
+            && (s.LabServiceOrderId != shipment.AuthorizationSourceId || !s.LabJobPhaseId.HasValue || !phaseIds.Contains(s.LabJobPhaseId.Value)))
+            && !db.TransportationKitRequestLines.Join(db.TransportationKitRequests, l => l.TransportationKitRequestId, r => r.Id,
+                (l, r) => new { l.Id, r.LabJobPhaseId, r.LabServiceOrderId }).Any(r => r.Id == k.TransportationKitRequestLineId
+                    && r.LabJobPhaseId.HasValue && (r.LabServiceOrderId != shipment.AuthorizationSourceId || !phaseIds.Contains(r.LabJobPhaseId.Value))));
+    }
+    public static async Task<IReadOnlyList<CustomerDeliveryLocationDto>> LocationsAsync(PSeqOperationsDbContext db, SampleShipment shipment, CancellationToken ct)
+        => (await db.CustomerDeliveryLocations.AsNoTracking().Where(item => item.OrganizationId == shipment.OrganizationId
+                && item.DepartmentId == shipment.DepartmentId && item.IsActive)
+            .OrderByDescending(item => item.IsDefault).ThenBy(item => item.Label).ToListAsync(ct)).Select(item => item.ToDto()).ToArray();
+    public static async Task<Guid?> LocationAsync(PSeqOperationsDbContext db, SampleShipment shipment, Guid? requested, CancellationToken ct)
+    {
+        var locations = await LocationsAsync(db, shipment, ct);
+        var location = requested ?? shipment.DepartureDeliveryLocationId ?? locations.FirstOrDefault(item => item.IsDefault)?.Id
+            ?? (locations.Count == 1 ? locations[0].Id : null);
+        if (location.HasValue && !locations.Any(item => item.Id == location))
+            throw new OrderManagementException("transportation_location_not_found", "Choose an active delivery location in your department.", 404);
+        return location;
+    }
+    public static async Task<IReadOnlyList<SampleShippingContainerDefinitionDto>> OptionsAsync(PSeqOperationsDbContext db,
+        SampleShipment shipment, Guid? locationId, CancellationToken ct)
+    {
+        if (shipment.Items.Count == 0) return [];
+        var stock = await Available(db, shipment, locationId).ToArrayAsync(ct);
+        var ids = stock.Where(kit => IsPhysicallyUsable(kit, DateTime.UtcNow))
+            .Select(item => item.ContainerDefinitionId).Distinct().ToArray();
+        return await new SampleShippingContainerCatalogService(db).ReadStockCompatibleAsync(
+            await SampleShippingPackingData.ContextsAsync(db, shipment, ct), ids, ct);
+    }
+    public static async Task<IReadOnlyList<LocationStockKitDto>> MapAsync(PSeqOperationsDbContext db,
+        IReadOnlyList<SampleShippingStockKit> kits, CancellationToken ct)
+    {
+        var lineIds = kits.Where(item => item.TransportationKitRequestLineId.HasValue).Select(item => item.TransportationKitRequestLineId!.Value).Distinct().ToArray();
+        var lines = await db.TransportationKitRequestLines.AsNoTracking().Where(item => lineIds.Contains(item.Id))
+            .ToDictionaryAsync(item => item.Id, item => item.TransportationKitRequestId, ct);
+        var shipmentIds = kits.Select(item => item.BoundSampleShipmentId ?? item.ReservedSampleShipmentId).Where(item => item.HasValue).Select(item => item!.Value).Distinct().ToArray();
+        var assignments = await db.SampleShipments.AsNoTracking().Where(item => shipmentIds.Contains(item.Id))
+            .ToDictionaryAsync(item => item.Id, item => new { item.AuthorizationSourceId, item.AuthorizationReference }, ct);
+        var originIds = kits.Where(item => item.AuthorizationSourceId.HasValue).Select(item => item.AuthorizationSourceId!.Value).Distinct().ToArray();
+        var origins = await db.LabServiceOrders.AsNoTracking().Where(item => originIds.Contains(item.Id)).ToDictionaryAsync(item => item.Id, item => item.OrderNumber, ct);
+        return kits.Select(kit =>
+        {
+            var assignedId = kit.BoundSampleShipmentId ?? kit.ReservedSampleShipmentId;
+            var assigned = assignedId.HasValue ? assignments.GetValueOrDefault(assignedId.Value) : null;
+            return new LocationStockKitDto(kit.Id, kit.KitNumber, SampleShippingPackingData.Container(kit.ContainerSnapshotJson)!, kit.Version,
+                Status(kit), kit.CustomerDeliveryLocationId, kit.TransportationKitRequestLineId.HasValue ? lines.GetValueOrDefault(kit.TransportationKitRequestLineId.Value) : null,
+                kit.AuthorizationSourceId, kit.AuthorizationSourceId.HasValue ? origins.GetValueOrDefault(kit.AuthorizationSourceId.Value) : null,
+                assigned?.AuthorizationSourceId, assigned?.AuthorizationReference, kit.ReservedSampleShipmentId, kit.BoundSampleShipmentId,
+                kit.FulfilledAt, kit.CustomerReceivedAt);
+        }).ToArray();
+    }
+    public static string Status(SampleShippingStockKit kit) => kit.WithdrawnAt.HasValue ? "NeedsReview"
+        : kit.BoundSampleShipmentId.HasValue ? "InUse"
+        : kit.ReservedSampleShipmentId.HasValue ? "Assigned" : !kit.FulfilledAt.HasValue ? "Preparing"
+        : !kit.CustomerDeliveryLocationId.HasValue ? "NeedsReview" : kit.CustomerReceivedAt.HasValue ? "Available" : "OnTheWay";
+
+    public static async Task ReleaseAsync(PSeqOperationsDbContext db, IReadOnlyList<Guid> shipmentIds, CancellationToken ct)
+    {
+        var ids = await db.SampleShippingStockKits.AsNoTracking().Where(item => item.ReservedSampleShipmentId.HasValue
+            && shipmentIds.Contains(item.ReservedSampleShipmentId.Value) && !item.BoundSampleShipmentId.HasValue)
+            .Select(item => item.Id).Order().ToArrayAsync(ct);
+        foreach (var id in ids) await SampleShippingPackingData.LockAsync(db, $"stock-kit:{id}", ct);
+        var kits = await db.SampleShippingStockKits.Where(item => ids.Contains(item.Id)).ToArrayAsync(ct);
+        foreach (var kit in kits)
+        {
+            await db.Entry(kit).ReloadAsync(ct);
+            if (kit.BoundSampleShipmentId.HasValue) throw new OrderManagementException("container_in_use", "Tube scanning has started; this container cannot be released.", 409);
+            kit.ReleaseReservation();
+        }
+    }
+}

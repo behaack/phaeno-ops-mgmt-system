@@ -37,9 +37,15 @@ public sealed class LabServiceQuote : IAudit, IConcurrency
     public QuotePurpose Purpose { get; private set; }
     public QuoteStatus Status { get; private set; } = QuoteStatus.SyncPending;
     public string LinesJson { get; private set; } = "[]";
+    public string? PhasePlanSnapshotJson { get; private set; }
+    public string? ChangeScopeSnapshotJson { get; private set; }
+    public string? AcceptedAmendmentSnapshotJson { get; private set; }
+    public DateTime? ChangeRosterFinalizedAt { get; private set; }
     public decimal Subtotal { get; private set; }
     public decimal Tax { get; private set; }
     public decimal Total { get; private set; }
+    // Null identifies quotes issued before the full-receipt business-day commitment.
+    public int? DeliveryTargetBusinessDays { get; private set; }
     public string Currency { get; private set; } = "USD";
     public DateTime IssuedAt { get; private set; }
     public DateTime ExpiresAt { get; private set; }
@@ -91,7 +97,59 @@ public sealed class LabServiceQuote : IAudit, IConcurrency
         ExpiresAt = expiresAt;
     }
 
+    public QuoteStatus EffectiveStatus(DateTime utcNow)
+        => Status == QuoteStatus.Issued && AcceptedAt is null && ExpiresAt <= utcNow ? QuoteStatus.Expired : Status;
+
+    public void FreezePhasePlan(string json)
+    {
+        if (Status != QuoteStatus.SyncPending) throw new InvalidOperationException("Freeze phases before quote issuance.");
+        PhasePlanSnapshotJson = OrderText.Json(json);
+    }
+
+    public void SetDeliveryTarget(int businessDays)
+    {
+        if (Status != QuoteStatus.SyncPending || businessDays is < 1 or > 365)
+            throw new InvalidOperationException("Choose a delivery target of 1 to 365 business days before issuing the quote.");
+        DeliveryTargetBusinessDays = businessDays;
+    }
+
     public void MarkIssued() { if (Status != QuoteStatus.SyncPending) throw new InvalidOperationException(); Status = QuoteStatus.Issued; }
+
+    public void FreezeChangeScope(string snapshot)
+    {
+        if (Purpose != QuotePurpose.Change || Status != QuoteStatus.SyncPending || ChangeScopeSnapshotJson is not null)
+            throw new InvalidOperationException("Change scope must be frozen before issuance.");
+        ChangeScopeSnapshotJson = OrderText.Json(snapshot);
+    }
+
+    public void RecordAcceptedAmendment(string snapshot)
+    {
+        if (Purpose != QuotePurpose.Change || Status != QuoteStatus.Accepted || AcceptedAmendmentSnapshotJson is not null)
+            throw new InvalidOperationException("Only a newly accepted Change quote can record its amendment.");
+        AcceptedAmendmentSnapshotJson = OrderText.Json(snapshot);
+    }
+
+    public void FinalizeChangeRoster(DateTime now)
+    {
+        if (AcceptedAmendmentSnapshotJson is null || ChangeRosterFinalizedAt.HasValue)
+            throw new InvalidOperationException("The accepted amendment roster is unavailable.");
+        ChangeRosterFinalizedAt = now;
+    }
+
+    public void DeclineChange()
+    {
+        if (Purpose != QuotePurpose.Change || Status != QuoteStatus.Issued)
+            throw new InvalidOperationException("Only an issued Change quote can be declined.");
+        Status = QuoteStatus.Declined;
+    }
+
+    public void DeclineInitial()
+    {
+        if (Purpose != QuotePurpose.Initial || Status is not (QuoteStatus.Issued or QuoteStatus.Expired)
+            || AcceptedAt.HasValue || SupersededByQuoteId.HasValue)
+            throw new InvalidOperationException("Only the current unaccepted initial quote can be declined.");
+        Status = QuoteStatus.Declined;
+    }
 
     public void FreezeCommercialTerms(
         string billingContactSnapshotJson,
@@ -138,6 +196,16 @@ public sealed class LabServiceQuote : IAudit, IConcurrency
             PricingDecisionReason = null;
         PricingDecidedByUserId = actorUserId;
         PricingDecidedAt = utcNow;
+    }
+    public void RecordPhasePricingDecision(IEnumerable<(decimal? Proposed, decimal Final)> phases, string? amendmentReason)
+    {
+        if (Status != QuoteStatus.SyncPending || !PricingDecidedByUserId.HasValue)
+            throw new InvalidOperationException("Record the pricing reviewer before phase decisions.");
+        var proposals = phases.Where(p => p.Proposed.HasValue).ToArray();
+        PricingDecision = proposals.Length == 0 ? QuotePricingDecision.PricedWithoutProposal
+            : proposals.Any(p => p.Proposed != p.Final) ? QuotePricingDecision.AmendedProposal : QuotePricingDecision.ApprovedAsProposed;
+        PricingDecisionReason = PricingDecision == QuotePricingDecision.AmendedProposal
+            ? OrderText.Required(amendmentReason, "Price amendment reason", 2000) : null;
     }
     public void Supersede(Guid nextQuoteId) { if (Status is QuoteStatus.Accepted or QuoteStatus.Superseded) throw new InvalidOperationException(); Status = QuoteStatus.Superseded; SupersededByQuoteId = nextQuoteId; }
 

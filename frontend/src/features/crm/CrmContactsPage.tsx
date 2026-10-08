@@ -1,3 +1,4 @@
+import { CrmClearFilters, useCrmState, useCrmSearch, CrmListPagination } from "./CrmListNavigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Plus, Search } from "lucide-react";
@@ -14,6 +15,7 @@ import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -23,18 +25,19 @@ import { Checkbox } from "#/components/ui/checkbox";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
 import { CrmContactDialog } from "./CrmContactDialog";
+import { outreachLabel, outreachStatus } from './crm-outreach';
 import { CrmSavedViewBar } from "./CrmSavedViewBar";
 
 export function CrmContactsPage() {
+  const [page, setPage] = useCrmState<number>("page", 1);
   const navigate = useNavigate();
   const client = useQueryClient();
-  const [draft, setDraft] = useState("");
-  const [search, setSearch] = useState("");
-  const [includeInactive, setIncludeInactive] = useState(false);
+  const [draft, setDraft, search, setSearch] = useCrmSearch();
+  const [includeInactive, setIncludeInactive] = useCrmState<boolean>("includeInactive", false);
   const [open, setOpen] = useState(false);
   const query = useQuery({
-    queryKey: ["crm-contacts", search, includeInactive],
-    queryFn: () => listCrmContacts({ search, includeInactive, pageSize: 100 }),
+    queryKey: ["crm-contacts", search, includeInactive, page],
+    queryFn: () => listCrmContacts({ search, includeInactive, page, pageSize: 25 }),
   });
   const create = useMutation({
     mutationFn: (input: CrmContactInput) => createCrmContact(input),
@@ -60,10 +63,6 @@ export function CrmContactsPage() {
             their identity.
           </p>
         </div>
-        <Button onClick={() => setOpen(true)}>
-          <Plus data-icon="inline-start" />
-          New contact
-        </Button>
       </section>
       {query.error ? (
         <Alert variant="destructive">
@@ -72,8 +71,14 @@ export function CrmContactsPage() {
       ) : null}
       <Card>
         <CardHeader>
-          <CardTitle>Contact directory</CardTitle>
-          <CardDescription>
+          <CardTitle className="self-center">Contact directory</CardTitle>
+          <CardAction className="row-span-1">
+            <Button className="cursor-pointer" onClick={() => setOpen(true)}>
+              <Plus data-icon="inline-start" />
+              New contact
+            </Button>
+          </CardAction>
+          <CardDescription className="col-span-2">
             Search names, email addresses, and Company-specific job titles.
           </CardDescription>
         </CardHeader>
@@ -112,6 +117,7 @@ export function CrmContactsPage() {
               </Label>
             </div>
           </form>
+          <CrmClearFilters />
           <CrmSavedViewBar
             recordType="Contact"
             currentFilter={{ search, includeInactive }}
@@ -130,7 +136,7 @@ export function CrmContactsPage() {
                   <th className="px-4 py-3">Contact</th>
                   <th className="px-4 py-3">Email</th>
                   <th className="px-4 py-3">Primary position</th>
-                  <th className="px-4 py-3">Preference</th>
+                  <th className="px-4 py-3">Outreach</th>
                   <th className="px-4 py-3">Owner</th>
                 </tr>
               </thead>
@@ -139,7 +145,7 @@ export function CrmContactsPage() {
                   <tr key={contact.id}>
                     <td className="px-4 py-3 font-medium">
                       <Link
-                        to="/crm/contacts/$contactId"
+                        to="/crm/contacts/$contactId" search={previous => previous}
                         params={{ contactId: contact.id }}
                         className="hover:underline"
                       >
@@ -160,13 +166,12 @@ export function CrmContactsPage() {
                     <td className="px-4 py-3">
                       <Badge
                         variant={
-                          contact.communicationPreference === "DoNotContact" ||
-                          contact.communicationPreference === "OptedOut"
+                          outreachStatus(contact) === 'Suppressed'
                             ? "destructive"
                             : "outline"
                         }
                       >
-                        {spaced(contact.communicationPreference)}
+                        {outreachLabel(contact)}
                       </Badge>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
@@ -176,12 +181,13 @@ export function CrmContactsPage() {
                 ))}
               </tbody>
             </table>
-            {!query.isLoading && !(query.data?.items.length ?? 0) ? (
+            {!query.isLoading && !query.error && !(query.data?.items.length ?? 0) ? (
               <p className="p-8 text-center text-sm text-muted-foreground">
                 No contacts match this view.
               </p>
             ) : null}
           </div>
+          <CrmListPagination result={query.data} page={page} onPageChange={setPage} busy={query.isFetching} />
         </CardContent>
       </Card>
       <CrmContactDialog
@@ -196,7 +202,4 @@ export function CrmContactsPage() {
       />
     </main>
   );
-}
-function spaced(value: string) {
-  return value.replace(/([a-z])([A-Z])/g, "$1 $2");
 }

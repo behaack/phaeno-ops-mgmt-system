@@ -8,7 +8,9 @@ public enum BusinessRole
     ResultReleaseManager,
     BillingOperator,
     CashOperator,
-    CashReconciler
+    CashReconciler,
+    BusinessDevelopment,
+    CommercialLeadership
 }
 
 public sealed class BusinessRoleAssignment : IAudit, IConcurrency

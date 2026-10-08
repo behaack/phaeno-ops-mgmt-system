@@ -1,6 +1,7 @@
+import { WorkflowApprovalOverrideDialog } from './WorkflowApprovalOverrideDialog'
 import { useMutation } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { Plus } from 'lucide-react'
+import { ChevronDown, Plus, ShieldCheck } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 
 import {
@@ -11,12 +12,15 @@ import {
   type LabServiceWorkflow,
 } from '#/api/lab-operations'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
+import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '#/components/ui/dialog'
+import { ActionMenu as DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/required-field'
+import { WorkflowListFilters } from './WorkflowListFilters'
 
 type ConfirmedWorkflowAction = 'discard' | 'promote' | 'retire' | 'withdraw'
 
@@ -28,12 +32,12 @@ const transitionCopy: Record<ConfirmedWorkflowAction, { title: string; descripti
   },
   promote: {
     title: 'Promote workflow to production?',
-    description: 'This exact ordered workflow will govern new laboratory jobs. Its Approved protocols will enter Production, and the previous Production workflow and replaced protocol versions will be retired.',
+    description: 'This exact ordered workflow will be the default for new standalone processing attempts. Its Approved protocols will enter Production, and the previous Production workflow and replaced protocol versions will be retired.',
     label: 'Promote to production',
   },
   retire: {
     title: 'Retire production workflow?',
-    description: 'Existing jobs will keep this pinned version, but new laboratory jobs cannot start this service until another workflow version is promoted.',
+    description: 'Existing attempts retain their recorded version. Promote another workflow before selecting new standalone sources; approved preparation batches use their selected version.',
     label: 'Retire workflow',
   },
   withdraw: {
@@ -47,14 +51,21 @@ export function ServiceWorkflowList({
   workflows,
   marketedServices,
   canManage,
+  canOverride = false,
+  actorId,
   refresh,
 }: {
   workflows: LabServiceWorkflow[]
   marketedServices: LabMarketedService[]
   canManage: boolean
+  canOverride?: boolean
+  actorId?: string
   refresh: () => Promise<unknown>
 }) {
+  const [overrideTarget, setOverrideTarget] = useState<{ workflow: LabServiceWorkflow; version: LabServiceWorkflow['versions'][number] } | null>(null)
   const [createOpen, setCreateOpen] = useState(false)
+  const [search, setSearch] = useState('')
+  const [showInactive, setShowInactive] = useState(false)
   const [confirmation, setConfirmation] = useState<{
     workflow: LabServiceWorkflow
     versionId: string
@@ -62,34 +73,41 @@ export function ServiceWorkflowList({
     action: ConfirmedWorkflowAction
   } | null>(null)
   const transition = useMutation({
-    mutationFn: ({ workflow, versionId, action }: { workflow: LabServiceWorkflow; versionId: string; action: string }) =>
-      transitionLabServiceWorkflowVersion(versionId, { action, workflowVersion: workflow.version }),
+    mutationFn: ({ workflow, versionId, action, approvalOverrideReason }: { workflow: LabServiceWorkflow; versionId: string; action: string; approvalOverrideReason?: string }) =>
+      transitionLabServiceWorkflowVersion(versionId, { action, workflowVersion: workflow.version, ...(approvalOverrideReason !== undefined ? { approvalOverrideReason } : {}) }),
     onSuccess: async () => {
       setConfirmation(null)
+      setOverrideTarget(null)
       await refresh()
     },
   })
-  // Keep the canonical service identity visible even when its only candidate was
-  // discarded; otherwise the unique service key would make the next version unreachable.
-  const visibleWorkflows = workflows
+  // Keep an empty canonical identity visible so a first version can be added.
+  // Retired, discarded, and invalidated-only identities remain discoverable
+  // through Show inactive, where staff can add a new version.
+  const needle = search.trim().toLocaleLowerCase()
+  const inactiveStatuses = new Set(['Retired', 'Discarded', 'Invalidated'])
+  const visibleWorkflows = workflows.filter(workflow =>
+    (showInactive || !workflow.versions.length || workflow.versions.some(version => !inactiveStatuses.has(version.status)))
+    && (!needle || `${workflow.name} ${workflow.serviceKey} ${workflow.description ?? ''}`.toLocaleLowerCase().includes(needle)))
 
   return (
     <>
       <Card className="gap-0 py-0">
         <CardHeader className="border-b bg-muted/50 p-4">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
+          <div className="flex min-w-0 items-start justify-between gap-3">
+            <div className="min-w-0 flex-1 wrap-anywhere">
               <CardTitle>Controlled service workflows</CardTitle>
               <CardDescription>
                 One canonical workflow per marketed service stitches approved protocols into an ordered production process.
               </CardDescription>
             </div>
             {canManage ? (
-              <Button type="button" onClick={() => setCreateOpen(true)}>
-                <Plus data-icon="inline-start" /> New service workflow
+              <Button type="button" className="h-auto min-h-9 max-w-[55%] shrink-0 whitespace-normal" onClick={() => setCreateOpen(true)}>
+                <Plus data-icon="inline-start" /><span className="min-w-0 wrap-anywhere">New service workflow</span>
               </Button>
             ) : null}
           </div>
+          <WorkflowListFilters id="service-workflow" search={search} onSearchChange={setSearch} showInactive={showInactive} onShowInactiveChange={setShowInactive} />
         </CardHeader>
         <CardContent className="p-4">
           {transition.error ? (
@@ -98,67 +116,77 @@ export function ServiceWorkflowList({
               <AlertDescription>{getLabOperationsError(transition.error, 'Refresh the workflow and try again.')}</AlertDescription>
             </Alert>
           ) : null}
-          <div className="space-y-4">
+          <ul className="divide-y" aria-label="Controlled service workflows">
             {visibleWorkflows.map((workflow) => {
-              const openCandidate = workflow.versions.find((version) => version.status === 'Draft' || version.status === 'Approved')
+              const openCandidate = workflow.versions.find((version) => version.status === 'Draft' || version.status === 'Approved' || version.status === 'Invalid')
               return (
-                <section key={workflow.id} className="rounded-lg border bg-background p-4 shadow-xs">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <h3 className="font-medium">{workflow.name}</h3>
-                      {workflow.description ? <p className="mt-1 text-sm text-muted-foreground">{workflow.description}</p> : null}
-                      <p className="mt-1 text-xs text-muted-foreground">{workflow.serviceKey} · latest v{workflow.latestVersion || 'none'}</p>
-                    </div>
+                <li key={workflow.id} className="py-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <h3 className="min-w-0 wrap-anywhere font-medium">{workflow.name}</h3>
                     {canManage && !openCandidate ? (
-                      <Button asChild size="sm" variant="outline">
+                      <Button asChild size="sm" variant="outline" className="shrink-0">
                         <Link to="/lab-operations/workflows/$workflowId/versions/new" params={{ workflowId: workflow.id }} search={{ section: undefined }}>
                           Add version
                         </Link>
                       </Button>
                     ) : null}
                   </div>
+                  {workflow.description ? <p className="mt-1 text-sm text-muted-foreground">{workflow.description}</p> : null}
+                  <p className="mt-1 text-xs text-muted-foreground">{workflow.serviceKey} · latest v{workflow.latestVersion || 'none'}</p>
                   <div className="mt-3 space-y-2">
-                    {workflow.versions.filter((version) => version.status !== 'Discarded').map((version) => (
+                    {workflow.versions.filter((version) => version.status !== 'Discarded').sort((a, b) => b.workflowVersion - a.workflowVersion).map((version) => (
                       <div key={version.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md bg-muted px-3 py-2 text-sm">
                         <div>
                           <span className="font-medium">v{version.workflowVersion}</span>
-                          <Status value={version.status} />
+                          <Badge className="ml-2" variant={version.status === 'Production' ? 'secondary' : 'outline'}>{version.status}</Badge>
                           <span className="ml-2 text-muted-foreground">{version.stages.length} stage(s)</span>
+                          {version.approvalOverrideReason ? <p className="mt-1 text-sm"><strong>Administrator override</strong> · {version.approvedAtUtc ? new Date(version.approvedAtUtc).toLocaleString() : ''} · {version.approvalOverrideReason}</p> : null}
+                          {version.invalidationReason ? <p className="mt-1 text-xs text-muted-foreground">{version.invalidationReason}</p> : null}
                         </div>
-                        {canManage ? (
-                          <div className="flex flex-wrap gap-2">
-                            {version.status === 'Draft' ? (
-                              <>
-                                <Button asChild size="sm">
-                                  <Link to="/lab-operations/workflows/$workflowId/versions/$versionId/edit" params={{ workflowId: workflow.id, versionId: version.id }} search={{ section: undefined }}>
-                                    Continue editing
-                                  </Link>
-                                </Button>
-                                <Button type="button" size="sm" variant="outline" disabled={transition.isPending} onClick={() => transition.mutate({ workflow, versionId: version.id, action: 'approve' })}>Approve</Button>
-                                <Button type="button" size="sm" variant="ghost" disabled={transition.isPending} onClick={() => setConfirmation({ workflow, versionId: version.id, workflowVersion: version.workflowVersion, action: 'discard' })}>Discard</Button>
-                              </>
-                            ) : null}
-                            {version.status === 'Approved' ? (
-                              <>
-                                <Button type="button" size="sm" disabled={transition.isPending} onClick={() => setConfirmation({ workflow, versionId: version.id, workflowVersion: version.workflowVersion, action: 'promote' })}>Promote to production</Button>
-                                <Button type="button" size="sm" variant="outline" disabled={transition.isPending} onClick={() => setConfirmation({ workflow, versionId: version.id, workflowVersion: version.workflowVersion, action: 'withdraw' })}>Withdraw approval</Button>
-                              </>
-                            ) : null}
-                            {version.status === 'Production' ? (
-                              <Button type="button" size="sm" variant="ghost" disabled={transition.isPending} onClick={() => setConfirmation({ workflow, versionId: version.id, workflowVersion: version.workflowVersion, action: 'retire' })}>Retire</Button>
-                            ) : null}
-                          </div>
+                        {canManage && ['Draft', 'Invalid', 'Approved'].includes(version.status) ? (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button type="button" size="sm" variant="outline" disabled={transition.isPending}>
+                                Actions <ChevronDown aria-hidden="true" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-80 max-w-[calc(100vw-2rem)]">
+                              <DropdownMenuLabel>Workflow v{version.workflowVersion} actions</DropdownMenuLabel>
+                              {version.status === 'Draft' || version.status === 'Invalid' ? (
+                                <>
+                                  <DropdownMenuItem asChild>
+                                    <Link to="/lab-operations/workflows/$workflowId/versions/$versionId/edit" params={{ workflowId: workflow.id, versionId: version.id }} search={{ section: undefined }}>
+                                      {version.status === 'Invalid' ? 'Review workflow' : 'Continue editing'}
+                                    </Link>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onSelect={() => transition.mutate({ workflow, versionId: version.id, action: 'approve' })}>{version.status === 'Invalid' ? 'Revalidate and approve' : 'Approve'}</DropdownMenuItem>
+                                  {canOverride && actorId === version.authoredByUserId ? <DropdownMenuItem onSelect={() => { transition.reset(); setOverrideTarget({ workflow, version }) }}><ShieldCheck aria-hidden="true" /> Approve with administrator override</DropdownMenuItem> : null}
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem variant="destructive" onSelect={() => setConfirmation({ workflow, versionId: version.id, workflowVersion: version.workflowVersion, action: 'discard' })}>Discard</DropdownMenuItem>
+                                </>
+                              ) : (
+                                <>
+                                  <DropdownMenuItem onSelect={() => setConfirmation({ workflow, versionId: version.id, workflowVersion: version.workflowVersion, action: 'promote' })}>Promote to production</DropdownMenuItem>
+                                  <DropdownMenuItem onSelect={() => setConfirmation({ workflow, versionId: version.id, workflowVersion: version.workflowVersion, action: 'withdraw' })}>Withdraw approval</DropdownMenuItem>
+                                </>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        ) : canManage && version.status === 'Production' ? (
+                          <Button type="button" size="sm" variant="ghost" disabled={transition.isPending} onClick={() => setConfirmation({ workflow, versionId: version.id, workflowVersion: version.workflowVersion, action: 'retire' })}>Retire</Button>
                         ) : null}
                       </div>
                     ))}
                   </div>
-                </section>
+                </li>
               )
             })}
-          </div>
-          {visibleWorkflows.length === 0 ? <p className="py-8 text-center text-sm text-muted-foreground">No service workflow has been defined.</p> : null}
+          </ul>
+          {visibleWorkflows.length === 0 ? <p className="py-8 text-center text-sm text-muted-foreground">{!workflows.length ? 'No service workflow has been defined.' : !showInactive && workflows.every(workflow => workflow.versions.length > 0 && workflow.versions.every(version => inactiveStatuses.has(version.status))) && !needle ? 'All service workflows are inactive. Select Show inactive to review them.' : 'No service workflows match these filters.'}</p> : null}
         </CardContent>
       </Card>
+
+      {overrideTarget ? <WorkflowApprovalOverrideDialog key={overrideTarget.version.id} workflow={overrideTarget.workflow} version={overrideTarget.version} pending={transition.isPending} error={transition.error ? getLabOperationsError(transition.error, 'Refresh the workflow and try again.') : undefined} onClose={() => { setOverrideTarget(null); transition.reset() }} onApprove={reason => transition.mutate({ workflow: overrideTarget.workflow, versionId: overrideTarget.version.id, action: 'approve', approvalOverrideReason: reason })} /> : null}
 
       <CreateServiceWorkflowDialog
         open={createOpen}
@@ -282,8 +310,4 @@ function CreateServiceWorkflowDialog({
       </DialogContent>
     </Dialog>
   )
-}
-
-function Status({ value }: { value: string }) {
-  return <span className="ml-2 rounded-full border bg-background px-2.5 py-1 text-xs font-medium">{value}</span>
 }

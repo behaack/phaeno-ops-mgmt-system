@@ -1,6 +1,7 @@
 namespace PhaenoPortal.Test;
 
 using System.Text;
+using PSeq.Operations.Laboratory.Domain;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
@@ -26,6 +27,44 @@ using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 public sealed class GovernedResultRetentionPostgresTests
 {
     [PostgreSqlReferenceFact]
+    public async Task DashboardNewResultsRemainUntilEveryArtifactHasVerifiedDownloadCompletion()
+    {
+        await using var scope = await Scope.Create();
+        var second = new ResultArtifact(scope.Package.Id, "data", "second.txt", "text/plain", 16, new string('B', 64), $"fixture/{Guid.NewGuid():N}");
+        second.BeginScan(); second.CompleteScan(true, null, DateTime.UtcNow);
+        scope.Db.Add(second);
+        scope.Db.Entry(scope.Package).Property(package => package.ExpectedArtifactCount).CurrentValue = 2;
+        scope.Db.Entry(scope.Order).Property(order => order.Status).CurrentValue = LabServiceOrderStatus.Completed;
+        await scope.Release(DateTime.UtcNow.AddMinutes(-10));
+        var dashboard = new CustomerLabDashboardService(scope.Db);
+        Assert.Equal(1, (await dashboard.ReadAsync(scope.Organization.Id, scope.Order.DepartmentId, default)).NewResultCount);
+        Assert.Equal(0, (await dashboard.ReadAsync(scope.Organization.Id, Guid.NewGuid(), default)).NewResultCount);
+        Assert.Equal(0, (await dashboard.ReadAsync(Guid.NewGuid(), scope.Order.DepartmentId, default)).NewResultCount);
+
+        var started = DateTime.UtcNow.AddMinutes(-2);
+        var failed = OperationalFileDownload.ForPSeqArtifact(Guid.NewGuid(), second.Id, scope.Organization.Id, scope.Actor.Id,
+            scope.Package.Id, started, started.AddMinutes(10), null, null);
+        failed.Complete(OperationalFileDownloadOutcome.Failed, started.AddSeconds(5));
+        var firstDownload = OperationalFileDownload.ForPSeqArtifact(Guid.NewGuid(), scope.Artifact.Id, scope.Organization.Id, scope.Actor.Id,
+            scope.Package.Id, started, started.AddMinutes(10), null, null);
+        firstDownload.Complete(OperationalFileDownloadOutcome.Succeeded, started.AddSeconds(10), countsForReleasedPackageRetention: true);
+        scope.Db.AddRange(failed, firstDownload);
+        AddSyntheticCompletion(scope.Db, firstDownload, firstDownload.CompletedAtUtc!.Value);
+        await scope.Db.SaveChangesAsync();
+        Assert.Equal(1, (await dashboard.ReadAsync(scope.Organization.Id, scope.Order.DepartmentId, default)).NewResultCount);
+
+        var lastDownload = OperationalFileDownload.ForPSeqArtifact(Guid.NewGuid(), second.Id, scope.Organization.Id, scope.Actor.Id,
+            scope.Package.Id, started, started.AddMinutes(10), null, null);
+        lastDownload.Complete(OperationalFileDownloadOutcome.Succeeded, started.AddSeconds(20), countsForReleasedPackageRetention: true);
+        scope.Db.Add(lastDownload);
+        await scope.Db.SaveChangesAsync();
+        await Assert.ThrowsAsync<OrderManagementException>(() => dashboard.ReadAsync(scope.Organization.Id, scope.Order.DepartmentId, default));
+        AddSyntheticCompletion(scope.Db, lastDownload, lastDownload.CompletedAtUtc!.Value);
+        await scope.Db.SaveChangesAsync();
+        Assert.Equal(0, (await dashboard.ReadAsync(scope.Organization.Id, scope.Order.DepartmentId, default)).NewResultCount);
+    }
+
+    [PostgreSqlReferenceFact]
     public async Task GovernedReleaseFreezesOrganizationPolicyAndOneReleaseInstant()
     {
         await using var scope = await Scope.Create();
@@ -34,7 +73,7 @@ public sealed class GovernedResultRetentionPostgresTests
             45, null, 8, global.ReadValues(), "Synthetic contracted policy");
         scope.Db.AddRange(policyOverride, new BusinessRoleAssignment(scope.Actor.Id, BusinessRole.ResultReleaseManager));
         await scope.Db.SaveChangesAsync();
-        var controller = new PSeqResultReleaseController(scope.Db, scope.Context, Options.Create(new PSeqOrderToCashOptions {
+        var controller = new PSeqResultReleaseController(scope.Db, scope.Context, Options.Create(new PSeqOrderToCashOptions { RequireResultTraceability = false, RequireScientificEvidence = false,
             GovernedPSeqResults = true, BusinessRoles = true, PipelineServiceSecret = new string('s', 24),
             PipelineProviderKey = "synthetic", ObjectStorageTransferBaseUrl = "https://example.test/transfers" }), new(scope.Db), new(scope.Db))
             { ControllerContext = new() { HttpContext = scope.Http } };
@@ -201,6 +240,8 @@ public sealed class GovernedResultRetentionPostgresTests
             var db = new PSeqOperationsDbContext(options, Options.Create(new PersistenceOptions()));
             var services = new ServiceCollection().AddLogging().AddControllers().Services.BuildServiceProvider();
             var scope = new Scope(db, await db.Database.BeginTransactionAsync(), services);
+            if (!await db.ReleasedDeliverablePolicyDefaults.AnyAsync(value => value.IsActive))
+                db.Add(new ReleasedDeliverablePolicyDefault(1, ReleasedDeliverablePolicyValues.Create(30, 5, 5), "Synthetic retention fixture"));
             scope.Organization = new($"Retention {Guid.NewGuid():N}", OrganizationKind.Customer);
             var identity = new ExternalIdentity("test", Guid.NewGuid().ToString("N"), $"retention-{Guid.NewGuid():N}@example.test", true);
             scope.Actor = new(identity.Email, "Synthetic", "Member");
@@ -211,7 +252,11 @@ public sealed class GovernedResultRetentionPostgresTests
             var department = scope.Organization.Departments.Single();
             scope.Order = new(scope.Organization.Id, department.Id, $"RET-{Guid.NewGuid():N}", "Retention fixture", null, 1, false, "RNA", "Frozen", "Safe", "Synthetic");
             scope.Sample = new(scope.Order.Id, "Synthetic sample", "RNA", "Synthetic source", 1, "tube", "Frozen", "Safe", null, null, null, "[]");
-            scope.Package = new(scope.Organization.Id, scope.Order.Id, Guid.NewGuid(), scope.Sample.Id, 1, null,
+            var work = new LabWorkOrder(Guid.NewGuid(), 1, LabAuthorizationSource.CommercialOrder,
+                scope.Order.Id, scope.Organization.Id, OrderServiceKeys.PSeqLabService, 1, "retention-test", scope.Order.OrderNumber);
+            work.Specimens.Add(new LabSpecimen(work.Id, scope.Sample.Id));
+            db.Add(work);
+            scope.Package = new(scope.Organization.Id, scope.Order.Id, work.Id, scope.Sample.Id, 1, null,
                 "synthetic", Guid.NewGuid().ToString("N"), Guid.NewGuid().ToString("N"), "{}", new string('A', 64), 1);
             scope.Artifact = new(scope.Package.Id, "report", "synthetic.txt", "text/plain", 16, new string('A', 64), $"fixture/{Guid.NewGuid():N}");
             scope.Artifact.BeginScan(); scope.Artifact.CompleteScan(true, null, DateTime.UtcNow);

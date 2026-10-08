@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using PSeq.Operations.Commercial.LabOperations.Application;
 using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Infrastructure.Persistence;
+using PhaenoPortal.App.Features.OrderManagement.Services;
 
 public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbContext)
     : ILabOperationsProvider
@@ -123,8 +124,8 @@ public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbCont
             workOrder.Id,
             workOrder.CurrentAuthorizationVersion,
             MapMilestone(workOrder.Status),
-            MapScheduleHealth(workOrder.Status),
-            CurrentExpectedCompletionAtUtc: null,
+            Enum.Parse<LabScheduleHealth>(workOrder.ScheduleHealth(DateTime.UtcNow)),
+            CurrentExpectedCompletionAtUtc: workOrder.ExpectedCompletionAtUtc,
             ActiveCustomerActionCount: 0,
             workOrder.UpdatedAt,
             workOrder.ProjectionVersion);
@@ -162,8 +163,10 @@ public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbCont
                 acknowledgedAtUtc);
         }
 
-        var workflowVersionId = await ResolveProductionWorkflowVersionAsync(
-            command.ServiceKey, cancellationToken, command.ApprovedWorkflowVersionId);
+        // Commercial authorizations describe services; execution chooses its workflow.
+        var workflowVersionId = command.SourceType == LabWorkAuthorizationSource.TrialProject
+            ? await ResolveProductionWorkflowVersionAsync(command.ServiceKey, cancellationToken, command.ApprovedWorkflowVersionId)
+            : (Guid?)null;
 
         var workOrder = new LabWorkOrder(
             command.AuthorizationId,
@@ -175,7 +178,10 @@ public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbCont
             command.ServiceVersion,
             command.TurnaroundPolicyKey,
             command.OpaqueSubmitterReference,
-            workflowVersionId);
+            workflowVersionId, command.MinimumTurnaroundDays, command.MaximumTurnaroundDays);
+
+        if (command.TubeUsePolicyKey is not null)
+            workOrder.SetTubeUsePolicy(command.TubeUsePolicyKey, command.TubeUsePolicyVersion!.Value);
 
         workOrder.AuthorizationVersions.Add(new LabWorkAuthorizationVersion(
             workOrder.Id,
@@ -261,7 +267,54 @@ public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbCont
                 acknowledgedAtUtc);
         }
 
-        if (workOrder.Status != LabWorkOrderStatus.AwaitingSpecimens)
+        if (workOrder.TubeUsePolicyKey != replacement.TubeUsePolicyKey || workOrder.TubeUsePolicyVersion != replacement.TubeUsePolicyVersion)
+            return ManualReviewAcknowledgment(command.Metadata, workOrder, acknowledgedAtUtc);
+
+        var additive = command.CommercialReasonCode == "accepted_additional_scope";
+        var serviceCorrection = command.CommercialReasonCode == LabServiceIdentityCorrectionPolicy.ReasonCode;
+        if (serviceCorrection)
+        {
+            var authorization = await dbContext.CommercialLabAuthorizations.AsNoTracking()
+                .SingleOrDefaultAsync(a => a.AuthorizationId == workOrder.AuthorizationId, cancellationToken);
+            var order = authorization is null ? null : await dbContext.LabServiceOrders.AsNoTracking()
+                .Include(o => o.Quotes).SingleOrDefaultAsync(o => o.Id == authorization.CommercialOrderId, cancellationToken);
+            var quote = order?.Quotes.SingleOrDefault(q => q.Id == order.AcceptedQuoteId);
+            var previous = authorization is null ? null
+                : LabServiceIdentityCorrectionPolicy.ReadCommercialSnapshot(authorization.AuthorizationSnapshotJson);
+            if (previous is null || quote is null || order!.Id != workOrder.AuthorizationSourceId
+                || order.OrganizationId != workOrder.SubmittingOrganizationId
+                || !LabServiceIdentityCorrectionPolicy.HasUnstartedStatus(workOrder)
+                || !LabServiceIdentityCorrectionPolicy.PreservesScope(previous, replacement)
+                || await dbContext.LabSpecimenAttempts.AnyAsync(a => a.LabWorkOrderId == workOrder.Id, cancellationToken)
+                || await dbContext.LabProtocolExecutions.AnyAsync(e => e.LabWorkOrderId == workOrder.Id, cancellationToken)
+                || await dbContext.LabLibraries.AnyAsync(l => l.LabWorkOrderId == workOrder.Id, cancellationToken))
+                return ManualReviewAcknowledgment(command.Metadata, workOrder, acknowledgedAtUtc);
+            var purchased = await LabQuoteCatalog.ReadServiceIdentityAsync(dbContext, quote.LinesJson, cancellationToken);
+            if (replacement.ServiceKey != purchased.ServiceKey)
+                return ManualReviewAcknowledgment(command.Metadata, workOrder, acknowledgedAtUtc);
+        }
+        if (additive)
+        {
+            var previousJson = await dbContext.LabWorkAuthorizationVersions.AsNoTracking()
+                .Where(v => v.LabWorkOrderId == workOrder.Id && v.AuthorizationVersion == workOrder.CurrentAuthorizationVersion)
+                .Select(v => v.SnapshotJson).SingleAsync(cancellationToken);
+            using var previousDocument = JsonDocument.Parse(previousJson);
+            var previousElement = previousDocument.RootElement.TryGetProperty("replacementAuthorization", out var amended)
+                ? amended : previousDocument.RootElement;
+            var previous = previousElement.Deserialize<AuthorizeLabWorkCommand>(SerializerOptions)!;
+            var newById = replacement.Specimens.ToDictionary(s => s.SubmittedSpecimenId);
+            var preservesExisting = previous.Specimens.All(s => newById.TryGetValue(s.SubmittedSpecimenId, out var current)
+                && JsonSerializer.Serialize(s, SerializerOptions) == JsonSerializer.Serialize(current, SerializerOptions));
+            if (!preservesExisting || replacement.Specimens.Count <= previous.Specimens.Count
+                || replacement.ServiceKey != previous.ServiceKey || replacement.ServiceVersion != previous.ServiceVersion
+                || replacement.TurnaroundPolicyKey != previous.TurnaroundPolicyKey
+                || replacement.MinimumTurnaroundDays != previous.MinimumTurnaroundDays || replacement.MaximumTurnaroundDays != previous.MaximumTurnaroundDays
+                || replacement.IncludedScientificScopeJson != previous.IncludedScientificScopeJson
+                || replacement.OpaqueSubmitterReference != previous.OpaqueSubmitterReference
+                || workOrder.Status is LabWorkOrderStatus.OnHold or LabWorkOrderStatus.Cancelled or LabWorkOrderStatus.ReadyForRelease)
+                return ManualReviewAcknowledgment(command.Metadata, workOrder, acknowledgedAtUtc);
+        }
+        if (!additive && !serviceCorrection && workOrder.Status != LabWorkOrderStatus.AwaitingSpecimens)
         {
             return ManualReviewAcknowledgment(command.Metadata, workOrder, acknowledgedAtUtc);
         }
@@ -298,8 +351,9 @@ public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbCont
             return ManualReviewAcknowledgment(command.Metadata, workOrder, acknowledgedAtUtc);
         }
 
-        var workflowVersionId = await ResolveProductionWorkflowVersionAsync(
-            replacement.ServiceKey, cancellationToken, replacement.ApprovedWorkflowVersionId);
+        var workflowVersionId = replacement.SourceType == LabWorkAuthorizationSource.TrialProject
+            ? await ResolveProductionWorkflowVersionAsync(replacement.ServiceKey, cancellationToken, replacement.ApprovedWorkflowVersionId)
+            : workOrder.LabServiceWorkflowVersionId; // Retain historical metadata, never select a workflow for an order.
         workOrder.RecordAuthorizationVersion(
             command.NewAuthorizationVersion,
             replacement.ServiceKey,
@@ -357,9 +411,11 @@ public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbCont
                 where workflow.ServiceKey == normalizedServiceKey && candidate.Id == approvedVersionId
                     && (candidate.Status == LabServiceWorkflowStatus.Production || candidate.Status == LabServiceWorkflowStatus.Retired)
                 select (Guid?)candidate.Id).SingleOrDefaultAsync(cancellationToken);
-            return version ?? throw new InvalidOperationException("The approved laboratory workflow version is unavailable.");
+            if (!version.HasValue) throw new InvalidOperationException("The approved laboratory workflow version is unavailable.");
+            await RequireCurrentWorkflowProtocolsAsync(version.Value, cancellationToken);
+            return version;
         }
-        return await (
+        var productionVersion = await (
             from workflow in dbContext.LabServiceWorkflows.AsNoTracking()
             join version in dbContext.LabServiceWorkflowVersions.AsNoTracking()
                 on workflow.Id equals version.LabServiceWorkflowId
@@ -367,8 +423,22 @@ public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbCont
                 && version.Status == LabServiceWorkflowStatus.Production
             orderby version.WorkflowVersion descending
             select (Guid?)version.Id).FirstOrDefaultAsync(cancellationToken);
+        if (productionVersion.HasValue) await RequireCurrentWorkflowProtocolsAsync(productionVersion.Value, cancellationToken);
+        return productionVersion;
     }
 
+    private async Task RequireCurrentWorkflowProtocolsAsync(Guid workflowVersionId, CancellationToken cancellationToken)
+    {
+        var versionIds = dbContext.LabServiceWorkflowStages.Where(x => x.LabServiceWorkflowVersionId == workflowVersionId)
+            .Select(x => x.LabProtocolVersionId);
+        var protocolIds = dbContext.LabProtocolVersions.Where(x => versionIds.Contains(x.Id)).Select(x => x.LabProtocolId);
+        var protocols = await dbContext.LabProtocols.Where(x => protocolIds.Contains(x.Id)).OrderBy(x => x.Id).ToListAsync(cancellationToken);
+        foreach (var protocol in protocols)
+        {
+            protocol.RequireCurrent();
+            dbContext.Entry(protocol).Property(x => x.UpdatedAt).IsModified = true;
+        }
+    }
     private async Task<LabCancellationOutcome> ApplyCancellationAsync(
         RequestLabWorkCancellationCommand command,
         DateTime acknowledgedAtUtc,
@@ -469,7 +539,7 @@ public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbCont
                     authorizationVersion = workOrder.CurrentAuthorizationVersion,
                     milestone = LabWorkMilestone.Cancelled.ToString(),
                     scheduleHealth = LabScheduleHealth.Complete.ToString(),
-                    currentExpectedCompletionAtUtc = (DateTime?)null,
+                    currentExpectedCompletionAtUtc = workOrder.ExpectedCompletionAtUtc,
                     activeCustomerActionCount = 0,
                     customerSafeSummary = (string?)null
                 }, SerializerOptions),
@@ -632,6 +702,10 @@ public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbCont
         && IsValidAuthorization(command.ReplacementAuthorization);
 
     private static bool IsValidAuthorization(AuthorizeLabWorkCommand command) =>
+        IsValidMetadata(command.Metadata) && (command.Metadata.ContractVersion == LabOperationsContractVersions.V1
+            ? command.TubeUsePolicyKey is null && command.TubeUsePolicyVersion is null
+            : (command.TubeUsePolicyKey == LabTubeUsePolicy.RunOneWithFailureFallback || command.TubeUsePolicyKey == LabTubeUsePolicy.RunAuthorizedWithFailureFallback) && command.TubeUsePolicyVersion == LabTubeUsePolicy.Version)
+        &&
         IsValidMetadata(command.Metadata)
         && command.AuthorizationId != Guid.Empty
         && command.AuthorizationVersion > 0
@@ -641,6 +715,10 @@ public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbCont
         && command.ServiceVersion > 0
         && HasValue(command.ServiceKey)
         && HasValue(command.TurnaroundPolicyKey)
+        && command.MinimumTurnaroundDays.HasValue == command.MaximumTurnaroundDays.HasValue
+        && command.MinimumTurnaroundDays is null or (>= 1 and <= 365)
+        && command.MaximumTurnaroundDays is null or (>= 1 and <= 365)
+        && (!command.MinimumTurnaroundDays.HasValue || command.MinimumTurnaroundDays <= command.MaximumTurnaroundDays)
         && command.Specimens is { Count: > 0 }
         && command.Specimens.All(IsValidSpecimen)
         && command.Specimens.Select(specimen => specimen.SubmittedSpecimenId).Distinct().Count()
@@ -653,6 +731,7 @@ public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbCont
         && HasValue(specimen.DeclaredMaterialType)
         && HasValue(specimen.DeclaredBiologicalSource)
         && specimen.DeclaredQuantity > 0
+        && specimen.SequencingRunCount is >= 1 and <= 10000
         && HasValue(specimen.DeclaredQuantityUnit)
         && HasValue(specimen.DeclaredStorageRequirements)
         && HasValue(specimen.DeclaredSafetyInformation)
@@ -665,7 +744,7 @@ public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbCont
         && metadata.CommandId != Guid.Empty
         && metadata.CorrelationId != Guid.Empty
         && metadata.OccurredAtUtc.Kind == DateTimeKind.Utc
-        && metadata.ContractVersion == LabOperationsContractVersions.V1;
+        && metadata.ContractVersion is LabOperationsContractVersions.V1 or LabOperationsContractVersions.V2;
 
     private static bool HasValue(string value) => !string.IsNullOrWhiteSpace(value);
 

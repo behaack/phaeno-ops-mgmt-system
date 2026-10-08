@@ -1,3 +1,16 @@
+-- Temporary views allow recovery of pre-managed-file archives with their original schema.
+DO $$ BEGIN
+  IF to_regclass('lab_ops.lab_scientific_files') IS NULL THEN
+    EXECUTE 'CREATE TEMP VIEW backup_scientific_files AS SELECT NULL::text storage_key, NULL::text sha256, NULL::bigint size_bytes WHERE false';
+  ELSE
+    EXECUTE 'CREATE TEMP VIEW backup_scientific_files AS SELECT storage_key, sha256, size_bytes FROM lab_ops.lab_scientific_files';
+  END IF;
+  IF to_regclass('lab_ops.lab_scientific_uploads') IS NULL THEN
+    EXECUTE 'CREATE TEMP VIEW backup_upload_chunks AS SELECT NULL::jsonb chunks_json WHERE false';
+  ELSE
+    EXECUTE 'CREATE TEMP VIEW backup_upload_chunks AS SELECT chunks_json FROM lab_ops.lab_scientific_uploads';
+  END IF;
+END $$;
 -- Executed ONLY against the isolated restored database. Output remains private
 -- inside the encrypted backup; no names, contact data, or freeform notes.
 WITH deleted_managed AS (
@@ -28,11 +41,29 @@ WITH deleted_managed AS (
            CASE WHEN EXISTS(SELECT 1 FROM deleted_managed d WHERE d.id = f.id) THEN 'retired' ELSE 'required' END
       FROM commercial_ops.managed_operational_files f
     UNION ALL
+    SELECT 'order-files/' || storage_key, lower(sha256), size_bytes::text, 'required'
+      FROM backup_scientific_files
+    UNION ALL
+    SELECT 'order-files/' || (chunk->>'Key'), lower(chunk->>'Sha256'), chunk->>'SizeBytes', 'required'
+      FROM backup_upload_chunks CROSS JOIN LATERAL jsonb_array_elements(chunks_json) chunk
+    UNION ALL
     SELECT 'order-files/' || pdf_storage_key, lower(pdf_sha256), 'unknown', 'required'
       FROM commercial_ops.invoices WHERE nullif(btrim(pdf_storage_key), '') IS NOT NULL
     UNION ALL
     SELECT 'order-files/' || object_storage_key, lower(sha256), size_bytes::text,
            CASE WHEN deleted_at_utc IS NULL THEN 'required' ELSE 'retired' END
       FROM commercial_ops.result_artifacts
+    UNION ALL
+    SELECT 'order-files/' || (details_json->'qcReport'->>'storageKey'),
+           lower(details_json->'qcReport'->>'sha256'),
+           details_json->'qcReport'->>'sizeBytes', 'required'
+      FROM lab_ops.lab_preparation_records
+      WHERE jsonb_typeof(details_json->'qcReport') = 'object'
+    UNION ALL
+    SELECT 'order-files/' || (details_json->'preparationReport'->>'storageKey'),
+           lower(details_json->'preparationReport'->>'sha256'),
+           details_json->'preparationReport'->>'sizeBytes', 'required'
+      FROM lab_ops.lab_preparation_records
+      WHERE jsonb_typeof(details_json->'preparationReport') = 'object'
 )
 SELECT path || E'\t' || hash || E'\t' || bytes || E'\t' || presence FROM file_refs ORDER BY path, presence;

@@ -110,6 +110,7 @@ public sealed class MailgunWebsiteNotificationSender(
                 exception,
                 "Mailgun failed to send Website template {Template}. The submission remains persisted.",
                 template);
+            throw;
         }
     }
 

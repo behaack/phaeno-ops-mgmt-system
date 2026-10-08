@@ -4,7 +4,7 @@ An organization grant gives one Prospect, Customer, or Partner organization acce
 
 ## Create the grant
 
-Confirm the active target organization and package identity. Select a published, eligible, non-quarantined, non-retired version and review the complete package contents before confirmation.
+Confirm the active target Company access scope and package identity. If access has not been approved, use **Open Company access setup**, create or open the CRM Company, and complete its reviewed online-access request. Return to the pending data assignment; its selected version and access scope remain in the browser session. Select a published, eligible, non-quarantined, non-retired version and review the complete package contents before confirmation.
 
 The grant operation should show:
 
@@ -14,11 +14,11 @@ The grant operation should show:
 - files and manifest included in the package; and
 - the access consequence for active organization members.
 
-Granting is idempotent. If the operation fails after organization creation or another surrounding workflow, the organization remains valid and the grant can be retried independently.
+Company access approval and data assignment are separate actions. A failed grant never recreates the Company or its access scope.
 
 ## Understand access
 
-Every active member of the granted organization can view and download the package under the current role rules. Access is package-wide, not file-by-file. Downloads remain authorized at request time against membership, grant, version, package, and governance state.
+An organization-wide grant is visible to authorized active members throughout that organization. A Department grant is visible only in that Department under the current role rules. Access is package-wide, not file-by-file. Downloads remain authorized at request time against membership, grant, version, package, and governance state.
 
 ## Upgrade explicitly
 

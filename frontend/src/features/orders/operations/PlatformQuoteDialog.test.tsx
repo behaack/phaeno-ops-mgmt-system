@@ -1,8 +1,10 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { PlatformQuoteDialog } from "./PlatformQuoteDialog";
+import type { Quote } from "#/api/order-management";
 
 const api = vi.hoisted(() => ({
   getPlatformOrder: vi.fn(),
@@ -51,11 +53,11 @@ describe("PlatformQuoteDialog", () => {
 
     const catalog = screen.getByLabelText(/Commercial catalog item/);
     expect(catalog).toHaveProperty("value", canonicalItem.id);
-    expect(catalog).toHaveProperty("disabled", true);
+    expect(catalog).toHaveProperty("disabled", false);
     expect(screen.queryByText("pseq-lab-service")).toBeNull();
     expect(
       screen.getByText(
-        "Priced per specimen · quantity set from the committed specimen count",
+        "Priced per sample-sequencing run · quantity set from the requested sample-sequencing run count",
       ),
     ).toBeTruthy();
     expect(screen.getByLabelText(/Quantity/)).toHaveProperty("value", "3");
@@ -77,6 +79,27 @@ describe("PlatformQuoteDialog", () => {
     expect(api.issuePlatformQuote).not.toHaveBeenCalled();
   });
 
+  it('uses the active specific offering while the legacy generic item is inactive', () => {
+    const rna = { ...canonicalItem, id: '33333333-3333-4333-8333-333333333333', externalItemId: 'ITEM-RNA', name: 'PSeq RNA Service' };
+    renderDialog([{ ...canonicalItem, isActive: false }, rna]);
+    expect(screen.getByLabelText(/Commercial catalog item/)).toHaveProperty('value', rna.id);
+    expect(screen.queryByText('PSeq Lab Service item is not ready')).toBeNull();
+  });
+
+  it('requires a choice between multiple active offerings and submits that exact item', async () => {
+    const rna = { ...canonicalItem, id: '33333333-3333-4333-8333-333333333333', externalItemId: 'ITEM-RNA', name: 'PSeq RNA Service', basePrice: 250 };
+    renderDialog([canonicalItem, rna]);
+    const select = screen.getByLabelText(/Commercial catalog item/);
+    expect(select).toHaveProperty('value', '');
+    expect(screen.getByRole('button', { name: 'Issue quote' })).toHaveProperty('disabled', true);
+    fireEvent.change(select, { target: { value: rna.id } });
+    expect(screen.getByLabelText(/Unit price/)).toHaveProperty('value', '250');
+    fireEvent.click(screen.getByRole('button', { name: 'Issue quote' }));
+    await waitFor(() => expect(api.issuePlatformQuote).toHaveBeenCalledWith('lab', expect.any(String), expect.objectContaining({
+      lines: [expect.objectContaining({ catalogItemId: rna.id, quantity: 3, unitPrice: 250 })],
+    })));
+  });
+
   it("uses user-facing per-unit guidance for optional quote lines", () => {
     renderDialog([canonicalItem, unrelatedSpecimenItem]);
 
@@ -95,7 +118,42 @@ describe("PlatformQuoteDialog", () => {
     ).toBeTruthy();
   });
 
-  it("pauses quote issuance when the canonical catalog item is unavailable", () => {
+  it("reissues saved line prices and requires an explicit future expiration", async () => {
+    const sourceQuote = savedQuote();
+    renderDialog([canonicalItem, unrelatedSpecimenItem], undefined, undefined, undefined, sourceQuote);
+
+    expect(screen.getByText("Reissue laboratory quote")).toBeTruthy();
+    expect(screen.getAllByLabelText(/Unit price/).map(input => (input as HTMLInputElement).value)).toEqual(["100", "15"]);
+    expect(screen.getAllByLabelText(/Description/).map(input => (input as HTMLInputElement).value)).toEqual(["Previously agreed PSeq service", "Previously agreed handling"]);
+    expect(screen.getByText("$330.00")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Issue new revision" }));
+    expect(await screen.findByText("Choose a future expiration date for the replacement quote.")).toBeTruthy();
+    expect(api.issuePlatformQuote).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByLabelText(/Expiration date/), { target: { value: "2020-01-01" } });
+    fireEvent.click(screen.getByRole("button", { name: "Issue new revision" }));
+    expect(await screen.findByText("Choose a future expiration date.")).toBeTruthy();
+    expect(api.issuePlatformQuote).not.toHaveBeenCalled();
+
+    const futureDate = new Date(Date.now() + 45 * 86400000).toISOString().slice(0, 10);
+    fireEvent.change(screen.getByLabelText(/Expiration date/), { target: { value: futureDate } });
+    fireEvent.click(screen.getByRole("button", { name: "Issue new revision" }));
+    await waitFor(() => expect(api.issuePlatformQuote).toHaveBeenCalledWith("lab", "22222222-2222-4222-8222-222222222222", expect.objectContaining({
+      sourceQuoteId: sourceQuote.id, purpose: "Initial", expiresAt: futureDate,
+      currency: "USD", version: 7,
+      lines: [expect.objectContaining({ unitPrice: 100, quantity: 3 }), expect.objectContaining({ unitPrice: 15, quantity: 2 })],
+    })));
+  });
+
+  it("does not substitute catalog prices when saved quote lines are unreadable", () => {
+    renderDialog([canonicalItem], undefined, undefined, undefined, { ...savedQuote(), linesJson: "{invalid" });
+    expect(screen.getByText("Saved quote lines could not be loaded")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Issue new revision" })).toHaveProperty("disabled", true);
+    expect(screen.queryByLabelText(/Unit price/)).toBeNull();
+    expect(api.issuePlatformQuote).not.toHaveBeenCalled();
+  });
+
+  it("pauses quote issuance when no active family offering is available", () => {
     renderDialog([unrelatedSpecimenItem]);
 
     expect(screen.getByText("PSeq Lab Service item is not ready")).toBeTruthy();
@@ -173,12 +231,90 @@ describe("PlatformQuoteDialog", () => {
     expect(onSaved).toHaveBeenCalledTimes(1);
     expect(screen.getByLabelText(/Unit price/)).toHaveProperty("value", "150");
   });
+
+  it.each(["Cancel", "Close", "Escape"])("protects dirty quote entries when dismissed using %s", async (action) => {
+    const onOpenChange = vi.fn();
+    renderDialog([canonicalItem], undefined, undefined, onOpenChange);
+    fireEvent.change(screen.getByLabelText(/Unit price/), { target: { value: "150" } });
+
+    if (action === "Escape") fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
+    else fireEvent.click(screen.getByRole("button", { name: new RegExp(`^${action}$`) }));
+
+    expect(await screen.findByText("Discard your unsaved quote changes?")).toBeTruthy();
+    expect(onOpenChange).not.toHaveBeenCalled();
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Keep editing" }));
+    expect(screen.getByLabelText(/Unit price/)).toHaveProperty("value", "150");
+    expect(screen.getByRole("button", { name: "Issue quote" })).toHaveProperty("disabled", true);
+    fireEvent.click(screen.getByRole("button", { name: "Keep editing" }));
+    expect(screen.queryByText("Discard your unsaved quote changes?")).toBeNull();
+    expect(screen.getByLabelText(/Unit price/)).toHaveProperty("value", "150");
+
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    fireEvent.click(screen.getByRole("button", { name: "Discard changes" }));
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(api.issuePlatformQuote).not.toHaveBeenCalled();
+  });
+
+  it("closes an untouched quote without a discard prompt", () => {
+    const onOpenChange = vi.fn();
+    renderDialog([canonicalItem], undefined, undefined, onOpenChange);
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(screen.queryByText("Discard your unsaved quote changes?")).toBeNull();
+  });
+
+  it("blocks dismissal and editing until quote issuance and refresh finish", async () => {
+    let finishIssue!: (value: object) => void;
+    let finishRefresh!: () => void;
+    api.issuePlatformQuote.mockReturnValue(new Promise((resolve) => { finishIssue = resolve; }));
+    const onSaved = vi.fn(() => new Promise<void>((resolve) => { finishRefresh = resolve; }));
+    const onOpenChange = vi.fn();
+    renderDialog([canonicalItem], undefined, onSaved, onOpenChange);
+    fireEvent.change(screen.getByLabelText(/Unit price/), { target: { value: "150" } });
+    fireEvent.click(screen.getByRole("button", { name: "Issue quote" }));
+    await waitFor(() => expect(api.issuePlatformQuote).toHaveBeenCalledTimes(1));
+
+    expect(screen.getByRole("button", { name: "Cancel" })).toHaveProperty("disabled", true);
+    expect(screen.queryByRole("button", { name: /^Close$/ })).toBeNull();
+    expect(screen.getByLabelText(/Unit price/).matches(":disabled")).toBe(true);
+    fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
+    expect(onOpenChange).not.toHaveBeenCalled();
+    await act(async () => { finishIssue({}); });
+    await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1));
+    fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
+    expect(onOpenChange).not.toHaveBeenCalled();
+    await act(async () => { finishRefresh(); });
+    await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
+    expect(screen.queryByText("Discard your unsaved quote changes?")).toBeNull();
+  });
+
+  it("restores focus to the action that opened the quote", async () => {
+    function Harness() {
+      const [open, setOpen] = useState(false);
+      return <>
+        <button type="button" onClick={() => setOpen(true)}>Review quote</button>
+        <PlatformQuoteDialog open={open} workflow="lab" recordId="record-1" defaultQuantity={3} catalogItems={[canonicalItem]} onOpenChange={setOpen} onSaved={vi.fn().mockResolvedValue(undefined)} />
+      </>;
+    }
+    const client = new QueryClient();
+    render(<QueryClientProvider client={client}><Harness /></QueryClientProvider>);
+    const opener = screen.getByRole("button", { name: "Review quote" });
+    opener.focus();
+    fireEvent.click(opener);
+    fireEvent.change(screen.getByLabelText(/Unit price/), { target: { value: "150" } });
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    fireEvent.click(screen.getByRole("button", { name: "Discard changes" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    await waitFor(() => expect(document.activeElement).toBe(opener));
+  });
 });
 
 function renderDialog(
   catalogItems: Array<typeof canonicalItem>,
   priceProposal?: { unitPrice: number; currency: string; note?: string | null },
   onSaved = vi.fn().mockResolvedValue(undefined),
+  onOpenChange = vi.fn(),
+  sourceQuote?: Quote,
 ) {
   const client = new QueryClient({
     defaultOptions: {
@@ -194,10 +330,23 @@ function renderDialog(
         recordId="22222222-2222-4222-8222-222222222222"
         defaultQuantity={3}
         priceProposal={priceProposal}
+        sourceQuote={sourceQuote}
         catalogItems={catalogItems}
-        onOpenChange={vi.fn()}
+        onOpenChange={onOpenChange}
         onSaved={onSaved}
       />
     </QueryClientProvider>,
   );
+}
+
+function savedQuote(): Quote {
+  return {
+    id: "44444444-4444-4444-8444-444444444444", revision: 2, purpose: "Initial", status: "Issued",
+    linesJson: JSON.stringify([
+      { catalogItemId: canonicalItem.id, description: "Previously agreed PSeq service", quantity: 3, unitPrice: 100 },
+      { catalogItemId: unrelatedSpecimenItem.id, description: "Previously agreed handling", quantity: 2, unitPrice: 15 },
+    ]),
+    subtotal: 330, tax: 0, total: 330, currency: "USD", issuedAt: "2020-01-01T00:00:00Z",
+    expiresAt: "2020-02-01T00:00:00Z", acceptedAt: null, version: 1,
+  };
 }

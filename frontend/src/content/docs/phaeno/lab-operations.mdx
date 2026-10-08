@@ -1,8 +1,33 @@
 # Laboratory operations
 
-Use **Receipt & accession** in Lab operations to prepare return kits, identify arriving packages, compare registered tubes, and see authorized work awaiting specimens. Choose **Open receipt** to record custody, accession, and intake disposition in the linked Lab work order. Customer quote acceptance opens sample-list preparation; finalizing the exact compliant roster records the Commercial authorization and creates the linked Lab work order and shipment together. Do not create Lab work manually to repair an order.
+The dashboard's **Laboratory work** card identifies each job by its Commercial order number, submitted reference, or a unique work-order identifier when neither is available. Select a job to open its record, or use **Open Lab operations** at the top-right of the card.
 
-Use the far-left sidebar beneath the toolbar to move among **Receipt & accession**, **Work**, **PSeq kits**, **Data assembly**, **Protocols**, **Materials**, **Equipment**, and **Batches**. **Work** contains authorized scientific work after the receipt queue; **PSeq kits** and **Data assembly** contain their manufacturing workflows. The sidebar header identifies Lab operations and, on wider screens, provides the pin or unpin icon. Pointer users can preview an unpinned sidebar by approaching the left edge; keyboard and touch users open it from the edge tab. Choosing a section closes an unpinned sidebar.
+Use **Transportation kit inventory** in Lab operations to assemble Phaeno kits and receive purchased complete kits with the exact recorded tube roster. Use **Transportation kit requests** to dispatch completed kits and review Customer receipt. Use **Sample receipt & accession** to identify arriving Customer sample packages, compare registered tubes, and see authorized work awaiting specimens. Choose **Open receipt** to record custody, accession, and intake disposition in the linked Lab work order. Customer quote acceptance opens sample-list preparation; finalizing the exact compliant roster records the Commercial authorization and creates the linked Lab work order and shipment together. Do not create Lab work manually to repair an order.
+
+When recording a requested kit shipment, review the **Phaeno ship-to destination** separately from the Customer delivery location. The Job starts with Phaeno's global default. Before the first kit for that Job is sent, you may select another current Active destination that supports every requested kit, provided the Customer has not begun packing or confirmed a shipping insert. The first kit dispatch fixes the destination for later requests and batches. If that saved destination revision later becomes inactive, confirm with receiving that it can still accept the remaining kits, then check the required confirmation before dispatch. A new default does not redirect the Job, and inactive destinations cannot be selected for new Jobs. Customers using compatible kits already at their location use the default without a separate routing queue.
+
+Use **Jobs** at the top of the Lab operations sidebar for the overview of open and closed jobs, delivery deadlines and samples. Jobs opens by default. The remaining sections use four groups:
+
+| Group | Sections |
+| --- | --- |
+| SAMPLE PROCESSING | Sample receipt & accession; Library prep; Sequencing batches; Data assembly |
+| RESULTS | Results & scientific review; Result release, when permitted |
+| LAB PREPARATIONS | Master mixes; Reagent manufacturing |
+| KITS & FULFILLMENT | Transportation kit requests; Transportation kit inventory; PSeq kit fulfillment |
+
+Transportation kit requests contains the existing **Kit requests / Fulfilled requests** queues, separate from sample receipt. Sample receipt & accession contains **Receive shipments / Accession samples**, with receiving selected by default. Saved request, inventory and sample bookmarks continue to select the matching task and retain their filters. Sequencing results require verified FASTQ uploads through a batch ZIP or individual-file workspace before successful results save. Data assembly retains both sequencing runs and Partner assembly cases; completed assembly packages need recorded QC before independent scientific approval and explicit Customer release. PSeq kit fulfillment prepares and ships the commercially accepted kit orders. Scientific review and result publication remain separate responsibilities.
+
+Open **More → Purchasing** for **Suppliers**, **Products**, and **Purchased materials**, and **More → Equipment** for laboratory assets. Phaeno platform administrators use Purchasing to maintain supplier names, product names, descriptions and product types for reagents and shipping supplies; the seeded Phaeno record is marked as an internal producer. Within Purchasing, use **Suppliers** for vendors, **Products** for their catalog, and the **Product types** tab to manage those categories and their eligibility for transportation kits. Search and **Show inactive** are in the shaded header of the suppliers, products and product types lists. Open **Lab settings** from **Administration** in the user menu for **Lab steps**, **Protocols**, **Workflows**, **Stage durations**, **Holiday calendar**, **Library tray formats**, and **Storage locations** in its own sidebar. Workflows distinguishes library preparation, sample-independent reagent manufacturing, and physical transportation-kit assembly; tray layouts are managed in Library tray formats and selected when assembling work in Library prep. Library prep opens preparation batches, where accepted tubes from compatible jobs are assembled into a tray and processed together. Open **Jobs**, the first sidebar entry, for the job and specimen list. Jobs remain open until results for every in-scope sample have been published to the customer Portal. The **Active jobs** tab is the default. **Closed jobs** contains fully delivered and cancelled jobs, including cancellations before shipment. A failed sample does not close its job. Scientific approval and Ready for release do not complete delivery. Expand **Filters** in the list header to search or narrow either jobs tab. The section starts collapsed, shows how many filters are applied, and summarizes the selected criteria in one sentence while closed; collapsing it keeps those filters in effect. Use **Clear filters** beside the Filters label to reset only the selected tab’s filters, even when the section is collapsed. Typed dates apply when you leave the date field or press Enter, so you can finish entering the year. Each tab retains its own search, date filters and page when switching tabs, refreshing or returning from a job. Results & scientific review opens the same jobs at scientific review; a listed job is not necessarily ready for approval. Its return link preserves the section you came from. Specimen, execution, library and exception history remain accessible from either entry point. PSeq kit fulfillment retains its manufacturing workflow. Data assembly has **Sequencing runs** for sample assembly jobs and **Assembly cases** for Partner manufacturing. The sequencing connection currently shows a setup notice until the processing service is configured. Each assembly attempt retains actual start/stop times and final disposition; percentage progress is shown live without a saved update history. The sidebar header identifies Lab operations and, on wider screens, provides the pin or unpin icon. Pointer users can preview an unpinned sidebar by approaching the left edge; keyboard and touch users open it from the edge tab. Choosing a section closes an unpinned sidebar.
+
+Use **Purchasing → Suppliers → Phaeno** to define each named reagent or internally made transportation kit product. Reagents have type Reagent; finished kits have type Transportation kit, a stable SKU, a separate finished-kit name, and inventory unit each. Configure an internal kit's procedure in **Lab settings → Workflows**. Reagent workflows show their earlier procedure revisions and approval history. In **Reagent manufacturing**, select the reagent by name, run its approved procedure, record source-lot use as it happens, then enter the actual finished amount for QC. For internally made kits, a shipping specification can become Active and accept orders while its Transportation kit workflow is still pending; the confirmation and order review warn that new physical kits cannot yet be prepared. Before assembly in **Transportation kit inventory**, approve a reusable workflow with ordered steps and complete the exact products and quantities on each Kit specification Draft. A different administrator approves a revision unless a platform administrator records a reason for approving their own work. Tube and outer shipper products are counted in whole `each` units. If tube inventory is tracked by material lot, use one source tube lot per kit; its lot number must match the kit record, and every scanned tube ID in that kit traces to that lot. Scan each physical tube ID as it is packed, record component use with its source lot using the scanned tube count, review the exact unique tube roster, print and affix the container label, scan that label, and complete assembly before dispatch. Completing confirms that the recorded contents are packed; there is no mandatory second tube scan. An external supplier may instead provide a complete Transportation kit product. Selecting Transportation kit fills its required inventory unit with read-only `each`. Create its shipping specification using that supplier and product, then record each received physical kit under **Transportation kit inventory → Actions → Receive purchased kit**. Record the supplier receipt reference, a catalog tube product for the full specification capacity, one catalog outer shipper product, required expiration dates, and an optional supplier kit lot. The kit receives a Phaeno `KIT-` barcode and remains unavailable until every required tube is registered and its assembly is complete. A second physical rescan is optional when packing needs review. Deactivating a finished kit product stops new preparation or receipt and removes it from new shipping recommendations. Kit preparation and receipt are separate from sample and tube preparation. Use **Purchasing → Purchased materials** to receive purchased material lots by supplier product and printed lot number; that workflow does not create a ready complete Transportation kit. Maintain named material and equipment locations under **Lab settings → Storage locations**. These names do not represent scanned tube or freezer-box positions.
+
+Each Lab step list row has an Actions menu for viewing details, editing its name or draft, starting a new version, or retiring the step when permitted. Lab step details and Protocol and Workflow version editors keep the Lab settings header and section sidebar visible. Use **Back to Lab steps**, **Back to protocols**, or **Back to workflows** above the record to return to its list. Returning from a Lab step preserves its search, retired filter, and page. If you have unsaved draft changes, confirm before leaving the editor. Transportation kit workflows offer only current, approved instruction-only Lab step versions. Save and approve a Draft step before expecting it in the workflow picker; steps with sample or preparation-batch captures are excluded.
+
+On Lab step details, use the single **Actions** menu beside the step name for both step and version commands. A step has at most one Draft: edit, approve, or discard it before starting another version. **Configuration previews** identifies each saved version and its status. Approval and discard confirmations name the affected version. An unconfigured Draft must have its instructions and fields saved before approval; independent approval and the platform-administrator override still apply.
+
+## Investigation evidence preservation
+
+Internal sample history, traceability records, saved investigation reports and uploaded supporting preparation/QC reports are retained indefinitely for now, separately from customer download expiry. Deleting expired customer result files cannot remove a supporting report referenced by internal evidence. External scientific files remain with their producing system; a saved reference or checksum does not mean POMS holds their bytes.
 
 ## Understand the boundary
 
@@ -14,9 +39,9 @@ Work enters Lab Ops only through an immutable Commercial authorization. Lab Ops 
 
 Laboratory roles are additive Phaeno-only assignments:
 
-- **Lab Operator** records receipt, accession, containers, execution, consumption, equipment use, libraries, batching, sendouts, custody, and exceptions.
-- **Lab Supervisor** can perform operator work, approve material QC, and resolve exceptions.
-- **Protocol Administrator** authors, approves, activates, and retires controlled protocol versions.
+- **Lab Operator** records receipt, accession, containers, execution, consumption, equipment use, reagent manufacturing and kit assembly runs, libraries, batching, sendouts, custody, and exceptions.
+- **Lab Supervisor** can perform operator work, approve material QC, abandon an unfinished reagent run with a reason, and resolve exceptions.
+- **Protocol Administrator** authors, approves, activates, and retires controlled protocol versions and reagent manufacturing and kit assembly workflows.
 - **Scientific Reviewer** records scientific approval after execution and blocking-exception gates pass.
 - **Lab Operations Administrator** can perform all Lab actions and assign Lab roles.
 
@@ -29,15 +54,105 @@ Manage these assignments from **User management**. Select **Edit** on an active 
 1. Open the authorized work order and verify the expected specimens.
 2. Record receipt and accession; POMS assigns the authoritative barcode and creates the initial physical container.
 3. Apply the intake decision and preserve every derived-container relationship.
-4. Assign an active protocol version and record controlled execution.
-5. Capture material consumption, equipment use, library preparation, batching, and sendout custody as applicable.
+4. In Library prep, assemble accepted sources into a preparation tray using an approved workflow for the jobs’ purchased service. Confirm the tray to start.
+5. Record ordered steps with their prescribed batch or tube scope, shared resource use and any tube exceptions. Create and identify outputs in the same workspace, reuse preparation QC, and close the tray before adding passing libraries to a sequencing batch. Record sendout custody separately when applicable.
 6. Resolve blocking exceptions and complete scientific review.
 7. Publish **Ready for release** back to Commercial.
 
 Every transition preserves prior state. Do not repair mistakes by deleting containers, overwriting protocol versions, replacing shipment history, or duplicating work orders.
 
+In **Sequencing batches**, choose **New batch**. POMS assigns a unique identifier automatically; a descriptive name and notes are optional. Leave the name blank to use the identifier. Only draft batches accept libraries. If no draft is available, the preparation tray disables **Add to sequencing batch** and directs you to create one.
+
+## Investigate a sample or questioned result
+
+Open **Closed jobs**, select the job, and open the specimen. **Sample history** is also available from an active job.
+
+Choose a **Result version** to see its saved producing analysis, sequencing inputs, result-file attribution and exact source tube. A historical result without those links is shown as unknown; POMS does not infer a tube from the latest attempt.
+
+Expand **Protocol work** to review entries, corrections and actual performers/times separately from the person and time that recorded the entry. Other sections show materials, equipment, libraries, scientific metadata, result files, approvals, exceptions and custody. **Event history** has Previous and Next controls. Open a protocol execution to review its controlled instructions and detailed work context.
+
+Open **Supporting reports** to download a preparation or QC report attached to a step that covered this sample. **Recorded report details** shows the retained file identity and checksum. A download checks current access, the saved clean-scan status, file size and checksum before returning the file. A missing file or checksum mismatch appears as **Evidence unavailable**; investigate the original attachment and retry after the problem is resolved. Downloading does not replace or change the saved evidence. The access record confirms that a verified download was requested, not that the browser finished receiving it.
+
+**Sequencing outputs** and **Analysis runs** link to individual records. Operators and Supervisors can record new evidence and linked corrections from these sections. See **Libraries, batches, and sequencing** for the required run, file, QC, software and source information.
+
+**Delivery and retention history** covers all recorded result versions for this sample: delivery events, download attempts, verified download timing, retention schedules and saved policies, preservation holds and reissues. A started or failed download is not a completed transfer, and a completed transfer does not prove that the recipient read the file. Missing completion or commit timestamps remain unrecorded. A shared Trial release describes the package containing this sample; other samples' files and downloads are omitted. Package-wide holds or retention decisions still apply to the shared package. Saving an investigation report also preserves this history as it stood at that time.
+
+**Find related samples** searches an exact tube barcode, material lot number, equipment asset code, sequencing run, library key or preparation-tray barcode within this job’s organization. A shared resource is a starting point for investigation; it does not establish that the samples share a problem.
+
+Use **Save investigation report** to preserve the evidence available at that time. Each saved report’s **Actions** menu offers a readable report, which can be opened and printed, and a structured evidence manifest. The checksum identifies the exact saved manifest and is checked before download. Later work does not rewrite an earlier report. Customer download expiry does not remove saved investigation reports. These reports capture the sample history; supporting PDF files and external scientific files are not embedded.
+
+Review missing or unavailable evidence. Recorded metadata does not certify scientific validity or prove that an external source file is still available. A failed source load appears as **Evidence unavailable**. Large histories may exceed the supported report size; POMS rejects that report rather than presenting a partial history as complete. Reports are for internal investigation, not automatic customer distribution.
+
 ## Operational readiness boundary
 
-POMS now allocates checksummed Phaeno barcodes, renders Code 39 container labels, records reasoned print and failure history, supports scan-first container lookup, and adds eligible libraries to a draft batch by scan. These software controls do not prove that a particular printer, stock, scanner, browser, or environment is fit for production.
+POMS allocates checksummed Phaeno container identifiers, renders DataMatrix tube labels, records reasoned print, scan-back and failure history, and adds eligible libraries to a draft batch by scan. These software controls do not prove that a particular printer, stock, scanner, browser, or environment is fit for production.
 
 This guide explains the portal workflow; it is not a laboratory SOP or evidence that a production process has been validated. Before production use, Phaeno must approve the actual minimum fields, labels, printers, scanners, reprint and degraded-mode procedures, external NGS provider identifiers and manifest/status exchange, and operational ownership. Use only approved procedures and configuration for real work.
+
+## Track delivery deadlines
+
+Each Job card shows its **Current status** separately from its deadline warning.
+Field labels are bold, with regular-weight values. A deadline badge is omitted
+when it repeats the current status. **Samples** shows the total for a cohort
+whose samples all share that status; mixed-stage cohorts retain readable
+per-stage counts. Holds and samples needing review remain separate because
+they can overlap those stages. Physical receipt, expected completion and
+Portal delivery continue to describe different facts.
+**Recorded freezer box** (or **Recorded freezer boxes**) lists the distinct saved
+locations of its submitted sample tubes, including retained held or rejected
+material. Multiple boxes are shown together. **Not recorded** means no location
+is saved for those tubes; it does not prove that the shipment is missing.
+Disposed tubes and derived library or reagent containers are excluded. These
+values follow saved tube moves; open the Job's **Tubes** tab for individual
+identities, intake decisions and location history. A recorded box does not by
+itself establish accession completion, scientific acceptance or preparation.
+
+**Active jobs** prioritizes Overdue, At risk and Due soon work, followed by other open work. Filter by **Job or organization**, **Due date: From / To**, **Deadline status** (All deadlines, Overdue, At risk, Due soon), and **Job status**. The list includes jobs once at least one specimen shipment has been recorded as shipped, delivered or received. A recorded specimen receipt also qualifies older jobs without shipment records. Jobs still being prepared for shipment are excluded. Matching jobs appear across pages, including sent specimens still awaiting acceptance. Expand **Filters** to use the Overdue, At risk and Due soon count links. **All** clears only the deadline status, keeping the other filters. These warning counts cover every page for the current search, due-date range and job status, before the deadline-status selection.
+
+**Closed jobs** provides **Job or organization**, **Order date: From / To**, and **Outcome** (All outcomes, Delivered, Cancelled). Order date is the original order creation date; Trials use their creation date. Older work without its originating record uses the retained work creation date. Closed jobs show their outcome; delivery timing remains available in job details.
+
+Either date endpoint may be blank. From and To include the entire selected calendar day in the browser timezone, which is shown below the filters.
+
+Job statuses are Awaiting receipt, Awaiting acceptance, Ready for preparation, Library preparation, Sequencing, Data processing, Quality review, Awaiting delivery, and On hold. The overall status follows the earliest outstanding sample stage; an explicit job hold takes precedence. Sequencing includes libraries awaiting sequencing in a batch. Partial publication does not move remaining laboratory work into Awaiting delivery. Sample stages remain available in the job details. No failed-job outcome is defined yet.
+
+For new orders, the Customer approves one business-day delivery target before placement. The due date is set when Phaeno records physical receipt of every required tube for every sample in the Job. Count Monday–Friday, excluding Phaeno observed holidays; the due date and calendar revision are retained. A sample requiring multiple tubes is not complete after only one arrives. Future offering or calendar changes do not move the original target. If the calendar lacks coverage at final receipt, the Job is **At risk**; extend the holiday calendar to calculate the pending due date. Historical Jobs keep their accepted calendar-day or manually set terms. Missing deadlines on historical Jobs are handled from **Actions → Set due date** without blocking physical receipt or scientific acceptance. **Due soon** means a delivery or outstanding sample target is within three calendar days. Holds, blocking exceptions and a forecast later than the due date produce **At risk**. Passing the job’s due time without complete delivery produces **Overdue**, even if the forecast has moved later.
+
+Open a job to see the original delivery target, current due date, expected completion, published-sample count and due-date history. Operators and supervisors can choose **Actions → Set due date** (or **Adjust due date** when one exists), enter the exact date/time and a customer-safe reason, and save. The original target and forecast are retained. Commercial jobs receive one notice of this deliberate due-date change. Adjust a staff expected-completion estimate separately through the Commercial order when needed; the calculated progress forecast is explained below. Follow any commitments in the governing agreement; the standard TAT alone is not a contractual guarantee.
+
+The form identifies the timezone used for entry. Dates retain their exact time cutoff; they do not silently mean end of day. The list refreshes deadline warnings while open. No new periodic email reminder is sent by the Jobs list.
+
+Partial publication leaves a job open. Download or acknowledgement is not required for completion. A withdrawal makes the affected sample outstanding again while retaining the original full-delivery event; ordinary expiration of the download period does not undo delivery. Historical published jobs without a retained first full-delivery event show **Complete — timing unverified**, rather than an invented on-time/late assessment. Failed samples remain outstanding unless an actual customer-visible deliverable is published or the scope is explicitly cancelled through the existing process.
+
+## Calculated expected completion
+
+Active jobs show **Calculated expected completion** based on each sample’s recorded progress and configured stage durations. Open a job and expand **Sample progress and remaining work** to see current stage, entry time, time in stage, remaining calendar days and the stages still needed for Portal delivery. The latest outstanding sample determines the job date; parallel libraries are evaluated separately. A later calculated or explicit staff estimate makes the job **At risk** when it exceeds the committed due date.
+
+The calculation updates when the queue or job is refreshed. An hourly internal refresh also retains forecast history. The calculated forecast, original turnaround baseline, staff estimate and delivery commitment are separate. Automatic calculations do not change a commitment or send a customer message.
+
+An unfinished stage whose estimate is exhausted receives **one additional stage day** from the current evaluation time, followed by its remaining downstream work. A business-day stage uses an eligible business day for that allowance. The original estimate and recorded entry time remain intact.
+
+**Insufficient information** means the calculation needs configuration, a reliable stage timestamp or a required workflow decision. **Blocked** means a hold, unresolved failure or blocking exception prevents a reliable date. Coverage shows how many outstanding samples can be estimated; a partial estimate is not presented as the whole job’s expected completion. Older library and review records may lack the newly captured transition times.
+
+## Configure stage durations and holidays
+
+Protocol administrators and supervisors maintain the **Stage durations** and **Holiday calendar** sidebar sections under **Lab settings**. Lab steps remains the default section.
+
+1. Open **Holiday calendar** and create the calendar first. Enter its confirmed coverage period and the actual observed dates and names of holidays or other laboratory closures. An empty calendar confirms there are no additional exclusions within that period. No jurisdiction’s holidays are assumed automatically. The year filter and revision details appear in the calendar header. Holiday dates display as **Sep 18, 2026**; the display list and existing entries in the editor are ordered by observed date.
+2. Open **Stage durations**, select the workflow version and choose **Configure durations** or **Actions → Edit durations**. Set estimated days and **Calendar days** or **Business days** independently for every applicable stage. Include normal waiting time. Blank means not configured; zero means no additional downstream time. Indicate whether the workflow requires library QC and sequencing after its protocol stages.
+3. Business days use Monday–Friday in America/Los Angeles and exclude configured closure dates. Calendar-day stages count every day. Fractional business days count time within eligible dates; work starting on a closed date begins counting at the next eligible midnight. Forecasts needing business dates beyond confirmed calendar coverage remain unavailable until coverage is extended.
+4. Save with a reason. Saving creates a revision. New jobs use the latest configured revision for their approved or current service workflow; existing workflow assignments retain their revision. If a sample starts an attempt using another workflow version, that version receives its own timing assignment. Each sample is forecast using its actual selected workflow.
+5. To change existing jobs, choose **Actions → Preview and apply to jobs**. Review current and proposed forecasts, select the jobs and provide a reason. Apply the revision only after reviewing that preview. A calendar edit also requires selecting the new calendar in the workflow’s durations and applying the resulting policy revision to existing jobs.
+
+Timing settings support operational estimates; they do not establish or change customer delivery commitments. A scientific or operational review is still needed to decide appropriate duration values.
+
+## Review phase progress
+
+**Jobs** opens with **Phases** selected in the **Phases / Jobs** toggle. Choose **Jobs** for the whole-job view. **Active jobs** and **Closed jobs** each retain their own toggle selection, including when switching tabs or refreshing. Changing grouping retains filters and resets pagination only in that tab. Clear filters keeps both grouping selections. Each phase row shows current status, its sample-stage counts, shipment/container and tube receipt counts, deadline and recorded freezer boxes. All distinct recorded boxes are shown when samples occupy several boxes. **Mixed** means samples are at different stages. Holds and failures remain visible alongside progress.
+
+A phase's TAT begins after all declared tubes for its complete sample cohort have been physically received. Processing of a later phase is blocked until every required sample/run output in all preceding active phases is Portal-accessible. Approved cancelled phases are skipped and retain a separate cancelled outcome. Receiving future cohorts early starts their TAT while they wait.
+
+Open the Job to review each phase's original and current delivery commitment. A delivery deadline adjustment selects the affected phase and retains its previous date and reason. Forecast changes alone do not move commitments. For Customers, accessioned or accepted samples display **Received**.
+
+## Release responsibility
+
+Open **Lab ops → Result release** to inspect and publish scientifically approved PSeq packages. A Release Manager without a general Lab role sees only Result release. Scientific review remains in Results & scientific review; release permission does not grant Lab execution or Lab settings access.

@@ -284,7 +284,7 @@ public sealed class DataGovernanceAdminController(
     {
         var actor = await RequirePlatformAdminAsync(cancellationToken);
         var incident = await ReadIncidentAsync(id, tracking: true, cancellationToken);
-        incident.FollowUps.Add(new DataGovernanceFollowUp(
+        dbContext.DataGovernanceFollowUps.Add(new DataGovernanceFollowUp(
             incident.Id,
             organizationId: null,
             "InternalNote",
@@ -310,7 +310,7 @@ public sealed class DataGovernanceAdminController(
         var notes = RequireText(request.Notes, "notes", 4000);
         var now = DateTime.UtcNow;
         affected.RecordReminder(now);
-        incident.FollowUps.Add(new DataGovernanceFollowUp(
+        dbContext.DataGovernanceFollowUps.Add(new DataGovernanceFollowUp(
             incident.Id,
             organizationId,
             "AttestationReminder",
@@ -346,7 +346,7 @@ public sealed class DataGovernanceAdminController(
         var notes = RequireText(request.Notes, "notes", 4000);
         var now = DateTime.UtcNow;
         affected.Attest(actor.Id, AttestationSource.RecordedByPhaeno, contact, evidence, notes, now);
-        incident.FollowUps.Add(new DataGovernanceFollowUp(
+        dbContext.DataGovernanceFollowUps.Add(new DataGovernanceFollowUp(
             incident.Id,
             organizationId,
             "AttestationRecorded",

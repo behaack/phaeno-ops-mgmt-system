@@ -2,6 +2,8 @@ namespace PhaenoPortal.App.Features.Trials.Services;
 
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using PhaenoPortal.App.Features.Accounts.Services;
 using PSeq.Operations.Commercial.Accounts.Domain;
 using PSeq.Operations.Commercial.Crm.Domain;
 using PSeq.Operations.Commercial.LabOperations.Application;
@@ -14,7 +16,8 @@ using PhaenoPortal.App.Features.Trials.DTOs;
 using PhaenoPortal.App.Infrastructure.Persistence;
 using static TrialAccess;
 
-public sealed class TrialWorkflowService(PSeqOperationsDbContext db, ILabOperationsProvider lab, TrialAccess access)
+public sealed class TrialWorkflowService(PSeqOperationsDbContext db, ILabOperationsProvider lab, TrialAccess access,
+    IOptions<InvitationOptions>? invitations = null)
 {
     public IQueryable<TrialProject> Query => db.TrialProjects.Include(value => value.Scopes).ThenInclude(value => value.Decisions).Include(value => value.Samples).AsSplitQuery();
     public async Task<TrialProject> ReadAsync(Guid id, TrialActor actor, CancellationToken token) =>
@@ -22,26 +25,61 @@ public sealed class TrialWorkflowService(PSeqOperationsDbContext db, ILabOperati
 
     public async Task<TrialProject> CreateAsync(TrialActor actor, TrialCreateRequest request, CancellationToken token)
     {
-        RequireStaff(actor);
-        var existing = await Query.SingleOrDefaultAsync(value => value.CrmHandoffId == request.CrmHandoffId, token);
-        if (existing is not null) return existing;
-        var handoff = await db.CrmHandoffs.Include(value => value.Company).Include(value => value.Opportunity)
-            .Include(value => value.RelationshipRequest).SingleOrDefaultAsync(value => value.Id == request.CrmHandoffId, token) ?? throw Missing();
-        if (handoff.RelationshipRequest.Status is PortalIntegrationRequestStatus.Declined or PortalIntegrationRequestStatus.Cancelled
-            || handoff.Type != CrmHandoffType.TrialProject || !handoff.Company.IsActive || handoff.Opportunity is not { IsActive: true }
-            || handoff.Opportunity.CompanyId != handoff.CompanyId)
-            throw Error("trial_handoff_invalid", "Choose an active Company Opportunity's first-party Trial Project request.");
+        await access.RequireCreateAsync(actor, token);
+        if (string.IsNullOrWhiteSpace(request.Name) || string.IsNullOrWhiteSpace(request.Objective)
+            || request.SubmissionClosesAtUtc <= request.SubmissionOpensAtUtc)
+            throw Error("trial_creation_details_invalid", "Provide a Trial name, objective, positive sample count, and a submission window that closes after it opens.");
+        TrialRules.ValidateSources(request.Sources);
+        await RequireSampleTypeAsync(request.SampleTypeId, token);
+        var draft = new TrialScopeDraftValues(Name: request.Name.Trim(), Objective: request.Objective.Trim(),
+            SampleAllowance: TrialRules.SourceCount(request.Sources), SubmissionOpensAtUtc: request.SubmissionOpensAtUtc,
+            SubmissionClosesAtUtc: request.SubmissionClosesAtUtc, SampleTypeId: request.SampleTypeId,
+            Sources: request.Sources.Select(value => value with { BiologicalSource = value.BiologicalSource.Trim() }).ToList());
+        draft.Validate();
+        var company = await db.CrmCompanies.SingleOrDefaultAsync(value => value.Id == request.CompanyId && value.IsActive, token)
+            ?? throw Error("trial_company_invalid", "Select an active Company for the Trial.");
+        var departmentId = await PhaenoPortal.App.Features.Crm.Services.CrmOpportunityDepartments.ResolveAsync(db, company, request.DepartmentId, token);
         var project = new TrialProject($"TR-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid():N}"[..24].ToUpperInvariant(),
-            handoff.Id, handoff.CompanyId, handoff.OpportunityId!.Value, handoff.Opportunity.OwnerUserId);
+            null, company.Id, null, actor.User.Id);
+        if (departmentId.HasValue) project.BindOrganization((company.AccessOrganizationId ?? company.SetupOrganizationId)!.Value, departmentId.Value);
+        project.SaveScopeDraft(draft with { DepartmentId = departmentId }, actor.User.Id, DateTime.UtcNow);
         db.TrialProjects.Add(project);
-        Record(project, actor, "Requested", "Trial requested for Phaeno review.");
+        Record(project, actor, "Requested", "Phaeno created the Trial with its initial scope draft. Its complete scope must be submitted before Prospect acceptance.", request);
         return project;
+    }
+
+    public async Task SaveDraftAsync(TrialProject trial, TrialActor actor, TrialScopeDraftRequest request, CancellationToken token)
+    {
+        RequireStaff(actor); Version(trial.Version, request.Version);
+        if (request.Values is null) throw Error("trial_draft_invalid", "Provide the draft scope values.");
+        request.Values.Validate();
+        if (request.Values.SampleTypeId.HasValue) await RequireSampleTypeAsync(request.Values.SampleTypeId.Value, token);
+        if (request.Values.DepartmentId.HasValue && !await (from company in db.CrmCompanies
+            join department in db.OrganizationDepartments on company.AccessOrganizationId equals department.OrganizationId
+            where company.Id == trial.CompanyId && company.IsActive && department.Id == request.Values.DepartmentId
+                && department.IsActive && company.AccessOrganization != null && company.AccessOrganization.IsActive
+                && company.AccessOrganization.Kind == OrganizationKind.Prospect
+            select department.Id).AnyAsync(token))
+            throw Error("trial_department_invalid", "Select an active Department of this Company's Prospect organization, or leave it blank in the draft.");
+        if (trial.ApprovedScopeRevision.HasValue && request.Values.DepartmentId.HasValue && trial.DepartmentId != request.Values.DepartmentId)
+            throw Error("trial_department_immutable", "The approved Trial's Department cannot change.");
+        var values = request.Values;
+        if (values.Sources is not null)
+        {
+            var total = TrialRules.SourceCount(values.Sources);
+            values = values with { SampleAllowance = total > 0 ? total : null };
+        }
+        trial.SaveScopeDraft(values, actor.User.Id, DateTime.UtcNow);
     }
 
     public async Task ProposeAsync(TrialProject trial, TrialActor actor, TrialScopeRequest request, CancellationToken token)
     {
         RequireStaff(actor); Version(trial.Version, request.Version);
+        var approveOnSubmission = await CanApproveScopeOnSubmissionAsync(db, actor, token);
+        if (approveOnSubmission && trial.IsOnHold) throw Error("trial_on_hold", "Resolve the Trial hold before approving scope.", 409);
         if (request.AnalysisIds is null || request.DeliverableIds is null) throw Error("trial_scope_catalog_invalid", "Select PSeq analyses and deliverables.");
+        TrialRules.ValidateSources(request.Sources);
+        var sampleType = await RequireSampleTypeAsync(request.SampleTypeId, token);
         var company = await db.CrmCompanies.AsNoTracking().Include(value => value.AccessOrganization).SingleAsync(value => value.Id == trial.CompanyId, token);
         if (!company.IsActive || company.AccessOrganization is not { IsActive: true, Kind: OrganizationKind.Prospect })
             throw Error("trial_prospect_access_required", "Prepare the Company's Prospect Portal access before approving Trial scope.");
@@ -54,80 +92,111 @@ public sealed class TrialWorkflowService(PSeqOperationsDbContext db, ILabOperati
         var analyses = await (from analysis in db.AnalysisDefinitions.AsNoTracking()
             join catalog in db.QboCatalogItems on analysis.QboCatalogItemId equals catalog.Id
             where request.AnalysisIds.Contains(analysis.Id) && analysis.IsActive && !analysis.IsSynthetic
-                && catalog.ExternalItemId == OrderServiceKeys.PSeqLabService
+                && catalog.ServiceFamily == CatalogServiceFamily.PSeqLabService
             select analysis).ToListAsync(token);
         var deliverables = await db.TrialDeliverableDefinitions.AsNoTracking().Where(value => request.DeliverableIds.Contains(value.Id) && value.IsActive).ToListAsync(token);
         if (analyses.Count != request.AnalysisIds.Count || analyses.Count == 0 || deliverables.Count != request.DeliverableIds.Count || deliverables.Count == 0)
             throw Error("trial_scope_catalog_invalid", "Select active PSeq analyses and Trial deliverables.");
         trial.BindOrganization(company.AccessOrganizationId!.Value, request.DepartmentId);
-        var proposedScope = trial.Propose(new(request.Name, request.Objective, request.SampleAllowance, request.SubmissionOpensAtUtc,
+        var proposedScope = trial.Propose(new(request.Name, request.Objective, TrialRules.SourceCount(request.Sources), request.SubmissionOpensAtUtc,
             request.SubmissionClosesAtUtc, request.WorkflowVersionId,
             analyses.Select(value => new TrialAnalysisSnapshot(value.Id, value.Version, value.Name, value.SubmissionInstructions, value.RequiredIntakeFieldsJson, value.ResultContractJson)).ToList(),
             deliverables.Select(value => new TrialDeliverableSnapshot(value.Id, value.Revision, value.Key, value.Name)).ToList(),
             request.SubmissionInstructions, request.SuccessCriteria, request.EstimatedRetailValue, request.AnticipatedInternalCost,
             request.ResidualRetentionDays, request.MaterialDisposition, request.ReturnDestination, request.ReturnHandling, request.ReturnShippingPayer,
-            request.Terms), request.Reason, actor.User.Id, DateTime.UtcNow);
+            request.Terms, new(sampleType.Id, sampleType.Version, sampleType.Name, sampleType.QuantityUnit, sampleType.MinimumQuantity, sampleType.MaximumQuantity),
+            request.Sources.Select(value => value with { BiologicalSource = value.BiologicalSource.Trim() }).ToList()), request.Reason, actor.User.Id, DateTime.UtcNow);
         db.TrialScopes.Add(proposedScope);
-        Record(trial, actor, "ScopeProposed", $"Scope revision {trial.CurrentScopeRevision} submitted for two-person review.", request);
+        Record(trial, actor, "ScopeProposed", approveOnSubmission
+            ? $"Scope revision {trial.CurrentScopeRevision} submitted with approval by the submitting user."
+            : $"Scope revision {trial.CurrentScopeRevision} submitted for Commercial leadership review.", request);
+        if (approveOnSubmission)
+        {
+            await ValidateApprovalAsync(trial, token);
+            RecordDecision(trial, actor, TrialDecisionKind.Approve, request.Reason,
+                actor.IsPlatformAdmin ? "Platform administrator approved the scope on submission." : "Commercial leadership approved the scope on submission.", request);
+        }
     }
 
     public async Task DecideAsync(TrialProject trial, TrialActor actor, TrialDecisionRequest request, CancellationToken token)
     {
         Version(trial.Version, request.Version);
-        var authority = await access.RequireAuthorityAsync(actor, request.Domain, token);
+        await access.RequireRoleAsync(actor, BusinessRole.CommercialLeadership, token);
+        if (request.Domain != TrialApprovalDomain.Commercial)
+            throw Error("trial_approval_domain_invalid", "Trial scope requires Commercial leadership approval only.");
         if (trial.IsOnHold) throw Error("trial_on_hold", "Resolve the Trial hold before approving scope.", 409);
-        if (request.Decision == TrialDecisionKind.Approve)
-        {
-            if (!await db.Organizations.AnyAsync(value => value.Id == trial.OrganizationId && value.IsActive && value.Kind == OrganizationKind.Prospect, token)
-                || !await db.OrganizationDepartments.AnyAsync(value => value.Id == trial.DepartmentId && value.OrganizationId == trial.OrganizationId && value.IsActive, token))
-                throw Error("trial_prospect_inactive", "The Prospect organization and Department must be active before approval.", 409);
-            var values = trial.CurrentScope().Read();
-            if (!await db.LabServiceWorkflowVersions.AnyAsync(value => value.Id == values.WorkflowVersionId && value.Status == LabServiceWorkflowStatus.Production, token))
-                throw Error("trial_workflow_changed", "The proposed laboratory workflow is no longer in production. Submit a revised scope.", 409);
-            foreach (var selected in values.Analyses)
-                if (!await db.AnalysisDefinitions.AnyAsync(value => value.Id == selected.Id && value.Version == selected.Version && value.IsActive && !value.IsSynthetic, token))
-                    throw Error("trial_scope_configuration_changed", "An analysis changed during review. Propose a new scope before approving.", 409);
-            foreach (var selected in values.Deliverables)
-                if (!await db.TrialDeliverableDefinitions.AnyAsync(value => value.Id == selected.Id && value.Revision == selected.Revision && value.IsActive, token))
-                    throw Error("trial_scope_configuration_changed", "A deliverable changed during review. Propose a new scope before approving.", 409);
-        }
-        var decision = trial.Decide(request.Domain, request.Decision, actor.User.Id, authority.Id, !authority.IsPrimary, request.Reason, DateTime.UtcNow);
+        if (request.Decision == TrialDecisionKind.Approve) await ValidateApprovalAsync(trial, token);
+        RecordDecision(trial, actor, request.Decision, request.Reason, $"Commercial leadership review: {request.Decision}.", request);
+    }
+    private async Task ValidateApprovalAsync(TrialProject trial, CancellationToken token)
+    {
+        if (trial.IsOnHold) throw Error("trial_on_hold", "Resolve the Trial hold before approving scope.", 409);
+        if (!await db.Organizations.AnyAsync(value => value.Id == trial.OrganizationId && value.IsActive && value.Kind == OrganizationKind.Prospect, token)
+            || !await db.OrganizationDepartments.AnyAsync(value => value.Id == trial.DepartmentId && value.OrganizationId == trial.OrganizationId && value.IsActive, token))
+            throw Error("trial_prospect_inactive", "The Prospect organization and Department must be active before approval.", 409);
+        var values = trial.CurrentScope().Read();
+        values.Validate();
+        var sampleType = await RequireSampleTypeAsync(values.SampleType.Id, token);
+        if (sampleType.Version != values.SampleType.Version)
+            throw Error("trial_sample_type_changed", "The proposed sample type changed. Submit a revised scope.", 409);
+        if (sampleType.ShippingProcedureId is not Guid shippingProcedureId || !await db.SampleShippingProcedures.AnyAsync(procedure =>
+            db.SampleShippingProcedures.Any(anchor => anchor.Id == shippingProcedureId && anchor.DefinitionKey == procedure.DefinitionKey) && procedure.IsActive, token))
+            throw Error("trial_shipping_instructions_unavailable", "Configure shipping instructions for the selected sample type before approval.");
+        if (!await db.LabServiceWorkflowVersions.AnyAsync(value => value.Id == values.WorkflowVersionId && value.Status == LabServiceWorkflowStatus.Production, token))
+            throw Error("trial_workflow_changed", "The proposed laboratory workflow is no longer in production. Submit a revised scope.", 409);
+        foreach (var selected in values.Analyses)
+            if (!await db.AnalysisDefinitions.AnyAsync(value => value.Id == selected.Id && value.Version == selected.Version && value.IsActive && !value.IsSynthetic, token))
+                throw Error("trial_scope_configuration_changed", "An analysis changed during review. Propose a new scope before approving.", 409);
+        foreach (var selected in values.Deliverables)
+            if (!await db.TrialDeliverableDefinitions.AnyAsync(value => value.Id == selected.Id && value.Revision == selected.Revision && value.IsActive, token))
+                throw Error("trial_scope_configuration_changed", "A deliverable changed during review. Propose a new scope before approving.", 409);
+    }
+    private void RecordDecision(TrialProject trial, TrialActor actor, TrialDecisionKind kind, string reason, string summary, object request)
+    {
+        var decision = trial.Decide(TrialApprovalDomain.Commercial, kind, actor.User.Id, null, false, reason, DateTime.UtcNow);
         db.TrialDecisions.Add(decision);
-        Record(trial, actor, "DecisionRecorded", $"{request.Domain} review: {request.Decision}.", request);
+        Record(trial, actor, "DecisionRecorded", summary, request);
         if (trial.Status == TrialStatus.AwaitingAcceptance) Notice(trial, "trial-approved", "Trial ready for acceptance", "Phaeno approved your Trial scope. Review and accept the current no-charge RUO/no-PHI terms before submitting samples.");
     }
     public void Accept(TrialProject trial, TrialActor actor, TrialAcceptRequest request)
     {
-        RequireTenantAdmin(actor); Version(trial.Version, request.Version);
+        RequireTenantAdmin(actor, trial); Version(trial.Version, request.Version);
         trial.Accept(request.ScopeRevision, request.TermsVersion, request.RuoNoPhiConfirmed, actor.User.Id, DateTime.UtcNow);
-        Record(trial, actor, "Accepted", $"The organization administrator accepted scope revision {request.ScopeRevision} and its RUO/no-PHI terms.", request);
+        Record(trial, actor, "Accepted", $"The organization or assigned-department administrator accepted scope revision {request.ScopeRevision} and its RUO/no-PHI terms.", request);
     }
 
     public async Task SubmitAsync(TrialProject trial, TrialActor actor, TrialSubmitRequest request, CancellationToken token)
     {
-        RequireTenantAdmin(actor); Version(trial.Version, request.Version);
+        RequireTenantAdmin(actor, trial); Version(trial.Version, request.Version);
         if (!request.RuoNoPhiConfirmed) throw Error("trial_confirmation_required", "Confirm that the samples and entered information are RUO and contain no PHI.");
         if (request.Samples is null || request.Samples.Count is < 1 or > 100) throw Error("trial_samples_invalid", "Submit between 1 and 100 samples per batch, within the approved allowance.");
         var now = DateTime.UtcNow;
         var blocker = trial.SubmissionBlocker(now); if (blocker is not null) throw Error("trial_submission_unavailable", blocker, 409);
         var destination = await db.SampleShippingDestinations.SingleOrDefaultAsync(value => value.Id == request.DestinationId && value.IsActive
             && value.EffectiveFrom <= now && (value.EffectiveTo == null || value.EffectiveTo > now), token) ?? throw Error("trial_destination_unavailable", "Choose an active Phaeno shipping destination.");
+        var values = trial.CurrentScope().Read();
+        if (request.SampleTypeId != values.SampleType.Id) throw Error("trial_sample_type_mismatch", "Use the sample type in the approved Trial scope.");
         var sampleType = await db.SampleTypeDefinitions.SingleOrDefaultAsync(value => value.Id == request.SampleTypeId && value.IsActive
             && value.EffectiveFrom <= now && (value.EffectiveTo == null || value.EffectiveTo > now), token) ?? throw Error("trial_sample_type_unavailable", "Choose an active extracted-RNA sample type.");
-        if (!string.Equals(sampleType.MaterialClass.Replace(" ", "").Replace("-", ""), "extractedrna", StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(sampleType.MaterialClass.Replace(" ", "").Replace("-", "").Replace("_", ""), "extractedrna", StringComparison.OrdinalIgnoreCase))
             throw Error("trial_material_invalid", "Initial Trials accept extracted RNA only.");
-        if (!await db.SampleShippingInstructionRules.AnyAsync(value => value.SampleTypeDefinitionId == sampleType.Id && value.DestinationId == destination.Id
-            && value.IsActive && value.EffectiveFrom <= now && (value.EffectiveTo == null || value.EffectiveTo > now), token))
-            throw Error("trial_shipping_instructions_unavailable", "Phaeno must configure approved instructions for this sample type and destination.");
-        var values = trial.CurrentScope().Read(); var samples = new List<TrialSample>();
+        if (sampleType.Version != values.SampleType.Version) throw Error("trial_sample_type_changed", "The approved sample type changed. Phaeno must approve a revised scope.", 409);
+        if (sampleType.ShippingProcedureId is not Guid procedureId ||
+            !await db.SampleShippingProcedures.AnyAsync(value =>
+                db.SampleShippingProcedures.Any(anchor => anchor.Id == procedureId && anchor.DefinitionKey == value.DefinitionKey) &&
+                value.IsActive, token))
+            throw Error("trial_shipping_instructions_unavailable", "Phaeno must select an active shipping procedure for this sample type.");
+        var samples = new List<TrialSample>();
         foreach (var input in request.Samples)
         {
+            if (!values.Sources.Any(source => TrialRules.SourceKey(source.BiologicalSource) == TrialRules.SourceKey(input.BiologicalSource ?? "")))
+                throw Error("trial_biological_source_mismatch", "Select a biological source from the approved Trial scope.");
             ValidateInputs(values, input);
             if (!string.Equals(input.QuantityUnit, sampleType.QuantityUnit, StringComparison.OrdinalIgnoreCase)
                 || (sampleType.MinimumQuantity.HasValue && input.Quantity < sampleType.MinimumQuantity)
                 || (sampleType.MaximumQuantity.HasValue && input.Quantity > sampleType.MaximumQuantity))
                 throw Error("trial_quantity_invalid", "Sample quantity must meet the selected extracted-RNA type's requirements.");
-            var sample = new TrialSample(trial.Id, trial.CurrentScopeRevision, input.Reference, input.BiologicalSource, input.TubeCount,
+            var sample = new TrialSample(trial.Id, trial.CurrentScopeRevision, input.Reference, values.Sources.Single(value => TrialRules.SourceKey(value.BiologicalSource) == TrialRules.SourceKey(input.BiologicalSource)).BiologicalSource, input.TubeCount,
                 input.Quantity, input.QuantityUnit, input.Concentration, input.StorageRequirements, input.SafetyDeclaration,
                 JsonSerializer.Serialize(input.Inputs), input.ReplacesSampleId, input.ReplacementAuthorizationId, actor.User.Id, now);
             if (input.ReplacementAuthorizationId.HasValue)
@@ -140,11 +209,12 @@ public sealed class TrialWorkflowService(PSeqOperationsDbContext db, ILabOperati
         trial.AddSamples(samples, now);
         db.TrialSamples.AddRange(samples);
         var authorizationId = Guid.NewGuid();
-        var command = new AuthorizeLabWorkCommand(new(Guid.NewGuid(), authorizationId, now), authorizationId, 1,
+        var command = new AuthorizeLabWorkCommand(new(Guid.NewGuid(), authorizationId, now, LabOperationsContractVersions.V2), authorizationId, 1,
             LabWorkAuthorizationSource.TrialProject, trial.Id, trial.OrganizationId!.Value, OrderServiceKeys.PSeqLabService, 1,
             "trial-schedule-no-sla", trial.Number, samples.Select(value => new AuthorizedSpecimen(value.Id, value.Reference,
                 "Extracted RNA", value.BiologicalSource, value.Quantity, value.QuantityUnit, value.StorageRequirements,
-                value.SafetyDeclaration, null, value.Concentration, null, [OrderServiceKeys.PSeqLabService])).ToList(), values.WorkflowVersionId);
+                value.SafetyDeclaration, null, value.Concentration, null, [OrderServiceKeys.PSeqLabService])).ToList(), values.WorkflowVersionId,
+            TubeUsePolicyKey: "run_one_with_failure_fallback", TubeUsePolicyVersion: 1);
         var acknowledgment = await lab.AuthorizeWorkAsync(command, token);
         if (acknowledgment.Disposition is not (LabCommandDisposition.Accepted or LabCommandDisposition.AlreadyApplied) || !acknowledgment.LabWorkOrderId.HasValue)
             throw Error("trial_lab_authorization_failed", "The Lab could not authorize this submission. No samples or shipment were created.", 409);
@@ -160,6 +230,17 @@ public sealed class TrialWorkflowService(PSeqOperationsDbContext db, ILabOperati
         }
         db.SampleShipments.Add(shipment);
         Record(trial, actor, "SamplesSubmitted", $"{samples.Count} sample(s) submitted; the return kit is awaiting Phaeno preparation.", new { shipmentId = shipment.Id, authorizationId });
+    }
+
+    private async Task<SampleTypeDefinition> RequireSampleTypeAsync(Guid id, CancellationToken token)
+    {
+        var now = DateTime.UtcNow;
+        var value = await db.SampleTypeDefinitions.SingleOrDefaultAsync(type => type.Id == id && type.IsActive
+            && type.EffectiveFrom <= now && (type.EffectiveTo == null || type.EffectiveTo > now), token)
+            ?? throw Error("trial_sample_type_unavailable", "Choose a current extracted RNA sample type.");
+        if (!string.Equals(value.MaterialClass.Replace(" ", "").Replace("-", "").Replace("_", ""), "extractedrna", StringComparison.OrdinalIgnoreCase))
+            throw Error("trial_material_invalid", "Trials accept extracted RNA only.");
+        return value;
     }
 
     public async Task ActAsync(TrialProject trial, TrialActor actor, string action, TrialActionRequest request, CancellationToken token)
@@ -232,7 +313,7 @@ public sealed class TrialWorkflowService(PSeqOperationsDbContext db, ILabOperati
     {
         if (trial.OrganizationId.HasValue && trial.DepartmentId.HasValue)
             db.OrderNotifications.Add(new(trial.OrganizationId.Value, null, "trial-project", trial.Id, kind, subject,
-                $"{body} Open Trial {trial.Number} in the Portal. {TrialRules.RuoStatement}", trial.DepartmentId));
+                $"{body} Open Trial {trial.Number} in the Portal:\n{(invitations?.Value ?? new InvitationOptions()).PublicBaseUrl.TrimEnd('/')}/order-operations/lab-services/trials/{trial.Id}\n{TrialRules.RuoStatement}", trial.DepartmentId));
     }
     private static void ValidateInputs(TrialScopeValues scope, TrialSampleInput input)
     {

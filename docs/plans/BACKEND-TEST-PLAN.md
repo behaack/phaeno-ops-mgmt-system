@@ -1,5 +1,1611 @@
 # Backend Test Plan
 
+## Sequencing review fixes — October 6, 2026
+
+`LabVendorResultSafetyTests` covers unchanged input identity retention, unrelated
+library exceptions and material reference/time changes. The PostgreSQL
+`FastqDeliveryReceiptsRecoveryVersionsDispatchQcAndWithdrawalRemainConsistent`
+journey exercises actual ZIP and individual bytes, scan retry, stored checksums,
+entry/portion replay and conflicts, partial coverage denial, file-set locking,
+sealed-set admission denial, note-only identity retention, reviewed draft recovery,
+superseded queued dispatch rejection, exact QC Fail/Hold/Pass and withdrawal before
+vendor correction. Run only on an isolated local verification database; fixtures
+are marked synthetic and rolled back. Existing governed Customer download tests
+cover actual stream completion, partial/cancelled/failed transfers and cutoff.
+These checks do not establish real DPS, independent scientific or hosted acceptance.
+
+The complete model-boundary regression explicitly verifies all 87 Laboratory
+entities, the six sequencing/result/QC tables, their unique indexes and only the
+approved restricted actor/package foreign keys across schemas. Full connected
+release verification uses the existing `phaeno_release_verification_` loopback
+database prefix; do not widen the concurrency-test safety guards.
+
+The connected operator journey verifies immutable per-version library exception
+facts, latest-only batch readers and continued rejection of direct deletion. Its
+timestamp fixture uses database precision; phase-cancellation shipment selection
+is scoped to the fixture order instead of unrelated seeded data.
+
+## FASTQ/ZIP intake and assembly QC — October 6, 2026
+
+LabFastqValidationTests covers bounded record parsing, roles, empty/truncated content and mate/order mismatch. LabFastqArchiveInspectionTests covers relative names, report separation, traversal/absolute paths, duplicate names and expansion bounds. Commercial vendor receipt sources now use current file-set commands and preserve failed-library no-file version/replay coverage. Required further connected cases: actual chunk/import replay and conflicts, cross-member/run denial, final atomic receipt rollback, current-input invalidation, exact QC Pass/Fail/Hold and independent approval/release. Sources are compiled; automated execution remains unrequested. This supersedes required-location capture and the retired results modal contracts.
+
+## Numbered vendor results versions — October 6, 2026
+
+`LabVendorResultsVersionTests` covers an unchanged v1 snapshot and required notes
+for v2. The commercial handoff regression checks sequential v1/v2 creation,
+unchanged replay without extra versions, retained initial snapshot/note/location,
+and exact v1 read after v2 with IsCurrent false. Numbering is unique per sendout
+under the existing lock/concurrency boundary. The additive version table/ERD and
+one-time local v1 copy are verified separately. Sources compile; automated suites
+remain unexecuted. No application-side legacy initialization is added.
+
+## Vendor result modification with notes — October 6, 2026
+
+The Owner authorized editing a current recorded result. Require a fresh note,
+preserve the prior metadata/exception/completion snapshot in an appended correction
+event, protect role/version/locks and unchanged replay, and update current outcome
+and times atomically. Existing reference history remains. No-run scientific-output
+contradictions are rejected in correction and output registration. Missing-result
+legacy completion still has no repair path. Updated domain/controller regressions
+are compiled; suites remain request-only. This supersedes immutable-result checks.
+
+## Removal of vendor results recovery — October 6, 2026
+
+The current command closes no-run jobs with server entry time and null actual
+run/receipt timestamps, requires Failure/reason/no references and does not advance
+customer sequencing/data processing. The real saved no-run flag drives summaries.
+Successful-library location coverage is enforced against existing plus submitted
+references. Failed-batch references/Success exceptions and failed-member paths are
+rejected. Updated regression sources compile; automated execution is unrequested.
+
+The Owner withdrew legacy repair. Removed obsolete outcome/reference methods and
+requests, retrospective completion and missing-results backfill. Domain capture
+requires Vendor received; a completed sendout accepts only the exact stored
+metadata for later handoff additions. Updated domain and fixture regressions to
+use the atomic command; the incomplete-completed-record case rejects capture.
+Separate Sequencing/ResultsReceived transitions are rejected at both boundaries.
+Suites remain request-only. The one-record local rollback is verified separately
+in the [rollback checkpoint](../testing/runs/2026-10-06-vendor-results-rollback.md).
+Earlier recovery test descriptions below are historical and superseded.
+
+## Combined vendor results receipt — October 6, 2026
+
+This checkpoint supersedes the separate final-outcome and storage routes below.
+`LabVendorResultsDomainTests` covers distinct run/receipt times, immutable recorded
+facts and an unperformed failed run with a required reason and absent run times.
+The commercial handoff PostgreSQL journey uses `RecordVendorResults` for one
+atomic receipt with library exceptions and optional locations; it checks foreign
+membership rejection, unchanged replay, changed replay and later handoff additions.
+Route coverage registers this command and excludes the two superseded endpoints.
+Generic status transitions permit only shipment and vendor receipt, preventing
+final-stage writes from bypassing results capture. Automated execution remains
+request-only. The additive migration is applied only to the configured local
+development database; the ERD includes both nullable fields. See the
+[current verification record](../testing/runs/2026-10-06-combined-vendor-results.md).
+
+## Combined vendor results receipt — October 6, 2026
+
+This checkpoint supersedes the separate final-outcome and storage routes below.
+`LabVendorResultsDomainTests` covers distinct run/receipt times, immutable recorded
+facts and an unperformed failed run with a required reason and absent run times.
+The commercial handoff PostgreSQL journey uses `RecordVendorResults` for one
+atomic receipt with library exceptions and optional locations; it checks foreign
+membership rejection, unchanged replay, changed replay and later handoff additions.
+Route coverage registers this command and excludes the two superseded endpoints.
+Generic status transitions permit only shipment and vendor receipt, preventing
+final-stage writes from bypassing results capture. Automated execution remains
+request-only. The additive migration is applied only to the configured local
+development database; the ERD includes both nullable fields. See the
+[current verification record](../testing/runs/2026-10-06-combined-vendor-results.md).
+
+## Missing outcome on completed records — October 6, 2026
+
+`LabVendorResultsDomainTests` covers one retrospective decision on a completed
+sendout: active work is rejected, actual UTC/time/evidence constraints apply,
+recorded shipment/receipt values remain unchanged, absent sequencing/results
+timestamps stay absent and a second decision is rejected. Controller source keeps
+role/lock/version/replay checks, skips batch completion for the completed-record
+case and audits the preserved completion. Compile coverage applies; suites are
+not executed. Database-backed preservation, stale/replay and member-exception
+acceptance remain for the next requested PostgreSQL test checkpoint.
+
+## Sequencing storage scope entry — October 6, 2026
+
+The commercial handoff PostgreSQL regression now uses the atomic storage command:
+foreign membership rejects all submitted rows without a partial insert, new
+descriptions are system-owned, member and whole-batch additions retain history,
+identical retries create no duplicates and changed replays fail. Route coverage
+names `AddVendorResultReferences`. Compile coverage applies; automated execution
+is deferred under the request-only policy. Review multiple valid rows, invalid
+locations, duplicate IDs/members, mixed scopes, stale versions and unauthorized
+writes at the next requested database-backed test checkpoint.
+
+## Independent batch send-out progression — October 5, 2026
+
+`LabSendoutProgressTests` covers forward Job milestones, one projection version
+per stage, and preservation of DataProcessing, ScientificReview, ReadyForRelease
+and OnHold when another batch records progress. The commercial handoff PostgreSQL
+journey now starts vendor dispatch with the shared Job already in DataProcessing
+and checks that each stage preserves it and advances the projection version.
+Generic milestone and repeat-run authorization remain unchanged. Source compiles;
+these automated regressions are not executed. The real local HTTP 500 and successful
+six-library retry are recorded in [the walkthrough](../testing/runs/2026-10-05-sequencing-sendout-walkthrough.md).
+
+## Vendor sequencing results — October 5, 2026
+
+Domain coverage in `LabVendorResultsDomainTests` covers ordered stages, receipt without inferred success, final-outcome immutability/time, dispatched destination, permanent reference constraints and library identity. The commercial handoff controller regression now covers ResultsReceived, final batch outcome with a library exception, foreign-member rejection and unchanged/changed outcome/reference replays. Existing completed sendout fixtures advance through the valid workflow. Customer progress retains Sequencing during results reconciliation. Compilation applies; suites are not executed without a request.
+
+## Customer specimen hold routes suppressed — October 5, 2026
+
+The Customer hold GET/POST implementations remain `NonAction` methods and are
+not registered endpoints. `ControllerRouteTests` now checks their absence while
+Phaeno hold read/decision actions remain registered. Existing domain/controller
+hold tests retain coverage of the preserved implementation and safeguards; their
+direct method calls do not establish HTTP availability. Source is compiled;
+automated execution remains deferred under the request-only rule.
+
+## Customer order authorization snapshot — October 5, 2026
+
+`CustomerOrderReadsCorrectedAuthorizationWithoutChangingItsHistory` covers the
+Customer detail controller reading the string-enum snapshot produced by the
+purchased-service correction. It checks authorized sample identities and retained
+order version, snapshot and authorization version. Both roster readers and new
+authorization writes use the same scoped options. The regression source is
+compiled; automated PostgreSQL execution remains deferred pending a request.
+
+## Customer order authorization snapshot — October 5, 2026
+
+`CustomerOrderReadsCorrectedAuthorizationWithoutChangingItsHistory` covers the
+Customer detail controller reading the string-enum snapshot produced by the
+purchased-service correction. It checks authorized sample identities and retained
+order version, snapshot and authorization version. Both roster readers and new
+authorization writes use the same scoped options. The regression source is
+compiled; automated PostgreSQL execution remains deferred pending a request.
+
+## Sequencing status evidence — October 5, 2026
+
+The PostgreSQL commercial handoff regression now supplies actual event time and
+provider evidence for each sendout status. Authored negative checks reject
+missing/future time, missing evidence and skipped statuses without status-history
+writes. API requires roles, expected version, monotonic actual times and serial
+status updates. Status evidence retains server entry time and operator in custody
+history JSON; existing records are preserved. Solution compilation applies;
+automated PostgreSQL execution is deferred pending a request.
+
+## Catalog sequencing requirement and tube pairing — October 4, 2026
+
+`SequencingVolumeTests` covers exact volume boundaries, supported units, Catalog service restrictions and immutable pair snapshots. PostgreSQL handoff coverage captures the Catalog version at allocation, rejects below-minimum transfers without changing balances, and proves a later Catalog edit cannot change the existing pair. Obsolete batch-setting regressions are removed. Sources compile; execution remains request-only/deferred.
+
+## Empty sequencing batch recovery — October 4, 2026
+
+Domain recovery tests cover unchanged identity/notes and reject populated,
+sent-out or completed work. `LabSequencingBatchRecoveryPostgresTests` adds
+controller/database coverage for stale versions, missing/oversized reasons,
+empty start/complete/sendout refusal, sendout recovery refusal, audit evidence
+and repeat recovery refusal. The existing handoff journey checks empty start
+and populated recovery refusal before continuing its usual sequencing flow.
+Added source is compiled; automated execution remains request-only and deferred.
+
+## Sequencing batch automatic identity — October 4, 2026
+
+`LabOperationsDomainTests` covers omitted/empty/whitespace creation names using
+the allocated identifier, retained notes and Draft status, and repeated custom
+names with distinct immutable batch numbers. Existing scanner-safe allocation
+and draft-only membership safeguards remain unchanged. Added test source is
+compiled; automated execution is deferred under the request-only rule.
+
+## Purchased service correction — October 3, 2026
+
+`LabServiceIdentityCorrectionPolicyTests` covers unchanged specimen/run/timing/
+scope/organization policy, the next authorization version, preserved contract
+and correlation identity, Commercial-only scope, unstarted statuses and workflow
+pins. Source is included in the build; automated execution is deferred in this
+local UI walkthrough. Database acceptance must additionally cover immutable
+versions, no receipt/accession changes, required reason, exact purchase resolution,
+request replay/conflict, stale writes, roles, and source-selection races. See
+[the correction plan](LAB-PURCHASED-SERVICE-IDENTITY-CORRECTION-PLAN.md).
+
+`LabBiologicalMaterialTransferTests.PendingGeneratedLabelExplainsRecoveryAndConsumesNoMaterial`
+adds a label-guard recovery regression: a pending generated destination names
+print/scan-back and leaves source quantity/history untouched. Source compiles;
+automated execution remains deferred for this walkthrough.
+
+## Subject workspace navigation — October 3, 2026
+
+Trial CRM, retention and notification acceptance assertions now expect the canonical /lab-services/trials/{id} link. No endpoint or persistence contract changes. Automated test execution is deferred because this navigation implementation request did not request test execution. Lint, typechecking, documentation generation and local HTTP diagnostics are the verification checkpoint; do not count these as browser acceptance or automated-test passes. See [the owning plan](WORKSPACE-NAVIGATION-RESTRUCTURE-PLAN.md).
+
+## Trial source quantities and order workflow — October 2, 2026
+
+Creation and scope requests require an eligible extracted-RNA sample type and
+variable biological source/count rows. Validate missing/nonpositive quantities,
+case/whitespace duplicates and totals; persist the calculated allowance in the
+initial draft and freeze the type/version and rows in scope. PostgreSQL coverage
+rejects another type, a changed type, an unapproved source and per-source overflow
+before Lab/shipment creation. Valid composition uses one shared Lab authorization
+and shipment while the paid-order count stays unchanged. Domain coverage verifies
+amendments cannot remove or reduce already-submitted sources and replacements
+retain original source lineage without adding original slots.
+
+Final focused Trial, CRM access and session run: **85 passed, zero failed/skipped**
+on a disposable local PostgreSQL database; isolated build has zero warnings/errors.
+EF reports no pending model changes. This refinement changes existing JSON
+contracts and requires no new migration. See the
+[source workflow receipt](../testing/runs/2026-10-02-trial-source-quantity-workflow-verification.md).
+
+## Initial Trial creation details — October 2, 2026
+
+Trial creation requires name, Objective / Description, positive sample count and
+an ordered UTC submission window. PostgreSQL regressions verify that one save
+persists all details and Department in the initial shared draft, leaves the Trial
+Requested with no scope revision, approval or acceptance, exposes the draft name
+to staff only, and rejects missing/invalid values without adding a Trial. Retain
+Trial lifecycle, Commercial role revocation, direct approval and session-capability
+coverage. No new persisted model or migration is required for initial draft fields.
+
+See the [local verification receipt](../testing/runs/2026-10-02-trial-creation-details-and-settings-verification.md).
+
+## Direct Trial approval on submission - October 2, 2026
+
+Creation permits active Phaeno Business Development, Commercial leadership and
+Platform administrators. Session and workflow regressions check all three,
+ordinary-role/Prospect denial and revocation. Administrator and leadership
+complete-scope submission records one Commercial approval, remains unaccepted
+by the Prospect, and sends the existing ready-for-acceptance notice. Draft saves
+do not approve; held or invalid Department scopes cannot create an approval.
+Business Development alone remains UnderReview until a leadership decision.
+Existing Trial lifecycle, scope history, scientific controls and release coverage
+remain in the focused regression slice. No persisted model change is required.
+
+Focused verification passes all 79 Trial, CRM access and session cases after the
+obsolete two-approval message assertion is corrected. See the
+[verification receipt](../testing/runs/2026-10-02-trial-direct-approval-verification.md).
+
+## Direct Trial roles and Company Departments - October 2, 2026
+
+Domain and PostgreSQL regressions cover one Commercial leadership approval, rejection of Scientific Operations scope decisions, direct Business Development creation without CRM parent records, revoked-role denial, active Phaeno session capabilities without billing/cash/laboratory privileges, department auto-selection and required multi-department validation, invalid selections, editing persistence, and existing scope/acceptance/sample/release controls. Use a disposable local verification database for invitation and transaction-commit tests. The additive migration preserves historical references and cannot downgrade by inventing CRM parents.
+
+The broad solution run passed 1,200 cases with three failures and two skips.
+The three failures were corrected; the focused 78-case retest passes, including
+historical scope visibility, rollback guarding and department/session fixtures.
+See the [verification receipt](../testing/runs/2026-10-02-direct-trial-workflow-verification.md)
+for exact scope and evidence. This is local PostgreSQL/software verification.
+
+## Accession sample directory — October 2, 2026
+
+Sample-use source coverage extends the existing fixture: fresh accession, planned and cancelled unstarted source selection remain NotUsed; starting an attempt changes the sample and exact source to Used while reserves stay NotUsed. Combined intake/use/search filters apply before paging, exclude Used samples from NotUsed, and reject invalid use values. Review transfer evidence before attempt start, held/failed started attempts, cross-Job associations and historical started processing without source attribution as connected acceptance. No automated tests are executed for this follow-up; compilation is checked separately.
+
+Extended the existing PostgreSQL tube-intake fixture to exclude unaccessioned planned samples, return one sample for multiple accepted/rejected tubes, preserve each actual box and a non-stored rejection, search a supplier barcode and box without regard to case, clamp an out-of-range page, filter the sample intake separately from a rejected reserve, and reject invalid status/overlong search. Count/filter/stable order/paging precede page-only tube loading. The existing Phaeno membership/Lab role reader gates the endpoint. Review unauthorized Customer/Partner and unauthenticated reads, multiple-page data, bounded page size, cross-Job specimen/tube association and read-only behavior as integration acceptance. Sources are authored; no automated or PostgreSQL suite is run for this request.
+
+## Box-at-a-time accession — October 2, 2026
+
+The new placement UI reuses the existing atomic accept-remaining endpoint with one exact box group per request. Preserve the prior receipt/packet/crosswalk/undecided/version checks, per-tube location and audit events, transaction rollback and actor/payload-bound request replay. No backend or persisted-model change is needed. Existing LabTubeAccessionPostgresTests remain the integration guard; live PostgreSQL execution is unrequested. Physical box validity/capacity/temperature/position are outside the current location-string model.
+
+The single-scan follow-up combines identity lookup and pending placement in the client; it does not change receipt/acceptance semantics. A successfully saved exception uses the existing individual intake endpoint and advances the work version before the remaining exact group is accepted. No backend tests or API/model changes are required for this follow-up; existing server guards remain authoritative.
+
+## Shipment arrival history — October 2, 2026
+
+Kit-shipment pagination: extended the existing PostgreSQL shipping fixture to check two distinct one-row pages with a total count, case-insensitive kit search, selected-shipment scope and out-of-range page clamping. The dedicated reader retains platform-admin access and existing workflow mapping, applying search/count and stable sorting before loading page details. Source-only regression coverage; no automated suite is run unless requested.
+
+Extended the existing SampleShippingPostgresTests receipt/accession case: a fully accessioned shipment leaves the default received queue but remains in the paged ShipmentHistory read with its original arrival time and completed tube count. Source coverage checks case-insensitive shipment/PH-P matching, no-match search, total count and clamping an out-of-range page. The query keeps existing Lab-role access and excludes packing pools, cancelled/empty/unconfigured containers. History applies search/count, arrival-descending/ID ordering and Skip/Take before loading page details; page size is bounded. No persisted model or mutation changes. Automated tests remain unexecuted under the request-only policy; solution compilation is checked separately. Multi-page PostgreSQL runtime and live role acceptance remain deferred until tests are requested.
+
+## Consolidated Job detail hold projection — October 1, 2026
+
+The existing tenant-authorized hold read workspace now includes each specimen's
+submitted `sampleId`. The Customer phase filter uses this identity, never a
+sample name, while all hold writes and guards remain unchanged. Verify the
+read projection with duplicate display names in different phases and retain
+existing hold permission/concurrency/blocking coverage. This is an additive
+read field with no persistence change or migration. API compilation and frontend
+ID-filter regression sources cover the change; automated backend tests were not
+requested and are not run.
+
+## Phase shipping after dispatch — October 1, 2026
+
+Updated LabPhaseShippingSequenceTests for full sample/container dispatch without
+result delivery, partial/uncovered dispatch, mixed-phase contents, missing sample
+identity and cancellation skips. Request, pairing, finalization and handoff use
+the same tenant-scoped shipping guard; laboratory processing retains its separate
+result-delivery guard. Connected PostgreSQL acceptance should request Phase 2
+after full Phase 1 dispatch without results, reject it after partial dispatch,
+and confirm Phase 2 laboratory start still waits for Phase 1 delivery. Coverage
+is authored, not run; no automated test execution was requested.
+
+## Ordered phase shipping refinement — October 1, 2026
+
+Preparation availability follow-up: current completed assembly and exact unique
+tube product/namespace roster establish readiness without requiring the optional
+second-rescan marker. The existing one-pass assembly domain case now checks the
+shared preparation predicate. A connected phase case checks that a completed,
+physically received kit without that marker can be selected and count as phase
+coverage. Receipt, compatibility, phase ownership, expiry and duplicate-use
+guards remain required. Authored and compiled; automated execution is request-only.
+
+Received-stock follow-up: authored, not executed. OnDemandPhaseKitPostgresTests
+simulates an inconsistent allocated kit without Customer physical receipt and
+checks that the pair workspace marks it unusable with zero available tubes and
+the phase supply still recommends a replacement kit. Allocation alone must never
+establish physical receipt or count as received capacity.
+
+Authored, not executed: LabPhaseShippingSequenceTests covers position order, full Portal coverage, partial/withdrawn coverage, incomplete rosters, cancellation and preparation/delivery-date facts that cannot advance the workflow. OnDemandPhaseKitPostgresTests now rejects future requests and preparation/finalization, keeps per-phase capacity and idempotent replay, and authorizes the first phase without future Sample IDs. Carrier handoff shares the same server guard. API/test compilation is the local check; connected PostgreSQL acceptance remains pending.
+
+## Initial on-demand phase kits checkpoint — October 1, 2026
+
+Authored, not executed: `OnDemandPhaseKitPostgresTests` covers acceptance without
+an automatic kit request, independent bulk phase capacity, request replay without
+duplicates, stale Job versions, cross-phase physical kit rejection, and phase-one
+authorization/shipment creation before future Sample IDs exist. The second phase
+amends the same laboratory authorization. `PhaseKitSelectionDomainTests` covers
+immutable physical-kit phase assignment and preparation completion without
+starting TAT. Existing standard placement and handoff fixtures now use explicit
+phase preparation and expect no acceptance-time request.
+
+API and test assemblies compile with zero warnings/errors. The additive migration
+is applied only to the configured local development database; EF reports no
+pending model changes and the complete ERD is regenerated. Read-only before/after
+review preserves both existing Jobs and the unassigned whole-Job kit history.
+Automated PostgreSQL and domain execution were not requested. Remaining focused
+acceptance includes competing received-stock allocation, partial dispatch and
+receipt, expiry/replacement, amended/cancelled phases, and Customer/Partner tenant
+isolation. See [the implementation checkpoint](../testing/runs/2026-10-01-on-demand-phase-kits.md).
+
+## Phase-aware quote PDF — October 1, 2026
+
+Later owner-approved refinement updates the same regression set for singular Service, shared phase borders/headings, reconciled run derivation and compact terms/totals. Added cases cover a full five-line billing address with 15 samples × 2 additional runs/sample = 30, both phases and $38,750 on one Letter page, and inconsistent recorded allocation preserving its charges without a guessed formula. Continued-source checks retain the source heading after the added scope row. Tests are authored and compile; no automated execution was requested.
+
+Latest checkpoint: determined/pre-tax full-address examples are one page each; twenty phases are five pages; an oversized extra-run phase source is seven pages; a long single-scope service is four pages. All 18 pages were visually inspected, end markers retained and extracted glyph bounds clean. Isolated solution/test assembly and normal API builds pass with no warnings/errors. The rebuilt local API is running and healthy. This manual renderer evidence does not establish connected tenant download or automated regression execution.
+
+Later owner-approved refinement updates the same regression set for singular Service, shared phase borders/headings, reconciled run derivation and compact terms/totals. Added cases cover a full five-line billing address with 15 samples × 2 additional runs/sample = 30, both phases and $38,750 on one Letter page, and inconsistent recorded allocation preserving its charges without a guessed formula. Continued-source checks retain the source heading after the added scope row. Tests are authored and compile; no automated execution was requested.
+
+Authored, not executed: `QuotePdfRendererTests` covers concise catalog identities with frozen quantities/rates, exact phase-ID pairing despite reordered lines or repeated names, services and quantities, conditional additional runs, one-page two-phase determined/pre-tax totals, sample-based TAT, multi-page phase identity, oversized sources, final service/totals pagination and incomplete phase allocation rejection. Existing billing precision, statuses, historical source presentation, glyph rejection and bounds cases remain. Compilation and manually generated synthetic PDF inspection are distinct from automated test execution.
+
+Manual renderer evidence: the representative two-phase quote and additional-run/pre-tax variant each occupy one Letter page; twenty phases occupy five pages; an oversized source occupies five pages; an oversized accepted single-scope description occupies four pages and keeps its end with totals. All rendered pages were inspected, complete end markers and Latin accented billing text were retained, and extracted glyph bounds remained within the page content/footer limits. No database or quote records were written for this evidence. Connected download and automated case execution remain separate acceptance gates.
+
+The isolated solution/test assembly and refreshed local API compile with zero warnings/errors. Generated help is current and the restarted API health check passes. Automated tests were not run.
+
+## Initial quote proposals and decline — October 1, 2026
+
+Authored, not executed: `LabQuoteDecisionDomainTests` covers immutable terms and phase scope, acceptance paused during proposal review, whole-Job decline and accepted/replaced-quote rejection. `LabQuoteDecisionsPostgresTests` extends the commercial handoff fixture with active tenant administrator authorization, stale-version/foreign-quote rejection, idempotent retries, one exact-quote audit event, both audience projections, retained phased scope and reissuance ending the pending proposal. The isolated solution and test assembly compile with zero warnings/errors. Automated tests were not executed.
+
+The proposal uses existing status-event storage and introduces no migration. The local API was rebuilt and restarted after the user reported missing decision options; its health check passed. Connected customer proposal/decline/reissue acceptance remains unverified until authorized test execution or a user walkthrough.
+
+## Requested laboratory catalog service — October 1, 2026
+
+Authored, not executed: `CommercialOrderDraftDomainTests` checks that an incomplete service choice can be retained in a Draft but cannot create phase/source scope on submission, and that submission retains the exact catalog identity. `CatalogOfferingPostgresTests` covers optional Draft save, required service choice, unknown/unrelated/inactive catalog rejection, exact catalog-name lookup and unchanged quoted prices when the catalog price changes. Catalog deletion also checks requested-order and Draft JSON references. Connected controller rejection of a quote that substitutes another requested service remains in the E2E acceptance scope. Tests are request-only and were not run.
+
+The isolated solution build passes with zero warnings/errors. Reviewed `20261001155357_AddRequestedLabCatalogService` adds only a nullable UUID, index and restricted catalog foreign key; it is applied to localhost:5432 / phaeno_ops_clean_20260919, with no data conversion/reset. EF reports no pending model changes. The complete regenerated ERD covers 231 tables, 3,409 fields and 548 foreign keys. This earlier checkpoint preceded the quote-decision runtime activation; the local IIS Express API has subsequently been rebuilt and restarted. Connected service-selection acceptance remains pending.
+
+## Remote MQTT plumbing probe — October 1, 2026
+
+The standalone [probe](../../backend/tools/PSeq.Operations.MqttPlumbingProbe/README.md) sends one dummy `StartJobDto` to the owner-confirmed `test.mosquitto.org:1883` broker and observes only the freshly generated job ID's status topic. Verify successful subscription before publication, the non-retained QoS 1 command, and matching `dto_id=102`/`job_id` responses. Preserve raw numeric status values until the remote enum is confirmed. Record broker publication acknowledgment, remote response, and confirmed fake-job completion separately. The probe has no API/database reference, reconnect/automatic republish, real scientific inputs, or worker activation. No automated application suites are required for this isolated connection test.
+
+The [October 1 run](../testing/runs/2026-10-01-remote-mqtt-plumbing-probe.md) records the initial silent attempt and the subsequent owner-authorized successful retry. The standalone rebuild passed with zero warnings/errors. A fresh, broker-acknowledged dummy Start received six matching remote status responses at 0%, 20%, 40%, 60%, 80%, and 100%, with final raw `status=2`; the probe disconnected and exited `0`. The isolated plumbing round trip passes. Numeric enum semantics and full operational integration remain separate gates. Earlier handshake failures published no commands.
+
+## POMS assembly messaging foundation — September 30, 2026
+
+`LabAssemblyMessagingTests` covers stable retry identity/backoff, receipt versus execution, escalation without abandonment, cancellation completion without inventing command receipt, provider cancellation before start, immutable conflict evidence, and scoped reconnect subscriptions. `LabAssemblyMessagingPostgresTests` covers commit-before-acknowledgment receipts, restart/replay, stale tracked receipts after another instance records conflict, transient percentages excluded from payload/hash, preserved terminal outcomes, deadline/start confirmation, retry persistence, wrong-provider/foreign-event rejection, owned transaction boundaries, fresh notification authorization after revocation/expiry and transient progress refresh without job writes. Existing assembly recovery/no-percentage-history tests remain included.
+
+Run these reference cases in a task-owned migrated PostgreSQL database, then remove only that owned database. The [run record](../testing/runs/2026-09-30-poms-assembly-messaging-foundation.md) separates this internal normalized-message proof from DPS wire, broker/replay, output verification, scientific and hosted acceptance.
+
+## Negotiated price active-service selection — September 30, 2026
+
+Company Lab pricing reads expose catalog active status for service choices. New negotiated prices require an active USD PSeq Lab service; updates retain their fixed service/scope and can manage an existing price after catalog deactivation. Add focused coverage at the next requested test checkpoint for active creation, inactive/stale creation rejection and retained inactive-price updates. No persistence or migration changes are required; test execution is deferred for this change.
+
+## Order review regressions — September 30, 2026
+
+`CommercialOrderDraftDomainTests.EarlyCancellationRemovesOnlyItsSourcesAndRunsFromPreparation` preserves accepted scope while removing a cancelled cohort's additional runs from preparation. `LabOrderReviewEdgeCasesPostgresTests` exercises approval before any sample/tube pairs, finalization/authorization/shipment for only the remaining cohort, four pre-tax partial invoices with rounding reconciliation, and a later approved tax rate without changing earlier charges. Focused execution and database cleanup evidence are retained in [the review-fix run](../testing/runs/2026-09-30-order-review-fixes.md). No shared development migration is required.
+
+## Order management verification checkpoint — September 30, 2026
+
+The owner requested migration application, tests and builds, lifting the earlier verification hold, then requested resolution of the remaining 25 backend failures. Both pending additive migrations were applied to the configured local database after backup; EF reports no pending model changes. The corrected solution builds with zero warnings/errors. The final complete PostgreSQL-enabled suite passes 1,157 cases with zero failures and two environment-specific skips (1,159 total). All 31 originally failing cases, including the remaining 25, have matching passing full-run results in [the run ledger](../testing/runs/2026-09-30-order-management-verification.md). The final reference/concurrency run used a disposable loopback database migrated from empty; cleanup was verified. This is automated API/database evidence, not live provider, physical laboratory or final business acceptance.
+
+Verification corrected tracking of newly created source/phase rows in Customer review, Sales submission and additional-scope acceptance. Customer Draft coverage now reviews an edited Draft a second time and verifies the old phase is removed. Quoted-order fixtures freeze accepted phase pricing, Sales Draft creation replay is tested separately from later status transitions, and readiness checks retain the saved Draft when pricing submission is blocked. Prior checkpoints below describe their state before this run.
+
+The remaining-failure correction adds `ManualRequestRevisionKeepsItsSingleCohortIdentityAndReconcilesCount` for Draft and requested-correction edits, plus a stored phase-count assertion on the request integration test. Manual request/correction and independent quote-review acceptance cases now explicitly use Partner organizations, which retain that workflow; Customer standard-order cases continue to cover the distinct Customer path. Scientific preparation, assembly, queue, history and reissue fixtures use actual commercial parents and valid sample cohorts. The mixed-progress fixture adds a separate accepted future cohort rather than changing started scope. Phase-cancellation acceptance checks first-receipt rejection, whole future-cohort cancellation, unchanged quote/custody, preserved received work, replay and stale-decision rejection. CRM and receiving-destination assertions isolate owned records without assuming the database is globally empty. Execution results are retained in the run ledger.
+
+## Customer standard ordering — September 30, 2026
+
+Authored CustomerStandardOrderTests covers negotiated rates versus standard, Organization/Department selection, other-scope isolation, inactive/future/expired windows, overlapping rates, inclusive and missing sample limits, incomplete Drafts, prohibited client fields and frozen price evidence. CustomerStandardOrderPostgresTests covers selected-rate changes between review and commitment, accepted price preservation and missing-limit enforcement; CustomerStandardDraftPostgresTests covers incomplete save/replay and complete one-run review. Updated configured-standard fixtures explicitly configure and restore their service limit and reject extra-run placement; teardown removes only test-owned negotiated rates. Pending connected coverage includes Company pricing permissions/tenant isolation/overlap concurrency, no-entitlement bypass, N+1 placement and changed-limit races, phase/price override requests and uncertain replay. AddCustomerStandardOrdering and AddSeparateSampleRunPricing are authored but unapplied; no builds or tests were run under the owner hold.
+
+
+## Sample service and additional-run pricing — September 30, 2026
+
+Authored `LabSampleServicePricingTests` covers phased and single-scope sample/additional-run quantities, prevention of charging standard preparation for every run, retained quote components and monetary portions, amendment of the additional-run rate, and incomplete Draft proposal submission. Updated Draft materialization and existing quote-lifecycle fixtures retain explicit pricing components. Coverage is authored only; execution is pending. Connected coverage must also check standard direct-placement rejection of unpriced extra runs, quote/reissue idempotency and concurrency, both-rate dual control, native/QBO line retention, phase invoicing and PDF totals. Confirm existing prepared-library material guards remain authoritative for another transfer.
+
+`AddSeparateSampleRunPricing` adds a nullable phase rate with no existing-order conversion. The owner halted builds and tests during implementation. The isolated backend build completed before that hold and before the final source/migration/coverage edits; it does not validate the final change. Migration application, runtime activation and further compilation remain deferred.
+
+## Draft storage defaults — September 30, 2026
+
+The solution (including authored domain cases) and local API compiled with zero warnings and errors. The refreshed local API supplied the selected type's configured Preservation requirements to the signed-in Draft page. No order write or pricing submission was performed for verification, and no migration was created or applied. Automated case execution remains pending.
+
+The existing nullable Draft storage field distinguishes Sample type mode (null) from a supplied exception (text). Sample choices expose Preservation requirements; the authorized submit endpoint resolves the validated type and materialization retains final requirements in the order. `CommercialOrderDraftDomainTests` now covers inherited defaults, override precedence, and atomic rejection of missing defaults or empty exceptions before operational phases are created. Existing materialization coverage uses the explicit default argument. Automated execution remains pending under the request-only rule; a build verifies compilation only. No schema migration or existing-order conversion is part of this refinement.
+
+## Sales order Draft and phase scope — September 30, 2026
+
+Authored `CommercialOrderDraftDomainTests` covers incomplete Draft retention without submission or operational phases, materialization of distinct phase runs and proposed prices, repeated biological sources across phases, required proposal completion, and rejection of wrong source/run/capacity during sample preparation. PostgreSQL commercial-handoff fixtures now follow Save Draft, Submit for pricing, and Begin quote. Automated execution is pending under the request-only test rule. Connected coverage remains required for Customer Draft invisibility, stale writes, duplicate/uncertain submission, phase quote allocation and proposal-review permissions.
+
+## Four-stage Customer Lab preparation — September 29, 2026
+
+The additive `AddLabSampleTubePairs` migration was applied to the configured local development database. Release builds of the API and test project compile; test execution remains pending under the request-only test rule. Integration coverage must exercise manual quote and configured standard placement with supported Sample type and Department address confirmation, idempotent shortage creation, Phaeno dispatch before roster, physical receipt, one physical-kit tube per Sample ID, duplicate and wrong-kit rejection, exact source/run finalization, shipment binding and retry rollback. The transportation-kit receipt integration case now includes rejection of a scanned barcode from a different physical kit before receipt, followed by acceptance and replay of the selected shipped kit's barcode; execution remains pending. Existing historical and Change-quote fixtures using the previous sample-list path need a deliberate historical setup or updated paired fixtures before their suites run.
+
+The additive `AddLabSampleTubeKitSelections` migration was applied to the configured local development database. It backfills selected kit records from any existing draft pairs. Add integration coverage for exact scanned-kit lookup at the accepted location, receipt and compatibility checks, cross-Job kit claim rejection, fixed selection across reload, rejection of pair entry before kit save, one active kit at a time, explicit finish with unused tubes before selecting another kit, and correction of a saved pair that reopens a finished kit before finalization. Test execution remains request-only.
+
+Add a paired-preparation regression with a placed Job pinned to a Sample type whose material quantity unit is not a tube count: the pair-save and finalization paths must still count one physical tube per saved pair and preserve the separately declared amount in its configured unit. Missing Sample type minimum or Tube product maximum, mismatched units, below-minimum amount, and above-maximum amount must reject the initial pair save without creating a pair or history event. A configured amount at either inclusive boundary must save. The physical tube count and tube volume capacity must remain distinct. A linked kit is orderable only when its tube maximum meets or exceeds the current Sample type minimum in the same unit. Once physical kits use a configured tube product, a changed maximum or unit must require a new product identity. The older sample-list path retains its tube-count guard because it derives physical slots from sample quantity. Execution remains pending under the request-only test rule.
+
+Add a manual-quote regression with no configured standard offerings: an active quoted Sample type that matches the Job and passes shipping readiness must accept, while a changed or unavailable type still fails. This regression is pending under the request-only test rule.
+
+## Customer order Department ownership — September 29, 2026
+
+`LabOperationsCommercialHandoffPostgresTests` now expects POMS initiation to
+reject a Department with no active Customer user; the quote-administrator case
+starts pricing while a Customer user exists, then removes that access before
+quote issuance. The readiness and initiation paths share the active-user check.
+Automated tests remain request-only.
+
+## Service-change approval in Requests — September 29, 2026
+
+`CrmRequestAcceptancePostgresTests` now expects approval and the dated source-linked entitlement to save together. `CrmRequestCompletionPostgresTests` adds approved-request setup that updates an existing permission with optimistic concurrency and no duplicate, rejection that leaves an invalid approval pending, and service approval that waits for a separately approved Company access scope. Active Department, date, overlap and stale-version validation remain server checks. These PostgreSQL regression sources compile in the Release API/test build with zero warnings or errors; automated tests were not run because this turn did not request test execution.
+
+## Hosted reset preparation — September 29, 2026
+
+The owner authorized the hosted clean reset and API/UI release with three accounts and canonical product types preserved. The maintenance importer now permits the current baseline's Phaeno supplier only through the existing exact expected-model-seed guard. Its Release/Linux publish and isolated candidate import pass. Wrong target, raw snapshot, conflicting replay and populated-baseline attempts are refused; exact replay and every-table verification preserve the reviewed 57-row package. The matching additive migration applies only to the candidate, with successful exact re-verification. No broad application suite is repeated for this maintenance-only allowlist correction; the full publication results below remain the API/UI source evidence. Protected receipts live under `artifacts/hosted-clean-reset-20260929/`.
+
+The [hosted release record](../operations/hosted-clean-reset-release-20260929.md) confirms cutover and matching API/UI activation. Post-startup every-table preservation/emptiness checks, three production Clerk bindings, retained access, API/database/public-read health and recent runtime-error checks pass. Coordinated and final write-frozen backups were restore-verified and encrypted copies verified off-server. No authenticated operator or physical/scientific workflow acceptance was performed.
+
+## Publication verification — September 29, 2026
+
+The owner requested tests, commit and push without deployment. The final complete backend run exercised 1,126 cases: 1,106 passed, 18 failed and two were intentionally skipped. All remaining failures pass after fixture/assertion corrections in 32 targeted cases across retention, kit bundles, result-registration concurrency, baseline rollback and kit readiness. This produces 1,124 distinct passing cases across the complete run and targeted reruns; it does not claim a new single green full run. The skipped cases require Unix symbolic links or opt-in PostgreSQL backup/restore qualification.
+
+Corrections make clean-database fixtures supply an explicit retention policy, barcode namespaces, saved quote scope and producing analysis lineage. Assertions reflect the current catalog error code, private storage root, migration baseline and Inventory completion rule. The readiness case now selects the Tube explicitly instead of an arbitrary component, and checks that retiring the workflow or tube blocks new assembly while deactivating the selected Shipping Container blocks new ordering. The clean baseline remains irreversible after committed evidence; no runtime compatibility fallback or seed policy was restored.
+
+The full solution build passes with zero warnings/errors in an isolated artifacts path, preserving the owner's active Visual Studio/IIS Express outputs. Reference checks create and remove only the explicitly named local disposable databases `phaeno_release_verification_20260929`, `phaeno_release_verification_20260929_corrections`, `phaeno_release_verification_20260929_rollback` and `phaeno_release_verification_20260929_readiness`; all cleanup logs confirm removal. Evidence is local under `artifacts/publication-20260929/` and is not committed. No owner database write, new migration application, hosted database reset or deployment occurred during this checkpoint.
+
+## One scan per packed tube — September 29, 2026
+
+Assembly completion and dispatch now require the exact unique registered tube roster, saved tube product/namespace, exact BoM and confirmed container label without mandatory physical rescanning. The session case completes with no verification payload and asserts rescan timestamps stay null. Explicit optional rescan payloads still reject incomplete/duplicate rosters atomically. Added domain coverage for missing, duplicate, wrong-product and wrong-namespace tubes, incomplete assembly dispatch rejection and successful dispatch without rescan. Added connected Customer request supply selection/dispatch without rescan; shared reference helpers complete using first-scan evidence only. Label, expiration, concurrency and consumption checks remain included. Earlier required-rescan expectations are superseded.
+
+Verification: all 18 focused backend cases pass, including 13 disposable-PostgreSQL cases and 5 domain cases. Setup/cleanup used only `phaeno_kit_packing_edge_20260928`, and cleanup succeeded. API/test projects built successfully in the isolated artifacts directory because the active Visual Studio/IIS Express debug session holds normal build outputs. Evidence: `artifacts/kit-packing-20260928/edge-backend-tests.log`. No owner data write or migration.
+
+## Assembly without required notes — September 29, 2026
+
+Current assembly completion no longer requires narrative notes. The connected session case completes with null notes and asserts the approved step, operator and UTC time are recorded; overlong supplied notes still roll back atomically. Optional notes and step-only recording retain existing material-use evidence. The existing completion gates remain tested.
+
+All 16 focused backend cases pass against disposable PostgreSQL `phaeno_kit_packing_edge_20260928`; its cleanup succeeded. API and test builds succeeded in `artifacts/kit-packing-20260928/notes-free-build`, avoiding assemblies locked by the owner's Visual Studio debug session. Evidence: `artifacts/kit-packing-20260928/edge-backend-tests.log`. No persisted-model change or migration is required; the active debug API needs a rebuild/restart to load this update.
+
+## Unified transportation-kit assembly — September 29, 2026
+
+The approved modal now saves unfinished assembly sessions or completes them atomically. `KitAssemblySessionRequiresPrintedAttachedLabelAndExactVerifiedContentsAtomically` covers Print-first enforcement, incorrect attached labels, missing/duplicate verification scans, required notes, expired saved components, partial-save/resume, exact final quantities, retained draft evidence and rejected stale replay. `KitAssemblyCreationRetryReusesPermanentIdentityAndFullDraftCanResumeWithoutMoreConsumption` covers creation retry identity, fully packed drafts staying unfinished and completion without duplicate consumption. Existing role/capability restrictions, source-lot locks and historical APIs remain enforced.
+
+All 16 focused backend regressions pass against disposable PostgreSQL `phaeno_kit_packing_edge_20260928`; its setup uses the current initial-plus-additive migration SQL and removes that database afterward. Evidence: `artifacts/kit-packing-20260928/edge-backend-tests.log`. The configured local development database received additive migration `20260929133348_AddKitAssemblyLabelVerification`, containing six nullable columns and two restricted User references on the assembly run. Full solution build passes with zero warnings/errors; EF reports no pending model changes. No production database write or reset is part of this checkpoint.
+
+## Single-step kit packing completion — September 29, 2026
+
+All 14 focused cases pass: 10 isolated PostgreSQL controller cases and 4 assembly-domain cases. The final-content save records one step with notes, actor and timestamp in the same transaction as scans, component use and source consumption. Missing, blank and oversized notes leave versions, tubes, uses and steps unchanged; stale replay never duplicates the step. A notes-only request after existing exact component use records missing step evidence without additional consumption. Workflow save rejects zero/multiple steps, accepts one, and approval rejects a stored multi-step draft. The shared kit test fixture now supplies an eligible instruction-only step. Partial packing, lot/stock rollback, barcode and shared-lot contention, exact BoM and separate roster verification regressions remain included. Evidence: artifacts/kit-packing-20260928/edge-backend-tests.log. The runner created and dropped only phaeno_kit_packing_edge_20260928; no owner database writes or schema changes.
+
+## Combined kit packing — September 28, 2026
+
+The packed-contents endpoint requires both current assembly and stock-kit versions and saves newly scanned tubes, component-use rows and source-lot deductions in one transaction. Shared barcode validation preserves syntax/normalization, global namespace ownership, duplicate, capacity, verified-roster and authorization checks. Tube use must equal all scanned tubes not already recorded. Updated the shipping reference helper and authored `KitPackingRejectsMismatchedScansAndPartialWritesAndStaleRetry` and `PartialKitPackingRequiresExactRemainingScansAndBothCurrentVersions`. Cases cover mismatched barcode/use counts, duplicate/excess scans, an invalid later source lot leaving no tubes or uses, one successful combined save, stale replay, partial packing, incomplete BoM completion blocking and stale stock-kit versions. The requested edge-case checkpoint below now includes tracked-lot balance/history rollback, expiry/QC/holds and shared-lot concurrency. All 12 selected backend cases pass, including 8 PostgreSQL controller cases and 4 assembly-domain cases. No migration is required.
+
+### Requested edge-case verification — September 28
+
+The owner requested edge-case checks. Focused PostgreSQL cases run against a separately created `phaeno_kit_packing_edge_20260928` database using the current initial migration, then drop that disposable database. The configured development database is not used for test writes. Added tracked-stock balance/history/version rollback through failures in later components, failed QC, expiry, holds, insufficient stock and wrong units; partial packing retains one tube source lot, rejects switching lots without adding scans, and consumes only the remaining quantity. Concurrent requests for one kit record once; separate kits cannot overdraw one shared source lot or reuse tube barcodes within a manufacturer namespace. Completion rejects incomplete BoM and unverified rosters, succeeds after ordered step evidence and an exact second scan, and rejects further component writes. Existing roster/correction and assembly-domain cases are included in the focused checkpoint. Evidence: `artifacts/kit-packing-20260928/edge-backend-tests.log`. No schema change or migration is required.
+
+## Kit component recording batch — September 28, 2026
+
+The earlier Portal-owned component-only request contained one assembly version and unique component rows, saved with source-lot consumption in one transaction. Source lots are locked in stable order. The shared shipping fixture submits both components in one call. The earlier `KitComponentBatchRejectsPartialWritesAndStaleRetry` case was superseded by combined packing coverage above; its original scope was: a valid container followed by unscanned tubes must retain no use rows or version change; after registration both products save and repeating the original version conflicts without duplicate records. These tests are authored and compiled only. At the next requested connected checkpoint also verify failed/expired/held/insufficient lots, a rejected second row leaves the first lot balance/history unchanged, and concurrent batches cannot consume a shared lot twice. No persisted model or migration changed.
+
+## September 26 release verification
+
+The complete Release backend suite passed against a disposable PostgreSQL 18 database migrated from empty through all 33 migrations: **1,114 passed, 0 failed, 1 Windows-only skip**. The configured local development database already had the latest migration and EF applied none there. EF reports no model changes pending after the latest migration. The connected fixtures now create and activate Draft shipping records explicitly, select each revision's Shipping procedure and Sample type, pin the placed Job's procedure, and record the outer container's tube capacity. Historical assertions were updated for immutable released revisions and specification-owned contents. The disposable verification database was removed after the run; production and physical acceptance remain separate.
+
+## Named Transportation kit workflow — September 26, 2026
+
+The domain case checks title trimming and length, a rename without advancing the revision, and Draft discard without number reuse. Pending connected coverage: create retains the unique product link and returns the saved name. The dedicated Edit title command checks the workflow version and changes only the name; revision save rejects a changed title. Discard accepts only the latest Draft, retains its number and status in history, and allows a later Add revision without reusing the number. Approval and pinned physical kit revisions remain unchanged. Migration backfills existing workflow names from their catalog product descriptions, falling back to the product number; it was applied to the configured local development database. Build is the static checkpoint; automated tests remain request-only.
+
+## Phaeno kit contents per specification — September 26, 2026
+
+The connected kit-specification case now covers saving a Draft with an unconfigured tube unit, rejecting activation until the unit is `each`, rejecting a too-small outer Shipping Container, and activating after capacity is corrected. The shared kit fixture records an explicit outer-container capacity. Further connected coverage remains pending for catalog create/edit capacity validation, existing null-capacity products, exclusion of a finished Transportation kit as a component, and readiness after catalog changes. Automated tests remain request-only.
+
+Pending connected coverage: a Phaeno Kit specification Draft can save an empty or partial product list, edit it at the same revision and concurrency version, and create a successor copying the preceding list. Activation requires unique active purchased products, exactly one tube line equal to usable capacity, exactly one outer shipper of quantity one, valid `each` units, and arbitrary additional product rows across suppliers; it does not require an approved assembly workflow. Workflow revisions approve instruction-only steps without components. Two concurrently Active specifications for one finished product can have different contents and use the same approved workflow. Physical kit creation pins the selected specification contents and current workflow revision; use and completion compare against the pinned contents, not historical workflow components. Tube use cannot exceed scanned IDs, exact use and a verified full roster gate completion, and a later specification or workflow change cannot rewrite an existing kit. Legacy active specifications without contents remain orderable with a preparation warning but cannot start new assembly. Purchased receipt behavior remains unchanged. Build is static verification; automated tests remain unrun under the request-only rule. Earlier workflow-owned component cases below require reconciliation.
+
+## Shipping configuration Draft lifecycle checkpoint — September 26, 2026
+
+The [shipping versioning plan](SHIPPING-CONFIGURATION-VERSIONING-PLAN.md) supersedes older Active-by-default revision and family-wide relationship mutation cases below. Connected coverage must verify one Draft per family under concurrency, repeated edits at one number, discard and next number, scheduled activation, exact relationship history, placed-Job Sample type/procedure pins through ordinary deactivation, explicit safety hold and resolution, compatible upstream workflow adoption, and frozen issued packet/physical kit facts. The additive migration was applied to the local database after a verified backup, isolated restore, and historical audit; ten preexisting placed Jobs still need exact-pin review. Release build passed; no backend tests were run under the request-only rule. Existing legacy expectations need reconciliation before running the suite.
+
+For named kit products, cover a submitted Kit specification name that differs from the product description on create, Draft edit, and successor revision. Confirm each exact revision retains its own name and the SKU remains fixed. This coverage remains pending under the request-only test rule.
+
+## September 25, 2026 — Workflow-owned transportation kit components
+
+The shipping specification API rejects a separately supplied component list for a named Phaeno kit. Create and revision paths snapshot the product's approved Transportation kit workflow components; activation pins the current approved revision and refreshes that snapshot. `ShippingKitContentsPostgresTests.KitWorkflowComponentSnapshotSurvivesCatalogRename` now checks request rejection and historical snapshot retention, and the shared connected fixture no longer submits duplicate component lists. Connected tests were not run for this follow-up.
+
+## September 25, 2026 — Product-derived assembly workflow
+
+`ShippingKitContentsPostgresTests.InactiveKitRevisionKeepsPredecessorActiveUntilExplicitActivation` now supplies an unrelated revision ID and checks that the saved specification instead pins the product's current approved workflow. The same service resolves the current approved revision on create and activation. The backend solution build passed with zero warnings and errors; focused connected execution remains pending under the request-only test rule. Existing issued records retain their pinned revision.
+
+## September 25, 2026 — Kit readiness regressions
+
+`LabOperationsCommercialHandoffPostgresTests.RetiredAssemblyOrInactiveKitComponentKeepsOrderingOpenButStopsNewAssembly` now verifies that deactivating a kit component or retiring its approved assembly workflow leaves the specification orderable but marks assembly readiness false. The earlier order-blocking expectation was superseded by the September 26 owner decision. Focused connected execution passed on a verified isolated PostgreSQL 18 database. `ShippingKitContentsPostgresTests.HistoricalContainerWithoutFinishedProductCannotBeActivatedForNewOrders` and `TransportationKitOrderingPostgresTests.WithdrawnPhysicalKitIsNotOfferedForDispatch` passed in earlier isolated focused runs. These cases complement, but do not replace, a full post-hardening connected suite or authenticated end-to-end acceptance.
+
+The Commercial-to-Lab fixture now wraps initial configuration in one transaction and reads the unique PSeq catalog external ID before inserting. An incompatible pre-existing item produces a clear setup error with no partial synthetic organizations, users, or departments. Always verify the disposable target database name before connected execution; a case-sensitive connection-string substitution previously pointed two failed runs at local development instead.
+
+## September 25, 2026 — Samples and shipping restart checkpoint
+
+The replacement model removes Shipping assignments and kit compatibility records. New configuration uses one procedure per Sample type, at most one permanent Sample type link per Transportation kit, and one global Default Phaeno ship-to destination. The connected `SampleShippingPostgresTests` suite exercises Order, kit request, physical stock, shipment, packet, location inventory, and laboratory handoff behavior against an isolated PostgreSQL 18 database migrated through `20260925220000_RestartSampleShippingConfiguration`: 98 passed, 1 pre-existing backup/attachment scenario skipped. The common fixture creates an approved Lab step and kit assembly workflow, records exact bill-of-material use, and completes assembly before dispatch. The adjacent `LabOperationsCommercialHandoffPostgresTests` class passed 54/54 after its fixtures selected the required Sample type and configured a Default destination. Backend solution Release and Debug builds passed with no warnings or errors. This checkpoint supersedes the assignment-based fixture expectations and request-only test notes below; those sections remain historical records of earlier iterations.
+
+## September 25, 2026 — Default destination audit
+
+The isolated commercial-to-lab journey now configures the global Phaeno ship-to default in its disposable database and verifies sample-list finalization through laboratory authorization. Transportation-kit fixtures select the Job's Sample type and supply required kit packing details at an eligible effective time. The PostgreSQL fixture removes Sample types before their referenced procedures. `LaterKitRequestCannotRedirectAJobAfterItsFirstKitDispatch` covers a received first kit followed by another request with two otherwise compatible destinations; the second request stays on the Job's saved destination and rejects a redirect. The isolated journey passed, two connected kit flows passed, and the new route regression passed in a separate disposable local database; those generated databases were removed after each run.
+
+## September 25, 2026 — Shipping procedure description
+
+`SampleShippingProcedurePostgresTests.cs` carries an optional description through procedure create, revision and persisted read. The migration adds a 4,000-character non-null description with an empty default for earlier rows and was applied to the configured local development database. Release build is the static checkpoint; connected test execution remains request-only.
+
+## September 25, 2026 — Shipping dependency hardening
+
+`SampleShippingProcedurePostgresTests.cs` adds a new Sample type with no selected procedure and verifies that a new assignment is rejected. `ShippingKitContentsPostgresTests.cs` adds cases for a duplicate destination on one kit and an Active kit save after its chosen assignment is withdrawn. Active kit saves now resolve exact assignment and procedure availability at their effective time. Customer roster finalization rechecks that resolved configuration, and operational readiness includes current procedure availability. Release solution build is the static checkpoint; connected test execution remains request-only.
+
+## September 25, 2026 — Procedure choice belongs to Sample type
+
+The Sample type fixture selects its shared procedure. Assignment create and revision ignore a client-supplied procedure choice and inherit the type's current choice; `SampleShippingProcedurePostgresTests.cs` covers a null submitted assignment choice and a new Sample type revision choosing another procedure. Active kit combinations still require packing and temperature details when the current type chooses a procedure but a historical assignment lacks one. The nullable migration backfills only unambiguous families and was applied to the configured local development database. Release solution build and EF model check are static checkpoints; connected tests remain request-only. This supersedes assignment-level procedure expectations below.
+
+## September 25, 2026 — One Sample type per named kit product
+
+The kit catalog rejects new specifications that combine Sample type families and rejects revisions that change the product's family. New recommendation and stock choice reads exclude historical multi-type specifications while leaving their saved records readable. `ShippingKitContentsPostgresTests.cs` now covers many kits for one type, mixed-family create/revise rejection, and exclusion of a simulated historical mixed-type kit. A same-family revision across Sample type versions remains for a requested test checkpoint. The backend Release build is the static checkpoint; automated suites remain request-only.
+
+## September 25, 2026 — One Sample type per PSeq order
+
+The order API requires one currently Active PSeq Sample type for new Customer and Phaeno Jobs and stores the selected revision identity and material class. Existing orders without that selection remain readable. Pricing request snapshots include the selection; new shipping work resolves only its active family revision. Standard placement also checks offering support. Shipping rejects a mixed-type packet even when historical rules share a compatibility label, and packing reset pools only within one type family. `SampleShippingDomainTests` includes the mixed-type rejection. Backend solution Release build and EF pending-model check passed; automated test suites remain request-only.
+
+Container compatibility resolution now anchors Customer Job shipments to the order's selected Sample type family and blocks mismatched shipment items. Transportation-kit supply reports the selected type name alongside its recommendation. Historical Jobs without a selection retain item-based lookup. Static build is the checkpoint; connected recommendation and mismatch cases remain for requested test execution.
+
+The Job supply response filters its inventory-kit choices to the same compatible container-definition set used for recommendations and received-stock options. General location inventory remains complete. The order-creation and container-order save endpoints continue to enforce the current compatible set on the server.
+
+## September 25, 2026 — Shared procedure required for new assignments
+
+`SampleShippingProcedurePostgresTests.cs` asserts the API rejects a new assignment when the current Sample type has no shared procedure, regardless of a client-supplied assignment choice. The common PostgreSQL fixture selects an Active procedure on its Sample type, preserving coverage of other rules. An assignment revision inherits the type's procedure even when the submitted procedure ID is null; activation of a standalone draft also requires a procedure on the current Sample type. Historical standalone records and issued packets remain unchanged. Backend build is the static checkpoint; automated execution remains request-only.
+
+## September 25, 2026 — Current shared shipping procedure
+
+`SampleShippingProcedurePostgresTests.cs` now asserts that an assignment anchored to an earlier procedure revision resolves the newer Active revision in a fresh preview while its already issued packet snapshot remains unchanged. Packet issuance uses the same resolved instruction fields; missing Active procedure revisions block new resolution. Regression source is updated; automated execution remains request-only. The backend solution build is the static checkpoint.
+
+## September 25, 2026 — Assignment revisions may change scope
+
+`SampleShippingPostgresTests.cs` adds a PostgreSQL regression source for an Active assignment revision that changes destination and sample-type family while retaining the definition key, ending the predecessor and preserving its exact historical references. Creation and status changes lock all old and new scopes in stable order and keep overlap/version validation. The backend solution build is the static checkpoint; automated execution remains request-only.
+
+## September 25, 2026 — Shipping procedure revision status
+
+`SampleShippingProcedurePostgresTests.cs` covers an Inactive successor retaining the earlier Active revision, activation retiring it, an Active successor retiring its predecessor at creation, stale-version and administrator checks, and rejection of historical activation. Assignment creation and pending-assignment activation reject a superseded procedure even if legacy data still flags it Active. Regression source is updated; automated execution remains request-only. The Release solution build is the static checkpoint.
+
+## September 24, 2026 — Shipping procedure deactivation
+
+`SampleShippingProcedurePostgresTests.cs` covers platform-administrator authorization, stale-version rejection, exact-revision deactivation without a content revision, version increment, and duplicate-deactivation conflict. Assignment creation and activation acquire the same procedure lock as deactivation before checking approval. The regression source is added; automated execution remains request-only. The backend solution build is the static checkpoint.
+
+The September 2026 manual UAT pack and its case scripts were retired after substantial workflow changes. Historical case IDs and results below describe their dated checkpoints; derive any new acceptance exercise from the current product and code. Automated regression coverage remains tracked here.
+
+## September 23, 2026 — Tube-label scan-back
+
+The label-print PostgreSQL cases now send the exact physical scan for successful POMS label prints and reject a wrong scan without recording success. New generated tubes are expected to remain `LabelPending` through failed prints and become `Available` only after a matching scan-back; existing saved status values are unaffected. Failed attempts still require a reason and preserve the print count. The solution build passes; these modified database cases were not run at this checkpoint. Physical DataMatrix decoding and label adhesion remain bench acceptance, not API evidence.
+
+## September 23, 2026 — Exact transfer and dashboard follow-up
+
+`ExactDecimalQuantityTests` covers representable inputs, rejected rounded inputs, and source/destination balance precision. The sequencing handoff regression exercises `quantityText`, ambiguous and invalid input rejection, exact transferred/remainder values, and identical replay. The preparation PostgreSQL journey exercises text and legacy numeric input together and rejects mixed or unrepresentable input. `CustomerLabDashboardCandidateQueryTests` checks PostgreSQL translation; the governed result dashboard regression retains complete-download, partial-download, and missing-commit-evidence cases. The combined dashboard endpoint is covered for counts, paging, Department scope, and revoked access. The isolated API test-project build passed with zero warnings/errors; the 11 focused non-database tests and 6 selected PostgreSQL integration cases passed. PostgreSQL used a freshly migrated, generated loopback database, which was removed afterward. The normal API build was locked by Visual Studio/IIS Express, so the isolated build supplied the current source and migrations.
+
+## September 23, 2026 — Material amounts, transfers and expiration
+
+The owner authorized full database-backed release checks. Combined evidence covers **1,072 passing applicable cases and one intentional Windows symlink skip**, with zero unresolved failures. The initial full run had 1,067 passes and four failures; subsequent runs recorded 64 passed/two failed, 45 passed/one failed, and finally two passed. Every failed case has a later same-name passing result, including the newly added preparation test. This is combined evidence, not a clean full run. Corrections use mapped `VoidedAt` in the dispatch query, catalog-linked return-kit fixtures with shared suppliers, and the expected third physical sequencing tube in the operator journey. The new preparation case verifies both barcode paths, atomic multi-tube rollback, stale/wrong scan rejection, report-backed replay with no second debit, operational-hold resolution after source exhaustion and independent prepared yield. Final Release build has zero warnings/errors; EF model and migrations agree. Isolated loopback test databases were removed afterward. The [release record](../operations/material-tracking-release-20260923.md) supersedes the initial unexecuted checkpoint below.
+
+Regression sources cover customer-declared per-tube amounts, required shipment declarations and immutable crosswalk snapshots; biological transfer quantities/remainders, explicit exhaustion adjustments, unknown amounts, repeated input before measured yield and attempt identity; reagent-lot exhaustion with actual consumption retained; and product-dependent expiration dates. Existing shipping fixtures now supply explicit amounts. New sendouts require sequencing-tube transfer evidence and retain a versioned physical manifest. Automated execution is not requested at this checkpoint; build results and remaining manual/database acceptance are recorded in the [owning plan](SAMPLE-MATERIAL-TRANSFER-PLAN.md).
+
+Required persisted acceptance includes retry/concurrency rollback, source exhaustion with valid Start/Resume, manufacturer barcode collisions across stock/registered/Lab/tray identities, schema-2 sendout/lineage and retained schema-1 reads, unknown historical balances, frozen stock-product expiration, and no double debit on corrections. These cases remain unexecuted until separately requested.
+
+## September 22, 2026 — Authorized release regression checkpoint
+
+The owner requested a full database-backed release run. Combined evidence covers **1,046 passing applicable cases and one intentional Windows skip** for the Unix symlink fixture. The full PostgreSQL-enabled run completed 1,047 cases in 15m7s: 1,028 passed, 18 failed and one skipped. A focused 56-case follow-up passed in 2m47s with zero failures/skips; every original failure has a same-name passing result. This is combined evidence, not a single clean full run.
+
+Corrected validation fixtures retain exact assertions: shipping timestamps use PostgreSQL microsecond precision, quoted handoff orders reference the actual active PSeq offering, and persistence checks enumerate all 11 migrations plus the Assembly job/event tables. The final Release solution build has zero warnings/errors and EF reports no model changes after the latest migration. Integration fixtures used isolated loopback databases, which were removed afterward; existing local and production records were untouched. The Unix-only case remains unexecuted because the available Linux environment has no .NET SDK. See the [release record](../operations/shipping-dashboard-release-20260922.md). Earlier unexecuted-suite notes below describe the implementation-time checkpoint and are superseded for current source.
+
+## September 22, 2026 — Shipping kit contents
+
+Regression sources cover multiple supplier products and arbitrary active product types, independent quantities, missing/duplicate/inactive products, empty drafts, and immutable revision labels after catalog changes. Update existing shipping fixtures with explicit contents and cleanup ordering. Compile only; automated execution was not requested.
+
+## September 22, 2026 — Department dashboard metrics
+
+`CustomerDashboardRequestsPostgresTests` covers full attention counts beyond the
+first page, matching list filters, Department isolation and revoked summary
+access. `GovernedResultRetentionPostgresTests` adds completed-Job visibility and
+requires complete verified downloads of every artifact; failures, partial
+completion and missing commit evidence cannot silently clear New results.
+These PostgreSQL regressions are authored but have not been executed.
+
+## September 22, 2026 — Customer dashboard, priced runs and sized tubes
+
+`CustomerDashboardRequestsPostgresTests.cs` adds opt-in coverage for active-only
+paging, pricing priority, tenant/Department boundaries, revoked access and refresh
+after completion. `SampleSequencingRunTests` covers fixed one-per-sample pricing
+and extra reserve tubes through CSV validation. `SampleSubmissionUnitsTests` covers
+plain and sized tubes while excluding volume-only and unsupported units.
+Regression sources are added; automated execution remains request-only.
+
+## September 22, 2026 — Quote notification Job name
+
+The Lab Service quote-issued notice now uses the Job name in its opening sentence
+and retains the order reference on a separate line. No tests added for this copy
+change. Existing quote issuance and notification-recipient coverage remains
+unchanged; automated suites and live email delivery are not run.
+
+## September 22, 2026 — Optional completion notes, required cancellation reasons
+
+`RelationshipManagementDomainTests` covers optional/trimmed completion notes,
+retained completion identity, approval and length validation, omitted DTO notes,
+and blank/oversized cancellation rejection before decision mutation.
+`CrmRequestCompletionPostgresTests` now exercises omitted/blank completion notes
+against current and stale readiness and verifies completion actor/time. Automated
+execution remains request-only; the PostgreSQL cases require the opt-in fixture.
+
+## September 22, 2026 — Catalog families and unused-item deletion
+
+Catalog family and deletion regression sources: CatalogItemPolicyTests and CatalogOfferingPostgresTests cover explicit family membership independent of names/references, legacy inactive plus specific active offerings, multiple-offering quote identity, active/ever-active/unknown-history deletion protection, and saved configuration references. Controller deletion retains platform-admin checks, version concurrency and restrictive foreign keys. Automated execution remains request-only; sources are compiled. Integration acceptance still includes independent-connection activation/delete and reference/delete races.
+
+## September 22, 2026 — Optional Company approval notes
+
+`RelationshipManagementDomainTests` now covers omitted/null/empty/whitespace approval notes for onboarding, evaluation, offboarding and service changes; retained decision/reviewer/time; trimmed notes and the 2,000-character limit; reasons required for every decline and other approval types; and invalid reasons leaving decision state unchanged. The decision DTO can deserialize an omitted reason. Sources are compiled by the solution build; automated execution remains request-only.
+
+## September 22, 2026 — Company departments before online access
+
+Authored `CrmCompanyDepartmentSetupTests` and `CrmCompanyDepartmentSetupPostgresTests` cover separate setup/access identities, merge retention/conflicts, platform-admin-only creation, inactive setup, generated references, editing, no requests/invitations/memberships/entitlements, rejection of direct activation, approval retaining department settings, and inactive-Company denial. Automated execution remains deferred under the repository request-only rule. Solution build compiles the regression sources.
+
+## Sequencing assembly runner — September 22, 2026
+
+New `LabAssemblyTests` cover actual start/stop and disposition, delayed/duplicate/conflicting outcomes, cancellation races and unstarted cancellation, timestamp precision, transient percentage expiry, no persisted progress fields, disabled production provider and rejection of combined-run completion counts. `LabAssemblyPostgresTests` adds an opt-in reference fixture for recovery without duplicate dispatch, a percentage stream producing no job-version/audit/event writes, restart recovery, failure retention, late-progress rejection and the unique active-attempt constraint. The simulated adapter exists only in the test project. Sources compile; test execution remains request-only. Remaining acceptance includes real provider idempotency/replay, S3 byte verification, input admission and independent-connection start/cancel/hold races, completed output import and provider/scientific acceptance.
+
+## Shipping availability without content revisions — September 21, 2026
+
+Regression sources: `SampleTypeStatusPostgresTests`, `SampleShippingAvailabilityPostgresTests`, `SampleShippingDomainTests`, and the issued-packet journey in `SampleShippingProcedurePostgresTests`. Cover same-ID/revision status changes, audit/version increments, admin-only access, stale requests, draft retention, scheduled activation, no fallback after retirement, exact destination references, assignment overlap and activation after an inactive destination becomes available. Issued packet instruction and manifest snapshots remain unchanged. No schema change. Sources compile with the solution; suites remain request-only and have not been executed for this change.
+
+## Flexible sample/container packing - September 21, 2026
+
+Added SampleShippingPackingInstructionsTests for regular ice, dry ice, cold packs, no cooling, distinct container amounts, missing or conflicting controls, authoritative approved procedures and legacy preservation. Added an additive procedure/compatibility migration. Sources compile; automated suites are not run because they remain request-only. Integration follow-up: issue a real local packet for each approved method and verify its snapshot survives configuration revisions.
+
+
+## Managed scientific uploads — September 19, 2026
+
+Added LabScientificFilesTests and LabScientificFilesPostgresTests for actual-byte download integrity, truncated/extra/altered content, temporary-file disposal, specimen/job/metadata scoping, supporting-document validation, private-key exclusion and customer-retention protection. Sources added; not executed (tests remain request-only). See [plan](LAB-MANAGED-SCIENTIFIC-FILES-PLAN.md).
+
+## Company request history search and pagination — September 19, 2026
+
+Owner limited this change to Completed / history. Add a read-only, platform-admin history endpoint with database filtering by company name, request number, summary, decision and completion notes; case-insensitive literal matching, newest-updated ordering with ID tie-breaker, 25-row pages, bounded page sizes and stale-page clamping. The active queues remain unpaginated and load only active requests; legacy API callers retain their existing response. History search/page stay in CRM route state; searching resets page, direct request links retain their exact target, and only history shows the search/paginator. No schema, permission or migration changes. Regression sources cover authorization, page boundaries, global search, empty matches, pinned requests and active/history separation. Automated suites remain request-only.
+
+## Current sample-type revisions — September 19, 2026
+
+See [owning plan](SAMPLE-TYPE-CURRENT-REVISION-PLAN.md). Coverage added for family-based previews, inactive/future exclusion, readiness, existing container compatibility, duplicate-family rules, missing effective revisions, and immutable issued packet snapshots. UI coverage verifies one named choice per family and current revision readback. Manual acceptance: publish an approved successor, confirm rule/container/readiness continuity for new shipments and unchanged old packet content; an inactive or future successor must not interrupt current use. Automated suites remain request-only and were not run.
+
+
+## Sample-sequencing runs — September 19, 2026
+
+SampleSequencingRunTests covers one sample with 20 purchased runs versus 20 samples with one each, legacy defaults, immutable submitted scope, allocation totals and CSV validation. ConfiguredLabServicePostgresTests includes a one-sample/20-run pricing, commitment and sale-summary regression. Test sources compile; suites were not run (request-only). Manual/integration acceptance remains required for sequential successful attempts, duplicate selection locks, material-reuse confirmation, recovery attempts, result coverage per distinct producing attempt, and additional-sample quotes.
+
+## September 19, 2026 — Department-led administration
+
+Regression sources cover department-led onboarding/reconciliation, invitation acceptance in the same transaction, active/inactive membership and Department evidence, Department-specific readiness, standard/Kit role admission and replay, custom-work origin, and Trial acceptance/member and cross-Department denial. Company-wide permissions remain restricted. Automated suites were not requested or run.
+
+
+## September 19, 2026 — Invited access edits and active access notices
+
+InvitationAccessChangesPostgresTests.cs covers Department-only version increments; retained
+invitation/link/expiry/delivery; no membership or email on edit; current preview and stale-review
+acceptance; terminal, unauthorized, cross-Company, empty and stale edits; expired intent editing;
+no-op stability; active Organization/Department changes without reinvitation; exact recipient
+resolution after membership removal; no duplicate notices on no-op/rejected changes; and failed
+transport followed by successful retry without reversing access. Source coverage compiled;
+automated suites were not requested or run. Live provider delivery and recipient acceptance
+remain separate. No schema changes or migrations.
+
+## September 19, 2026 — Automatic Department references
+
+Added DepartmentAccessPostgresTests sources for missing Code, server allocation, ignored legacy
+Code payloads, inactive/legacy-numbered reservations, saved rename stability, existing GENERAL
+and RESEARCH preservation, and audit creation. DepartmentAccessDomainTests covers immutable
+references through rename. Existing administrator/permission/concurrency sources remain.
+Full solution compilation passed with zero warnings/errors using temporary output to avoid the
+running API's locks. Automated suites were not requested or run; concurrent database allocation
+is serialized by a transaction-scoped Organization advisory lock but not runtime-tested here.
+
+
+## September 19, 2026 — Request completion minimums
+
+CrmRequestCompletionPostgresTests.cs adds administrator-only readiness access; missing and revoked active-admin rejection; successful onboarding closeout; exact source/current/Ready service requirements; stale entitlement rejection; and offboarding access deactivation. Existing relationship conversion remains covered by TrialClosureAcceptancePostgresTests. Suites are not executed without explicit request.
+
+Automatic access-completion follow-up adds InvitationRequestCompletionPostgresTests for actual acceptance orchestration, non-admin exclusion, pending/cancelled/other-Company/Trial/service exclusions, recorded actor/time/notes and repeat-acceptance stability. CrmAutomaticAccessCompletionPostgresTests covers already-ready approval and idempotent reconciliation. Sources compile; suites remain unexecuted.
+
+## Immediate traceability enforcement — verified September 19, 2026
+
+**105 backend tests passed, zero failures/skips:** 104 lineage, scientific governance, Trial, retention, concurrency and commercial handoff/domain regressions plus one isolated legacy approval boundary test. New tests prove default-on enforcement for preexisting unlinked or unprofiled results, unchanged historical records, complete profiled replacement acceptance, and Trial approval/release rejection. Historical compatibility fixtures explicitly retain their original policy. Full solution build passes with zero warnings/errors. No migration/backfill or production activation occurred; see the [enforcement verification record](../testing/runs/2026-09-19-traceability-enforcement.md).
+
+## Sample traceability — verified September 18, 2026
+
+The [focused verification record](../testing/runs/2026-09-18-sample-traceability.md) supersedes the initial unrun notes below. **44 backend tests passed across the 43-case regression run and one isolated restore rehearsal, zero failures/skips in the final runs**. Coverage includes isolated PostgreSQL result-to-reserve-tube attribution, shared preparation performance/report retries, metadata privacy and external-actor denial, immutable investigation reports, organization-scoped lookup, scientific evidence validation and 10,000-event cursor traversal. The continuation adds exact attachment coverage/size/checksum checks, missing and altered files, same-batch noncoverage denial, corrupt-manifest rejection, and native database/private-file restoration; see the [restore record](../testing/runs/2026-09-18-investigation-restore.md). Solution build passes. No model or migration changes were needed for the continuation. Real producers, hosted recovery, retention/holds and policy activation remain gates.
+
+## Step performance slice — initial authoring checkpoint, superseded above
+
+`LabStepPerformanceTests` covers explicit self/now capture, offset and minute-preserving late entry, required reasons, future/invalid/offset-free rejection, legacy unknowns and unchanged null-field serialization, correction identity preservation, repeats and skip/coverage guards. `LabPreparationPostgresTests` now submits performance in its shared QC journey, checks invalid late-entry rollback, equal member/receipt timestamps and actor attribution after the existing report retry. These are authored cases, not passing-test evidence; execution remains pending. Actual physical times, independent performer verification, on-behalf entry, time/performer amendments and late-entry review policy are outside this slice.
+
+Checkpoint: the full backend solution build passed with zero warnings/errors; EF reports no model changes since the last migration. Frontend typecheck, changed-file lint, documentation generation/check (56 guides) and diff/link checks passed. Automated suites and browser acceptance were not executed. No migration, Git publication, deployment or production activation occurred for this slice.
+
+## Sample traceability — phase 1 authored, September 18, 2026
+
+`LabResultLineageTests` adds compatibility/default-off release, required analysis/locator, sticky voluntary binding, correction predecessor/reason, immutable input sets/resource evidence, restrictive links and immutable bindings. `LabResultLineagePostgresTests` adds a rolled-back persisted failed-first/reserve-success journey through paired sequencing inputs, analysis, package/legacy release and the restricted lineage reader, plus wrong specimen/organization, missing input, changed replay and checksum rejection. `PersistenceTests` now expects all 51 Laboratory entities, including the three new lineage tables. These cases compile; tests were not executed because the implementation request did not request test execution. The full backend build and additive local migration are implementation checks, not passing-test evidence.
+
+Remaining coverage is specified in [Sample traceability acceptance](SAMPLE-TRACEABILITY-AND-INVESTIGATION-PLAN.md#12-acceptance-and-verification-matrix), especially ST-19/ST-20. Execute the authored cases and existing result/Trial/preparation/retention regressions before rollout. Complete independent-connection races, all controller authorization/bypass cases, full resource snapshot evolution, actual provider/physical handoffs and phase-2/3 performed-time, preservation/restore and report cases separately. No full traceability acceptance claim is made.
+
+## Service catalog scientific consolidation (2026-09-18)
+
+`ConfiguredLabServiceDomainTests` covers distinct required sample assignments, immutable assignment and legacy/new snapshot round trips. `ConfiguredLabServicePostgresTests` adds parent immutability, duplicate definition rejection, no availability from material text alone, and frozen supported revision IDs; configured-order fixtures now assign an explicit RNA type and cleanup removes the new children. These cases compile but were not executed (tests not requested). The additive migration was applied to verified local `phaeno_ops`; the Release solution build and pending-model check pass. Concurrent cross-family writes and rejection of a retired pinned type at authorization remain acceptance cases to execute before production release. No production migration occurred.
+
+## September 18 jobs/settings release checkpoint
+
+Release solution build passed with zero warnings/errors, and EF reports no model changes missing a migration. Automated suites were not requested or run; authored Jobs/forecast integration coverage remains unexecuted. See [release evidence](PORTAL-JOBS-SETTINGS-RELEASE-2026-09-18.md) for production migration and health results.
+
+## Material lot identity matching (2026-09-17)
+
+See [implementation plan](MATERIAL-LOT-PRODUCT-LINK-PLAN.md). Added domain/Postgres regressions for exact product/definition matching, unlinked and wrong-supplier assignment, immutable assignment, stale versions, configured prepared identity, and rejected wrong-lot consumption with no stock change. Updated material creation fixtures for required products and added frontend helper/schema checks for same-vendor wrong products, unlinked lots, prepared identity and unusable stock. Automated tests are authored/compiled but not executed. Build, typecheck, scoped lint, migration review and local read-only UI checks form this checkpoint; populated operational writes remain unverified.
+
+
+## Shared output command checkpoint (2026-09-17)
+
+Extended preparation PostgreSQL reference journey for multi-output atomic validation, duplicate/foreign members, invalid row quantities/unit/location, stale version, individual lineage/barcodes, no automatic physical confirmation, replay without duplicate containers/records, and existing-output rejection. Existing held-job/access-denied matrix includes outputs. Tests authored and compiled, not executed.
+
+## Preparation report checkpoint - September 17, 2026
+
+Added domain regression coverage for optional preparation reference, required output barcode and required resource confirmation. Extended the PostgreSQL journey for optional preparation-report omission/upload, metadata purpose, private-key redaction, covered tube count, authenticated download and idempotent replay. Existing scanned-upload behavior is reused. Tests authored, not run; connected preparation upload, retry, private download and backup restore remain acceptance checks.
+
+## Automatic conditional-review skips — September 17, 2026
+
+Added domain coverage for all-pass histories, missing prerequisites, empty coverage, historical Hold/Fail followed by Pass, unknown condition prose, existing review evidence, and stale evidence after correction. Extended the mixed-tray PostgreSQL journey to retain review when a tube is on hold, automatically skip for the remaining passing tube after explicit failure, verify coverage/audit metadata, and prevent duplicate skips on reconciliation. Existing validation/roles remain authoritative. Build includes these tests; execution deferred per repository instruction.
+
+
+## Optional preparation QC reports — September 17, 2026
+
+Added domain regressions for omission of the two exact synthetic file-reference captures while retaining QC and unrelated required captures. Extended the mixed-tray PostgreSQL journey with malformed file rejection, unclean scan rollback/cleanup, successful attachment and exact coverage, metadata redaction, retry without duplicate upload, changed-file idempotency rejection, protected download and wrong-batch/customer denial. The alternate journey still saves without a report. Solution build compiles these tests; execution is deferred per repository instruction.
+
+
+## Automatic preparation specimen references (2026-09-17)
+
+Add automatic specimen-reference tests for server-owned accession values across record/repeat/correct and legacy scopes, ignored client substitutions, distinct tube accessions, missing accession failure, skipped evidence and unchanged ordinary exception rules. Extend the mixed-job preparation journey to check customer sample references from original/replacement authorizations and persisted per-execution accession evidence. Build tests with the solution; execution deferred per repository instruction.
+
+## Preparation specimen declarations — September 17, 2026
+
+Extend the mixed-tray PostgreSQL journey fixtures/assertions to read biological source and multiline safety declarations from both original and replacement authorization snapshots, distinguish two jobs' specimens, and retain null when the second specimen has no safety declaration. Existing denied-reader coverage remains. Tests updated but not executed; Release build is the compilation checkpoint.
+
+## Guided preparation and tray confirmation — September 17, 2026
+
+LabPreparationPostgresTests now covers rejecting Start before assembly confirmation, persisted confirmation readback, rejection of assign/add/move/remove while confirmed, reason-required reopening, invalidation/reconfirmation, idempotent confirmation retries and rejection of reopening after Start. Existing workflow-decoupling coverage explicitly confirms before Start. Confirmation uses the existing audited command records and optimistic version guard; no migration. Tests updated, not executed; Release compilation is the checkpoint. Concurrent confirm/edit, stale-client recovery and closed-batch regressions remain part of requested acceptance execution.
+
+## Eligible tube pagination — September 17, 2026
+
+Extended preparation eligibility PostgreSQL assertions for one-item pages with distinct identities, correct eligible totals/page counts and filtered out-of-range page clamping. Existing exclusions and unpaged compatibility assertions remain. Eligibility now executes before counting and paging in the database. Tests added/compiled, not executed; populated translation, large-list and concurrent-list-change acceptance remains pending.
+
+## Physical preparation tray identity — September 17, 2026
+
+Domain coverage adds required tray identity before Start, trimming, batch-label rejection, populated-tray reassignment denial, empty-tray reassignment, running-tray locking and closed-history retention. Preparation PostgreSQL journeys now assign distinct physical trays before adding tubes; cross-batch active reuse is rejected. Concurrent assignment protection is provided by a transaction lock plus an active-only unique index; concurrent/reuse acceptance remains pending. Tests updated/compiled, not executed unless requested.
+
+## Eligible tube freezer-box filter — September 16, 2026
+
+Extended the preparation workflow PostgreSQL regression with distinct recorded boxes: trimmed/partial box filtering, tube/job query AND box filtering, exclusion of unreviewed tubes and whitespace-only reset. Filtering occurs before the existing candidate limit. Assertions added, not executed per repository policy.
+
+## Service-based commercial jobs — September 16, 2026
+
+Added PreparationSelectsWorkflowByServiceAndPreservesAttemptVersions and CommercialAuthorizationDoesNotRequireOrPinAWorkflow. Coverage: historical commercial v1 pin permits same-service v2 batch; wrong service/unreviewed tube excluded; actual attempt/stage v2 persisted while legacy pin retained; incompatible reservation excluded; standalone selection follows Production at selection time; retirement follows queued/started execution dependencies; authorization without a production workflow is idempotent and unpinned. Tests added, not executed per repository policy. Existing preparation lock, held/closed job and concurrency suites remain required before release.
+
+
+## Administrator approval override — September 16, 2026
+
+LabApprovalOverrideTests covers unchanged independent approval, required/trimmed/bounded reasons, self-approval with override, production use, immutable retired history and withdrawal clearing. LabApprovalOverridePostgresTests covers both controller paths with strict role enforcement: ordinary Protocol Administrator denial, standard self-approval denial, blank reason rejection, persisted actor/time/reason, stale protocol version rejection, DTO visibility, audit retention after workflow withdrawal and promotion with recorded overrides. Existing legacy self-approval production-denial tests remain. Tests added, not executed by request policy.
+
+## Managed product types — September 16, 2026
+
+Managed type persistence, seeded type references, reagent exclusion from kits, inactive-type assignment restrictions, uniqueness, stale updates and used-type kit-use protection are covered in SupplierCatalogPostgresTests. Tests updated/compiled, not executed.
+
+## Supplier catalog and kit product snapshots — September 16, 2026
+
+Added supplier-catalog PostgreSQL coverage for administrator-only access, normalized duplicate names/numbers, required descriptions, wrong-type/missing/inactive selections, stale edits and frozen kit descriptions. Existing shipping fixtures now prepare stock from catalog products. Tests compiled but not executed; requested verification remains build-only.
+
+## Lab request submission and pricing review — September 16, 2026
+
+Atomic lab request creation/submission and revision coverage is added in LabRequestSubmissionPostgresTests; domain coverage checks pending edits and issued-quote rejection. Existing manual quote coverage no longer supplies a Customer price proposal. Check idempotent creation, unchanged prior snapshots, fresh revisions, stale edits, withdrawal and no Lab authorization before acceptance. Tests are added/updated but not run (not requested).
+
+## September 16, 2026 — Invitation-authorized identity setup
+
+`ClerkInvitationRegistrationTests` covers exact-email existing-user lookup, silent provider invitation creation, revision-specific reuse, provider errors and unsafe URL rejection. `InvitationRegistrationPostgresTests` covers pending-token handoff without membership, no-store responses, revoked/expired/accepted/declined/replaced/inactive links, and revocation during the provider call. The approved focused run uses disposable PostgreSQL databases and simulated identity-provider responses; it does not create production identities or send email.
+
+Focused verification: all 12 provider and PostgreSQL handoff cases passed on September 16, 2026.
+
+## September 16, 2026 — Empty pipeline deletion
+
+`CrmPipelineDeletionPostgresTests.cs` adds rollback-scoped coverage for admin-only access, stale versions, active/inactive empty deletion, default protection, active/inactive stages and retained closed/inactive Opportunity history. Tests added but not executed (not requested).
+
+## September 16, 2026 — Opportunity summary and queue
+
+`CrmOpportunitySummaryPostgresTests.cs` adds rollback-scoped coverage for more
+than 25 records, per-currency totals, zero/unpriced amounts, empty stages, search,
+pipeline isolation, inactive inclusion and stale-only/list count agreement.
+Tests added, not executed (not requested).
+
+## September 16, 2026 — Missing conversion Company name
+
+`CrmLeadConversionPostgresTests.cs` adds rollback-scoped cases for missing/blank/
+overlong names without conversion writes, trimmed saved names, duplicate entered
+names, recorded-name precedence, existing-company linking and contact-only
+conversion. Tests added, not executed (not requested).
+
+## September 16, 2026 — Task editing and rescheduling
+
+`CrmTaskEditingTests` covers rescheduling in each active status, overdue/due-soon
+membership, reminder validation without partial mutation, and terminal
+edit/owner/reopen denial. `CrmTaskEditingPostgresTests` extends the existing
+rollback-scoped Commercial fixture for saved readback, version conflicts without
+duplicate audit events, actor and before/after dates, rescheduled recurrence,
+terminal history and revoked access. Tests added, not executed (not requested).
+
+## Coordinated recovery rehearsal - September 15, 2026
+
+The complete command-driven Lab journey can now opt into exporting its own synthetic disposable database and actual invoice/result bytes through `PSEQ_RECOVERY_EXPORT_DIR`. Export rejects non-loopback or non-generated databases and preserves ordinary database cleanup. The final exported journey passed; the real API then passed coordinated encrypted capture, fresh database/file restoration and authenticated matching-byte downloads in an owned Linux/systemd/Docker environment. All 26 unchanged backup safety checks passed, and an actual killed coordinator recovered its exact API through the independent watchdog. Production backup maintenance was separately activated successfully; actual overnight scheduled evidence remains pending. [Evidence and boundaries](../testing/runs/2026-09-15-sys06-recovery.md).
+
+## Final manual and Change-quote acceptance - September 15, 2026
+
+The final-three continuation adds disposable PostgreSQL journeys for correction/resubmission and independent pricing review; immutable incremental quotes; stale, expired, superseded and unauthorized decisions; new-only sample authorization/shipping; preserved started-work specimens; and combined amendment billing with completion replay. The retained two-person check is exercised. The existing open-opportunity handoff helper now creates and cleans up its own pipeline/stage instead of depending on shared seed data. [Full results and boundaries](../testing/runs/2026-09-15-final-three-acceptance.md).
+
+## Remaining-case review — September 15, 2026
+
+43 distinct backend checks pass across the remaining-case continuation, including authoritative terminal outcomes, current hold checks, failed-processing billability, invoice/PDF issuance and preservation, selected partial cancellation and contextual notice retry. The change-quote probe records ORD-03 as Fail. Tests use disposable loopback databases; no source/shared migration. [Case crosswalk](../testing/runs/2026-09-15-remaining-case-acceptance.md).
+
+## September 15 scientific and workflow acceptance
+
+New CRM request and Trial closure tests plus the strengthened command-driven Lab journey verify governed independent approval, separate release/exact-byte download, timing, same-notice retry, three-sample/multiple-library projections and Trial replacement/conversion. The partial Trial member archive is now executed and checked before complete release. Fixtures explicitly own missing seed prerequisites and preserve cleanup. Thirty focused checks plus the separate paid-held Kit check pass without skips; the same Lab journey passes again with its final all-samples/hold/rejection/withdrawal assertions. Two product gaps remain: missing Trial/result email links and incomplete partial Lab cancellation. [Crosswalk and test boundaries](../testing/runs/2026-09-15-scientific-ten-software-acceptance.md).
+
+## September 15 ten-case shipping and accession acceptance
+
+Three new `ShippingAcceptancePostgresTests` journeys cover durable same-notice failed/retried delivery to current administrators, full-capacity stock registration with incomplete/duplicate/excess/used identity denials, and a specimen split 9+9 through frozen packet correction, distinct dispatch/receipt, 18 exact-once accessions and derived-label failure/success/reprint history. All 28 focused backend checks pass without skips. Physical facts and transport/print confirmations are simulated. A schema-only disposable database was removed afterward; source business data and migrations were unchanged. [Complete case crosswalk and limits](../testing/runs/2026-09-15-shipping-ten-software-acceptance.md).
+
+## September 15 session and role acceptance continuation
+
+Two new disposable PostgreSQL journeys in `SessionRoleAcceptancePostgresTests.cs` verify pending-to-accepted additive Lab roles, ignored display/provider role labels, unauthorized/missing-session edits, fresh authorization after role changes, retained assignment history and stale-update rejection. The second rejects unauthenticated Company association without persistence, then verifies authorized save and duplicate denial. All 17 focused backend checks pass without skips, including identity and session regressions. ACC-06 remains open for live provider/browser execution. [Crosswalk and limits](../testing/runs/2026-09-15-session-role-acceptance.md).
+
+## September 15 simulated account lifecycle acceptance
+
+Two new disposable PostgreSQL journeys cover Company suspension/restoration, retained order/grant/invitation history, membership-only isolation and fresh acceptance using the original membership/Department assignment, employee disable/restore with preserved roles, and administrator self-disable denial. All 23 focused lifecycle, account authorization and session checks pass without skips. The shared invitation fixture supports selected scope and existing-user invitations; its original defaults remain unchanged. Final inspection confirms no disposable invitation databases remain. [ACC-05 crosswalk and limits](../testing/runs/2026-09-15-account-lifecycle-software-acceptance.md).
+
+## September 15 simulated invitation acceptance and recovery
+
+Four new `InvitationAcceptancePostgresTests` use newly created loopback disposable databases for real endpoint commits, actual dispatcher/template and simulated provider delivery, verified-email/Research membership, session/replay, resend/cooldown, revoked/expired/declined/invalid-Department guards, and signed hard-bounce deduplication/reissue. The 24-check focused run passes without skips; the four new checks also pass after strengthening the fixture to use the specified Phaeno platform administrator. No shared migration, real external send or existing UAT identity mutation. [ACC-01/02 crosswalk, results and limits](../testing/runs/2026-09-15-invitation-software-acceptance.md).
+
+## September 15 simulated Website intake and delivery acceptance
+
+Three PostgreSQL checks in `WebsiteIntakeAcceptancePostgresTests.cs` add rejected-CAPTCHA/no-intake and updates-only/demo isolation, real Mailgun-adapter failure/recovery with a separate simulated inbox, and inactive/active legacy eligibility plus actor audit. They share the existing notification class's transaction rollback fixture. All 14 PostgreSQL notification checks and the sender-failure unit check pass without skips. Five failed attempts remain after the same notice is recovered; captured sender URL/recipient fields and separate provider/inbox timestamps are retained. No real external send or product behavior change. [Full WEB-02/04 crosswalk and limits](../testing/runs/2026-09-15-website-intake-recovery-software-acceptance.md).
+
+## September 15 approved simulated Kit batch
+
+KIT-02–06 now pass the approved simulated software scope. Four additional PostgreSQL checks cover two-unit shipment admission/replay/source separation, different-product substitution decisions and member denial, extension/cancellation/repeat-draft/historical compatibility, and corrected-input release/member file and ZIP completion against the original invoice. The shared fixture now supplies download-attempt tracking and an optional member identity. The 13 Kit PostgreSQL plus six domain checks pass without skips; the strengthened substitution check passed a final targeted rerun. Real physical/scientific/provider acceptance remains open. [Full crosswalk and recovery notes](../testing/runs/2026-09-15-kit-batch-software-acceptance.md).
+
+## September 15 included Kit input recovery
+
+Three new disposable PostgreSQL checks cover included-input upload interruption/cleanup/replay, all non-clean scan states, file and metadata limits, confirmation/manifest gates, frozen purchased scope, one immutable submitted revision and expired-draft preservation. The shared fixture accepts the known loopback UAT source and injectable upload adapters while creating and removing only its own disposable databases. All nine Kit controller checks pass without skips. Bytes, scans and shipments are simulated; KIT-04 remains open under its original real-world criteria. [Evidence and remaining gate](../testing/runs/2026-09-15-kit-input-continuation.md).
+
+## September 15 approved simulated completion of seven cases
+
+The Product Owner approved simulated software acceptance for DAT-03–06, ACC-04, SYS-03 and WEB-03, preserving real scientific/provider acceptance as a separate gate. The final focused run passes 107 checks, and one additional focused monitoring-disabled test passes: **108 distinct checks, no skips**. Four new checks verify exact Lab/Assembly/Trial file and ZIP bytes, second-member credit, membership/Department revocation with non-revival, and quarantine denial without monitoring. Synthetic hashes match their bytes; commit/concurrency tests accept the existing loopback UAT source while retaining disposable-database cleanup guards. No shared schema or production application change. [Scope, results and crosswalk](../testing/runs/2026-09-15-seven-case-software-acceptance.md).
+
+## September 15 managed files and governance recovery
+
+Two focused PostgreSQL regressions pass without skips: reloaded governance investigation/reminder/recorded-attestation commands insert their three follow-ups and one reminder notice; an unconfigured sender records Failed with a retry time and no delivery timestamp. Each fixture rolls back. Connected evidence separately verifies actual ClamAV and storage faults/recovery, source-version/role/frozen-file retry guards, real source/grant lifecycle and durable Trial-to-CRM projection failure/retry exactly once. See [ten-case crosswalk](../testing/runs/2026-09-15-files-access-ten-case-batch.md). No schema migration or production activation; external attestation and operational release/retention acceptance remain gated.
+
+## September 15 empty Job completion guard
+
+Two focused OrderManagementDomainTests pass: accepted pricing cannot complete a Job with no samples, while normal post-acceptance roster finalization remains available. The guard preserves InProgress and a null completion time on rejection. This is local domain evidence; FIN-01 still requires supported terminal laboratory outcomes and genuine invoice/PDF issuance. See [completion continuation](../testing/runs/2026-09-15-job-completion-control.md).
+
+Connected ten-case UAT found Trial action requests returning 404 because the route used MVC's reserved action value. ControllerRouteTests now exercises real endpoint matching for six lifecycle commands: the new check fails before the operation-parameter correction, and both route tests pass afterward. A separate disposable PostgreSQL test reproduces zero-tube roster creation escaping as ArgumentOutOfRangeException (HTTP 500). Explicit add/edit tube-count validation returns 400; zero/negative rows leave roster/version unchanged and a valid two-tube retry succeeds. All three focused tests pass; no shared schema change. See ../testing/runs/2026-09-14-ten-case-execution.md.
+
+## Guided evidence and retirement persistence — September 14, 2026
+
+LAB-04/07 connected API/PostgreSQL acceptance covers typed capture and role guards, immutable correction/repeat history, held/finished writes, active and queued protocol retirement, workflow recovery/invalidation, stale previews and races against start, assignment, save, approval, promotion and internal authorization. Read-only audit confirms fifteen step-evidence events, five distinct queued-work warnings and zero jobs/receipts for rejected authorization. No backend implementation or automated backend test was changed for this slice; the discovered defect was frontend field-array initialization. The API was rebuilt to include the updated help corpus and passed fresh authenticated readback. [Full evidence and fixture boundaries](../testing/runs/2026-09-14-guided-evidence-retirement-uat.md).
+
+## Connected intake concurrency and persistence — September 14, 2026
+
+LAB-10/13 actual API/database acceptance now covers whole-batch validation/rollback, dropped-success idempotency, simultaneous intake reviews, review-versus-start, locked used sources, independently correctable reserves, legacy scope/eligibility and preserved acceptance targets. Independent read-only PostgreSQL confirms seven main accession records, twelve intake-history events including corrections, one batch receipt and one execution start. No backend implementation or automated backend tests changed for this slice; its two defects were in frontend focus/draft handling. [Full crosswalk](../testing/runs/2026-09-14-tube-intake-uat.md).
+
+## Material consumption validation — September 14, 2026
+
+Extended `AuthorizedOrderCompletesTheDatabaseBackedLabOperatorJourney` with zero, negative and excessive material consumption. It requires `material_quantity_unavailable` / 409, unchanged saved stock/version and zero consumption rows before valid use. The complete disposable-database journey failed on the raw domain exception before correction and passed after correction (1 passed, 0 skipped). Connected Operator/Supervisor UAT also verifies the live error, corrected save, component atomicity, QC and equipment restrictions. [LAB-03 evidence](../testing/runs/2026-09-14-lab-resources-uat.md). No broad suite or shared migration.
+
+## September 14, 2026 — Commercial intake access
+
+CommercialIntakeAccessPostgresTests covers scoped Customer/Department/catalog and Lab intake reads, rejection of other queues, administrator read without pricing, disabled-role fallback, revoked assignment and external membership denial. Database tests run within a rolled-back transaction, including Begin quote, Request changes, status events and absence of Lab authorization. Session tests cover BusinessRoles/DualControl flag combinations. Final checkpoint: 15 tests passed, none skipped.
+
+
+## Invalid CRM import commit — September 14, 2026
+
+Added `CrmCommercialAccessPostgresTests.InvalidImportCommitLeavesPreviewAndBusinessRecordsUnchanged`. The original implementation began constructing valid rows before reaching invalid input; the connected null-name variant returned 500. The controller now rejects the preview's invalid-row count first. The rollback-scoped regression failed before correction and passes with null/empty-name rows, unchanged preview/version and no persisted or tracked Company additions (1 passed, 0 skipped). Actual admin corrected import, duplicate skipping and batch/content replay also pass. [Ten-case evidence](../testing/runs/2026-09-14-next-ten-uat.md). No broad suite, schema or authorization change.
+
+
+## Opportunity stage response regression — September 14, 2026
+
+`CrmCommercialAccessPostgresTests.OpportunityStageMoveReturnsSavedStageAndRejectsStaleReplayWithoutDuplicateHistory` reproduces the connected save-then-500 defect against isolated PostgreSQL and verifies returned stage/name/probability/version, fresh readback, no duplicate stage history after stale replay, and closed-to-open history preservation. The same test failed on the original loaded-navigation reset and passes after fresh saved-record readback (1 passed, no skips). Setup and changes roll back. An intermediate assertion was corrected to expect the existing `DbUpdateConcurrencyException`, which middleware maps to HTTP 409. Artifacts: `tmp/uat-closure/crm03-stage-before.trx` and `crm03-stage-verified.trx`. No broad suite was rerun.
+
+
+Trial canonical material eligibility: extended the existing PostgreSQL batch-submission regression with `extracted_rna`; reproduced missing configuration choice, fixed configuration/submission normalization, and passed that test plus existing spaced-label approval/submission (2 passed, 0 skipped). Rolled-back local fixtures only. See [execution evidence](../testing/runs/2026-09-14-acceptance-closure.md).
+
+## Completion recovery — September 14, 2026
+
+Added one disposable PostgreSQL completion test: final idempotency-save failure reproduces the prior committed-invoice defect; after atomic transaction/per-order locking and verified PDF cleanup, failure rolls back business state, deliberate retry creates one PDF/invoice and same-key replay preserves identity/status. Test passed; no whole FIN-01 UAT claim. [Evidence](../testing/runs/2026-09-14-acceptance-closure.md).
+
+
+## File safeguards and quote recovery checkpoint — September 14, 2026
+
+54 file scanner/storage/verification/download and API/module/route/metadata checks passed; one Unix symbolic-link fixture intentionally skipped on Windows. Uses temporary storage and loopback scanner protocol doubles, not live malware detection or Customer delivery. No backend changes. See [run evidence](../testing/runs/2026-09-12-laboratory-uat-closeout.md#september-14-file-safeguards-shared-controls-and-quote-recovery-slice).
+
+## Finance rules and Web Operations checkpoint — September 14, 2026
+
+62 Website parsing/search/crawler/extraction, queue-monitor, Finance/import/domain, quote-rendering and unconfigured-gateway checks passed. No PostgreSQL notification-processing fixture, legitimate invoice issuance or provider-delivery claim. No backend changes. See [run evidence](../testing/runs/2026-09-12-laboratory-uat-closeout.md#september-14-finance-rules-and-web-operations-recovery-slice).
+
+## CRM, people and account access checkpoint — September 14, 2026
+
+94 account, identity/session, invitation, department and CRM/outreach/relationship checks passed with no failures or skips. Stub invitation HTTP responses verify message construction, not provider delivery. No backend changes. See [run evidence](../testing/runs/2026-09-12-laboratory-uat-closeout.md#september-14-crm-people-and-account-access-slice).
+
+## Documentation, access and provisioning checkpoint — September 14, 2026
+
+34 documentation-search and data-provisioning domain/profile checks passed with no failures or skips. No backend test or product changes. TRX recorded in the run ledger. See [run evidence](../testing/runs/2026-09-12-laboratory-uat-closeout.md#september-14-documentation-access-and-provisioning-slice).
+
+## Release/download/retention grouped verification — September 14, 2026
+
+56 checks passed: 44 domain/decision/download and governed-result PostgreSQL checks, plus 12 managed-release lifecycle/notice/commit checks. The latter includes ten generated local database journeys. The harness now accepts the existing isolated UAT database name alongside local phaeno_ops; loopback and generated-database cleanup guards remain. Actual commit timing, independent archive revocation, concurrent notices, holds, simulated cleanup retry and reissue history passed. No product change or shared migration; no real file deletion/email delivery. Saved UAT state and disposable cleanup verified. See [release checkpoint](../testing/runs/2026-09-12-laboratory-uat-closeout.md#september-14-release-download-and-retention-grouped-continuation).
+
+## Shipping and packing grouped verification — September 14, 2026
+
+72 distinct shipping domain/container/PostgreSQL checks pass after three focused fixture-assertion corrections. Queue completeness now scopes its 261 expected rows to the generated organization, failed routing verifies unchanged notification count instead of assuming an empty database, and accepted-tube intake expects recorded specimen acceptance while retaining null completion timing without a quote. No product rule/schema change. Generated-fixture cleanup and retained UAT counts verified. See [shipping results](../testing/runs/2026-09-12-laboratory-uat-closeout.md#september-14-shipping-packing-and-accession-grouped-continuation).
+
+## Handoff and Trial grouped verification — September 14, 2026
+
+66 distinct backend checks pass across the initial group (62/66) and focused retests of three corrected Trial release fixtures and the operator journey. Trial ready-package fixtures arrange resolved specimen state; they are not execution acceptance. The operator journey now selects a source through the attempt command, starts its generated execution with barcode confirmation, then creates the library and exercises evidence/review. It uses a guarded generated local database so commands can own transactions; exact database cleanup was verified. No product/schema/guard change. See [grouped results](../testing/runs/2026-09-12-laboratory-uat-closeout.md#september-14-grouped-handoff-shipping-and-trial-verification).
+
+## Grouped laboratory verification — September 14, 2026
+
+Broader laboratory selection ran 158 checks: 157 passed, one failed, zero skipped. The failure was the stale 30-entity expectation in `PersistenceTests.PSeqOperationsDbContextMapsCompleteLaboratoryModelWithoutCommercialForeignKeys`; the current model contains 36 entities. Corrected the count and explicitly asserted specimen-attempt/receipt, preparation and role-invitation table mappings, retaining schema and no-Commercial-FK assertions. All 11 persistence tests then passed, including ERD completeness. Combined runs contain 168 distinct passing backend checks. No model/migration change.
+
+Eight PostgreSQL journeys passed on isolated loopback 5436: five Lab provider authorization/amendment/cancellation/projection cases, scientific approval/non-publication, atomic batch accession with destroyed-tube exception, and forced concurrent preparation creation/retry. Saved preparation IDs/statuses/versions/history and aggregate fixture counts matched before/after. Tests use generated fixtures and scoped cleanup; this is supporting server/database evidence, not signed-in physical/provider acceptance. TRX files are in ignored `tmp/uat-resume-20260914-results`. See [grouped run](../testing/runs/2026-09-12-laboratory-uat-closeout.md#september-14-grouped-software-verification-and-saved-lineage-trace).
+
+## Laboratory closeout concurrency — September 12, 2026
+
+Added ConcurrentPreparationCreatesResolveNameCollisionsAndRetainRetryIdentity in LabPreparationCreationConcurrencyPostgresTests.cs. Real PostgreSQL advisory-lock contention proves both create requests overlap; seeded test-only base names force collision handling without changing clocks. Both creates receive distinct names/IDs, unchanged retries retain those identities and notes, and exactly two creation records/no members remain before scoped cleanup. Focused test passed 1/1; the two connected preparation journeys and scientific-review-gate regression passed 3/3 with no skips. Local test/API build warning-free; original UAT fixtures preserved and generated race workflow absent afterward. This closes the forced-creation regression gap, not full signed-in acceptance. See [closeout ledger](../testing/runs/2026-09-12-laboratory-uat-closeout.md).
+
+## Multi-artifact scan rejection — September 12, 2026
+
+Four engineering-assisted local HTTP/database variants passed on separate package d14354fb-36ef-4801-8184-adf6cde706e2: unknown artifact ID and duplicated artifact ID each return 400 without any persisted state/version/timestamp change; actual ClamAV-clean bytes with a deliberately mismatched manifest checksum produce Failed/artifact_checksum_mismatch with Clean and Rejected sibling artifacts; subsequent callback returns 409 and preserves failed state. No automated suite or product edit. Original ReadyForReview/ReadyForRelease fixtures remain unpublished and unchanged. See [checksum rejection evidence](../testing/runs/2026-09-12-lab-14-preparation.md#multi-artifact-scan-validation-and-checksum-rejection--september-12-2026).
+
+## Retained result artifact real-scanner callback — September 12, 2026
+
+Engineering-assisted local LAB-06 continuation: existing ClamAV 1.4.6/28121 scanned the retained 158-byte artifact via loopback INSTREAM and returned stream: OK; independent SHA-256 matched the manifest. The actual pipeline scan-result endpoint returned 200/ReadyForReview, then rejected a repeated callback with 409 result_package_not_scanning. Database confirms package version 3, Clean artifact version 2 and null approval/release. No new automated test or suite; owned temporary API stopped. Real-byte local scanner/callback passes; external transfer/provider and complete scientific lineage remain separate gates. See [retained scan evidence](../testing/runs/2026-09-12-lab-14-preparation.md#real-scanner-callback-and-scientific-access-boundary--september-12-2026).
+
+## Billing approval and completion handoff - September 12, 2026
+
+Actual signed-in FIN-01 billing validation, approval, approval reset after a terms change, reapproval and reload passed on the existing marked Customer A. Saved profile is version 4/configuration 3, Net 45 with a synthetic 10% tax rate. All invoice readbacks stayed identical; receipt totals remain 8/$108 unapplied. Settled desktop/390px billing screenshots inspected. FIN-01 remains partial: neither saved InProgress Job has terminal Commercial samples, governed release does not advance those statuses, the current Job UI has no completion action, and this isolated runtime lacks CommercialOperator. No completion, invoice issuance, PDF, role change or production action was performed. No automated tests were added or rerun; this checkpoint is signed-in acceptance and code/read-only record tracing. [Evidence and next implementation slice](../testing/runs/2026-09-12-lab-production-verification.md#billing-approval-and-completion-handoff---september-12-2026).
+
+## Real scanner and receipt evidence - September 12, 2026
+
+Real ClamAV is now active only for the isolated LAB-06 API. The integration already existed; the earlier missing-integration diagnosis traced only the DevelopmentFixture implementation and was incomplete. Real clean/EICAR/encrypted/oversize/health checks and both injected storage/scanner adapter checks passed. Signed-in Cash upload rejected EICAR with no receipt, retained entries, then saved one $1 receipt after a clean replacement. Exact 83-byte download passed; Billing-only access returned 403 and anonymous access 401. A discovered client filename defect was fixed locally: supported server extensions are retained for receipt evidence, including JSON imports. Nine scanner tests, ten focused frontend tests, TypeScript, scoped lint and documentation checks passed. Existing balances/history remain intact; there are 14 invoices/$645 outstanding and eight receipts/$108 unapplied. [Exact runtime and saved evidence](../testing/runs/2026-09-12-lab-production-verification.md#real-scanner-and-receipt-evidence--september-12-2026). No deployment, migration, auth change or Git mutation. Remaining legitimate issuance/PDF, scientific independence and production/physical/provider gates stay open.
+
+## Finance upload validation — September 12, 2026
+
+Live UAT found automatic ValidationProblemDetails being wrapped as success=true despite HTTP 400. ApiResponseEnvelopeFilter now uses the existing failure envelope, validation_error and field/message detail shape for validation problems. ApiResponseEnvelopeFilterTests covers missing multipart fields, explicit validation status/fallback and preserved success behavior. Eight focused envelope tests passed. Actual authenticated malformed upload returns 400/success=false; valid multipart reaches unavailable scanner and creates no receipt/evidence artifact. Existing domain rejection endpoints also passed live Cash duplicate reversal, unauthorized adjustment, cross-Customer and over-allocation probes, plus Billing concurrency recovery. No schema/auth change. See [run evidence](../testing/runs/2026-09-12-lab-production-verification.md#finance-exceptions-and-upload-correction--september-12-2026).
+
+### Accession before storage and bulk acceptance (2026-09-11)
+
+Added domain coverage in `LabTubeIntakeTests` and persisted shipment coverage in `LabTubeAccessionPostgresTests` (partial shipping fixture): rejected expected tube retains identity/evidence with null location/quantity and Rejected availability; accepted/held material needs real storage; correction needs retained material. Bulk requires inspection, frozen expected identities and current work version; includes no recorded exceptions, rejects invalid storage atomically, and replays without duplicate events. Existing per-tube and receipt identity coverage remains. Suites are authored, not run.
+
+Manual/concurrent gates: wrong role/tenant, voided or unreceived shipment, duplicate/wrong tube, stale decision and two simultaneous batches; consumed/started source and cancelled work; rollback following a mid-save failure; used-tube correction denied; no overwriting storage; no automatic reserve start. These persisted acceptance gates remain Not run.
+
+
+## Implemented specimen-attempt guards — September 11, 2026
+
+Added LabSpecimenAttemptTests covering barcode mismatch without mutation, same-attempt QC repeat versus explicit operational hold, failure immutability, required/foreign stage skip rejection and processing failure preserving intake acceptance. Domain and controller implementation also add versioned authorization, transactional command receipts, filtered uniqueness, lineage and downstream gates. Tests are authored/compiled, not run. PostgreSQL concurrency, rollback/replay, source/start races, legacy adoption and full lifecycle acceptance are still required by LAB-09. Earlier proposed-status notes are superseded by this implementation checkpoint.
+
+## Execution tube prerequisite - September 11, 2026
+
+Execution detail now projects TubeAcceptanceRequired for Planned specimen executions through the same predicate enforced by Start. Verify missing acceptance, accepted but unavailable input, foreign-specimen tubes, accepted available input, job-level execution, and started/completed history; a stale ready page must still be rejected by Start if eligibility changed. Existing behavior is preserved; automated coverage deferred and not run for this navigation/prerequisite slice.
+
+## Tube intake reason coverage - September 11, 2026
+
+Added LabTubeIntakeTests for one accepted tube among held/rejected reserves, stable first acceptance time, invalid reason/Other validation without mutation, resolution notes, unreviewed tubes and cross-specimen isolation. Adapted existing acceptance fixtures to tube-derived intake. API acceptance must cover automatic accession, reason catalog, deprecated specimen-write rejection, role/concurrency denial, start/review races and event/turnaround projection. Tests added/updated but not run.
+
+## Tube-attempt enforcement coverage - September 11, 2026
+
+The [tube-attempt plan acceptance matrix](SPECIMEN-TUBE-ATTEMPT-PLAN.md#acceptance-matrix) requires coverage for policy snapshots, atomic tube reservation, competing starts, retries, explicit failure, same-attempt repeats, cross-attempt stage isolation, eligibility, retirement/cancellation, permissions and legacy adoption. The domain sources listed above are now authored and compiled. Automated execution and PostgreSQL lifecycle/concurrency acceptance remain Not run.
+
+## Promotion actor policy - September 11, 2026
+
+Added LabWorkflowPromotionTests and revised protocol activation regressions: author or reviewer may promote independently approved versions; self-approval captured in audit-only mode cannot authorize activation/promotion; Draft and withdrawn approvals remain blocked; promotion actor/time and original approval are preserved. Automated tests not run. API acceptance still needs role denial, mixed independently/self-approved stages (including Active), stale workflow version, and atomic rejection without retiring previous production versions.
+
+## Revised retirement and invalidation coverage — September 11, 2026
+
+New required coverage is specified in LAB-07. It supersedes the prior rule blocking all workflow/unfinished-job references: active processing blocks, queued work requires explicit current-impact confirmation, and authorized retirement atomically invalidates affected workflows and creates clean Invalid recovery revisions. Cover immutable historical versions, remaining-stage preservation, empty-stage rejection, revalidation with/without edits, independent approval, production gating, queued-pin retention, role checks, stale impact tokens, duplicate retries, concurrent execution starts/assignments/workflow transitions/job authorization, and audit atomicity. Add domain regressions for Invalid candidate approval and invalidated historical immutability. These new scenarios are not yet marked passed; earlier dependency-blocking evidence is historical only. Automated suite execution has not been requested.
+
+## Protocol retirement — September 11, 2026
+
+Added LabProtocolRetirementTests for retained identity/version, reason and actor validation without partial mutation, repeat retirement rejection, and rejection of edits/new versions/use after retirement. Built API and test project; did not run automated tests. Retirement enforces ProtocolAdministrator/version checks, previous approval, no open draft, no Draft/Approved/Production workflow references and no unfinished dependent jobs. New workflow/job/execution references participate in identity concurrency. Live local UI covered Draft workflow blocker and successful retirement after discarding it, with persisted reason/time/actor/version corroborated. Cross-role denial, Approved/Production dependency branches, unfinished-job references, provider rejection and concurrent requests still need executable acceptance coverage.
+
+## Equipment retirement — September 11, 2026
+
+Added LabEquipmentRetirementTests for required/limited reasons, actor requirement, metadata retention, duplicate retirement rejection, calibration/identity retention, and refusal of new usage even when backdated after retirement. API retirement requires Supervisor/OperationsAdministrator and expected equipment version. Recording use now updates the equipment concurrency version in the same SaveChanges transaction to conflict with concurrent retirement. Test project and API build passed; automated tests were not run. Local live verification covered successful retirement and persisted audit metadata; role-denial and concurrent-request scenarios remain unrun.
+
+## Customer laboratory stages — September 10, 2026
+
+**Local checkpoint: 4/4 cases passed; 0 skipped.** See the [stage verification record](../testing/runs/2026-09-10-customer-laboratory-stages.md) and [TRX evidence](../../artifacts/customer-progress-test-results/customer-progress.trx). This is a focused run, not a full backend-suite result.
+
+| Coverage | Evidence and result |
+| --- | --- |
+| Preparation, sequencing, assembly, review and release | `LabCustomerProgressTests.PreparedAndAwaitingProviderRemainPreparationUntilSequencingIsRecorded` passed. A DataAvailable status alone and withdrawn output do not establish release. |
+| Mixed sample stages and partial release | `MixedSamplesAndPartialReleaseDoNotAdvanceTheWholeJob` passed. Outstanding receipt/earlier work prevents whole-Job Results Available; all released samples permit it. |
+| Job-wide versus individual progress; holds | `JobWideActivityDoesNotFabricateSampleStageCounts` passed. Global review preserves attributed sample counts; holds remain visible. |
+| Persisted workflow and scope | `LabOperationsCommercialHandoffPostgresTests.AuthorizedOrderCompletesTheDatabaseBackedLabOperatorJourney` passed. Started preparation, provider Shipped/ReceivedByProvider versus Sequencing/Complete, organization/order isolation, and scientific readiness without released results are verified against the local database. |
+
+Remaining coverage: a database fixture with multiple libraries for one sample (only some sequencing), populated Customer and entitled Partner list/detail response checks across Department/member boundaries, and actual partial output release through the complete customer journey. These are **Not run** for this feature; pure mapping tests do not establish persisted release or API authorization acceptance. No test or data migration was executed while updating this plan.
+
+## Intake progress synchronization — September 10, 2026
+
+`LabIntakeProgressTests` covers receipt/accession replay, immutable identity, preserved timestamps, holds and later/terminal statuses. The registered-tube reference journey checks Work progress, projection-version replay, completed accession facts and unchanged scientific acceptance/turnaround. The complete Lab operator journey checks Commercial Job/sample propagation. Existing projection tests cover monotonic replay. Results are recorded in [the intake correction run record](../testing/runs/2026-09-10-intake-progress-correction.md).
+
+**Prior local checkpoint: 3 domain cases and 4 focused PostgreSQL cases passed.** The operator journey above overlaps this checkpoint; do not add these historical totals as unique coverage. The database cases are the registered-tube journey, complete operator journey, replay-safe monotonic projection delivery, and whole-kit/partial-fill case. The corrected fixture expectation for an outstanding second shipment is retained in the run record. Failure-injection coverage for atomic rollback/retry across the projection and Commercial update remains **Not run**. Container arrival advances Lab Work to Received and the Commercial lifecycle to InProgress; the newer customer-facing display says Received. No scientific acceptance, target or tube/storage backfill is implied.
+
+## Location inventory correction — September 9, 2026
+
+The [location-inventory plan](TRANSPORTATION-KIT-LOCATION-INVENTORY-PLAN.md)
+supersedes the same-Job stock restriction below. The final isolated PostgreSQL
+checkpoint passed **76/76** shipping, kit, location, packing, reset and cancellation
+cases; the solution build passed with zero warnings/errors. Six new cases in
+`TransportationKitLocationInventoryPostgresTests.cs` establish:
+
+- Receipt after origin Job cancellation and exact reservation for another Job at
+  the same Customer/Department/location, with no repeated receipt or delivery.
+- Concurrent Jobs produce exactly one container reservation without losing tubes.
+- Pre-scan reset releases the container; a wrong-container tube fails; first
+  successful scan locks reset and freezes the physical barcode into the packet.
+- Receipt, tenant, Department, location and Member write restrictions are enforced.
+- Ordinary catalog supersession retains compatible physical stock, while explicit
+  withdrawal blocks it.
+- Pending and declined cancellation retain reservations; approved cancellation
+  releases only unused reservations and preserves fulfillment history. Scanned
+  containers remain bound. Existing native Lab approval/veto tests also pass.
+
+Existing partial-receipt, dispatch and scan tests now use exact reservations.
+The first 73-case checkpoint exposed a dispatch-replay comparison between .NET
+100-nanosecond ticks and PostgreSQL microseconds. Matching now compares at the
+persisted precision; the regression deliberately supplies a finer-grained time.
+The final 76-case run passed, its scratch database was removed, and zero synthetic
+notification rows remained. Counts overlap earlier checkpoints and are not additive.
+
+Migration `20260909153238_AddTransportationKitLocationReservations` adds four
+nullable fields, four indexes and three restrictive foreign keys; no record
+backfill or repair is included. The complete ERD is updated. Shared/production
+application is not part of this local implementation. Automatic cancellation of
+unshipped requests remains a pending product decision.
+
+Evidence: `artifacts/location-inventory-tests/location-inventory.trx` and
+`latest-run.log`. Applied the migration only to verified local
+`localhost/phaeno_ops`; API restarted from `artifacts/location-inventory-runtime`
+with health HTTP 200. `local-preservation.json` confirms all six before/after
+state hashes match: the saved Job still has nine samples and 18 unmatched tubes;
+its received kit is version 5, unreserved and unbound. No walkthrough data repair
+or consumption occurred.
+
+## Customer Job kit requirement and dispatch synchronization — September 8, 2026
+
+The final isolated checkpoint passed **68/68** shipping, kit, location, packing,
+reset and legacy-boundary cases. It includes six new cases in
+[TransportationKitOrderRequiredPostgresTests.cs](../../backend/test/TransportationKitOrderRequiredPostgresTests.cs).
+The solution build completed with zero warnings/errors. Evidence:
+`artifacts/kit-order-required-tests/kit-order-required.trx` and `latest-run.log`.
+The scratch database was removed and zero remaining synthetic notification rows
+were verified. These totals overlap earlier checkpoints; they are not additive.
+An initial run passed 65/66 and exposed an incompatible quantity unit in the new
+historical-shipment fixture; the fixture was corrected before the final run.
+
+For accepted Customer Lab Jobs, no request or only cancelled requests must block
+unbound container preparation, first tube scanning, packet confirmation and
+shipping. Ordering recommendations remain available before an order exists.
+Only acknowledged kits ordered for the same Job and delivery location provide
+preparation capacity. Existing bound shipments and Trial/Partner policies retain
+their prior behavior. New direct shipment-bound legacy kit creation must direct
+staff to the Customer Job's kit order.
+
+Both staff dispatch entry points must update the stock kit, matching request
+line, request status and one customer dispatch notice in the same transaction.
+An already-recorded, unused dispatch may be linked through the same dispatch
+endpoint only with its saved Job/carrier/tracking/time unchanged. An identical
+retry must not repeat the status event or notice. The shared mutation lock order
+is Job, then request, then stock kit; concurrent entry points must not overfill a
+request or partly dispatch another kit.
+
+| ID | Trigger and required invariant | Exact test method in TransportationKitOrderRequiredPostgresTests.cs | Evidence |
+| --- | --- | --- | --- |
+| KIT-B20 | Open or mutate an unbound physical container before ordering, then after cancelling its only request. Reject preparation/scanning/packet/shipping without changing shipment versions, slots or histories; retain a complete order recommendation and enabled eligible ordering. | `TransportationKitMissingOrCancelledOrderBlocksUnboundPreparationWithoutBlockingOrdering` | Passed in the 68-case isolated checkpoint |
+| KIT-B21 | Try direct dispatch without an order or new legacy return-kit creation, then scan old unlinked stock despite having another received ordered kit. Reject bypasses; bind the correctly ordered and received kit successfully. | `TransportationKitReceivedOrderCannotBeBypassedWithUnorderedStockOrLegacyDispatch` | Passed in the 68-case isolated checkpoint |
+| KIT-B22 | Continue an already-bound historical Customer shipment with no kit request. Retain tube matching, packet confirmation and recorded return shipping. | `TransportationKitOrderRulePreservesAlreadyBoundHistoricalCustomerShipment` | Passed in the 68-case isolated checkpoint |
+| KIT-B23 | Evaluate the order requirement for Partner, Trial and unaccepted legacy contexts. Keep the new Customer rule out of those policies. | `TransportationKitOrderRuleRetainsPartnerTrialAndUnacceptedLegacyPreparationPolicies` | Passed in the 68-case isolated checkpoint; existing shared-shipping journeys also rerun |
+| KIT-B24 | Race kit-detail dispatch against request fulfillment for the same kit, then replay and attempt an extra kit. Reconcile one line/status/event/notice, accept an unchanged retry and leave excess stock undispatched. | `TransportationKitDirectAndRequestDispatchSynchronizeOnceUnderConcurrentRequests` | Passed in the 68-case isolated checkpoint |
+| KIT-B25 | Reconcile an existing direct dispatch with its request. Reject altered saved facts; preserve the original dispatch and every permanent barcode, add the request/location links once, and leave customer receipt unset. | `TransportationKitRecordedDispatchReconcilesWithoutRewritingFactsOrDuplicatingNotices` | Passed in the 68-case isolated checkpoint |
+
+The walkthrough kit's pre-reconciliation dispatch/barcode fingerprints were
+captured read-only in `artifacts/kit-order-required-tests/local-kit-before-reconciliation.json`.
+This checkpoint did not mutate that kit, reload the local API or send a provider
+notification. Record connected reconciliation, delivery acknowledgement and
+physical scanning separately in the [E2E test plan](E2E-TEST-PLAN.md) and the
+[local walkthrough record](../testing/runs/2026-09-08-hs5y7db7-local-walkthrough.md).
+
+## SHP-03-001 fulfillment routing failure — September 8, 2026
+
+Locally corrected and verified; connected Customer retry saved one request. The
+failed unscoped Phaeno lookup now resolves the exact active organization named by
+the existing bootstrap configuration, with a controlled conflict for unavailable
+or ambiguous routing. Existing administrator-recipient routing is retained.
+All **7 focused TransportationKit PostgreSQL tests passed**, including multiple
+active Phaeno organizations with concurrent/replayed request creation and only
+the configured organization's fake recipient, plus inactive/missing/non-Phaeno
+routing rollback. Build had zero warnings/errors. Evidence:
+`artifacts/kit-order-routing-tests/kit-order-routing.trx`. The isolated database
+was removed and zero remaining synthetic notifications verified. Local API was
+reloaded and health returned 200. No live order or provider send was performed
+by the isolated checks. Later user confirmation saved request D20018AA and one
+logical fulfillment notice recorded Sent, corroborated read-only. Inbox and
+physical fulfillment are not yet verified.
+See the [incident run record](../testing/runs/2026-09-08-hs5y7db7-local-walkthrough.md).
+
+## Reset container configuration before scanning — September 8, 2026
+
+September 9 explanation correction: an active **ReadyToShip** shipment was
+incorrectly described as an inactive container selection. The reset service now
+reserves that reason for cancelled/unconfigured, preparation-pool and empty
+records, then identifies any issued packet in the shipment family before the
+existing scan/history and progress blockers. The packet reason reads
+**Containers cannot be changed because a shipping insert has already been issued
+for this job.** Eligibility and the 409 rejection remain intact; no schema or
+contract-shape change is involved.
+
+The existing PostgreSQL
+`ContainerResetBlocksScanningClearedMatchesCancelledHistoryAndShipmentProgress`
+case now includes ReadyToShip and Delivered alongside Shipped and Received,
+checks the current-record blocked reason and verifies rejection. The retired
+identity case also checks that a truly retired selection retains the inactive
+reason. These additions have not been executed and are separate from the older
+passing checkpoints below.
+
+The active Visual Studio API still runs the older source, so the corrected
+backend explanation is not yet verified at runtime. A narrow frontend fallback
+provides the issued-insert explanation when a current insert exists and the
+server already disallows reset; it does not change backend eligibility or the
+409 response. Runtime activation and the new backend assertions remain pending.
+
+The final backend Release solution build passed with zero warnings and zero
+errors in 41.65 seconds. No automated suite was run; this build result does not
+execute the added reset-reason assertions or activate the running API.
+
+The focused checkpoint passed **61/61**, including **eight reset cases** in
+addition to the previous 53 shipping/kit/location cases. The order-wide packing
+reset checks target the new eligibility/read and versioned confirmation/write
+paths: tenant and Department isolation; organization/Department administrators
+versus members; exact family snapshot versions; whole-plan retirement to
+cancelled shipment history; and restoration of the correct selection pools.
+Assert preserved specimen/tube IDs, global ordinals, counts, destination/handling
+separation, quotes, kit requests and physical inventory.
+
+Exercise every family-wide blocker independently: current scan, immutable past
+scan with cleared fields, ReturnKit/physical-kit binding, packet, dispatch and
+receipt. Race reset against scanning, packing and another reset; stale or changed
+families must produce a conflict without partial moves or duplicate tube slots.
+Dialog cancellation/no-write behavior is covered in frontend checks. No migration
+was planned; model consistency remains part of implementation verification.
+The 61-case checkpoint is distinct from older passing totals, and this
+documentation update runs no tests itself.
+Connected acceptance is the SHP-09 reset variant,
+currently Not run.
+
+## Customer transportation-kit ordering and receipt — September 8, 2026
+
+The focused checkpoint passed **53/53** cases against a newly migrated,
+isolated PostgreSQL database. This includes the existing 44 shipping, packing,
+catalog and Lab handoff cases, six new transportation-kit cases and three new
+Customer delivery-location cases. The solution build completed without warnings
+or errors. The scratch database was removed and synthetic notification rows
+were verified empty; notification delivery used a fake sender.
+
+New coverage includes concurrent/duplicate request suppression, frozen delivery
+and container facts, one Phaeno fulfillment notice, partial dispatch and receipt,
+receipt-gated tube scanning and packing, residual capacity after another
+container is allocated, delivery-location isolation, cancellation without
+operational changes, and all 261 records in the staff queue with status filters.
+Delivery-location coverage checks Department ownership, tenant isolation,
+administrator/member permissions, default replacement, optimistic concurrency,
+soft deactivation and validation without changing a saved default. A demoted
+administrator must receive explicit Department membership before member reads
+are permitted; missing membership remains a 404.
+
+Migration `20260909013740_AddCustomerTransportationKitOrdering` was applied only
+to the configured localhost `phaeno_ops` database. The model has no pending
+changes. Before/after evidence confirms identical HS5Y7DB7 order state, nine
+sample identities and values, 18 tubes, and shipment identities and versions.
+Evidence: `artifacts/transportation-kit-ordering-tests/transportation-kit-ordering.trx`,
+`latest-run.log`, `local-migration.log` and `local-job-{before,after}.json`.
+
+### Reusable transportation-kit scenarios
+
+The IDs below are stable regression references. **H53** means the named test
+passed in the historical September 8, 2026 53-case checkpoint above; this
+documentation update did not run tests or produce new acceptance evidence.
+**Planned** means the stated scenario has no dedicated passing case identified
+here. A passing API test or fake notification sender does not establish mailbox,
+physical inventory, scanner, carrier or customer-delivery acceptance. Follow
+the [E2E test plan](E2E-TEST-PLAN.md) for the observable Customer/Phaeno walkthrough
+and record its evidence separately.
+
+Reference keys below name exact source files. Methods in TK, LOC, PACK and SHIP
+belong to the shared `SampleShippingPostgresTests` partial class.
+
+| Key | Test source |
+| --- | --- |
+| TK | [TransportationKitOrderingPostgresTests.cs](../../backend/test/TransportationKitOrderingPostgresTests.cs) |
+| LOC | [CustomerDeliveryLocationPostgresTests.cs](../../backend/test/CustomerDeliveryLocationPostgresTests.cs) |
+| PACK | [SampleShippingPackingPostgresTests.cs](../../backend/test/SampleShippingPackingPostgresTests.cs) |
+| SHIP | [SampleShippingPostgresTests.cs](../../backend/test/SampleShippingPostgresTests.cs) |
+| CAT | [SampleShippingContainerTests.cs](../../backend/test/SampleShippingContainerTests.cs) |
+| DOMAIN | [SampleShippingDomainTests.cs](../../backend/test/SampleShippingDomainTests.cs) |
+| LEGACY | [LabOwnedSampleOperationPostgresTests.cs](../../backend/test/LabOwnedSampleOperationPostgresTests.cs), in `LabOperationsCommercialHandoffPostgresTests` |
+
+| ID | Trigger and required invariant | Existing exact test reference | Evidence |
+| --- | --- | --- | --- |
+| KIT-B01 | Read/order as Customer administrator, ordinary Department member, user without Department access, foreign Customer or Phaeno staff. Retain member reads, deny unauthorized writes, and hide foreign records; cancellation before dispatch permits one replacement request. | TK.`TransportationKitOrderAuthorizationCancellationAndWrongKitLeaveRecordsIntact`; LOC.`CustomerDeliveryLocationsRejectOtherTenantAndMemberWritesWhilePhaenoCanManage`; LOC.`CustomerDeliveryLocationsRespectDepartmentOwnershipAndRejectInvalidAddressWithoutReplacingDefault` | H53 |
+| KIT-B02 | Create/change a default delivery location, submit stale edits or invalid address data, and deactivate a location. Keep one active default per Department, reject stale/invalid writes without changing it, and retain inactive record details. | LOC.`CustomerDeliveryLocationsReplaceDefaultWithConcurrencyAndPreserveInactiveDetails`; LOC.`CustomerDeliveryLocationsRespectDepartmentOwnershipAndRejectInvalidAddressWithoutReplacingDefault` | H53 |
+| KIT-B03 | Confirm recommended kits for an accepted Customer Lab Job from concurrent clients and retry. Create one Pending request, retain included-cost presentation, preserve sample counts and shipment allocation, freeze the confirmed address against later address edits, and retain requested container capacity. | TK.`TransportationKitConcurrentRequestsFreezeFactsAndNotifyPhaenoOnlyOnce` | H53; included-cost flag is asserted, financial-ledger absence is not separately asserted |
+| KIT-B04 | Process the new-request notification and replay ordering. Queue one notice and resolve the Phaeno administrator recipient through the existing dispatcher. | TK.`TransportationKitConcurrentRequestsFreezeFactsAndNotifyPhaenoOnlyOnce` | H53 with fake sender; actual mailbox delivery outstanding |
+| KIT-B05 | Dispatch one requested size before the other, or pick a wrong size. Preserve exact requested revision/quantity matching; report PartiallyDispatched, then Dispatched; reject the wrong kit without saving dispatch facts. On-the-way quantities remain unavailable. | TK.`TransportationKitPartialDispatchAndReceiptEnableOnlyAcknowledgedCapacity`; TK.`TransportationKitOrderAuthorizationCancellationAndWrongKitLeaveRecordsIntact` | H53 |
+| KIT-B06 | Acknowledge only received kits, repeat the acknowledgement, then receive the remainder. Make only acknowledged capacity usable, preserve receipt/version on repeat, and reach Received only when every requested kit is acknowledged. Block preparation and tube scans before receipt. | TK.`TransportationKitPartialDispatchAndReceiptEnableOnlyAcknowledgedCapacity`; TK.`TransportationKitReceiptGateBlocksTubeScanUntilCustomerAcknowledgesDelivery` | H53 |
+| KIT-B07 | Allocate a received 20-tube kit while ten tubes remain, or order to a second delivery location. Keep the same request across the residual pool; subtract already-prepared containers; recommend only missing capacity; do not pool another location's kits. An acknowledged kit already bound to its shipment remains usable there. | TK.`TransportationKitPartialDispatchAndReceiptEnableOnlyAcknowledgedCapacity`; TK.`TransportationKitPackingDoesNotPoolReceivedKitsAcrossDeliveryLocations`; TK.`TransportationKitReceiptGateBlocksTubeScanUntilCustomerAcknowledgesDelivery` | H53 |
+| KIT-B08 | Configure compatible sizes and recommend/override them with unknown, zero or limited availability. Enforce Phaeno configuration access and exact compatibility; preserve frozen shipment revisions; prefer fewest containers, then least spare capacity; support 20+10, two 20s or six 5s and retain exact shortfall. | PACK.`ContainerCatalogRequiresPhaenoConfigurationAccessAndExactCompatibilityPairs`; PACK.`ContainerCatalogDraftPreviewRevisionsAndDeactivationPreserveFrozenShipmentFacts`; CAT.`DefaultThirtyTubesUsesTwentyAndTen`; CAT.`ActualAvailabilityControlsRecommendation`; CAT.`UnknownAvailabilityIsNotZeroAndNoCompatibleOptionsIsIncomplete`; CAT.`ZeroAvailabilityDoesNotInventContainers`; CAT.`InvalidSelectionsRejectDuplicatesUnavailableAndUnknownDefinitions` | H53; recorded Job stock does not establish a complete customer inventory balance |
+| KIT-B09 | Split tubes 15+15 or 10+10+10, skip an empty container, finish a residual pool, or submit simultaneous packing confirmations. Preserve every physical tube's global sample ordinal and earlier shipment identities; invalid plans leave the source unchanged; only one concurrent allocation wins. | PACK.`ContainerPackingCustomCountsSupportEvenSplitsAndSkipEmptyExtras`; PACK.`ContainerPackingHonorsAlternateSelectionsAndLeavesShortfallExplicit`; PACK.`ContainerPackingRejectsInvalidCustomCountsWithoutChangingTheSource`; PACK.`ContainerPackingConcurrentConfirmAllocatesEveryPhysicalTubeOnlyOnce` | H53 |
+| KIT-B10 | Register/dispatch a standard kit and scan its permanent tube barcode into a partially filled return container. Require the complete registered kit before dispatch, bind the physical kit once, retain unused spare tubes separately, and preserve existing supplier-barcode adoption. | DOMAIN.`ReturnKitRequiresTheExactRegisteredTubeCountBeforeFulfillment`; PACK.`ContainerStockConcurrentScansBindOnePhysicalKitToOnlyOneShipment`; PACK.`ContainerStockWholeKitBindsOnFirstScanWhilePartialFillKeepsUnusedTubesSeparate`; SHIP.`RegisteredTubeJourneyFreezesCrosswalkEnforcesTenantAndAdoptsBarcodeAtAccession` | H53 |
+| KIT-B11 | Print/replace a split-sample manifest and receive/accession individual tubes. Preserve order/shipment/sample/tube identities, reject a void packet, resolve the current shipment packet, and advance physical counts only for received tubes. A complete package can become Received without fabricated Customer dispatch details; the other package stays incomplete. | PACK.`ContainerStockWholeKitBindsOnFirstScanWhilePartialFillKeepsUnusedTubesSeparate`; SHIP.`RegisteredTubeJourneyFreezesCrosswalkEnforcesTenantAndAdoptsBarcodeAtAccession` | H53; physical print/scan acceptance remains E2E work |
+| KIT-B12 | Open and filter a queue or a Job with more than 250 related records. Return all 261 matching requests/shipments without losing older records; retain readable Customer/Department names and tenant/member scope. | TK.`TransportationKitQueueReturnsAllRecordsForClientFilteringBeyondTwoHundredFifty`; PACK.`ContainerShipmentSourceListingIncludesAllPackagesAndRetainsMemberReadOnlyScope` | H53 |
+| KIT-B13 | Invoke old whole-sample receipt/accession/status endpoints for Lab-owned shipping samples, then repeat on an unowned legacy sample. Reject the owned bypass with 409 and unchanged state; retain the three legacy operations for unowned samples. | LEGACY.`LabOwnedShippingSampleRejectsLegacyReceiptAccessionAndTransitionWithoutChanges`; LEGACY.`LegacySampleWithoutLabOwnedShippingRetainsReceiptAccessionAndTransition` | H53 |
+
+### Additional backend cases and broader inventory boundaries
+
+These are coverage requirements for later authorized test work, not new passing
+results or a claim that the broader inventory model exists. Keep the scenario
+IDs when adding tests and replace the reference/status only after evidence is
+recorded.
+
+| ID | Trigger and expected invariant | Existing coverage boundary | Evidence/status |
+| --- | --- | --- | --- |
+| KIT-B14 | Open ordering with no location, one non-default location or several locations without a default; change/deactivate the chosen location before confirmation. Require explicit setup/choice where needed and reject stale confirmation without creating a request. | KIT-B02 covers saved defaults, validation and deactivation; no dedicated backend case covers every ordering-selection branch or stale location confirmation. | Planned regression |
+| KIT-B15 | Attempt kit ordering for an unaccepted/held/cancelled Job, Trial or Partner context; retry the same idempotency key with altered data; race dispatch, receipt and cancellation. Preserve eligibility, payload-conflict, quantity and transaction boundaries. | KIT-B01/B03/B05/B06 cover selected authorization, concurrent creation, wrong-kit rollback and repeated receipt; these additional negative/race combinations are not established by those passes. | Planned regression |
+| KIT-B16 | Order included kits/outbound delivery and exercise notification failure/retry, missing routing or a future designated recipient. Assert no new invoice/financial posting and no duplicate notification delivery record. | KIT-B03 asserts the included-cost flag; KIT-B04 proves initial routing through a fake sender. Dedicated financial-absence and notification-recovery cases are not identified. | Planned regression; named-recipient policy/configuration remains a separate decision |
+| KIT-B17 | Reserve Phaeno/customer stock for simultaneous Jobs, move supply between warehouse/customer locations, and release reservations after plan changes or cancellation. Prevent double allocation across Jobs and distinguish transit from confirmed on-hand balance. | Current kit supply is Job/location scoped; it is not a cross-Job inventory ledger or warehouse reservation system. | Planned product scope; no implemented backend test reference |
+| KIT-B18 | Reconcile unknown/stale balances, record lost/damaged supply, adjust with reasons, or split/reassemble kits and reuse spare tubes. Preserve movement history and permanent identities without inventing availability. | Current partial-fill/spare-tube checks do not implement reusable spare inventory, stock adjustments or reconciliation. | Planned product scope; no implemented backend test reference |
+| KIT-B19 | Recalculate preliminary demand at order intake, then exact demand after final sample entry; apply replenishment thresholds and partial fulfillment/receipt over multiple orders. Create one appropriate replenishment work item and avoid automatic charges or shipments without policy. | Finalized-Job request and partial receipt are covered above; automatic replenishment and preliminary-demand inventory planning remain in the [owning shipping plan](SAMPLE-SHIPPING-AND-INTAKE-PLAN.md). | Planned product scope; no implemented backend test reference |
+
+For future authorized execution, use isolated synthetic PostgreSQL fixtures and
+a fake notification sender; verify cleanup. Do not use the walkthrough Job as
+a test fixture. Backend pass counts, signed-in walkthrough results and real
+delivery/receipt evidence must remain separate in the
+[E2E test plan](E2E-TEST-PLAN.md).
+
+## Container configuration, stock kits and split shipments — September 8, 2026
+
+The final focused checkpoint passed **44/44** cases: 17 container/catalog
+domain and packing cases, eight existing shipping domain cases, four packing
+invariants, and 15 PostgreSQL cases (twelve new and three existing journeys).
+The new PostgreSQL cases are in `SampleShippingPackingPostgresTests.cs`, a
+partial of the existing shipping fixture; cleanup scopes all new catalog and
+stock records to that fixture's unique SKU prefix.
+
+Coverage includes inactive draft preview, stable case-insensitive SKU identity,
+revision history, explicit deactivation, frozen shipment container facts,
+Phaeno configuration authorization, exact structured compatibility pairs,
+fewest-container/least-unused-capacity recommendations, unknown/zero/limited
+availability, arbitrary compatible selections, exact shortfalls and preserved
+global sample tube ordinals. The optimizer is also compared with exhaustive
+results for 675 small bounded cases. Confirmed plans cover 20+10, two 20s,
+six 5s, custom 15+15 and 10+10+10 splits, skipped empty extras, and rejection of
+invalid counts without source changes.
+
+The final lifecycle review also verifies completing a previously partial
+packing pool without changing earlier containers, retrieving all 261 packages
+for a selected job despite the general list's 250-record limit, and retaining
+Member read access while blocking administrative writes. Draft preview cannot
+override active, ended or deactivated revisions. Complete physical receipt or
+accession marks a confirmed package Received even if Customer dispatch details
+were never entered, retaining absent carrier/tracking values rather than
+inventing them.
+
+`LabOwnedSampleOperationPostgresTests.cs` verifies that the legacy POMS sample
+receipt, accession and status-transition endpoints reject samples connected to
+Lab-owned shipping work with 409 and direct staff to Lab operations. The guard
+leaves sample, order, specimen, work and shipment state, audit events and notices
+unchanged. Samples without that ownership retain all three legacy operations.
+
+Concurrent confirmation and concurrent stock-kit binding each permit exactly
+one winning operation. A complete stocked 20-tube kit can back a 10-tube return
+container without making the other supplied tubes expected returns. Packet
+tests verify SKU, distinct order/shipment/sample barcodes, split-sample totals
+and other-container references. Identity lookup resolves each context; a
+shipment barcode resolves the current packet, while an explicitly replaced
+packet barcode is rejected. Physical receipt advances from 1 through 10 of
+30 expected tubes while the other container remains at zero. Unpaired receipt,
+receipt of an unused spare tube, cross-tenant reads and reuse of a received
+tube are rejected. Existing supplier-barcode adoption and packet issuance
+regressions still pass.
+
+All database fixtures ran against freshly created local scratch databases with
+no copied user data or running notification dispatcher. All five scratch
+databases were dropped and absence verified; each left zero synthetic notices.
+The intermediate checkpoint caught an unmapped computed void-status property
+in packet queries; the final code queries the persisted void timestamp.
+The isolated backend/test build passed with zero warnings and errors.
+
+Migration `20260908234930_AddSampleShippingContainerPackingAndStock` adds five
+catalog/stock tables, three shipment packing fields and a physical-tube receipt
+timestamp. Existing required return-kit ownership is unchanged. The model
+snapshot has no pending changes and the complete database ERD is regenerated.
+After verifying it was the sole pending migration on `localhost/phaeno_ops`,
+it was applied locally. Before/after evidence confirms that the walkthrough
+job's nine unique sample IDs, saved sample values, 18 tubes, order status and
+version, and shipment IDs/statuses/versions are identical. No fixtures ran
+against that database. Shared/production migration, actual supply configuration
+and physical kit/scanner acceptance remain unperformed.
+
+## Sample source capacity, imports and roster responses — September 8, 2026
+
+The final focused checkpoint passed 13 cases: five new PostgreSQL capacity
+cases, three existing acceptance/finalization/replay PostgreSQL regressions,
+and five unit/CSV checks. An earlier broader unit/domain batch passed 27/27.
+Coverage includes quota enforcement while other sources still have room,
+record counts independent of tubes, source normalization, unchanged-source
+legacy metadata recovery, moving/removing records, exact finalization flags
+and authorization, persisted CSV revalidation, and simultaneous requests for
+the last available source slot. The computed count property is verified absent
+from EF metadata, so no model or migration change is required.
+
+The first isolated run exposed duplicate Add response rows from EF collection
+fix-up: tracking the sample before explicitly adding it to the order collection
+could return the same saved record twice. Add/import now attach the collection
+member before tracking it; response-count checks passed. A subsequent failing
+assertion depended on source-group iteration order; it now accepts either
+correct source-mismatch explanation, and the entire checkpoint passed.
+
+The owner's Visual Studio session repeatedly restarted local IIS, so tests
+used fresh local scratch databases instead of the active development database.
+Each received the existing migrations without copied user data. All three
+scratch databases were dropped and absence verified; cleanup left zero
+synthetic notification rows. No user samples were changed and no shared or
+production database was used. Root's final local API build passed with zero
+warnings/errors; the restarted API returned health HTTP 200.
+
+## Quote decline reason selection — September 8, 2026
+
+The decline dropdown uses the existing withdrawal `ReasonRequest` contract
+and request-closure operation. Named selections serialize their readable label;
+Other serializes `Other: ` plus trimmed explanation, within the existing
+2,000-character limit. No API, authorization or persisted-model change is
+required, so no migration or additional backend test run is needed for this UI
+change. Focused frontend tests cover the payload and conditional validation.
+
+## Quote expiration and extension requests — September 8, 2026
+
+All six `LabQuoteExtensionPostgresTests` cases passed against guarded local
+PostgreSQL. They cover effective expiry without read mutation, blocked expired
+acceptance, durable duplicate/idempotent requests, organization/department and
+Member/admin boundaries, inactive membership, stale versions/source quotes,
+pending staff filtering, future-dated reissue, immutable original terms,
+atomic request resolution, one issuance notice, and Accepted-state preservation.
+The first checkpoint found a duplicate fixture Job name; unique fixture names
+fixed it and all six cases passed on rerun. The other 36 related quote issuance,
+PDF and order-domain cases passed in the original checkpoint.
+
+The API was stopped during committed test fixtures so synthetic notices could
+not dispatch; fixture cleanup deletes extension requests before their quotes.
+Migration `20260908204524_AddLabServiceQuoteExtensionRequests` was verified
+additive and applied only to `localhost/phaeno_ops`. Existing Phaeno read
+authorization is unchanged. Shared/production execution remains unperformed.
+
+## Branded quote PDF — September 8, 2026
+
+All 6 `QuotePdfRendererTests` cases passed: embedded Phaeno logo/fonts, saved
+USD900 pre-tax quote without invented terms, frozen billing/tax/payment terms,
+precise unit prices and rounded line amounts, historical status, long/multipage
+descriptions with repeated headers and bounded glyphs, and safe failure for
+unsupported characters. The representative one-page PDF and every page of the
+five-page layout sample were visually checked under `artifacts/quote-pdf-review`.
+
+All 5 `DepartmentAccessPostgresTests.QuotePdf*` cases passed against guarded
+local PostgreSQL using rolled-back fixtures, with zero failures/skips. They
+cover ordinary Member download, organization/department/order/quote boundaries,
+unissued and missing revisions, membership revocation, immutable quote/order/
+audit data, frozen billing versus the current profile, and malformed-line 409
+recovery. Local API build passed with zero warnings/errors. No migration or
+shared-environment change was required. The owner's Firefox retry remains
+separate from these automated results.
+
+After the owner's successful Firefox download, the spacing-only refinement
+reran the same 6 renderer cases successfully. The sample and all five long
+document pages were visually reviewed again, including aligned metadata, table
+padding and totals-divider clearance. No new cosmetic test or access-test
+rerun was needed; content, money calculations and download permissions did
+not change. API rebuild passed with zero warnings/errors.
+
+## Private invitation preview — September 8, 2026
+
+Two `DepartmentAccessPostgresTests.InvitationPreview*` cases passed against the
+local development database inside rolled-back transactions. They cover the
+minimal pending recipient preview, no-store headers, no membership/lifecycle
+mutation, and generic failures for unknown, empty, oversized, expired, revoked,
+accepted, declined, and inactive-organization links. The preview POST is
+anonymous only with a valid secret invitation token and uses the API rate
+limiter. Acceptance and decline authorization remain unchanged. Local API
+build passed with zero warnings/errors. No migration was needed.
+
+## Domain invitation template — September 8, 2026
+
+Updated `MailgunInvitationEmailSenderTests.SendInvitationPostsSingleEmailToMailgun`
+to verify the domain template name, private `t:variables` organization/recipient/
+invitation URL, plain-text fallback, and absence of inline HTML or public token
+metadata. All four focused Mailgun sender/renderer/webhook tests passed. API
+build passed with zero warnings/errors. No other backend suite was run.
+
+## CRM outreach decisions — September 8, 2026
+
+`CrmOutreachTests` covers legacy permission requiring review, legacy suppression,
+required source/date/explanation/email, future dates, inactive/merged eligibility,
+email-change invalidation, and preservation of suppression. The transactional
+`CrmCommercialAccessPostgresTests.OutreachDecisionsPersistWithImmutableHistoryAndCannotBeChangedThroughLegacyFields`
+checks API legacy-field bypass rejection, persisted evidence, actor history,
+immutable activity, and email-change history. Focused checkpoint: 30 passed,
+zero failed/skipped (includes `CrmCompanyDomainTests`); PostgreSQL fixture rolled
+back. Migration `20260908161948_AddCrmOutreachEvidence` applied only to verified
+local `localhost/phaeno_ops`. ERD regenerated. No outreach sender exists; queue,
+dispatch, and provider receipt enforcement remain a future integration gate.
+
+## Final isolated retention checkpoint — September 8, 2026
+
+All 12 `ManagedReleaseRetentionPostgresTests` passed with zero failures/skips on an owned, temporary loopback PostgreSQL 18 cluster with `track_commit_timestamp=on`. This resolves the four environmental prerequisite failures in the bundle integration run below. The cluster and its generated test databases were stopped and removed; the normal development instance was neither restarted nor reconfigured. Evidence: `artifacts/portal-operational-completion-20260908/retention-isolated.trx`. These cases overlap the selected PostgreSQL checkpoint and are not an additional unique-test total.
+
+## Configured Lab Service bundles — September 8, 2026
+
+`ConfiguredLabServiceDomainTests` covers immutable offering scope/effective windows, invalid turnaround ranges, exact accepted-quote commitment with no early specimen authority, acceptance-based clocks, preserved original targets, controlled timing reasons/private notes, and durable sale publication retry. The configured portion of `LabOperationsCommercialHandoffPostgresTests` lives in `ConfiguredLabServicePostgresTests.cs`: it exercises atomic placement and idempotent replay, stale scientific/catalog review, organization-admin-only Partner commitment and Department-scoped replay admission, real session capabilities, delayed/earlier timing changes and tenant-safe history/notices, and inactive/future offering versions that preserve current availability. `SessionAccessTests` additionally covers Partner Lab navigation without granting administration and keeps the separate invoice capability aligned with current Accounts Receivable authority.
+
+The initial focused checkpoint passed **12 tests, zero failures/skips**, including four PostgreSQL cases against the explicitly approved local reference database. It found and fixed an accepted-quote tracking defect before commitment could succeed; its failed transaction left the Job unplaced. A failed test-fixture teardown was corrected to include its exact Lab work outbox rows, and the one generated fixture was removed with identity guards. Evidence: `artifacts/portal-bundles-20260908/configured-lab-focused.trx`. Subsequent session, canonical-item, publication-window and current schedule-display changes require the integrated checkpoint below; the initial result does not cover those later changes.
+
+The integrated Release run without the PostgreSQL opt-in discovered **554 tests: 415 passed, one failed, and 138 skipped** (`artifacts/portal-bundles-20260908/backend-non-postgres.trx`). The failed persistence assertion exposed that cross-module timing/notification history belonged in the application layer; moving that record preserved its table and restrictive foreign keys while restoring the Laboratory module's original 30 entities and no-Commercial-foreign-key invariant. The final focused model, session and configured-domain run passed **26 tests, zero failures/skips** (`backend-bundle-model-session.trx` in the same directory), including that strict boundary check and one additional invoice-capability case. This follow-up repairs the identified failure; it is not a second complete-suite run.
+
+The selected local PostgreSQL checkpoint executed **88 tests: 83 passed, five failed, zero skipped** (`artifacts/portal-bundles-20260908/backend-bundle-postgres.trx`). All 26 commercial Lab handoff cases, including the five configured Lab journeys, all five Lab provider cases, all 32 Department-access cases, all three shared-shipping cases and all five Kit cases passed. Retention passed eight cases and failed four because the normal local server has commit-timestamp tracking disabled; that server was not restarted or reconfigured. Custom-work passed four cases and exposed one real routing regression: a Kit-only Partner was incorrectly required to have Lab entitlement. The owning correction selects the existing Kit tenant admission for Kit requests and preserves the new Lab eligibility check for Lab requests. The final Kit/custom-work checkpoint passed **22 tests, zero failures/skips**: six Kit PostgreSQL cases (including a paid order whose Assembly is held or cancellation is pending), five custom-work PostgreSQL cases (including Kit-only Partner access) and 11 unit cases. Evidence: `artifacts/portal-completion-20260907/backend/kit-custom-work-final-acceptance.trx`. The final solution Release build completed with zero warnings/errors. These focused results overlap the earlier checkpoint and must not be added as independent coverage.
+
+The final model/session Release build completed without compiler warnings/errors. EF reports **no pending model changes** after the application-layer history correction; its installed-tool-version advisory (10.0.5 tooling versus 10.0.10 runtime) is separate from the successful model comparison. Reviewed idempotent migration SQL from `20260907232219_AddTrialAndReconciliationDrafts` to `20260908015114_AddConfiguredLabAndPartnerKitBundles` is `artifacts/portal-operational-completion-20260908/bundle-migration.sql`, SHA-256 `E93B6E9E45A5F162D6063C48666D091383713021AFD165E0E7C33F96E37A2FEF`. It adds 21 columns, six tables and 43 indexes; all 37 foreign keys restrict deletion. Existing rows retain manual Lab ordering and non-bundled Kit behavior through additive defaults. It contains no drops, business-data inserts, updates, deletes or explicit historical backfill; its sole insert records migration history. This review generated SQL only and did not execute it against a database.
+
+Remaining acceptance includes the pending Partner Finance scope decision, retention checks on a commit-tracking-enabled reference server, real Customer/Partner submissions, physical specimen acceptance, provider delivery and production release. Approved Partner self-service standard ordering and manual draft submission do not enable staff-created Partner sales-assisted conversion: that existing intake remains Customer-only, and a Partner custom request currently creates a CRM opportunity for staff follow-up. Local reference data is not operational acceptance.
+
+## Approved file-service activation — 2026-09-07
+
+Added the permanent operator-only `--verify-file-services` command for the approved production activation. It starts no HTTP listener or background workers, accesses no database, and uses injected storage/scanning for uniquely owned synthetic files in both managed areas. It verifies size, checksum, exact readback, clean scan and deletion, with cleanup even after failure or cancellation. It requires the configured ClamAV provider; fixture/Disabled scanning cannot establish readiness. This command is reusable deployment verification, not temporary data-repair code.
+
+Five new cases cover both areas and owned cleanup, rejected/unavailable scan failure, corrupt readback and incomplete deletion. The focused storage/scanner/verification checkpoint passed **34 tests, one Linux-only skip, zero failures (35 total)**. Evidence: `artifacts/portal-completion-20260907/storage-activation.trx`. Release build passed with zero warnings/errors. The prior full 506-backend/321-frontend checkpoint below remains the full-suite evidence; this targeted follow-up does not claim a new full-suite run. Live daemon/volume evidence belongs in the completion release plan.
+
+## Portal completion integration — 2026-09-07
+
+The completion checkpoint passed **506 tests, zero failures and one Linux-only skip (507 total)** in the full Release suite. The filesystem-link test is explicitly skipped on Windows; its Linux execution and production volume ownership remain target acceptance. Evidence: `artifacts/portal-completion-20260907/backend-final.trx`.
+
+Coverage includes private Local storage and restart persistence, stream limits/checksums and failed-write cleanup, explicit scanner verdicts and unavailable/error rejection, ordinary Commercial Operator CRM access with active membership, restricted administration and exact attention filters, partial Trial scope drafts and approval separation, allocation correction, append-only reconciliation draft history, independent approval and resolved attention after balancing/cancellation. Earlier focused counts overlap this full checkpoint and must not be added to it.
+
+The usual development PostgreSQL instance has commit-timestamp tracking disabled, so retention verification initially failed on that environmental prerequisite. The final suite used an isolated loopback PostgreSQL 18 reference cluster with commit tracking enabled and the entire migration history applied. That cluster was stopped and removed after verification; the normal development server was not reconfigured or restarted.
+
+Release build passed with zero warnings/errors. EF reports no pending model changes. Additive migration `20260907232219_AddTrialAndReconciliationDrafts` was applied only to configured local development and the isolated reference database. It adds four nullable columns, one index and one restrictive foreign key, with no historical-row rewriting. The complete ERD was regenerated. Reviewed idempotent SQL: `artifacts/portal-completion-20260907/add-drafts.sql`, SHA-256 `2B56AC6801CD7147F19BC25E462A6152BD804972561A2D7B10108B18B94CFFFA`.
+
+Production migration application remains explicitly unapproved. No production financial, scientific or customer records were created by these checks. Real scanner service, target volume backup/restore, authenticated role journeys, upstream scientific output and physical bench acceptance remain separate.
+
+## Intake consolidation - 2026-09-07
+
+Readiness regression assertions now cover separate pricing and invoice blockers. Customer options/readiness endpoints retain platform authorization and validate the selected active Customer department. Readiness uses the canonical specimen catalog and department entitlement precedence; absent system configuration is incomplete. API build is the local checkpoint; automated suites and database-backed endpoint acceptance were not requested.
+
+## Optional Trial assignment note - 2026-09-07
+
+API build passed with isolated output for the optional Trial authority assignment note; the running Visual Studio/IIS Express process locked normal output. Automated tests for omitted/blank notes, trimming and the existing length limit remain deferred; no test suite was requested.
+
+## Combined API/Portal release checkpoint — 2026-09-05
+
+The Product Owner authorized committing/pushing the combined change and deploying
+the production API plus Portal UI. Inspected production workflow `33975386749`
+at commit `ab2df0a` records migration through
+`20260905140916_FreezeReleasedDeliverableReceiptLineage`. The pending release
+migrations are `20260905172646_AddTrialProjectIntegration`,
+`20260905213944_AddWebsiteNotificationRecovery`, and
+`20260905222201_AddWebsiteNotificationProcessingControl`, in that order.
+Their reviewed idempotent script is
+`artifacts/review-gap-closure/production-review-migrations.sql`, SHA-256
+`10A12E85A0B0930AA98E5766D3991227B19556E58248FE60D7F33AC1BBC01EA3`.
+Explicit approval for the shared migration is still pending; API/Portal
+deployment authorization and earlier local applications do not establish it.
+No production application of these migrations is claimed at this checkpoint.
+
+The current release-focused run passed **59 tests with zero failures/skips**.
+The backend Release build passed with zero warnings/errors, and EF reports no
+pending model changes. Evidence is in `artifacts/review-gap-closure/release-backend-*`
+and `release-pending-model.log`. The earlier 27 distinct Website checks remain
+the prior subsystem checkpoint. Local release verification is complete;
+commit/push, exact deployed artifact, production migration/backup evidence and
+runtime health remain unrecorded pending release-owner confirmation.
+Hosted operator admission, real provider acceptance versus inbox delivery,
+external alert collection/routing and actual Trial/storage paths remain separate
+acceptance evidence. Public Website deployment is outside this request.
+
+## Follow-up: review gap closure and Website processing controls — 2026-09-05
+
+All **27 distinct Website checks** passed: 11 PostgreSQL workflow cases, one
+independent-connection processing case, one sender case, one queue-monitor case,
+and 13 API cases. This follow-up extends the prior checkpoint below; the counts
+overlap and must not be added together as independent coverage.
+
+Coverage includes durable pause/resume with required reason, current-version
+conflicts and actor audit; intake and manual recovery queuing without consuming
+attempts while paused; acknowledgement without waiting for an in-flight provider
+call; persistence across fresh connections; and resumed processing of retained
+work. Summary/filter cases cover failed and expired claims, including an explicit
+interrupted-row projection. Monitor checks cover counts while paused, changed
+attention, bounded reminders, cleared attention, numerical gauges, and exclusion
+of actor/reason details from logs. Unsubscribe and completion cancel queued or
+failed work while retaining attempt history; retired intake also cancels a final
+expired claim and a provider failure that finishes after retirement.
+
+The Release build passed with zero warnings, and the EF pending-model check was
+clean. Migration `20260905222201_AddWebsiteNotificationProcessingControl` was
+applied to isolated loopback PostgreSQL on port 55435 and configured local
+`phaeno_ops` on port 5432; the configured-local application followed a backup.
+The regenerated ERD accounts for all 157 tables at this checkpoint. Providers
+and identities remain synthetic. These results do not establish shared or
+production rollout, hosted admission, real provider acceptance, or inbox delivery.
+External collection of the emitted metrics/logs and alert-sink configuration
+remain deployment work; the monitor tests do not establish an active external
+alerting service.
+
+## Review gap closure — 2026-09-05
+
+All 51 focused Website API, notification, Trial domain/PostgreSQL, and persistence
+cases passed with zero skips. The PostgreSQL cases used the isolated loopback
+reference cluster with commit tracking; notification providers were fake.
+`WebsiteNotificationPostgresTests.cs` covers atomic intake/enqueue, duplicate
+suppression, bounded retries and immutable attempt history, version/cooldown and
+actor audit for recovery, interrupted final leases, inactive intake, legacy brief
+recovery, and propagation of Mailgun rejection through a fake HTTP handler.
+`TrialProjectPostgresTests.cs` adds a two-sample authorization/shipment, sample-type
+quantity rules, exact Company/request lookup, and superseded/expired availability.
+
+Release build passed with zero warnings/errors. Additive migration
+`20260905213944_AddWebsiteNotificationRecovery` was applied to the isolated
+reference database and configured local `phaeno_ops` after a backup; the complete
+ERD was regenerated. Real provider acceptance/inbox delivery, hosted admission,
+shared migration and production workers remain release verification steps.
+
+## Portal documentation search — 2026-09-05
+
+All 51 focused documentation-search, Website API and Website crawler cases passed
+with zero failures/skips. `DocumentationSearchTests.cs` covers packaged corpus
+loading without frontend files, cached-index restart, corrupt-index recovery,
+guide removal/version mismatch, audience filtering before counts/facets/snippets,
+metadata browsing, short terms and literal syntax, relevance, bounds, index path
+separation, concurrent-process locks, rebuild cooldown and Website sentinel/index
+byte isolation. A loopback HTTP test exercises the real controller, MVC binding,
+authentication admission, error/envelope handling, no-store caching, forbidden
+scope overrides and rebuild denial. The test uses a synthetic authentication
+handler and active-user source; hosted Clerk/database admission remains separate.
+
+Measured locally with 55 guides: 100 sequential warm searches had p95 19.54 ms;
+one recorded initial index build took 183.09 ms. These are search-engine timings,
+not production identity/database/network measurements. Backend build and Release
+publish passed; the publish artifact contains the exact generated corpus and no
+frontend source directory. No database migration is introduced.
+
 ## General Lab/Assembly scheduled notices (2026-09-05)
 
 All 111 affected policy/download/PSeq/Department/persistence cases passed with
@@ -269,6 +1875,12 @@ and rollback-isolated PostgreSQL coverage.
   Operations Administrator capabilities; platform-administrator bootstrap;
   inactive-assignment filtering; external-user denial; disabled-user denial;
   explicit role matching; and `/api/session` capability projection.
+- [x] `backend/test/LabProtocolExecutionTests.cs` - strict definition validation,
+  historical-evidence recovery, empty-results rejection, typed number/date/
+  choice/barcode/reference checks, required roles and confirmations, explicit
+  optional/conditional decisions, sequence and QC gates, resource attestation,
+  repeat permissions, reasoned supervisor corrections, downstream re-review,
+  pinned versions, and immutable completed/abandoned evidence.
 - [x] `backend/test/PersistenceTests.cs` - Commercial and Laboratory assembly
   schema ownership, all 26 Laboratory mappings, and no Laboratory foreign key
   into a Commercial entity.
@@ -432,6 +2044,10 @@ and rollback-isolated PostgreSQL coverage.
   sequencing, execution, library lineage, NGS sendout/custody, exception
   resolution, scientific approval, customer-safe projection delivery, and proof
   that Ready for release creates neither a managed file nor a Lab result release.
+  The guided-execution extension rejects invalid definitions, empty and forged
+  completion results, wrong-role and stale step writes, and step/resource
+  evidence on held jobs. It saves a QC hold, appends a supervisor correction,
+  checks retained actors/attempts, and completes using persisted evidence.
   The fixture uses unique
   Customer/Phaeno identities and removes its Commercial, Laboratory, shipping,
   account, idempotency, notification, and audit records. All thirteen sources
@@ -935,6 +2551,25 @@ lineage. Fixtures use synthetic storage and uniquely named loopback databases.
 Full regression execution is authorized for this closeout. Shipping fixture
 cleanup now deletes its Department assignments/departments before organizations.
 
+## Guided protocol completion checkpoint (2026-09-05)
+
+The focused command passed **79 tests, zero failed or skipped**:
+
+```powershell
+dotnet test backend/test/PSeq.Operations.Test.csproj --no-restore --artifacts-path .artifacts/protocol-completion --filter 'FullyQualifiedName~LabProtocolExecutionTests|FullyQualifiedName~LabOperationsDomainTests|FullyQualifiedName~PSeqOrderToCashDomainTests|FullyQualifiedName~LabOperationsAuthorizationTests|FullyQualifiedName~AuthorizedOrderCompletesTheDatabaseBackedLabOperatorJourney'
+```
+
+The existing opt-in reference connection was supplied from development settings
+only after verifying `localhost` and database `phaeno_ops`. The controller
+journey uses its established isolation and cleanup. This is local PostgreSQL
+proof; shared databases, migrations, deployments, and physical acceptance were
+outside this completion run. The solution compiled with no warnings or errors
+using the isolated artifact directory.
+
+The final compatibility regression verifies that absent optional procedure
+fields remain omitted in saved JSON, so draft resume and formal review retain
+the portable authoring format.
+
 ## Trial integration checkpoint (2026-09-05)
 
 `TrialProjectDomainTests` and `TrialProjectPostgresTests` cover immutable scope,
@@ -954,3 +2589,391 @@ remove their own isolated databases. Merely supplying a differently named source
 or a server without commit tracking does not meet those tests' prerequisites.
 Final execution evidence is in `TRIAL-INTEGRATION-CLOSEOUT.md`. Production
 mailbox/scanner/storage and physical acceptance remain separate.
+
+
+## Portal consistency regression coverage (September 7, 2026)
+
+Authorized implementation covers all 20 review items. Added `OrderReadinessConfigurationDomainTests` for arbitrary/malformed JSON and contradictory/duplicate property rejection, supported modes and atomic failed updates; `PaymentImportBatchDomainTests` for owned, unconfirmed corrections; and `AccountsReceivableEvidencePostgresTests` for protected scanned evidence, retired arbitrary-key writes, upload retries/cleanup, corrected previews, ownership/concurrency, duplicate confirmation, deactivated Customers and malformed CSV. Reagent domain coverage verifies draft purchase/delivery retention without placement requirements.
+
+Source review additionally traces held intake visibility, canonical CRM request completion/conversion, contextual Contact association, paid roster/shared-shipment tracking, Assembly file correction/idempotency, result identity/retention and Lab authorization. New PostgreSQL tests are opt-in and require the existing isolated test database setup. Test suites were not requested and have not been executed in this implementation turn. Build and browser evidence is recorded separately in the implementation tracker.
+
+The production preparation review adds `UnconfiguredQuickBooksGatewayTests`: all unconfigured catalog/create/read operations must fail with `503 quickbooks_not_configured`, and cancellation must remain `OperationCanceledException`. The unconfigured dispatcher immediately records NeedsAttention instead of retrying fabricated success. These two regression cases have not been executed. Release solution compilation passed with zero warnings and zero errors on September 7, 2026; compilation is not test execution.
+
+Final source review adds opt-in `AssemblyUploadPostgresTests` for a failed idempotent save rolling back its input and cleaning up uncommitted bytes, followed by a retry retaining one input. `DepartmentSecondaryPathPostgresTests.RelationshipReadinessUsesPendingConversionWithoutSavingItEarly` verifies readiness uses the authorized tracked Customer conversion while the database still contains the prior Prospect kind. Both preserve transaction boundaries; neither regression has been executed.
+
+## Quote PDF sample-scope verification — September 10, 2026
+
+Focused renderer coverage checks the biological-source names, per-source counts,
+total sample count and saved pricing on the same representative page; many rows
+and a source longer than a page retain all text with repeated headers and bounded
+text. PostgreSQL download coverage checks immutable request-revision selection,
+quote-linked standard placement, omitted unrecorded legacy scope, inconsistent
+count rejection and unchanged tracked data. Existing quote access, historical
+status, commercial immutability, branding and billing tests remain in scope.
+
+Local verification: 16 focused renderer and PostgreSQL download tests passed,
+including historical scope and unchanged data. The representative one-page PDF
+and all six pages of the long-source stress PDF were visually reviewed. The
+scope heading and count share a shaded band attached to the source table; pricing
+headers retain room for the first item. Documentation generation and freshness
+checks passed (56 guides); whitespace checks passed. No commit or deployment.
+
+### Container receipt and accession separation — September 10, 2026
+
+Regression coverage: each expected container has its own tracking row; PH-P- receiving is an explicit write; repeat scans preserve one receipt/event; unrelated identifiers and void/cancelled inserts cannot receive; container arrival leaves tubes unaccessioned; Accession samples uses read-only lookup and individually saves tube accession. Verify queue movement, permissions, multi-container Jobs, missing tracking, retry, tab navigation and final-tube removal. Backend reference journey and frontend navigation assertions updated; automated suites are unrun by request scope. Manual browser and physical scanner acceptance remain pending. No real shipment is received merely to verify this feature.
+
+Verification: solution build passed with zero warnings/errors using a separate output folder because Visual Studio/IIS Express held the normal output files. Frontend TypeScript, scoped ESLint, documentation freshness (56 guides) and whitespace passed. Read-only signed-in local browser inspection confirmed the separate tabs, two expected container rows with distinct tracking numbers for 69SJN4PA, and a received HS5Y7DB7 container showing 0/18 tubes accessioned. Desktop screenshot review passed. The agent did not submit receipt or accession. Automated suites, narrow/dark layouts, physical scanner and completed tube-accession acceptance remain unrun. The existing shipping insert files have no additional working-tree diff from this work.
+
+## Container accession loop — 2026-09-10
+
+Coverage: PH-P opens complete container modal; each tube opens required freezer-box prompt; no accession before valid save; progress and scan focus repeat until completion; wrong tube blocked; same-tube/same-box replay creates one container/event; different-box replay rejected. Component and PostgreSQL coverage updated. Automated suites not run (not requested). Physical scanner, nested-modal keyboard behavior, partial resume and populated save journey remain manual acceptance gates.
+
+
+Release checkpoint (September 10): 87 focused backend cases pass in an isolated
+PostgreSQL database; 315 frontend cases pass across 30 affected suites. Four
+focused browser print checks pass with two intentional mobile-label skips.
+Letter/A4 receiving sheets and 50 x 25 mm lab label output were visually reviewed
+and independently QR-decoded. See
+[release evidence](PORTAL-LAB-PROGRESS-RELEASE-2026-09-10.md) for local fixture
+failures, artifacts and outstanding physical/production acceptance gates.
+
+## Focused execution checkpoint — September 11, 2026
+
+LabTubeIntakeTests, LabSpecimenAttemptTests, LabWorkflowPromotionTests, LabWorkflowInvalidationTests and LabProtocolRetirementTests passed: 23 tests, zero failures/skips. Earlier authored/not-run entries describe the prior checkpoint. PostgreSQL acceptance/concurrency suite remains unrun. Current partial manual evidence is in ../testing/runs/2026-09-11-protocol-preparation.md.
+
+## Preparation-batch verification — September 11, 2026
+
+LabPreparationBatchTests: 10 passing cases; LabSpecimenAttemptTests: 5 passing cases. LabPreparationPostgresTests: 2 passing persisted journeys covering competing reservations, stale versions, unauthorized Customer access, start locking, command replay, one material consumption, shared evidence/tube Hold, explicit failure, output creation and existing-output selection, optional final-stage skip, QC references, sequencing membership and reserve fallback. The optional-stage fixture lookup was corrected and rerun. The local migration was applied to localhost/phaeno_ops; the ERD includes all new tables and provenance links.
+
+The owning [Library prep plan](LAB-WORK-JOURNEY-PLAN.md#verification-checkpoint) and LAB-14 manual journey retain remaining acceptance coverage: held/closed Trial races, all staff-role combinations, physical trays/scanners/labels, owner sign-off and production/provider gates. Historical TEST-008 work was not retrofitted or replayed. Customer-requested hold implementation remains blocked.
+
+## September 12 — Preparation batch identifiers
+
+Preparation naming: extended PostgreSQL preparation journey assertions for server-owned names, optional notes, stable create replay, distinct creates and ignoring legacy supplied names. Same-second concurrent allocation uses the existing transaction advisory lock. Regression execution pending; no database migration.
+
+
+September 12 naming follow-up: both focused PostgreSQL preparation journeys passed, including name/notes/retry assertions. Signed-in UI verified removal of the name field, two distinct identical-choice creates, persisted notes and unchanged historical names. Reserve exhaustion confirmation produced terminal specimen Failed. See the LAB-14 run record; unrun variants remain open.
+
+
+September 12 LAB-14 follow-up: failed-output scan prompts removed while traceability links remain; terminal specimens use Processing outcome. Live saved-record inspection passed. Failed-output regression passed on desktop/mobile (2); all 11 preparation-domain tests passed, including new repeat reason/history coverage and existing correction invalidation. Manual correction/repeat remains separate and pending; see the active run record.
+
+September 12 LAB-14 checkpoint: existing TypedEvidenceRequiresTheStepRoleConfirmationAndValidValues regression passed (1, no skip). No backend implementation change. This domain proof does not substitute for signed-in role-matrix acceptance.
+
+September 12 preparation concurrency: both PostgreSQL journeys now assert a stale material command returns concurrency_conflict without history, stock or consumption changes, followed by valid idempotent use. Both passed on isolated UAT DB (2, no skips), including competing reservation coverage. No backend product change.
+
+September 12 review-role checkpoint: all 11 existing LabOperationsAuthorizationTests passed, zero skipped. Isolated LAB-14 launcher has governed result-package validation disabled, so no governed missing-package claim is made from that runtime. Independent approval/package controller acceptance requires separate LAB-06 setup; see active run. No backend code or data changed.
+
+September 12 LabScientificReviewGatePostgresTests added and passed (one journey, four rejection cases, zero skipped) against the isolated UAT database. Calls the real scientific-approval controller with governed package validation and dual-control enforcement enabled for test context only. Checks exact errors for premature milestone, missing output package, contributor conflict and blocking exception; after each, asserts unchanged status/version/event count and no approval. Transaction rollback verified by absence of fixture work/user afterward. Uses a legacy-compatible job without tube policy to isolate approval guards; this does not cover specimen readiness, package scanning, HTTP authentication or signed-in acceptance. No runtime flags or operational records changed.
+
+September 12 package-gate extension: same journey passed with seven controller rejections, adding Uploading, Scanning and Failed output packages. Each package stays in its original state/version with no approval ID or release timestamp. Domain transition checks also reject incomplete artifact count, checksum mismatch and non-clean malware result while retaining Scanning. Fixture includes synthetic order/sample/package relationships and rolls back, verifying package absence afterward. No real file, scanner, provider or signed-in package workflow exercised. One journey passed, zero skipped; no product code or runtime change.
+
+September 12 independent approval extension: LabScientificReviewGatePostgresTests now also approves a synthetic ready package through the real controller using a separate non-admin Scientific Reviewer with no work contributions. Work and package become ReadyForRelease; the package references the saved approval and independent reviewer, exactly one ScientificApprovalRecorded event exists, and release timestamp/user remain null. The earlier failed package remains Failed. Focused journey passed (one test, zero skipped), retaining seven controller and three domain rejection checks. Transaction rollback verifies both packages and both reviewers absent. This isolates server approval behavior using a legacy-compatible job and synthetic scan readiness; it does not prove scanner, HTTP authentication, customer visibility or signed-in acceptance.
+
+September 12 signed-in supplement: actual UI/API approval on separate 3016/7116 runtime and cloned DB at 127.0.0.1:5436 persisted one independent approval and ReadyForRelease with no release timestamp/user. Missing-package UI prevented submission, so that case adds UI evidence rather than another controller rejection. Database commit tracking enabled only on the owned temporary cluster; original server unchanged. Full lineage/scanner/publication not covered. See active LAB-14 run.
+
+September 12 HTTP/UI supplement: signed-in contributor approval rejected on separate synthetic LAB-06 work; real database before/after retains ScientificReview/version 1, ReadyForReview/version 1, one original event and zero approvals. Confirms enforced contributor guard through live request with overlapping reviewer/release roles. No new automated test or product change; full lineage/provider cases remain separate.
+
+September 12 release checkpoint: API Release build passed with zero warnings/errors; 66 selected laboratory domain tests passed, zero skipped. Production migration/deployment evidence belongs to LAB-WORKFLOW-RELEASE-2026-09-12.md.
+
+September 12 production release: source 5365a38 deployed by workflow 34716138359 with owner-approved seven migrations, encrypted-backup restore/checksum proof and API/database smoke checks passed. See LAB-WORKFLOW-RELEASE-2026-09-12.md for exact identities and remaining acceptance.
+
+September 12 engineering-assisted LAB-06/DAT-04 ingestion acceptance: current-checkout helper/API build passed. LocalFileStorage wrote/read 158 harmless bytes with independent SHA-256/length confirmation. Ten actual HTTP cases on temporary isolated API 7118 passed: missing service auth, manifest hash/scope validation, registration/retry, idempotency conflict, artifact count/register/repeat, incomplete scan report. One package remains Scanning with Pending artifact and no approval/release; no scanner verdict was fabricated. Owned API stopped. Synthetic authorization setup and direct local-storage save do not establish Customer handoff, remote upload or actual malware scanning. Full positive pipeline remains Blocked on those prerequisites. Exact evidence is in [the active UAT run](../testing/runs/2026-09-12-lab-14-preparation.md#real-byte-storage-and-pipeline-http-ingestion-acceptance--september-12-2026). No committed regression tests or application source changes.
+
+September 12 SYS-01 ingestion concurrency: OPEN UAT-20260912-01. Two overlapping identical registration requests returned 200 and 500 internal_error; PostgreSQL unique idempotency-key conflict was unhandled. Exactly one package persisted and a later retry recovered its ID. Data integrity passed, clean race recovery failed. Preserve package 278a61d2-d7a4-4f78-b183-17bcab60360e. Fix and focused PostgreSQL/HTTP regression remain pending; no product code change in this UAT checkpoint. See [active run](../testing/runs/2026-09-12-lab-14-preparation.md#concurrent-registration-and-release-screen-keyboardreflow-uat--september-12-2026).
+
+September 12 correction supersedes the open status above: UAT-20260912-01 fixed and retested locally. Added PSeqResultRegistrationConcurrencyPostgresTests.OverlappingRegistrationsRecoverIdenticalRequestsAndRejectChangedRequests with independent connections and a deterministic overlap barrier. Covers identical races, changed manifest races, changed scope/count/correction replay, distinct-key version collision and recovery, one-row persistence and null approval/release. Creates and drops its own disposable database on a guarded local PostgreSQL connection; no shared migration. Focused dotnet test with --artifacts-path tmp/uat-defect-fix-build passed 1/1, no skips or build warnings. Original HTTP variant passed 200/200/retry 200 for one new package. Retained 7116 uses the verified build; no full suite or deployment. See [correction evidence](../testing/runs/2026-09-12-lab-14-preparation.md#uat-defect-corrections-and-focused-retest--september-12-2026).
+
+September 14 LAB-14 continuation: extended both `LabPreparationPostgresTests` journeys with six unauthorized Customer command rejections (403 / `lab_capability_required`) and 15 held/closed Job-command combinations (`execution_work_unavailable`) each. Complete tray/history readbacks and Job/attempt versions remain unchanged; no execution starts or library creation. Generated fixture statuses are arranged directly, not through real closure. Both positive journeys and the independent scientific-review/non-publication regression passed: 3 tests, 0 failed/skipped, including 42 added negative checks. Current source compiled into `tmp/uat-resume-20260914-build`; isolated loopback 5436 database only, generated-fixture cleanup verified and retained packages unchanged. Trial-specific guards and signed-in Customer writes remain separate acceptance work. See [continuation checkpoint](../testing/runs/2026-09-12-laboratory-uat-closeout.md#september-14-continuation--preparation-command-guards).
+
+September 14 Trial preparation coverage: PreparationCommandsRespectTrialHoldClosureAndScopeCurrencyWithoutPartialWrites passes 56 rejected command/state combinations with unchanged persisted snapshots and one valid move control. Uses a guarded disposable local PostgreSQL database because preparation controllers own their transactions; database cleanup verified. Existing rollback fixtures remain the default. New test passed 1/1; four related Trial/preparation regressions passed 4/4, no skips. Initial nested-transaction harness failure was corrected, not a product defect. See [continuation evidence](../testing/runs/2026-09-12-laboratory-uat-closeout.md#september-14-trial-preparation-guards-and-reviewer-keyboard-check).
+
+
+September 14 CRM terminal-history fix: added `DisqualifiedLeadRejectsProfileAndStatusChangesWithoutChangingHistory`, covering controller/profile/working/qualify/disqualify/convert rejection and unchanged saved history. Reproduced red, then 2 focused checks passed including retained conversion/merge identity. Rolled-back local PostgreSQL fixture; actual signed-in verification recorded separately. [Execution record](../testing/runs/2026-09-14-acceptance-closure.md).
+
+September 14 ten-case checkpoint: SampleShippingTransactionPostgresTests proves nested shipping packing joins the outer transaction, holds the advisory lock against another connection, rolls back correctly and owns a standalone transaction. Failed before fix; passes with the two real routing checks. Independent final PostgreSQL readback verifies exact main quote/shipment/slot/work counts, distinct Trial decision actors, revoked temporary authority and no accidental kit request/invoice. DerivedReadiness explicitly enabled for staged gate acceptance. [Full evidence and limits](../testing/runs/2026-09-14-ten-case-execution.md).
+
+September 15 LAB-09 provider/database continuation: historical V1 payload replay returns the identical acknowledgment with one authorization version, receipt and event; changed-payload command reuse is rejected. V2 Customer finalization preserves the legacy order snapshots and produces exact one-/three-tube crosswalks. Completed historical execution remains unlinked after adoption denial. Independent PostgreSQL assertions pass. [Evidence and synthetic-precondition boundaries](../testing/runs/2026-09-15-policy-history-and-shipping-access-uat.md). No backend source or automated backend tests changed.
+
+
+## Reusable Lab steps and configuration preview - September 17, 2026
+
+September 24 name and first-draft follow-up: PostgreSQL regression now covers version 1 Draft creation in the same write as the identity, refusal to approve it before configuration, case-insensitive duplicate-name rejection, rename propagation into an open draft, and approved-version name preservation after a later rename. The migration adds a unique normalized-name index. Tests were authored but not executed under the request-only test policy; apply the migration before connected acceptance.
+
+Added LabStepTests and LabStepPostgresTests: one scoped catalog step, author/editor separation, immutable approval, retirement retention, independent repeated-occurrence evidence, exact-version pinning, rejected overrides, retained retired references, blocked new retired occurrences and stale parent version. Tests are authored, not executed. API role denial and concurrent retirement/approval races remain acceptance scenarios; no production acceptance is inferred.
+
+LabStepTests adds hidden/optional/required/permitted-skip report policy and legacy QC inference regressions. Automated tests remain unexecuted under repository policy.
+
+Added partial-coverage rejection and no-record-write assertion to the PostgreSQL preparation journey. Automated tests remain unexecuted under repository policy.
+
+### Inline resource fields and sample exception disclosure (September 17)
+
+LabStepTests: resource scopes, optional tracking and material quantity basis; LabPreparationPostgresTests.PreparationInlineMaterialUseIsAtomicAndIdempotent: rejected step rollback, unavailable lot, per-sample stock total and receipt replay. Authored; not executed. Product/supplier matching, corrections and output atomicity need connected acceptance before release.
+
+### Material identity at configuration
+
+Configured material snapshot resolution and retention added to LabStepPostgresTests. Inline material integration coverage now checks rejection of runtime identity replacement and retained configured name. Tests authored, not executed.
+
+Material unit configuration follow-up: require authoring units, preserve them in save/reopen, show fixed runtime labels, reject tracked lots or submitted units that differ, and keep legacy definitions runnable. Regression cases added/updated; not executed. Manual preview checks cover symbol insertion and report placement after step-entry fields.
+
+### Material amount exceptions and quantity reconciliation
+
+Authored domain coverage for shared material scope, total-batch rejection, uncertain stock holds and reconciliation without replenishment. PostgreSQL preparation journeys cover actual failed-tube consumption, unknown stock and tube holds, mandatory reasons, late-validation transaction rollback, request replay, and reconcile-before-resume. Solution build compiles these cases; they are not executed under the repository's request-only test policy. Role denial, stale reconciliation and concurrent consumption still need execution acceptance.
+
+### Equipment selector requirement — September 18, 2026
+
+Preparation step recording now requires a catalog equipment identity for every Equipment used field, even when an older definition disabled tracking or requiredness. Name-only and omitted entries are rejected. Existing active/calibration checks and resource-use transactions remain in effect; corrections retain prior evidence. Backend compilation passed with zero warnings/errors. Connected API regression execution (missing identity, optional legacy field, inactive/out-of-calibration asset, valid selection and atomic rollback) remains deferred; no automated test run requested.
+
+## Jobs delivery deadlines — September 18, 2026
+
+September 30 list storage display: the authorized Jobs response now reads distinct
+nonblank current submitted-tube locations for the displayed page in one query;
+disposed and derived containers are excluded. Verify same-Job scoping, duplicate
+boxes, multiple/no-box cases, retained held/rejected material and a saved move.
+Stage classification and deadline rules are unchanged. Automated coverage and
+suite execution are deferred under the request-only policy; solution builds and
+a read-only populated local browser check are the current checkpoint.
+
+Authored `LabJobDeadlineTests`: undated/acceptance, exact cutoff, three-day warning, blocking risk, reforecast independence, earlier specimen target, partial publication/ReadyForRelease, cancellation, immutable deadline-at-delivery and SQL translation/pagination beyond the dashboard cap. Automated execution not requested. Local read-only database acceptance verified query translation and complete counts; live concurrent release, withdrawals/reissue, roles and actual publication fixtures remain acceptance cases.
+
+`LabJobDeadlinePostgresTests` additionally defines rollback-scoped acceptance cases for a 276-job queue/page 12, complete-query counts, distinct sample coverage and retained completion/deadline history. These cases compile but have not been run.
+
+Jobs queue refinement: authored PostgreSQL eligibility coverage for every shipment state, receipt fallback and direct detail availability; the 276-job pagination fixture now records specimen receipt. SQL-translation coverage uses the eligible queue. Tests not run (not requested).
+
+Required date at acceptance: added LabJobDeadlineTests coverage for missing-date rejection, configured automatic deadlines, explicit manual deadlines and domain refresh enforcement; historical accepted/undated work is AtRisk. Shared shipping fixture now supplies its 14-day standard turnaround. Intake rollback and single/bulk/correction acceptance paths remain focused integration acceptance cases. Tests authored, not run.
+
+Active/Closed Jobs: added stage classification, partial delivery/hold/cancelled precedence, SQL translation for stage/date predicates and rollback-scoped database coverage for inclusive lower/exclusive upper due and order-date boundaries, pre-shipment cancellation in Closed, outcome filtering and warning counts. Authored/compiled; suites not run.
+
+## Progress-based completion forecast — September 18, 2026
+
+Authored `LabCompletionForecastTests` covers mixed day bases, weekend/observed holidays, fractional eligible days, daylight saving, exact exhaustion and repeatable actual-plus-one overruns, missing coverage, future entry, duplicate holidays, zero downstream duration and per-stage validation. Authored `LabCompletionForecastPostgresTests` covers latest-sample delivery, a real mixed-stage policy, read-only preview, missing-duration coverage, preserved pinned binding and no read-triggered snapshots. Suites not executed (not requested). Build and read-only local database projection checks are recorded in the owning plan. Remaining acceptance: atomic state tracking/no-op edits/retry, configuration permissions/concurrency, policy application, parallel library joins/provider waits, rework/holds/publication withdrawal, scheduler history and large queues.
+
+## Full-suite release verification - September 18, 2026
+
+Ran every API test with PSEQ_OPERATIONS_REFERENCE_CONNECTION pointing to a separately initialized loopback PostgreSQL 18 cluster on port 55439, migrated from empty. Database-backed suites are enabled. Corrected the complete laboratory model assertion (48 entities), a release fixture lacking its laboratory job/specimen, sequential workflow revision creation, configured 14-day acceptance expectation, an explicit manual due date before accession, and a self-approval negative fixture missing the proposed price. The five affected cases all pass. Final full-suite result is recorded in SERVICE-CATALOG-RELEASE-2026-09-18.md. The Unix-only symlink case remains a declared Windows platform exclusion.
+
+## Evidence governance checkpoint — September 18, 2026
+
+See [the governance verification record](../testing/runs/2026-09-18-evidence-governance.md) for executed scope and limitations. Coverage includes actual-person capture and preview isolation; independent review, self/stale/scope/retry rejection; retained original evidence; scientific profile requirements and explained exceptions; private evidence preservation versus customer-byte deletion; and desktop/mobile proposal/review accessibility. Production, real producer/bench and hosted recovery acceptance remain separate.
+
+## Staff scientific capture and delivery history — September 19, 2026
+
+The [capture/history verification record](../testing/runs/2026-09-19-scientific-capture-history.md) records 19 backend, 13 frontend and 12 browser passes, including sample-scoped commercial/Trial history, immutable report snapshots, staff sequencing/analysis capture and linked corrections, unchanged retries, exact manual-upload attribution, access limits, error recovery, keyboard focus and light/dark mobile accessibility. TypeScript, focused ESLint, EF model consistency and documentation checks pass. No new migration; no production activation. Browser evidence is simulated, and real producer/bench/hosted recovery acceptance remains separate.
+
+## Database baseline and preservation release — September 19, 2026
+
+The [reset execution record](../operations/database-rebase-20260919.md) records the completed production release: all 930 backend cases have passing evidence across the full run and focused follow-ups, 1,061 UI unit tests passed, and the final browser run passed 176 cases with two intentional mobile print skips. Signed-in hosted acceptance remains separate. The baseline-only discovery assertion replaces the retired additive-migration assertion; downgrade still must refuse loss of commit evidence. The legacy scientific-review gate fixture explicitly selects legacy evidence policy, while enforcement suites retain current defaults. Browser keyboard coverage includes the added performer and performed-time controls. Export/import probes cover wrong targets, transactional rollback, replay conflicts, source preservation and drift detection. Production identity, physical scientific evidence and real provider delivery remain separate from automated fixtures.
+
+## PostgreSQL 18 production engine verification — September 19, 2026
+
+The [engine upgrade plan](POSTGRESQL-18-UPGRADE-PLAN.md) requires a full PostgreSQL 17-to-18 data/schema comparison, unchanged EF migration check using the deployed application, isolated version 18.6 governed-download commit and managed-retention tests, normal-deployment engine/volume guard checks, and encrypted backup restoration on the new engine. Execution completed with all 16 focused PostgreSQL 18.6 cases passing (zero skips), equal data/schema across all 197 tables/211 rows, deployment-guard rejection on version 17, and successful pre/post encrypted backup restores. No application behavior or frontend test fixture changes are part of this upgrade; the preceding full application suites remain the application-code checkpoint. Hosted signed-in and physical/provider acceptance are recorded separately.
+
+
+### September 19 repeated-sequencing release coverage
+
+Repeated sequencing: `RepeatedSequencingLineagePostgresTests` exercises frozen allocations, explicit preparation choices, same-library reuse, corrections using a new preparation, over-allocation/missing-choice rejection, idempotent capture, reanalysis deduplication, and first delivery after every run is covered. Baseline discovery now expects three follow-up migrations: run counts, output lineage, and active-preparation uniqueness. Scientific approval keeps repeated-run work open until all allocations have approved results; package publication is a separate step. Disposable database tests also accept the explicitly isolated localhost `phaeno_release_verification_` prefix. Final full release run: 957 passed, zero failed, one Windows-only skip; the skipped Unix filesystem case passed separately in an isolated Linux container. All 958 cases have passing evidence. See the [release record](../operations/repeated-sequencing-release-20260919.md) for the exact migration and production activation boundaries.
+
+## September 20 operational gap closure
+
+Added `LabOperationalGapPostgresTests`, `LabCustomerHoldTests`, `S3ScientificStorageTests` and managed-file restore coverage. The isolated connected suite passed 84 tests (one Unix-only symlink skip on Windows), including 50 MiB resume/scan/integrity/cleanup, exact tenant scope, hold transitions/concurrency/release blocking, S3 adapter bytes and backup deletion coordination. See OPERATIONAL-GAP-CLOSURE-20260920.md for boundaries and subsequent checks.
+
+Final release rerun: 968 passed, zero failed, one Unix-only symlink test skipped on Windows. All connected cases ran against disposable databases; the driver verified scratch-database removal and no remaining synthetic notification rows. Updated model/migration discovery assertions cover the scientific receipt, upload session and hold additions.
+
+Backup release follow-up: all 29 archive/envelope/failure cases passed after covering a zero-entry referenced-file archive and sizing the synthetic restore workspace. Actual online production backup restoration/encryption/cleanup passed; no API outage occurred. See the operational gap closure release receipt for the manual-versus-scheduled evidence boundary.
+
+## September 21 samples and shipping release coverage
+
+`SampleShippingPackingInstructionsTests` covers regular ice, dry ice, cold packs,
+no cooling, distinct container amounts, missing/conflicting instructions, approved
+procedure authority and legacy compatibility. `SampleShippingProcedurePostgresTests`
+adds the real save/assign/issue/revise journey: authorization, exact procedure
+revision, different small/large quantities, actual-container packet content,
+revision conflicts and unchanged historical packets. Cleanup removes only the
+fixture's uniquely named procedure revisions after its assignments are removed.
+Persistence discovery now includes the additive shared-procedure migration.
+Release tests use a verified loopback disposable `phaeno_release_verification_`
+database and verify its removal; the application development database is untouched.
+
+Final full release run: 977 passed, zero failed and one Unix-only symlink test
+skipped on Windows. The new connected shipping-procedure case passes. Synthetic
+notification count is zero and the disposable database was verified removed.
+
+September 23 barcode follow-up: domain coverage records distinct supplier namespaces for identical printed values and a primary alias per laboratory container. Focused domain and transfer tests cover manufacturer-specific internal library keys, rejection of identical physical source/destination scans, preservation of available historical POMS tubes during intake correction, and first-print gating after a newly rejected POMS tube is corrected. Model discovery checks now expect the barcode alias entity and migration. The full local backend suite passed: 750 passed, 0 failed, 341 skipped because the reference connection was unset and for platform-specific cases. Three focused connected PostgreSQL journeys then passed without skips on the verified local development target: a bound kit sharing its printed value with available stock from another manufacturer, split-shipment receipt through POMS label print history, and preparation material transfer with manufacturer selection and POMS label scan-back. Their synthetic fixture records were cleaned up. Before release, connected cases must also cover same-supplier collision rejection, cross-supplier registration, packet-scoped receipt and accession, ambiguous unscoped scan, and container move audit/concurrency.
+
+September 24 storage/material follow-up: `MaterialLotProductPostgresTests` now covers automatic, stable purchased-product material identity across two lots and preservation of a legacy definition. A connected storage-settings case covers creation, unused-name correction, stale-version rejection, referenced-name protection, deactivation/reactivation, exclusion from new lots and duplicate-name rejection. These regression sources were compiled in Release; tests were not run for this change.
+
+September 24 reagent manufacturing follow-up: `ReagentManufacturingDomainTests` covers independent approval or a reasoned administrator override, exact run procedure snapshot after revision, ordered step and source-use requirements, and abandonment retaining source-use count. `ReagentManufacturingPostgresTests` covers seeded internal producer, generated lot prefix, immediate source deduction, stale-version rejection, retained deduction after abandonment, QC hold and output lineage. These focused cases passed after approved local migrations. Additional connected cases for role gates, concurrent starts, seed/backfill, expiry/hold/overdraw and no sample/tube schema links remain in the acceptance plan.
+
+September 24 unit and reagent identity follow-up: all three reagent migrations were explicitly approved and applied to the configured local development database. Five focused reagent domain tests pass, including stable reagent identity/unit. Seven focused connected PostgreSQL tests pass after the third migration: immediate reagent source use and abandonment, automatic purchased-product identity and unit matching, supplier catalog and product types, storage settings, expiration policy, and setting a future unit on a legacy product without rewriting its older lots. The connected cases use rollback transactions or fixture cleanup. Release solution build has zero warnings, and EF reports no model changes beyond the generated migration.
+
+September 24 release verification: the complete Release suite without a reference database passed 755 cases, with 344 database or platform cases skipped. A full connected run against an isolated database migrated from empty passed 1,090 cases, failed seven older laboratory/shipping fixture assertions, and skipped two environment-specific cases. The seven failures reflected the first-print requirement for newly generated library/sequencing tubes and the now-valid reuse of a printed barcode across different manufacturers. After correcting those fixtures, all 11 affected connected journeys passed in a focused rerun. This is combined full-run and focused follow-up evidence, not a clean connected full run. The scratch database was dropped. EF reports no pending model changes. The new reagent and storage connected cases passed on the configured local development database in the preceding focused run; full hosted, physical-label and bench acceptance remain separate.
+### September 24 Phaeno reagent product follow-up
+
+The Phaeno catalog now creates a distinct Reagent product and prepared-material
+identity per named reagent. New workflows require that product; manufacturing
+runs pin its product onto the output lot. The new migration links existing
+prepared identities and lots. The connected catalog scenario covers multiple
+products, fixed type, immutable saved unit, renamed identity, and status sync;
+the manufacturing scenario covers workflow creation, inactive-product denial,
+required expiration, and output lot product lineage. The migration-discovery
+assertion now expects 18 revisions. These
+tests were added but not run because this follow-up did not request tests.
+
+### Transportation kit product and assembly (2026-09-24)
+
+The local kit-product migration was explicitly approved and applied to the configured development database. New domain tests cover independent approval, pinned step snapshots, ordered completion, an exact physical tube rescan, and verification invalidation. A connected PostgreSQL test covers registering a full stock roster, rejecting a mismatched rescan, retaining a reasoned correction, and verifying the corrected roster; its synthetic records are cleaned up. Both domain tests passed. The connected `SampleShippingPostgresTests` group passed 96 cases with one existing skip; the backend solution build passed with zero warnings and errors. Further connected acceptance must exercise a named Phaeno kit product through workflow/BOM approval, paired shipping specification, lot consumption, assembly completion, Customer dispatch and stock-to-return-to-Lab tube lineage; include concurrent retries and historical definitions without invented verification.
+
+The Phaeno kit catalog regression now creates a kit product, corrects its name before specification, and rejects a direct API attempt to change its SKU afterward. The focused case passed against the configured local PostgreSQL database with its changes rolled back (1 passed, 0 skipped); the Release solution build passed.
+
+### September 24 review-remediation coverage
+
+Kit domain regressions now check that a same-author override needs platform-administrator authorization and a reason, plus immutable recorded tube-lot matching. A reagent domain regression checks that an approved prior procedure remains inspectable after revision without a run. Connected acceptance remains required for withdrawn steps/components at approval, inactive finished products at preparation/recommendation, one source tube lot per kit with multiple material lots available, discrete `each` consumption, current approved workflow selection, and rejection of an unlinked new shipping specification. These additions have not been run in this remediation turn under repository verification policy.
+
+The migration-discovery assertion expects 23 migrations after the master-mix gap-closure migration.
+
+### Single-use master mix (2026-09-24)
+
+`MasterMixDomainTests` covers independent workflow approval, exact procedure revision snapshots, ordered completion with ingredient evidence, allocation across more than one tray, overdraw rejection, and terminal discard with a separately measured amount. The September 24 disconnected backend suite passed 760 cases, including these domain tests, and skipped 348 database-dependent cases. The connected backend suite passed 1,106 cases with two skips against a newly migrated disposable PostgreSQL database, then dropped. Feature-specific connected PostgreSQL acceptance remains to cover source-lot QC, expiry, unit and stock enforcement; exact approved revision pinning without silent adoption; atomic tray-step save and replay; concurrent trays competing for the final amount; operator role gates; and retained ingredient/tray lineage after discard. With explicit owner approval, the Lab step naming and master-mix migrations were applied in order to local development database `phaeno_ops_clean_20260919` on `localhost:5432`; EF lists both as applied and reports no pending model changes.
+
+Gap-closure acceptance must additionally exercise exact recipe totals across multiple lots, extra/missing/wrong-unit ingredients, independent Supervisor deviation approval and invalidation after another ingredient, Pacific local midnight and daylight-saving boundaries, concurrent workflow retirement versus mix preparation and new-tray creation, blocked retirement for active approved Lab steps, permitted use of an existing Ready mix on an open tray after retirement, rejection of new trays pinned to a retired recipe, full barcode scan matching, and correction races. Include the retired-recipe check for a protocol pinned through an older Lab step version, and verify that a failed new-tray request creates no batch. For corrections, verify a never-dispensed ingredient restores stock exactly once, an exhaustion override instead holds the lot for count, a never-dispensed tray use restores mix allocation once, and an uncertain or physically dispensed use stays recorded while the mix closes and the source lot is held. Confirm duplicate request IDs and same-target corrections cannot apply twice. The `CloseMasterMixGaps` migration was applied to configured local database `phaeno_ops_clean_20260919`; EF lists it as applied with no pending model changes. Connected acceptance has not run under the request-only test rule.
+
+# Global Phaeno ship-to default — September 25, 2026
+
+Regression scope: one configured destination family follows its latest current Active revision; a new finalized Job selects that destination only when its Sample type has a current Active assignment and procedure; an absent or incompatible default fails finalization with a configuration error; an amended Job retains a compatible selected route. Fulfillment offers only Active destinations compatible with every requested kit, permits a change before the first dispatch and before packing or packet issuance, and rejects route changes afterward. Migration backfills the default only when exactly one Active destination family exists. The initial checkpoint used a Release build and EF model checks; the focused connected regression added afterward is recorded below.
+
+The partial-dispatch regression `PartialDispatchKeepsItsSavedDestinationAfterDeactivationAndRequiresReceivingConfirmation` covers a changed Default and deactivated exact saved revision. Detail still offers that revision to the committed Job, while the command rejects dispatch without receiving confirmation and rejects a redirect even with confirmation. It records the confirmed continuation and retains the Job's saved destination.
+It also covers a later kit request on the same Job, the physical-kit detail dispatch API, and confirms that new work excludes the inactive destination. This case and the two adjacent route-lock/partial-dispatch cases passed against the verified disposable PostgreSQL reference database.
+
+`KitCannotBeLinkedToAnInactiveSampleType` now checks the one-time Transportation kit link against a deactivated Sample type, confirms the failed save leaves no link, and then confirms linking succeeds when that type is Active again. It passed against the verified disposable PostgreSQL reference database.
+
+The kit-status follow-up adds connected cases for an inactive successor retaining its predecessor's active interval until explicit activation, activation closing that interval at the successor's effective start, stale-version rejection, and historical-container activation rejection. Both cases passed on the verified disposable PostgreSQL reference database. The activation command also rechecks current product, component, and approved assembly readiness; the Debug and Release API builds passed with zero warnings.
+
+The pending-successor rule adds a connected assertion that direct API revision creation fails with a conflict while revision 3 is Inactive, without changing the active predecessor. The initial version 1 draft may still create its first successor. The focused connected selection passed three tests on the verified disposable PostgreSQL reference database, including the original version 1 draft activation path.
+
+The inactive-successor connected case now also asserts that the linked Sample type is unchanged in the revision-create response, a fresh detail read, and revision history. Other revisioned records need their own relationship-inheritance audit under the application-wide revision strategy.
+
+The historical-kit connected case now proves that an inactive successor can be activated, retains its Sample type, becomes the current Active revision, and allows another content revision. It also proves that this status does not make an unnamed historical kit eligible for recommendations or new physical-kit stock. This supersedes the earlier historical activation rejection assertion.
+
+# Purchased complete Transportation kits — September 26, 2026
+
+Activation-order regression: a Kit specification with a selected but inactive Sample type family can be activated without first activating that Sample type or its Shipping procedure. A connected PostgreSQL case in `ShippingKitContentsPostgresTests.cs` records the released specification and confirms it remains absent from the new-work readiness set. A missing Sample type link and invalid kit details remain activation errors. This case is authored but not executed under the request-only test rule.
+
+Workflow-later regression: a Phaeno specification with an Active Sample type and no approved assembly workflow can activate and appear in compatible kit-order choices, with `AssemblyWorkflowReady = false`. Preparing a new physical kit remains blocked until a compatible approved workflow exists. A connected PostgreSQL case in `ShippingKitContentsPostgresTests.cs` covers this separation; automated execution remains request-only. The earlier workflow activation gate is superseded by this owner decision.
+
+Pending connected coverage: create external supplier Transportation kit products with required `each` unit; create Draft/activate their specifications without an internal assembly workflow; accept equal supplier SKU text for distinct products without merging families; permit multiple separate specification families for the same catalog product, including concurrently Active families and families with different Sample types; retain the one-open-Draft rule per family and exact revision identity through recommendation, physical stock, and issued history; reject inactive suppliers/products, missing current Sample type/procedure, missing capacity or temperature instructions, and external component or workflow overrides. Internal Phaeno products must retain workflow validation. Receipt must require a supplier reference, active tube and outer shipper catalog products, required expiration dates for the complete kit and included products, and authenticated actor/time. It must issue one unique `KIT-` barcode, pin exact specification and actual contents, create no assembly run or component deduction, reject stale or duplicate physical tube IDs, and block dispatch until the full roster is registered and independently rescanned. Confirm expiry, deactivation, withdrawal, Customer receipt, reservation, shipment use, and issued snapshots retain the established safeguards. Run connected tests only when requested under the repository rule.
+
+## September 28, 2026 — Built-in product types and tube inventory defaults
+
+SupplierCatalogPostgresTests adds connected regressions for Tube and Shipping Container name/status/role protection, Transportation kit rename/deactivate/reactivate with its complete-kit role preserved, and Tube creation defaulting to each while explicitly configured units survive an unrelated edit. The missing-unit regression now uses Reagent, which still requires an explicit unit. Connected cases use a rollback transaction and remain unexecuted under the request-only rule. The complete solution, including test sources, compiled with zero warnings and errors using isolated temporary artifacts. No persisted model, EF migration, or seed change is required.
+
+September 28 follow-up: ProductTypes connected assertions reject creating a managed Tube/ShippingContainer role and reject changing an unreferenced Other type into a component role. KitDraftCanReplaceContentsRepeatedlyWhileRejectingAStaleVersion covers initial contents insertion, repeated replacement, fresh-read quantities/count, unchanged revision number, increasing concurrency versions, and a genuine stale-version rejection. The draft service explicitly tracks replacement rows as Added so EF inserts them instead of issuing updates against their assigned new IDs. The full solution compiles with zero warnings/errors; connected regressions are authored but unexecuted under the request-only rule.
+
+## September 28 clean local baseline and compatibility cleanup
+
+The [local reset record](LOCAL-CLEAN-DATABASE-20260928-PLAN.md) supersedes earlier additive-migration and old-kit fixture requirements. PersistenceTests now expects exactly one InitialCleanPortal migration. Shipping fixtures use purchased Shipping Containers, specification-owned contents, reusable named methods, explicit tube slots and supplier barcode namespaces. Catalog fixtures verify editable purchased-container identity/capacity and each defaults. QC capture tests require every configured required reference, with no exemption based on fixture names; optional attachments and conditional review remain current capabilities. Retired Website recovery and finished-kit receipt cases are removed.
+
+The complete solution builds with zero warnings/errors. The guarded baseline was applied locally and EF reports no pending model changes. Local seed counts and authenticated administrator access were verified. Automated backend suites were not run for this slice; authored fixture changes are not passing execution evidence. Production is unchanged. CRM compliance-field removal remains pending explicit confirmation.
+
+## September 29 transportation-kit barcode dispatch
+
+Connected request tests now assert type-level ready counts, exact barcode resolution, and withdrawn-kit rejection. The dispatch transaction continues to revalidate physical stock under its existing lock. These cases were updated but not executed under the request-only test rule. Quantity-flexible fulfillment and historical-demand conversion remain gated in the owning plan.
+
+## September 29 delivery target after complete physical receipt
+
+`LabJobDeadlineTests` now expects historical undated Jobs to accept tube intake without a deadline exception and covers observed-holiday arithmetic and the frozen due baseline. New connected coverage is still needed for standard and manual quote snapshots, rejection of initial quotes without a target, complete multi-tube and multi-shipment receipt, missing-calendar attention, and preserving existing placed Job dates. These suites were not run under the request-only test rule; the Release solution build is the static gate for this change.
+
+## September 29 requested full backend release run
+
+The complete Release solution builds with zero warnings or errors. All seven current EF migrations applied to a fresh disposable PostgreSQL reference database. The final full connected run passed **1,128 tests, with 2 intentional environment-dependent skips and 0 failures** (1,130 total). The skipped cases require a recovery-export environment and a supported file-storage host, respectively. Historical commercial handoff fixtures now use a received physical kit, a saved sample/tube pair, an issued shipping packet, shipment receipt, and registered-tube accession. Trial fixture grants are effective before the test clock boundary. The preceding full run had five failures, including a Windows socket-exhaustion error while another diagnostic suite was running; the isolated final run passed without concurrent tests. This evidence is local and simulated, not physical scanner, hosted authenticated, provider, or scientific acceptance.
+
+## September 30 sequential Job phases
+
+Authored, not executed under the request-only test rule: LabJobPhaseDomainTests covers generalized 350/10,000-sample scope, first receipt versus complete receipt, frozen commitments, sent/received assignment restrictions, fixed started scope, cancelled outcomes and immutable invoice attribution. LabJobCompletionPostgresTests now covers explicit phase invoice rollback, PDF cleanup, safe retry and incomplete delivery rejection. Completion acceptance and accepted-scope change cases issue invoices explicitly. Customer progress cases expect Mixed from differing attributed stages and require complete purchased-run release evidence. Scoped fixture cleanup includes the new phase dependencies.
+
+Connected acceptance still needs execution and expansion for multi-container partial tube receipt, early future-cohort TAT, preceding-phase start gates across trays/analysis/assembly, concurrent first receipt versus cancellation/rephasing, tenant/Department authority, invoice tax rounding, partial/combined invoices, voids and billed rephasing. Static compilation is not proof of these workflows. See MULTI-PHASE-LAB-JOBS-PLAN.md.
+
+## September 30 Portal reconstruction maintenance workflow
+
+The [reconstruction plan](PORTAL-DATABASE-RECONSTRUCTION-WORKFLOW-PLAN.md) defines a manual data-only reset. Automated/destructive suites are deferred under the request-only test rule. A read-only production preview checked all 223 deployed application tables and returned three preserved Phaeno users, three built-in types, one calendar and 33 holidays; it finished with ROLLBACK. This does not exercise destructive execution, API stop/restart, or GitHub dispatch.
+
+Requested connected rehearsal must use an isolated PostgreSQL 18 instance with database name `phaeno_portal_green`, never the production endpoint. Populate Customer/Partner/Prospect users and a dual-membership Phaeno user; active/inactive staff memberships, departments, role assignments and Trial primary/delegate authority links; all three canonical types plus custom types/catalog/stock; multiple calendar revisions; customized reference defaults; and jobs/invoices/Website intake/audits. Assert preview changes no persistent rows or database comment. Assert reset retains exact Phaeno identities/access states and all calendars, discards customer access and all nonallowed operational rows, recreates exact model defaults, preserves schema/migration history, and leaves exactly one new maintenance audit. Include two successive resets and newly added operational tables.
+
+Refuse wrong database, absent active linked administrator, missing canonical type/calendar, changed seed columns, unresolved retained authority references, cross-schema foreign keys/descendants and cross-table preservation cycles. Force reinsertion/comparison failure after TRUNCATE and prove transaction atomicity. Shell coverage must verify failed SQL restarts only the original API container, another maintenance lock/client refuses reset, confirmation is mandatory, secret/profile values never enter logs, and failed post-commit health is reported without inventing a rollback. No production reset or test suite was run for this implementation.
+
+## October 2 requested workflow release verification
+
+The complete Release solution builds with zero warnings/errors, and EF reports
+no pending model differences. The final connected full run on an explicitly
+isolated, freshly migrated local PostgreSQL 18 database passed **1,201 cases,
+with 2 intentional skips and no failures** (1,203 total). All fourteen migrations
+applied; the scratch database was removed and verified absent afterward.
+The skips are the Windows symbolic-link storage case and recovery export/private
+attachment case requiring its dedicated environment. Neither skip is claimed as
+passing physical or scientific recovery evidence.
+
+Current fixtures preserve catalog identity, valid commercial phase pricing,
+sample/tube crosswalks, phase shipment gates and cancellation boundaries.
+Location-stock reuse tests explicitly seed unallocated historical requests;
+new phase-owned kit exclusivity remains enforced. The full run covers the
+accession Used/Not used query, mapped latest-packet shipment search and accepted
+Change quote pair finalization/provider amendments after original work starts.
+The [release plan](PORTAL-WORKFLOW-RELEASE-20261002-PLAN.md) records a separate
+current-hosted-copy migration rehearsal. Destructive reconstruction execution,
+hosted operator, real provider and physical/scientific acceptance remain separate.
+
+### Master-mix Lab step assembly and service workflow header — October 3, 2026
+
+`MasterMixDomainTests` now covers recipe derivation across repeated approved step occurrences, exact 12-place totals, rejection of missing pins or optional/untracked reagents, required typed evidence, QC holds and permitted repeats, immutable revisions, shared quantity limits and discard. Whole-solution Release build verifies compilation. Automated suites were not requested for this new scope. Connected acceptance remains required for reagent-only catalog validation, actual lot/step/field matching, stock/replay atomicity, equipment eligibility, QC correction lineage and migration refusal on a nonempty target.
+
+### October 4 release verification
+
+The persistence boundary test explicitly permits only the new restricted
+`LabBatchMember.SequencingCatalogItemId` relationship to `QboCatalogItem`;
+other cross-schema relationships retain their existing allowlist. The current
+Release solution builds with zero warnings/errors and no EF model drift.
+All four pending migrations passed twice against an isolated hosted copy,
+with eighteen migrations and unchanged counts for all 226 existing tables.
+Full connected regression results are recorded in the
+[release plan](PORTAL-WORKFLOW-RELEASE-20261004-PLAN.md).
+
+The final complete connected run passes: 1,244 cases, zero failures and two
+intentional environment skips. The recovery fixture now creates an independent
+batch for the retained-sendout rejection case rather than deleting permanent
+history; the application's lineage deletion guard remains intact. Its twelve
+persistence/recovery cases also pass independently. The disposable verification
+database was dropped and verified absent after the full run.
+
+### Sequencing vendor catalog — October 5, 2026
+
+`SequencingVendorCatalogTests.cs` adds domain coverage for vendor/address ownership,
+inactive addresses, physical-product rejection, immutable reviewed snapshots and
+post-dispatch address freezing. Its PostgreSQL reference case covers multiple
+addresses, service activation prerequisites, last-address retirement, stale writes,
+wrong-parent writes and Customer denial. `ControllerRouteTests` registers the
+vendor lookup and address write actions. Commercial handoff fixtures now create
+explicit synthetic catalog selections and validate the version-3 manifest; both
+version-2 and version-3 manifests enforce frozen sequencing-tube custody scope.
+
+The solution builds with zero warnings/errors. Migration
+`20261005182306_SequencingVendorCatalog` is additive and applied only to the verified
+configured local database. Model drift is absent and before/after fingerprints
+match for the existing batches, sendout and demo tubes. Automated execution was
+not requested; these authored cases and connected stale-selection/concurrency
+acceptance remain pending.
+
+## October 5 controlled release verification
+
+The owner separately authorized full tests, commit/push, deployment and the two
+preserving EF migrations under [the hosted release plan](PORTAL-WORKFLOW-RELEASE-20261005-PLAN.md).
+Final results and hosted activation are recorded in [the release receipt](../operations/portal-workflow-release-20261005.md).
+This supersedes request-only execution statements in the earlier local checkpoints;
+physical/scientific/provider and authenticated operator acceptance remain separate.
+
+The complete connected final run passes 1,261 tests with zero failures and two
+intentional environment skips: the Windows linked-directory case and the opt-in
+private-attachment investigation restore scenario. The full Release solution build
+has zero warnings/errors and EF reports no model drift. Both new migrations apply
+to an isolated local verification database, which is dropped and verified absent.
+The 63 focused repair cases also pass. Fixture repairs preserve unique preparation
+identity, actual custody actor, catalog-backed sendouts and immutable JSON values
+across PostgreSQL JSONB formatting. Hosted backup restoration has its own evidence
+in the release receipt; it does not substitute for the opt-in scientific scenario.

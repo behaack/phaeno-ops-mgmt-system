@@ -1,6 +1,8 @@
 import type { SessionCapabilities } from '#/api/session'
 
 export const noSessionCapabilities: SessionCapabilities = {
+  canAccessCrm: false,
+  canAdministerCrm: false,
   canInviteUsers: false,
   canManageMembers: false,
   canChangeMemberRoles: false,
@@ -14,6 +16,7 @@ export const noSessionCapabilities: SessionCapabilities = {
   canProvisionOrganizationData: false,
   canViewOrganizationDatasets: false,
   canViewLabServiceOrders: false,
+    canViewLabServiceInvoices: false,
   canCreateLabServiceRequests: false,
   canSubmitLabServiceRequests: false,
   canAcceptLabServiceQuotes: false,

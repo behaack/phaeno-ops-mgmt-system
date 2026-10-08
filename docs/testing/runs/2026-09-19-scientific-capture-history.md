@@ -1,0 +1,14 @@
+# Staff scientific capture and sample delivery history — September 19, 2026
+
+Authorized scope: close the two confirmed software gaps in the [capture/history contract](../../plans/LAB-SCIENTIFIC-CAPTURE-AND-HISTORY-CONTRACT.md). Changes remain local and uncommitted; no deployment, production settings or shared database changes.
+
+## Verification
+
+- Backend: **19 passed**, no failures/skips. Focused filter covers `ScientificWorkspaceScopes`, `InvestigationHistory`, `LabScientificEvidenceTests`, `LabResultLineageTests`, `LabInvestigationTests`, and `EvidenceGovernance`. The new three PostgreSQL scenarios prove scoped choices/role rejection/historical sendout matching; commercial sample and organization exclusions, download outcomes/commit observations, retention/holds/reissues and immutable reports; shared Trial package membership, sample-only files/downloads and explicit unreadable-manifest failure. Tests ran against disposable local PostgreSQL at port 55441 in rolled-back transactions. API and test projects compiled successfully.
+- Frontend: **13 passed** across scientific capture, step timing and performance presentation. Coverage includes mandatory exact file identity, versions/roles, positive whole-byte sizes, QC measurements/documents, explained exceptions, invalid/ordered times and correction timestamp precision.
+- Browser: **12 passed** across scientific capture, sample investigation and performance review in desktop Chromium and mobile Chrome. Light/dark capture cases exercise failed-save retry identity, linked corrections, exact analysis inputs/profile, fixed upload attribution, unsaved-change cancellation, menu keyboard focus and axe accessibility. Read-only/error recovery and existing immutable-report/performance-review interactions also pass. These use synthetic API fixtures, not live producer/provider acceptance.
+- TypeScript and focused ESLint checks pass. EF reports **no pending model changes**; no migration was created or applied for this slice. Documentation corpus regenerated (56 guides, `6ecb171bcde4`); documentation consistency and whitespace checks pass.
+
+The first browser run caught on-blur validation moving an add-row button during a click; validation now starts on submit, and reruns pass. Existing browser fixtures were updated to serve the new scoped read endpoint. The retention test fixture initially attempted a second active global policy; it now uses the seeded policy, preserving the existing uniqueness rule. No product guard or test was disabled to clear failures.
+
+Screenshots are local artifacts under `artifacts/sample-investigation-20260919/scientific-*.png`; visual review includes the narrow mobile record layout. Successful downloads represent recorded transfers, not proof of reading or scientific validity. Historical facts remain unknown where never captured. Hosted recovery, real producer/bench acceptance, activation cutoff/in-flight policy and production release remain separate gates.

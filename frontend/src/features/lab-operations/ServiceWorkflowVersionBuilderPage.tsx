@@ -1,8 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link, useNavigate } from '@tanstack/react-router'
-import { ArrowDown, ArrowLeft, ArrowUp, Plus, Trash2 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useBlocker, useNavigate } from '@tanstack/react-router'
+import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { useFieldArray, useForm } from 'react-hook-form'
 import { z } from 'zod'
 
@@ -42,6 +42,7 @@ const emptyStage = (): WorkflowForm['stages'][number] => ({ name: '', labProtoco
 export function ServiceWorkflowVersionBuilderPage({ workflowId, draftVersionId }: { workflowId: string; draftVersionId?: string }) {
   const { authProvider, session } = usePhaenoSession()
   const navigate = useNavigate()
+  const leaveApproved = useRef(false)
   const queryClient = useQueryClient()
   const [loadedKey, setLoadedKey] = useState<string | null>(null)
   const [discardOpen, setDiscardOpen] = useState(false)
@@ -50,11 +51,11 @@ export function ServiceWorkflowVersionBuilderPage({ workflowId, draftVersionId }
   const dashboard = useQuery({ queryKey: ['lab-operations'], queryFn: getLabOperationsDashboard, enabled: apiEnabled })
   const workflow = dashboard.data?.serviceWorkflows.find((item) => item.id === workflowId)
   const draft = draftVersionId ? workflow?.versions.find((item) => item.id === draftVersionId) : undefined
-  const openCandidate = workflow?.versions.find((item) => item.status === 'Draft' || item.status === 'Approved')
+  const openCandidate = workflow?.versions.find((item) => item.status === 'Draft' || item.status === 'Approved' || item.status === 'Invalid')
   const controlledSource = workflow?.versions.find((item) => item.status === 'Production')
     ?? workflow?.versions.filter((item) => item.status === 'Retired').slice(-1)[0]
   const formKey = `${workflowId}:${draftVersionId ?? 'new'}`
-  const form = useForm<WorkflowForm>({ resolver: zodResolver(workflowSchema), defaultValues: { stages: [emptyStage()] } })
+  const form = useForm<WorkflowForm>({ resolver: zodResolver(workflowSchema), defaultValues: { stages: [] } })
   const stages = useFieldArray({ control: form.control, name: 'stages' })
   const mutation = useMutation({
     mutationFn: (values: WorkflowForm) => {
@@ -71,14 +72,17 @@ export function ServiceWorkflowVersionBuilderPage({ workflowId, draftVersionId }
         : createLabServiceWorkflowVersion(workflowId, input)
     },
     onSuccess: async () => {
+      leaveApproved.current = true
       await queryClient.invalidateQueries({ queryKey: ['lab-operations'] })
-      await navigate({ to: '/lab-operations', search: { section: 'protocols' } })
+      await navigate({ to: '/lab-configuration', search: { configurationTab: 'workflows' } })
     },
   })
 
+  useBlocker({ shouldBlockFn: () => !leaveApproved.current && (mutation.isPending || form.formState.isDirty && !window.confirm('Discard unsaved workflow changes?')), enableBeforeUnload: false })
+
   useEffect(() => {
     if (!workflow || loadedKey === formKey) return
-    if (draftVersionId && (!draft || draft.status !== 'Draft')) return
+    if (draftVersionId && (!draft || !['Draft', 'Invalid'].includes(draft.status))) return
     if (!draftVersionId && openCandidate) return
     const source = draft ?? controlledSource
     form.reset({ stages: source?.stages.map((stage) => ({
@@ -101,24 +105,23 @@ export function ServiceWorkflowVersionBuilderPage({ workflowId, draftVersionId }
     return () => window.removeEventListener('beforeunload', warn)
   }, [form.formState.isDirty, mutation.isSuccess])
 
-  const leave = () => navigate({ to: '/lab-operations', search: { section: 'protocols' } })
+  const leave = () => navigate({ to: '/lab-configuration', search: { configurationTab: 'workflows' } })
   if (!canManage) return <PageAlert title="Workflow authoring unavailable" message="An active Protocol Administrator role is required." destructive />
   if (authProvider === 'mock') return <PageAlert title="Workflow authoring is paused" message="Connect a real Phaeno session to create a controlled workflow version." />
-  if (dashboard.isLoading) return <main className="page-wrap px-4 py-8"><p role="status">Loading service workflow…</p></main>
-  if (dashboard.error || !workflow) return <PageAlert title="Service workflow could not be loaded" message={getLabOperationsError(dashboard.error, 'Return to Lab operations and try again.')} destructive />
-  if (draftVersionId && (!draft || draft.status !== 'Draft')) return <PageAlert title="This workflow version cannot be edited" message="Only the current Draft version can be changed." destructive />
+  if (dashboard.isLoading) return <main className="space-y-4"><p role="status">Loading service workflow…</p></main>
+  if (dashboard.error || !workflow) return <PageAlert title="Service workflow could not be loaded" message={getLabOperationsError(dashboard.error, 'Return to Workflows and try again.')} destructive />
+  if (draftVersionId && (!draft || !['Draft', 'Invalid'].includes(draft.status))) return <PageAlert title="This workflow version cannot be edited" message="Only the current Draft version can be changed." destructive />
   if (!draftVersionId && openCandidate) return <PageAlert title="A workflow candidate is already open" message="Continue, promote, withdraw, or discard the existing candidate first." destructive />
 
-  const protocolOptions = dashboard.data!.protocols.flatMap((protocol) => protocol.versions
+  const protocolOptions = dashboard.data!.protocols.filter((protocol) => !protocol.retiredAtUtc).flatMap((protocol) => protocol.versions
     .filter((version) => version.status === 'Approved' || version.status === 'Active')
     .map((version) => ({ value: version.id, label: `${protocol.name} v${version.protocolVersion} · Approved` })))
 
   return (
-    <main className="page-wrap px-4 py-8">
+    <main className="space-y-4">
       <section className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-sm text-muted-foreground"><Link to="/lab-operations" search={{ section: 'protocols' }} className="inline-flex items-center gap-1 hover:underline"><ArrowLeft className="size-4" /> Protocols</Link></p>
-          <h1 className="mt-2 text-3xl font-semibold">{workflow.name} · workflow v{draft?.workflowVersion ?? workflow.latestVersion + 1}</h1>
+          <h2 className="text-2xl font-semibold">{workflow.name} · workflow v{draft?.workflowVersion ?? workflow.latestVersion + 1}</h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">Arrange exact approved protocol versions in operating order. Production jobs retain this complete version even after a replacement is promoted.</p>
         </div>
         <div className="rounded-lg border bg-muted/40 px-3 py-2 text-sm"><span className="text-muted-foreground">Marketed service</span><span className="ml-2 font-mono font-medium">{workflow.serviceKey}</span></div>
@@ -166,7 +169,7 @@ export function ServiceWorkflowVersionBuilderPage({ workflowId, draftVersionId }
       </form>
 
       <Dialog open={discardOpen} onOpenChange={setDiscardOpen}>
-        <DialogContent><DialogHeader><DialogTitle>Discard workflow changes?</DialogTitle><DialogDescription>Unsaved stage order and selections will be lost. The previously saved workflow remains unchanged.</DialogDescription></DialogHeader><DialogFooter><DialogClose asChild><Button type="button" variant="outline">Keep editing</Button></DialogClose><Button type="button" variant="destructive" onClick={() => void leave()}>Discard changes</Button></DialogFooter></DialogContent>
+        <DialogContent><DialogHeader><DialogTitle>Discard workflow changes?</DialogTitle><DialogDescription>Unsaved stage order and selections will be lost. The previously saved workflow remains unchanged.</DialogDescription></DialogHeader><DialogFooter><DialogClose asChild><Button type="button" variant="outline">Keep editing</Button></DialogClose><Button type="button" variant="destructive" onClick={() => { leaveApproved.current = true; void leave() }}>Discard changes</Button></DialogFooter></DialogContent>
       </Dialog>
     </main>
   )
@@ -177,5 +180,5 @@ function Field({ label, id, required, error, children }: { label: string; id: st
 }
 
 function PageAlert({ title, message, destructive = false }: { title: string; message: string; destructive?: boolean }) {
-  return <main className="page-wrap px-4 py-8"><Alert variant={destructive ? 'destructive' : 'default'}><AlertTitle>{title}</AlertTitle><AlertDescription>{message}</AlertDescription></Alert></main>
+  return <main className="space-y-4"><Alert variant={destructive ? 'destructive' : 'default'}><AlertTitle>{title}</AlertTitle><AlertDescription>{message}</AlertDescription></Alert></main>
 }

@@ -64,6 +64,27 @@ export type AcceptedInvitation = Invitation & {
   organizationKind?: OrganizationKind
 }
 
+export type InvitationPreview = {
+  email: string
+  firstName: string | null
+  lastName: string | null
+  organizationName: string
+  expiresAt: string
+  isOrganizationAdmin?: boolean
+  departments?: Array<{ departmentId: string; departmentName: string; isDepartmentAdmin: boolean }>
+  version?: number
+}
+
+export async function previewInvitation(token: string) {
+  const response = await api.post<InvitationPreview>('/invitations/preview', { token })
+  return response.data
+}
+
+export async function beginInvitationAuthentication(token: string) {
+  const response = await api.post<{ registrationUrl: string | null }>('/invitations/authentication', { token })
+  return response.data
+}
+
 export async function createInvitation(input: {
   organizationId: string
   firstName: string
@@ -79,6 +100,7 @@ export async function createInvitation(input: {
 
 export async function acceptInvitation(input: {
   token: string
+  version?: number
   firstName: string
   lastName: string
 }) {

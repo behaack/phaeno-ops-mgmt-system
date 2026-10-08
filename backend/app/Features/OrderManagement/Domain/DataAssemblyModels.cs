@@ -5,6 +5,20 @@ using PSeq.Operations.Commercial.OrderManagement.Domain;
 
 public sealed class DataAssemblyRequest : IAudit, IConcurrency
 {
+    public Guid? KitAssemblyCaseId { get; private set; }
+    public string? KitProfileSnapshotJson { get; private set; }
+    public void LinkIncludedCase(Guid caseId, string profileSnapshotJson, string purchaseOrderNumber, DateTime committedAt)
+    {
+        EnsureStatus(AssemblyRequestStatus.Draft);
+        if (KitAssemblyCaseId.HasValue || caseId == Guid.Empty) throw new InvalidOperationException("The included Assembly case link is immutable.");
+        KitAssemblyCaseId = caseId; KitProfileSnapshotJson = OrderText.Json(profileSnapshotJson);
+        PurchaseOrderNumber = OrderText.Required(purchaseOrderNumber, nameof(purchaseOrderNumber), 255); PlacedAt = committedAt;
+    }
+    public void AcceptIncludedIntake()
+    {
+        if (!KitAssemblyCaseId.HasValue) throw new InvalidOperationException("An included Kit case is required.");
+        Transition(AssemblyRequestStatus.IntakeValidation, AssemblyRequestStatus.PlacedQueued);
+    }
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid OrganizationId { get; private set; }
     public Guid DepartmentId { get; private set; }
@@ -81,7 +95,7 @@ public sealed class DataAssemblyRequest : IAudit, IConcurrency
         EnsureStatus(AssemblyRequestStatus.Draft, AssemblyRequestStatus.ChangesRequested);
         ProjectReference = OrderText.Required(projectReference, nameof(projectReference), 255);
         MetadataJson = OrderText.Json(metadataJson);
-        RequestedOutput = OrderText.Required(requestedOutput, nameof(requestedOutput), 2000);
+        if (!KitAssemblyCaseId.HasValue) RequestedOutput = OrderText.Required(requestedOutput, nameof(requestedOutput), 2000);
         ProcessingNotes = OrderText.Optional(processingNotes, 4000);
         ProhibitedDataConfirmed = prohibitedDataConfirmed;
     }
@@ -104,10 +118,15 @@ public sealed class DataAssemblyRequest : IAudit, IConcurrency
         SetStatus(AssemblyRequestStatus.ChangesRequested, reason, internalNote);
     }
 
-    public void BeginQuotePreparation() => Transition(AssemblyRequestStatus.IntakeValidation, AssemblyRequestStatus.QuoteInPreparation);
+    public void BeginQuotePreparation()
+    {
+        if (KitAssemblyCaseId.HasValue) throw new InvalidOperationException("Included Assembly does not require another quote.");
+        Transition(AssemblyRequestStatus.IntakeValidation, AssemblyRequestStatus.QuoteInPreparation);
+    }
 
     public void MarkQuoteIssued(Guid quoteId)
     {
+        if (KitAssemblyCaseId.HasValue) throw new InvalidOperationException("Included Assembly does not create a second quote.");
         EnsureStatus(AssemblyRequestStatus.QuoteInPreparation, AssemblyRequestStatus.QuoteIssued);
         CurrentQuoteId = quoteId;
         SetStatus(AssemblyRequestStatus.QuoteIssued, null, null);
@@ -115,6 +134,7 @@ public sealed class DataAssemblyRequest : IAudit, IConcurrency
 
     public void AcceptQuote(Guid quoteId, string purchaseOrderNumber, DateTime utcNow)
     {
+        if (KitAssemblyCaseId.HasValue) throw new InvalidOperationException("Included Assembly is already purchased with its Kit.");
         EnsureStatus(AssemblyRequestStatus.QuoteIssued);
         if (CurrentQuoteId != quoteId) throw new InvalidOperationException("Only the current quote can be accepted.");
         PurchaseOrderNumber = OrderText.Required(purchaseOrderNumber, nameof(purchaseOrderNumber), 255);
@@ -196,6 +216,7 @@ public sealed class DataAssemblyRequest : IAudit, IConcurrency
 
 public sealed class AssemblyInputRevision
 {
+    public Guid? KitUnitId { get; private set; }
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid DataAssemblyRequestId { get; private set; }
     public int Revision { get; private set; }
@@ -207,7 +228,7 @@ public sealed class AssemblyInputRevision
     public DateTime SubmittedAt { get; private set; }
 
     private AssemblyInputRevision() { }
-    public AssemblyInputRevision(Guid requestId, int revision, Guid? previousRevisionId, string manifestJson, string? correctionReason, string validationSummaryJson, Guid actorUserId, DateTime submittedAt)
+    public AssemblyInputRevision(Guid requestId, int revision, Guid? previousRevisionId, string manifestJson, string? correctionReason, string validationSummaryJson, Guid actorUserId, DateTime submittedAt, Guid? kitUnitId = null)
     {
         if (revision <= 0) throw new ArgumentOutOfRangeException(nameof(revision));
         DataAssemblyRequestId = requestId;
@@ -218,6 +239,7 @@ public sealed class AssemblyInputRevision
         ValidationSummaryJson = OrderText.Json(validationSummaryJson);
         SubmittedByUserId = actorUserId;
         SubmittedAt = submittedAt;
+        KitUnitId = kitUnitId;
     }
 }
 

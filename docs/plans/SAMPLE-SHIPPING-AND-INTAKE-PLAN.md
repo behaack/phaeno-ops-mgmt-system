@@ -1,5 +1,1445 @@
 # Sample Shipping and Intake Plan
 
+## September 29, 2026 shipping insert confirmation correction
+
+Keep the confirmation title and brief description in the fixed header, with the shipment's sample and tube counts and print/packing guidance in the dialog body. Name the shipping insert as the receiving sheet created by confirmation: its printed face has shipment details, sample and tube totals, and a scan barcode; the full packing instructions and sample/tube crosswalk remain available separately for review. The entry action is **Review and confirm shipment contents** and the final button is **Confirm and create receiving sheet**. A server error spans the available dialog width while the title retains space for the close control. In the Lab Job Actions menu, **Request cancellation** uses destructive red text while retaining its existing confirmation and permission rules.
+
+The accepted Sample type's submission unit describes a count of physical tubes, including sized labels such as `2mL tube`; the entered material amount is checked separately against the Sample type minimum and Tube product maximum in matching volume units. Paired shipment items must carry the pinned Sample type's exact submission unit. Existing paired Customer shipments saved with the generic `tube` count are equivalent for insert confirmation when the pinned type also counts tubes. This must not weaken the volume bounds or accept a non-tube submission unit. For the local sample `9595955`, 1.65 mL is within the configured 1.5–2.0 mL range; the insert rejection was caused by comparing `tube` to `2mL tube` as literal strings.
+
+## September 26, 2026 versioning supersession
+
+The [Shipping configuration versioning plan](SHIPPING-CONFIGURATION-VERSIONING-PLAN.md) supersedes earlier Active-by-default create/revision flows for Sample types, Phaeno ship-to destinations, Shipping procedures, and Kit specifications. Each begins as a Draft, may be edited in place or discarded, and is activated separately. The Sample type's procedure and Kit specification's Sample type are per-revision choices; the immediate Change procedure and permanent Link Sample type flows retire. Ordinary Sample type/procedure deactivation blocks new Jobs while placed Jobs continue on exact pins unless separately placed on an audited shipping safety hold. Existing historical sections below describe earlier decisions and should be read under this supersession.
+
+The current decisions at the top of this plan supersede older alternatives below, including mixed-type containers and procedure selection on individual assignments.
+
+In the Phaeno ship-to destination Add and Create revision forms, place Status last, after the international-shipment choice and existing-assignment guidance. Its Active default and revision behavior remain unchanged.
+
+## Global default Phaeno ship-to destination — September 25, 2026
+
+Phaeno configures one global default receiving-destination family from a current Active destination's Actions menu; the list and detail show its Default badge. When the latest revision is Inactive but an earlier revision remains Active, the action explicitly names that Active revision. A newly finalized Customer Job uses the current Active revision of that family when it has an Active assignment and procedure for the Job's single Sample type. A missing or unavailable default blocks finalization with a specific configuration error; the system never picks an arbitrary alternate. When exactly one active destination family already exists, migration initializes it as the default in an existing system configuration. An amended Job retains its earlier selected destination if still eligible. Customer-held kits therefore need no separate Phaeno routing queue.
+
+The destination settings page names whether an Active Sample type lacks an available shared procedure or a usable Active assignment to the current default and links to that type. In the configured local development database, PSeq Enriched RNA has a selected shared procedure; the signed-in browser subsequently showed its Active assignment to Santa Barbara Lab. The software must not invent pair-specific instructions or silently route its Jobs elsewhere.
+
+Kit fulfillment shows the saved Phaeno return destination separately from the Customer's outbound delivery location. Before the first kit for a Job is dispatched, Phaeno may choose a different current Active destination only when every requested kit supports it and no shipment packing or issued packet exists. A dispatched kit or shipment beyond preparation fixes that Job's destination for later requests and batches. Issued packets retain their frozen address and instructions. The destination setting is a global family key, so publishing a new Active revision does not require reselecting the default. The `DefaultPhaenoShipToDestination` migration was applied to the configured local development database `phaeno_ops_clean_20260919`; it initializes the default for an existing system configuration only when exactly one Active destination family exists. Acceptance: new Jobs use the configured default, an invalid default blocks finalization clearly, existing stock orders can prepare without waiting for a routing queue, fulfillment permits only compatible alternate destinations before first dispatch, and later dispatch cannot change the route. Automated suites and signed-in browser acceptance remain request-only.
+
+## Shipping procedure description and usage — September 25, 2026
+
+A Shipping procedure has an optional Description in Add and Create revision, directly after Name. Show the saved description beneath the name in its list row and on its detail page. Existing revisions have a blank description after migration; creating a revision carries the prior description into the form. Between Procedure details and Revision history, list the currently Active Sample type families configured to this procedure family, with links to each current Sample type revision. A historical procedure revision shows the same family usage because new work follows the family's current Active revision. Inactive or ended Sample types are not presented as currently using it. The Description column is limited to 4,000 characters and defaults to empty for existing rows. The migration was applied to the configured local development database `phaeno_ops_clean_20260919`.
+
+Acceptance: a description saves and appears directly beneath the procedure name in the list; a revision retains it for editing; the detail page shows each current Active Sample type once, links to its exact current revision, and shows a clear empty state when none use the procedure. Backend and frontend static checks are the checkpoint; automated suites and browser acceptance remain request-only.
+
+## Shipping procedure description and usage — September 25, 2026
+
+A Shipping procedure has an optional Description in Add and Create revision, directly after Name. Show the saved description beneath the name in its list row and on its detail page. Existing revisions have a blank description after migration; creating a revision carries the prior description into the form. Between Procedure details and Revision history, list the currently Active Sample type families configured to this procedure family, with links to each current Sample type revision. A historical procedure revision shows the same family usage because new work follows the family's current Active revision. Inactive or ended Sample types are not presented as currently using it. The Description column is limited to 4,000 characters and defaults to empty for existing rows. The migration was applied to the configured local development database `phaeno_ops_clean_20260919`.
+
+Acceptance: a description saves and appears directly beneath the procedure name in the list; a revision retains it for editing; the detail page shows each current Active Sample type once, links to its exact current revision, and shows a clear empty state when none use the procedure. Backend and frontend static checks are the checkpoint; automated suites and browser acceptance remain request-only.
+
+## End-to-end shipping hardening — September 25, 2026
+
+An older Inactive assignment can be activated only after checking the current Active Sample type revision and its selected Active shared procedure. The UI and API use the same prerequisite; an old procedure ID saved on the assignment is not a substitute for a missing type-level choice. A Sample type revision cannot appear to clear an existing procedure while the API retains it. When its previous choice is unavailable, the form requires an Active replacement.
+
+New-work readiness for an Active kit specification requires a current Sample type and its shared procedure at the effective time. The specification may be activated before that Sample type; it stays unavailable for new Orders until the dependency becomes Active. Validate the current destination and procedure through the same resolver used for new packet instructions; reject ended or inactive dependencies when authorizing new work. Saved legacy specifications remain readable and show dependency warnings after a later withdrawal. Customer roster finalization rechecks resolved shipping instructions before authorizing work, and operational readiness cannot report shipping ready when the selected procedure family has no Active revision. Existing issued packets and kit histories remain frozen. The global default decision above governs new Job destination selection.
+
+Acceptance: an unavailable type procedure blocks assignment activation; an Active kit cannot be saved with a withdrawn assignment or duplicate destination; a draft retains its review path; current procedure withdrawal blocks new shipping work and readiness while leaving issued text unchanged. Backend Release build, frontend typecheck, lint, documentation generation/check, EF model check and whitespace check are static checkpoints. Automated suites and browser acceptance remain request-only.
+
+## One shared shipping procedure per Sample type — September 25, 2026
+
+One Active shared Shipping procedure family may serve many Sample types. Each Sample type revision selects at most one family, and that choice applies across all Phaeno ship-to destinations. Administrators choose the procedure on the Sample type form. A destination assignment pairs the type and exact destination revision and holds only genuine pair-specific additions; it inherits the type's current Active procedure for new previews and packets. A new assignment requires a selected, available procedure. A new Active revision of that procedure is picked up automatically. Already issued instructions keep their saved text.
+
+The persisted Sample type revision stores the selected procedure ID. The migration copies an existing choice only when every historical assignment in that Sample type family names the same procedure family and that family has an Active revision. It leaves standalone or conflicting histories unset for review, preserving their saved assignment and issued snapshots. Sample types may be created before a procedure is chosen, but no new destination assignment can be added or activated until the type selects an available procedure. The form names the inherited procedure and displays its steps in a collapsible review area. Acceptance: many Sample types may choose the same procedure; a Sample type uses one across destinations; assignment create and revision cannot override it; procedure revision changes flow into new instructions; ambiguous legacy histories require an explicit Sample type revision. Automated suites and browser acceptance remain request-only.
+
+## Sample type as the home for shipping setup — September 25, 2026
+
+One Sample type family may have many compatible named transportation kit products. Each kit product is dedicated to exactly one family, even when another type would use identical components. The kit specification form selects the type first and then shows only its destination assignments. New specifications cannot combine type families, and a revision cannot change the product's type. A different type needs its own named kit product, assembly workflow, specification, and stock identity. Existing compatibility records provide the family association; no duplicate persisted type field or migration is needed. Historical multi-type specifications remain readable, show a warning, and are excluded from new recommendations until replaced by separate products. Issued records keep their saved facts.
+
+The Samples & shipping settings sidebar presents Sample types, Phaeno ship-to destinations, Shipping procedures, Kit specifications, and Order submission guidance. A Sample type detail page contains its assignments and kit specifications, including their create and revision actions. The shared destinations and procedures remain separate. Kit specifications retains an all-kits view so containers remain easy to find; older all-assignment links still resolve. Acceptance: choosing a type filters the kit's assignments and the Sample type page's kit list; an API save with multiple type families or a different type on revision fails; recommendation excludes an old mixed-type specification; the BOM is labeled **Bill of materials** in the editor and detail view; navigation back from a kit returns to its Sample type. Automated suites and signed-in browser acceptance remain request-only.
+
+## One sample type per PSeq order and container — September 25, 2026
+
+Each new PSeq order selects exactly one controlled Sample type before pricing. All samples added to that order use the selected type; a Customer requesting PSeq on another type creates a separate order. Different types never share a physical container, shipment packet, or tracking label. Biological source remains a separate sample attribute and may vary within one order. Customer and Phaeno order creation both capture the type, and the order workspace shows it. The selected type family follows its latest Active, effective revision for new shipping work; an issued packet retains its saved revision and instructions. Earlier orders with no explicit selected type stay readable and retain their existing fallback during shipping resolution.
+
+Shipping assignment forms no longer expose Compatibility group or a separate-shipment choice. The server derives a one-type handling key for new revisions and forces the separate-shipment flag for legacy contract compatibility. Packing reset pools by sample-type family, and multi-type packet previews are rejected. Historical group labels, old revisions, and issued packet snapshots remain readable. The order model stores the selected type revision ID and material-class snapshot; its new columns are nullable for historical rows. The EF migration and ERD are included. The owner authorized applying the migration to the configured local development database, `phaeno_ops_clean_20260919`, and EF confirmed it was applied.
+
+Acceptance: a new Customer or Phaeno Job cannot be created without one available PSeq Sample type; its scope shows that type. An order's samples and new shipping resolution use the selected type family. A second type requires another order, and a mixed-type packet request is rejected. Packing reset never pools different type families even when historical assignments share a compatibility label. Existing orders and issued records remain available for review. Automated suites and browser acceptance remain request-only.
+
+The Job's transportation-kit and container recommendations use the Sample type selected on that order, resolved to its current approved family revision and shipping assignment. Shipment items must belong to the same family; a mismatch blocks new container selection for review instead of suggesting another type's kit. Both recommendation surfaces show the Job's Sample type so the Customer can check the context. Historical orders without a selected type continue to use their saved shipment items. Kit stock and issued packet history remain unchanged.
+
+Only container definitions and received stock compatible with that order-scoped type and assignment appear as choices in the Job supply response. The general delivery-location inventory still shows all owned kits for inventory review. If approval changes while the kit-order dialog is open, Adjust kit sizes removes stale choices, clears their draft quantities, and excludes them from submission; the server checks compatibility again on save. An incompatible container cannot be selected merely because it is physically present at the location.
+
+## Shipping assignment form and current shared instructions — September 25, 2026
+
+A Shipping assignment pairs one Sample type family with one exact Phaeno destination revision. The Sample type selects one Active shared procedure family for all its destinations. Add and Create revision use the same form: Destination, Sample type, effective time, the inherited procedure name and collapsible read-only instructions, optional destination-specific additions, and Status at the bottom. Active is the default; Inactive retains an earlier Active assignment. The assignment form has no procedure override, compatibility group, separate-shipment choice, or direct-entry instruction mode. Existing standalone histories remain readable, but a new revision adopts the Sample type's selected procedure.
+
+New previews and packets resolve the current Active procedure revision in that family. Activating a new procedure revision therefore updates future instructions automatically; issued packets retain their saved text. Before an Active assignment is saved or activated, the UI and API check its current Sample type, destination, and selected procedure. An unavailable saved choice is shown with a warning so an administrator can replace it. A revision may change destination and Sample type, while preserving its own revision history and issued facts. Kit-specific temperature control and packing remain in Kit specifications.
+
+Acceptance: Add and Create revision expose the same fields and default to Active; a missing or withdrawn type-level procedure blocks new assignment work; inherited instructions are labeled text in a collapsed review area; new procedure revisions flow into new packets; issued snapshots are unchanged; saved unavailable dependencies are named and cannot be silently reused. Automated suites and browser acceptance remain request-only.
+
+## Warnings for Active records with withdrawn dependencies — September 25, 2026
+
+An Active approval label remains a saved fact when an administrator deactivates a dependency. It must not imply that the downstream record is ready for new shipping work. Before deactivating a destination, sample type, or procedure, name and count newly affected Active shipping assignments in the confirmation. Before deactivating an assignment, load and name its affected Active kit specifications; hold the action if that impact cannot be loaded. On Shipping assignments and Kit specifications, show a prominent persistent warning for affected Active records, including earlier Active revisions hidden behind a newer Inactive draft. Destination and sample-type loss blocks the relevant new shipping combination. A withdrawn procedure blocks new instructions until a Sample type revision selects another Active procedure. A kit specification linked to an unavailable assignment or its prerequisites needs review and a new revision if its combination changes. Do not silently change downstream approval flags or historical/issued records. Existing backend shipping resolution remains authoritative for eligibility; this UI warning reports currently loaded configuration and is not a replacement for server validation.
+
+Acceptance: each deactivation confirmation reports the affected assignment count and examples when known; an affected Active assignment or kit specification displays a visible warning after refresh even though its approval badge remains Active. The list summary remains visible when an earlier Active revision is behind an Inactive draft. The detail view states the affected kit combinations. Repairing the dependency removes the warning after refresh. Existing issued packets, confirmed shipments and manifests retain their frozen facts. Static typecheck, scoped lint, documentation check and whitespace check are the verification checkpoint; automated suites and browser acceptance remain request-only.
+
+## Ship-to destination revision presentation — September 25, 2026
+
+Phaeno administrators need the same clear latest-revision workflow for Ship-to destinations as for Sample types. The destination list shows the name as a primary record link, a short Rev N badge, and its saved Active/Inactive status without the long generated DEST reference. The reference remains searchable and available in destination detail. A collapsed prior-revision section below the list and exact links in the destination detail preserve historical review. The latest Inactive revision remains discoverable without Show inactive while an earlier revision is Active, and its row and detail identify the earlier active revision and effective timing. Status defaults to Active in the add and create-revision dialog, with an explicit Inactive choice. The existing destination API already ends an earlier Active revision at an Active successor's effective time; an Inactive successor leaves it available. Existing assignments retain their exact destination revision and must be revised to use a new one. The latest revision offers Actions; historical detail is view-only. No database or API contract change is required.
+
+Acceptance: creating a destination or revision without changing Status submits Active, while selecting Inactive submits Inactive; the form explains the effect. A latest Inactive revision with an earlier Active version stays in the default list with a named revision note. Search can find earlier names and generated codes. The list and detail show the short revision and status, the list's prior revisions expand, and exact historical detail links open the selected revision. Kit specifications row Actions puts Preview recommendation first. Update Phaeno help and regression sources; automated suites and signed-in browser acceptance remain request-only.
+
+## Shipping procedure availability and record links — September 25, 2026
+
+Phaeno administrators need the same revision availability model for Shipping
+procedures as for Sample types. The create/revision form uses a required Status
+choice defaulting to Active; Inactive saves content for later review. Saving or
+activating an Active successor retires earlier Active revisions immediately.
+An Inactive successor leaves the earlier Active revision available. Saved latest
+revisions expose one Activate or Deactivate action in the Actions menu, with a
+confirmation and optimistic version check. Historical revisions are read-only:
+there is no action to return to one. The list and detail use Active/Inactive
+badges and identify an earlier Active revision only while its successor is
+Inactive. Existing families that already have two Active revisions treat the
+newer revision as current for new assignment selection; the older one appears
+Superseded in history. A later Active save or latest-revision deactivation
+retires any remaining older Active flags. Viewing the list leaves saved data
+untouched. Existing assignments and issued packets retain their frozen
+content. This replaces the September 24 menu option to deactivate an exact
+historical revision. Keep the legacy deactivation endpoint compatible and add
+the narrow activation action; no
+schema migration or dependency is required. The Sample types list omits its
+long generated code badge while keeping the revision and status visible, with
+the code available on the detail page and in search.
+
+Use the Sample type primary-record link styling as the shared Portal standard
+for record links, including Shipping procedures. Preserve clear keyboard focus
+and use the same style on newly touched record lists. Procedure history follows
+the Sample type layout: a collapsed prior-revision section with matching card
+inset on the list, and a separate detail card with exact revision links and
+saved statuses.
+
+Acceptance: new Active procedure revisions retire an earlier Active revision;
+Inactive drafts preserve it; a saved Inactive latest revision can be activated
+without another content revision. The list, detail, confirmation and keyboard
+focus show one status action for the latest revision; older versions are
+read-only and cannot be selected for new assignments after a newer Active
+revision exists. The Sample types row shows its name, revision and status without the
+generated code. Backend and frontend regression sources and the Phaeno guide
+are updated; automated suites remain request-only.
+
+## Shipping procedure Actions and withdrawal — September 24, 2026
+
+Phaeno configuration administrators need to create a new revision or withdraw approval directly from a Shipping procedures row. Show one **Actions** dropdown when both actions apply, with **Create revision** and **Deactivate**. The detail header follows the same action rule, and an approved earlier revision remains reachable through revision history when a draft is newer. Deactivate changes only the selected saved procedure revision's approval flag after a named confirmation and version check. It prevents new assignments from selecting that revision and blocks activation of pending assignments that reference it. Existing active assignments retain their saved instruction copies; issued shipment packets and history remain unchanged. Deactivation does not create a content revision or approve another one. Keep existing platform-administrator authorization, add the narrow procedure deactivation API, serialize it with procedure revision creation and assignment creation/activation, and use current audit and concurrency stamping. No database migration or dependency is needed.
+
+Acceptance: an approved latest row presents Actions with Create revision and Deactivate; an inactive latest row still offers Create revision; an earlier approved revision can be withdrawn by exact revision. Cancel makes no write, stale versions fail, and a successful deactivation refreshes the row/detail status and restores keyboard focus. New assignment selection and activation reject the withdrawn procedure; existing assignment snapshots and issued packets retain their saved facts. Update the Phaeno guide and regression sources. Automated and signed-in browser execution remain pending unless requested.
+
+## New sample-type activation default — September 24, 2026
+
+Phaeno configuration administrators adding a new sample type should see **Status** set to **Active** in the create dialog. They may choose **Inactive** before saving when scientific requirements need further review. Send that selection in the existing create request; the API already supports either state. An Active type begins at its selected effective time, while shipping still requires an approved assignment, destination and other existing readiness conditions. Creating a content revision of an existing type continues to save it Inactive so an earlier active revision remains available until separately replaced. This updates the earlier inactive-by-default rule for initial sample-type creation only. No API, permission or persisted-model change is needed.
+
+Acceptance: creating a new type without changing Status sends Active; choosing Inactive sends Inactive; opening a revision has no status selector and saves it Inactive. The saved status appears in the list and detail after refresh. Update the Phaeno guide and focused frontend regression source. Automated and signed-in browser execution remain pending unless requested.
+
+## Kit specification header and row deactivation — September 24, 2026
+
+Phaeno configuration administrators need the two page actions at the right end of the title row, with the description and discovery controls below. Use the same shaded-header grid as the other shipping configuration lists; narrow layouts may stack the actions so they remain usable. Hide the visible search and availability labels, retain their accessible names, align the controls on one row, and use **Search by common name or SKU** as the search placeholder. Hide a kit specification whose latest saved revision is Inactive by default; **Show inactive** reveals it, including a newer draft with an earlier active revision. Search and the separate **Availability** filter apply to the visible set, and changing either visibility or availability resets pagination. Preserve visibility in route search across detail navigation. The Kit specifications row Actions menu also offers **Deactivate** for an active specification revision that has not ended. When a newer draft has an earlier active revision, offer **Deactivate active specification (rev N)** for that predecessor. The confirmation names the kit and exact saved revision, requires its current concurrency version, preserves issued kit and shipment facts, reports failures in place, and refreshes list and detail caches after success. Restore focus to the row action or search if deactivation hides the row. The backend stores activation on the saved revision; the user-facing action describes the effect on new specification use. No API, permission or persisted-model change is needed.
+
+Acceptance: at desktop width Preview recommendation and Add kit specification sit at the end of the title row; active latest revisions appear by default; Show inactive reveals inactive latest revisions and resets to page one; Availability retains its usable-now meaning; row Actions contains Deactivate only for eligible active saved revisions; a revealed draft exposes its active predecessor; cancel leaves availability unchanged; successful confirmation hides the inactive latest row by default and preserves keyboard focus. Frontend regression source covers visibility, the row action and predecessor. Automated and signed-in browser execution remain pending unless requested.
+
+## Shipping configuration activation badges — September 24, 2026
+
+Use the Sample types list as the visual standard across Sample types, Ship-to destinations, Shipping assignments and Kit specifications. Each row places its activation pill immediately after the reference and revision beside the record name. **Active** uses the filled secondary badge and **Inactive** uses the outline badge. For an active revision outside its effective interval, show **Scheduled** or **Ended** as a separate timing pill. A deactivated kit revision is Inactive. The Kit specifications table keeps usable tube capacity and Actions in their own columns, with the status pill in the identity column. Its filter is labeled **Availability** because it selects definitions usable now, including an earlier approved revision behind a draft; filtering behavior and shipping eligibility do not change. Detail and revision-history timing labels remain available. No API, persistence or authorization change is needed.
+
+Acceptance: the four lists use the same pill placement, color and Active/Inactive wording; timing does not replace the activation pill; a revealed draft kit with an active predecessor still shows the predecessor note; available-now filtering retains its existing meaning. Update existing frontend expectations, the Phaeno guide and visual acceptance cases. Automated tests and browser inspection remain request-only.
+
+## Kit specification row Actions — September 24, 2026
+
+Replace the row ellipsis menu trigger with a visible **Actions** outline button and trailing chevron, matching the other configuration lists. Keep its per-row accessible name, Create revision and Preview recommendation actions, and trailing menu alignment. The subsequent row-deactivation section adds the status action. Give the table a contained horizontal scroll region when its columns do not fit a narrow screen. No API, saved data or permission behavior changes. Static lint and typecheck are the verification checkpoint; no automated test or browser run was requested.
+
+## Ship-to destination list discovery — September 24, 2026
+
+Phaeno administrators need to find a receiving site by name, reference or location without scanning inactive drafts. The Ship-to destinations list shows the latest revision per definition, displays an **Active** or **Inactive** pill for its saved activation flag, and hides inactive latest revisions by default. **Show inactive** reveals those revisions, including a draft with an earlier approved revision. Activated revisions outside their effective interval also show **Scheduled** or **Ended**. Search matches the destination name, code, recipient, organization and address location; the filtered list uses 12-item pages. Search, visibility and page are retained in the route across section navigation and refresh. Search and Show inactive fill the shaded header row without a separate visible search label. Deactivation that hides a row returns focus to search. Revision history and existing activation confirmations remain available; no API or persisted-model change is needed.
+
+Acceptance: active latest revisions appear by default; Show inactive reveals inactive latest revisions; search and page controls operate on the filtered set and reset to page one when filters change; empty search results differ from an unconfigured list; status changes retain confirmation, concurrency and audit behavior. Focused regression source covers the list and focus recovery. Automated and signed-in browser execution remain pending unless requested.
+
+## Sample type list discovery — September 24, 2026
+
+Phaeno administrators need to find the right controlled sample type without scanning inactive drafts in a long list. The Sample types list continues to show the latest revision for each definition. It now displays an **Active** or **Inactive** pill for that revision's saved activation flag, hides inactive latest revisions by default, and offers **Show inactive** to include them. A separate **Scheduled** or **Ended** pill remains visible when an activated revision is outside its effective interval; activation alone does not establish shipping readiness. Search matches name, code, material class and description, and the filtered list uses 12-item pages. The search input and Show inactive control occupy the full header row; the input has a search placeholder and accessible name without a separate visible label. Search, visibility and page live in the route so opening a detail and returning restores the list. When deactivation hides a row, focus returns to the search field. Revision history and direct detail links remain accessible. No API, authorization, scientific eligibility or persisted model changes are required.
+
+Acceptance: active latest revisions appear by default; Show inactive reveals inactive latest revisions; search and pagination apply to the filtered set and reset to page one when the filter changes; an empty match is distinct from no configured types; direct detail links and return preserve list state; status transitions retain their existing confirmation, concurrency and audit behavior. Focused frontend regression source covers filtering, pagination and return state. Automated and signed-in browser execution remain pending unless requested.
+
+## Transportation kit product direction — September 24, 2026
+
+The [transportation kit product and workflow plan](TRANSPORTATION-KIT-PRODUCT-AND-BOM-PLAN.md) records the newly agreed direction: Phaeno assembles finished, named transportation kit products from purchased components, using an approved shipping specification and a Lab Steps/Protocols/Workflow assembly procedure that owns the structured, versioned component requirements. Purchased complete kits are a future extension. The planned Transportation kits workspace moves kit preparation and inventory out of Receipt & accession. This refines the earlier **Container sizes** and **Kit contents** sections below; their descriptions remain accurate for the current implementation until the new plan is executed. No product, stock, shipment, or database record changes with this planning note.
+
+## Saved scan presentation — September 23, 2026
+
+After Customer, Partner or Prospect tube matching, show the saved manufacturer tube identifier as readable text in the row rather than reproducing a QR code that would send a scanner back to the same saved record. Keep scannable QR symbols on printable shipment packets and kit labels, where a physical recipient needs them. This updates presentation only; supplier barcode assignment, immutable crosswalks, packet values and intake rules are unchanged. POMS-generated laboratory tube labels separately use DataMatrix and require physical scan-back before print success is recorded, as described in the Lab Operations plan.
+
+## Record shipment form follow-up — September 23, 2026
+
+The dispatch form prompts before discarding entered carrier, tracking or time details, and stays open with controls locked while saving. Required-field errors are associated with their controls for assistive technology; invalid shipment times are rejected in the form. The saved shipment contract and dispatch rules remain unchanged. Local regression source was added; automated execution and signed-in UI acceptance are pending.
+
+## Customer-declared tube material amount — 2026-09-23
+
+Owner-approved requirement: capture the actual biological material amount and unit being sent from the customer during shipment preparation. Capture belongs to each physical registered tube, not the sample's submission quantity, tube count, or tube capacity. Amounts do not imply a laboratory measurement.
+
+Local implementation records a positive amount (up to six decimal places), explicit unit, declaring user and UTC time with the tube match. Each tube starts with blank amount fields. Crosswalk rows show the declaration or Unknown, and packet manifest snapshots and CSV retain it. Before dispatch, matching/correction uses the existing version-checked, tenant-scoped workflow; changes retain assignment-event amount snapshots, require a correction reason for changed declarations or frozen packets, and issue a new packet revision where applicable. Initial packet confirmation and dispatch require all tube amounts. Previously issued packets can be corrected one tube at a time before dispatch; already shipped historical snapshots remain unchanged. Historical nulls are never inferred from sample quantities or backfilled.
+
+[Sample material transfers](SAMPLE-MATERIAL-TRANSFER-PLAN.md) owns the declared opening-balance handoff to accession, biological material consumption, remaining amount and exhaustion overrides. The shipment manifest `samples` entries retain `customerDeclaredQuantity`, `customerDeclaredQuantityUnit`, `customerDeclaredAt` and `customerDeclaredByUserId` alongside the supplier barcode and registered tube identity. These fields distinguish declared provenance from any later laboratory measurement.
+
+Regression sources cover required quantity/unit before matching, positive precision-bounded values, retained declarer/time, blocked alteration after accession, frozen per-tube manifests, and honest unknowns in historical packet rendering. Existing shipping/kit controller fixtures now supply explicit amounts. Automated tests and physical acceptance have not been run for this increment; shared-database migration and deployment remain separate gates.
+
+## Kit contents by supplier product — September 22, 2026
+
+Owner request: replace the single optional supplier reference with a flexible
+Kit contents list. The owner clarified that any number of products from the entire
+supplier catalog must be supported, each with its own positive whole-number
+quantity. Products may come from different suppliers or share a product type.
+Usable tube capacity remains independent; there is no forced container/tube mix.
+
+Each container revision owns immutable content rows with supplier-product identity,
+quantity, row order and frozen supplier/product/type labels. Reuse active suppliers,
+products and product types, including Other products. New active revisions require
+at least one product; drafts may have an empty list. Reject duplicate products
+with guidance to change quantity. Existing definitions without contents retain
+legacy references, and existing kits/manifests retain their snapshots. Do not infer
+missing contents or silently activate or revise any saved records.
+
+Show contents on the detail page and in physical kit preparation. Prefill the
+actual tube/container selectors only when the recipe has one matching product;
+otherwise preserve explicit selection of actual products. The existing full-capacity
+barcode registration and actual tube/shipper traceability remain separate from the
+flexible configuration list. The kit snapshot also retains the full contents list.
+No inventory deduction, procurement, dependency or authorization changes.
+
+Additive migration 20260923001318_AddShippingKitContents adds only the revision
+contents table and its indexes/foreign keys. Update the ERD and affected guides.
+Apply only to the verified local development database after backup/review under
+the repository's local-migration rule. No shared database or deployment is included.
+Regression sources cover multiple suppliers, arbitrary types, independent quantities,
+invalid/inactive products and frozen history. Automated tests remain request-only.
+
+Local completion: migration applied only to localhost/phaeno_ops_clean_20260919
+and verified in migration history. The new table has no seeded rows. Recoverable
+pre-change backup: artifacts/kit-contents-20260922/before-kit-contents.dump (archive
+listing verified). Backend solution builds with zero warnings/errors, including
+regression sources; frontend typecheck, scoped lint, generated help and whitespace
+checks pass. Automated tests were not run. Signed-in browser inspection confirmed
+supplier-scoped selection, independent quantities, additional rows, row removal
+and focus restoration. Screenshot capture timed out and the viewport override did
+not take effect; narrow-screen visual acceptance remains unverified. The unsaved
+verification draft was dismissed. The user's running API needs rebuild/restart to
+load the new persisted save behavior; it was not interrupted. No Git publishing
+or deployment was performed.
+
+## Container detail Actions menu — September 22, 2026
+
+Add a decorative dropdown chevron to the container detail Actions trigger and
+size its trailing-aligned menu to its labels, capped to the viewport width.
+Preview recommendation and Deactivate fit on one line at ordinary
+viewport widths. Actions, permissions and confirmation behavior are unchanged.
+Reviewed the Phaeno configuration guide; its existing Actions instructions remain
+accurate, so no help text change is needed. Automated tests are not requested
+for this presentation-only adjustment.
+
+Local browser inspection confirmed the chevron and all three labels on one line
+in a 182px-wide menu. Typecheck, scoped ESLint and whitespace checks passed.
+
+## September 22 — Sized tubes in existing RNA intake
+
+Correct the literal `tube` comparison that rejected an active `20 µL tube`
+definition despite its active shipping destination and rule. Plain tubes and
+positive µL/mL-sized tubes use the same tube-count roster and packing workflow;
+the size remains part of the sample-type requirements and shipment unit. Keep
+material, effective revision, explicit service assignment and unique shipping
+configuration guards. Volume-only units, blocks, sections and other containers
+remain unsupported by automatic RNA tube intake. This supersedes only the prior
+sized-tube exclusion. Existing saved configuration and shipping approvals remain
+unchanged. The customer's roster is not finalized by this code change.
+
+## Sample-type and destination Actions menu width — September 22, 2026
+
+Size the sample-type and Ship-to destinations Actions menus to their labels so Create revision and earlier-revision actions fit without wrapping at ordinary viewport widths. Retain trailing-edge alignment and a viewport width limit for narrow screens. This is a presentation-only correction; permissions, actions and focus behavior are unchanged. Reviewed the Phaeno configuration guide: existing Actions instructions remain accurate and need no content change. Scoped ESLint and whitespace checks passed. Automated tests and browser verification are not run for these styling changes; local servers remain stopped.
+
+## Availability separate from content — September 21, 2026
+
+Owner approved explicit Activate/Deactivate actions for sample types, destinations and shipping assignments. Status changes retain revision identity and use the existing audit/concurrency mechanisms. New revisions of existing records start inactive; drafts preserve previous active intervals. The September 24 initial sample-type creation default is recorded above. Assignment activation validates named prerequisites at the actual activation time and retains exact destination references. See [availability behavior and implementation](SAMPLE-TYPE-CURRENT-REVISION-PLAN.md). This local correction does not activate production configuration or deploy the application.
+
+## Approved simplification - September 21, 2026
+
+The owner approved [shared shipping procedures and sample/container packing
+details](SAMPLE-SHIPPING-PACKING-REFINEMENT-PLAN.md), including flexible temperature
+control, consolidated setup and preserved shipment instructions.
+
+## Enriched RNA configuration — September 19, 2026
+
+Owner requested a second active sample type for Enriched RNA and shipping rules for Total RNA and Enriched RNA at Santa Barbara Lab. Material selection now includes Enriched RNA (enriched_rna), distinct from Total RNA (extracted_rna). This adds configurable shipping content; it does not silently expand service or Trial ordering eligibility. Source: owner-supplied PSeq submission PDF and confirmed dry-ice instructions.
+
+Local configuration completed: Enriched RNA revision 1 (8e9e5077-32df-4cf3-aad3-8bbc8a0d814c) is active, with minimum one Tube and no maximum count. Both Santa Barbara Lab shipping rules are revision 1 and active, using FROZEN_RNA and the existing destination revision 1. Signed-in previews resolved both rules successfully. Existing Total RNA revision 4 was retained. Shipping content uses Phaeno-supplied tubes and container, 2–4 kg dry ice, de-identified labels, printed submission form, saved receiving hours, and shipment/exception contact instructions. The PDF conflicts on Enriched RNA volume (10 µL maximum versus 20–50 µL preferred); 10 µL maximum was used provisionally under the owner's do-your-best instruction and flagged for review. The destination's existing Delivery instruction remains TBD. No shipment packet was issued. TypeScript, scoped lint, generated-help consistency, and whitespace checks passed; automated suites were not run.
+## Current sample-type selection — September 19, 2026
+
+Owner approved following the named sample type's latest active, effective revision. [Current-revision implementation](SAMPLE-TYPE-CURRENT-REVISION-PLAN.md) supersedes exact sample-revision pinning for new shipping-rule resolution, readiness and compatible container selection. Issued packets keep their immutable snapshots; destination references remain exact.
+
+## Automatic destination references — September 19, 2026
+
+New destination drafts generate a DEST- UUID reference once on opening, consistent with sample-type references. Remove manual code entry and place Display name first. Retries preserve the draft code; renames and revisions retain the existing code. Existing API contracts and saved references are unchanged.
+
+## Total RNA terminology — September 19, 2026
+
+The owner renamed the canonical material label from Whole RNA to Total RNA. The selector, list, details and user guide use Total RNA; the existing extracted_rna value and eligibility remain unchanged. This supersedes the earlier display-label decision below.
+
+## Instruction-field scientific helpers — September 19, 2026
+
+All eight sample-type handling/instruction textareas use the shared ScientificTextField with the full instruction-specific unit and symbol lists. Both units and symbols insert at the remembered cursor or replace selected text, preserve surrounding instructions, and restore focus/caret. Labels, validation links, required markers, multiline sizing and pending-save disabling are retained. Submission unit keeps its restricted µL/mL helper and now also inserts at the cursor rather than replacing the field; Lab Steps keeps its existing selection behavior. The owner requested a quieter form: remove the introductory description, quantity-count helper and repeated insertion messages; underline the Units/Units and symbols buttons and place them directly beneath the inputs. Keep the dialog title, field labels, Material type selection, Quantity heading and validation. Detailed guidance remains in the user guide. No saved records or contracts change.
+
+## Submission counts and compact quantity card — September 19, 2026
+
+Current owner direction supersedes the decimal-count and measurement/symbol-helper sections below. Quantity describes submitted items such as a sized tube, FPET block, or section from block. Use input-matching rounded-lg corners, a compact header, aligned Submission unit / Min / Max fields, Min default 1 and optional Max with one concise helper line. The owner rejected the Choose submission unit header menu. Restore the ScientificTextField helper beneath the editable field, labeled Units and restricted to µL and mL for sample sizes. Exclude symbol insertion and unrelated measurement units here; preserve the full Lab Steps helper. Editable text still accommodates descriptions such as 20 mL tube, FPET block or Section from block. Counts use positive whole-number validation and numeric keyboards. Existing saved records are not rewritten.
+
+The owner clarified the intended commercial unit as **sample-sequencing run**: 20 samples sequenced once count as 20; one sample sequenced 20 times also counts as 20. A machine batch is not the commercial unit, and submission item counts do not determine the run count. This resolves the cardinality question. The compact configuration form removes the misleading statement that ordering uses tube and does not modify prices or accepted work.
+
+Repeated-run ordering and pricing implementation and remaining laboratory decisions are tracked in [Sample Sequencing Runs](SAMPLE-SEQUENCING-RUNS-PLAN.md). Purchased quantities remain separate from sample identities and physical submission counts; preserve existing accepted prices and historical records. Current configured intake also selects exactly one extracted-RNA tube type and retains tube_count roster and tube-use rules; saving a block, section or sized-tube definition alone does not authorize a new operational intake workflow. Review service eligibility, roster/CSV, Trial compatibility, container packing, and shipment authorization before enabling those workflows.
+
+Verification: TypeScript, scoped ESLint, generated-help consistency and whitespace checks passed. Signed-in browser checks verified the picker choices, keyboard opening, sized-tube selection and restored input focus. The card and inputs both use 8px corners; the card measures about 128px high, fields align at the checked viewport, and the modal has no horizontal overflow. No record was saved. Regression sources were updated; automated suites were not run under repository policy.
+
+
+## Quantity numeric entry — September 19, 2026
+
+Min/Max keep plain text controls with decimal keyboard hints and no spinners. Validate decimal numeric strings (including scientific notation for existing numeric values), reject hexadecimal and nonnumeric values, trim surrounding whitespace, and save blank limits as null. Min is nonnegative; Max is positive and cannot be below Min. Validate both fields on blur and recheck existing errors on change. Inline errors are associated with inputs; helpers explain units, allowable values, and blank/unbounded limits. The API and its existing numeric constraints are unchanged. Regression sources cover negative/zero/nonnumeric/hex input, dependent range updates, decimals and blank-to-null payloads; suites remain request-only.
+
+Verification: TypeScript, scoped ESLint, generated-help consistency, and whitespace checks passed. Signed-in browser checks verified negative Min, zero Max, reversed-range errors and clearing the range error after entering a valid decimal Min. No sample type was saved. Empty-fill automation did not clear the browser inputs, so blank-to-null behavior is covered by source inspection and the authored regression rather than claimed as live verification. Cleanup hit the browser discard-confirmation limitation.
+
+## Quantity field layout — September 19, 2026
+
+Material type spans its own row. A full-width Quantity card groups Unit, Min and Max in that order, with the unit helper retained inside the Unit field. Wider layouts use three columns with more room for Unit; narrow layouts stack the fields in the same reading order. Labels in existing regression sources and Phaeno help match the new grouping. Validation and saved data are unchanged. TypeScript, scoped ESLint, generated-help and whitespace checks passed. Live browser inspection confirmed the full-width Material type row, a Quantity group with Unit/Min/Max aligned on one row, the retained unit helper, and no modal horizontal overflow. The unchanged form and verification tab were closed without saving.
+
+## Quantity unit helper — September 19, 2026
+
+Reuse the Lab Steps ScientificTextField for sample-type Quantity unit. Generalize its form typing while keeping Lab Steps defaults intact, and allow additional per-field units. Sample types add tube to the common-unit list and explain the current PSeq requirement. Common units replace the input; symbols insert at the remembered selection and return keyboard focus to the input. Custom entry remains supported and values are not converted. Disable input and helper while saving. No API or scientific eligibility changes. Phaeno help and focused regression source cover unit replacement and cursor insertion; automated suites remain request-only.
+
+Verification: TypeScript, scoped ESLint, generated-help consistency, and whitespace checks passed. Signed-in browser inspection verified the full menu, tube selection, µ insertion before g, and input focus/caret restoration. No sample record was saved. Browser cleanup encountered the existing discard-confirmation automation limitation; the verification draft remained unsaved.
+
+
+## Material type selection — September 19, 2026
+
+The owner selected Whole RNA as the single currently supported choice. Replace the free-text Material class field with Material type, offering Whole RNA for new definitions and persisting the existing extracted_rna key so current PSeq and Trial eligibility checks keep working. Existing noncanonical values remain visible as previously saved choices when revising their own records; never silently reclassify them. The sample-type list and details show Whole RNA for the canonical key. This is a presentation/input change, not authorization of a new material workflow. Regression sources verify the exact submitted key, single new choice, and legacy-value preservation.
+
+Verification: TypeScript, scoped ESLint, generated-help consistency, and whitespace checks passed. Signed-in browser inspection confirmed Name-first entry with no code input and exactly one enabled material choice, Whole RNA, mapped to extracted_rna. The modal had no horizontal overflow. No sample type was saved; retry and legacy revision behavior have regression source coverage but suites were not run under repository policy.
+
+## Automatic sample-type references — September 19, 2026
+
+Generate a SAMPLE-prefixed UUID reference when a new sample-type form opens and retain it through validation and save retries. Remove code entry from the form, keep Name as its primary label, and identify revision dialogs by name. Revisions reuse the saved reference even when renamed, including legacy references. Existing backend uniqueness and frozen-code enforcement remain unchanged; no migration, contract change, or saved-record update is required. Long generated references wrap in the detail badge. Phaeno configuration help describes the behavior. Regression sources cover automatic generation, retry stability, and reference preservation on renamed revisions; suites are not run unless requested.
+
+
+## Linkable sample-type details — September 18, 2026
+
+In Order settings → Sample types, each sample name links to `/order-configuration/sample-types/{sampleTypeId}`. This view-first page retains the owning sidebar and shows the exact revision's identity, availability, effective dates, material and quantity limits, transit limit, and full container, temperature, stabilizer, packaging, labeling, prohibited-identifier, safety and carrier requirements. Shaded headers group the details and revision history. History links open exact retained revisions; historical pages link to the latest revision. Only the latest revision exposes Create revision, using the existing bounded dialog. Successful creation opens the saved revision's detail. Back to sample types returns to the list. Missing IDs show an explicit not-found state; load failures support retry. Existing administrator access, backend revision rules and shipment snapshots remain unchanged; no migration or new API is needed.
+
+The sample editor now guards unsaved dismissal/navigation and pauses editing/dismissal during saving. Component regressions cover list/detail/return navigation, exact historical URLs, latest-only creation, and missing records. Tests are authored but not run under the repository's request-only rule. The Phaeno configuration guide documents the detail workflow.
+
+## Standalone shipping settings and shared sample types — September 18, 2026
+
+Sample Shipping Settings appears under Administration after CRM Settings. Its addressable sidebar sections are Container sizes, Ship-to destinations, Sample shipping instructions. Each rule has an Actions dropdown with a chevron indicator, Preview instructions, and Create revision. Preview opens read-only for the exact destination and sample type, using now or the exact future start. Optional Add sample types checks combined compatibility while keeping the original sample included. Inactive or ended rules cannot resolve a preview; existing API checks remain authoritative. Legacy preview links open the instruction list. Sample types is a separate Order Settings subject; shipping reads the same shared definitions and exact revisions. Container, destination, instruction and sample-type lists use shaded headers, with container search/status controls inside the header. Existing revision creation dialogs and controlled activation rules remain unchanged. The former combined shipping URL redirects to Container sizes and preserves list filters. Existing container detail URLs remain valid and return to the new shipping list with filters intact. No API, schema, revision, instruction resolution or authorization changes. Creation and revision actions continue using existing bounded dialogs; this navigation change does not replace existing destination, sample-type or instruction row management with new detail workspaces.
+
+## Accession footer summary — September 16, 2026
+
+Show X with exceptions | Y to be accepted in the accession modal footer, with Accept (Y) beside the existing close action. X counts saved OnHold or Rejected decisions for this shipment; Y uses the existing identified, undecided, eligible acceptance selection. Preserve the review/storage confirmation and disabled/completed states. Stack the summary above the actions on narrow screens.
+
+## Receipt confirmation action — September 16, 2026
+
+Place Accession samples at the right of the Shipment received / Shipment already received heading row. Keep the receipt timestamp and guidance below, allow wrapping on narrow screens, and preserve existing receipt and accession behavior.
+
+## Sample row alignment — September 16, 2026
+
+Give sample IDs a consistent 12rem column on wider screens, wrap long IDs without changing their stored length, and align ID/status text with the same font size, line height and vertical spacing. Stack status beneath the ID on narrow screens. Use “1 of 1 tube matched” / “2 of 2 tubes matched” and omit the duplicate standalone quantity when matching status is shown. Keep quantity before matching is available, unavailable/loading states, accession and receipt details, and individual tube ordinals in expanded rows. Keep the QR size unchanged.
+
+## Compact matched-tube rows — September 16, 2026
+
+Lead each saved tube row with the QR on the left. Top-align the sample details with the visible QR, and tighten the compact QR caption spacing while retaining its quiet zone. Group the sample ID and tube ordinal directly beside it, followed by biological source and a muted, wrapping container/shipment reference. Keep Change tube at the right on wide screens and below on narrow screens. Avoid letting long references determine the gap between the identity and QR. Use a 21 mm QR in these rows (25% smaller than the standard 28 mm); retain the encoded value, contrast and four-module quiet zone. Other QR usages retain their existing sizes. Inline scanning remains full width. Reviewed shipping guides; no workflow or instruction changes are needed for this visual adjustment.
+
+## Scanning completion action — September 16, 2026
+
+Show Done scanning only during matching after all tubes in the selected nonempty container have saved barcode matches. Render it in the shared action slot at the right of Samples and shipping, and focus it after the last save settles. Hide it while incomplete; keep pending-save and current-data guards. Match tubes uses the same header slot before scanning. Completion exits matching and preserves the expanded review list; unsaved-navigation protection remains.
+
+## Inline tube matching — September 16, 2026
+
+Put the single active barcode form inside its tube row, including validation and save errors. Keep shipment/container identity and overall progress above the list. Successful save expands and pages to the next unmatched tube, focuses its field and scrolls the row into view without animation. Keep barcode draft state when the row is collapsed or paged away; Return to active tube remounts and focuses the retained draft. Pending saves still block navigation and duplicates, and failures retain the same target. Apply this to embedded Job lists and standalone shipment lists; no API or saved-match changes.
+
+## Sample ID ordering — September 16, 2026
+
+Use case-insensitive alphabetical/digit-by-digit ID ordering within existing biological-source groups. IDs are identifiers, not numeric quantities. The Job passes that same grouped sample order to the scanner; standalone scanning sorts by ID. Tube ordinals remain numeric. Apply the ordering on initial load, pagination, resumption and successful scan advancement without mutating saved crosswalks or changing a dirty active target. Source grouping and matched identities remain intact.
+
+## Kit fulfillment date — September 16, 2026
+
+The Kits sent table includes a Fulfillment date column after Registered tubes, using the saved return-kit fulfilledAt timestamp in the viewer's local time zone. Show a dash when no fulfillment timestamp exists. No API, date inference or workflow changes.
+
+## Container assignment wording — September 16, 2026
+
+Use **Assign shipping containers** for the card and modal titles, **Assign containers** for the card header action, and **Confirm assignment** (or **Confirm partial assignment**) to save. Receiving stock makes it available; it does not assign a physical container to the Job. Label the suggested configuration **Recommended containers — not yet assigned**. Each modal card has a visible, accessible **Container N** heading and fields labeled **Container**, **Tubes**, and, for location inventory, **Scan or enter container barcode**. Hide Remove when the sole selected container is the only compatible container in available stock. Retain removal for multiple rows, alternative stock, unrestricted stock selection and stale/unavailable selections needing correction. Collapse the unused action column. A single container shows its automatic tube allocation in a read-only text box with muted background and text in both themes, capped at capacity; multiple containers retain editable counts. Removing rows until one remains recalculates its allocation and preserves the unallocated remainder. Barcode scanning no longer moves focus to a hidden tube input. Keep the existing barcode checks, explicit confirmation/reservation boundary, partial-allocation rules and availability guards. Audience guides and existing regression selectors follow these labels. Tests updated but not run.
+
+## Kit product validation correction — September 16, 2026
+
+Product selections revalidate immediately after supplier changes, clearing stale required errors for both Tubes and Shipping Container. Configured-size prefills also revalidate the shipping supplier and product, and the displayed product stays synchronized with the form value as supplier options change. Empty selections remain invalid. Existing catalog eligibility and save checks are retained. Focused regressions cover both manual selections and prefills after a failed submission; tests added but not run. Reviewed the Phaeno preparation guide; this restores its documented behavior without changing instructions.
+
+## Product type row actions — September 16, 2026
+
+Each product-type, supplier and product row, plus supplier/type detail headers, has an Actions menu with Edit and Deactivate, or Activate for an inactive record. Edit opens the existing bounded form. Status changes share an application confirmation that identifies the record and explains selection effects, retaining history and the current concurrency version. Keep errors in the confirmation and disable repeat submission while saving. Refresh supplier, type and Materials caches after status changes. Return focus to the row action or search field when deactivation hides the row. On narrow screens move the product count below the type name to leave room for Actions. No backend or database change. Focused frontend coverage updated, not run.
+
+## Supplier catalog tabs — September 16, 2026
+
+Keep one **Suppliers & Products** sidebar entry. Its shared tab control contains **Suppliers & Products** and **Product types**; remove the separate Product types sidebar item. Persist the selected tab in route search so refresh and return from type details restore it. Legacy `section=product-types` links resolve to the Product types tab. Existing detail routes, record forms, permissions and data remain unchanged. Update Phaeno navigation help. This navigation-only change uses typecheck/lint and documentation checks; automated tests are not run.
+
+## Managed product types — September 16, 2026
+
+September 28 product type protection correction: Tube, Shipping Container, and Reagent are the built-in types with fixed names, active status, and kit use; omit their Actions in both list and detail views and enforce these protections in the API. Transportation kit retains its stable seeded identity but supports Edit, Deactivate, and Activate through the same Actions menu as managed types. Its complete-kit role remains Other and cannot become a component role, even without referenced products. Tube products default to inventory unit each when created or configured without a unit; each means one physical tube, while tube volume describes capacity. Preserve existing configured units and lot quantities without bulk conversion. The existing configured-product unit-change safeguards remain in place. Configuring a missing unit governs future receipts and does not rewrite historical lots. Remove the kit-use field from product type create/edit forms and stop displaying its internal role as a subtype in lists or details. Reagent is identified by its saved Reagent product type; it is not displayed as Other product. Place a Built-in badge beside protected type names in list rows and detail headers. New managed types are always Other, and the API rejects assigning a Tube or Shipping Container role or changing an existing role. Preserve classifications of historical managed types and their referenced products. Other product types remain usable as additional kit contents. This supersedes older statements that all seeded types are editable or that Transportation kit is protected from name/status changes. No persisted model, seed, migration, or API shape changes are required.
+
+September 28 verification checkpoint: scoped ESLint and TypeScript pass; the full backend solution compiles with zero warnings/errors in isolated temporary outputs. Manual local Chrome review confirms built-in action omission, editable Transportation kit management, and each defaults for new and unconfigured tube products without saving catalog data. The owner confirmed Transportation kit deactivation. Regression sources and living test plans are updated; automated tests remain unrun under the request-only rule. Phaeno help and the 56-guide corpus are current. Temporary compilation outputs are removed after verification.
+
+Extend the shared supplier directory to reagent vendors as well as transportation supplies. Place Product types in a tab within Suppliers & Products, with view-first type details and bounded create/edit modals. Names are case-insensitively unique, descriptions required, and types may be inactivated/reactivated without deleting referenced products. Seed Tube, Shipping Container and Reagent. Each type declares kit use (Tube, Shipping Container or Not used in transportation kits); reagent and other catalog types cannot enter kit selections. Once products reference a type, its kit use cannot change; its name, description and active status remain editable. Product editors select active saved types and retain an existing inactive reference for correction. Inactive types exclude their products from new kits. Existing material-lot supplier references reuse the same directory; reagent stock, QC and lot workflows are unchanged.
+
+Implementation checkpoint: `20260916202935_AddManagedProductTypes` maps existing Tube/ShippingContainer values to stable type IDs before removing the old enum column, seeds Reagent, and is applied to localhost `phaeno_ops`. Build, frontend typecheck/lint, documentation and ERD checks pass; automated tests are not run. API restart remains necessary.
+
+Migrate existing product kinds to stable type references without changing product/kit identities or snapshots. Local migration and ERD included. Shared/production migration and deployment remain outside scope. Acceptance: manage types, supplier offering several types, required descriptions, normalized uniqueness, stale edit protection, inactive-type filtering and reagent exclusion from kit selectors. Tests updated but not run unless requested.
+
+## Catalog filter placement — September 17, 2026
+
+Scope is limited to the **Suppliers & products**, **Products**, and **Product types** lists. Place search and Show inactive together on a full-width row inside the shaded card header, beneath title, description and creation action. Preserve filter behavior and detail-page layouts; controls wrap on narrow screens. The Product Owner explicitly deferred the proposed Portal-wide rollout.
+
+## Catalog presentation — September 17, 2026
+
+Use **Product name** in product create/edit forms, validation and catalog guidance. Keep the existing `productNumber` API/storage property and historical values unchanged. Products and Product types use the Preparation batches card pattern: shaded header, bottom separator, outlined creation action at the right, and separately padded body. The shared supplier list uses the same treatment. No schema or workflow change. Update existing accessible-label/button test selectors; automated tests are not run for this presentation-only change.
+
+Verification: frontend typecheck and scoped lint pass. Connected local browser inspection confirmed both card headers and the Product name field in the New product modal; cancelled without saving. Help corpus regenerated. Automated tests not run.
+
+## Suppliers and products — September 16, 2026
+
+Authorized scope: Phaeno kit administrators manage reusable suppliers and their products from **Suppliers & Products**, immediately below Lab configurations in the sidebar. Reuse existing LabSupplier identities. Supplier detail is view-first with a product list; creation/editing uses bounded modals. Products require a supplier, product number, description and managed product type. Supplier names and supplier/product numbers are case-insensitively unique. Retire/reactivate through editing rather than deleting history. Existing platform-administrator kit permissions govern catalog access; no authentication or role widening.
+
+Kit preparation uses supplier and product select lists, limited to active matching product types. Supplier changes clear the selected product. Existing configured shipper references preselect only an exact active catalog match. Lot stays batch-specific free text. The server resolves selected IDs and freezes supplier, number and description in kit history; old kits remain readable without fabricated catalog associations. No speculative historical supplier/product import. Additive local migration and ERD update are included; shared/production migration and deployment are outside this request.
+
+Implementation checkpoint: catalog endpoints, supplier detail and product editors, sidebar route, typed kit selections and frozen descriptions are implemented locally. Migration `20260916201610_AddSupplierProductCatalog` was generated, reviewed and applied to localhost `phaeno_ops`; it was the only pending migration. ERD and Phaeno guides updated. Release solution build and frontend typecheck/lint pass. Focused regression tests are compiled/updated but not run. The existing Visual Studio/IIS Express session retains the older API; restart that development session to load the new endpoints. No shared database, commit, push or deployment performed.
+
+Acceptance: catalog create/edit/retire, duplicate rejection, scoped products, descriptions in options, no stale supplier/product selection, required fields, server validation, retained historical snapshots, local navigation and responsive forms. Automated tests are updated/added but not executed unless requested. Success means kit preparation requires no repeated supplier/product typing and uses valid catalog references.
+
+## Standard kit preparation sections — September 16, 2026
+
+Group the modal into **Tubes** (Supplier, Product name, optional Lot, each on its own full-width row at every screen size) and **Shipping Container** (Supplier and Product name, each on its own full-width row at every screen size). Stack fields on narrow screens and preserve required markers, errors, prefilled shipper references and save behavior. The supplier/product catalog implementation above supersedes the earlier free-text selection proposal.
+
+## Kit receiving and container locations — September 16, 2026
+
+Use **Kit receiving location** for the kit-order delivery address and **Container location** for received-stock selection. Remove the misleading Departure location label from this preparation flow; physical sample-dispatch terms remain separate. Move the received-stock control into Choose shipping containers. Display the selected sole active location as text; retain the selector when multiple active locations are available, including when current stock is empty so stock at another location remains reachable. The full container chooser stays hidden with no received stock. Existing address, inventory and shipment API fields are unchanged. Customer and Partner help and affected selectors are updated; tests are not executed unless requested.
+
+## Ordered containers awaiting arrival — September 16, 2026
+
+After an active transportation-kit order, show **Wait for containers to arrive** and **View kit delivery** in the next-step area. Distinguish pending preparation, partial dispatch and dispatched delivery in the detail; preserve receipt eligibility and actor permissions, and complete Container supply only from recorded compatible supply or assignment evidence. Hide **Choose shipping containers** while the selected location has no compatible received stock; reveal it from recorded inventory, including previously received kits or partial arrivals. Keep an open selection draft and inventory errors/retry visible. Suppress redundant order-kits preparation advice during an outstanding delivery, retaining location links and receipt controls. No automatic receipt or shipping write is introduced. Customer and Partner guides and focused progress expectations follow this state-based copy. Tests updated but not executed (not requested).
+
+## Transportation kit order action — September 16, 2026
+
+Place **Order transportation kits**, **Cancel kit order** for a cancellable pending request, or **Confirm kits received** for arriving kits, at the right end of the **Transportation kits** card heading, using the shared card action layout. Retain existing permission, loading, error, active-request and ordering-eligibility conditions; disabled reasons remain in the card body. Remove the duplicate stock-availability message and suggested configuration from this card; the ordering modal labels its default sizes **Recommended kit configuration for this shipment**. Hide that label while adjusting sizes or when there is no current recommendation. This is a layout change only; ordering and confirmation behavior are unchanged. Customer shipping help identifies the new button location.
+
+## Container configuration and location acceptance — September 14, 2026
+
+SHP-01 now passes isolated software acceptance: actual catalog/detail, 18/30-tube recommendations, invalid/draft compatibility checks and disposable revision retirement with original shipment snapshots unchanged. SHP-02 actual five-session validation/default/stale-write/scoping/retirement and phone controls pass; returning to an unsubmitted kit confirmation still needs an eligible accepted Customer Job. No physical inventory, delivery, receipt, existing shipment or original TRANS definition was changed. [Full evidence and retained IDs](../testing/runs/2026-09-14-next-ten-uat.md).
+
+
+## Inspect before storage and batch acceptance — September 11, 2026
+
+Owner-approved scope: identify and inspect tubes during accessioning; record exceptions first, then accept the remaining identified/undecided tubes in that shipment. A rejected tube retains its expected shipment identity and rejection evidence even when destroyed. Rejection does not require a freezer location and never creates available material. Retained Accepted/On hold material requires a real storage location; a rejected retained tube may optionally record one. No disposal is inferred.
+
+Implementation decisions: retain a Lab tube identity record for rejected receipts with nullable location and physical status Rejected; preserve registered-tube/crosswalk linkage and actual accession/receipt history. Existing locations and decisions are not backfilled. The migration normalizes an existing Rejected intake with physical status Available to physical status Rejected; it does not infer a new decision or quantity. Non-stored rejected receipts do not assert remaining material quantity. Current-dialog scans form an explicit pending selection, protected by a discard prompt; acceptance and individual storage locations are saved atomically only after inspection confirmation. Saved exceptions survive closing the dialog. The bulk endpoint validates the current packet, shipment receipt, exact expected barcodes, undecided state, role and work version; retries retain their request identity and cannot duplicate records. Held, rejected, previously accepted, missing/unidentified and used tubes are excluded or rejected on stale submission.
+
+The job tab becomes Tubes and the received-tube list becomes Received tubes. The identifier opens view-first tube details with lineage and retained intake evidence. Routine Review tube is removed from the list. A Supervisor can correct intake with a required explanation before that tube has been used; restoring a non-stored record to Accepted/On hold requires a real retained-material location. Started-source problems stay with the specimen attempt hold/failure workflow. Customer-requested holds remain blocked.
+
+Implemented locally: nullable storage and rejection availability, exception-first accession, guarded bulk acceptance, tube detail/lineage and supervised intake correction. Migration `20260911205728_AllowRejectedTubeWithoutStorage` applied to localhost `phaeno_ops`; no existing rejections needed availability normalization. ERD, guides, regression sources and LAB-13 manual acceptance are updated. Do not run automated tests without a request; record builds/static checks and any read-only UI verification separately from persisted acceptance. Preserve HS5Y7DB7 and its unstarted execution.
+
+## Attempt-aware tube use — September 11, 2026
+
+The specimen/source workspace is implemented alongside [tube attempts](SPECIMEN-TUBE-ATTEMPT-PLAN.md). Receipt/accession remains physical-tube based; the selected source must be accepted and available. After an attempt starts its source intake is locked, while unused reserve intake can still be completed during accessioning or corrected by a supervisor. Expected unreceived or unresolved available tubes block exhaustion confirmation. No receipt or review automatically selects or starts a reserve. Local migration applied; persisted acceptance remains Not run.
+
+## Multiple tubes per specimen - September 11, 2026
+
+The [specimen tube selection and fallback plan](SPECIMEN-TUBE-ATTEMPT-PLAN.md) retains individual physical receipt/identity and groups eligible source/reserve tubes under one specimen. Receipt does not start all tubes or imply scientific acceptance. Source/attempt handling is now implemented locally.
+
+## Container receipt and separate accession tab — September 10, 2026
+
+The Product Owner superseded the read-only receiving workflow: Receive shipments now lists all expected physical containers (not dashboard work orders), with Customer/Job, carrier, tracking, destination and tube count. It excludes packing pools, empty placeholders, cancelled configurations and already-arrived containers. Prepared containers may appear before carrier handoff with their actual stage and missing-tracking text.
+
+Submitting a valid current PH-P- insert in Receive shipments explicitly acknowledges physical container arrival. Other barcode kinds cannot write receipt. A separate Accession samples tab lists arrived containers with unaccessioned tubes, supports read-only insert lookup and tube comparison, and opens individual accession. Successful accession establishes the verified tube's intake and Lab container; the container scan does not bulk-receive, accession or accept any tubes. The existing printed shipping insert is unchanged.
+
+Implementation uses existing DeliveredAt/Delivered for container arrival and ReceivedAt/Received for completed tube receipt. A ShipmentReceived Lab work event retains the actor, shipment, scanned revision and time. Receipt is serialized with shipment changes and tube receipt, repeats retain the first timestamp/event, and void/cancelled/preparing scans are rejected. Arrival without reported carrier handoff does not invent carrier, tracking or shipment time. Delivered shipments cannot be cancelled. No persisted model change, migration, backfill or production write is required.
+
+The internal Lab API adds GET shipments/queue and POST shipments/receipt under /api/platform/lab-operations; existing GET packet scan remains read-only and adds optional containerReceivedAt. Reads retain assigned Lab-role access; receipt requires Operator/Supervisor. The source-only change includes updated backend receipt-to-accession and frontend queue/navigation/receipt regression coverage. Automated suites and physical scanner acceptance have not been requested. Local build/static checks and remaining browser/runtime gates are reported separately.
+
+## Current direction — location inventory and container barcode assignment
+
+The September 9 Product Owner correction supersedes the same-Job kit requirement
+below. Ship containers to Customer locations; keep unused received stock usable
+after an originating Job is cancelled. Assign a physical container to a Job and
+shipment during Customer preparation using its permanent barcode. The
+[location-inventory plan](TRANSPORTATION-KIT-LOCATION-INVENTORY-PLAN.md) records
+the workflow, reservation/reset rules, implementation work and acceptance gates.
+The correction is deployed on matching API/UI source
+`11699745825e17f6f16d67be1a678e78ea3b3578`, including the separately approved
+location-reservation migration. Exact workflow, backup/restore, deployment and
+runtime evidence is in the
+[September 9 release record](PORTAL-SHIPPING-RELEASE-2026-09-08.md#september-9-location-inventory-and-shipping-insert-release--completed).
+The local walkthrough remains paused at its saved 18/18 ReadyToShip checkpoint;
+deployment does not complete outstanding print or physical acceptance. It has
+completed container configuration and reset/reselection checks; user screenshots
+showed five saved synthetic tubes after duplicate rejection and recovery. The
+owner's screenshots confirm **18 of 18 matched**, the packet confirmation review
+for the correct shipment, nine samples and 18 tubes, and subsequently the
+post-issuance actions **View packet**, **Crosswalk CSV**, **Replace packet** and
+**Record shipment**. A subsequent screenshot confirms that the document page
+opens for **SP-20260910-TJHAQYMGKQ, revision 1**, for the same 18-tube shipment.
+This establishes document rendering, not physical printing or a complete
+content/print review. No sample-return dispatch has been reported.
+Remaining acceptance checks are recorded in the
+[current run record](../testing/runs/2026-09-08-hs5y7db7-local-walkthrough.md).
+
+## September 10 related-shipment navigation
+
+The active entries under **Shipping containers** now present their navigation as
+prominent primary-style buttons. External users see **Open shipment**, shortened
+from **Open shipment, tubes and packet**; preparation pools retain **Choose
+containers**, and Phaeno staff retain **Open Lab shipping**. Destinations,
+permissions, shipment/receipt data and retired-configuration visibility are
+unchanged. Customer/Prospect shipping and Partner Lab guides now name **Open
+shipment** explicitly; their September 10 review metadata remains current.
+Existing related-shipment assertion wording is updated without adding cases or
+running a suite. Scoped ESLint and the full frontend TypeScript check passed;
+no live browser navigation was performed. This is a local presentation change; browser acceptance remains
+separate from the prior shipping-insert PDF proof and paused manual checkpoint.
+
+### Accepted receipt and history simplification — September 10
+
+The Product Owner accepted moving actual received-tube counts into the main Lab
+Job sample roster and hiding retired configurations from the external user view.
+The bounded implementation shares the existing organization/Department/source
+shipment query between the roster and shipping summary. Sample rows retain their
+laboratory status, accession and customer-safe reason alongside physical receipt
+progress. Repeated aggregate counts for a sample split across containers must be
+counted once; loading or unavailable receipt information must not become zero.
+
+The Lab Job omits the duplicate **Sample receipt progress** disclosure. Trial
+pages retain their receipt disclosure because they do not have this consolidated
+Lab Job roster. Retired configurations are hidden from external shipping
+summaries; Phaeno staff history remains visible with its existing capability
+requirements. No shipment records, audit history or backend receipt data are
+removed or changed. Current source routes and support/history access remain.
+
+Implemented locally with focused component assertions updated for split counts,
+identity, known-zero versus unknown data, query reuse and audience visibility.
+Full frontend TypeScript, scoped ESLint and documentation freshness/whitespace
+checks passed. Automated suites and browser acceptance were not run; this is
+not a new receipt, dispatch or print acceptance result. Changes are uncommitted
+and undeployed.
+
+The owner's accompanying **PLAN** request for a full order roadmap and shipping
+work on the Job details page is separate. The proposed experience, evidence
+mapping, shared workspace and acceptance criteria are recorded in the
+[Lab Job progress and shipping workspace plan](LAB-JOB-PROGRESS-AND-SHIPPING-WORKSPACE-PLAN.md).
+The Product Owner subsequently approved execution. The Lab Job now hosts the
+shared shipping controller, horizontal customer progress and paginated sample/
+tube views locally, as recorded in that owning plan. Trial and staff entry points
+remain unchanged; this implementation does not advance the physical walkthrough.
+
+## September 10 shipping insert presentation refinement
+
+The owner's screenshot review identified the raw material value `extracted_rna`
+and insufficient separation between instruction sections. The local render-only
+refinement displays the exact canonical `materialClass` value `extracted_rna` as
+**Extracted RNA**; other configured labels remain unchanged. Scientific wording,
+material mapping, stored values, frozen content and insert revisions are preserved.
+
+The owner then requested preparation/shipping instructions in two columns on the
+first page and **Sample and tube list** starting on page two. The print layout now
+uses balanced instruction columns with a 6mm column gap, 4mm between main sections
+and 3mm between instruction fields; the 0.5mm label/body gap is unchanged.
+An explicit page break starts the sample/tube list on a fresh page: page two when
+the instructions fit page one. Longer or multiple sample-type instructions may
+flow onto additional pages without clipping; individual label/body blocks stay
+together. This layout change applies only to printing.
+
+The affected Customer/Prospect sample-shipping and Partner Lab guides were
+reviewed and still describe the workflow accurately; only their review dates are
+updated to September 10. Frontend TypeScript, scoped ESLint and documentation
+checks passed. No automated test suite was run for this cosmetic refinement.
+
+The representative offline PDF proof passed using the current React document
+and barcode components, current print CSS, all 15 populated instruction blocks
+from the owner's screenshot, full barcode values, synthetic destination/contacts,
+nine samples and 18 tubes. Letter and A4 each produce four pages: all instruction
+text fits page one, **Sample and tube list** begins on page two, each of the
+18 tube barcodes appears exactly once and all nine sample IDs are retained.
+Rendered pages one and two were visually reviewed for both paper sizes; columns,
+spacing and **Extracted RNA** are readable without clipping. Evidence and source
+hashes are in `artifacts/shipping-insert-layout-20260910/fit-summary.json` and
+`render-evidence.json`.
+
+This is representative synthetic layout proof, not physical printing,
+print-dialog cancellation or completion of the paused manual Test plan. The new
+refinement remains local and is not part of the previously recorded production
+release.
+
+## September 9 shipment header actions
+
+The Product Owner requested a compact shipment header after packet issuance
+displayed four separate actions and wrapped the shipment identity. In the shared
+shipment detail workspace, show one eligible header action directly. When more
+than one action is present, put every header action, including the primary
+workflow action, in one **Actions** dropdown. With no eligible header actions,
+show no action control. Count visible actions even when temporarily disabled.
+
+This is a scoped exception to the default primary-action-plus-secondary-menu
+pattern in [UI/UX principles](../ui-ux-principles.md#record-detail-workspaces).
+It applies to this shared shipment header for each permitted audience, not to
+other record pages, the container selector, scanner rows or dialog footers.
+Keep permissions, pending and disabled states, links, downloads, confirmation
+dialogs and workflow behavior. The label and replacement-action refinements below
+apply to the final menu. The menu must support keyboard
+navigation, visible focus, Escape dismissal and focus restoration; its trigger
+must remain compact on narrow screens.
+
+Acceptance checks cover zero, one and multiple header actions, the issued-packet
+menu, unchanged action destinations and confirmations, and desktop/narrow
+light/dark presentation. Connected Portal verification confirms the three-item
+issued-insert menu, absence of standalone replacement, Escape dismissal and
+focus restoration to **Actions**. **Record shipment** opens with Carrier focused;
+Cancel returns focus to Actions while preserving ReadyToShip and 18/18 matches,
+without a submission. Zero/one-action states, narrow/theme coverage and the final
+same-page print behavior remain pending. Existing component assertions are updated for the menu, absence of
+a standalone replacement action, and first-confirmation error/recovery and
+invalidation; they have not been run. Customer,
+Prospect and Partner guides describe the menu without changing their distinct
+workflow or permission instructions. Complete document/print review and dispatch remain
+separate manual acceptance steps.
+
+The three audience guides and their review metadata are updated. Documentation
+generation and corpus checking passed for all 56 guides. Application and browser
+verification remain separate from these documentation checks.
+
+The subsequent screenshot explicitly shows **ReadyToShip**, but its disabled
+reset explanation incorrectly says the container selection is no longer active.
+The reset eligibility service treated every non-Preparing status as inactive
+before examining the issued-packet lock. The local correction preserves the lock
+and reserves inactive wording for cancelled or unconfigured records, preparation
+pools and empty selections. A packet revision anywhere in the shipment family
+now explains **Containers cannot be changed because a shipping insert has already
+been issued for this job.** Existing scan/history and shipment-progress safeguards
+remain enforced. Added backend coverage has not been executed.
+
+The owner later reported that the old inactive-selection helper still appears.
+The active Visual Studio API is running the older backend code. The immediate
+frontend correction therefore derives the issued-insert explanation from the
+current shipment only when the server already disallows reset. It changes the
+reason presented to the user, not server eligibility or any reset operation.
+Connected Portal DOM verification now confirms the exact issued-insert explanation
+on shipment `b3fa2a0e-bd7a-4460-8376-b1658ec43b71`, with the same URL and 18/18
+matches. The backend source correction still requires activation in the running API.
+
+The owner also reported that **View packet** does nothing and found **Crosswalk
+CSV** and **Replace packet** unclear. Rename the CSV action to **Download tube
+list (CSV)** so the export is recognizable. Source inspection found that the
+packet child route was registered, but its parent did not render the child
+outlet. The local route correction now renders the packet child. The owner's
+subsequent screenshot confirms that the document page opens with identifier
+**SP-20260910-TJHAQYMGKQ, revision 1** for the same 18-tube shipment. It does not
+establish complete document review, print-dialog behavior or physical printing.
+
+The Product Owner chose to remove the standalone **Replace packet** header
+action. The later terminology refinement replaces **View packet** with **Print
+shipping insert**. After issuance, the manager's menu contains **Print shipping
+insert**, **Download tube list (CSV)** and **Record shipment**; read-only users
+retain the first two. Existing permitted tube
+corrections still void the prior packet and issue the corrected revision with
+history retained. This does not remove backend revision behavior or record a
+replacement packet or dispatch.
+
+## September 9 shipping insert wording and direct printing
+
+The Product Owner named the frozen preparation/manifest document **shipping
+insert** and requested **Print shipping insert** to open printing directly.
+Use that terminology in the shared shipment header, confirmation, scanner,
+document page and affected Customer, Prospect and Partner guides. Existing
+packet route/API names, identifiers, barcodes, persisted revisions and history
+remain unchanged.
+
+The owner then explicitly required **Do not change page when selecting print**.
+The final design keeps the shipment route, content and scan state in place while
+validating and printing through a hidden same-origin document frame. Only the
+browser print dialog should appear. A stale, void or unverified revision must
+not print; errors and retry remain on the shipment page. Printing another copy
+must not issue a new revision. Dismissing the print dialog returns to the same
+shipment, and a refresh must not reopen printing automatically.
+
+This supersedes the earlier design that navigated to the printable page before
+opening the print dialog. The observed revision-1 page proves the earlier
+navigation fix, not this new same-page printing behavior or physical scanner
+qualification. Same-page printing is implemented locally. Failures show **Shipping
+insert could not be printed**, details and **Try again** on the original shipment;
+preparation times out after 20 seconds. Direct-print cancellation/retry and
+physical-print acceptance are pending. The final same-page wording is published
+in the three affected guides; documentation generation/check passed for all 56 guides.
+
+Final scoped ESLint and frontend TypeScript checks passed. The backend Release
+solution build passed with zero warnings/errors in 41.65 seconds; automated
+suites were not run. A connected **Actions → Print shipping insert** attempt was
+followed by a browser-inspection timeout, consistent with a blocking native print
+dialog but insufficient to prove its contents or the cancellation outcome. The
+owner is checking cancellation, the unchanged shipment/18 matches and restored
+print action. This remains pending manual confirmation, not print acceptance.
+Read-only Chrome tab inventory after the attempt confirms the exact shipment
+URL is retained without `/packet` navigation. Dialog contents, scroll/matches
+after cancellation and the restored print action remain unverified.
+
+## September 9 first-scan feedback refinement
+
+After the successful first synthetic tube scan, the Product Owner requested a
+smaller, less repetitive scanning view. Remove the separate **Saved** card and
+its duplicate barcode. Keep each saved tube's exact readable identity and a
+smaller barcode graphic in its sample/tube row, alongside **Change tube** or
+**Correct tube** when permitted. Progress and advancement to the next tube remain
+the visible save feedback; preserve an accessible success announcement and focus
+on the next scan field.
+
+This is a shared scanner presentation change. It does not alter matching,
+per-scan saving, physical-container assignment, reset eligibility, correction
+history, packet printing or barcode identity. Acceptance requires one visible
+saved barcode per matched row, readable compact graphics without overflow, and
+unchanged successful-save progression, failure retention and keyboard focus.
+Printed barcode sizing and physical scanner qualification are separate.
+
+Implemented locally in the shared scanner. The separate visual Saved card is
+removed, its success message remains a screen-reader announcement, and row
+barcodes are capped at 12rem wide while retaining readable identifiers. Connected
+Portal and the owner's accepted screenshot confirmed the initial 2rem-high bars
+at the preserved first-scan checkpoint. Existing Customer/Prospect guide
+instructions remain accurate because saved identities, graphic, progress and
+advancement are still shown. The existing scanner assertion now checks the single
+row barcode.
+
+At five saved tubes, the owner requested that matched rows have the same height
+as unmatched rows. Reduce the scanner's on-screen bars from 2rem to 1rem, keeping
+the 12rem width cap, 4px caption gap and readable identifier text. Retain 7mm
+printed bars. Row height remains content-driven so longer identifiers, labels
+and narrow layouts can grow without clipping. Acceptance requires equal matched
+and unmatched row heights for the current desktop fixture. The 1rem refinement
+is implemented locally. The owner's latest screenshot confirms the compact
+16px bars and rows, but all tubes are now matched, so it does not provide an
+unmatched row for a direct comparison. Precise matched/unmatched measurements
+were not completed after the browser inspection lost its connection. Scoped
+ESLint and the whitespace check passed; automated suites were not run for this
+sizing change. Customer and Prospect scanning instructions remain accurate.
+
+The local checkpoint reached **18 of 18 matched**, followed by **Confirm shipping
+packet**. The owner's screenshot confirms the expected shipment, nine samples
+across 18 tubes, and the explanation of frozen crosswalk revisions. After the
+instruction to confirm once, the next screenshot shows the issued-packet actions
+for the same shipment. The packet document itself has not been reviewed. The preceding
+screenshot confirms the post-scan reset lock. At the earlier
+first-scan checkpoint, the owner confirmed that refresh preserved the 1-of-18
+count, exact first barcode, next unmatched tube and disabled reset action. This
+is user-reported manual refresh acceptance;
+no independent post-refresh browser capture or database audit was performed.
+The owner also reported the expected duplicate-rejection message after trying
+the first saved barcode against TEST-002, followed by successful recovery using
+`TEST-HS5Y7DB7-002` and Enter. A further success report and screenshot confirm
+TEST-002's four exact saved identities and advancement to TEST-003. Next verify
+list paging preserves scanner context and saved assignments. A later read-only
+Portal check during the row-sizing refinement shows that the owner advanced
+through TEST-003 with `TEST-HS5Y7DB7-006` and `TEST-HS5Y7DB7-007`; the same
+shipment and kit now show seven matches and an empty focused field at TEST-004,
+Tube 1 of 2. Reset remains disabled. No paging action was performed by Codex or
+confirmed by the owner. Later screenshots show eight matches, then completion
+at 18 of 18. The latest screenshot retains the same shipment and kit, shows
+**Every declared tube is matched**, and displays **Tubes 17–18 of 18** with
+TEST-009's two tubes saved as `TEST-HS5Y7DB7-017` and `TEST-HS5Y7DB7-018`.
+Automatic advancement reached the last page; explicit Previous/Next navigation
+and remaining negative variants are still outstanding. Preserve the saved
+assignments and existing shipment when continuing to packet review.
+
+## September 9 receipt feedback correction
+
+The local Customer walkthrough completed simulated receipt of the one TRANS-20
+kit for HS5Y7DB7. A cancelled predecessor container page still displayed the
+generic instruction to confirm arrival, despite showing **Kits received**.
+The delivery panel now renders only a specific server-provided preparation
+reason; absence of a preparation action is not treated as missing receipt.
+Existing receipt and preparation permissions are unchanged. Continue the local
+walkthrough using **Tubes awaiting containers** in the shipment selector; the
+cancelled predecessor remains available as history. See the
+[current run record](../testing/runs/2026-09-08-hs5y7db7-local-walkthrough.md).
+
+## Earlier September 9 production release and acceptance step (historical)
+
+The earlier shipping release deployed matching API/UI source `f06f4530`,
+including all four reviewed additive migrations. Backup/restore verification,
+deployment identities and passing public health checks are recorded in the
+[release record](PORTAL-SHIPPING-RELEASE-2026-09-08.md#september-9-production-release--completed).
+Production configuration and signed-in/physical acceptance remain separate from
+deployment. At that checkpoint, the local HS5Y7DB7 walkthrough resumed at Customer
+receipt for Request D20018AA; no test records or receipt acknowledgement were
+imported into production. The saved pause checkpoint supersedes that older step.
+
+## End-of-day acceptance handoff — September 8, 2026
+
+The [local walkthrough handoff](../testing/runs/2026-09-08-hs5y7db7-local-walkthrough.md#end-of-day-handoff--resume-september-9-2026)
+is the precise September 9 resume point: Customer Job **HS5Y7DB7**, Request
+**D20018AA**, **Dispatched, 1 sent, 0 received**. Its one TRANS-20 kit has all
+20 synthetic barcodes; its original FedEx dispatch is unchanged and now linked
+to the request. Next, acknowledge that test kit as Customer, then verify only
+received same-Job supply enables container configuration and scanning.
+Successful scans, packets, split-shipment variants and physical acceptance
+remain pending. Do not reorder or redispatch the existing kit. Local test
+fixtures and acceptance evidence are separate from production rollout evidence.
+
+## 2026-09-08 active walkthrough incident: dispatched kit missing from its request
+
+At the incident checkpoint, the owner recorded dispatch from the standard kit
+detail page. That page showed **Sent to customer**, while Request D20018AA still
+showed **Pending, 0 of 1 sent**. Read-only verification confirmed the kit had the
+correct Job and saved dispatch facts but no transportation-kit request line or
+delivery-location link. This was a synchronization defect between two dispatch
+entry points, not an unsubmitted dispatch or a reason to send another kit.
+
+Required correction:
+
+- Dispatching a kit for an accepted Customer Job must fulfill the compatible
+  open transportation-kit request in the same transaction, whichever dispatch
+  entry point was used. Validate requested revision/quantity, ownership and
+  location; keep request, kit and customer supply views consistent.
+- An already-recorded, unused dispatch may be linked to its matching request
+  through a guarded reconciliation. Preserve its original carrier, tracking
+  number, dispatch time, barcode roster and kit identity. Do not record a second
+  physical dispatch or acknowledge Customer receipt.
+- Reject ambiguous, mismatched, excess, already-bound or conflicting links and
+  make retries idempotent. Refresh the stock, request and supply views after
+  either entry point succeeds.
+- Retain the requirement for a Job-specific order and later Customer receipt;
+  preparation/registration alone is not fulfillment. Record focused evidence and
+  the local walkthrough repair separately from physical delivery acceptance.
+
+Implemented and reconciled locally through **Update kit request** on the saved
+kit. Request D20018AA now shows **Dispatched: 1 requested, 1 sent, 0 received**.
+Read-only comparison confirms the original dispatch facts and all 20 permanent
+tube identities/barcodes are unchanged. The kit now links to the request line
+and its delivery location; Customer receipt and sample-shipment binding remain
+unset. One dispatch event and one logical Customer dispatch notification were
+recorded. See the [local run record](../testing/runs/2026-09-08-hs5y7db7-local-walkthrough.md).
+Focused verification passed 68 backend cases, 28 staff component cases and
+7 responsive recovery-dialog cases. No migration or direct database patch was
+needed. Customer delivery acknowledgement and physical acceptance remain pending.
+
+## 2026-09-08 product correction: require kits ordered for the Customer Job
+
+The owner confirmed that Customer container configuration must use transportation
+kits ordered for that Job. The current dispatch model associates physical stock
+with its originating Job; general customer stock is therefore not an alternative
+entry point. This decision supersedes the earlier **I already have kits** action
+and the no-request preparation allowance. Cross-Job inventory reuse remains
+deferred.
+
+Customer workflow and acceptance criteria:
+
+- With no active kit order, show **Order transportation kits**, its recommended
+  sizes and the included-cost confirmation. Do not expose **I already have kits**
+  or let the Customer configure containers using assumed stock.
+- Pending and in-transit orders show fulfillment/receipt progress. Received kits
+  ordered for the same Job and delivery location unlock preparation, limited to
+  the compatible quantities actually available. Partial receipt unlocks only
+  that received supply.
+- Enforce the same prerequisites on the server, including direct requests,
+  cancelled orders and unbound containers created before this correction. Keep
+  ordering recommendations available before receipt so ordering has no circular
+  dependency on container preparation.
+- Existing unbound container links provide an ordering or delivery-status path
+  instead of exposing the scanner prematurely. Already-bound historical
+  shipments retain their recorded lineage and supported completion flow.
+- Phaeno continues preparing standard kits into unassigned stock and fulfilling
+  requests from that stock. This change concerns Customer preparation; it does
+  not introduce new Trial or Partner ordering policy, database fields, commercial
+  charges or physical inventory movements.
+
+Implemented locally. Focused verification passed 62 Customer component cases
+and 28 responsive actual-component browser cases, plus backend supply-guard
+coverage in the 68-case checkpoint above. Build, full frontend typecheck and
+scoped lint passed. Customer and Phaeno guides and the generated 56-guide corpus
+are current (`e81c712bcb04`). The owning test plans distinguish this automated
+evidence from remaining connected Customer receipt/preparation acceptance.
+
+## 2026-09-08 active walkthrough incident: kit-order save failure
+
+SHP-03-001 is resolved locally; the connected Customer retry saved one Pending
+TRANS-20 request, corroborated by the signed-in staff queue and read-only data.
+The owner attempted Order transportation kits; the screenshot shows Kit order
+could not be saved / An unexpected error occurred. The API's fulfillment routing
+queried an active Phaeno organization with `SingleOrDefault`, encountered multiple
+matches and rolled back the transaction. The 20:53:42 PDT read-only check found
+no Job request/notification, corroborated by the empty staff queue. This is not
+evidence of a different user action. Routing now uses the exact active Phaeno
+organization named in the existing bootstrap configuration; other Phaeno
+organizations are excluded, and missing/ambiguous routing fails with a controlled
+message. The modal's error aligns with the form width and replaces generic
+unexpected errors with retry guidance. Seven isolated backend cases, 25 frontend
+cases and seven synthetic responsive dialog cases passed, plus build/typecheck
+and scoped lint. The local API was reloaded successfully. The
+[local run record](../testing/runs/2026-09-08-hs5y7db7-local-walkthrough.md)
+retains the chronology and successful retry evidence. Exactly one logical
+notification is recorded Sent; inbox receipt and physical fulfillment remain
+to be checked.
+
+## 2026-09-08 local implementation: Shipping container selector
+
+A full-width native **Shipping container** selector sits at the top of shipment
+detail, above the kit/preparation/scanning area. Options identify each active
+sibling by container name/identifier, tube count and status, including pools with
+remaining unallocated tubes. Cancelled siblings and empty pools are excluded.
+Selection navigates directly within the same Job or Trial and replaces the
+repeated bottom related-shipment list only on shipment detail; the owning
+Lab/Trial lists retain their existing layout.
+
+The scanner's route guard asks before discarding an unsaved barcode and blocks
+navigation during a save. **Reset container configuration** is likewise disabled while local
+barcode input is unsaved or saving, so reset cannot precede resolution of that
+input. Discarding an unsaved entry is distinct from clearing a persisted scan:
+historical scans continue to lock the whole plan.
+
+Five focused selector cases passed. Final synthetic detail review passed six
+viewport/theme cases in `artifacts/container-controls-review/review.json`,
+including guarded switching and reset-to-pool navigation. These are not signed-in
+Customer results. SHP-09 remains Not run.
+
+## 2026-09-08 local implementation: Reset container configuration before scanning
+
+Status: locally implemented and checked; connected manual acceptance Not run.
+An organization or selected-Department administrator may use **Reset container configuration**
+to return the entire order's prepared container plan to selection before scanning
+starts. This is an order-wide reset, not removal of an isolated shipment.
+The action sits beside the top **Shipping container** selector. Customer and Partner Lab
+Jobs and authorized Trial shipment plans share this workflow. Eligibility is
+read from the server; confirmation submits the reviewed shipment-family versions
+and returns to the appropriate packing pool after success.
+
+Acceptance criteria:
+
+- Confirmation identifies the order and the number of affected containers and
+  tubes, explains that the full plan returns to selection, and permits dismissal
+  without changing anything.
+- Finalized sample identities, total tube counts and global tube ordinals remain
+  intact. Existing prepared shipments are retained as cancelled audit history;
+  their tubes return to the unallocated selection without duplication or loss.
+  Destination and handling separation remain intact across the resulting pools.
+- No quote, accepted price, sample authorization, kit request or physical
+  inventory movement is changed by resetting the plan.
+- Any scan, physical-kit binding, packet, dispatch or receipt anywhere in the
+  order's shipment family blocks the whole reset. Historical immutable scan
+  events and ReturnKit/physical-kit links also block it even after current scan
+  fields are cleared. Once scanning has started it cannot be undone to regain
+  this action. The server enforces the rule as well
+  as the UI, including work that starts after confirmation was opened.
+- Stale versions and concurrent reset/scan/packing attempts cannot partly reset
+  the order, duplicate tubes or replace a newer plan. Failure keeps the current
+  state reviewable and provides a clear refresh/recovery message.
+- Local unsaved barcode input or an in-flight scan disables Reset container configuration
+  before any reset mutation can start. A saved scan permanently invokes the
+  family-wide lock; clearing local input cannot undo its historical evidence.
+- Test both the successful pre-scan reset and each blocking milestone on
+  separate fixtures. The current walkthrough must not lose its prepared plan
+  merely to demonstrate a negative case. SHP-09's reset variant remains Not run.
+
+Customer, Partner and Prospect guides describe the supported entry points and
+lock conditions. The focused backend checkpoint passed 61/61, including eight
+reset cases. Reset UI 12 and detail 5 passed again after the final label/layout;
+scanner 6, selector 5 and kit-panel 22 also passed their focused checkpoints.
+Six synthetic detail browser cases verified guarded navigation and one reset
+POST returning to the pool. No successful live Customer reset or physical workflow
+is claimed; no schema change or EF migration was planned for this workflow.
+
+### Kit ordering versus container scanning
+
+The general **Transportation kits** ordering card belongs to unallocated
+pool/preparation pages. Physical container pages show **Kit delivery** for an
+outstanding Pending, PartiallyDispatched or Dispatched request, with tracking
+and permitted receipt actions. Once delivery is resolved and preparation is
+allowed, that card is hidden. Loading/error or blocked preparation still provides
+an explanation/retry path; hiding the general ordering card never bypasses
+receipt/scanning gates. Direct physical-container links do not reopen ordering.
+
+## 2026-09-08 implementation: Customer transportation-kit ordering
+
+The owner approved a short ordering flow from an accepted Customer Lab Job:
+when no usable kits are recorded, Order transportation kits is the primary
+action. It opens a confirmation prefilled with the recommended SKU/common name
+and quantities plus the Customer/Department delivery location. Kits and outbound
+delivery are included with the accepted laboratory order at no additional
+charge. Confirmation creates a durable Job-scoped order in Phaeno fulfillment;
+retries, multiple tabs and sibling sample shipments must not create duplicates.
+
+The original implementation placed Order transportation kits and I already have
+kits on one action row. The product correction above removes that existing-stock
+alternative: kits must be ordered for this Job before preparation. Earlier
+screenshots and verification counts describe the preceding implementation.
+
+Delivery locations are Customer/Department-owned records managed from the
+Customer/Department workspace, with bounded create/edit modals and a default
+location. The order freezes the confirmed address and container revisions.
+Missing address setup must be explicit; the general CRM address and Phaeno's
+inbound sample destinations must not be silently substituted.
+
+Customer organization and Department administrators reach these records before
+quote acceptance through **Customer settings** in the user menu. Separate
+**Transportation-kit delivery** and **Departments** tabs keep address management
+and Department administration distinct. The delivery tab filters the complete
+saved-location list to one active Department within the administrator's scope,
+supports adding a location, and returns from a location detail to that same
+Department. The quote dialog retains its contextual
+address-management link. The existing `/departments` route hosts Customer
+settings and remains the Department administration route for other audiences.
+
+Customer helper text addresses the reader directly: "Phaeno will send your
+department’s transportation kits to this address." The Phaeno staff view keeps
+its operational description.
+
+The location detail remains view-first. The page header keeps the **Actions**
+menu, including **Edit location** and deactivation. The **Delivery address**
+card spans the available content width. Permissions, bounded edit dialogs and
+frozen request addresses are unchanged. SHP-02 records this layout check; it
+remains Not run and does not alter prior verification results.
+
+The confirmed fulfillment sequence is:
+
+1. A new kit order queues one notification to the responsible Phaeno fulfillment
+   recipient. A successful retry does not queue another notice.
+2. Staff fulfill from registered compatible physical stock, using the order's
+   frozen delivery address, and record carrier/tracking. Partial dispatch is
+   supported and does not imply completion of every requested line.
+3. Dispatched kits provisionally increase the Customer's recorded inventory as
+   On the way. They do not count as usable stock yet.
+4. The Customer acknowledges the kits actually received. Those kits become
+   Available; receipt unlocks sample preparation and shipment using those kits.
+   Partial receipt never makes undelivered kits available.
+
+New request-linked kits enforce the receipt prerequisite on the server as well
+as the screen. Existing legacy shipping data keeps its established workflow.
+Unknown physical stock is distinguished from verified zero; duplicate ordering
+is suppressed while the Job already has outstanding kit supply. Initial support
+is scoped to accepted Customer Lab Jobs; no new Trial/Partner commercial terms
+are inferred. General inventory corrections, cross-Job reuse, replenishment
+thresholds and warehouse reservations remain in the broader scope below.
+
+The ordering/dispatch/receipt slice is implemented locally. Initial fulfillment
+notifications use the existing Phaeno administrator recipient routing; the
+owner has not named a separate fulfillment recipient. Customer and Phaeno help
+guides describe the implemented flow, and the 56-guide generated corpus is
+current. General inventory functionality listed below remains separate.
+
+The backend checkpoint passed 53 focused cases, including authorization and
+Department isolation, frozen snapshots, duplicate/concurrent ordering and
+notifications, partial dispatch/receipt, receipt-gated packing/scanning and
+location-specific residual capacity. The solution builds without warnings or
+errors. Customer/staff actual-component browser review passed 48 desktop/phone
+and light/dark cases; focused component evidence is recorded in the frontend
+test plan. No external delivery was exercised by those tests.
+
+Migration `20260909013740_AddCustomerTransportationKitOrdering` was applied to
+localhost `phaeno_ops` after isolated PostgreSQL verification. The generated ERD
+is current and EF reports no model drift. Exact before/after evidence preserves
+HS5Y7DB7's order state, nine samples, 18 tubes and existing shipment identities
+and versions. The updated local API returns health 200, and signed-in Phaeno
+Receipt & accession displays the new empty Kit requests queue alongside this
+Job. No kit requests, customer addresses or stock records were invented for the
+walkthrough. The next Customer acceptance step is to save a real Department
+delivery location, return to the shipment and review the included-cost kit
+order before confirming it. Mailbox and physical delivery/receipt acceptance
+remain outstanding; no production deployment occurred.
+
+## 2026-09-08 additional planning scope: transportation-kit inventory and fulfillment
+
+Status after the Job-order correction: deferred inventory expansion. The
+location balances and cross-Job reservation/reuse proposals in this section do
+not authorize Customers to use general stock in the current workflow. Current
+Customer orders require their own request, fulfillment and acknowledged receipt.
+Revisit this deferred scope explicitly before replacing that product rule.
+
+The owner requested this addition during implementation of container selection
+and scanning. The ordering slice above supplies Job-scoped location records and
+dispatch/receipt evidence. This section tracks the broader inventory scope:
+cross-Job customer-location balances, reservations, corrections and automatic
+order-driven replenishment are not supplied by standard-stock registration or
+the initial transportation-kit ordering flow alone.
+
+### Required product outcome
+
+Phaeno must know which transportation kits it holds and which kits are available
+at each customer location. When an order arrives, the workflow should identify
+whether the customer needs kits and what Phaeno needs to fulfill. Inventory is
+identified by container SKU/common name, with the physical kit and enclosed
+permanent tube identities retained where registered.
+
+### Inventory and movement requirements
+
+- Track separate Phaeno stock locations and customer receiving/storage
+  locations, within the appropriate organization and Department access scope.
+  Do not treat one customer's stock as available to another location by default.
+- Manage customer kit-delivery locations from the Customer workspace, owned by
+  that Customer and linked to the applicable Department. Keep these distinct
+  from the Phaeno receiving destinations used for inbound sample shipments.
+- Distinguish available, reserved, outbound/in transit, received at the customer,
+  consumed in a sample-return shipment, damaged/lost and adjusted quantities.
+  Quantities in transit are expected supply, not confirmed stock on hand.
+- Retain who recorded each movement, when, its source and destination,
+  kit/SKU quantities and the related fulfillment/order references. Correct
+  discrepancies through explained adjustments rather than rewriting history.
+- Retain customer confirmation or the relevant evidence of receipt. Show the
+  last confirmed balance and whether it needs reconciliation; unknown inventory
+  is not zero and must not be presented as verified available stock.
+- Reserve stock for a packing/fulfillment plan to prevent two orders from
+  relying on the same kit. Release unused reservations when plans change or
+  orders are cancelled. A partly filled returned container consumes that
+  physical container; remaining unused tubes are a separate supply balance.
+- Keep standardized kit definitions, assembled physical kits, individual tube
+  supplies and physical shipping containers distinct. Record any split or
+  reassembly of a kit explicitly so its original enclosed barcode roster is
+  not mistaken for its current contents.
+
+### Order readiness and fulfillment
+
+1. At order intake, compare the anticipated transport need with compatible,
+   unreserved stock at the customer's selected location. If exact tube counts
+   are not yet known, label the check preliminary; quoted sample count is not
+   automatically the final physical tube count.
+2. Recheck when sample entry/finalization establishes the exact tube count and
+   when destination, handling, available stock or packing selection changes.
+3. Show a clear outcome: kits available, kits needed, kits on the way, or stock
+   confirmation needed. Show required, available, reserved and shortfall
+   quantities by SKU with links to the supporting inventory/fulfillment records.
+4. Use the customer's usable stock to recommend a packing combination. When
+   additional kits are required, determine the shortage and create or update
+   one linked fulfillment work item rather than duplicate requests on refresh.
+5. Phaeno reserves/picks registered kits, confirms the destination and records
+   dispatch/tracking. Customer receipt moves supply into available stock at
+   that location; the order readiness view reflects the same movement history.
+6. Link later sample-return use to the supplied/reserved kit and decrement the
+   correct inventory once. Preserve partial-order and multiple-shipment progress.
+
+### Decisions and acceptance work for this scope
+
+Define the supported customer-location model, who confirms customer balances
+and adjustments, reconciliation rules and reservation expiry before this scope
+is implemented. Do not infer a new kit charge, reorder fee, automatic outbound
+shipment or transport policy from an inventory shortage.
+
+Acceptance must cover stock at multiple customer locations, insufficient or
+unknown stock, in-transit supply, simultaneous orders competing for stock,
+partial dispatch/receipt, cancellations and released reservations, lost or
+damaged materials, customer balance corrections and duplicate readiness checks.
+Order-intake estimates must visibly become confirmed needs after exact tube
+counts are available. Extend audience guides and living test plans alongside
+implementation of these behaviors.
+
+## 2026-09-08 product direction: container configuration and guided packing
+
+Status: implemented locally on September 8, 2026. This section supersedes the
+earlier requirement to prepare a separate kit from scratch for every order.
+Phaeno may prepare standard stock in advance; Customers must still order the
+kits for each Job under the product correction at the top of this plan.
+Production release and a physical scanner/printer walkthrough remain separate
+acceptance steps. Broader cross-Job location inventory and automatic
+replenishment remain the additional planning scope above; the newer ordering
+slice records only supply and receipt associated with the selected Job.
+
+### Implementation checkpoint
+
+The subsequent container-editor layout review aligns paired controls while
+preserving helper text before inputs, groups dates/activation under Availability,
+and places optional product details in Supplier and packing. Populated details
+and validation errors open that section automatically. Twelve focused tests
+and six desktop/phone/theme browser cases passed; the signed-in form was also
+reviewed without changing the approved draft definitions.
+
+Container row action menus size to their option text, with a viewport width
+limit, so Preview recommendation remains readable without a cramped menu.
+
+The approved **Adjust containers** editor replaces the all-size quantity fields
+and separate allocation list with **Containers to use**, prepopulated as one
+editable row per recommended container. Each row has a compatible size selector,
+SKU/capacity, tube count and targeted Remove action. Size choices include the
+smaller compatible sizes and the smallest size that covers the remaining need,
+calculated from total tubes minus the capacities of the other selected rows.
+If no size covers that need, consider all compatible sizes. Also exclude any
+choice that makes an existing row redundant. **Add container** chooses the
+smallest permitted fitting size, or the largest permitted size when none fits,
+and is disabled once selected capacity covers the tube total. Three remaining
+tubes offer only a 5 when sizes are 5/10/20. For 30 tubes with 10+5 already
+selected, Add chooses 10, then 5; adding 20 would make the existing 5 redundant.
+Changing or removing one row preserves the others' entered counts.
+**Use recommendation** explicitly rebuilds the rows and their counts.
+
+There are no manual availability fields or disclosure. Recorded-stock and kit
+receipt guards remain automatic. A single compact **Summary** totals grid stays
+in place during recalculation, with **Updating** inside the grid and confirmation
+blocked until the current preview returns. Do not repeat its explanation,
+container breakdown or capacity totals elsewhere in the dialog. Each container
+remains one row on desktop and phone. Whole-number, capacity, total-allocation,
+partial-supply and empty-shipment validation remain. The shared editor serves Customer, Partner
+Lab and authorized Trial shipments without changing audience permissions or
+commercial terms. This replacement passed 20 focused packing tests, TypeScript,
+scoped ESLint and six synthetic viewport/theme cases. The final review is in
+`artifacts/smart-container-review/review.json`; aligned inputs, no overflow and
+0px pending-to-resolved Summary reflow were verified without real Customer
+writes. SHP-09 remains Not run; these results do not verify the new order-wide
+Reset container configuration reset.
+
+- Phaeno can configure versioned container types with immutable unique SKUs,
+  common names, usable tube capacities and controlled compatibility rules;
+  preview recommendations; and explicitly deactivate future use.
+- Standard stock kits can be prepared, registered with permanent tube barcodes
+  and dispatched for an authorized Job. The first Customer scan binds the
+  dispatched physical kit to a compatible return shipment, using the existing
+  fulfillment safeguards. Required ownership relationships remain intact.
+- Preparation recommends the fewest containers and then the least unused
+  capacity. The current editor permits smaller needed sizes, such as six 5s
+  or three 10s for 30 tubes, while filtering oversized/redundant additions.
+  The earlier backend checkpoint also exercised 15+15 in two 20s; that remains
+  historical API evidence, not a current editor option with 5/10/20 configured.
+  No API contract changes with this UI restriction. Empty containers create no
+  shipments; a shortfall stays in an explicit packing pool.
+- Physical tube identities and sample ordinals survive allocation across
+  shipments. Inline scans save before advancing, retain errors on the current
+  tube, and show readable values with Code 128 graphics. One stock kit cannot
+  bind to two shipments and a registered tube cannot be reused or duplicated.
+- Each immutable manifest includes order, shipment, sample and physical tube
+  barcodes, its selected container facts, and separate references/counts for
+  tubes in other shipments or still unallocated. Packet corrections retain
+  the prior voided revision. Receipt resolves the current shipment manifest
+  and records each physical tube independently, with shipment and order totals.
+- Existing fulfilled kits remain usable. Repacking after a kit is bound or
+  a tube is assigned is blocked; existing explicit tube-correction safeguards
+  remain available before physical receipt. Unused tubes from a partly filled
+  returned kit are not yet a reusable customer inventory balance.
+
+Verification: 44 focused backend cases passed, including real PostgreSQL
+transactions, concurrent packing and kit binding, invalid/cross-scope scans,
+custom allocations, current/void manifest lookup and partial tube receipt.
+Source-specific lists retain all 261 packages in the large-order regression.
+Completing a residual pool preserves earlier container identities. Complete
+physical receipt reconciles shipment status even when Customer dispatch was
+not recorded, without inventing carrier facts. Legacy whole-sample endpoints
+redirect Lab-owned shipping samples to the authoritative Lab workflow while
+preserving their existing behavior for unowned legacy samples.
+The additive migration
+`20260908234930_AddSampleShippingContainerPackingAndStock` was applied only to
+the verified local `phaeno_ops` database. Before/after evidence confirms the
+walkthrough Job HS5Y7DB7 retains exactly its original 9 samples, 18 tubes,
+IDs, versions and Preparing shipment. Temporary test databases were removed
+and synthetic notification counts were zero. See the living backend, frontend
+and E2E test plans for detailed evidence and remaining acceptance boundaries.
+
+Initial implementation seeded no container sizes, stock kits or Customer
+shipments. In the subsequent September 8 walkthrough, the owner explicitly
+requested three sizes and approved these internal SKUs/common names:
+
+| SKU | Common name | Tube capacity | Local state |
+| --- | --- | --- | --- |
+| TRANS-20 | 20-tube transportation kit | 20 | Active, revision 2; original draft retained |
+| TRANS-10 | 10-tube transportation kit | 10 | Active, revision 2; original draft retained |
+| TRANS-05 | 5-tube transportation kit | 5 | Active, revision 2; original draft retained |
+
+All three were saved through the signed-in configuration screen against the
+existing Reference extracted RNA / Reference receiving rule. The continued
+local walkthrough encountered no eligible sizes because they were drafts;
+active revision 2 was then created for each size, preserving revision 1.
+Supplier details and additional packing instructions remain unspecified.
+These are local test definitions, not physical stock or an assertion that
+materials/scanners have been qualified. Stock preparation remains a later
+walkthrough step; the owner's Job and sample records were not changed by
+configuration.
+The signed-in Phaeno preview for 18 tubes and the Reference handling context
+returned one TRANS-20 container, 18 assigned tubes and 2 unused slots. Customer
+screen refresh/review remains the next acceptance step; the connected Phaeno
+session cannot enter the Customer shipment workspace directly.
+
+### Confirmed product requirements
+
+- Supply standard kits with permanently barcoded tubes instead of configuring
+  the contents of every outbound kit from scratch for each order.
+- Support multiple shipping-container sizes. Phaeno maintains those sizes and
+  their usable tube capacities in a configuration screen. Customer preparation
+  recommends a size or combination of sizes for the tubes being shipped.
+- Every container type has a required SKU number and common name. Identify the
+  recommended/selected physical kit using both values, together with capacity.
+- Container recommendations are advisory. Customers can select the compatible
+  sizes and quantities they actually have, including more containers or more
+  spare capacity than the default recommendation. A valid alternative needs no
+  exception approval or justification.
+- An order can require multiple shipments according to tube count, container
+  capacity and applicable handling requirements. Each physical shipping
+  container has its own shipment identity and manifest.
+- The Customer works down the sample list, scanning each physical tube. Each
+  successful assignment displays the exact scanned value with its barcode
+  graphic beside it. A sample with several tubes has several tube assignments.
+- Print an order barcode, a shipment barcode and a barcode identifying each
+  sample in that shipment. Preserve the distinct permanent identity of every
+  tube; a sample identifier does not replace its individual tube barcodes.
+- Tubes from the same sample MAY occupy different shipping containers. Sample
+  co-location is not a packing requirement or a reason to reject a valid plan.
+  This supersedes the earlier discussion recommendation to keep them together.
+- A split-sample manifest identifies the sample's total tube count, the tubes
+  inside this container and the other shipment references/counts. References
+  to other containers are separate from this manifest's physical contents.
+
+### Configuration screen
+
+Extend POMS **Order configuration > Sample shipping** with **Container sizes**.
+Use a discovery list, a dedicated view-first record and bounded create/edit
+dialogs following the shared record-management policy. Restrict management to
+the existing authorized Phaeno configuration users.
+
+Each container definition records:
+
+- required unique SKU number, preserved as an identifier rather than a numeric
+  quantity (including any leading zeros, letters or separators);
+- required common name used as the primary customer-facing label;
+- positive whole-number usable tube capacity for the supported tube/packing
+  configuration, accounting for the required packing materials;
+- compatible tube/sample definitions and handling profiles, reusing the
+  controlled shipping rules rather than relying on free-text matching;
+- supplier/product reference and packing instructions where applicable;
+- active/effective revision and display order.
+
+Actual names, capacities and compatible packing configurations are operational
+inputs supplied by Phaeno. Do not seed invented capacities or infer usable
+capacity from exterior dimensions. New definitions default to inactive.
+SKU uniqueness applies to the container type across its revisions; the SKU is
+distinct from an optional supplier's product number. Display common name, SKU
+and capacity in the configuration list, packing recommendation and selection.
+Include the chosen container's common name and SKU on its manifest.
+Version changes must not rewrite the container facts frozen on an existing
+confirmed shipment or printed manifest. A standard definition, a physical kit
+and a Customer's sample-return shipment remain distinct records/concepts.
+
+Include a **Preview recommendation** action so Phaeno can enter a tube count
+and applicable sample/handling context, optionally limit the available quantity
+of each size, then see the recommended containers, allocation, spare capacity
+and explanation before activating a definition.
+Preview is read-only; it does not create kits, reserve stock or create shipments.
+
+### Preparation and recommendation behavior
+
+The recommendation policy below is the implemented default, not a claim that
+package count is a proxy for shipping cost:
+
+1. Resolve the unallocated physical tubes for the selected dispatch. Count
+   tubes, not unique samples, and honor destination/handling separation rules.
+2. Consider only active, effective, compatible container definitions. Capacity
+   alone cannot make an incompatible container eligible. Apply recorded-stock
+   and kit-receipt guards automatically; the editor has no manual availability
+   inputs. Selected rows do not establish unrecorded inventory or change global
+   configuration.
+3. Prefer the fewest containers that accommodate those tubes; among equally
+   sized sets, prefer the least unused tube capacity and use a stable tie-breaker.
+   Do not claim a cheapest option without a separately defined cost model.
+   Recorded stock is not a requirement to use every container on hand.
+4. Explain the recommendation in plain language, showing each container's size,
+   assigned tubes and capacity. **Adjust containers** opens individual rows with
+   compatible size selectors and tube counts. **Add container** and each row's
+   Remove action change the selected containers without resetting other rows.
+   Filter choices and Add by the remaining-capacity and existing-row rules above.
+   **Use recommendation** explicitly rebuilds the rows. Another permitted plan
+   needs no separate approval. Show tubes, containers, usable capacity, unused
+   slots and unallocated tubes once in the stable Summary grid. Recalculate on
+   change, keep an in-grid Updating indicator, and require the latest preview
+   before confirmation. Capacity, stock and duplicate-allocation guards remain.
+5. After the user confirms the actual containers, scan through the sample/tube
+   rows in the active shipment. Save successful scans before advancing focus;
+   keep failures on the current row with an actionable message. Show progress
+   per shipment and across the order without requiring a modal for every tube.
+6. Review and confirm each shipment's contents before printing its manifest.
+   A partly filled container is valid when its declared contents are complete;
+   unused slots do not create expected samples or expected returns.
+
+The owner's example is 30 tubes with configured compatible container sizes of
+20, 10 and 5. Current editor examples are:
+
+| Containers selected | Example tube allocation | Unused capacity |
+| --- | --- | --- |
+| One 20 and one 10 | 20 + 10 | 0 |
+| Three 10s | 10 + 10 + 10 | 0 |
+| Six 5s | 5 + 5 + 5 + 5 + 5 + 5 | 0 |
+
+The first is the default recommendation. Smaller needed sizes remain selectable,
+including six 5s. With all three sizes configured, two 20s for 30 tubes is
+superseded: a 10 covers the remaining need after the first 20. The earlier
+15+15 alternative remains historical backend/print evidence only. These are
+acceptance examples, not seeded product records.
+Unused capacity means empty permitted slots, not missing sample tubes; it is
+also distinct from any actual unused supply tubes remaining in a physical kit.
+
+If the chosen compatible containers cannot hold every tube selected for this
+dispatch, show the exact shortfall and leave the plan incomplete. Do not invent
+additional available containers or silently omit tubes. A container whose own
+declared contents are complete can be prepared independently; outstanding
+tubes remain explicit on the order and in applicable split-sample references.
+Unused or empty selected containers do not become empty shipments/manifests.
+
+Configuration revisions or a changed recommendation must not silently move
+already assigned tubes, alter a dispatched shipment or change accepted sample
+counts/pricing. Repacking before dispatch must explicitly reconcile affected
+assignments and invalidate/reissue affected manifest revisions as appropriate.
+
+### Manifest and receiving acceptance criteria
+
+- Each physical tube is allocated to at most one active shipment. Duplicate,
+  unknown, ineligible and already-used barcodes cannot advance scanning.
+- Order, shipment, sample and tube identities remain distinct and unambiguous.
+  Scanning a printed identifier resolves its context; it is not proof that the
+  corresponding physical material arrived.
+- Each manifest lists only its container's contents, with readable identifiers
+  and scannable graphics. A sample spanning shipments shows, for example,
+  "2 of 4 tubes in this shipment" and references the remaining allocations.
+- If remaining tubes are not yet assigned to a shipment, communicate that
+  explicitly instead of inventing a shipment reference. The printed statement
+  reflects the confirmed manifest revision; the Portal shows current progress.
+- Sample and order receipt summaries aggregate physical tubes across shipments
+  without treating the first package received as receipt of the entire sample.
+  This does not define a new scientific rule for when laboratory work may start.
+- Scanning is keyboard-friendly and resumable, with visible focus, accessible
+  success/error feedback and usable desktop/mobile layouts. Test long sample
+  lists, multiple tubes per sample and multiple containers without page growth.
+- Before implementation is declared complete, cover exact fit, partial fill,
+  mixed sizes, user-selected alternatives, limited/zero availability, an exact
+  capacity shortfall, no eligible container, inactive/revised definitions,
+  concurrent assignment, split samples, partial receipt and stale/reissued
+  printouts in the owning automated and manual verification plans.
+
+### Remaining operational inputs and acceptance
+
+Customer finalization retains a single unallocated roster initially; guided
+packing allocates its physical tubes into separate container shipments. The
+legacy return-kit ownership model remains intact, with standard stock recorded
+separately and bound through the existing fulfillment rules. Printed manifests
+now include the requested distinct order, shipment, sample and tube graphics.
+
+Actual container specifications and the policy for customers holding unused
+kits/tubes for future orders remain operational inputs. The inventory and
+fulfillment scope above will add confirmed location balances, reservations and
+order-driven shortages. Current availability entries are user-supplied planning
+limits only. Sample splitting is settled and must not be reopened as a
+mandatory co-location rule. Customer, Prospect, Partner and Phaeno guides
+describe the implemented workflow; physical packing, representative barcode
+scanners/printers and the real materials still need operational acceptance.
+
+## 2026-09-07 follow-up consistency review
+
+Packet confirmation distinguishes unique samples from tube slots. Packet issue
+failures remain visible inside the confirmation dialog with entered values
+preserved; opening a fresh attempt clears the earlier failure. Tube corrections,
+packet replacement and shipment updates invalidate the retained packet preview.
+The print page verifies the current revision on entry and withholds printable
+content while loading, offline or failed. It labels the confirmed revision and
+offers return/retry recovery. Shipment detail also links to the authorized list.
+Focused regression source covers those cache, count and failure cases; automated
+suites and physical packet/scanner acceptance were not run in this review.
+
 Keep this file updated as external sample-shipping, printable packet, and
 pre-receipt intake requirements are supplied and decisions are made.
 
@@ -1073,3 +2513,106 @@ workflow, approved operational content, and representative physical materials.
   procedure
 - ordinary paid-order migration to the shared packet flow
 - external LIMS or carrier-system integration
+
+## Shipping and receiving location link wording — September 10, 2026
+
+The owner approved **View shipping and receiving location** for both selected-location links in sample preparation and transportation kits. Each still opens the selected location with the existing Job return context. This is a label-only change; the Customer shipping guide uses the same wording.
+
+## Kit-order dialog spacing — September 10, 2026
+
+Group the delivery-location label, selector, helper/address and management link together. Separate the transportation-kit list with a divider and place its size-adjustment action beside the section heading, wrapping on narrow screens. Preserve selections, validation, submission and footer behavior. This presentation-only refinement does not change the documented ordering steps.
+
+## Container accession scan loop — 2026-09-10
+
+- Users: Phaeno laboratory operators and supervisors. Goal: accession every physical tube in a received container without navigating between records.
+- PH-P lookup opens a modal showing the complete expected crosswalk and saved tube count. Tube scan opens a nested freezer-box barcode form. Only saving that form accessions the matched tube; successful save returns focus to the tube scanner until every expected tube is complete. Closing preserves partial progress.
+- Box barcode is required, trimmed, at most 255 characters, stored per tube in existing LabContainer.Location; no freezer registry, box position, model migration, or shipping-insert content change is introduced. Existing specimen accession numbers are retained; otherwise the server allocates a stable unique ACC-prefixed specimen identifier. Tubes remain separate containers under the same specimen.
+- Additive Portal API scope: POST work-orders/{workOrderId}/shipments/{shipmentId}/tubes/accession receives packetBarcode, supplierTubeBarcode and freezerBoxBarcode. It reuses laboratory accession validation, role authorization, trial guards and serialized per-work writes. Same-tube/same-box replay returns the saved result; a different box conflicts instead of relocating. Container arrival is mandatory.
+- Acceptance: correct container modal; wrong/void/unreceived rejection; no write before box submission; separate tube locations; repeated scan/retry without duplicate records; focus returns for the next tube; completion only at all expected tubes; reopen partial progress. Success is completing the container using barcode scans without leaving the modal.
+- Verification: build, typecheck, scoped lint and generated-document checks at completion. Automated tests are maintained but not executed without request; physical scanner and populated save acceptance remain separate gates.
+
+
+### Minimal receiving insert - September 10, 2026
+
+The owner replaced the former multi-page packing insert with a minimal receiving
+sheet per container. This decision supersedes older full-manifest printing and
+top-right barcode descriptions in this plan. The PH-P insert revision barcode
+moves into the body under **Scan to receive this shipment**, enlarged to 20 mm
+bar height with 0.4 mm nominal modules and preserved quiet zones. The optional
+physical container barcode occupies a separate block with 14 mm between blocks.
+Order, shipment and individual sample/tube barcodes remain in the Portal's
+expandable full manifest, outside printed output. The sheet includes Customer,
+Job/Trial and shipment references, frozen container identity, this container's
+sample/tube counts, complete deduplicated temperature/safety notes and receiving
+contact when configured. Preparation, routing and full instructions stay
+available in the Portal before dispatch. No snapshot, barcode value, revision,
+receipt/accession rule or schema changes. Unusually long configured safety notes
+must flow without clipping; physical printer/scanner acceptance remains required.
+
+Current-revision validation and explicit printed-and-packed acknowledgement stay
+in force. Print-frame teardown removes its React portal before disposing its
+iframe to avoid stale-document removal errors.
+
+
+### QR rendering update - September 10, 2026
+
+The owner requested all Portal-generated barcode graphics use QR codes and
+spacing be adjusted accordingly. This supersedes older Code 39/128 rendering
+and linear-size assertions. Shipping inserts use 32 mm squares with four-module
+quiet zones and a 14 mm gap between target blocks; ordinary displays and stock
+kit prints use 28 mm squares. Lab labels keep 50 x 25 mm stock with an 18 mm QR
+and rearranged human-readable identity/context. Values, checksum normalization,
+manufacturer labels, receipt and accession semantics remain unchanged. No new
+label or successful print is recorded merely by rendering the QR.
+
+Verify exact decoding (including case/underscore), square undistorted rendering,
+quiet zones, current-revision checks, frozen manifests, Letter/A4 one-page
+receiving output and the lab-label print boundary. Preserve the full manifest
+and preparation guidance in the Portal. Physical 2D scanner, printer/stock and
+handling acceptance remain explicit gates; former Code 39-only hardware proof
+cannot establish QR compatibility. The shared renderer is pinned qrcode.react
+4.2.0; no backend model or migration change is required.
+
+
+### Receipt and accession list contrast — September 11, 2026
+
+All five tabs now use a shaded, bordered list header and separately padded content. Kit requests and Prepare kits keep search/filter controls with the header and present individually bordered, lightly shaded records. Kits sent and both shipment queues retain semantic tables with shaded column headers and lighter body rows. Receiving and accession lookup panels use the same header/content division. Empty/loading/error states stay in the content area.
+
+Local verification: TypeScript, scoped lint and whitespace checks passed. Signed-in desktop inspection covered all five tabs, including two populated kit requests, three prepared kits, three Kits sent rows, and empty receiving/accession queues. No horizontal page overflow was observed. No receipt, accession, fulfillment or saved record was changed. The Phaeno receipt/accession guide was reviewed; instructions remain accurate because this is a visual-only adjustment. Automated suites were not run for this styling change; narrow/dark and populated receiving/accession checks remain acceptance coverage.
+# September 14 UAT verification checkpoint
+
+Grouped shipping/packing/accession checks passed: 72 backend and 107 frontend, with generated local fixture cleanup verified. Corrected misleading return-kit feedback so denied/failed loads do not also claim an empty queue; four regressions plus signed-in desktop/narrow keyboard checks passed. Existing receipt/accession guide remains accurate; no role, scientific or physical-workflow rule changed. Full provider/Customer/physical acceptance remains separate. See [UAT evidence](../testing/runs/2026-09-12-laboratory-uat-closeout.md#september-14-shipping-packing-and-accession-grouped-continuation).
+
+September 14 SHP-02 closeout: address setup carries explicit resumeKitOrder context. Returning from Add/Manage during kit ordering restores the same Job/shipment and opens unsubmitted review; ordinary inventory return stays view-only. Kit dialogs own dirty/pending navigation guards so the embedded parent does not silently block address setup. Real default/no-default return checks create no kit request; prior scoped address validation/retirement/phone evidence completes the case. [Full evidence and limits](../testing/runs/2026-09-14-ten-case-execution.md).
+
+## Shipping recovery acceptance — September 15, 2026
+
+SHP-03/04 now pass complete isolated connected acceptance: included-cost stock/location review, committed-response loss with retained identity, second-session duplicate/conflicting details, stale address/shipment review, deliberate cancellation/reorder and post-dispatch denial. PostgreSQL confirms one logical notice per intentional request, frozen commercial scope, zero extra invoices and preserved original walkthrough. Synthetic stock and logging-only notices do not prove physical/provider delivery. Temporary purchase/default configuration restored; no application source changed. [Full crosswalk and continuation point](../testing/runs/2026-09-15-shipping-recovery-uat.md).
+
+### Shipping recovery and long-list acceptance — September 15, 2026
+
+SHP-14 now passes complete isolated software acceptance. The full frozen Portal manifest displays eight samples per page with named controls and an announced range; complete-container receiving totals, CSV and immutable contents remain unchanged. A changed shipment/revision starts at the first page. This implements bounded long-content review under the existing minimal receiving-sheet decision; the acceptance script's older multipage-manifest wording is reconciled accordingly.
+
+Fulfillment queues no longer depend on loading the unrelated laboratory dashboard. Their existing configuration-administrator permission and all API authorization remain unchanged. Receipt workspace Refresh invalidates its relevant queues. The Customer shipping and Phaeno receipt guides explain the current behavior. [Defects, full connected crosswalk and retained evidence](../testing/runs/2026-09-15-shipping-large-recovery-uat.md).
+
+### Alternate packing and reset connected acceptance — September 15, 2026
+
+SHP-09 now passes isolated software acceptance across its ten primary steps and all five reset steps. Actual sessions prove custom sizes and residual supply, inventory recovery, competing physical-container claims and complete-plan resets. Separate explicitly staged historical families prove ReturnKit/binding/packet/dispatch/receipt/cleared-scan locks and separation of destinations/handling from a residual pool. One reset wins under concurrency; original slots, frozen orders and prior shipment identities are retained. This supersedes the earlier Not run status for connected software reset acceptance, while real physical, scanner, carrier and scientific gates remain separate. [Complete crosswalk and retained fixture evidence](../testing/runs/2026-09-15-packing-reset-uat.md).
+
+## September 18, 2026 — Default submission guidance
+
+Default submission instructions is a separate sidebar page with a shaded header and bounded edit dialog. It relocates the existing fallback instruction value from Order Settings without deleting it or replacing destination/sample shipping rules. Loading and saving use existing administrator configuration APIs and shared query invalidation. Saving preserves quote/shipping settings and omits optional sample/result workflow fields; version conflicts retain entered values. Required validation, unsaved-change protection and return focus are preserved.
+
+## September 23, 2026 — Manufacturer barcode namespace
+
+The selected tube supplier product at stock-kit assembly establishes the manufacturer namespace for every registered tube in that physical kit. Binding copies that namespace to the return kit and its registered tubes; legacy return-kit assembly resolves it from its selected product. A printed manufacturer value is unique within its manufacturer namespace, with unresolved historical records kept under `LEGACY`. Kit binding considers only unbound dispatched stock, so a previously bound kit with the same printed tube value does not hide an available kit from another manufacturer. Receiving, packet comparisons and accession resolve the tube inside the selected packet or shipment. A bare scan with more than one possible physical container reports ambiguity. The customer crosswalk and per-tube identity remain unchanged.
+
+
+## September 28, 2026 — Product catalog type filtering
+
+Phaeno catalog administrators need to identify and find products by their actual saved product type. Display that name in an outline badge beside each product title, removing the duplicate type from the metadata line. Add an accessible Product type selector to the Products card header with All product types as the default. Derive sorted options by stable type ID from catalog products whose saved product type is active. Inactive types are excluded even when Show inactive is selected. Ignore a saved inactive or unavailable type filter and use All product types; inactive supplier/product visibility remains controlled separately. Apply type, search, and inactive visibility together and provide Clear filters. Preserve the selected type in validated route search state through product details and Back to products. Existing row Actions and permissions remain effective. Acceptance: correct row type identity, immediate combined filters, default inactive hiding, empty-result feedback, return-state retention, and usable header wrapping at narrow widths. No backend, schema, or EF migration changes are required.
+
+
+### Product catalog type filter verification - September 28, 2026
+
+Implemented the type badges and combined header filters with retained detail-return state. Clear filters resets local controls and saved URL filters. Scoped ESLint, TypeScript and documentation generation/consistency checks passed (56 guides, corpus c9e9f4af99ff). Manual signed-in local Chrome checks passed for default and filtered lists, detail-return state, clearing and a 320px CSS viewport without horizontal overflow. Three component regressions were authored but not executed. No backend model or migration change, catalog write, or compilation output was introduced by this slice.

@@ -1,0 +1,76 @@
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
+import { ProtocolApprovalDialog } from './ProtocolApprovalDialog'
+import { createLibraryPreparationExample, serializeProtocolDefinition } from './protocol-definition'
+import type { LabProtocol } from '#/api/lab-operations'
+
+vi.mock('@tanstack/react-router', () => ({ useBlocker: vi.fn() }))
+
+const protocol: LabProtocol = { id: 'protocol', name: 'Library preparation', key: 'library', description: null, latestVersion: 1, versions: [], version: 1 }
+
+describe('formal protocol review', () => {
+  it('shows the procedure and permitted choices and requires attestation', () => {
+    const values = createLibraryPreparationExample()
+    values.steps[0].captures.push({ label: 'Preparation method', type: 'choice', required: true, unit: '', choices: 'Method A, Method B', scope: 'batch' })
+    const approve = vi.fn()
+    render(<ProtocolApprovalDialog protocol={protocol} version={{ id: 'version', protocolVersion: 1, status: 'Draft', definitionJson: serializeProtocolDefinition(values), authoredByUserId: 'author', authoredAtUtc: '', approvedByUserId: null, approvedAtUtc: null }} isPending={false} onApprove={approve} onOpenChange={vi.fn()} />)
+    expect(screen.getByText(/choices: Method A, Method B/)).toBeTruthy()
+    expect(screen.getByText(/^Enabled/)).toBeTruthy()
+    const button = screen.getByRole('button', { name: 'Approve version 1' }) as HTMLButtonElement
+    expect(button.disabled).toBe(true)
+    fireEvent.click(screen.getByRole('checkbox'))
+    fireEvent.click(button)
+    expect(approve).toHaveBeenCalledOnce()
+  })
+
+  it('does not allow an incomplete historical definition to be approved', () => {
+    render(<ProtocolApprovalDialog protocol={protocol} version={{ id: 'version', protocolVersion: 1, status: 'Draft', definitionJson: '{"steps":[]}', authoredByUserId: 'author', authoredAtUtc: '', approvedByUserId: null, approvedAtUtc: null }} isPending={false} onApprove={vi.fn()} onOpenChange={vi.fn()} />)
+    expect(screen.getByText('Definition cannot be reviewed')).toBeTruthy()
+    expect((screen.getByRole('button', { name: 'Approve version 1' }) as HTMLButtonElement).disabled).toBe(true)
+  })
+
+  it('shows preparation evidence scopes, QC scope and source identity before approval', () => {
+    const values = createLibraryPreparationExample()
+    values.preparationBatchEnabled = true
+    values.steps.forEach(step => {
+      step.captures.forEach(capture => { capture.scope = 'tube' })
+      if (step.qcEnabled) step.qcScope = 'shared'
+    })
+    values.steps[1].captures.push({ label: 'Shared temperature', type: 'number', required: true, unit: 'C', choices: '', scope: 'batch' })
+    values.steps[1].captures.push({ label: 'Duration exceptions', type: 'number', required: true, unit: 'min', choices: '', scope: 'shared' })
+    render(<ProtocolApprovalDialog protocol={protocol} version={{ id: 'scoped-version', protocolVersion: 1, status: 'Draft', definitionJson: serializeProtocolDefinition(values), authoredByUserId: 'author', authoredAtUtc: '', approvedByUserId: null, approvedAtUtc: null }} isPending={false} onApprove={vi.fn()} onOpenChange={vi.fn()} />)
+    expect(screen.getByText(/^Enabled/)).toBeTruthy()
+    const definition = screen.getByRole('region', { name: 'Ordered protocol definition' }).textContent
+    expect(definition).toContain('Sample — record individually')
+    expect(definition).toContain('Batch — same entry for all selected samples')
+    expect(definition).toContain('Same entry with sample exceptions')
+    expect(definition).toContain('Shared outcome with tube exceptions')
+    expect(definition).toContain('must match the selected source tube')
+    expect((screen.getByRole('button', { name: 'Approve version 1' }) as HTMLButtonElement).disabled).toBe(true)
+  })
+})
+
+it('requires an override reason and retains entries after a rejected save', async () => {
+  const approve = vi.fn()
+  const close = vi.fn()
+  const version = { id: 'override-version', protocolVersion: 2, status: 'Draft', definitionJson: serializeProtocolDefinition(createLibraryPreparationExample()), authoredByUserId: 'author', authoredAtUtc: '', approvedByUserId: null, approvedAtUtc: null }
+  const props = { protocol, version, override: true, isPending: false, onApprove: approve, onOpenChange: close }
+  const view = render(<ProtocolApprovalDialog {...props} />)
+  const accept = screen.getByRole('button', { name: 'Approve with override' })
+  expect(accept).toHaveProperty('disabled', true)
+  fireEvent.click(screen.getByRole('checkbox'))
+  fireEvent.click(accept)
+  expect(await screen.findByText('Enter a reason for bypassing independent review.')).toBeTruthy()
+  expect(approve).not.toHaveBeenCalled()
+  fireEvent.change(screen.getByLabelText(/Override reason/), { target: { value: '  TEST ONLY — administrator reviewed  ' } })
+  fireEvent.click(accept)
+  await waitFor(() => expect(approve).toHaveBeenCalledWith('TEST ONLY — administrator reviewed'))
+  view.rerender(<ProtocolApprovalDialog {...props} error="Version changed; reload before approving." />)
+  expect(screen.getByLabelText(/Override reason/)).toHaveProperty('value', '  TEST ONLY — administrator reviewed  ')
+  const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+  fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+  expect(close).not.toHaveBeenCalled()
+  confirm.mockRestore()
+  view.rerender(<ProtocolApprovalDialog {...props} isPending />)
+  expect(screen.getByRole('button', { name: 'Cancel' })).toHaveProperty('disabled', true)
+})

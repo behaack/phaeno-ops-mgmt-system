@@ -1,5 +1,7 @@
 # PSeq Operations Restructuring and Database Reset Plan
 
+The September 19 proposal to rebase migrations and rebuild both local and production databases while preserving accounts, customers, configuration and CRM data is tracked in [Database rebase and selective preservation](DATABASE-REBASE-AND-RESEED-PLAN.md). The execution records below describe the earlier local-only reset and do not authorize the new work.
+
 ## 2026-08-29 additive order-to-cash migration
 
 Migration `20260829204102_AddPSeqOrderToCashGapClosure` adds the invitation,

@@ -15,7 +15,9 @@ public sealed class FileStorageOptions
 
     public string Provider { get; set; } = FileStorageProviders.Local;
 
-    public string LocalRootPath { get; set; } = "App_Data";
+    public string LocalRootPath { get; set; } = string.Empty;
+
+    public bool LocalPersistentVolumeConfirmed { get; set; }
 
     public S3FileStorageOptions S3 { get; set; } = new();
 }
@@ -45,15 +47,16 @@ internal sealed class FileStorageOptionsValidator(IWebHostEnvironment environmen
 
         if (string.Equals(options.Provider, FileStorageProviders.Local, StringComparison.OrdinalIgnoreCase))
         {
-            if (environment.IsProduction())
+            if (environment.IsProduction() && (!options.LocalPersistentVolumeConfirmed
+                || !Path.IsPathFullyQualified(options.LocalRootPath)))
             {
                 return ValidateOptionsResult.Fail(
-                    "FileStorage:Provider must be Disabled or S3 in Production; local application storage is not durable production storage.");
+                    "Production Local storage requires an absolute LocalRootPath on a persistent volume and LocalPersistentVolumeConfirmed=true.");
             }
-
-            return string.IsNullOrWhiteSpace(options.LocalRootPath)
-                ? ValidateOptionsResult.Fail("FileStorage:LocalRootPath is required for the Local provider.")
-                : ValidateOptionsResult.Success;
+            try { LocalFileStorage.ResolveRoot(environment, options); }
+            catch (Exception error) when (error is ArgumentException or InvalidOperationException or IOException or UnauthorizedAccessException)
+            { return ValidateOptionsResult.Fail(error.Message); }
+            return ValidateOptionsResult.Success;
         }
 
         if (string.Equals(options.Provider, FileStorageProviders.S3, StringComparison.OrdinalIgnoreCase))

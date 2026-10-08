@@ -2,7 +2,76 @@ import * as React from "react"
 import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui"
 
 import { cn } from "#/lib/utils"
-import { CheckIcon, ChevronRightIcon } from "lucide-react"
+import { CheckIcon, ChevronDownIcon, ChevronRightIcon } from "lucide-react"
+import { Button } from "#/components/ui/button"
+
+// Action menus count rendered items after permission/status conditions resolve.
+// Navigation, radio and checkbox menus keep their regular dropdown behavior.
+function ActionMenu({ keepSingleActionInMenu = false, ...props }: React.ComponentProps<typeof DropdownMenuPrimitive.Root> & {
+  /** Use only for a documented product-policy exception to the direct-action rule. */
+  keepSingleActionInMenu?: boolean
+}) {
+  const children = React.Children.toArray(props.children)
+  const trigger = children.find(child => React.isValidElement(child) && child.type === DropdownMenuTrigger)
+  const content = children.find(child => React.isValidElement(child) && child.type === DropdownMenuContent)
+  const items: React.ReactElement<React.ComponentProps<typeof DropdownMenuItem>>[] = []
+  let supported = true
+  function collect(nodes: React.ReactNode) {
+    React.Children.forEach(nodes, child => {
+      if (!child) return
+      if (!React.isValidElement<{ children?: React.ReactNode }>(child)) { supported = false; return }
+      if (child.type === DropdownMenuItem) items.push(child as React.ReactElement<React.ComponentProps<typeof DropdownMenuItem>>)
+      else if (child.type === React.Fragment || child.type === DropdownMenuGroup) collect(child.props.children)
+      else if (child.type !== DropdownMenuLabel && child.type !== DropdownMenuSeparator) supported = false
+    })
+  }
+  if (React.isValidElement<{ children?: React.ReactNode }>(content)) collect(content.props.children)
+  else supported = false
+  if (supported && items.length === 0) return null
+  if (!keepSingleActionInMenu && supported && items.length === 1 && !items[0].props.onClick && React.isValidElement<{ children?: React.ReactNode }>(trigger)) {
+    const button = React.Children.toArray(trigger.props.children)[0]
+    if (React.isValidElement<React.ComponentProps<typeof Button>>(button) && button.type === Button) {
+      const item = items[0].props
+      const disabled = button.props.disabled || item.disabled
+      return React.cloneElement(button, {
+        children: item.asChild && disabled && React.isValidElement<{ children?: React.ReactNode }>(item.children) ? item.children.props.children : item.children,
+        asChild: item.asChild && !disabled,
+        disabled,
+        type: 'button',
+        size: button.props.size?.startsWith('icon') ? 'sm' : button.props.size,
+        variant: item.variant === 'destructive' ? 'destructive' : button.props.variant,
+        className: cn(button.props.className, 'h-auto min-h-8 max-w-full whitespace-normal text-left'),
+        'aria-label': item['aria-label'],
+        'aria-describedby': item['aria-describedby'],
+        'aria-busy': item['aria-busy'],
+        onClick: event => {
+          if (disabled) { event.preventDefault(); return }
+          if (!event.defaultPrevented) item.onSelect?.(new Event('action.select', { cancelable: true }))
+        },
+      })
+    }
+  }
+  // Dropdown indicators belong to the shared control, not individual screens.
+  // Keep an existing chevron so callers cannot accidentally render two.
+  if (React.isValidElement<{ children?: React.ReactNode }>(trigger)) {
+    const button = React.Children.toArray(trigger.props.children)[0]
+    if (trigger.props.children && React.isValidElement<React.ComponentProps<typeof Button>>(button) && button.type === Button) {
+      const dropdownTrigger = React.cloneElement(trigger, {
+        children: React.cloneElement(button, {
+          size: button.props.size?.startsWith('icon') ? 'sm' : button.props.size,
+          children: <>{button.props.children}{hasActionMenuIndicator(button.props.children) ? null : <ChevronDownIcon aria-hidden="true" data-icon="inline-end" data-slot="action-menu-indicator" />}</>,
+        }),
+      })
+      return <DropdownMenu {...props}>{children.map(child => child === trigger ? dropdownTrigger : child)}</DropdownMenu>
+    }
+  }
+  return <DropdownMenu {...props} />
+}
+
+function hasActionMenuIndicator(children: React.ReactNode): boolean {
+  return React.Children.toArray(children).some(child => React.isValidElement<{ children?: React.ReactNode }>(child)
+    && (child.type === ChevronDownIcon || hasActionMenuIndicator(child.props.children)))
+}
 
 function DropdownMenu({
   ...props
@@ -249,6 +318,7 @@ function DropdownMenuSubContent({
 }
 
 export {
+  ActionMenu,
   DropdownMenu,
   DropdownMenuPortal,
   DropdownMenuTrigger,

@@ -32,7 +32,7 @@ public sealed class CrmAdministrationController(PSeqOperationsDbContext dbContex
     [HttpGet("saved-views")]
     public async Task<IReadOnlyList<CrmSavedViewDto>> SavedViews([FromQuery] CrmRecordType? recordType, CancellationToken cancellationToken)
     {
-        var actor = await RequireActor(cancellationToken);
+        var actor = await RequireCrmAccessAsync(HttpContext, dbContext, externalIdentityContext, cancellationToken);
         var query = dbContext.CrmSavedViews.AsNoTracking().Where(value => value.IsActive && (value.IsShared || value.OwnerUserId == actor.Id));
         if (recordType.HasValue) query = query.Where(value => value.RecordType == recordType);
         return await query.OrderBy(value => value.RecordType).ThenBy(value => value.Name)
@@ -43,8 +43,9 @@ public sealed class CrmAdministrationController(PSeqOperationsDbContext dbContex
     [HttpPost("saved-views")]
     public async Task<ActionResult<CrmSavedViewDto>> CreateSavedView([FromBody] UpsertCrmSavedViewRequest request, CancellationToken cancellationToken)
     {
-        var actor = await RequireActor(cancellationToken);
+        var actor = await RequireCrmAccessAsync(HttpContext, dbContext, externalIdentityContext, cancellationToken);
         var value = Execute(() => new CrmSavedView(request.Name, request.RecordType, request.FilterJson, request.IsShared, actor.Id));
+        if (request.IsShared) RequireAdministration(actor);
         dbContext.CrmSavedViews.Add(value);
         await dbContext.SaveChangesAsync(cancellationToken);
         return Created($"/api/platform/crm/administration/saved-views/{value.Id}", ToDto(value));
@@ -53,11 +54,12 @@ public sealed class CrmAdministrationController(PSeqOperationsDbContext dbContex
     [HttpPut("saved-views/{id:guid}")]
     public async Task<CrmSavedViewDto> UpdateSavedView(Guid id, [FromBody] UpsertCrmSavedViewRequest request, CancellationToken cancellationToken)
     {
-        var actor = await RequireActor(cancellationToken);
+        var actor = await RequireCrmAccessAsync(HttpContext, dbContext, externalIdentityContext, cancellationToken);
         var value = await dbContext.CrmSavedViews.FirstOrDefaultAsync(item => item.Id == id && item.OwnerUserId == actor.Id, cancellationToken)
             ?? throw Missing("crm_saved_view_not_found", "The saved view was not found.");
         EnsureVersion(value.Version, request.Version ?? 0);
         if (request.RecordType != value.RecordType) throw Invalid("crm_saved_view_type_immutable", "A saved view's record type cannot be changed.");
+        if (value.IsShared || request.IsShared) RequireAdministration(actor);
         Execute(() => value.Update(request.Name, request.FilterJson, request.IsShared));
         await dbContext.SaveChangesAsync(cancellationToken);
         return ToDto(value);
@@ -66,10 +68,11 @@ public sealed class CrmAdministrationController(PSeqOperationsDbContext dbContex
     [HttpPost("saved-views/{id:guid}/deactivate")]
     public async Task<CrmSavedViewDto> DeactivateSavedView(Guid id, [FromBody] ChangeCrmCompanyActiveRequest request, CancellationToken cancellationToken)
     {
-        var actor = await RequireActor(cancellationToken);
+        var actor = await RequireCrmAccessAsync(HttpContext, dbContext, externalIdentityContext, cancellationToken);
         var value = await dbContext.CrmSavedViews.FirstOrDefaultAsync(item => item.Id == id && item.OwnerUserId == actor.Id, cancellationToken)
             ?? throw Missing("crm_saved_view_not_found", "The saved view was not found.");
         EnsureVersion(value.Version, request.Version);
+        if (value.IsShared) RequireAdministration(actor);
         value.Deactivate();
         await dbContext.SaveChangesAsync(cancellationToken);
         return ToDto(value);
@@ -78,8 +81,9 @@ public sealed class CrmAdministrationController(PSeqOperationsDbContext dbContex
     [HttpGet("custom-fields")]
     public async Task<IReadOnlyList<CrmCustomFieldDefinitionDto>> CustomFields([FromQuery] CrmRecordType? recordType, [FromQuery] bool includeInactive = false, CancellationToken cancellationToken = default)
     {
-        await RequireActor(cancellationToken);
+        var actor = await RequireCrmAccessAsync(HttpContext, dbContext, externalIdentityContext, cancellationToken);
         var query = dbContext.CrmCustomFieldDefinitions.AsNoTracking().AsQueryable();
+        if (!AccountAuthorization.IsPlatformAdmin(actor)) query = query.Where(value => value.Sensitivity == CrmFieldSensitivity.Internal);
         if (recordType.HasValue) query = query.Where(value => value.RecordType == recordType);
         if (!includeInactive) query = query.Where(value => value.IsActive);
         return await query.OrderBy(value => value.RecordType).ThenBy(value => value.Name).Select(value => ToDto(value)).ToListAsync(cancellationToken);
@@ -133,17 +137,20 @@ public sealed class CrmAdministrationController(PSeqOperationsDbContext dbContex
     [HttpGet("custom-field-values/{recordId:guid}")]
     public async Task<IReadOnlyList<CrmCustomFieldValueDto>> CustomFieldValues(Guid recordId, CancellationToken cancellationToken)
     {
-        await RequireActor(cancellationToken);
+        var actor = await RequireCrmAccessAsync(HttpContext, dbContext, externalIdentityContext, cancellationToken);
+        var isAdmin = AccountAuthorization.IsPlatformAdmin(actor);
         return await dbContext.CrmCustomFieldValues.AsNoTracking().Where(value => value.RecordId == recordId && value.Definition.IsActive)
+            .Where(value => isAdmin || value.Definition.Sensitivity == CrmFieldSensitivity.Internal)
             .Select(value => new CrmCustomFieldValueDto(value.DefinitionId, value.RecordId, value.ValueJson, value.Version)).ToListAsync(cancellationToken);
     }
 
     [HttpPut("custom-field-values")]
     public async Task<CrmCustomFieldValueDto> SetCustomFieldValue([FromBody] UpsertCrmCustomFieldValueRequest request, CancellationToken cancellationToken)
     {
-        await RequireActor(cancellationToken);
+        var actor = await RequireCrmAccessAsync(HttpContext, dbContext, externalIdentityContext, cancellationToken);
         var definition = await dbContext.CrmCustomFieldDefinitions.FirstOrDefaultAsync(value => value.Id == request.DefinitionId && value.IsActive, cancellationToken)
             ?? throw Missing("crm_custom_field_not_found", "The active custom field was not found.");
+        if (definition.Sensitivity != CrmFieldSensitivity.Internal) RequireAdministration(actor);
         await EnsureRecordExists(definition.RecordType, request.RecordId, cancellationToken);
         ValidateCustomValue(definition, request.ValueJson);
         var value = await dbContext.CrmCustomFieldValues.FirstOrDefaultAsync(item => item.DefinitionId == request.DefinitionId && item.RecordId == request.RecordId, cancellationToken);
@@ -222,6 +229,7 @@ public sealed class CrmAdministrationController(PSeqOperationsDbContext dbContex
             ?? throw Missing("crm_import_not_found", "The import preview was not found.");
         EnsureVersion(value.Version, request.Version);
         if (value.Status == CrmImportStatus.Committed) return ToDto(value);
+        if (value.InvalidRows > 0) throw Invalid("crm_import_invalid_rows", "Resolve invalid rows before committing the import.");
         var rows = JsonSerializer.Deserialize<List<Dictionary<string, string?>>>(value.RowsJson) ?? [];
         var importKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var row in rows)
@@ -266,6 +274,7 @@ public sealed class CrmAdministrationController(PSeqOperationsDbContext dbContex
                 var stage = await dbContext.CrmPipelineStages.Where(value => value.IsActive && value.Category == CrmPipelineStageCategory.Open && value.Pipeline.IsActive).OrderByDescending(value => value.Pipeline.IsDefault).ThenBy(value => value.Position).FirstAsync(cancellationToken);
                 decimal? amount = decimal.TryParse(Get(row, "amount"), NumberStyles.Number, CultureInfo.InvariantCulture, out var parsed) ? parsed : null;
                 var opportunity = Execute(() => new CrmOpportunity(Get(row, "name")!, company.Id, stage, actor.Id, Get(row, "product_interest"), amount, Get(row, "currency") ?? "USD", null, Get(row, "next_step"), null, null, null));
+                opportunity.AssignDepartment(await CrmOpportunityDepartments.ResolveAsync(dbContext, company, null, cancellationToken));
                 dbContext.CrmOpportunities.Add(opportunity);
                 dbContext.CrmOpportunityStageHistory.Add(new CrmOpportunityStageHistory(opportunity.Id, null, stage.Id, "Opportunity imported.", actor.Id, DateTime.UtcNow));
                 break;
@@ -295,7 +304,9 @@ public sealed class CrmAdministrationController(PSeqOperationsDbContext dbContex
                     var opportunityName = Get(row, "name");
                     var opportunityCompanyName = Get(row, "company_name");
                     if (string.IsNullOrWhiteSpace(opportunityName) || string.IsNullOrWhiteSpace(opportunityCompanyName)) return "name and company_name are required.";
-                    if (!await dbContext.CrmCompanies.AnyAsync(value => value.IsActive && value.Name.ToLower() == opportunityCompanyName.ToLower(), cancellationToken)) return "company_name must exactly match an active Company.";
+                    var opportunityCompany = await dbContext.CrmCompanies.SingleOrDefaultAsync(value => value.IsActive && value.Name.ToLower() == opportunityCompanyName.ToLower(), cancellationToken);
+                    if (opportunityCompany is null) return "company_name must exactly match an active Company.";
+                    if ((await CrmOpportunityDepartments.ReadAsync(dbContext, opportunityCompany, cancellationToken)).Count > 1) return "This Company has multiple Departments. Create the Opportunity in CRM and select its Department.";
                     if (!decimal.TryParse(Get(row, "amount"), NumberStyles.Number, CultureInfo.InvariantCulture, out var parsed) && !string.IsNullOrWhiteSpace(Get(row, "amount"))) return "amount must be a number.";
                     var stage = await dbContext.CrmPipelineStages.AsNoTracking().Where(value => value.IsActive && value.Category == CrmPipelineStageCategory.Open && value.Pipeline.IsActive).OrderByDescending(value => value.Pipeline.IsDefault).ThenBy(value => value.Position).FirstOrDefaultAsync(cancellationToken);
                     if (stage is null) return "an active pipeline with an open stage is required.";
@@ -376,7 +387,7 @@ public sealed class CrmAdministrationController(PSeqOperationsDbContext dbContex
                 rows.AddRange((await companyQuery.OrderBy(value => value.Name).ToListAsync(cancellationToken)).Select(value => new[] { value.Id.ToString(), value.Name, value.DomainName ?? "", value.Phone ?? "", value.Industry ?? "", value.LifecycleState.ToString(), value.Source ?? "", value.IsActive.ToString() }));
                 break;
             case CrmRecordType.Contact:
-                rows.Add(["id", "first_name", "last_name", "email", "phone", "primary_company", "primary_company_title", "preference", "active"]);
+                rows.Add(["id", "first_name", "last_name", "email", "phone", "primary_company", "primary_company_title", "preference", "active", "outreach_status", "outreach_eligible", "permission_source", "evidence_date", "suppression_reason"]);
                 var contactQuery = dbContext.CrmContacts.AsNoTracking().AsQueryable();
                 if (!FilterBool(filters, "includeInactive")) contactQuery = contactQuery.Where(value => value.IsActive);
                 var contactSearch = FilterText(filters, "search");
@@ -394,12 +405,13 @@ public sealed class CrmAdministrationController(PSeqOperationsDbContext dbContex
                 rows.AddRange(contactValues.Select(value =>
                 {
                     var primary = primaryPositions.GetValueOrDefault(value.Id);
-                    return new[] { value.Id.ToString(), value.FirstName, value.LastName, value.Email ?? "", value.Phone ?? "", primary?.CompanyName ?? "", primary?.JobTitle ?? "", value.CommunicationPreference.ToString(), value.IsActive.ToString() };
+                    return new[] { value.Id.ToString(), value.FirstName, value.LastName, value.Email ?? "", value.Phone ?? "", primary?.CompanyName ?? "", primary?.JobTitle ?? "", value.CommunicationPreference.ToString(), value.IsActive.ToString(), value.OutreachStatus, value.CanReceiveOutreach.ToString(), value.OutreachPermissionSource ?? "", value.OutreachRecordedOn?.ToString("yyyy-MM-dd") ?? "", value.OutreachSuppressionReason ?? "" };
                 }));
                 break;
             case CrmRecordType.Lead:
                 rows.Add(["id", "display_name", "company_name", "email", "phone", "source", "status", "active"]);
                 var leadQuery = dbContext.CrmLeads.AsNoTracking().AsQueryable();
+                if (FilterBool(filters, "needsNextAction")) leadQuery = CrmAttentionFilters.MissingNextAction(leadQuery);
                 if (!FilterBool(filters, "includeInactive")) leadQuery = leadQuery.Where(value => value.IsActive);
                 var leadStatus = FilterEnum<CrmLeadStatus>(filters, "status");
                 if (leadStatus.HasValue) leadQuery = leadQuery.Where(value => value.Status == leadStatus.Value);
@@ -414,6 +426,7 @@ public sealed class CrmAdministrationController(PSeqOperationsDbContext dbContex
             case CrmRecordType.Opportunity:
                 rows.Add(["id", "opportunity_number", "name", "company", "pipeline", "stage", "amount", "currency", "probability", "expected_close", "active"]);
                 var opportunityQuery = dbContext.CrmOpportunities.AsNoTracking().Include(value => value.Company).Include(value => value.Pipeline).Include(value => value.Stage).AsQueryable();
+                if (FilterBool(filters, "stale")) opportunityQuery = CrmAttentionFilters.StaleOpportunities(opportunityQuery, DateTime.UtcNow);
                 if (!FilterBool(filters, "includeInactive")) opportunityQuery = opportunityQuery.Where(value => value.IsActive);
                 var pipelineId = FilterGuid(filters, "pipelineId");
                 var stageId = FilterGuid(filters, "stageId");
@@ -433,11 +446,9 @@ public sealed class CrmAdministrationController(PSeqOperationsDbContext dbContex
                 if (!FilterBool(filters, "includeInactive")) taskQuery = taskQuery.Where(value => value.IsActive);
                 var taskStatus = FilterEnum<CrmTaskStatus>(filters, "status");
                 if (taskStatus.HasValue) taskQuery = taskQuery.Where(value => value.Status == taskStatus.Value);
-                if (FilterBool(filters, "overdue"))
-                {
-                    var now = DateTime.UtcNow;
-                    taskQuery = taskQuery.Where(value => value.DueAt < now && value.Status != CrmTaskStatus.Completed && value.Status != CrmTaskStatus.Cancelled);
-                }
+                taskQuery = CrmAttentionFilters.Tasks(taskQuery, FilterBool(filters, "overdue"), FilterBool(filters, "dueSoon"), DateTime.UtcNow);
+                var taskSearch = FilterText(filters, "search");
+                if (taskSearch is not null) { var term = taskSearch.ToLower(); taskQuery = taskQuery.Where(value => value.Title.ToLower().Contains(term) || (value.Description != null && value.Description.ToLower().Contains(term))); }
                 rows.AddRange((await taskQuery.OrderBy(value => value.DueAt).ToListAsync(cancellationToken)).Select(value => new[] { value.Id.ToString(), value.Title, value.OwnerUserId.ToString(), value.Priority.ToString(), value.Status.ToString(), value.DueAt.HasValue ? value.DueAt.Value.ToString("O", CultureInfo.InvariantCulture) : "", value.IsActive.ToString() }));
                 break;
         }

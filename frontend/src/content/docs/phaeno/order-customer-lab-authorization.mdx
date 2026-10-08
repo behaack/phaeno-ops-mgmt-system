@@ -1,44 +1,82 @@
-# Customer lab authorization
+# Lab Service authorization
 
-Customer laboratory work enters Order Ops as a Commercial request. Order Ops validates the Job-level specimen count, biological-source composition, storage, safety, and service profile before pricing. Individual samples do not exist yet.
+Customer and Partner Lab Service work shares the Department-scoped Job, specimen, shipping and scientific-release workflow. Manual Customer work enters Order Ops as a Commercial request. Order Ops validates the Job-level specimen count, biological-source composition, storage, safety, and service profile before pricing. Individual samples do not exist yet.
+
+## Additional scope on an accepted Job
+
+For an active accepted Job, an authorized Commercial Operator can select **Issue Change quote**. Enter only additional biological-source counts and the price per additional sample. The saved quote is an immutable incremental proposal; it does not replace the original placement or authorize new work. Existing readiness and independent pricing controls remain enforced. A new proposal supersedes the previous unaccepted Change quote.
+
+The Customer or Partner organization administrator or an administrator of the assigned Department accepts or declines separately. Accepted additions open sample entry without unlocking existing authorized samples. Finalization appends a versioned authorization and creates shipping records only for new samples. Started work must preserve all existing specimens and its pinned scientific configuration; unsafe changes require laboratory review. Final billing combines accepted original and additional charges, retaining each quote's tax decision. Completed or cancelled Jobs cannot receive new additions.
+
+## Configured standard orders
+
+An eligible Customer or Partner organization administrator or an administrator of the assigned Department may select a configured offering and place its standard Lab Service bundle directly from the Job. The review includes the specimen count, frozen scientific scope, unit price, approved tax and final total. Complete billing and Finance-approved tax are required for this direct commitment; manual quote readiness remains as described below.
+
+Order Ops displays the accepted **Standard PSeq Lab Service** terms. Do not issue a second quote or sell assembly separately for the same bundle. The accepted Job opens exact sample-list preparation; roster finalization creates the normal Lab and shipping authorization. Partner Lab work stays within the Partner's organization and Department.
+
+Custom-work requests create a Sales Opportunity and preserve the originating order and Department. They do not place an order or approve a price. Review their scope in CRM and follow the existing Sales handoff when ready.
 
 ## Initiate an order for a Customer
 
 An authorized Phaeno order-pricing user can begin the pricing profile when the Customer is already known and does not need to create the request first.
 
-1. Open **Order operations**, select **Order intake**, and choose **New Customer order**.
-2. Wait for the eligible Customer list to load, search incrementally by Company name, then select the Customer from the matching results. **New Customer order** remains unavailable while the list is loading or could not be loaded. Names come from canonical active CRM Companies. A Company appears when its attached active Customer operational scope is not manually blocked and has a current **Ready** PSeq Lab Service entitlement plus the active canonical specimen offering. It does not need an online administrator at this stage.
-3. Enter a unique **Job name**, every biological source and sample count, the shared storage requirements and safety declaration, and any Customer-safe Job notes. If Sales discussed a price, select **Propose a price**, enter the proposed USD price per specimen, and optionally add Customer-safe pricing context. A proposal is not a quote and does not authorize work. Do not enter individual sample IDs, tube barcodes, patient identifiers, or PHI.
+1. Open **Order ops**, select **Order intake** under **LAB SERVICES**, and choose **New Customer order**.
+2. Search by Company name and select the active Customer, then choose the Department that owns the Job. When the Customer has more than one Department, make the choice explicitly; the default Department is not selected for you. Use **Clear Customer** in the search field to choose a different Customer; this clears the Department and readiness selection while keeping the Job details you entered. A Customer selected by an approved CRM handoff stays fixed to that handoff. Customers remain visible even when setup is incomplete. Review **Before starting pricing**, **Before issuing a quote**, and **Before invoicing** for that Department. Starting pricing requires the active Customer, an effective **Ready** PSeq Lab Service entitlement, the active specimen offering, no operational block, and at least one active Customer user who can access the chosen Department. An organization administrator can access all Departments; a Department member can access only assigned Departments. The user need not be an administrator until quote approval is required. Setup links open in a separate tab so your order details remain here. Ask a platform administrator to complete setup if your role cannot change it, then return to the same order draft and select **Refresh readiness** at the end of the pricing-readiness panel.
+3. Enter a unique **Job name**, select one **Sample type**, every biological source and sample count, the total **Sample-sequencing runs** (leave blank for one per sample), the shared storage requirements and safety declaration, and any Customer-safe Job notes. If Sales discussed a price, select **Propose a price**, enter the proposed USD price per sample-sequencing run, and optionally add Customer-safe pricing context. A proposal is not a quote and does not authorize work. Do not enter individual sample IDs, tube barcodes, patient identifiers, or PHI.
 4. Confirm that the pricing details contain no patient identifiers, PHI, or unnecessary personal data, then select **Start pricing**. POMS creates the Customer-owned Job with one immutable submitted request revision and opens it in **Quote in preparation**.
-5. Review the committed sample count, source composition, storage, and safety facts on the operational detail. If a price was proposed, select **Review proposed price** and compare the proposal, active catalog price, difference, and calculated subtotal. Approve it unchanged or amend the unit price; an amendment requires an internal reason. Before issuing the quote, complete every non-billing readiness blocker, including activating a Customer administrator who can receive and approve it. Billing readiness may be completed after acceptance but is required before invoicing. The editor preselects the required **PSeq Lab Service**, explains that it is priced per specimen, and sets its read-only quantity from the Job's committed specimen count. The required line cannot be removed. Additional active catalog lines may be added with a per-unit price and a quantity chosen for that quote. Permanent accounting codes remain available in **Order configuration** but are not shown as quote-entry guidance.
+5. Review the committed sample count, source composition, storage, and safety facts on the operational detail. If a price was proposed, select **Review and issue quote** and compare the proposal, active catalog price, difference, and calculated subtotal. Approve it unchanged or amend the unit price; an amendment requires an internal reason. Before issuing the quote, complete every non-billing readiness blocker, including activating a Customer administrator who can receive and approve it. Billing readiness may be completed after acceptance but is required before invoicing. The editor preselects the required **PSeq Lab Service**, explains that it is priced per sample-sequencing run, and sets its read-only quantity from the Job's requested sample-sequencing run count. The required line cannot be removed. Additional active catalog lines may be added with a per-unit price and a quantity chosen for that quote. Permanent accounting codes remain available in **Order settings** but are not shown as quote-entry guidance.
 
-If the designated item is missing, inactive, or not priced per specimen, quote issuance is paused until **Order configuration** is corrected. POMS validates the item identity, unit, and committed quantity again on the server.
+If the designated item is missing, inactive, or not priced per sample-sequencing run, quote issuance is paused until **Order settings** is corrected. POMS validates the item identity, unit, and committed quantity again on the server.
 
-POMS sends no Customer notice while a Phaeno-initiated Job remains **Quote in preparation**. Issuing or revising the quote rechecks ordering eligibility and the approver list, makes the quote available immediately, moves the Job to **Quote issued**, and notifies every active Customer administrator. The Customer can approve it; Phaeno cannot approve on the Customer's behalf. The accepting administrator becomes the Job's acting Customer contact for ordinary later notices. High-impact events, including cancellation by Phaeno and result release or payment hold, continue to notify all active Customer administrators.
+POMS sends no Customer notice while a Phaeno-initiated Job remains **Quote in preparation**. Issuing or revising the quote rechecks ordering eligibility and the approver list, makes the quote available immediately, moves the Job to **Quote issued**, and notifies every active Customer administrator. The Customer can approve it; Phaeno cannot approve on the Customer's behalf. The accepting administrator becomes the Job's acting Customer contact for ordinary later notices. High-impact events, including cancellation by Phaeno and result release, continue to notify all active Customer administrators.
 
 ## Review the request
 
+The quote-available notice identifies the Customer-visible Job name in its opening
+sentence and lists the order reference separately for tracking.
+
+Open the Job header's **Actions** menu for **Assignment**, **Request changes**, and **Decline request** when your permissions and the Job status allow them. **Open Lab work** and **Complete Job** appear there when available. If only one header action is available, it appears as a labeled button. Selecting an action keeps its existing review or confirmation step.
+
 Confirm that the Customer has an active laboratory-service entitlement and that the selected service is currently offered. Review the requested specimen count, each source group and count, shared handling and safety declarations, and Customer notes. Request a targeted correction when information is incomplete or unsafe rather than rewriting Customer data internally.
 
-Keep internal review notes separate from the tenant-safe reason shown to the Customer. The initial workflow is not a PHI intake path; do not ask for or store patient-identifying information.
+Keep internal review notes separate from the reason shown to the Customer. The initial workflow is not a PHI intake path; do not ask for or store patient-identifying information.
 
 ## Issue and accept the quote
 
 The Customer or Sales price proposal is part of the submitted request revision, not a quote. POMS preserves its unit price, note, proposer, and time. The issued quote records whether Phaeno approved that proposal or amended it, along with the responsible Commercial reviewer and decision time. When dual control is enabled, a Phaeno proposer cannot review the same proposal.
 
-The quote is a versioned, immutable Commercial offer for one job. Confirm the configured service, quantities, prices, currency, expected turnaround information, and expiration before issuance. Tax is calculated by POMS: when the complete billing and tax profile is Finance-approved, the quote includes and freezes tax; otherwise the quote is explicitly pre-tax and tax is calculated from the approved profile at invoicing. Saving the issued POMS quote makes it available for Customer acceptance.
+The quote is a versioned, immutable Commercial offer for one job. Confirm the configured service, quantities, prices, currency, one delivery target in business days, and expiration before issuance. The target starts after all required physical tubes for all samples are received. Tax is calculated by POMS: when the complete billing and tax profile is Finance-approved, the quote includes and freezes tax; otherwise the quote is explicitly pre-tax and tax is calculated from the approved profile at invoicing. Saving the issued POMS quote makes it available for Customer acceptance.
+
+Cancel, Close, or Escape asks you to keep editing or discard unsaved quote changes. Dismissal is unavailable while the quote is being issued or its current record is being refreshed. A stale-record response preserves your entries; review the refreshed Job and pricing before deliberately submitting again.
 
 Customer acceptance performs one Commercial operation that:
 
-- records the accepted quote revision and frozen pricing profile; and
-- opens post-acceptance sample-list preparation.
+- records the accepted quote revision, confirmed supported Sample type, Department kit delivery address and frozen pricing profile; and
+- starts Phaeno-selected compatible Transportation kit fulfillment for any shortage at that address. The Customer does not approve kit types separately.
 
-After the Customer enters or imports the exact compliant sample list, finalization atomically creates the immutable laboratory work authorization, linked Lab work order, shipment, and physical tube slots. Do not create a Lab work order manually if finalization fails. Resolve the reported roster or shipping-configuration issue and retry the durable operation.
+For newly confirmed manual and configured standard orders, Phaeno can prepare and dispatch registered physical kits before individual Sample IDs are entered. The Customer confirms actual receipt of each kit. In the Customer Portal, preparation then saves one Sample ID and one registered barcode from that exact received kit at a time. The complete accepted sample, biological-source and purchased-run totals are checked before final confirmation.
+
+For these newly confirmed orders, final confirmation atomically creates the immutable laboratory work authorization, linked Lab work order and one return shipment per used physical kit, with the exact saved Sample ID/tube crosswalk. Earlier Jobs and accepted supplemental scope retain their existing sample-list preparation. Do not create a Lab work order manually if finalization fails. Resolve the reported pair or shipping-configuration issue and retry the durable operation.
 
 Physical samples must not arrive before quote acceptance and exact roster finalization create the authorized shipment. Quarantine and escalate an unexpected package under the approved receiving and custody exception. Do not accession, process, bill, or attach it to executable Job work.
 
 ## Respect the Lab boundary
 
-After acceptance, Order Ops continues to own Customer communication, Commercial holds, cancellation review, billing, files, and publication. Open the linked work from the order or from **Lab operations** > **Receipt & accession**. Lab Ops owns return-kit preparation, shipment identification, receipt, accession, physical lineage, controlled execution, exceptions, and scientific approval.
+After acceptance, Order Ops continues to own Customer communication, Commercial holds, cancellation review, billing, files, and publication. Open the linked work from the order or from **Lab operations** > **Sample receipt & accession**. Lab Ops owns return-kit preparation, shipment identification, receipt, accession, physical lineage, controlled execution, exceptions, and scientific approval.
 
-The Lab milestone **Ready for release** means the scientific gate passed. It does not upload, scan, attach, or publish a result. Order Ops must still apply the file, accounting-source, and credit release gates. Without approved credit, files remain held because manual payment confirmation is not implemented.
+The Lab milestone **Ready for release** means the scientific gate passed. It does not upload, scan, attach, or publish a result. PSeq result publication still requires the governed file and release checks. PSeq scientific result release is independent of invoice balance, credit status, and payment; Partner workflows retain their separate commercial rules.
+
+## Track and change expected completion
+
+**Turnaround and progress** shows first receipt, scientific acceptance, the original target, current expected completion, actual completion and receipt-to-acceptance elapsed time. For new approvals, the delivery clock begins after all required physical tubes are received, counting Monday–Friday except Phaeno holidays. Previously approved Jobs retain their accepted terms. The original target is never overwritten by an operational delay.
+
+An authorized Lab operator, supervisor or Operations administrator uses **Change expected completion** from the order. Choose the new date and a controlled reason. **Other operational delay** also requires a customer-safe explanation. Keep internal investigation notes in **Internal note**. A later date queues a notice; an earlier date updates the Portal. The history distinguishes the timing change from notification delivery. Failed notices remain available to authorized notification recovery.
+
+### Delivery due date and job tracking
+
+Use **Lab operations → Jobs** to track delivery deadlines independently of the processing forecast. An authorized operator or supervisor can adjust an unfinished job’s due date with a customer-safe reason. The original delivery target and adjustment history remain; Commercial jobs receive a notice of the changed due date. **Turnaround and progress** also shows the delivery due date and original delivery target. Laboratory completion remains distinct from full Portal delivery: every in-scope sample needs published results, and the customer does not have to download them.
+
+
+## Sample-sequencing runs
+
+Unique samples, submitted tubes and purchased runs are separate quantities. One sample with 20 runs has the same run quantity as 20 samples with one run each. Configured pricing, proposed subtotals, required quote lines and accepted snapshots use the run quantity. Sample-source counts continue to count unique samples. After acceptance, each sample receives a positive run allocation; finalization requires the allocated total to match the purchased total. A Change quote for additional samples can include an explicit additional run quantity, which is allocated to the new samples after acceptance. Previously authorized samples retain their original allocations.

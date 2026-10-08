@@ -37,6 +37,18 @@ const company: CrmCompany = {
 };
 
 describe("CRM Company lifecycle dialog", () => {
+  it.each([true, false])('reviews linked Company lifecycle with cancellation before confirmation (active=%s)', active => {
+    const onConfirm = vi.fn()
+    const onOpenChange = vi.fn()
+    render(<CrmCompanyLifecycleDialog company={{ ...company, accessOrganizationId: 'scope-id', isActive: active }} isPending={false} onConfirm={onConfirm} onOpenChange={onOpenChange} />)
+    expect(screen.getByText(active ? /Users, service entitlements, orders, and history are retained/ : /existing memberships and service entitlements/)).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+    expect(onOpenChange).toHaveBeenCalledWith(false)
+    expect(onConfirm).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: active ? 'Deactivate company' : 'Reactivate company' }))
+    expect(onConfirm).toHaveBeenCalledOnce()
+  })
+
   it("explains the consequence boundary before deactivation", () => {
     const onConfirm = vi.fn();
     render(
@@ -48,8 +60,17 @@ describe("CRM Company lifecycle dialog", () => {
       />,
     );
 
-    expect(screen.getByText(/suspends the Company’s Portal access/)).toBeTruthy();
+    expect(screen.getByText(/This Company has no Portal access scope/)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Deactivate company" }));
     expect(onConfirm).toHaveBeenCalledOnce();
+  });
+
+  it("identifies the affected Company access and blocks dismissal while saving", () => {
+    const onOpenChange = vi.fn();
+    render(<CrmCompanyLifecycleDialog company={{ ...company, accessOrganizationId: 'scope-id' }} isPending onConfirm={vi.fn()} onOpenChange={onOpenChange} />);
+    expect(screen.getByText(/suspends access to Example Biosciences for all of its Portal users/)).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Cancel' })).toHaveProperty('disabled', true);
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+    expect(onOpenChange).not.toHaveBeenCalled();
   });
 });

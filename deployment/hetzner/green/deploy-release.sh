@@ -59,14 +59,34 @@ for path in "${COMPOSE_FILE}" "${COMPOSE_ENV}" "${DATABASE_ENV}" "${PORTAL_ENV}"
     [[ -f "${path}" ]] || fail "Required deployment file '${path}' is missing."
 done
 
+# Major engine changes require the dedicated, rehearsed upgrade procedure.
+# Fail before changing runtime files or allowing Compose to attach new storage.
+database_major="$(docker exec phaeno-portal-green-db sh -ceu 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -X -At -v ON_ERROR_STOP=1 -c "SHOW server_version_num"')" \
+    || fail 'Cannot verify the current production database engine.'
+[[ "${database_major}" =~ ^18[0-9]{4}$ ]] \
+    || fail 'Production must first complete the approved PostgreSQL 18 upgrade.'
+database_mount="$(docker inspect phaeno-portal-green-db --format '{{range .Mounts}}{{if eq .Destination "/var/lib/postgresql"}}{{.Name}}{{end}}{{end}}')"
+[[ "${database_mount}" == phaeno-portal-green-postgres18-data ]] \
+    || fail 'Production database storage does not match the verified PostgreSQL 18 volume.'
+
 for secret_file in "${COMPOSE_ENV}" "${DATABASE_ENV}" "${PORTAL_ENV}"; do
     mode="$(stat -c '%a' "${secret_file}")"
     (( 10#${mode} % 100 == 0 )) \
         || fail "${secret_file} must not be accessible by group or other users."
 done
 
+[[ "$(grep -c '^FileStorage__Provider=' "${PORTAL_ENV}" || true)" == 1 ]] \
+    || fail "Runtime must contain exactly one explicit FileStorage__Provider entry."
 if grep --fixed-strings --line-regexp 'FileStorage__Provider=Disabled' "${PORTAL_ENV}" > /dev/null; then
     printf 'File storage is disabled; file operations will return service unavailable.\n'
+elif grep --fixed-strings --line-regexp 'FileStorage__Provider=Local' "${PORTAL_ENV}" > /dev/null; then
+    [[ "$(grep -c '^FileStorage__LocalRootPath=' "${PORTAL_ENV}" || true)" == 1 && "$(grep -c '^FileStorage__LocalPersistentVolumeConfirmed=' "${PORTAL_ENV}" || true)" == 1 ]] \
+        || fail "Local storage root and persistent-volume acknowledgement must each be configured once."
+    grep --fixed-strings --line-regexp 'FileStorage__LocalRootPath=/var/lib/phaeno-portal/files' "${PORTAL_ENV}" > /dev/null \
+        || fail "Local storage must use the dedicated persistent file volume."
+    grep --fixed-strings --line-regexp 'FileStorage__LocalPersistentVolumeConfirmed=true' "${PORTAL_ENV}" > /dev/null \
+        || fail "Local storage requires explicit persistent-volume confirmation."
+    printf 'File storage uses the dedicated persistent Local volume; scanning is configured independently.\n'
 elif grep --fixed-strings --line-regexp 'FileStorage__Provider=S3' "${PORTAL_ENV}" > /dev/null; then
     for key in \
         FileStorage__S3__BucketName \
@@ -78,7 +98,7 @@ elif grep --fixed-strings --line-regexp 'FileStorage__Provider=S3' "${PORTAL_ENV
             || fail "Portal S3 runtime is missing ${key}."
     done
 else
-    fail "Portal production runtime must configure FileStorage__Provider=Disabled or S3."
+    fail "Portal production runtime must configure FileStorage__Provider=Disabled, Local or S3."
 fi
 
 exec 9>"${RUNTIME_DIR}/deploy.lock"
@@ -96,6 +116,14 @@ cleanup() {
     local status=$?
     trap - EXIT
 
+    if [[ "${status}" -ne 0 && "${migrations_ran}" == false ]]; then
+        printf 'Restore\n' | FILE_STORAGE_DEPLOY_LOCK_HELD=true \
+            "${SCRIPT_DIR}/install-file-scanning-runtime-config.sh" "${DEPLOY_ROOT}" >&2 || \
+            printf 'Scanner runtime recovery requires manual review; its protected receipt is retained.\n' >&2
+        printf 'Restore\n' | FILE_STORAGE_DEPLOY_LOCK_HELD=true \
+            "${SCRIPT_DIR}/install-file-storage-runtime-config.sh" "${DEPLOY_ROOT}" >&2 || \
+            printf 'Storage runtime recovery requires manual review; the protected rollback receipt is retained.\n' >&2
+    fi
     if [[ "${status}" -ne 0 && "${api_replaced}" == true && "${migrations_ran}" == false ]]; then
         printf 'Deployment failed; restoring the previous green API image.\n' >&2
         docker compose \
@@ -166,6 +194,24 @@ compose() {
 
 compose config --quiet
 compose build api
+if grep -qx 'FileScanning__Provider=ClamAv' "${PORTAL_ENV}"; then
+    if grep -qx 'FileScanning__Host=scanner' "${PORTAL_ENV}"; then
+        for setting in \
+            'FileScanning__Port=3310' \
+            'FileScanning__TimeoutSeconds=120' \
+            'FileScanning__MaximumStreamBytes=104857600' \
+            'FileScanning__ClamAvLimitsConfirmed=true'; do
+            grep -qx "${setting}" "${PORTAL_ENV}" || fail 'Managed scanner limits do not match the reviewed deployment configuration.'
+        done
+        compose --profile scanner pull scanner
+        compose --profile scanner up --detach --wait --wait-timeout 1200 scanner
+        compose --profile scanner exec -T scanner /bin/sh /opt/portal-scanner/smoke.sh
+        docker inspect phaeno-portal-green-scanner --format 'scanner_image_id={{.Image}}'
+    fi
+    if grep -Eq '^FileStorage__Provider=(Local|S3)$' "${PORTAL_ENV}"; then
+        compose run --rm --no-deps api --verify-file-services
+    fi
+fi
 compose up --detach --wait db
 
 website_counts_before="$(
@@ -202,6 +248,14 @@ if [[ "${APPLY_MIGRATIONS}" == "true" ]]; then
     readonly ENCRYPTED_KEY="${BACKUP_BASE}.key.enc"
     readonly ENCRYPTED_CHECKSUMS="${BACKUP_BASE}.encrypted.sha256"
 
+    expected_backup_migration="$(
+        timeout --kill-after=5s 20s docker exec phaeno-portal-green-db \
+            psql --username phaeno_portal_green --dbname phaeno_portal_green \
+            --no-psqlrc --tuples-only --no-align --set ON_ERROR_STOP=1 \
+            --command 'SELECT "MigrationId" FROM public.__ef_migrations_history ORDER BY "MigrationId" DESC LIMIT 1;'
+    )"
+    [[ "${expected_backup_migration}" =~ ^[0-9]{14}_[A-Za-z0-9_]+$ ]] \
+        || fail 'The current migration identity could not be verified for backup restoration.'
     docker exec phaeno-portal-green-db \
         pg_dump \
         --username phaeno_portal_green \
@@ -211,13 +265,8 @@ if [[ "${APPLY_MIGRATIONS}" == "true" ]]; then
         --no-privileges \
         > "${migration_dump}"
 
-    docker run \
-        --rm \
-        --user 0:0 \
-        --volume "${migration_dump}:/backup/database.dump:ro" \
-        postgres:17 \
-        pg_restore --list /backup/database.dump \
-        > /dev/null
+    bash "${SCRIPT_DIR}/verify-database-backup.sh" \
+        "${migration_dump}" "${expected_backup_migration}"
 
     openssl rand -base64 48 > "${migration_passphrase}"
     openssl enc \
@@ -378,6 +427,11 @@ mv -T "${link_path}" "${CURRENT_LINK}"
     printf 'website_counts=%s\n' "${website_counts_after//$'\n'/,}"
 } > "${DEPLOYMENT_MANIFEST}"
 chmod 600 "${DEPLOYMENT_MANIFEST}"
+
+printf 'Complete\n' | FILE_STORAGE_DEPLOY_LOCK_HELD=true \
+    "${SCRIPT_DIR}/install-file-storage-runtime-config.sh" "${DEPLOY_ROOT}"
+printf 'Complete\n' | FILE_STORAGE_DEPLOY_LOCK_HELD=true \
+    "${SCRIPT_DIR}/install-file-scanning-runtime-config.sh" "${DEPLOY_ROOT}"
 
 printf 'Portal green deployment succeeded.\n'
 printf 'source_revision=%s\n' "${SOURCE_REVISION}"

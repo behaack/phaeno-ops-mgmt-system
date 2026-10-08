@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { Plus, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -11,14 +11,15 @@ import {
   isOrderConcurrencyError,
   issuePlatformQuote,
   type OrderConfiguration,
+  type Quote,
 } from "#/api/order-management";
 import { Alert, AlertDescription, AlertTitle } from "#/components/ui/alert";
 import { Button } from "#/components/ui/button";
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
+  DialogFeedback,
   DialogHeader,
   DialogTitle,
 } from "#/components/ui/dialog";
@@ -32,10 +33,14 @@ import {
 import { Textarea } from "#/components/ui/textarea";
 
 const schema = z.object({
+  sourceQuoteId: z.string().uuid().optional(),
   purpose: z.enum(["Initial", "Change"]),
   currency: z.string().trim().length(3),
   tax: z.coerce.number().nonnegative(),
-  expiresAt: z.string(),
+  expiresAt: z.string().refine(
+    (value) => !value || isFutureExpiration(value),
+    "Choose a future expiration date.",
+  ),
   lines: z
     .array(
       z.object({
@@ -56,6 +61,7 @@ const schema = z.object({
     .min(1)
     .max(100),
   pricingDecisionReason: z.string().trim().max(2000),
+  deliveryTargetBusinessDays: z.coerce.number().int().min(1).max(365).nullable(),
 });
 type FormValues = z.input<typeof schema>;
 type Values = z.output<typeof schema>;
@@ -67,6 +73,7 @@ export function PlatformQuoteDialog({
   recordId,
   defaultQuantity,
   priceProposal,
+  sourceQuote,
   catalogItems,
   onOpenChange,
   onSaved,
@@ -82,33 +89,34 @@ export function PlatformQuoteDialog({
     proposedByUserId?: string | null;
     proposedAt?: string | null;
   } | null;
+  sourceQuote?: Quote | null;
   catalogItems: OrderConfiguration["catalogItems"];
   onOpenChange: (open: boolean) => void;
   onSaved: () => Promise<void>;
 }) {
-  const canonicalLabItem =
-    workflow === "lab"
-      ? catalogItems.find((item) => item.isPSeqLabService)
-      : undefined;
-  const requiredLabItem =
-    canonicalLabItem?.isActive &&
-    canonicalLabItem.salesUnit.trim().toLowerCase() === "specimen"
-      ? canonicalLabItem
-      : undefined;
+  const labItems = workflow === 'lab' ? catalogItems.filter(item => item.isPSeqLabService && item.isActive && item.salesUnit.toLowerCase() === 'specimen') : [];
+  const defaultLabItem = labItems.length === 1 ? labItems[0] : undefined;
   const proposedUnitPrice = workflow === "lab" ? priceProposal?.unitPrice : undefined;
+  const savedQuoteUnavailable = Boolean(sourceQuote && readSavedQuoteLines(sourceQuote).length === 0);
   const defaultValues = createDefaultValues(
     workflow,
     defaultQuantity,
-    requiredLabItem,
+    defaultLabItem,
     proposedUnitPrice,
+    sourceQuote,
   );
   const form = useForm<FormValues, unknown, Values>({
     resolver: zodResolver(schema),
     defaultValues,
   });
   const [recordRefreshed, setRecordRefreshed] = useState(false);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const keepEditingRef = useRef<HTMLButtonElement>(null);
+  const dismissSourceRef = useRef<HTMLElement | null>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
   const lines = useFieldArray({ control: form.control, name: "lines" });
   const watchedLines = form.watch("lines");
+  const requiredLabItem = labItems.find(item => watchedLines.some(line => line.catalogItemId === item.id));
   const watchedCurrency = form.watch("currency");
   const watchedTax = Number(form.watch("tax"));
   const quoteSubtotal = roundMoney(
@@ -132,7 +140,7 @@ export function PlatformQuoteDialog({
     : "USD";
   const requiredLabLineCount = requiredLabItem
     ? watchedLines.filter(
-        (line) => line.catalogItemId === requiredLabItem.id,
+        (line) => labItems.some(item => item.id === line.catalogItemId),
       ).length
     : 0;
   const currentLabUnitPrice = Number(
@@ -151,6 +159,7 @@ export function PlatformQuoteDialog({
         version: latestRecord.version,
         tax: workflow === "lab" ? 0 : values.tax,
         expiresAt: values.expiresAt || null,
+        deliveryTargetBusinessDays: workflow === "lab" && values.purpose === "Initial" ? values.deliveryTargetBusinessDays : null,
         pricingDecisionReason:
           workflow === "lab" && amendsProposedPrice
             ? values.pricingDecisionReason
@@ -168,16 +177,23 @@ export function PlatformQuoteDialog({
     },
   });
 
+  const isSubmitting = mutation.isPending || form.formState.isSubmitting;
+
+  useEffect(() => {
+    if (confirmDiscard) keepEditingRef.current?.focus();
+  }, [confirmDiscard]);
+
   useEffect(() => {
     if (!open || form.formState.isDirty) return;
-    form.reset(createDefaultValues(workflow, defaultQuantity, requiredLabItem, proposedUnitPrice));
+    form.reset(createDefaultValues(workflow, defaultQuantity, defaultLabItem, proposedUnitPrice, sourceQuote));
   }, [
     defaultQuantity,
     form,
     form.formState.isDirty,
     open,
     proposedUnitPrice,
-    requiredLabItem,
+    defaultLabItem,
+    sourceQuote,
     workflow,
   ]);
 
@@ -196,30 +212,57 @@ export function PlatformQuoteDialog({
       shouldDirty: true,
     });
     form.setValue("currency", item.currency, { shouldDirty: true });
+    if (workflow === 'lab' && item.isPSeqLabService) form.setValue(`lines.${index}.quantity`, defaultQuantity ?? 1, { shouldDirty: true });
   }
 
   function close() {
     mutation.reset();
+    setConfirmDiscard(false);
     setRecordRefreshed(false);
-    form.reset(createDefaultValues(workflow, defaultQuantity, requiredLabItem, proposedUnitPrice));
+    form.reset(createDefaultValues(workflow, defaultQuantity, defaultLabItem, proposedUnitPrice, sourceQuote));
     onOpenChange(false);
   }
 
+  function keepEditing() {
+    setConfirmDiscard(false);
+    dismissSourceRef.current?.focus();
+  }
+
+  function requestClose() {
+    if (isSubmitting) return;
+    if (confirmDiscard) {
+      keepEditing();
+      return;
+    }
+    if (form.formState.isDirty) {
+      dismissSourceRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      setConfirmDiscard(true);
+      return;
+    }
+    close();
+  }
+
   function submit(values: Values) {
+    if (mutation.isPending || confirmDiscard || savedQuoteUnavailable) return;
     setRecordRefreshed(false);
     form.clearErrors("root");
+    if (sourceQuote && !values.expiresAt) {
+      form.setError("expiresAt", { type: "manual", message: "Choose a future expiration date for the replacement quote." });
+      form.setFocus("expiresAt");
+      return;
+    }
     if (workflow === "lab") {
       if (!requiredLabItem) {
         form.setError("root", {
           type: "manual",
           message:
-            "Configure one active PSeq Lab Service catalog item with code pseq-lab-service and sales unit specimen before issuing this quote.",
+            "Select an active offering in the PSeq Lab Service family with the Per sample-sequencing run sales unit.",
         });
         return;
       }
 
       const requiredLines = values.lines.filter(
-        (line) => line.catalogItemId === requiredLabItem.id,
+        (line) => labItems.some(item => item.id === line.catalogItemId),
       );
       if (requiredLines.length !== 1) {
         form.setError("root", {
@@ -256,29 +299,54 @@ export function PlatformQuoteDialog({
   return (
     <Dialog
       open={open}
-      onOpenChange={(nextOpen) => (nextOpen ? onOpenChange(true) : close())}
+      onOpenChange={(nextOpen) => (nextOpen ? onOpenChange(true) : requestClose())}
     >
-      <DialogContent className="sm:max-w-5xl">
+      <DialogContent
+        className="sm:max-w-5xl"
+        showCloseButton={!isSubmitting}
+        onOpenAutoFocus={() => {
+          openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        }}
+        onCloseAutoFocus={(event) => {
+          if (openerRef.current?.isConnected) {
+            event.preventDefault();
+            openerRef.current.focus();
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle>
-            {workflow === "lab" && proposedUnitPrice !== undefined
+            {sourceQuote
+              ? "Reissue laboratory quote"
+              : workflow === "lab" && proposedUnitPrice !== undefined
               ? "Review proposed laboratory price"
               : `Issue ${workflow === "lab" ? "laboratory" : "data-assembly"} quote`}
           </DialogTitle>
           <DialogDescription>
-            {workflow === "lab" && proposedUnitPrice !== undefined
+            {sourceQuote
+              ? `Start from revision ${sourceQuote.revision}'s saved prices, review the terms, and choose a future expiration date. Issuing creates a new revision for the Customer and preserves the original.`
+              : workflow === "lab" && proposedUnitPrice !== undefined
               ? "Approve the proposed price unchanged or amend it. Either decision issues the final quote to the Customer immediately."
               : "Use active Phaeno commercial catalog items, then set the job-specific quantities and prices. Issuing the quote makes it available to the Customer immediately."}
           </DialogDescription>
         </DialogHeader>
-        {workflow === "lab" && !requiredLabItem ? (
+        {confirmDiscard ? (
+          <DialogFeedback>
+            <section role="alert" className="space-y-3">
+              <p>Discard your unsaved quote changes?</p>
+              <div className="flex flex-wrap gap-2">
+                <Button ref={keepEditingRef} type="button" variant="outline" onClick={keepEditing}>Keep editing</Button>
+                <Button type="button" variant="destructive" disabled={isSubmitting} onClick={close}>Discard changes</Button>
+              </div>
+            </section>
+          </DialogFeedback>
+        ) : null}
+        {savedQuoteUnavailable ? <Alert variant="destructive"><AlertTitle>Saved quote lines could not be loaded</AlertTitle><AlertDescription>Reload the Job before reissuing this quote. The stored prices must be available for review.</AlertDescription></Alert> : null}
+        {workflow === "lab" && labItems.length === 0 ? (
           <Alert variant="destructive">
             <AlertTitle>PSeq Lab Service item is not ready</AlertTitle>
             <AlertDescription>
-              Commercial configuration must contain one active item with code{" "}
-              <span className="font-mono">pseq-lab-service</span> and sales unit{" "}
-              <span className="font-mono">specimen</span>. Quote issuance is
-              paused until that configuration is corrected.
+              Activate at least one approved offering in the PSeq Lab Service family with the Per sample-sequencing run sales unit before issuing a quote.
             </AlertDescription>
           </Alert>
         ) : null}
@@ -288,28 +356,29 @@ export function PlatformQuoteDialog({
           onSubmit={form.handleSubmit(submit)}
           className="max-h-[65vh] space-y-5 overflow-y-auto px-1"
         >
+          <fieldset disabled={isSubmitting} className="space-y-5">
           {workflow === "lab" && proposedUnitPrice !== undefined ? (
             <section className="rounded-lg border bg-muted/30 p-4">
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Proposed price</p>
                   <p className="mt-1 text-lg font-semibold">{formatMoney(proposedUnitPrice, priceProposal?.currency ?? "USD")}</p>
-                  <p className="text-xs text-muted-foreground">per specimen</p>
+                  <p className="text-xs text-muted-foreground">per sample-sequencing run</p>
                 </div>
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Catalog price</p>
-                  <p className="mt-1 text-lg font-semibold">{formatMoney(requiredLabItem?.basePrice ?? 0, priceProposal?.currency ?? "USD")}</p>
-                  <p className="text-xs text-muted-foreground">per specimen</p>
+                  <p className="mt-1 text-lg font-semibold">{requiredLabItem ? formatMoney(requiredLabItem.basePrice, requiredLabItem.currency) : 'Select offering'}</p>
+                  <p className="text-xs text-muted-foreground">per sample-sequencing run</p>
                 </div>
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Difference</p>
-                  <p className="mt-1 text-lg font-semibold">{formatSignedMoney(proposedUnitPrice - (requiredLabItem?.basePrice ?? 0), priceProposal?.currency ?? "USD")}</p>
+                  <p className="mt-1 text-lg font-semibold">{requiredLabItem ? formatSignedMoney(proposedUnitPrice - requiredLabItem.basePrice, priceProposal?.currency ?? "USD") : 'Select offering'}</p>
                   <p className="text-xs text-muted-foreground">from catalog</p>
                 </div>
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Quantity</p>
                   <p className="mt-1 text-lg font-semibold">{defaultQuantity ?? 1}</p>
-                  <p className="text-xs text-muted-foreground">committed specimens</p>
+                  <p className="text-xs text-muted-foreground">sample-sequencing runs</p>
                 </div>
                 <div className="sm:col-span-2 lg:col-span-4">
                   <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Proposed subtotal</p>
@@ -323,14 +392,14 @@ export function PlatformQuoteDialog({
           <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
             <div>
               <Label htmlFor="quotePurpose">Purpose *</Label>
-              <select
+              {sourceQuote ? <><Input id="quotePurpose" className="mt-2 h-9 bg-muted/30" readOnly value={sourceQuote.purpose === "Change" ? "Scope change" : "Initial"} /><input type="hidden" {...form.register("purpose")} /></> : <select
                 id="quotePurpose"
                 {...form.register("purpose")}
                 className="mt-2 h-9 w-full rounded-lg border border-input bg-background px-3 text-sm"
               >
                 <option value="Initial">Initial</option>
-                <option value="Change">Scope change</option>
-              </select>
+                {workflow !== 'lab' ? <option value="Change">Scope change</option> : null}
+              </select>}
             </div>
             <div>
               <Label htmlFor="quoteCurrency">Currency *</Label>
@@ -378,18 +447,28 @@ export function PlatformQuoteDialog({
               </div>
             )}
             <div>
-              <Label htmlFor="quoteExpiresAt">Expiration override</Label>
+              <Label htmlFor="quoteExpiresAt">{sourceQuote ? <RequiredFieldName>Expiration date</RequiredFieldName> : "Expiration override"}</Label>
               <Input
                 id="quoteExpiresAt"
                 type="date"
+                min={nextUtcDate()}
                 className="mt-2 h-9"
+                aria-invalid={Boolean(form.formState.errors.expiresAt)}
+                aria-describedby={`quote-expiration-help${form.formState.errors.expiresAt ? " quote-expiration-error" : ""}`}
                 {...form.register("expiresAt")}
               />
-              <p className="mt-1 text-xs text-muted-foreground">
-                Leave blank to use the configured default validity.
+              <p id="quote-expiration-help" className="mt-1 text-xs text-muted-foreground">
+                {sourceQuote ? "Required for the new revision. The original expiration is preserved." : "Leave blank to use the configured default validity."}
               </p>
+              <FieldError id="quote-expiration-error">{form.formState.errors.expiresAt?.message}</FieldError>
             </div>
           </div>
+          {workflow === "lab" && form.watch("purpose") === "Initial" ? <div className="space-y-1">
+            <Label htmlFor="quote-delivery-target"><RequiredFieldName>Delivery target (business days)</RequiredFieldName></Label>
+            <Input id="quote-delivery-target" type="number" min={1} max={365} step={1} className="max-w-40" {...form.register("deliveryTargetBusinessDays", { valueAsNumber: true })} aria-invalid={Boolean(form.formState.errors.deliveryTargetBusinessDays)} />
+            <p className="text-xs text-muted-foreground">Starts when Phaeno physically receives every required tube for all samples. Monday–Friday, excluding Phaeno holidays.</p>
+            <FieldError>{form.formState.errors.deliveryTargetBusinessDays?.message}</FieldError>
+          </div> : null}
           <fieldset>
             <legend className="text-sm font-medium">
               <RequiredFieldName>Itemized quote</RequiredFieldName>
@@ -413,7 +492,7 @@ export function PlatformQuoteDialog({
                   (item) => item.id === selectedItemId,
                 );
                 const isRequiredLabLine =
-                  workflow === "lab" && selectedItemId === requiredLabItem?.id;
+                  workflow === "lab" && labItems.some(item => item.id === selectedItemId);
                 const isLockedRequiredLabLine =
                   isRequiredLabLine && requiredLabLineCount === 1;
 
@@ -434,7 +513,6 @@ export function PlatformQuoteDialog({
                       <select
                         id={`quoteItem-${index}`}
                         value={selectedItemId}
-                        disabled={isLockedRequiredLabLine}
                         onChange={(event) =>
                           selectCatalogItem(index, event.target.value)
                         }
@@ -446,21 +524,22 @@ export function PlatformQuoteDialog({
                         className="mt-2 h-9 w-full rounded-lg border border-input bg-background px-3 text-sm lg:mt-0"
                       >
                         <option value="">Select item</option>
+                        {selectedItem && !selectedItem.isActive ? <option value={selectedItem.id} disabled>{selectedItem.name} · Inactive</option> : null}
                         {catalogItems
-                          .filter((item) => item.isActive)
+                          .filter((item) => item.isActive && (!isLockedRequiredLabLine || labItems.some(lab => lab.id === item.id)))
                           .map((item) => (
                             <option
                               key={item.id}
                               value={item.id}
                               disabled={
-                                item.id === requiredLabItem?.id &&
+                                item.isPSeqLabService &&
                                 requiredLabLineCount > 0 &&
                                 !isRequiredLabLine
                               }
                             >
                               {item.name}
                               {item.isPSeqLabService
-                                ? " · required service"
+                                ? " · PSeq Lab Service"
                                 : ""}
                             </option>
                           ))}
@@ -472,7 +551,7 @@ export function PlatformQuoteDialog({
                         className="-mt-2 text-xs text-muted-foreground md:col-span-5 md:col-start-1 md:row-start-2"
                       >
                         {isRequiredLabLine
-                          ? "Priced per specimen · quantity set from the committed specimen count"
+                          ? "Priced per sample-sequencing run · quantity set from the requested sample-sequencing run count"
                           : "Priced per unit · set the quantity for this quote"}
                       </p>
                     ) : null}
@@ -597,6 +676,7 @@ export function PlatformQuoteDialog({
               </FieldError>
             </div>
           ) : null}
+          </fieldset>
           {form.formState.errors.root?.message ? (
             <Alert variant="destructive" role="alert">
               <AlertTitle>Quote needs attention</AlertTitle>
@@ -620,21 +700,21 @@ export function PlatformQuoteDialog({
           ) : null}
         </form>
         <DialogFooter>
-          <DialogClose asChild>
-            <Button type="button" variant="outline">
-              Cancel
-            </Button>
-          </DialogClose>
+          <Button type="button" variant="outline" disabled={isSubmitting} onClick={requestClose}>
+            Cancel
+          </Button>
           <Button
             type="submit"
             form="platform-quote-form"
             disabled={
-              mutation.isPending || (workflow === "lab" && !requiredLabItem)
+              isSubmitting || confirmDiscard || (workflow === "lab" && !requiredLabItem) || savedQuoteUnavailable
             }
           >
             {mutation.isPending
               ? "Issuing…"
-              : workflow === "lab" && proposedUnitPrice !== undefined
+              : sourceQuote
+                ? "Issue new revision"
+                : workflow === "lab" && proposedUnitPrice !== undefined
                 ? amendsProposedPrice
                   ? "Amend price and issue quote"
                   : "Approve price and issue quote"
@@ -651,7 +731,20 @@ function createDefaultValues(
   defaultQuantity: number | undefined,
   requiredLabItem: CatalogItem | undefined,
   proposedUnitPrice: number | undefined,
+  sourceQuote?: Quote | null,
 ): FormValues {
+  if (sourceQuote) {
+    return {
+      sourceQuoteId: sourceQuote.id,
+      purpose: sourceQuote.purpose === "Change" ? "Change" : "Initial",
+      currency: sourceQuote.currency,
+      tax: sourceQuote.tax,
+      expiresAt: "",
+      lines: readSavedQuoteLines(sourceQuote),
+      pricingDecisionReason: "",
+      deliveryTargetBusinessDays: sourceQuote.deliveryTargetBusinessDays ?? 14,
+    };
+  }
   const item = workflow === "lab" ? requiredLabItem : undefined;
   return {
     purpose: "Initial",
@@ -667,7 +760,30 @@ function createDefaultValues(
       },
     ],
     pricingDecisionReason: "",
+    deliveryTargetBusinessDays: workflow === "lab" ? 14 : null,
   };
+}
+
+function readSavedQuoteLines(quote: Quote): FormValues["lines"] {
+  try {
+    const parsed = schema.shape.lines.safeParse(JSON.parse(quote.linesJson));
+    return parsed.success ? parsed.data : [];
+  } catch {
+    return [];
+  }
+}
+
+function isFutureExpiration(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const timestamp = Date.parse(`${value}T00:00:00.000Z`);
+  return Number.isFinite(timestamp) && timestamp > Date.now()
+    && new Date(timestamp).toISOString().startsWith(value);
+}
+
+function nextUtcDate() {
+  const date = new Date();
+  date.setUTCDate(date.getUTCDate() + 1);
+  return date.toISOString().slice(0, 10);
 }
 
 function roundMoney(value: number) {

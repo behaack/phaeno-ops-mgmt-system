@@ -20,6 +20,7 @@ using PhaenoPortal.App.Features.FileManagement.Services;
 using PhaenoPortal.App.Features.LabOperations.Services;
 using PhaenoPortal.App.Features.OrderManagement.Services;
 using PhaenoPortal.App.Features.Website;
+using PhaenoPortal.App.Features.Documentation.Search;
 using PhaenoPortal.App.Infrastructure.Api;
 using PhaenoPortal.App.Infrastructure.Persistence;
 using PhaenoPortal.App.Infrastructure.Storage;
@@ -27,9 +28,34 @@ using PhaenoPortal.App.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
+if (args.Contains("--verify-file-services", StringComparer.Ordinal))
+{
+    // Operator command only: no HTTP listener, database or background workers.
+    builder.Services.AddFileStorage(builder.Configuration, builder.Environment);
+    builder.Services.AddFileScanning(builder.Configuration, builder.Environment);
+    await using var verificationApp = builder.Build();
+    try
+    {
+        if (args.Length != 1 || verificationApp.Services.GetRequiredService<IOptions<FileScanningOptions>>().Value.Provider != "ClamAv")
+            throw new InvalidOperationException("File-service verification requires the configured ClamAv provider and no other command.");
+        await FileServicesVerification.VerifyAsync(
+            verificationApp.Services.GetRequiredService<IFileStorage>(),
+            verificationApp.Services.GetRequiredService<IFileMalwareScanner>(),
+            CancellationToken.None);
+        Console.WriteLine("File services verified: both storage areas, checksums, readback, clean scanning and deletion. No business records or HTTP requests were created.");
+    }
+    catch (Exception failure)
+    {
+        Console.Error.WriteLine($"File-service verification failed ({failure.GetType().Name}); activation must stop. No paths, credentials or provider replies are logged.");
+        Environment.ExitCode = 1;
+    }
+    return;
+}
+
 builder.Services.AddPersistence(builder.Configuration);
 builder.Services.AddFileStorage(builder.Configuration, builder.Environment);
 builder.Services.AddWebsiteApi(builder.Configuration, builder.Environment);
+builder.Services.AddDocumentationSearch(builder.Configuration);
 builder.Services.Configure<ClerkOptions>(
     builder.Configuration.GetSection(ClerkOptions.SectionName));
 builder.Services.Configure<BootstrapOptions>(
@@ -93,8 +119,7 @@ if (builder.Environment.IsDevelopment())
     });
 }
 builder.Services.AddSingleton<DataProvisioningProfile>();
-builder.Services.AddSingleton<IManagedFileScanner, EnvironmentManagedFileScanner>();
-builder.Services.AddSingleton<IOperationalFileScanner, EnvironmentOperationalFileScanner>();
+builder.Services.AddFileScanning(builder.Configuration, builder.Environment);
 builder.Services.AddScoped<ReleasedDeliverableRetentionSnapshotService>();
 builder.Services.AddScoped<GovernedResultRetentionService>();
 builder.Services.AddScoped<GovernedRetentionCheckpointService>();
@@ -111,9 +136,12 @@ builder.Services.AddHostedService<ReleasedDeliverableDownloadAttemptReconciler>(
 builder.Services.AddScoped<OrderRequestContext>();
 builder.Services.AddScoped<IPSeqResultPipelineAdapter, ConfiguredPSeqResultPipelineAdapter>();
 builder.Services.AddScoped<OrderIdempotencyService>();
+builder.Services.AddScoped<CustomWorkRequestService>();
 builder.Services.AddScoped<ManualCommercialReleaseService>();
 builder.Services.AddScoped<SampleShippingPacketService>();
 builder.Services.AddScoped<SampleShippingWorkflowReader>();
+builder.Services.AddScoped<SampleShippingContainerCatalogService>();
+builder.Services.AddScoped<TransportationKitRequestService>();
 builder.Services.AddScoped<PhaenoPortal.App.Features.Trials.Services.TrialAccess>();
 builder.Services.AddScoped<PhaenoPortal.App.Features.Trials.Services.TrialCrmProjection>();
 builder.Services.AddHostedService<PhaenoPortal.App.Features.Trials.Services.TrialCrmProjectionWorker>();
@@ -123,17 +151,39 @@ builder.Services.AddScoped<PhaenoPortal.App.Features.Trials.Services.TrialReader
 builder.Services.AddScoped<PhaenoPortal.App.Features.Trials.Services.TrialResultService>();
 builder.Services.AddScoped<ILabOperationsProvider, InternalLabOperationsProvider>();
 builder.Services.AddScoped<LabOperationsRequestContext>();
+builder.Services.Configure<LabAssemblyOptions>(builder.Configuration.GetSection(LabAssemblyOptions.SectionName));
+builder.Services.AddOptions<LabFastqOptions>().Bind(builder.Configuration.GetSection(LabFastqOptions.SectionName))
+    .PostConfigure(o => {
+        // Configuration arrays replace the tentative defaults; binding must not append duplicate layouts.
+        var layouts = builder.Configuration.GetSection("LabFastq:AllowedReadLayouts");
+        var compression = builder.Configuration.GetSection("LabFastq:AllowedCompression");
+        if (layouts.Exists()) o.AllowedReadLayouts = layouts.Get<string[]>() ?? [];
+        if (compression.Exists()) o.AllowedCompression = compression.Get<string[]>() ?? [];
+    })
+    .Validate(o => o.IsValid(), "Review the tentative LabFastq configuration limits and supported layouts.").ValidateOnStart();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<ILabAssemblyProvider, UnavailableLabAssemblyProvider>();
+builder.Services.AddSignalR(options => options.MaximumReceiveMessageSize = 16 * 1024);
+builder.Services.AddSingleton<LabAssemblySubscriptions>();
+builder.Services.AddScoped<LabAssemblyDelivery>();
+builder.Services.AddScoped<LabAssemblyReceiptService>();
+builder.Services.AddHostedService<LabAssemblyNotificationWorker>();
+builder.Services.AddSingleton<LabAssemblyProgress>();
+builder.Services.AddScoped<LabAssemblyService>();
+builder.Services.AddScoped<LabAssemblyProcessor>();
+builder.Services.AddHostedService<LabAssemblyWorker>();
 builder.Services.AddHostedService<LabOperationsProjectionDispatcher>();
+builder.Services.AddHostedService<LabForecastWorker>();
 builder.Services.AddHttpClient("QuickBooksOAuth");
 builder.Services.AddSingleton(services => new QuickBooksAccessTokenProvider(
     services.GetRequiredService<IHttpClientFactory>().CreateClient("QuickBooksOAuth"),
     services.GetRequiredService<IOptions<QuickBooksOptions>>()));
 builder.Services.AddHttpClient<HttpQuickBooksGateway>();
-builder.Services.AddScoped<LoggingQuickBooksGateway>();
+builder.Services.AddScoped<UnconfiguredQuickBooksGateway>();
 builder.Services.AddScoped<IQuickBooksGateway>(services =>
     services.GetRequiredService<IOptions<QuickBooksOptions>>().Value.IsConfigured
         ? services.GetRequiredService<HttpQuickBooksGateway>()
-        : services.GetRequiredService<LoggingQuickBooksGateway>());
+        : services.GetRequiredService<UnconfiguredQuickBooksGateway>());
 builder.Services.AddHostedService<OrderIntegrationDispatcher>();
 builder.Services.AddHttpClient<MailgunOrderNotificationSender>();
 builder.Services.AddScoped<LoggingOrderNotificationSender>();
@@ -142,6 +192,9 @@ builder.Services.AddScoped<IOrderNotificationSender>(services =>
         ? services.GetRequiredService<MailgunOrderNotificationSender>()
         : services.GetRequiredService<LoggingOrderNotificationSender>());
 builder.Services.AddHostedService<OrderNotificationDispatcher>();
+builder.Services.AddHostedService<CommercialSaleSummaryWorker>();
+builder.Services.Configure<KitCaseLifecycleOptions>(builder.Configuration.GetSection("KitCaseLifecycle"));
+builder.Services.AddHostedService<KitCaseLifecycleWorker>();
 builder.Services.AddHostedService<ResultRetentionWorker>();
 builder.Services.AddHttpClient<MailgunDataProvisioningNoticeSender>();
 builder.Services.AddScoped<LoggingDataProvisioningNoticeSender>();
@@ -168,6 +221,14 @@ builder.Services.AddHttpClient<ClerkVerifiedEmailResolver>((services, httpClient
 });
 builder.Services.AddScoped<IVerifiedExternalEmailResolver>(
     services => services.GetRequiredService<ClerkVerifiedEmailResolver>());
+builder.Services.AddHttpClient<ClerkInvitationRegistration>((services, httpClient) =>
+{
+    var options = services.GetRequiredService<IOptions<ClerkOptions>>().Value;
+    httpClient.BaseAddress = new Uri(options.ApiBaseUrl.TrimEnd('/') + "/");
+    httpClient.Timeout = TimeSpan.FromSeconds(20);
+});
+builder.Services.AddScoped<IInvitationRegistration>(
+    services => services.GetRequiredService<ClerkInvitationRegistration>());
 builder.Services.AddScoped<LoggingInvitationEmailSender>();
 builder.Services.AddDataProtection();
 builder.Services.AddSingleton<IInvitationDeliveryPayloadProtector, InvitationDeliveryPayloadProtector>();
@@ -203,6 +264,15 @@ builder.Services
             ? null
             : clerkOptions.Audience;
         options.RequireHttpsMetadata = clerkOptions.RequireHttpsMetadata;
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                if (context.Request.Path == LabAssemblyNotificationHub.Path && context.HttpContext.WebSockets.IsWebSocketRequest)
+                    context.Token = context.Request.Query["access_token"];
+                return Task.CompletedTask;
+            }
+        };
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -332,13 +402,8 @@ if (args.Contains("--migrate", StringComparer.Ordinal))
     return;
 }
 
-if (args.Contains("--cutover-clerk-bootstrap-identity", StringComparer.Ordinal))
-{
-    await ClerkBootstrapIdentityCutover.RunAsync(app.Services);
-    return;
-}
-
 await AccountsBootstrapSeeder.SeedAsync(app.Services);
+if (args.Contains("--seed-bootstrap-only", StringComparer.Ordinal)) return;
 
 app.UseForwardedHeaders();
 app.UseHttpsRedirection();
@@ -365,5 +430,10 @@ app.MapMembershipEndpoints();
 app.MapDepartmentEndpoints();
 app.MapSessionEndpoints();
 app.MapControllers().RequireRateLimiting("api");
+app.MapHub<LabAssemblyNotificationHub>(LabAssemblyNotificationHub.Path, options =>
+{
+    options.Transports = Microsoft.AspNetCore.Http.Connections.HttpTransportType.WebSockets;
+    options.CloseOnAuthenticationExpiration = true;
+}).RequireRateLimiting("api");
 
 app.Run();

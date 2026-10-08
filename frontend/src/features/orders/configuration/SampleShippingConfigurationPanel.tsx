@@ -1,21 +1,23 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { FilePenLine, MapPin, PackageCheck, Plus, SearchCheck, TestTubeDiagonal } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { Link, useNavigate, useSearch } from '@tanstack/react-router'
+import { ArrowLeft, ChevronDown, FilePenLine, MapPin, Plus } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useForm, type UseFormRegisterReturn } from 'react-hook-form'
 import { z } from 'zod'
 
 import { getOrderErrorMessage } from '#/api/order-management'
+import { getShippingContainerDefinitions } from '#/api/shipping-containers'
 import {
   createSampleShippingDestination,
-  createSampleShippingInstructionRule,
   createSampleTypeDefinition,
+  discardSampleShippingDestinationDraft,
   getSampleShippingConfiguration,
-  previewSampleShipping,
+  setDefaultShippingDestination,
+  updateSampleShippingDestinationDraft,
+  updateSampleTypeDraft,
   type SampleShippingConfiguration,
   type SampleShippingDestination,
-  type SampleShippingInstructionRule,
-  type SampleShippingPreview,
   type SampleTypeDefinition,
 } from '#/api/sample-shipping'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
@@ -26,39 +28,70 @@ import { Checkbox } from '#/components/ui/checkbox'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '#/components/ui/dialog'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
+import { recordLinkClassName } from '#/components/ui/record-link'
 import {
   RequiredDialogFooter,
   RequiredFieldName,
-  RequiredLegend,
 } from '#/components/ui/required-field'
+import { ShippingProceduresPanel } from './ShippingProceduresPanel'
+import { currentShippingProcedure } from './current-shipping-procedure'
+import { containerDependencyWarnings } from './shipping-dependency-health'
+import { SampleTypePackingPanel } from './SampleTypePackingPanel'
+import { SampleTypeActions, SampleTypeActiveRevisionNote } from './SampleTypeActions'
+import { ShippingAvailabilityDialog, type ShippingStatusChange } from './ShippingAvailabilityDialog'
+import { ShippingActivationBadge } from './ShippingActivationBadge'
+import { ContainerSizesPanel } from './ContainerSizesPanel'
+import { parseSampleTypeListSearch, type SampleTypeListSearch } from './sample-type-list-navigation'
+import { parseDestinationListSearch, type DestinationListSearch } from './destination-list-navigation'
+import { shippingSettingsBackLinkClassName, type ShippingSettingsSection } from './shipping-settings-navigation'
+import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
+import { ScientificTextField } from '#/features/lab-operations/ScientificTextField'
+import { useOrderDraftGuard } from '../use-order-draft-guard'
 
 const codePattern = /^[A-Za-z0-9][A-Za-z0-9_-]*$/
 const positiveOptionalNumber = z.string().refine(
   (value) => value === '' || (Number.isFinite(Number(value)) && Number(value) > 0),
   'Enter a number greater than zero.',
 )
-const nonnegativeOptionalNumber = z.string().refine(
-  (value) => value === '' || (Number.isFinite(Number(value)) && Number(value) >= 0),
-  'Enter zero or a positive number.',
+const optionalQuantity = z.string().trim().refine(
+  value => value === '' || (/^\d+$/.test(value) && Number.isSafeInteger(Number(value)) && Number(value) >= 1),
+  'Enter a whole number of 1 or more.',
 )
+const sampleSizeUnits = ['µL', 'mL']
+const instructionUnits = [
+  'nL', 'µL', 'mL', 'L', 'pg', 'ng', 'µg', 'mg', 'g', 'kg',
+  'ng/µL', 'µg/µL', 'µg/mL', 'mg/mL', 'g/L', 'nM', 'µM', 'mM', 'M',
+  'µm', 'mm', 'cm', 'm', '°C', '°F', 'K', 's', 'min', 'h', 'day',
+  '%', '% v/v', '% w/v', '% w/w', 'rpm', '× g', 'kPa', 'psi',
+]
+const instructionSymbols = [
+  ['µ', 'Micro'], ['Δ', 'Delta'], ['°', 'Degree'], ['±', 'Plus or minus'],
+  ['×', 'Multiplication'], ['÷', 'Division'], ['≤', 'Less than or equal to'],
+  ['≥', 'Greater than or equal to'], ['≈', 'Approximately equal to'], ['≠', 'Not equal to'],
+  ['−', 'Minus'], ['–', 'Range'], ['→', 'Arrow'], ['α', 'Alpha'], ['β', 'Beta'],
+  ['γ', 'Gamma'], ['²', 'Squared'], ['³', 'Cubed'], ['₂', 'Subscript two'], ['₃', 'Subscript three'],
+] as const
+
+const sampleTypePageSize = 12
+const destinationPageSize = 12
 
 const destinationSchema = z.object({
   code: z.string().trim().min(1, 'Enter a destination code.').max(50).regex(codePattern, 'Use letters, numbers, hyphens, or underscores.'),
   name: z.string().trim().min(1, 'Enter a destination name.').max(255),
-  recipientName: z.string().trim().min(1, 'Enter the receiving person or team.').max(255),
-  organizationName: z.string().trim().min(1, 'Enter the receiving organization.').max(255),
-  addressLine1: z.string().trim().min(1, 'Enter the street address.').max(255),
+  recipientName: z.string().trim().max(255),
+  organizationName: z.string().trim().max(255),
+  addressLine1: z.string().trim().max(255),
   addressLine2: z.string().trim().max(255),
-  city: z.string().trim().min(1, 'Enter the city.').max(150),
-  stateOrProvince: z.string().trim().min(1, 'Enter the state, province, or region.').max(150),
-  postalCode: z.string().trim().min(1, 'Enter the postal code.').max(50),
+  city: z.string().trim().max(150),
+  stateOrProvince: z.string().trim().max(150),
+  postalCode: z.string().trim().max(50),
   countryCode: z.string().trim().length(2, 'Use a two-letter country code.'),
   receivingPhone: z.string().trim().max(50),
   receivingEmail: z.union([z.literal(''), z.string().trim().email('Enter a valid receiving email.').max(255)]),
-  receivingHours: z.string().trim().min(1, 'Enter receiving hours.').max(1000),
-  timeZoneId: z.string().trim().min(1, 'Enter the receiving time zone.').max(100),
+  receivingHours: z.string().trim().max(1000),
+  timeZoneId: z.string().trim().max(100),
   closureInstructions: z.string().trim().max(2000),
-  deliveryInstructions: z.string().trim().min(1, 'Enter detailed delivery instructions.').max(4000),
+  deliveryInstructions: z.string().trim().max(4000),
   carrierRestrictions: z.string().trim().max(2000),
   internationalShippingAllowed: z.boolean(),
   effectiveFrom: z.string().min(1, 'Choose when this revision becomes effective.'),
@@ -68,199 +101,416 @@ const destinationSchema = z.object({
 type DestinationValues = z.infer<typeof destinationSchema>
 
 const sampleTypeSchema = z.object({
+  shippingProcedureId: z.union([z.literal(''), z.string().uuid('Choose one shared shipping procedure.')]),
   code: z.string().trim().min(1, 'Enter a sample-type code.').max(50).regex(codePattern, 'Use letters, numbers, hyphens, or underscores.'),
   name: z.string().trim().min(1, 'Enter a sample-type name.').max(255),
   description: z.string().trim().max(2000),
-  materialClass: z.string().trim().min(1, 'Enter the material class.').max(255),
-  minimumQuantity: nonnegativeOptionalNumber,
-  maximumQuantity: positiveOptionalNumber,
-  quantityUnit: z.string().trim().min(1, 'Enter the quantity unit.').max(100),
-  primaryContainerRequirements: z.string().trim().min(1, 'Enter primary-container requirements.').max(2000),
-  temperatureRequirements: z.string().trim().min(1, 'Enter temperature requirements.').max(2000),
+  materialClass: z.string().trim().max(255),
+  minimumQuantity: optionalQuantity,
+  maximumQuantity: optionalQuantity,
+  quantityUnit: z.string().trim().max(100),
+  minimumSampleAmount: positiveOptionalNumber,
+  sampleAmountUnit: z.enum(['', 'µL', 'mL']),
+  primaryContainerRequirements: z.string().trim().max(2000),
+  temperatureRequirements: z.string().trim().max(2000),
   stabilizerRequirements: z.string().trim().max(2000),
-  packagingInstructions: z.string().trim().min(1, 'Enter sample-type packaging instructions.').max(4000),
-  labelingInstructions: z.string().trim().min(1, 'Enter customer label instructions.').max(4000),
-  prohibitedIdentifiers: z.string().trim().min(1, 'State which identifiers must not appear.').max(2000),
-  safetyRequirements: z.string().trim().min(1, 'Enter safety and hazard requirements.').max(2000),
+  packagingInstructions: z.string().trim().max(4000),
+  labelingInstructions: z.string().trim().max(4000),
+  prohibitedIdentifiers: z.string().trim().max(2000),
+  safetyRequirements: z.string().trim().max(2000),
   carrierRestrictions: z.string().trim().max(2000),
   maximumTransitHours: positiveOptionalNumber,
   effectiveFrom: z.string().min(1, 'Choose when this revision becomes effective.'),
   isActive: z.boolean(),
 }).superRefine((values, context) => {
+  if (Boolean(values.minimumSampleAmount) !== Boolean(values.sampleAmountUnit))
+    context.addIssue({ code: 'custom', message: 'Enter both the minimum sample amount and its unit.', path: ['sampleAmountUnit'] })
   if (values.minimumQuantity !== '' && values.maximumQuantity !== ''
+    && Number(values.minimumQuantity) >= 0 && Number(values.maximumQuantity) > 0
     && Number(values.maximumQuantity) < Number(values.minimumQuantity)) {
-    context.addIssue({ code: 'custom', message: 'Maximum quantity cannot be less than minimum quantity.', path: ['maximumQuantity'] })
+    context.addIssue({ code: 'custom', message: 'Max must be greater than or equal to Min.', path: ['maximumQuantity'] })
   }
 })
 
 type SampleTypeValues = z.infer<typeof sampleTypeSchema>
 
-const ruleSchema = z.object({
-  destinationId: z.string().uuid('Select a destination revision.'),
-  sampleTypeDefinitionId: z.string().uuid('Select a sample-type revision.'),
-  compatibilityGroup: z.string().trim().min(1, 'Enter a compatibility group.').max(50).regex(codePattern, 'Use letters, numbers, hyphens, or underscores.'),
-  packingInstructions: z.string().trim().min(1, 'Enter packing instructions.').max(4000),
-  temperatureInstructions: z.string().trim().min(1, 'Enter temperature instructions.').max(4000),
-  carrierInstructions: z.string().trim().min(1, 'Enter carrier instructions.').max(4000),
-  dispatchInstructions: z.string().trim().min(1, 'Enter dispatch instructions.').max(4000),
-  deliveryInstructions: z.string().trim().min(1, 'Enter delivery instructions.').max(4000),
-  requiredDocuments: z.string().trim().min(1, 'List the required documents.').max(4000),
-  exceptionInstructions: z.string().trim().min(1, 'Enter exception instructions.').max(4000),
-  internationalCustomsInstructions: z.string().trim().max(4000),
-  requiresSeparateShipment: z.boolean(),
-  effectiveFrom: z.string().min(1, 'Choose when this revision becomes effective.'),
-  isActive: z.boolean(),
-})
-
-type RuleValues = z.infer<typeof ruleSchema>
-
-const previewSchema = z.object({
-  destinationId: z.string().uuid('Select a destination revision.'),
-  sampleTypeDefinitionIds: z.array(z.string().uuid()).min(1, 'Select at least one sample type.'),
-  effectiveAt: z.string().min(1, 'Choose the preview time.'),
-})
-
-type PreviewValues = z.infer<typeof previewSchema>
-
 const emptyDestination: DestinationValues = {
   code: '', name: '', recipientName: '', organizationName: '', addressLine1: '', addressLine2: '', city: '',
   stateOrProvince: '', postalCode: '', countryCode: 'US', receivingPhone: '', receivingEmail: '', receivingHours: '',
   timeZoneId: 'America/Los_Angeles', closureInstructions: '', deliveryInstructions: '', carrierRestrictions: '',
-  internationalShippingAllowed: false, effectiveFrom: toLocalDateTime(new Date()), isActive: false,
+  internationalShippingAllowed: false, effectiveFrom: toLocalDateTime(new Date()), isActive: true,
 }
 
 const emptySampleType: SampleTypeValues = {
-  code: '', name: '', description: '', materialClass: '', minimumQuantity: '', maximumQuantity: '', quantityUnit: '',
+  shippingProcedureId: '',
+  code: '', name: '', description: '', materialClass: '', minimumQuantity: '1', maximumQuantity: '', quantityUnit: '', minimumSampleAmount: '', sampleAmountUnit: '',
   primaryContainerRequirements: '', temperatureRequirements: '', stabilizerRequirements: '', packagingInstructions: '',
   labelingInstructions: '', prohibitedIdentifiers: '', safetyRequirements: '', carrierRestrictions: '', maximumTransitHours: '',
-  effectiveFrom: toLocalDateTime(new Date()), isActive: false,
+  effectiveFrom: toLocalDateTime(new Date()), isActive: true,
 }
 
-const emptyRule: RuleValues = {
-  destinationId: '', sampleTypeDefinitionId: '', compatibilityGroup: '', packingInstructions: '', temperatureInstructions: '',
-  carrierInstructions: '', dispatchInstructions: '', deliveryInstructions: '', requiredDocuments: '', exceptionInstructions: '',
-  internationalCustomsInstructions: '', requiresSeparateShipment: false, effectiveFrom: toLocalDateTime(new Date()), isActive: false,
-}
-
-export function SampleShippingConfigurationPanel({ apiEnabled }: { apiEnabled: boolean }) {
+export function SampleShippingConfigurationPanel({ apiEnabled, section, sampleTypeId, destinationId, procedureId }: { apiEnabled: boolean; section: ShippingSettingsSection; sampleTypeId?: string; destinationId?: string; procedureId?: string }) {
+  const navigate = useNavigate()
+  const client = useQueryClient()
+  const routeSearch = useSearch({ strict: false })
+  const sampleTypeListSearch = useMemo(() => parseSampleTypeListSearch(routeSearch), [routeSearch])
+  const [sampleTypeSearchText, setSampleTypeSearchText] = useState(sampleTypeListSearch.sampleTypeSearch ?? '')
+  const destinationListSearch = useMemo(() => parseDestinationListSearch(routeSearch), [routeSearch])
+  const [destinationSearchText, setDestinationSearchText] = useState(destinationListSearch.destinationSearch ?? '')
   const [destinationEditor, setDestinationEditor] = useState<SampleShippingDestination | null | undefined>(undefined)
   const [sampleTypeEditor, setSampleTypeEditor] = useState<SampleTypeDefinition | null | undefined>(undefined)
-  const [ruleEditor, setRuleEditor] = useState<SampleShippingInstructionRule | null | undefined>(undefined)
+  const statusActionsRef = useRef<HTMLButtonElement | null>(null)
+  const [statusChange, setStatusChange] = useState<ShippingStatusChange | null>(null)
   const configuration = useQuery({
     queryKey: ['sample-shipping-configuration'],
     queryFn: getSampleShippingConfiguration,
     enabled: apiEnabled,
   })
+  const kitDefinitions = useQuery({ queryKey: ['shipping-container-definitions'], queryFn: getShippingContainerDefinitions,
+    enabled: apiEnabled && section === 'sample-types' })
+  const defaultDestination = useMutation({
+    mutationFn: (definitionKey: string) => setDefaultShippingDestination(definitionKey, configuration.data?.defaultDestinationVersion ?? 0),
+    onSuccess: value => { client.setQueryData(['sample-shipping-configuration'], value) },
+  })
 
-  const destinations = useMemo(() => latestRevisions(configuration.data?.destinations ?? []), [configuration.data?.destinations])
-  const sampleTypes = useMemo(() => latestRevisions(configuration.data?.sampleTypes ?? []), [configuration.data?.sampleTypes])
-  const rules = useMemo(() => latestRevisions(configuration.data?.instructionRules ?? []), [configuration.data?.instructionRules])
+  const destinations = useMemo(() => primaryShippingRevisions(configuration.data?.destinations ?? []), [configuration.data?.destinations])
+  const activeDestinationChoices = useMemo(() => {
+    const current = (configuration.data?.destinations ?? []).filter(item => item.isActive && revisionHasNotEnded(item) && Date.parse(item.effectiveFrom) <= Date.now())
+    return latestRevisions(current).sort((a, b) => a.name.localeCompare(b.name))
+  }, [configuration.data?.destinations])
+  const destinationFamilies = useMemo(() => {
+    const families = new Map<string, SampleShippingDestination[]>()
+    for (const revision of configuration.data?.destinations ?? []) {
+      const family = families.get(revision.definitionKey) ?? []
+      family.push(revision)
+      families.set(revision.definitionKey, family)
+    }
+    return families
+  }, [configuration.data?.destinations])
+  const selectedDestination = configuration.data?.destinations.find(item => item.id === destinationId)
+  const sampleTypes = useMemo(() => primaryShippingRevisions(configuration.data?.sampleTypes ?? []), [configuration.data?.sampleTypes])
+  const sampleTypeFamilies = useMemo(() => {
+    const families = new Map<string, SampleTypeDefinition[]>()
+    for (const revision of configuration.data?.sampleTypes ?? []) {
+      const family = families.get(revision.definitionKey) ?? []
+      family.push(revision)
+      families.set(revision.definitionKey, family)
+    }
+    return families
+  }, [configuration.data?.sampleTypes])
+  const selectedSampleType = configuration.data?.sampleTypes.find(item => item.id === sampleTypeId)
+  useEffect(() => {
+    if (sampleTypeSearchText.trim() === (sampleTypeListSearch.sampleTypeSearch ?? '')) return
+    const timer = window.setTimeout(() => {
+      void navigate({ to: '/sample-shipping-settings', search: previous => ({ ...previous, sampleTypeSearch: sampleTypeSearchText.trim() || undefined, sampleTypePage: 1 }), replace: true, resetScroll: false })
+    }, 200)
+    return () => window.clearTimeout(timer)
+  }, [navigate, sampleTypeListSearch.sampleTypeSearch, sampleTypeSearchText])
+
+  useEffect(() => {
+    if (destinationSearchText.trim() === (destinationListSearch.destinationSearch ?? '')) return
+    const timer = window.setTimeout(() => {
+      void navigate({ to: '/sample-shipping-settings', search: previous => ({ ...previous, destinationSearch: destinationSearchText.trim() || undefined, destinationPage: 1 }), replace: true, resetScroll: false })
+    }, 200)
+    return () => window.clearTimeout(timer)
+  }, [navigate, destinationListSearch.destinationSearch, destinationSearchText])
+
+  function changeDestinationListSearch(update: DestinationListSearch) {
+    void navigate({ to: '/sample-shipping-settings', search: previous => ({ ...previous, ...update, shippingSection: 'destinations' }), replace: true, resetScroll: false })
+  }
+  const destinationNeedle = (destinationListSearch.destinationSearch ?? '').trim().toLocaleLowerCase()
+  const filteredDestinations = destinations.filter(item => {
+    const revisions = destinationFamilies.get(item.definitionKey) ?? [item]
+    return (destinationListSearch.destinationShowInactive || revisions.some(value => (value.isActive || value.lifecycle === 'Draft') && revisionHasNotEnded(value)))
+      && (!destinationNeedle || revisions.some(value => `${value.name} ${value.code} ${value.recipientName} ${value.organizationName} ${value.addressLine1} ${value.addressLine2 ?? ''} ${value.city} ${value.stateOrProvince} ${value.postalCode} ${value.countryCode}`.toLocaleLowerCase().includes(destinationNeedle)))
+  })
+  const destinationPageCount = Math.max(1, Math.ceil(filteredDestinations.length / destinationPageSize))
+  const destinationPage = Math.min(destinationListSearch.destinationPage ?? 1, destinationPageCount)
+  const visibleDestinations = filteredDestinations.slice((destinationPage - 1) * destinationPageSize, destinationPage * destinationPageSize)
+
+  function changeSampleTypeListSearch(update: SampleTypeListSearch) {
+    void navigate({ to: '/sample-shipping-settings', search: previous => ({ ...previous, ...update, shippingSection: 'sample-types', sampleTypeId: undefined }), replace: true, resetScroll: false })
+  }
+  const sampleTypeNeedle = (sampleTypeListSearch.sampleTypeSearch ?? '').trim().toLocaleLowerCase()
+  const filteredSampleTypes = sampleTypes.filter(item => {
+    const revisions = sampleTypeFamilies.get(item.definitionKey) ?? [item]
+    return (sampleTypeListSearch.sampleTypeShowInactive || revisions.some(value => (value.isActive || value.lifecycle === 'Draft') && revisionHasNotEnded(value)))
+      && (!sampleTypeNeedle || revisions.some(value => `${value.name} ${value.code} ${value.materialClass} ${value.description}`.toLocaleLowerCase().includes(sampleTypeNeedle)))
+  })
+  const sampleTypePageCount = Math.max(1, Math.ceil(filteredSampleTypes.length / sampleTypePageSize))
+  const sampleTypePage = Math.min(sampleTypeListSearch.sampleTypePage ?? 1, sampleTypePageCount)
+  const visibleSampleTypes = filteredSampleTypes.slice((sampleTypePage - 1) * sampleTypePageSize, sampleTypePage * sampleTypePageSize)
 
   if (configuration.isLoading) return <p role="status">Loading sample-shipping configuration…</p>
   if (configuration.error) {
-    return <Alert variant="destructive"><AlertTitle>Sample-shipping configuration could not be loaded</AlertTitle><AlertDescription>{getOrderErrorMessage(configuration.error, 'Refresh the configuration and try again.')}</AlertDescription></Alert>
+    return <Alert variant="destructive"><AlertTitle>Sample-shipping configuration could not be loaded</AlertTitle><AlertDescription>{getOrderErrorMessage(configuration.error, 'Refresh the configuration and try again.')} <Button variant="outline" onClick={() => void configuration.refetch()}>Retry</Button></AlertDescription></Alert>
   }
   if (!configuration.data) return null
-
+  const currentDefaultDestination = activeDestinationChoices.find(item => item.definitionKey === configuration.data.defaultDestinationDefinitionKey)
   return (
     <div className="space-y-5">
-      <Alert>
-        <PackageCheck className="size-4" />
-        <AlertTitle>Shared trial and promotional shipping foundation</AlertTitle>
-        <AlertDescription>
-          Destinations, sample types, and instruction rules are versioned. New records default to inactive; enter only approved operational content before activation. This setup does not create a Trial Project or Customer promotional order.
-        </AlertDescription>
-      </Alert>
+      {section === 'procedures' ? <ShippingProceduresPanel procedures={configuration.data.procedures ?? []} procedureId={procedureId} configuration={configuration.data} /> : null}
+      {section === 'containers' ? <ContainerSizesPanel apiEnabled={apiEnabled} configuration={configuration.data} /> : null}
 
-      <Card>
-        <CardHeader>
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div><CardTitle>Ship-to destinations</CardTitle><CardDescription>Receiving addresses, hours, closures, delivery directions, and carrier restrictions printed from a frozen revision.</CardDescription></div>
-            <Button type="button" onClick={() => setDestinationEditor(null)}><Plus data-icon="inline-start" />Add destination</Button>
+      {section === 'destinations' && destinationId ? <>
+        <Link className={shippingSettingsBackLinkClassName} to="/sample-shipping-settings" search={{ ...destinationListSearch, shippingSection: 'destinations' }}><ArrowLeft aria-hidden="true" className="size-4" />Back to ship-to destinations</Link>
+        {defaultDestination.error ? <Alert variant="destructive"><AlertTitle>Default destination was not changed</AlertTitle><AlertDescription>{getOrderErrorMessage(defaultDestination.error, 'Refresh the destinations and try again.')}</AlertDescription></Alert> : null}
+        {selectedDestination ? <DestinationDetails item={selectedDestination} revisions={destinationFamilies.get(selectedDestination.definitionKey) ?? [selectedDestination]} activeRevision={activeDestinationChoices.find(choice => choice.definitionKey === selectedDestination.definitionKey)} isDefault={selectedDestination.definitionKey === configuration.data.defaultDestinationDefinitionKey} defaultPending={defaultDestination.isPending} onSetDefault={definitionKey => defaultDestination.mutate(definitionKey)} onCreateRevision={setDestinationEditor} onStatusChange={(item, isActive) => setStatusChange({ kind: 'destination', item, isActive })} triggerRef={statusActionsRef} /> : <Alert><AlertTitle>Destination not found</AlertTitle><AlertDescription>Return to Phaeno ship-to destinations and choose an available record.</AlertDescription></Alert>}
+      </> : null}
+
+      {section === 'destinations' && !destinationId ? <Card className="gap-0 py-0">
+        <CardHeader className="grid-cols-[minmax(0,1fr)_auto] gap-x-3 border-b bg-muted/50 p-4">
+          <CardTitle className="min-w-0">Phaeno ship-to destinations</CardTitle>
+          <Button className="col-start-2 row-start-1 justify-self-end" type="button" onClick={() => setDestinationEditor(null)}><Plus data-icon="inline-start" />Add destination</Button>
+          <CardDescription className="col-span-full">Receiving addresses, hours, closures, delivery directions, and carrier restrictions printed from a frozen revision. Create a Draft, then activate it when complete.</CardDescription>
+          <p className="col-span-full text-xs text-muted-foreground">Use a destination's Actions menu to set the default for new Jobs. Phaeno can change a Job's destination when dispatching a requested kit, before sample packing starts.</p>
+          <div className="col-span-full grid w-full gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+            <Input id="destination-search" className="w-full" aria-label="Search ship-to destinations" value={destinationSearchText} maxLength={255} onChange={event => setDestinationSearchText(event.target.value)} placeholder="Search by name, code, or location" />
+            <div className="flex w-full items-center gap-2 sm:w-auto sm:justify-self-end">
+              <Checkbox id="destination-show-inactive" checked={Boolean(destinationListSearch.destinationShowInactive)} onCheckedChange={checked => changeDestinationListSearch({ destinationShowInactive: checked === true, destinationPage: 1 })} />
+              <Label htmlFor="destination-show-inactive" className="cursor-pointer">Show inactive</Label>
+            </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4 p-4">
+          {defaultDestination.error ? <Alert variant="destructive"><AlertTitle>Default destination was not changed</AlertTitle><AlertDescription>{getOrderErrorMessage(defaultDestination.error, 'Refresh the destinations and try again.')}</AlertDescription></Alert> : null}
+          {!configuration.data.defaultDestinationDefinitionKey ? <Alert variant="warning">
+            <AlertTitle>No default Phaeno ship-to destination</AlertTitle>
+            <AlertDescription>{activeDestinationChoices.length ? 'Open the Actions menu on a current Active destination and choose Set as default before finalizing another sample list.' : 'Add or activate a destination, then choose Set as default from its Actions menu before finalizing another sample list.'}</AlertDescription>
+          </Alert> : null}
+          {configuration.data.defaultDestinationDefinitionKey && !currentDefaultDestination ? <Alert variant="warning">
+            <AlertTitle>Default destination is unavailable</AlertTitle>
+            <AlertDescription>{activeDestinationChoices.length ? 'Open the Actions menu on a current Active destination and choose Set as default before finalizing another sample list.' : 'Add or activate a destination, then choose Set as default from its Actions menu before finalizing another sample list.'}</AlertDescription>
+          </Alert> : null}
           <div className="divide-y">
-            {destinations.map((item) => (
+            {visibleDestinations.map((item) => (
               <div key={item.id} className="flex flex-wrap items-start justify-between gap-3 py-4">
                 <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2"><span className="font-medium">{item.name}</span><Badge variant="outline">{item.code} · rev {item.revision}</Badge><EffectiveBadge item={item} /></div>
+                  <div className="flex flex-wrap items-center gap-2"><DestinationLink item={item} /><Badge variant="outline">Rev {item.revision}</Badge><ShippingActivationBadge item={item} />{item.definitionKey === configuration.data.defaultDestinationDefinitionKey ? <Badge>Default</Badge> : null}</div>
                   <p className="mt-2 text-sm">{item.organizationName} · {item.city}, {item.stateOrProvince} {item.postalCode} · {item.countryCode}</p>
                   <p className="mt-1 text-xs text-muted-foreground">Receiving: {item.receivingHours} · {item.timeZoneId}</p>
+                  {(destinationFamilies.get(item.definitionKey) ?? []).filter(value => value.lifecycle === 'Draft' && value.id !== item.id).map(draft => <p key={draft.id} className="mt-2 text-sm"><DestinationLink item={draft}>Draft revision {draft.revision}: {draft.name}</DestinationLink></p>)}
+                  <DestinationActiveRevisionNote item={item} revisions={destinationFamilies.get(item.definitionKey) ?? [item]} />
                 </div>
-                <Button type="button" variant="outline" onClick={() => setDestinationEditor(item)}><FilePenLine data-icon="inline-start" />Create revision</Button>
+                <DestinationActions item={item} revisions={destinationFamilies.get(item.definitionKey) ?? [item]} activeRevision={activeDestinationChoices.find(choice => choice.definitionKey === item.definitionKey)} isDefault={item.definitionKey === configuration.data.defaultDestinationDefinitionKey} defaultPending={defaultDestination.isPending} onSetDefault={definitionKey => defaultDestination.mutate(definitionKey)} onCreateRevision={setDestinationEditor} onStatusChange={(target, isActive) => setStatusChange({ kind: 'destination', item: target, isActive })} triggerRef={statusActionsRef} />
               </div>
             ))}
           </div>
-          {!destinations.length ? <EmptyConfiguration text="No ship-to destinations are configured." /> : null}
-          <RevisionHistory items={configuration.data.destinations} currentItems={destinations} label={(item) => `${item.code} · revision ${item.revision} · ${formatEffectiveRange(item)}`} />
+          {!destinations.length ? <EmptyConfiguration text="No ship-to destinations are configured." /> : !filteredDestinations.length ? <EmptyConfiguration text={destinationNeedle ? 'No ship-to destinations match this search.' : 'No active ship-to destinations. Select Show inactive to review inactive destinations.'} /> : null}
+          {filteredDestinations.length > 0 ? <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4 text-xs text-muted-foreground"><span>{filteredDestinations.length} {filteredDestinations.length === 1 ? 'destination' : 'destinations'} · Page {destinationPage} of {destinationPageCount}</span><div className="flex gap-2"><Button type="button" size="sm" variant="outline" disabled={destinationPage <= 1} onClick={() => changeDestinationListSearch({ destinationPage: destinationPage - 1 })}>Previous</Button><Button type="button" size="sm" variant="outline" disabled={destinationPage >= destinationPageCount} onClick={() => changeDestinationListSearch({ destinationPage: destinationPage + 1 })}>Next</Button></div></div> : null}
+          <RevisionHistory items={configuration.data.destinations} currentItems={destinations} label={(item) => `${item.name} · revision ${item.revision} · ${effectiveState(item).toLowerCase()} · ${formatEffectiveRange(item)}`} />
         </CardContent>
-      </Card>
+      </Card> : null}
 
-      <Card>
-        <CardHeader>
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div><CardTitle>Sample types</CardTitle><CardDescription>Material, quantity, container, temperature, packaging, labeling, safety, and transit requirements.</CardDescription></div>
-            <Button type="button" onClick={() => setSampleTypeEditor(null)}><Plus data-icon="inline-start" />Add sample type</Button>
+      {section === 'sample-types' && sampleTypeId ? <>
+        <Link className={shippingSettingsBackLinkClassName} to="/sample-shipping-settings" search={{ ...sampleTypeListSearch, shippingSection: 'sample-types' }}><ArrowLeft aria-hidden="true" className="size-4" />Back to sample types</Link>
+        {selectedSampleType ? <SampleTypeDetails item={selectedSampleType} revisions={configuration.data.sampleTypes.filter(item => item.definitionKey === selectedSampleType.definitionKey)} onCreateRevision={setSampleTypeEditor} configuration={configuration.data} apiEnabled={apiEnabled} /> : <Alert><AlertTitle>Sample type not found</AlertTitle><AlertDescription>Return to Sample types and choose an available record.</AlertDescription></Alert>}
+      </> : null}
+
+      {section === 'sample-types' && !sampleTypeId ? <Card className="gap-0 py-0">
+        <CardHeader className="grid-cols-[minmax(0,1fr)_auto] gap-x-3 border-b bg-muted/50 p-4">
+          <CardTitle className="min-w-0">Sample types</CardTitle>
+          <Button className="col-start-2 row-start-1 justify-self-end" type="button" onClick={() => setSampleTypeEditor(null)}><Plus data-icon="inline-start" />Add sample type</Button>
+          <CardDescription className="col-span-full">Scientific material, quantity, preservation, labeling and safety requirements. Review the selected procedure and linked Transportation kits from each Sample type. Create a Draft, then activate it when complete.</CardDescription>
+          <div className="col-span-full grid w-full gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+            <Input id="sample-type-search" className="w-full" aria-label="Search sample types" value={sampleTypeSearchText} maxLength={255} onChange={event => setSampleTypeSearchText(event.target.value)} placeholder="Search by name, code, or material" />
+            <div className="flex w-full items-center gap-2 sm:w-auto sm:justify-self-end">
+              <Checkbox id="sample-type-show-inactive" checked={Boolean(sampleTypeListSearch.sampleTypeShowInactive)} onCheckedChange={checked => changeSampleTypeListSearch({ sampleTypeShowInactive: checked === true, sampleTypePage: 1 })} />
+              <Label htmlFor="sample-type-show-inactive" className="cursor-pointer">Show inactive</Label>
+            </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4 p-4">
+          {kitDefinitions.error ? <Alert variant="destructive"><AlertTitle>Kit readiness could not be checked</AlertTitle><AlertDescription>{getOrderErrorMessage(kitDefinitions.error, 'Refresh the transportation kits and try again.')} <Button type="button" variant="outline" size="sm" onClick={() => void kitDefinitions.refetch()}>Retry</Button></AlertDescription></Alert> : null}
           <div className="divide-y">
-            {sampleTypes.map((item) => (
+            {visibleSampleTypes.map((item) => (
               <div key={item.id} className="flex flex-wrap items-start justify-between gap-3 py-4">
                 <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2"><span className="font-medium">{item.name}</span><Badge variant="outline">{item.code} · rev {item.revision}</Badge><EffectiveBadge item={item} /></div>
-                  <p className="mt-2 text-sm">{item.materialClass} · {quantityRange(item)}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">{item.temperatureRequirements}</p>
+                  <div className="flex flex-wrap items-center gap-2"><SampleTypeLink item={item} /><Badge variant="outline">Rev {item.revision}</Badge><ShippingActivationBadge item={item} /></div>
+                  <p className="mt-2 text-sm">{item.materialClass === 'extracted_rna' ? 'Total RNA' : item.materialClass === 'enriched_rna' ? 'Enriched RNA' : item.materialClass} · {quantityRange(item)}</p>
+                  <p className="mt-1 text-xs">Procedure: {configuration.data.procedures?.find(procedure => procedure.id === item.shippingProcedureId)?.name ?? 'None'}</p>
+                  {(sampleTypeFamilies.get(item.definitionKey) ?? []).filter(value => value.lifecycle === 'Draft' && value.id !== item.id).map(draft => <p key={draft.id} className="mt-2 text-sm"><SampleTypeLink item={draft}>Draft revision {draft.revision}: {draft.name}</SampleTypeLink></p>)}
+                  {!currentShippingProcedure(configuration.data.procedures, item.shippingProcedureId) ? <p role="alert" className="mt-2 rounded-md border border-warning-border bg-warning-background px-3 py-2 text-sm text-warning">Needs attention: the selected Shipping procedure has no Active revision. New Orders of this Sample type are blocked.</p> : null}
+                  {kitDefinitions.data && !kitDefinitions.data.some(kit => kit.sampleTypeAnchorId === (sampleTypeFamilies.get(item.definitionKey) ?? []).find(revision => revision.revision === 1)?.id
+                    && kit.isActive && !kit.deactivatedAt && Date.parse(kit.effectiveFrom) <= Date.now()
+                    && (!kit.effectiveTo || Date.parse(kit.effectiveTo) > Date.now())
+                    && kit.newWorkReady !== false && !containerDependencyWarnings(kit, configuration.data).length)
+                    ? item.lifecycle === 'Draft'
+                      ? <p role="status" className="mt-2 rounded-md border border-warning-border bg-warning-background px-3 py-2 text-sm text-warning">This Sample type can be activated before a kit is ready. New Orders remain blocked until a usable Active Transportation kit is linked.</p>
+                      : <p role="alert" className="mt-2 rounded-md border border-warning-border bg-warning-background px-3 py-2 text-sm text-warning">Needs attention: no usable Active Transportation kit is linked to this Sample type. New Orders are blocked.</p>
+                    : null}
+                  <SampleTypeActiveRevisionNote item={item} revisions={sampleTypeFamilies.get(item.definitionKey) ?? [item]} />
                 </div>
-                <Button type="button" variant="outline" onClick={() => setSampleTypeEditor(item)}><FilePenLine data-icon="inline-start" />Create revision</Button>
+                <SampleTypeActions item={item} revisions={sampleTypeFamilies.get(item.definitionKey) ?? [item]} onCreateRevision={setSampleTypeEditor} onStatusChanged={(changed, isActive) => {
+                  if (changed.id === item.id && !isActive && !sampleTypeListSearch.sampleTypeShowInactive) {
+                    window.requestAnimationFrame(() => document.getElementById('sample-type-search')?.focus())
+                  }
+                }} />
               </div>
             ))}
           </div>
-          {!sampleTypes.length ? <EmptyConfiguration text="No sample types are configured." /> : null}
+          {!sampleTypes.length ? <EmptyConfiguration text="No sample types are configured." /> : !filteredSampleTypes.length ? <EmptyConfiguration text={sampleTypeNeedle ? 'No sample types match this search.' : 'No active sample types. Select Show inactive to review inactive definitions.'} /> : null}
+          {filteredSampleTypes.length > 0 ? <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4 text-xs text-muted-foreground"><span>{filteredSampleTypes.length} sample {filteredSampleTypes.length === 1 ? 'type' : 'types'} · Page {sampleTypePage} of {sampleTypePageCount}</span><div className="flex gap-2"><Button type="button" size="sm" variant="outline" disabled={sampleTypePage <= 1} onClick={() => changeSampleTypeListSearch({ sampleTypePage: sampleTypePage - 1 })}>Previous</Button><Button type="button" size="sm" variant="outline" disabled={sampleTypePage >= sampleTypePageCount} onClick={() => changeSampleTypeListSearch({ sampleTypePage: sampleTypePage + 1 })}>Next</Button></div></div> : null}
           <RevisionHistory items={configuration.data.sampleTypes} currentItems={sampleTypes} label={(item) => `${item.code} · revision ${item.revision} · ${formatEffectiveRange(item)}`} />
         </CardContent>
-      </Card>
+      </Card> : null}
 
-      <Card>
-        <CardHeader>
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div><CardTitle>Destination and sample instructions</CardTitle><CardDescription>Resolve detailed shipping steps for one exact destination revision and sample-type revision. Compatibility groups decide whether types may share a packet.</CardDescription></div>
-            <Button type="button" disabled={!configuration.data.destinations.length || !configuration.data.sampleTypes.length} onClick={() => setRuleEditor(null)}><Plus data-icon="inline-start" />Add instruction rule</Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="divide-y">
-            {rules.map((item) => (
-              <div key={item.id} className="flex flex-wrap items-start justify-between gap-3 py-4">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2"><span className="font-medium">{item.destinationName} + {item.sampleTypeName}</span><Badge variant="outline">{item.compatibilityGroup} · rev {item.revision}</Badge><EffectiveBadge item={item} /></div>
-                  <p className="mt-2 text-sm text-muted-foreground">{item.requiresSeparateShipment ? 'Must ship separately' : 'May share a packet with the same compatibility group'}</p>
-                </div>
-                <Button type="button" variant="outline" onClick={() => setRuleEditor(item)}><FilePenLine data-icon="inline-start" />Create revision</Button>
-              </div>
-            ))}
-          </div>
-          {!rules.length ? <EmptyConfiguration text="No destination and sample instruction rules are configured." /> : null}
-          <RevisionHistory items={configuration.data.instructionRules} currentItems={rules} label={(item) => `${item.destinationName} + ${item.sampleTypeName} · revision ${item.revision} · ${formatEffectiveRange(item)}`} />
-        </CardContent>
-      </Card>
-
-      <InstructionPreview configuration={configuration.data} />
-
-      <DestinationDialog item={destinationEditor} onClose={() => setDestinationEditor(undefined)} />
-      <SampleTypeDialog item={sampleTypeEditor} onClose={() => setSampleTypeEditor(undefined)} />
-      <InstructionRuleDialog configuration={configuration.data} item={ruleEditor} onClose={() => setRuleEditor(undefined)} />
+      <DestinationDialog item={destinationEditor} onClose={() => setDestinationEditor(undefined)} onSaved={item => { setDestinationEditor(undefined); void navigate({ to: '/sample-shipping-settings', search: { ...destinationListSearch, shippingSection: 'destinations', destinationId: item.id } }) }} />
+      {statusChange ? <ShippingAvailabilityDialog change={statusChange} configuration={configuration.data} onClose={() => setStatusChange(null)} restoreFocus={() => {
+        if (statusActionsRef.current?.isConnected) statusActionsRef.current.focus()
+        else if (section === 'destinations') document.getElementById('destination-search')?.focus()
+      }} /> : null}
+      {sampleTypeEditor !== undefined ? <SampleTypeDialog item={sampleTypeEditor} configuration={configuration.data} onClose={() => setSampleTypeEditor(undefined)} onSaved={item => { void navigate({ to: '/sample-shipping-settings', search: { ...sampleTypeListSearch, shippingSection: 'sample-types', sampleTypeId: item.id } }) }} /> : null}
     </div>
   )
 }
 
-function DestinationDialog({ item, onClose }: { item: SampleShippingDestination | null | undefined; onClose: () => void }) {
+function DestinationLink({ item, children }: { item: SampleShippingDestination; children?: React.ReactNode }) {
+  const routeSearch = useSearch({ strict: false })
+  const listSearch = parseDestinationListSearch(routeSearch)
+  return <Link to="/sample-shipping-settings" search={{ ...listSearch, shippingSection: 'destinations', destinationId: item.id }} className={recordLinkClassName}>{children ?? item.name}</Link>
+}
+
+function DestinationActiveRevisionNote({ item, revisions }: { item: SampleShippingDestination; revisions: SampleShippingDestination[] }) {
+  const now = Date.now()
+  const current = revisions.filter(value => value.isActive && Date.parse(value.effectiveFrom) <= now && (!value.effectiveTo || Date.parse(value.effectiveTo) > now)).sort((a, b) => b.revision - a.revision)[0]
+  if (current && current.id !== item.id) return <p className="mt-2 text-sm text-muted-foreground">Revision {current.revision} ({current.name}) is currently Active for new destination selections. {item.isActive ? `Revision ${item.revision} is scheduled for ${formatDateTime(item.effectiveFrom)}.` : `Activate revision ${item.revision} to replace it.`} Existing Orders and issued packets keep their selected destination revision.</p>
+  const scheduled = revisions.filter(value => value.id !== item.id && value.isActive && Date.parse(value.effectiveFrom) > now && revisionHasNotEnded(value)).sort((a, b) => a.revision - b.revision)[0]
+  return scheduled ? <p className="mt-2 text-sm text-muted-foreground">Revision {scheduled.revision} ({scheduled.name}) is Active and scheduled from {formatDateTime(scheduled.effectiveFrom)}. Existing Orders keep their selected destination revision.</p> : null
+}
+
+function DestinationActions({ item, revisions, activeRevision, isDefault, defaultPending, onSetDefault, onCreateRevision, onStatusChange, triggerRef }: {
+  item: SampleShippingDestination
+  revisions: SampleShippingDestination[]
+  activeRevision?: SampleShippingDestination
+  isDefault: boolean
+  defaultPending: boolean
+  onSetDefault: (definitionKey: string) => void
+  onCreateRevision: (item: SampleShippingDestination) => void
+  onStatusChange: (item: SampleShippingDestination, isActive: boolean) => void
+  triggerRef: React.RefObject<HTMLButtonElement | null>
+}) {
+  const client = useQueryClient()
+  const [discarding, setDiscarding] = useState(false)
+  const discard = useMutation({ mutationFn: () => discardSampleShippingDestinationDraft(item.id, item.version), onSuccess: async () => { await client.invalidateQueries({ queryKey: ['sample-shipping-configuration'] }); setDiscarding(false) } })
+  const draft = revisions.find(value => value.lifecycle === 'Draft')
+  const latest = !revisions.some(value => value.revision > item.revision)
+  const latestReleased = [...revisions].filter(value => value.lifecycle === 'Released' || value.lifecycle === 'Superseded' || value.lifecycle === 'Deactivated').sort((a, b) => b.revision - a.revision)[0]
+  if (!latest && !item.isActive && latestReleased?.id !== item.id) return null
+  const earlierActive = !item.isActive ? revisions.filter(value => value.id !== item.id && value.isActive && revisionHasNotEnded(value)) : []
+  return <><ActionMenu><DropdownMenuTrigger asChild><Button type="button" variant="outline" onPointerDown={event => { triggerRef.current = event.currentTarget }} onFocus={event => { triggerRef.current = event.currentTarget }}>Actions<ChevronDown aria-hidden="true" className="size-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-max max-w-[calc(100vw-2rem)]">
+    {activeRevision && !isDefault ? <DropdownMenuItem disabled={defaultPending} onSelect={() => onSetDefault(item.definitionKey)}><MapPin aria-hidden="true" />{activeRevision.id === item.id ? 'Set as default' : `Set active revision ${activeRevision.revision} as default`}</DropdownMenuItem> : null}
+    {draft ? <DropdownMenuItem onSelect={() => onCreateRevision(draft)}><FilePenLine aria-hidden="true" />Edit Draft revision {draft.revision}</DropdownMenuItem> : latest || latestReleased?.id === item.id ? <DropdownMenuItem onSelect={() => onCreateRevision(latestReleased ?? item)}><FilePenLine aria-hidden="true" />Create revision</DropdownMenuItem> : null}
+    {item.lifecycle === 'Draft' && revisionHasNotEnded(item) ? <DropdownMenuItem onSelect={() => onStatusChange(item, true)}>Activate</DropdownMenuItem> : null}
+    {item.lifecycle === 'Draft' ? <DropdownMenuItem variant="destructive" onSelect={() => setDiscarding(true)}>Discard</DropdownMenuItem> : null}
+    {item.isActive ? <DropdownMenuItem variant="destructive" onSelect={() => onStatusChange(item, false)}>Deactivate</DropdownMenuItem> : null}
+    {earlierActive.map(value => <DropdownMenuItem key={value.id} variant="destructive" onSelect={() => onStatusChange(value, false)}>Deactivate revision {value.revision}</DropdownMenuItem>)}
+  </DropdownMenuContent></ActionMenu><Dialog open={discarding} onOpenChange={open => { if (!open && !discard.isPending) setDiscarding(false) }}><DialogContent><DialogHeader><DialogTitle>Discard Draft revision {item.revision}?</DialogTitle><DialogDescription>The number remains in history and cannot be reused. The released revision stays available.</DialogDescription></DialogHeader>{discard.error ? <SaveError title="Draft was not discarded" error={discard.error} /> : null}<RequiredDialogFooter showLegend={false}><Button type="button" variant="outline" onClick={() => setDiscarding(false)}>Cancel</Button><Button type="button" variant="destructive" disabled={discard.isPending} onClick={() => discard.mutate()}>{discard.isPending ? 'Discarding…' : 'Discard Draft'}</Button></RequiredDialogFooter></DialogContent></Dialog></>
+}
+
+function DestinationDetails({ item, revisions, activeRevision, isDefault, defaultPending, onSetDefault, onCreateRevision, onStatusChange, triggerRef }: {
+  item: SampleShippingDestination
+  revisions: SampleShippingDestination[]
+  activeRevision?: SampleShippingDestination
+  isDefault: boolean
+  defaultPending: boolean
+  onSetDefault: (definitionKey: string) => void
+  onCreateRevision: (item: SampleShippingDestination) => void
+  onStatusChange: (item: SampleShippingDestination, isActive: boolean) => void
+  triggerRef: React.RefObject<HTMLButtonElement | null>
+}) {
+  const history = [...revisions].sort((a, b) => b.revision - a.revision)
+  const latest = history[0]
+  return <div className="space-y-5">
+    <Card className="gap-0 py-0">
+      <CardHeader className="border-b bg-muted/50 p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><h2 className="break-words text-xl font-semibold">{item.name}</h2><div className="mt-2 flex flex-wrap items-center gap-2"><Badge variant="outline">Revision {item.revision}</Badge><ShippingActivationBadge item={item} />{isDefault && (latest.id === item.id || activeRevision?.id === item.id) ? <Badge>Default</Badge> : null}</div></div><DestinationActions item={item} revisions={revisions} activeRevision={activeRevision} isDefault={isDefault} defaultPending={defaultPending} onSetDefault={onSetDefault} onCreateRevision={onCreateRevision} onStatusChange={onStatusChange} triggerRef={triggerRef} /></div>{latest.id === item.id ? <DestinationActiveRevisionNote item={item} revisions={revisions} /> : null}</CardHeader>
+      <CardContent className="space-y-4 p-4">{latest.id !== item.id ? <p className="text-sm">You are viewing a historical revision. <DestinationLink item={latest}>View latest revision ({latest.revision})</DestinationLink>.</p> : null}<dl className="grid gap-4 text-sm sm:grid-cols-2"><div><dt className="text-muted-foreground">Reference</dt><dd className="break-all">{item.code}</dd></div><div><dt className="text-muted-foreground">Effective period</dt><dd>{formatEffectiveRange(item)}</dd></div><Detail label="Recipient or receiving team" value={item.recipientName} /><Detail label="Receiving organization" value={item.organizationName} /><Detail label="Address" value={[item.addressLine1, item.addressLine2, `${item.city}, ${item.stateOrProvince} ${item.postalCode}`, item.countryCode].filter(Boolean).join('\n')} /><Detail label="Receiving phone" value={item.receivingPhone} /><Detail label="Receiving email" value={item.receivingEmail} /><Detail label="Receiving hours" value={item.receivingHours} /><Detail label="Receiving time zone" value={item.timeZoneId} /><Detail label="Closure and holiday instructions" value={item.closureInstructions} /><Detail label="Detailed delivery instructions" value={item.deliveryInstructions} /><Detail label="Carrier restrictions" value={item.carrierRestrictions} /><div><dt className="text-muted-foreground">International shipments</dt><dd>{item.internationalShippingAllowed ? 'Allowed' : 'Not allowed'}</dd></div></dl></CardContent>
+    </Card>
+    <Card className="gap-0 py-0"><CardHeader className="border-b bg-muted/50 p-4"><CardTitle role="heading" aria-level={3}>Revision history</CardTitle><CardDescription>Each link opens that exact destination revision. Existing Orders and issued shipments retain their saved destination.</CardDescription></CardHeader><CardContent className="p-4"><ul className="divide-y">{history.map(revision => <li key={revision.id} className="flex flex-wrap items-center justify-between gap-2 py-3"><div><DestinationLink item={revision}>Revision {revision.revision} · {revision.name}</DestinationLink>{revision.id === item.id ? <span className="ml-2 text-xs text-muted-foreground">Viewing</span> : null}<p className="mt-1 text-xs text-muted-foreground">{formatEffectiveRange(revision)}</p></div><ShippingActivationBadge item={revision} /></li>)}</ul></CardContent></Card>
+  </div>
+}
+
+function SampleTypeLink({ item, children }: { item: SampleTypeDefinition; children?: React.ReactNode }) {
+  const routeSearch = useSearch({ strict: false })
+  const listSearch = parseSampleTypeListSearch(routeSearch)
+  return <Link
+    to="/sample-shipping-settings"
+    search={{ ...listSearch, shippingSection: 'sample-types', sampleTypeId: item.id }}
+    className={recordLinkClassName}
+  >{children ?? item.name}</Link>
+}
+
+function SampleTypeDetails({ item, revisions, onCreateRevision, configuration, apiEnabled }: {
+  item: SampleTypeDefinition
+  configuration: SampleShippingConfiguration
+  revisions: SampleTypeDefinition[]
+  onCreateRevision: (item: SampleTypeDefinition) => void
+  apiEnabled: boolean
+}) {
+  const history = [...revisions].sort((a, b) => b.revision - a.revision)
+  const latest = history[0]
+  const requirements = [
+    ['Primary container', item.primaryContainerRequirements],
+    ['Preservation requirements', item.temperatureRequirements],
+    ['Stabilizer', item.stabilizerRequirements],
+    ['Customer labeling', item.labelingInstructions],
+    ['Prohibited identifiers', item.prohibitedIdentifiers],
+    ['Safety and hazards', item.safetyRequirements],
+  ]
+  return <div className="space-y-5">
+    <Card className="gap-0 py-0">
+      <CardHeader className="border-b bg-muted/50 p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="break-words text-xl font-semibold">{item.name}</h2>
+            <div className="mt-2 flex flex-wrap items-center gap-2"><Badge variant="outline" className="h-auto max-w-full whitespace-normal break-all">{item.code} · revision {item.revision}</Badge><EffectiveBadge item={item} /></div>
+          </div>
+          <SampleTypeActions item={item} revisions={revisions} onCreateRevision={onCreateRevision} />
+        </div>
+        <CardDescription className="mt-2 whitespace-pre-wrap">{item.description || 'No description provided.'}</CardDescription>
+        {latest?.id === item.id ? <SampleTypeActiveRevisionNote item={item} revisions={revisions} /> : null}
+      </CardHeader>
+      <CardContent className="space-y-4 p-4">
+        {latest && latest.id !== item.id ? <p className="text-sm">You are viewing a historical revision. <SampleTypeLink item={latest}>View latest revision ({latest.revision})</SampleTypeLink>.</p> : null}
+        <dl className="grid gap-4 text-sm sm:grid-cols-2">
+          <div><dt className="text-muted-foreground">Material type</dt><dd>{item.materialClass === 'extracted_rna' ? 'Total RNA' : item.materialClass === 'enriched_rna' ? 'Enriched RNA' : item.materialClass}</dd></div>
+          <div><dt className="text-muted-foreground">Quantity</dt><dd>{quantityRange(item)}</dd></div>
+          <div><dt className="text-muted-foreground">Minimum sample amount</dt><dd>{item.minimumSampleAmount != null && item.sampleAmountUnit ? `${item.minimumSampleAmount} ${item.sampleAmountUnit}` : 'Not configured'}</dd></div>
+          <div><dt className="text-muted-foreground">Maximum transit time</dt><dd>{item.maximumTransitHours == null ? 'Not specified' : `${item.maximumTransitHours} hours`}</dd></div>
+          <div><dt className="text-muted-foreground">Shared shipping procedure</dt><dd>{(() => { const procedure = configuration.procedures?.find(value => value.id === item.shippingProcedureId); return procedure ? <Link className={recordLinkClassName} to="/sample-shipping-settings" search={{ shippingSection: 'procedures', procedureId: procedure.id }}>{procedure.name}</Link> : <span role="alert" className="text-warning">No procedure selected for this revision. Edit a Draft to select one.</span> })()}{item.shippingProcedureId && !currentShippingProcedure(configuration.procedures, item.shippingProcedureId) ? <p role="alert" className="mt-1 text-warning">This procedure has no Active revision. New Orders are blocked.</p> : null}</dd></div>
+          <div><dt className="text-muted-foreground">Effective period</dt><dd>{formatDateTime(item.effectiveFrom)} to {item.effectiveTo ? formatDateTime(item.effectiveTo) : 'no end date'} (your local time)</dd></div>
+        </dl>
+      </CardContent>
+    </Card>
+    <Card className="gap-0 py-0">
+      <CardHeader className="border-b bg-muted/50 p-4"><CardTitle>Sample requirements</CardTitle></CardHeader>
+      <CardContent className="p-4"><dl className="space-y-5 text-sm">
+        {requirements.map(([label, value]) => <div key={label}><dt className="font-medium">{label}</dt><dd className="mt-1 whitespace-pre-wrap break-words">{value || 'Not specified'}</dd></div>)}
+      </dl></CardContent>
+    </Card>
+    <SampleTypePackingPanel sampleType={item} configuration={configuration} />
+    {item.packagingInstructions || item.carrierRestrictions ? <details className="rounded-lg border p-4"><summary className="cursor-pointer text-sm font-medium">Earlier sample shipping guidance</summary><p className="mt-2 text-sm text-muted-foreground">Retained from this sample revision. Review this guidance when approving shared procedures and container packing.</p><dl className="mt-3 space-y-3"><Detail label="Packaging" value={item.packagingInstructions} /><Detail label="Carrier restrictions" value={item.carrierRestrictions} /></dl></details> : null}
+    <ContainerSizesPanel apiEnabled={apiEnabled} configuration={configuration} sampleType={item} />
+    <Card className="gap-0 py-0">
+      <CardHeader className="border-b bg-muted/50 p-4"><CardTitle>Revision history</CardTitle><CardDescription>Each link opens that exact revision. Existing shipments retain their saved instructions.</CardDescription></CardHeader>
+      <CardContent className="p-4"><ul className="divide-y">
+        {history.map(revision => <li key={revision.id} className="flex flex-wrap items-center justify-between gap-2 py-3">
+          <div><SampleTypeLink item={revision}>Revision {revision.revision} · {revision.name}</SampleTypeLink>{revision.id === item.id ? <span className="ml-2 text-xs text-muted-foreground">Viewing</span> : null}<p className="mt-1 text-xs text-muted-foreground">{formatEffectiveRange(revision)}</p></div>
+          <EffectiveBadge item={revision} />
+        </li>)}
+      </ul></CardContent>
+    </Card>
+  </div>
+}
+
+function DestinationDialog({ item, onClose, onSaved }: { item: SampleShippingDestination | null | undefined; onClose: () => void; onSaved: (item: SampleShippingDestination) => void }) {
   const client = useQueryClient()
   const form = useForm<DestinationValues>({ resolver: zodResolver(destinationSchema), defaultValues: emptyDestination })
   const mutation = useMutation({
-    mutationFn: (values: DestinationValues) => createSampleShippingDestination({
+    mutationFn: (values: DestinationValues) => {
+      const draft = {
       ...values,
+      isActive: false,
       code: values.code.toUpperCase(),
       addressLine2: values.addressLine2 || null,
       receivingPhone: values.receivingPhone || null,
@@ -268,26 +518,27 @@ function DestinationDialog({ item, onClose }: { item: SampleShippingDestination 
       closureInstructions: values.closureInstructions || null,
       carrierRestrictions: values.carrierRestrictions || null,
       effectiveFrom: new Date(values.effectiveFrom).toISOString(),
-      supersedesDestinationId: item?.id ?? null,
+      supersedesDestinationId: item?.lifecycle === 'Draft' ? item.supersedesDestinationId : item?.id ?? null,
       supersededVersion: item?.version ?? null,
-    }),
-    onSuccess: async () => { await client.invalidateQueries({ queryKey: ['sample-shipping-configuration'] }); onClose() },
+      }
+      return item?.lifecycle === 'Draft' ? updateSampleShippingDestinationDraft(item.id, item.version, draft) : createSampleShippingDestination(draft)
+    },
+    onSuccess: async saved => { await client.invalidateQueries({ queryKey: ['sample-shipping-configuration'] }); onSaved(saved) },
   })
   const resetMutation = mutation.reset
 
   useEffect(() => {
     if (item === undefined) return
-    form.reset(item ? destinationValues(item) : { ...emptyDestination, effectiveFrom: toLocalDateTime(new Date()) })
+    form.reset(item ? { ...destinationValues(item), effectiveFrom: item.lifecycle === 'Draft' ? toLocalDateTime(new Date(item.effectiveFrom)) : toLocalDateTime(new Date(Math.max(Date.now(), Date.parse(item.effectiveFrom) + 60_000))) } : { ...emptyDestination, code: 'DEST-' + crypto.randomUUID().replaceAll('-', '').toUpperCase(), effectiveFrom: toLocalDateTime(new Date()) })
     resetMutation()
   }, [form, item, resetMutation])
 
   return (
     <Dialog open={item !== undefined} onOpenChange={(open) => { if (!open) onClose() }}>
       <DialogContent className="sm:max-w-3xl">
-        <DialogHeader><DialogTitle>{item ? `Create ${item.code} revision ${item.revision + 1}` : 'Add ship-to destination'}</DialogTitle><DialogDescription>{item ? 'The current revision will end when this new immutable revision begins.' : 'New destinations default to inactive until the operational content is approved.'}</DialogDescription></DialogHeader>
-        <form id="sample-shipping-destination-form" noValidate className="grid max-h-[65vh] gap-5 overflow-y-auto px-1 sm:grid-cols-2" onSubmit={form.handleSubmit((values) => mutation.mutate(values))}>
-          <Field label="Destination code" id="destination-code" required error={form.formState.errors.code?.message}><Input id="destination-code" disabled={Boolean(item)} aria-invalid={Boolean(form.formState.errors.code)} {...form.register('code')} /></Field>
-          <Field label="Display name" id="destination-name" required error={form.formState.errors.name?.message}><Input id="destination-name" aria-invalid={Boolean(form.formState.errors.name)} {...form.register('name')} /></Field>
+        <DialogHeader><DialogTitle>{item?.lifecycle === 'Draft' ? `Edit Draft revision ${item.revision}` : item ? `Create ${item.name} revision ${item.revision + 1}` : 'Add ship-to destination'}</DialogTitle><DialogDescription>Save an incomplete Draft and finish it later. Fields marked required must be complete before activation. Existing Orders keep their selected destination revision.</DialogDescription></DialogHeader>
+        <form id="sample-shipping-destination-form" noValidate className="grid gap-5 px-1 sm:grid-cols-2" onSubmit={form.handleSubmit((values) => mutation.mutate(values))}>
+          <Field label="Display name" id="destination-name" required error={form.formState.errors.name?.message} full><Input id="destination-name" aria-invalid={Boolean(form.formState.errors.name)} {...form.register('name')} /></Field>
           <Field label="Recipient or receiving team" id="destination-recipient" required error={form.formState.errors.recipientName?.message}><Input id="destination-recipient" {...form.register('recipientName')} /></Field>
           <Field label="Receiving organization" id="destination-organization" required error={form.formState.errors.organizationName?.message}><Input id="destination-organization" {...form.register('organizationName')} /></Field>
           <Field label="Address line 1" id="destination-line1" required error={form.formState.errors.addressLine1?.message}><Input id="destination-line1" {...form.register('addressLine1')} /></Field>
@@ -305,163 +556,137 @@ function DestinationDialog({ item, onClose }: { item: SampleShippingDestination 
           <Field label="Detailed delivery instructions" id="destination-delivery" required error={form.formState.errors.deliveryInstructions?.message} full><TextArea id="destination-delivery" rows={5} registration={form.register('deliveryInstructions')} /></Field>
           <Field label="Carrier restrictions" id="destination-carrier" error={form.formState.errors.carrierRestrictions?.message} full><TextArea id="destination-carrier" rows={3} registration={form.register('carrierRestrictions')} /></Field>
           <div className="flex items-center gap-2"><Checkbox id="destination-international" checked={form.watch('internationalShippingAllowed')} onCheckedChange={(value) => form.setValue('internationalShippingAllowed', value === true, { shouldDirty: true })} /><Label htmlFor="destination-international" className="cursor-pointer font-normal">International shipments are allowed</Label></div>
-          <div className="flex items-center gap-2"><Checkbox id="destination-active" checked={form.watch('isActive')} onCheckedChange={(value) => form.setValue('isActive', value === true, { shouldDirty: true })} /><Label htmlFor="destination-active" className="cursor-pointer font-normal">Active for packet resolution</Label></div>
+          <p className="text-sm text-muted-foreground sm:col-span-2">Existing Orders retain their selected destination revision. New Orders use the current Active destination revision.</p>
         </form>
         {mutation.error ? <SaveError title="Destination revision was not saved" error={mutation.error} /> : null}
-        <RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" form="sample-shipping-destination-form" disabled={mutation.isPending}>{mutation.isPending ? 'Saving revision…' : item ? 'Create revision' : 'Add destination'}</Button></RequiredDialogFooter>
+        <RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" form="sample-shipping-destination-form" disabled={mutation.isPending || Boolean(item?.lifecycle === 'Draft' && !form.formState.isDirty)}>{mutation.isPending ? 'Saving Draft…' : item?.lifecycle === 'Draft' ? 'Save Draft' : 'Create Draft'}</Button></RequiredDialogFooter>
       </DialogContent>
     </Dialog>
   )
 }
 
-function SampleTypeDialog({ item, onClose }: { item: SampleTypeDefinition | null | undefined; onClose: () => void }) {
+function SampleTypeDialog({ item, configuration, onClose, onSaved }: { item: SampleTypeDefinition | null | undefined; configuration: SampleShippingConfiguration; onClose: () => void; onSaved: (item: SampleTypeDefinition) => void }) {
   const client = useQueryClient()
   const form = useForm<SampleTypeValues>({ resolver: zodResolver(sampleTypeSchema), defaultValues: emptySampleType })
   const mutation = useMutation({
-    mutationFn: (values: SampleTypeValues) => createSampleTypeDefinition({
+    mutationFn: (values: SampleTypeValues) => {
+      const draft = {
       ...values,
+      isActive: false,
       code: values.code.toUpperCase(),
       minimumQuantity: optionalNumber(values.minimumQuantity),
       maximumQuantity: optionalNumber(values.maximumQuantity),
+      minimumSampleAmount: optionalNumber(values.minimumSampleAmount),
+      sampleAmountUnit: values.sampleAmountUnit || null,
       maximumTransitHours: optionalNumber(values.maximumTransitHours),
       stabilizerRequirements: values.stabilizerRequirements || null,
+      shippingProcedureId: values.shippingProcedureId || null,
       carrierRestrictions: values.carrierRestrictions || null,
       effectiveFrom: new Date(values.effectiveFrom).toISOString(),
-      supersedesSampleTypeId: item?.id ?? null,
+      supersedesSampleTypeId: item?.lifecycle === 'Draft' ? item.supersedesSampleTypeId : item?.id ?? null,
       supersededVersion: item?.version ?? null,
-    }),
-    onSuccess: async () => { await client.invalidateQueries({ queryKey: ['sample-shipping-configuration'] }); onClose() },
+      }
+      return item?.lifecycle === 'Draft' ? updateSampleTypeDraft(item.id, item.version, draft) : createSampleTypeDefinition(draft)
+    },
+    onSuccess: async (saved) => { await client.invalidateQueries({ queryKey: ['sample-shipping-configuration'] }); allowNavigation(); form.reset(); onClose(); onSaved(saved) },
   })
   const resetMutation = mutation.reset
+  const allowNavigation = useOrderDraftGuard(item !== undefined && form.formState.isDirty, mutation.isPending)
+  function close() {
+    if (!mutation.isPending && (!form.formState.isDirty || window.confirm('Discard unsaved sample-type changes?'))) onClose()
+  }
 
   useEffect(() => {
     if (item === undefined) return
-    form.reset(item ? sampleTypeValues(item) : { ...emptySampleType, effectiveFrom: toLocalDateTime(new Date()) })
+    form.reset(item ? { ...sampleTypeValues(item), effectiveFrom: item.lifecycle === 'Draft' ? toLocalDateTime(new Date(item.effectiveFrom)) : toLocalDateTime(new Date(Math.max(Date.now(), Date.parse(item.effectiveFrom) + 60_000))), isActive: false } : { ...emptySampleType, code: 'SAMPLE-' + crypto.randomUUID().replaceAll('-', '').toUpperCase(), effectiveFrom: toLocalDateTime(new Date()) })
     resetMutation()
-  }, [form, item, resetMutation])
+  }, [form, item, configuration.procedures, resetMutation])
 
   return (
-    <Dialog open={item !== undefined} onOpenChange={(open) => { if (!open) onClose() }}>
-      <DialogContent className="sm:max-w-3xl">
-        <DialogHeader><DialogTitle>{item ? `Create ${item.code} revision ${item.revision + 1}` : 'Add sample type'}</DialogTitle><DialogDescription>Describe approved shipment preparation requirements. Do not activate a material type until scientific and operational review is complete.</DialogDescription></DialogHeader>
-        <form id="sample-type-form" noValidate className="grid max-h-[65vh] gap-5 overflow-y-auto px-1 sm:grid-cols-2" onSubmit={form.handleSubmit((values) => mutation.mutate(values))}>
-          <Field label="Sample-type code" id="sample-type-code" required error={form.formState.errors.code?.message}><Input id="sample-type-code" disabled={Boolean(item)} {...form.register('code')} /></Field>
-          <Field label="Name" id="sample-type-name" required error={form.formState.errors.name?.message}><Input id="sample-type-name" {...form.register('name')} /></Field>
+    <Dialog open={item !== undefined} onOpenChange={(open) => { if (!open) close() }}>
+      <DialogContent className="sm:max-w-3xl" showCloseButton={!mutation.isPending} aria-busy={mutation.isPending} aria-describedby={undefined}>
+        <DialogHeader><DialogTitle>{item?.lifecycle === 'Draft' ? `Edit Draft revision ${item.revision}` : item ? `Create ${item.name} revision ${item.revision + 1}` : 'Add sample type'}</DialogTitle><DialogDescription>Save an incomplete Draft and finish it later. Choose this revision's shared procedure here; activate when requirements and dependencies are ready. Fields marked required must be complete before activation.</DialogDescription></DialogHeader>
+        <form id="sample-type-form" noValidate onSubmit={form.handleSubmit((values) => mutation.mutate(values))}>
+          <fieldset disabled={mutation.isPending} className="grid gap-5 px-1 sm:grid-cols-2">
+          <Field label="Name" id="sample-type-name" required error={form.formState.errors.name?.message} full><Input id="sample-type-name" {...form.register('name')} /></Field>
           <Field label="Description" id="sample-type-description" error={form.formState.errors.description?.message} full><TextArea id="sample-type-description" rows={3} registration={form.register('description')} /></Field>
-          <Field label="Material class" id="sample-type-material" required error={form.formState.errors.materialClass?.message}><Input id="sample-type-material" {...form.register('materialClass')} /></Field>
-          <Field label="Quantity unit" id="sample-type-unit" required error={form.formState.errors.quantityUnit?.message}><Input id="sample-type-unit" placeholder="e.g. ng, µg, tube" {...form.register('quantityUnit')} /></Field>
-          <Field label="Minimum quantity" id="sample-type-minimum" error={form.formState.errors.minimumQuantity?.message}><Input id="sample-type-minimum" inputMode="decimal" {...form.register('minimumQuantity')} /></Field>
-          <Field label="Maximum quantity" id="sample-type-maximum" error={form.formState.errors.maximumQuantity?.message}><Input id="sample-type-maximum" inputMode="decimal" {...form.register('maximumQuantity')} /></Field>
+          <Field label="Shared shipping procedure" id="sample-type-procedure" required error={form.formState.errors.shippingProcedureId?.message} full>
+            <select id="sample-type-procedure" className="h-9 w-full cursor-pointer rounded-lg border border-input bg-background px-3 text-sm" aria-invalid={Boolean(form.formState.errors.shippingProcedureId)} {...form.register('shippingProcedureId')}>
+              <option value="">Choose a procedure…</option>
+              {latestRevisions((configuration.procedures ?? []).filter(procedure => procedure.isActive)).map(procedure => <option key={procedure.id} value={procedure.id}>{procedure.name}</option>)}
+              {item?.shippingProcedureId && !(configuration.procedures ?? []).some(procedure => procedure.id === item.shippingProcedureId && procedure.isActive) ? <option value={item.shippingProcedureId}>Previously selected procedure (unavailable for new Jobs)</option> : null}
+            </select>
+            <p className="mt-1 text-xs text-muted-foreground">Changing this choice in a Draft leaves earlier Sample type revisions and placed Jobs unchanged.</p>
+          </Field>
+          <Field label="Material type" id="sample-type-material" required error={form.formState.errors.materialClass?.message} full>
+            <select id="sample-type-material" className="h-9 w-full cursor-pointer rounded-lg border border-input bg-background px-3 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none" aria-invalid={Boolean(form.formState.errors.materialClass)} {...form.register('materialClass')}>
+              <option value="" disabled>Select material type…</option>
+              <option value="extracted_rna">Total RNA</option>
+              <option value="enriched_rna">Enriched RNA</option>
+              {item && !['extracted_rna', 'enriched_rna'].includes(item.materialClass) ? <option value={item.materialClass}>{item.materialClass} (previously saved)</option> : null}
+            </select>
+          </Field>
+          <Card role="group" aria-label="Quantity" className="min-w-0 gap-0 rounded-lg py-0 sm:col-span-2">
+            <div className="flex flex-wrap items-center justify-between gap-x-3 rounded-t-lg border-b bg-muted/50 px-3 py-1.5">
+              <h3 className="text-sm font-medium">Quantity</h3>
+            </div>
+            <CardContent className="grid grid-cols-1 gap-x-3 gap-y-2 p-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
+              <div className="min-w-0 space-y-1">
+                <Label htmlFor="sample-type-unit"><RequiredFieldName>Submission unit</RequiredFieldName></Label>
+                <ScientificTextField control={form.control} name="quantityUnit" id="sample-type-unit" label="Submission unit" unit insertUnits unitOptions={sampleSizeUnits} showSymbols={false} disabled={mutation.isPending} placeholder="e.g. 20 mL tube" describedBy={form.formState.errors.quantityUnit ? 'sample-type-unit-error' : undefined} />
+                <ErrorText id="sample-type-unit-error" message={form.formState.errors.quantityUnit?.message} />
+              </div>
+              <div className="min-w-0 space-y-1">
+                <Label htmlFor="sample-type-minimum">Min</Label>
+                <Input id="sample-type-minimum" type="text" inputMode="numeric" placeholder="1" aria-invalid={Boolean(form.formState.errors.minimumQuantity)} aria-describedby={form.formState.errors.minimumQuantity ? 'sample-type-minimum-error' : undefined} {...form.register('minimumQuantity', {
+                  onBlur: () => { void form.trigger(['minimumQuantity', 'maximumQuantity']) },
+                  onChange: () => { if (form.formState.errors.minimumQuantity || form.formState.errors.maximumQuantity) void form.trigger(['minimumQuantity', 'maximumQuantity']) },
+                })} />
+                <ErrorText id="sample-type-minimum-error" message={form.formState.errors.minimumQuantity?.message} />
+              </div>
+              <div className="min-w-0 space-y-1">
+                <Label htmlFor="sample-type-maximum">Max <span className="font-normal text-muted-foreground">(optional)</span></Label>
+                <Input id="sample-type-maximum" type="text" inputMode="numeric" placeholder="No limit" aria-invalid={Boolean(form.formState.errors.maximumQuantity)} aria-describedby={form.formState.errors.maximumQuantity ? 'sample-type-maximum-error' : undefined} {...form.register('maximumQuantity', {
+                  onBlur: () => { void form.trigger(['minimumQuantity', 'maximumQuantity']) },
+                  onChange: () => { if (form.formState.errors.minimumQuantity || form.formState.errors.maximumQuantity) void form.trigger(['minimumQuantity', 'maximumQuantity']) },
+                })} />
+                <ErrorText id="sample-type-maximum-error" message={form.formState.errors.maximumQuantity?.message} />
+              </div>
+            </CardContent>
+          </Card>
+          <Card role="group" aria-label="Minimum sample amount" className="min-w-0 gap-0 rounded-lg py-0 sm:col-span-2">
+            <div className="rounded-t-lg border-b bg-muted/50 px-3 py-1.5"><h3 className="text-sm font-medium">Minimum sample amount</h3></div>
+            <CardContent className="grid gap-3 p-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+              <Field label="Minimum per sample" id="sample-type-minimum-sample" error={form.formState.errors.minimumSampleAmount?.message}><Input id="sample-type-minimum-sample" type="number" min="0" step="any" aria-invalid={Boolean(form.formState.errors.minimumSampleAmount)} {...form.register('minimumSampleAmount')} /></Field>
+              <Field label="Unit" id="sample-type-sample-unit" error={form.formState.errors.sampleAmountUnit?.message}><select id="sample-type-sample-unit" className="h-9 w-full cursor-pointer rounded-lg border border-input bg-background px-3 text-sm" aria-invalid={Boolean(form.formState.errors.sampleAmountUnit)} {...form.register('sampleAmountUnit')}><option value="">Choose unit…</option><option value="µL">µL</option><option value="mL">mL</option></select></Field>
+              <p className="text-xs text-muted-foreground sm:col-span-2">Customers must enter at least this much material per sample. The unit must match the tube product's maximum before a sample/tube pair can be saved.</p>
+            </CardContent>
+          </Card>
           <Field label="Maximum transit hours" id="sample-type-transit" error={form.formState.errors.maximumTransitHours?.message}><Input id="sample-type-transit" inputMode="numeric" {...form.register('maximumTransitHours')} /></Field>
-          <Field label="Primary-container requirements" id="sample-type-container" required error={form.formState.errors.primaryContainerRequirements?.message} full><TextArea id="sample-type-container" rows={3} registration={form.register('primaryContainerRequirements')} /></Field>
-          <Field label="Temperature requirements" id="sample-type-temperature" required error={form.formState.errors.temperatureRequirements?.message} full><TextArea id="sample-type-temperature" rows={3} registration={form.register('temperatureRequirements')} /></Field>
-          <Field label="Stabilizer requirements" id="sample-type-stabilizer" error={form.formState.errors.stabilizerRequirements?.message} full><TextArea id="sample-type-stabilizer" rows={3} registration={form.register('stabilizerRequirements')} /></Field>
-          <Field label="Sample-type packaging instructions" id="sample-type-packaging" required error={form.formState.errors.packagingInstructions?.message} full><TextArea id="sample-type-packaging" rows={4} registration={form.register('packagingInstructions')} /></Field>
-          <Field label="Customer label instructions" id="sample-type-labeling" required error={form.formState.errors.labelingInstructions?.message} full><TextArea id="sample-type-labeling" rows={4} registration={form.register('labelingInstructions')} /></Field>
-          <Field label="Prohibited identifiers" id="sample-type-prohibited" required error={form.formState.errors.prohibitedIdentifiers?.message} full><TextArea id="sample-type-prohibited" rows={3} registration={form.register('prohibitedIdentifiers')} /></Field>
-          <Field label="Safety and hazard requirements" id="sample-type-safety" required error={form.formState.errors.safetyRequirements?.message} full><TextArea id="sample-type-safety" rows={3} registration={form.register('safetyRequirements')} /></Field>
-          <Field label="Carrier restrictions" id="sample-type-carrier" error={form.formState.errors.carrierRestrictions?.message} full><TextArea id="sample-type-carrier" rows={3} registration={form.register('carrierRestrictions')} /></Field>
-          <Field label="Effective from" id="sample-type-effective" required error={form.formState.errors.effectiveFrom?.message}><Input id="sample-type-effective" type="datetime-local" {...form.register('effectiveFrom')} /></Field>
-          <div className="flex items-center gap-2"><Checkbox id="sample-type-active" checked={form.watch('isActive')} onCheckedChange={(value) => form.setValue('isActive', value === true, { shouldDirty: true })} /><Label htmlFor="sample-type-active" className="cursor-pointer font-normal">Active for packet resolution</Label></div>
+          <Field label="Sample tube or vessel requirements" id="sample-type-container" required error={form.formState.errors.primaryContainerRequirements?.message} full><ScientificTextField control={form.control} name="primaryContainerRequirements" id="sample-type-container" label="Sample tube or vessel requirements" multiline rows={3} unit insertUnits unitOptions={instructionUnits} symbolOptions={instructionSymbols} disabled={mutation.isPending} describedBy={form.formState.errors.primaryContainerRequirements ? 'sample-type-container-error' : undefined} /></Field>
+          <Field label="Preservation requirements" id="sample-type-temperature" required error={form.formState.errors.temperatureRequirements?.message} full><ScientificTextField control={form.control} name="temperatureRequirements" id="sample-type-temperature" label="Preservation requirements" multiline rows={3} unit insertUnits unitOptions={instructionUnits} symbolOptions={instructionSymbols} disabled={mutation.isPending} describedBy={form.formState.errors.temperatureRequirements ? 'sample-type-temperature-error' : undefined} /></Field>
+          <Field label="Stabilizer requirements" id="sample-type-stabilizer" error={form.formState.errors.stabilizerRequirements?.message} full><ScientificTextField control={form.control} name="stabilizerRequirements" id="sample-type-stabilizer" label="Stabilizer requirements" multiline rows={3} unit insertUnits unitOptions={instructionUnits} symbolOptions={instructionSymbols} disabled={mutation.isPending} describedBy={form.formState.errors.stabilizerRequirements ? 'sample-type-stabilizer-error' : undefined} /></Field>
+          {item?.packagingInstructions ? <Field label="Earlier sample packaging instructions" id="sample-type-packaging" error={form.formState.errors.packagingInstructions?.message} full><ScientificTextField control={form.control} name="packagingInstructions" id="sample-type-packaging" label="Sample-type packaging instructions" multiline rows={4} unit insertUnits unitOptions={instructionUnits} symbolOptions={instructionSymbols} disabled={mutation.isPending} describedBy={form.formState.errors.packagingInstructions ? 'sample-type-packaging-error' : undefined} /></Field> : null}
+          <Field label="Customer label instructions" id="sample-type-labeling" required error={form.formState.errors.labelingInstructions?.message} full><ScientificTextField control={form.control} name="labelingInstructions" id="sample-type-labeling" label="Customer label instructions" multiline rows={4} unit insertUnits unitOptions={instructionUnits} symbolOptions={instructionSymbols} disabled={mutation.isPending} describedBy={form.formState.errors.labelingInstructions ? 'sample-type-labeling-error' : undefined} /></Field>
+          <Field label="Prohibited identifiers" id="sample-type-prohibited" required error={form.formState.errors.prohibitedIdentifiers?.message} full><ScientificTextField control={form.control} name="prohibitedIdentifiers" id="sample-type-prohibited" label="Prohibited identifiers" multiline rows={3} unit insertUnits unitOptions={instructionUnits} symbolOptions={instructionSymbols} disabled={mutation.isPending} describedBy={form.formState.errors.prohibitedIdentifiers ? 'sample-type-prohibited-error' : undefined} /></Field>
+          <Field label="Safety and hazard requirements" id="sample-type-safety" required error={form.formState.errors.safetyRequirements?.message} full><ScientificTextField control={form.control} name="safetyRequirements" id="sample-type-safety" label="Safety and hazard requirements" multiline rows={3} unit insertUnits unitOptions={instructionUnits} symbolOptions={instructionSymbols} disabled={mutation.isPending} describedBy={form.formState.errors.safetyRequirements ? 'sample-type-safety-error' : undefined} /></Field>
+          {item?.carrierRestrictions ? <Field label="Earlier carrier restrictions" id="sample-type-carrier" error={form.formState.errors.carrierRestrictions?.message} full><ScientificTextField control={form.control} name="carrierRestrictions" id="sample-type-carrier" label="Carrier restrictions" multiline rows={3} unit insertUnits unitOptions={instructionUnits} symbolOptions={instructionSymbols} disabled={mutation.isPending} describedBy={form.formState.errors.carrierRestrictions ? 'sample-type-carrier-error' : undefined} /></Field> : null}
+          <div className="grid gap-x-5 gap-y-2 sm:col-span-2 sm:grid-cols-2">
+            <Field label="Effective from" id="sample-type-effective" required error={form.formState.errors.effectiveFrom?.message}><Input id="sample-type-effective" type="datetime-local" aria-invalid={Boolean(form.formState.errors.effectiveFrom)} aria-describedby={form.formState.errors.effectiveFrom ? 'sample-type-effective-error' : undefined} {...form.register('effectiveFrom')} /></Field>
+            <p className="text-sm text-muted-foreground sm:col-span-2">Saving keeps this revision as a Draft. Activation uses the Effective from time and requires an Active procedure, a usable linked transportation kit, and a Default destination for ordering.</p>
+          </div>
+          </fieldset>
         </form>
         {mutation.error ? <SaveError title="Sample-type revision was not saved" error={mutation.error} /> : null}
-        <RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" form="sample-type-form" disabled={mutation.isPending}>{mutation.isPending ? 'Saving revision…' : item ? 'Create revision' : 'Add sample type'}</Button></RequiredDialogFooter>
+        <RequiredDialogFooter><Button type="button" variant="outline" onClick={close} disabled={mutation.isPending}>Cancel</Button><Button type="submit" form="sample-type-form" disabled={mutation.isPending || Boolean(item?.lifecycle === 'Draft' && !form.formState.isDirty)}>{mutation.isPending ? 'Saving Draft…' : item?.lifecycle === 'Draft' ? 'Save Draft' : 'Create Draft'}</Button></RequiredDialogFooter>
       </DialogContent>
     </Dialog>
   )
 }
 
-function InstructionRuleDialog({ configuration, item, onClose }: { configuration: SampleShippingConfiguration; item: SampleShippingInstructionRule | null | undefined; onClose: () => void }) {
-  const client = useQueryClient()
-  const form = useForm<RuleValues>({ resolver: zodResolver(ruleSchema), defaultValues: emptyRule })
-  const mutation = useMutation({
-    mutationFn: (values: RuleValues) => createSampleShippingInstructionRule({
-      ...values,
-      compatibilityGroup: values.compatibilityGroup.toUpperCase(),
-      internationalCustomsInstructions: values.internationalCustomsInstructions || null,
-      effectiveFrom: new Date(values.effectiveFrom).toISOString(),
-      supersedesInstructionRuleId: item?.id ?? null,
-      supersededVersion: item?.version ?? null,
-    }),
-    onSuccess: async () => { await client.invalidateQueries({ queryKey: ['sample-shipping-configuration'] }); onClose() },
-  })
-  const resetMutation = mutation.reset
+function revisionHasNotEnded(item: { effectiveTo: string | null }) { return !item.effectiveTo || new Date(item.effectiveTo).getTime() > Date.now() }
 
-  useEffect(() => {
-    if (item === undefined) return
-    form.reset(item ? ruleValues(item) : { ...emptyRule, effectiveFrom: toLocalDateTime(new Date()) })
-    resetMutation()
-  }, [form, item, resetMutation])
-
-  return (
-    <Dialog open={item !== undefined} onOpenChange={(open) => { if (!open) onClose() }}>
-      <DialogContent className="sm:max-w-3xl">
-        <DialogHeader><DialogTitle>{item ? `Create instruction revision ${item.revision + 1}` : 'Add destination and sample instruction rule'}</DialogTitle><DialogDescription>The destination and sample-type revisions are fixed for this rule. Create another rule when either revision changes.</DialogDescription></DialogHeader>
-        <form id="sample-shipping-rule-form" noValidate className="grid max-h-[65vh] gap-5 overflow-y-auto px-1 sm:grid-cols-2" onSubmit={form.handleSubmit((values) => mutation.mutate(values))}>
-          <Field label="Destination revision" id="shipping-rule-destination" required error={form.formState.errors.destinationId?.message}><select id="shipping-rule-destination" disabled={Boolean(item)} className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" {...form.register('destinationId')}><option value="">Select destination…</option>{configuration.destinations.map((destination) => <option key={destination.id} value={destination.id}>{destination.code} · rev {destination.revision} · {destination.name}</option>)}</select></Field>
-          <Field label="Sample-type revision" id="shipping-rule-sample" required error={form.formState.errors.sampleTypeDefinitionId?.message}><select id="shipping-rule-sample" disabled={Boolean(item)} className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" {...form.register('sampleTypeDefinitionId')}><option value="">Select sample type…</option>{configuration.sampleTypes.map((sampleType) => <option key={sampleType.id} value={sampleType.id}>{sampleType.code} · rev {sampleType.revision} · {sampleType.name}</option>)}</select></Field>
-          <Field label="Compatibility group" id="shipping-rule-group" required error={form.formState.errors.compatibilityGroup?.message}><Input id="shipping-rule-group" placeholder="e.g. FROZEN_RNA" {...form.register('compatibilityGroup')} /></Field>
-          <Field label="Effective from" id="shipping-rule-effective" required error={form.formState.errors.effectiveFrom?.message}><Input id="shipping-rule-effective" type="datetime-local" {...form.register('effectiveFrom')} /></Field>
-          <Field label="Packing instructions" id="shipping-rule-packing" required error={form.formState.errors.packingInstructions?.message} full><TextArea id="shipping-rule-packing" rows={4} registration={form.register('packingInstructions')} /></Field>
-          <Field label="Temperature instructions" id="shipping-rule-temperature" required error={form.formState.errors.temperatureInstructions?.message} full><TextArea id="shipping-rule-temperature" rows={4} registration={form.register('temperatureInstructions')} /></Field>
-          <Field label="Carrier instructions" id="shipping-rule-carrier" required error={form.formState.errors.carrierInstructions?.message} full><TextArea id="shipping-rule-carrier" rows={4} registration={form.register('carrierInstructions')} /></Field>
-          <Field label="Dispatch and timing instructions" id="shipping-rule-dispatch" required error={form.formState.errors.dispatchInstructions?.message} full><TextArea id="shipping-rule-dispatch" rows={4} registration={form.register('dispatchInstructions')} /></Field>
-          <Field label="Delivery-window instructions" id="shipping-rule-delivery" required error={form.formState.errors.deliveryInstructions?.message} full><TextArea id="shipping-rule-delivery" rows={4} registration={form.register('deliveryInstructions')} /></Field>
-          <Field label="Required documents" id="shipping-rule-documents" required error={form.formState.errors.requiredDocuments?.message} full><TextArea id="shipping-rule-documents" rows={4} registration={form.register('requiredDocuments')} /></Field>
-          <Field label="Delay, damage, and temperature-excursion instructions" id="shipping-rule-exceptions" required error={form.formState.errors.exceptionInstructions?.message} full><TextArea id="shipping-rule-exceptions" rows={4} registration={form.register('exceptionInstructions')} /></Field>
-          <Field label="International customs instructions" id="shipping-rule-customs" error={form.formState.errors.internationalCustomsInstructions?.message} full><TextArea id="shipping-rule-customs" rows={4} registration={form.register('internationalCustomsInstructions')} /></Field>
-          <div className="flex items-center gap-2"><Checkbox id="shipping-rule-separate" checked={form.watch('requiresSeparateShipment')} onCheckedChange={(value) => form.setValue('requiresSeparateShipment', value === true, { shouldDirty: true })} /><Label htmlFor="shipping-rule-separate" className="cursor-pointer font-normal">This sample type must have a separate shipment packet</Label></div>
-          <div className="flex items-center gap-2"><Checkbox id="shipping-rule-active" checked={form.watch('isActive')} onCheckedChange={(value) => form.setValue('isActive', value === true, { shouldDirty: true })} /><Label htmlFor="shipping-rule-active" className="cursor-pointer font-normal">Active for packet resolution</Label></div>
-        </form>
-        {mutation.error ? <SaveError title="Instruction-rule revision was not saved" error={mutation.error} /> : null}
-        <RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" form="sample-shipping-rule-form" disabled={mutation.isPending}>{mutation.isPending ? 'Saving revision…' : item ? 'Create revision' : 'Add instruction rule'}</Button></RequiredDialogFooter>
-      </DialogContent>
-    </Dialog>
-  )
-}
-
-function InstructionPreview({ configuration }: { configuration: SampleShippingConfiguration }) {
-  const [preview, setPreview] = useState<SampleShippingPreview | null>(null)
-  const form = useForm<PreviewValues>({ resolver: zodResolver(previewSchema), defaultValues: { destinationId: '', sampleTypeDefinitionIds: [], effectiveAt: toLocalDateTime(new Date()) } })
-  const selectedSampleTypes = form.watch('sampleTypeDefinitionIds')
-  const mutation = useMutation({
-    mutationFn: (values: PreviewValues) => previewSampleShipping({ destinationId: values.destinationId, sampleTypeDefinitionIds: values.sampleTypeDefinitionIds, effectiveAt: new Date(values.effectiveAt).toISOString() }),
-    onSuccess: setPreview,
-  })
-
-  return (
-    <Card>
-      <CardHeader><div className="flex items-start gap-3"><SearchCheck className="mt-0.5 size-5 text-primary" /><div><CardTitle>Instruction preview</CardTitle><CardDescription>Resolve exactly what a shipment packet would freeze at a selected time. Incompatible sample types are blocked and must be split.</CardDescription></div></div></CardHeader>
-      <CardContent className="space-y-5">
-        <form noValidate className="grid gap-5 sm:grid-cols-2" onSubmit={form.handleSubmit((values) => { setPreview(null); mutation.mutate(values) })}>
-          <RequiredLegend className="sm:col-span-2" />
-          <Field label="Destination revision" id="preview-destination" required error={form.formState.errors.destinationId?.message}><select id="preview-destination" className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" {...form.register('destinationId')}><option value="">Select destination…</option>{configuration.destinations.map((item) => <option key={item.id} value={item.id}>{item.code} · rev {item.revision} · {item.name}</option>)}</select></Field>
-          <Field label="Effective at" id="preview-effective" required error={form.formState.errors.effectiveAt?.message}><Input id="preview-effective" type="datetime-local" {...form.register('effectiveAt')} /></Field>
-          <fieldset className="sm:col-span-2"><legend className="text-sm font-medium"><RequiredFieldName>Sample-type revisions</RequiredFieldName></legend><div className="mt-2 grid gap-2 sm:grid-cols-2">{configuration.sampleTypes.map((item) => { const id = `preview-sample-${item.id}`; const checked = selectedSampleTypes.includes(item.id); return <label key={item.id} htmlFor={id} className="flex cursor-pointer items-start gap-3 rounded-lg border p-3"><Checkbox id={id} checked={checked} onCheckedChange={(value) => form.setValue('sampleTypeDefinitionIds', value === true ? [...selectedSampleTypes, item.id] : selectedSampleTypes.filter((valueId) => valueId !== item.id), { shouldValidate: true })} /><span><span className="block text-sm font-medium">{item.name}</span><span className="block text-xs text-muted-foreground">{item.code} · revision {item.revision} · {formatEffectiveRange(item)}</span></span></label> })}</div><ErrorText message={form.formState.errors.sampleTypeDefinitionIds?.message} /></fieldset>
-          <div className="flex justify-end sm:col-span-2"><Button type="submit" disabled={mutation.isPending || !configuration.destinations.length || !configuration.sampleTypes.length}>{mutation.isPending ? 'Resolving…' : 'Preview instructions'}</Button></div>
-        </form>
-        {mutation.error ? <SaveError title="Instructions could not be resolved" error={mutation.error} /> : null}
-        {preview ? <PreviewResult preview={preview} /> : null}
-      </CardContent>
-    </Card>
-  )
-}
-
-function PreviewResult({ preview }: { preview: SampleShippingPreview }) {
-  return (
-    <div className="space-y-5 rounded-lg border bg-muted/20 p-5" aria-live="polite">
-      <div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="font-semibold">Resolved packet instructions</h3><p className="mt-1 text-sm text-muted-foreground">Effective {formatDateTime(preview.effectiveAt)} · compatibility group {preview.compatibilityGroup}</p></div><Badge variant="secondary">{preview.sampleRules.length} sample {preview.sampleRules.length === 1 ? 'type' : 'types'}</Badge></div>
-      <section><div className="flex items-center gap-2"><MapPin className="size-4" /><h4 className="font-medium">Ship to</h4></div><address className="mt-2 text-sm not-italic leading-6">{preview.destination.recipientName}<br />{preview.destination.organizationName}<br />{preview.destination.addressLine1}<br />{preview.destination.addressLine2 ? <>{preview.destination.addressLine2}<br /></> : null}{preview.destination.city}, {preview.destination.stateOrProvince} {preview.destination.postalCode}<br />{preview.destination.countryCode}</address><p className="mt-2 whitespace-pre-wrap text-sm"><strong>Receiving:</strong> {preview.destination.receivingHours} ({preview.destination.timeZoneId})</p><p className="mt-2 whitespace-pre-wrap text-sm"><strong>Delivery:</strong> {preview.destination.deliveryInstructions}</p>{preview.destination.closureInstructions ? <p className="mt-2 whitespace-pre-wrap text-sm"><strong>Closures:</strong> {preview.destination.closureInstructions}</p> : null}</section>
-      {preview.sampleRules.map((rule) => <section key={rule.sampleType.id} className="border-t pt-4"><div className="flex items-center gap-2"><TestTubeDiagonal className="size-4" /><h4 className="font-medium">{rule.sampleType.name}</h4></div><Instruction label="Container" value={rule.sampleType.primaryContainerRequirements} /><Instruction label="Sample temperature" value={rule.sampleType.temperatureRequirements} /><Instruction label="Pack" value={`${rule.sampleType.packagingInstructions}\n${rule.packingInstructions}`} /><Instruction label="Label" value={rule.sampleType.labelingInstructions} /><Instruction label="Do not include" value={rule.sampleType.prohibitedIdentifiers} /><Instruction label="Temperature control" value={rule.temperatureInstructions} /><Instruction label="Carrier" value={rule.carrierInstructions} /><Instruction label="Dispatch" value={rule.dispatchInstructions} /><Instruction label="Delivery window" value={rule.deliveryInstructions} /><Instruction label="Documents" value={rule.requiredDocuments} /><Instruction label="Problems or delays" value={rule.exceptionInstructions} />{rule.internationalCustomsInstructions ? <Instruction label="International customs" value={rule.internationalCustomsInstructions} /> : null}</section>)}
-    </div>
-  )
-}
-
-function Instruction({ label, value }: { label: string; value: string }) {
-  return <p className="mt-2 whitespace-pre-wrap text-sm"><strong>{label}:</strong> {value}</p>
-}
-
-function EffectiveBadge({ item }: { item: { effectiveFrom: string; effectiveTo: string | null; isActive: boolean } }) {
+function EffectiveBadge({ item }: { item: { effectiveFrom: string; effectiveTo: string | null; isActive: boolean; lifecycle?: string } }) {
   const state = effectiveState(item)
   return <Badge variant={state === 'Active now' ? 'secondary' : 'outline'}>{state}</Badge>
 }
@@ -482,25 +707,26 @@ function SaveError({ title, error }: { title: string; error: unknown }) {
 }
 
 function Field({ children, error, full, id, label, required }: { children: React.ReactNode; error?: string; full?: boolean; id: string; label: string; required?: boolean }) {
-  return <div className={full ? 'sm:col-span-2' : undefined}><Label htmlFor={id}>{required ? <RequiredFieldName>{label}</RequiredFieldName> : label}</Label><div className="mt-2">{children}</div><ErrorText message={error} /></div>
+  return <div className={full ? 'sm:col-span-2' : undefined}><Label htmlFor={id}>{required ? <RequiredFieldName>{label}</RequiredFieldName> : label}</Label><div className="mt-2">{children}</div><ErrorText id={`${id}-error`} message={error} /></div>
 }
 
-function TextArea({ id, registration, rows }: { id: string; registration: UseFormRegisterReturn; rows: number }) {
-  return <textarea id={id} rows={rows} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none" {...registration} />
+function TextArea({ id, registration, rows, error }: { id: string; registration: UseFormRegisterReturn; rows: number; error?: string }) {
+  return <textarea id={id} rows={rows} aria-invalid={Boolean(error)} aria-describedby={error ? `${id}-error` : undefined} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none" {...registration} />
 }
 
-function ErrorText({ message }: { message?: string }) { return message ? <p className="mt-1 text-sm text-destructive" role="alert">{message}</p> : null }
+function ErrorText({ message, id }: { message?: string; id?: string }) { return message ? <p id={id} className="mt-1 text-sm text-destructive" role="alert">{message}</p> : null }
 
 function destinationValues(item: SampleShippingDestination): DestinationValues {
-  return { code: item.code, name: item.name, recipientName: item.recipientName, organizationName: item.organizationName, addressLine1: item.addressLine1, addressLine2: item.addressLine2 ?? '', city: item.city, stateOrProvince: item.stateOrProvince, postalCode: item.postalCode, countryCode: item.countryCode, receivingPhone: item.receivingPhone ?? '', receivingEmail: item.receivingEmail ?? '', receivingHours: item.receivingHours, timeZoneId: item.timeZoneId, closureInstructions: item.closureInstructions ?? '', deliveryInstructions: item.deliveryInstructions, carrierRestrictions: item.carrierRestrictions ?? '', internationalShippingAllowed: item.internationalShippingAllowed, effectiveFrom: toLocalDateTime(new Date()), isActive: item.isActive }
+  return { code: item.code, name: item.name, recipientName: item.recipientName, organizationName: item.organizationName, addressLine1: item.addressLine1, addressLine2: item.addressLine2 ?? '', city: item.city, stateOrProvince: item.stateOrProvince, postalCode: item.postalCode, countryCode: item.countryCode, receivingPhone: item.receivingPhone ?? '', receivingEmail: item.receivingEmail ?? '', receivingHours: item.receivingHours, timeZoneId: item.timeZoneId, closureInstructions: item.closureInstructions ?? '', deliveryInstructions: item.deliveryInstructions, carrierRestrictions: item.carrierRestrictions ?? '', internationalShippingAllowed: item.internationalShippingAllowed, effectiveFrom: toLocalDateTime(new Date(Math.max(Date.now(), Date.parse(item.effectiveFrom) + 60_000))), isActive: true }
 }
 
 function sampleTypeValues(item: SampleTypeDefinition): SampleTypeValues {
-  return { code: item.code, name: item.name, description: item.description, materialClass: item.materialClass, minimumQuantity: optionalNumberText(item.minimumQuantity), maximumQuantity: optionalNumberText(item.maximumQuantity), quantityUnit: item.quantityUnit, primaryContainerRequirements: item.primaryContainerRequirements, temperatureRequirements: item.temperatureRequirements, stabilizerRequirements: item.stabilizerRequirements ?? '', packagingInstructions: item.packagingInstructions, labelingInstructions: item.labelingInstructions, prohibitedIdentifiers: item.prohibitedIdentifiers, safetyRequirements: item.safetyRequirements, carrierRestrictions: item.carrierRestrictions ?? '', maximumTransitHours: optionalNumberText(item.maximumTransitHours), effectiveFrom: toLocalDateTime(new Date()), isActive: item.isActive }
+  return { shippingProcedureId: item.shippingProcedureId ?? '', code: item.code, name: item.name, description: item.description, materialClass: item.materialClass, minimumQuantity: optionalNumberText(item.minimumQuantity), maximumQuantity: optionalNumberText(item.maximumQuantity), quantityUnit: item.quantityUnit, minimumSampleAmount: optionalNumberText(item.minimumSampleAmount), sampleAmountUnit: item.sampleAmountUnit === 'µL' || item.sampleAmountUnit === 'mL' ? item.sampleAmountUnit : '', primaryContainerRequirements: item.primaryContainerRequirements, temperatureRequirements: item.temperatureRequirements, stabilizerRequirements: item.stabilizerRequirements ?? '', packagingInstructions: item.packagingInstructions, labelingInstructions: item.labelingInstructions, prohibitedIdentifiers: item.prohibitedIdentifiers, safetyRequirements: item.safetyRequirements, carrierRestrictions: item.carrierRestrictions ?? '', maximumTransitHours: optionalNumberText(item.maximumTransitHours), effectiveFrom: toLocalDateTime(new Date()), isActive: item.isActive }
 }
 
-function ruleValues(item: SampleShippingInstructionRule): RuleValues {
-  return { destinationId: item.destinationId, sampleTypeDefinitionId: item.sampleTypeDefinitionId, compatibilityGroup: item.compatibilityGroup, packingInstructions: item.packingInstructions, temperatureInstructions: item.temperatureInstructions, carrierInstructions: item.carrierInstructions, dispatchInstructions: item.dispatchInstructions, deliveryInstructions: item.deliveryInstructions, requiredDocuments: item.requiredDocuments, exceptionInstructions: item.exceptionInstructions, internationalCustomsInstructions: item.internationalCustomsInstructions ?? '', requiresSeparateShipment: item.requiresSeparateShipment, effectiveFrom: toLocalDateTime(new Date()), isActive: item.isActive }
+function Detail({ label, value }: { label: string; value: string | null | undefined }) {
+  if (!value) return null
+  return <div className="text-sm"><dt className="font-medium">{label}</dt><dd className="mt-1 whitespace-pre-wrap wrap-anywhere">{value}</dd></div>
 }
 
 function latestRevisions<T extends { definitionKey: string; revision: number }>(items: T[]) {
@@ -512,7 +738,25 @@ function latestRevisions<T extends { definitionKey: string; revision: number }>(
   return [...latest.values()]
 }
 
-function effectiveState(item: { effectiveFrom: string; effectiveTo: string | null; isActive: boolean }) {
+function primaryShippingRevisions<T extends { definitionKey: string; revision: number; isActive: boolean; effectiveFrom: string; effectiveTo: string | null; lifecycle: string }>(items: T[]) {
+  const families = new Map<string, T[]>()
+  for (const item of items) families.set(item.definitionKey, [...(families.get(item.definitionKey) ?? []), item])
+  const now = Date.now()
+  return [...families.values()].flatMap(family => {
+    const sorted = [...family].sort((a, b) => b.revision - a.revision)
+    const current = sorted.find(value => value.isActive && Date.parse(value.effectiveFrom) <= now && (!value.effectiveTo || Date.parse(value.effectiveTo) > now))
+      ?? sorted.find(value => value.isActive && (!value.effectiveTo || Date.parse(value.effectiveTo) > now))
+      ?? sorted.find(value => value.lifecycle === 'Draft')
+      ?? sorted.find(value => value.lifecycle === 'Released' || value.lifecycle === 'Superseded' || value.lifecycle === 'Deactivated')
+      ?? sorted[0]
+    return current ? [current] : []
+  })
+}
+
+function effectiveState(item: { effectiveFrom: string; effectiveTo: string | null; isActive: boolean; lifecycle?: string }) {
+  if (item.lifecycle === 'Draft') return 'Draft'
+  if (item.lifecycle === 'Discarded') return 'Discarded'
+  if (item.lifecycle === 'Deactivated') return 'Deactivated'
   if (!item.isActive) return 'Inactive'
   const now = Date.now()
   if (new Date(item.effectiveFrom).getTime() > now) return 'Future'
@@ -520,10 +764,10 @@ function effectiveState(item: { effectiveFrom: string; effectiveTo: string | nul
   return 'Active now'
 }
 
-function formatEffectiveRange(item: { effectiveFrom: string; effectiveTo: string | null; isActive: boolean }) {
+function formatEffectiveRange(item: { effectiveFrom: string; effectiveTo: string | null; isActive: boolean; lifecycle?: string }) {
   const start = formatDateTime(item.effectiveFrom)
   const end = item.effectiveTo ? formatDateTime(item.effectiveTo) : 'open-ended'
-  return `${item.isActive ? 'active' : 'inactive'} · ${start} to ${end}`
+  return `${effectiveState(item).toLowerCase()} · ${start} to ${end}`
 }
 
 function quantityRange(item: SampleTypeDefinition) {

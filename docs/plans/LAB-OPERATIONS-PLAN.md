@@ -1,5 +1,600 @@
 # Lab Operations Plan
 
+## Vendor sequencing batch workflow — October 5, 2026
+
+The owner confirmed **Prepare shipment → Shipped → Vendor received (ETA) →
+Sequencing → Results received → Success / Failure**, a batch outcome with explicit
+library exceptions, and external storage references for the initial handoff. The
+[owning plan](VENDOR-SEQUENCING-BATCH-WORKFLOW-PLAN.md) records the implementation,
+role/version guards, additive model scope and verification. Existing completed
+records retain their history with an unrecorded vendor outcome; storage references
+remain unverified and separate from scientific output registration and release.
+
+## Catalog requirement and sequencing tube pairs — October 4, 2026
+
+The owner requires Catalog-controlled sequencing volume and a form like Customer sample/tube matching. The [pairing plan](CATALOG-SEQUENCING-TUBE-PAIRING-PLAN.md) owns this correction: per-service minimums, immutable physical-pair snapshots, one active pair form, progress and compact saved pairs. Operators cannot edit the requirement. Actual volume remains an Operator entry with both scans and exact atomic debit/credit. The demo uses the previously authorized 5 µL; its six 20 µL libraries remain unchanged. Local conversion approval and verification are recorded in that plan.
+
+## Empty sequencing batch recovery — October 4, 2026
+
+An Operator must assign passing libraries while the sequencing batch is Draft,
+then record its actual start. An empty batch cannot start, complete or create a
+sendout. Disable empty Start and Sequencing tubes actions and show the assignment
+prerequisite on the batch card. An empty In progress batch without a sendout
+offers **Return empty batch to draft** with a required correction reason,
+Cancel focus and focus return to its Actions control. Recovery preserves the
+identifier/name/notes and records the previous start, actor and reason in the
+existing audit infrastructure while clearing the current start. Current-version
+checks and the sequencing batch transaction lock protect recovery against
+membership/sendout changes. Populated, completed or sent-out work cannot be
+reopened this way. No persisted model change or migration is needed.
+
+The owner explicitly authorized correcting local batch
+`PH-BAT-20261004-TAHDCRV5`. This correction does not assign libraries or record
+sequencing work. Acceptance is the same identifier in Draft, zero members,
+preserved audit evidence, disabled empty Start and enabled handoff assignment
+when this draft is available. Compile, lint, documentation and connected UI
+checks apply; automated suite execution remains deferred unless requested.
+
+Connected verification passed: the reason is required, Cancel initially has
+focus, the dialog has header/body/footer regions, and focus returns to Actions.
+The correction saved once through the UI. The batch was Draft with zero members
+and empty Start/Sequencing tubes actions disabled. A read-only database check
+confirmed the actor, reason and original `2026-10-04T19:09:00Z` start in its audit
+entry. During the remaining checks, six libraries were assigned from the user's
+session; the refreshed completed tray shows **6 passing libraries · 6 assigned**
+to this same Draft. This task performed no membership or sequencing command.
+Solution build, frontend typechecking, scoped lint and documentation checks pass.
+See [the local recovery record](../testing/runs/2026-10-04-sequencing-batch-recovery.md).
+
+
+
+## Master mix card header — October 4, 2026
+
+The tray's **Open Master mixes** navigation is an outline button link at the
+right end of the **Master mix** title row. The description wraps beside it;
+narrow screens also wrap the compact button label. Use the shared preparation
+header action, keep a single link to the same workspace and retain recorded
+use rows. This is a presentation change with no operational writes. Acceptance
+covers desktop/narrow containment, keyboard focus and navigation. Automated
+tests are not requested for this reversible layout change.
+
+Connected geometry checks passed at 320, 1025 and normal desktop CSS widths:
+the action starts on the title row, the description wraps, and neither extends
+past the card. A single link remains, keyboard focus is visible, and Enter opens
+the Master mixes workspace. Scoped lint, typechecking and help generation pass.
+
+
+
+## Sequencing batch availability and identifiers — October 4, 2026
+
+Operators handing completed libraries to sequencing must have a draft batch.
+Disable assignment in the handoff and tube details while batches are loading,
+unavailable or absent, and explain the prerequisite beside the handoff list.
+The existing header link opens the sequencing workspace to create a batch.
+Use the existing server-allocated `PH-BAT-YYYYMMDD-XXXXXXXX` identity as the
+default display name; an optional descriptive name need not be unique. Keep
+custom names, existing identifiers, library lineage and draft-only backend
+validation intact. Creation accepts an omitted name without changing persisted
+fields, indexes or historical records; no migration is needed. Avoid repeating
+the identifier as both name and number in touched batch lists and selectors.
+Acceptance covers empty/loading/error and available draft states, creation
+without a name and with a custom name, and unchanged assignment safeguards.
+Automated suite execution remains request-only; compile and connected UI
+checks are the current verification scope.
+
+Verification: solution build (including added test source), frontend
+typechecking, scoped lint, documentation generation/check and whitespace
+checks pass. Connected Chrome shows six disabled Add actions with the empty
+draft explanation, one header link, optional-name creation guidance and a
+blank-name enabled Create button. Keyboard activation opens the sequencing
+workspace, and Cancel restores visible focus to New batch. Header geometry
+contains its title, wrapped description and action at 320 and desktop widths.
+The local Development API was refreshed at its existing URLs with no database
+change. No batch was created or assigned; automated tests were not executed.
+
+## Sequencing handoff header — October 4, 2026
+
+Move **Open sequencing batches** to the far right of the **Sequencing handoff**
+title row using the shared preparation card header action. The description
+wraps in the remaining column. Keep one navigation link, the same destination,
+and each library's existing assignment action. This is a presentation change;
+no laboratory record or handoff state changes. Phaeno help identifies the new
+header location. Connected desktop/narrow and keyboard verification is the
+acceptance checkpoint; automated suites are not requested. The connected check
+passes at 320 and 1025 CSS pixels and at the normal desktop size. The sole
+header link retains keyboard focus and opens the original destination; narrow
+screens wrap the compact action label as well as the description.
+
+## Fake PSeq tray completion — October 4, 2026
+
+The owner-authorized local **6WTMNUFE** walkthrough is complete through library
+preparation: the saved DEMO PSeq 2 × 3 tray is **Complete**, all six library
+positions are **Succeeded**, and six passing libraries are ready for sequencing.
+The UI recorded matching label/output barcodes, 0.010 mL specimen transfers,
+60 µL of a fresh approved master mix, and fictional yield/concentration/Pass QC.
+The expired prior mix and the fresh mix's 40 µL remainder were explicitly
+discarded without inventing a measured disposal amount. Original source and
+earlier history remain retained. This is **Pass (simulated)**, not scientific,
+physical or production acceptance; no sequencing or result release occurred.
+See the [completion record](../testing/runs/2026-10-04-6wtmnufe-pseq-library-preparation.md).
+The earlier label sections retain their historical checkpoints; this completion
+supersedes their outstanding fake-tray work.
+
+## Subject workspace navigation — October 3, 2026
+
+The approved Lab Ops sidebar now keeps **Jobs** first as the ungrouped overview and default landing section. CRM-style groups are **SAMPLE PROCESSING** (Sample receipt & accession, Library prep, Sequencing batches, Data assembly), **RESULTS** (Results & scientific review, Result release), **LAB PREPARATIONS** (Master mixes, Reagent manufacturing), and **KITS & FULFILLMENT** (Transportation kit requests, Transportation kit inventory, PSeq kit fulfillment). Transportation requests and sent-kit queues move out of sample receipt; receiving and accession remain together. Saved kit bookmarks and record return filters follow the new owning section. Data assembly keeps its two existing workflows. This is navigation only, with unchanged execution and release permissions; see the owning navigation plan for acceptance and local verification.
+
+The approved [navigation restructure](WORKSPACE-NAVIGATION-RESTRUCTURE-PLAN.md) groups Lab Order intake and Trials under LAB SERVICES and commercial Kit/Data assembly work under PARTNER SERVICES within Order Ops, governed result release to Lab ops, cross-workflow attention to the Dashboard, and Finance/Legacy integrations to More. Canonical list and record routes follow their subject domains; existing bookmarks redirect. Role isolation, scientific review, approval, billing, records and backend contracts remain intact. No persistence change or migration.
+
+## Accession sample directory — October 2, 2026
+
+Sample-use follow-up: the directory adds a separate Used / Not used column and server filter, plus individual tube use and recorded exhaustion in its disclosure. Started attempts and biological transfers establish source use; planning does not. Historical started processing without source attribution establishes sample use while tube use remains unknown. Intake acceptance, remaining material and reuse eligibility remain distinct. See the directory plan for the read-only contract and verification scope.
+
+The Product Owner authorized a compact Received packages / Accessioned samples toggle under Accession samples. The received queue and guarded accession workflow remain available in the first view. The directory uses one specimen row per sample with customer/accession identity, Customer/Job, specimen intake status and expandable tube decisions/locations. Search, intake filter and 20-row pagination run on the server; URL state survives sample-detail return. Partial accession remains distinguishable from all-tube completion and laboratory processing. See [the directory plan](ACCESSION-SAMPLE-DIRECTORY-PLAN.md) for scope, defaults, authorization and verification boundaries. No schema, migration or operational write is included.
+
+## Sequential phase Jobs — planning, September 30, 2026
+
+Plan one order/Job with ordered phases sufficient for invoicing and operations;
+do not introduce contract-management functionality. Each phase completes only
+when its required results are available through the Portal, before processing
+the next phase. Each phase has its own TAT starting on complete physical receipt
+of its required sample/tube roster. Unstarted phases may be requested for
+cancellation only before their first required sample/tube is received. Invoice
+timing and partial amounts are chosen deliberately by Phaeno. The
+[owning phase plan](MULTI-PHASE-LAB-JOBS-PLAN.md) preserves
+phase-specific input/output lineage, receipt/deadline meaning and retained
+cancellation/billing outcomes. Phase lifecycle is separate from derived shipping,
+intake, sample-work and delivery counts; independent Phases and holistic Jobs
+views expose mixed progress without treating one stage as every sample's status.
+The implementation scope is a distinct sample cohort per phase, with configurable
+phase counts, names and quantities rather than a fixed 50/150/150 structure.
+The generalized product model is ready for implementation within that scope.
+Mutually agreed rephasing is available only for unsent future samples of an open
+Job while an earlier phase executes. First required tube dispatch fixes the whole
+sample's phase assignment; in-transit and received-but-unprocessed samples are
+ineligible. Sent/started/delivered work stays fixed; dispatch, receipt, storage,
+material use, original deadlines and billing history are retained. Completed Jobs
+cannot be rephased; returns and holds do not restore sample eligibility.
+This is planning only; implementation, data-model changes, migrations and
+deployment are not authorized.
+
+## Customer intake status — September 30, 2026
+
+The owner retained **Received** for the Customer/Partner Job status after intake.
+Do not add Accessioned to the customer Job progress stages. Internal receipt,
+accession and freezer-box records continue to retain their scientific and physical
+meaning. Phaeno's Lab operations Job cards show the current internal status and
+all recorded freezer boxes, as covered by the Job deadline plan.
+
+## Purchasing and Equipment navigation — September 26, 2026
+
+Phaeno staff need a clear place for catalog, purchased stock, and laboratory assets outside the operational Lab operations sidebar. The Administration menu has one **Equipment** destination with no sidebar and one **Purchasing** destination with **Suppliers**, **Products**, and **Purchased materials** in its sidebar. Products includes the existing Product types management tab. The moved lists and their view-first details retain the established create, edit, status, QC, and retirement actions and existing capability checks. Canonical detail routes now live under `/purchasing`; old Lab operations URLs redirect to the corresponding destination. Existing backend catalog and inventory APIs remain unchanged.
+
+Acceptance: each destination appears once for an authorized Phaeno user; all three Purchasing sidebar entries and Equipment open their lists; list identifiers open details within the Purchasing layout; return links and links from workflows, material components, and kit setup use the new routes; inactive catalog items remain hidden by default and can be shown; unauthorized users do not gain new access. Frontend typecheck and scoped lint are the static checkpoint. Automated and signed-in browser acceptance remain deferred under the test plans.
+
+## Named Transportation kit workflows — September 26, 2026
+
+Protocol Administrators enter a required **Workflow name** as the first field when creating a Transportation kit assembly workflow, followed by the finished Phaeno kit product and ordered Lab steps. The workflow name is its staff-facing list identity and is searchable alongside the product name and SKU. The product link and SKU remain fixed after creation and continue to determine which kit assemblies use the workflow. **Edit title** is a separate Actions command that changes only the stable workflow name with optimistic concurrency, without adding or editing a revision. Existing workflows start with their product description as the saved name.
+
+Every kit workflow row has one Actions menu. A latest Draft offers **Edit draft**, **Edit title**, **Approve draft**, and **Discard draft**; an approved, retired, or discarded latest revision offers **New version** and **Edit title**, matching the Lab steps action wording. Approved revisions are read-only. Discarding only the latest Draft preserves it in history, does not reuse its number, and leaves an earlier Approved revision available. A workflow with only discarded history is hidden by default and remains findable with **Show inactive**. The row places revision, status, and a correctly pluralized step-count pill beside the workflow name; product name and SKU appear below. **Add step** sits at the end of the Ordered Lab steps label row while step selection stays beneath it. This change does not add a second workflow for one product or make the workflow name a catalog product name.
+
+## Workflow list consistency — September 26, 2026
+
+The four Lab Settings → Workflows tabs use the same list surface: title and creation action in the first header row, a description that wraps beside the action, a search field identified by its placeholder, and **Show inactive**. Library, reagent, master-mix, and Transportation kit workflow records use separated rows with status by the name, details below, and contextual actions at the trailing edge. Search matches workflow names and relevant service or product identities. Retired workflows are hidden by default; Library preparation also treats a workflow with only retired, discarded, or invalidated versions as inactive. Draft and approved work remains visible. The filter is local to each tab and does not change workflow status, version history, or backend selection. Purchased-kit receipt behavior is outside this presentation change.
+
+## Purchased Materials navigation — September 24, 2026
+
+Move the material-lot sidebar entry directly before **Reagent manufacturing** and label it **Purchased Materials**. Keep the existing material-lot route, purchased-lot receipt, prepared-reagent visibility, QC, and lot history unchanged. The sidebar description and Phaeno help explain that prepared reagent lots remain in this shared inventory list for QC and traceability. Update the material-lot return link to use the new label. This is a navigation and wording change; no new automated tests are planned for it.
+
+The purchased-lot form no longer displays **Lot kind**. It offered only **Supplier lot** after new prepared-reagent creation moved to Reagent manufacturing. Keep that kind fixed in the form's data and submitted command; historical prepared-reagent records and the separate manufacturing path remain available. Order the visible identity fields **Supplier**, **Product name**, then **Lot number**. The form grid uses the shared dialog body inset without extra top or bottom margins. No new automated case is planned for these presentation changes.
+
+## Internal reagent production workflow — product direction, September 24, 2026
+
+The owner identified a distinct internal manufacturing workflow for Phaeno-prepared reagents. Seed one Phaeno supplier record in the Lab supplier table, flagged **Internal producer** so it is distinguishable from external vendors; prevent deactivation or rename. Automatically associate every new Phaeno-manufactured lot with this record and backfill existing prepared-reagent lots that have no supplier. The former prepared-reagent lot form captured source lots, quantities, storage and QC, but asked staff to type a lot number and did not execute a versioned preparation procedure. The existing PSeq kits reagent queue is commercial kit fulfillment, and Lab service workflows are tied to customer jobs and library preparation. Neither is an internal reagent-production record.
+
+The Lab settings workflow views are **Reagent manufacturing** and **Library preparation**. A reagent-manufacturing workflow uses its own versioned procedure and executes against a reagent run and its source material lots. Its step records must not require a customer order, sample, or tube. Starting the run records output storage, allocates one unique Phaeno lot number and inherits the reagent's inventory unit; completion records the actual produced quantity, performer/time and exact procedure version. Source-lot quantities are deducted when each use is recorded, including when a run later stops. The finished lot remains unavailable until required QC and approval are recorded. A library-preparation workflow retains its sample/tube lineage and output rules. No implicit sample or tube record is fabricated for reagent work.
+
+Implementation scope: add a flagged and seeded Phaeno supplier, a revisioned reagent-workflow definition with immutable snapshots on started runs, a reagent run with generated lot number, separate step and material-use evidence, a start/run workspace, completion and abandonment paths, and a QC gate on incomplete runs. Keep existing manual prepared-reagent lots and their recorded numbers readable. Migrations must preserve supplier/product and historical lot identities, be reviewed before application to a shared database, and update the complete ERD. Add focused authorization, quantity, concurrency and no-sample/tube tests. A stale-version rejection prevents blind command replay; full client-request idempotency remains an open hardening item. Do not execute full test suites unless requested.
+
+Code checkpoint: Lab settings now has distinct library and reagent workflow views; the latter creates, revises, approves and retires ordered reagent procedures tied to a reagent name. Lab operations has a reagent-run list, start form and dedicated run record. Starting creates a zero-stock QC-pending lot with a generated Phaeno number, the seeded internal producer and the reagent's saved unit. Source use deducts stock immediately and records the exact lot, amount, performer and time. Completion aggregates component lineage into the output lot and records actual yield; abandonment retains uses and keeps output stock unavailable. The generic material-lot endpoint now directs new prepared reagents to this workflow while historical lots remain readable. All three migrations were explicitly approved and applied to the configured local development database. Seven focused connected regressions and five reagent domain tests passed; broader authorization, concurrency, retry, inventory, browser and physical acceptance remain pending.
+
+Product clarification: staff select the **reagent name**, not a workflow, to start a run. Each reagent identity has at most one workflow identity, with revisions; changing a workflow's reagent is forbidden. The reagent carries its standard inventory unit. Starting a run copies that unit to the zero-stock output lot; staff enter the actual amount only after completing the procedure. Purchased supplier products likewise carry a standard inventory unit. New purchased lots reuse and must match it; existing catalog products with no verified unit are blocked from new lot receipt until a catalog administrator sets one. Historical lot quantities and units are never rewritten when a legacy product's future unit is configured. The third migration adds these units and the unique reagent-to-workflow index; it was separately approved and applied to the configured local development database. Seven focused connected regressions passed after application, including a legacy mixed-unit product, purchase receipt, catalog and reagent run journey.
+
+## Named storage locations in Lab settings — September 24, 2026
+
+Phaeno laboratory staff need to find and maintain the named locations used when receiving material lots. The existing lot form can create a location only as part of receiving a lot, leaving no place to see inactive names or correct an unused entry. The owner also confirmed that choosing both Material and Supplier / Product name for a purchased lot adds a confusing duplicate decision.
+
+- Add **Storage locations** to the Lab settings sidebar. The list shows active and inactive names, material-lot use, search, and bounded create/edit and status actions. Operators may create locations, matching the existing inline lot workflow; Supervisors and Operations Administrators may correct unused names or deactivate/reactivate them. Keep referenced locations and lots, never delete them.
+- Names remain unique without regard to case, including inactive locations. An inactive location is unavailable to new material lots. A location already referenced by a material lot cannot be renamed because that would change the displayed historical lot location; create a new location and retire the old one instead. Require the current version for changes and preserve centralized audit stamping.
+- Material lot creation continues to select only active locations and can still create a new name inline. Hide Material for supplier lots: supplier and catalog product identify the purchased item, and lot number identifies its physical batch. Derive the required internal material definition from the selected product using a stable product-specific key, without remapping historical lots or adding a persisted column. Reagent manufacturing runs select the reagent identity and record source component uses without a supplier catalog product. Existing purchased-lot API clients that explicitly send a valid material definition remain compatible.
+- Scope is named material-lot locations only. Physical tube/freezer-box scans and movement records remain in their existing workflows. Equipment currently stores a location string and may offer these names as suggestions; this change does not convert historical equipment or tube locations into catalog references.
+
+Acceptance: authorized staff can list, search, create, correct an unused name, deactivate, and reactivate a location; duplicates and stale writes fail clearly; inactive names cannot be selected for new lots; referenced names cannot be changed; existing lots retain their location reference and history. New purchased lots require supplier/product, lot number, storage and quantity; their unit comes from the supplier product. Prepared reagents use a named reagent identity and source lots in the separate manufacturing flow. The storage-location slice required no migration; the later unit refinement's third reagent migration was separately approved and applied locally. Phaeno help and the living test plans were updated, and build, typecheck, lint, documentation and whitespace checks passed.
+
+## DataMatrix tube labels and scan-result presentation — September 23, 2026
+
+October 4 label-dialog correction: the owner reported an oversized DataMatrix preview, incorrect print layout and an apparent dead end with all footer actions disabled. The preview now bounds the symbol independently of modal width, while print media isolates one 50 × 25 mm label with explicit grid placement for metadata and barcode text. After browser printing, operators select the outcome before entering its evidence: a successful print requires the matching scan; a failed or cancelled print requires an explanation and no scan. The outcome action uses React Hook Form and Zod validation instead of silently disabling the failed-print path. The window stays open until the attempt is recorded, preserving the existing audit and tube-activation rules. The tube Actions trigger receives focus when the label dialog closes. Physical printer, label-stock and scanner qualification remain separate. Both focused component regressions, typecheck and scoped lint pass. Connected local checks pass for the compact preview, 320 px reflow without horizontal overflow, fixed modal regions and Escape focus return. The malformed demo preview was explicitly recorded as Failed without activating the tube. The final owner-exported PDF and Failed-path checks pass as recorded below. The fake PSeq tray remains In progress behind its simulated label verification.
+
+POMS-generated laboratory tube labels now render the existing exact, checksummed container identifier as DataMatrix with readable text on the 50 × 25 mm label. The Lab container's UUID remains its internal identity; the existing unique barcode and source fields continue to identify the physical tube independently of its specimen and accession. A newly allocated POMS container has `LabelPending` status and cannot serve as available material until its printed physical label is scanned back. The API independently checks the POMS identifier and records the successful print and activation only for a matching scan; failed print attempts retain their reason without increasing the print count or activating the tube. Existing saved containers retain their current state. This supersedes the September 10 QR choice for laboratory tube labels only. Supplier-applied tube labels, saved barcode values, shipping inserts, kit labels and physical tray label printing retain their established identities and symbols.
+
+After a tube or tray has been scanned, the preparation tray and saved sample-matching rows show readable identifiers without recreating on-screen QR codes. The stock-kit detail likewise shows its identifier as text; the dedicated print dialog retains the scannable label. The tray's print dialog retains its QR label for attachment to the physical tray. Existing USB keyboard-mode scanning and Enter submission remain the input path. A physical 2D scanner must support DataMatrix as well as QR for work across these areas. Printer/label stock, scanner, readability and bench acceptance remain separate operational gates.
+
+The owner confirmed that the tube manufacturer is selected when the physical container is assembled. The selected supplier product identifies that manufacturer in stock-kit assembly. The barcode registry, manufacturer-scoped duplicate values and scoped scan resolution are implemented locally as described in the physical container barcode identity section below. Existing manufacturer tubes retain their sole applied barcode and do not receive a second POMS label in current intake. Shared-environment migration and deployment remain separate release steps.
+
+October 4 print-page evidence: the owner's first exported PDF contained three pages: a blank Letter page, one 50.12 × 25.06 mm label page with readable symbol/metadata, and another blank Letter page. The named-page transition therefore failed the single-page requirement. The correction removes the named page and mounts one default 50 × 25 mm page rule only while the tube-label modal is open, avoiding different page types for portal ancestors. The second owner-exported PDF has exactly one 50.12 × 25.06 mm page (browser rounding), with the entire barcode, accession, location and parent inside the label. Raster inspection confirms its placement. Connected acceptance also passes for the Failed outcome: the scan field is absent, an empty explanation shows an inline error and receives focus, and a completed explanation saves Failed history without activating the tube; Close and printing become available again. Both focused component tests, final typecheck, scoped lint, documentation corpus and whitespace checks pass. The print regression source is updated but its automated browser run remains pending. This is a local layout correction, with no barcode, API, schema or activation-rule change. The fake tray remains In progress until its simulated label-verification and preparation steps are completed.
+
+## Sample material transfers — September 23, 2026
+
+The [sample material transfer plan](SAMPLE-MATERIAL-TRANSFER-PLAN.md) records the locally implemented accessioned-source → barcoded library tube → barcoded sequencing tube workflow, retained material and manufacturer or POMS-generated barcodes. Accounting captures customer-declared amounts during shipment, actual biological consumption and an optional Material exhausted override. Biological material is a preparation field type. Reagent lots support the same exhaustion override, and products can require expiration dates at inventory entry. The local migration, build and static checks are complete; the linked plan records pending automated and operational acceptance and deployment.
+
+## Sequencing data assembly runner — endpoint-independent implementation, September 22, 2026
+
+The [sequencing data assembly plan](SEQUENCING-DATA-ASSEMBLY-PLAN.md) records the authorized endpoint-independent implementation: durable attempts and lifecycle evidence, a background runner/provider boundary, transient progress, actual start/stop timestamps, final disposition, POMS queue/detail/sample history and exact-analysis linking. Shared capture/release guards enforce a separate result for each purchased run. The external SignalR adapter, live credentials, real S3 verification and automatic output import remain pending the provider contract. The runtime provider is explicitly unavailable, with dispatch default off; simulation exists only in regression sources. The additive migration is local only, and this is not a production activation claim.
+
+## Step performance evidence — September 18, 2026
+
+The next traceability slice is implemented locally for individual and preparation step entry. New UI records/repeats require personal confirmation and distinguish Now from Earlier, retaining entered time/offset/precision and a late-entry reason. Corrections preserve the original performer/time and record the correcting user separately. History shows both identities/times, with older omissions labeled unknown. See the [step performance contract](LAB-STEP-PERFORMANCE-CONTRACT.md) for compatibility, no-migration storage, pending policy and validation boundaries. This partially delivers phase 2; provider profiles, performance amendments/on-behalf recording and later investigation/preservation/rollout work remain open.
+
+## Sample investigation and traceability — phase 1, September 18, 2026
+
+The owner confirmed Lab ops → Closed jobs → Job → Sample as the investigation entry point, using the same sample workspace from Active jobs. The highest-priority requirement is capturing and retaining the unambiguous relationship from a specific result to its exact physical sample tube. Phase 1 now adds immutable sequencing-output/analysis-input capture, result bindings, resource snapshots, intake before/after evidence and shared prospective release guards. The [capture contract and writer matrix](LAB-RESULT-LINEAGE-CONTRACT.md) document these additions. The [owning plan](SAMPLE-TRACEABILITY-AND-INVESTIGATION-PLAN.md) retains remaining performance-attribution policies, full scientific metadata, supporting documents, preservation, investigation UI and reports. Migration is local only; automated/provider acceptance and production enforcement are pending. Existing history remains readable and unknown links are not guessed.
+
+## Standalone Lab Settings — September 18, 2026
+
+Lab Settings moves from the Lab operations sidebar to Administration in the user dropdown, directly after Order Settings and before File retention policies. Its own /lab-configuration page uses the shared workspace sidebar for Lab steps, Protocols, Workflows, Stage durations, Holiday calendar and Library tray formats, replacing the horizontal tabs. Existing Lab access and action capabilities are preserved. Legacy configuration links redirect with their selected section and Lab step filters; builder returns target the standalone page. No laboratory data, approvals or configuration rules change.
+
+Lab step details and the Protocol and Workflow version builders now retain the same Lab Settings page header and pinned or collapsible section sidebar as the index. A single arrowed return link sits above each detail, targeting its owning section; Lab step returns preserve search, retired visibility, and page. Switching sections while a draft has unsaved edits requires a discard confirmation. This is a navigation and presentation change only.
+
+Each Lab step list row also has an Actions dropdown. It shares the detail page's permitted name/description edit, draft or new-version entry, and retirement confirmation; View details remains available for read-only and retired rows. The Lab step name still opens its detail page.
+
+October 2 refinement: Lab step details consolidate catalog and version commands
+into one Actions menu beside the step name. The sole Draft provides one Edit
+draft entry, approval and discard; historical configuration previews identify
+their exact version and status in that menu. The API already rejects a second
+Draft. Version summaries have no separate Actions control. See
+[Lab steps and configuration preview](LAB-STEPS-AND-CONFIGURATION-PREVIEW-PLAN.md).
+
+Lab step rows follow the Samples & shipping record-list pattern: linked name with revision and status badges, description and protocol-use context below, and Actions at the right. Search, retired visibility, and pagination remain in the list header and footer.
+
+Lab step details and the Protocol and Workflow version builders now retain the same Lab Settings page header and pinned or collapsible section sidebar as the index. A single arrowed return link sits above each detail, targeting its owning section; Lab step returns preserve search, retired visibility, and page. Switching sections while a draft has unsaved edits requires a discard confirmation. This is a navigation and presentation change only.
+
+Within Workflows, use the shared Portal tab control for Library preparation, Reagent manufacturing, Master mix, and Transportation kit assembly. Keep the section sidebar and workflow selection behavior. Place **New workflow** at the right end of the transportation kit assembly header with a leading plus icon. This is a presentation change; workflow data and approval rules are unchanged.
+
+## Product-linked material lots — September 17, 2026
+
+Implementation scope and verification are tracked in [Material lot identity and Library prep matching](MATERIAL-LOT-PRODUCT-LINK-PLAN.md). This supersedes the earlier vendor-only lot matching.
+
+## Material lot details — September 17, 2026
+
+Make the material name/lot number in Materials open a stable, view-first `/lab-operations/materials/$materialLotId` route. Show the existing material identity, lot kind, supplier, stock/unit, storage, expiration/retest date and recorded QC status/date/failure reason. Prepared reagents show component quantities and links to their source lot details. Include Back to Materials and refresh, loading, unavailable-session, permission, error/retry and missing-record states. Reuse the authorized dashboard query; no new API, schema or data writes. Existing list QC actions remain in place. Update Phaeno help. Automated tests are deferred for this read-only presentation change; verify typecheck, scoped lint and connected navigation.
+
+Verification: typecheck and scoped lint pass. Connected local inspection confirmed both supplied lots, failed QC reason, retained dates/quantities, direct reload and return to Materials. No prepared-reagent fixture was available, so populated component navigation remains unverified. No records were changed.
+
+## Reusable Lab steps and configuration preview - September 17, 2026
+
+Implemented locally: reusable scoped step versions, independent approval/retirement, exact-version protocol occurrences with explicit adoption and preserved legacy snapshots, plus disposable previews using Library prep capture/resource/output forms. See [implementation and acceptance status](LAB-STEPS-AND-CONFIGURATION-PREVIEW-PLAN.md#local-implementation-checkpoint). The additive local migration is applied. Production rollout remains separate.
+
+
+Planned authoring work: [Lab steps and configuration preview](LAB-STEPS-AND-CONFIGURATION-PREVIEW-PLAN.md). Requirements are agreed; implementation is pending.
+
+## Physical tray identity — September 17, 2026
+
+Approved and implemented scope: reusable physical tray barcode is distinct from preparation batch name; active batches exclusively reserve that barcode, retained on closed history for reuse. Scan/confirm saves the physical identity before new tube additions or Start. Existing populated drafts may receive their first physical identity without changing members. Compact QR cells replace repetitive Planned text, and selecting a cell shows a single tube detail area. The earlier September 16 batch-label-only design below is superseded. Implementation and acceptance boundaries are in [the preparation journey plan](LAB-WORK-JOURNEY-PLAN.md#physical-tray-identity-and-compact-tray-workspace--september-17-2026).
+
+## Inline tray scanning — September 16, 2026
+
+Owner authorized replacing per-cell Add dialogs with direct barcode fields. The header scans the batch identity first (the owner explicitly selected tray/batch identity, not a shared tube scanner). Print batch label encodes the existing immutable batch name as a QR code with a readable name and tray format; it identifies this run, not a permanent reusable tray. Confirmation is local to the open batch workspace and resets on leaving/reloading it. No permanent-tray inventory, print-success assertion, new persisted model or migration is introduced.
+
+Operators scan the batch label, then type/scan a tube into any empty cell. Enter or Save explicitly submits that cell through the existing audited/versioned/idempotent add command. This bounded inline entry is an intentional laboratory scan-workspace exception to form-free record lists. Advance focus only after acknowledged success, left-to-right then row-by-row; skip occupied/unavailable cells and wrap to earlier empty positions if needed. Errors preserve the entered barcode and position; competing updates are refreshed without automatically moving focus to another tube. Read-only/in-progress trays expose no tube-entry controls. Partial trays remain valid and Start preparation remains a separate explicit review/confirmation. Prevent concurrent submissions; protect unsaved tube entries on navigation and announce saving/success/error/full-tray states.
+
+
+## Service-based commercial jobs — September 16, 2026
+
+Owner authorized decoupling commercial orders/jobs from laboratory workflow versions. Orders specify the purchased service; Operators choose the approved preparation workflow when creating a batch. New standalone source selection uses the service's current Production workflow. Exact versions belong to attempts, batches and stage executions, and remain immutable once selected. Existing unstarted commercial jobs can supply accepted available tubes to a same-service batch regardless of their historical job pin. Existing attempts retain their workflow; cancel an unstarted attempt explicitly before choosing a different version. No started or completed evidence is rewritten.
+
+Implementation scope: stop assigning commercial job pins during authorization/amendment; retain the nullable legacy column and historical authorization payloads without a migration. Keep explicitly approved Trial scope constraints separate and unchanged. Match preparation candidates and add commands by service, enforce attempt/batch version equality, use execution-owned versions for stage guards and retirement impact, and display workflow history per attempt. Scientific release definitions use the authorized service version rather than an incidental workflow version. No multi-service ordering or service-to-service output handoff is introduced in this slice.
+
+Acceptance: existing v1 commercial jobs with no attempt can enter an approved same-service v2 batch; a different service, rejected tube, existing incompatible attempt, started work or unavailable workflow remains blocked. New commercial authorizations need no production workflow and produce no job pin. Version changes never redirect existing attempts, skip stage dependencies or weaken protocol retirement/concurrency protections. Add regression coverage and compile/type/lint checks; do not execute tests without request.
+
+Verification: Release solution build (including the new regression tests) succeeded with zero warnings/errors. Frontend typecheck and scoped lint passed. Help corpus regenerated. Tests were not executed. No migration, saved job/tube mutation, approval or automatic batch start was performed. The local API must reload the updated code before connected acceptance.
+
+
+## Explicit administrator approval override — September 16, 2026
+
+Product Owner approved a reason-required, audited alternative to independent protocol/workflow approval. Normal approval continues to require a different author and approver. Only an active platform administrator with existing protocol-management access may explicitly override their own approval conflict. Require a trimmed reason (maximum 2,000 characters) and review confirmation; do not infer overrides from role or environment settings. Store the reason with the exact version and existing actual approver/time, and retain changes in the central audit history. Show Administrator override and its reason in version history. Protocol and workflow override menu items use a decorative shield-check icon; their action menus are 20rem wide, capped to the viewport. Protocol approval dialogs use concise action titles (Administrator protocol approval override or Approve protocol); the protocol name and version appear only in the existing review details below the header. Workflow cards keep Add version at the right of the name row, with descriptions and service/version details below. Visible workflow versions are sorted by version number descending, newest first. Help reviewed; ordering does not change the documented workflow actions. These visual refinements do not change the documented approval workflow. Production guards accept either independent approval or this recorded override; legacy unaudited self-approvals remain blocked. Workflow withdrawal clears current approval/override metadata while audit history retains it. Preparation scopes, QC, valid definitions, version concurrency, retirement, job pins, scientific review and result-release approval are unchanged.
+
+Implementation: additive optional override reason in the existing transition contracts and version DTOs, one nullable reason column on each protocol/workflow version table, no new roles or dependencies. Apply the additive migration only to the verified local development database. Update ERD, help and regression coverage; build/type/lint checks at the checkpoint, no test execution unless requested. No automatic approval or production promotion of any laboratory record.
+
+Implemented locally. Migration `20260916235423_AddLabApprovalOverrides` adds only two nullable reason columns and is applied to verified `localhost:5432/phaeno_ops`. ERD regenerated with its existing manual outcome notes preserved. Release solution/test-project build, TypeScript and scoped lint passed. Regression tests are added/compiled but not executed. Signed-in UI inspection confirmed the author-admin menu entry, exact-definition review, reason field, unchecked attestation, disabled initial submit and footer. The current RNA readiness v2 review is open for the owner; no approval was submitted. Production/multi-role/stale-response acceptance remains pending. No Git mutation or deployment.
+
+## Supplier navigation placement — September 17, 2026
+
+Move **Suppliers & products** to the start of the resource group, immediately after the separator and before Materials, followed by Equipment. Lab configurations retains its separate group. Use sentence case for the destination title, tab, return link and guidance. Routes, permissions and catalog/material data remain unchanged. This supersedes the original placement below Lab configurations.
+
+## Product types and reagent vendors — September 16, 2026
+
+Product types is a tab within Suppliers & Products; the other tab manages suppliers and their products. Administrators manage reusable type names, descriptions, status and transportation-kit use. Tube, Shipping Container and Reagent are seeded. Supplier products now select saved types; reagent vendors share existing supplier identities with Materials. No reagent inventory/QC workflow changed. Used types retain their kit-use classification, inactive types remain reviewable, and existing kit snapshots are unchanged. See the [managed type scope](SAMPLE-SHIPPING-AND-INTAKE-PLAN.md#managed-product-types--september-16-2026). Local migration applied; restart the local API to load these changes. Regression coverage updated and compiled, not executed.
+
+## Suppliers and products — September 16, 2026
+
+Added **Suppliers & Products** immediately below **Lab configurations** in the Lab sidebar. Phaeno platform administrators maintain reusable supplier records and typed products with required descriptions through view-first supplier details and bounded editors. Kit preparation now selects active catalog products and preserves their details in kit history. Existing kit-administration permissions are retained. See [supplier catalog scope and local verification](SAMPLE-SHIPPING-AND-INTAKE-PLAN.md#suppliers-and-products--september-16-2026). Local migration applied; development API restart required. Tests updated and compiled, not executed.
+
+## Guided evidence and retirement acceptance — September 14, 2026
+
+LAB-04 and LAB-07 now Pass for isolated software acceptance, with [complete six- and sixteen-step crosswalks](../testing/runs/2026-09-14-guided-evidence-retirement-uat.md). Connected empty-workflow recovery exposed duplicate blank stages under StrictMode. Initialize the builder field array empty and populate it only from the saved/new workflow loading path. The failing regression, new-workflow guard, actual recovery/save/revalidation, typed evidence, correction history, held/queued work and six retirement race pairs pass. Specimen source selection creates the pinned execution without a named assignee; explicit assignee validation remains covered for legacy job-level work. No role widening or scientific acceptance is inferred. Nine new synthetic jobs and eleven inactive test services preserve the existing 33 jobs and original definitions, approvals and roles.
+
+## Tube intake acceptance closure — September 14, 2026
+
+LAB-10 and LAB-13 now Pass for isolated software acceptance, with [complete step/variant crosswalks](../testing/runs/2026-09-14-tube-intake-uat.md). Connected testing found and fixed two UI gaps: initial scanner focus now completes after delayed job loading without overriding deliberate navigation, and bulk-storage dirty state now protects Cancel/navigation/unload. The 12 focused component tests, actual delayed responses, concurrent reviews/start, uncertain-response retry, Supervisor correction, independent database audit and both 390px themes pass. Existing scientific definitions, approvals, jobs and roles are preserved; the new test source attempt remains OnHold. Bench/provider and final acceptance are separate.
+
+## Material and equipment acceptance — September 14, 2026
+
+LAB-03 now Pass for isolated software acceptance. A consumed quantity outside available stock previously escaped as HTTP 500. The resource controller now maps that existing domain rejection to a structured quantity conflict, preserving stock/history and allowing the user to correct the entry. The full operator-journey regression and actual resource UI/API/database crosswalk pass. [Evidence, exact fixture boundary and cleanup](../testing/runs/2026-09-14-lab-resources-uat.md). Existing protocol/workflow concurrency counters advance through normal execution guards; definitions, approvals and prior job pins remain unchanged.
+
+## Controlled versioning acceptance — September 14, 2026
+
+LAB-01 and LAB-08 now Pass for isolated software acceptance. The [complete crosswalk](../testing/runs/2026-09-14-lab-versioning-uat.md) records structured definition validation/save/resume, distinct approvals, promotion by protocol/workflow authors, legacy self-approved Active protocol rejection, competing requests, immutable history and new/old/unpinned job retention. Original laboratory records and roles are unchanged. The disposable service was deactivated and its Production workflow retired after verification. No product implementation or scientific/bench acceptance is inferred from these software fixtures.
+
+## Specimen attempts implemented locally — September 11, 2026
+
+The [specimen tube-attempt plan](SPECIMEN-TUBE-ATTEMPT-PLAN.md) is now implemented locally: versioned order policy, explicit source selection, attempt-scoped ordered execution, failure/reserve restart, confirmed exhaustion, output guards and specimen detail workspace. Customer-requested holds remain blocked. Existing Planned work is adopted only through explicit source selection; historical started work is not backfilled. Local migration AddSpecimenTubeAttempts is applied. Full persisted acceptance remains Not run; this supersedes the earlier proposed-status notes below.
+
+## Tube review before execution - September 11, 2026
+
+Implemented the approved navigation/prerequisite slice: Specimens → Tubes & lineage → Execution → Libraries → Exceptions → Review, preserving the existing lineage route value. Planned specimen executions expose a server-derived TubeAcceptanceRequired flag using the same accepted/available-tube predicate as Start. The page explains Tube acceptance required, disables Start for that blocker and links Review tubes directly to the job's tube tab. Returning reloads execution eligibility; no tube or execution decision is automatic. Help and acceptance coverage updated. Wider attempt/fallback implementation is now local; customer-requested holds remain blocked.
+
+## Specimen failure and customer holds - September 11, 2026
+
+Implemented attempt behavior: terminal attempt failure with confirmed exhaustion of material for further permitted analysis makes the specimen processing outcome Failed. Preserve its intake acceptance history. Temporarily unresolved material suitability or pending receipt requires a specific blocker and next action, not an exhaustion outcome. A held reserve does not undo acceptance of another tube. See the [tube-attempt plan](SPECIMEN-TUBE-ATTEMPT-PLAN.md).
+
+The [customer-requested specimen hold plan](CUSTOMER-SPECIMEN-HOLD-PLAN.md) is **blocked from implementation by Product Owner direction**. Customer request, acknowledgment, safe pause and resumption need separate design and implementation authorization. Existing internal hold controls do not constitute that workflow.
+
+## Tube-level intake acceptance - September 11, 2026
+
+Owner clarified that acceptance belongs to tubes: a specimen is Accepted when at least one tube is Accepted. Tube accession records Accepted by default when receipt checks pass; exceptions require a predefined intake reason. Other requires notes; acceptance after hold/rejection requires resolution notes. Lineage offers Review tube; independent specimen disposition is removed and the old API rejects writes with guidance. Existing tubes remain unreviewed (no backfill). Tube decisions retain reviewer/time/code/notes with event history, and specimen aggregation does not reject a specimen just because a reserve is rejected. Started specimens have intake locked; execution start requires an available Accepted tube. Five nullable container columns added by AddTubeIntakeReview. Attempt/fallback is implemented in the checkpoint above.
+
+## Specimen tube attempts - September 11, 2026
+
+The [specimen tube selection and fallback plan](SPECIMEN-TUBE-ATTEMPT-PLAN.md) captures the owner's run-one/reserves-on-failure direction, order policy, attempt-scoped workflow enforcement and specimen-centered workspace. Implemented locally with AddSpecimenTubeAttempts; full lifecycle acceptance remains Not run.
+
+## Work-order action menu - September 11, 2026
+
+The menu fits its labels with a compact minimum width. Milestone uses a single full-width field and removes redundant body margins. Connected Edge verified the selector matches its parent width with zero extra grid margin; no milestone saved.
+
+The work-order header groups Change milestone, New container, Assign protocol and eligible Record scientific approval in Actions. Existing capability checks, disabled assignment rules and dialogs are preserved.
+
+## Work-order list presentation - September 11, 2026
+
+All six work-order tab lists (Specimens, Execution, Lineage, Libraries, Exceptions and Review) now match the established Materials/Equipment pattern: shaded divided headers, padded bodies and separate bordered rows. Status, links, actions and saved records are unchanged. Added explicit empty states for container, library and exception lists. Help reviewed; no workflow instructions changed.
+
+## Promotion after independent approval - September 11, 2026
+
+Owner approved allowing any authorized Protocol Administrator to promote an independently approved workflow, including its author or a protocol author. Promotion checks recorded independent approvals for the workflow and every included protocol (including already Active versions), regardless of audit-only rollout settings. Author restrictions remain on approval. Role checks, stale-version handling, retirement checks, existing job pins and promotion audit stamping remain unchanged. No schema migration is needed.
+
+## Workflow action menus - September 11, 2026
+
+Multiple actions for Draft, Invalid and Approved workflow versions now use an Actions dropdown, preserving permissions and confirmation dialogs. Single actions remain direct controls. This follows the owner-approved shared UI convention.
+
+## Discarded drafts as history only — September 11, 2026
+
+Owner removed the Show discarded drafts filter from the working list. Discarded-only protocol identities are always hidden, including with Show retired checked. Discarded revisions remain in their associated protocol's read-only version history; their rows have no edit/create actions. New identities without saved versions remain visible as Setup incomplete, while historical fallback badges now use the actual version status. No stored protocol data was changed. This supersedes earlier notes about a conditional discarded-drafts filter. Updated Phaeno help and existing visibility regression expectations. Connected Edge confirmed the single Show retired filter, hidden Test 1-2-3 in both filter states, visible retired protocols when checked, and intact original walkthrough protocols. Automated tests were not run.
+
+## Revised retirement policy — September 11, 2026
+
+Owner superseded the initial dependency-blocking rule: in-process samples block retirement; queued but unstarted work only warns and permits Proceed anyway. Confirmed retirement removes the protocol in new Invalid workflow revisions and invalidates affected operational versions atomically. Historical stages/approvals and job pins are retained. Invalid revisions can be revalidated/approved with or without further edits, but require at least one eligible approved stage and subsequent production promotion. Queued work retaining an invalidated version is flagged and blocked from starting; no silent repinning. A fresh impact token binds confirmation to the affected workflows/jobs. The retired LAB-07 script and the backend/frontend/E2E living plans recorded the test scope at this checkpoint. Implementation is complete locally. Migration 20260911174615_AddWorkflowInvalidation applied and ERD/help updated. Builds, TypeScript and lint passed; domain regression tests compile but were not run. Live Production workflow/no-job fixture verified named confirmation, retirement, historical Invalidated v1 with two preserved stages, and Invalid recovery v2 with only the retained stage; opened review without saving or approving. Active/queued-job and complete revalidation/concurrency acceptance remained Not run under LAB-07 at this checkpoint. Earlier manual retirement evidence applies to the superseded rule only.
+
+## Manual protocol retirement — September 11, 2026
+
+Implemented owner-approved protocol retirement for Protocol Administrators, with a required reason (1–1000 characters), retirement actor/time, preserved identity/version/approval/execution history, and no reactivation. Never-approved protocols continue to use deletion. An open protocol draft must be discarded first. Retirement blocks Draft/Approved/Production workflow dependencies and unfinished jobs referencing any historical workflow stage or protocol execution. Draft workflows must be edited/discarded, Approved candidates withdrawn then revised/discarded, and Production workflows replaced or retired. Completed/release-ready and cancelled work retain references. Blocker messages name workflows and job references. New workflow selection/approval/promotion, new executions, and provider job pinning reject retired protocols; participating writers update the protocol concurrency version atomically to conflict with concurrent retirement. Historical versions retain their original status and evidence rather than rewriting approvals.
+
+UI adds Actions → Retire protocol (Archive icon), required-reason modal and unchecked-by-default Show retired. A conditional Show discarded drafts filter retains access to legacy discarded-only identities. Retired records retain reason/date and version history and expose no edit/delete/create-version actions. Phaeno help updated and generated corpus `df73f4c03659` verified. Applied local migration `20260911172654_AddProtocolRetirement` (three nullable columns); ERD regenerated. API/test-project build, frontend TypeScript, scoped ESLint and documentation checks passed. Domain regression tests added but not run under repository test policy.
+
+Connected Edge as William verified blank-reason validation, blocked retirement naming a Draft workflow, preserved error input, subsequent success after discarding that test workflow, default hiding, filter inclusion, focus return, and retained reason/approval after Refresh. Separate fixture protocol `cbcb7e3f-d7bf-4f84-98b9-0ac58223e710` is retired version 2; DB readback confirmed actor `ec4b36b6-e143-4173-8c00-2319c5078cf3` and timestamp `2026-09-11T17:30:16.913671Z`. Fixture workflow `049f9d27-1300-44dd-aed0-c539f67a4d34` version `eba3fc9f-5f48-4b11-a33e-b77e15fab4f6` remains Discarded with its historical stage. Fixture creation used an explicitly synthetic temporary helper and null-human-actor audit context. No real laboratory use occurred. Cross-role denial, Approved/Production dependencies, populated unfinished jobs and concurrent-request scenarios are source-reviewed but not live-tested. Original RNA readiness v1 remains Approved; library-preparation v1 remains Draft. Updated local API process 4092 runs CodexProtocolRetirement on port 44399. No Git mutation or deployment.
+
+## Protocol removal menu — September 11, 2026
+
+The owner approved showing only Delete protocol for never-approved protocols, retaining the existing permanent-removal confirmation. Discard draft now appears only for draft revisions of a protocol with an approved version in its history, with a FileX icon. Existing backend deletion protections remain in force, including referenced-record restrictions. Updated Phaeno help to explain the menu distinction. This changes action presentation, not saved protocol data or approval state.
+
+## Laboratory dashboard list presentation — September 11, 2026
+
+Applied the owner's Materials/Equipment list template to the Laboratory work dashboard summary: shaded header with bottom divider, inset body, and individual bordered work-order rows with subtle shadows. Existing counts, ordering, links and actions are preserved. Connected Edge confirmed the shaded header, 1px divider and row borders, 16px row padding, and both existing work orders. Scoped ESLint passed; no automated suite was run. Reviewed user-documentation guidance: this presentation-only correction does not change the documented workflow. Protocol approval remains pending.
+
+## Equipment retirement — September 11, 2026
+
+Implemented and locally verified. Migration `20260911164357_AddEquipmentRetirement` was reviewed (three nullable metadata columns only) and applied to local `phaeno_ops` at the owner's explicit request; ERD regenerated. API and test-project builds, frontend TypeScript and scoped ESLint passed. Domain regressions were added but automated tests were not run. Connected Edge verified the reason-required error and successful retirement of a separate synthetic asset `PH-EQP-20260911-2NH6C3WJ`, default hiding, Show retired inclusion, and persistence after Refresh. Database readback confirmed reason, actor, timestamp and version 2; preparation asset `PH-EQP-20260911-SVDMBJUH` remains Active at version 1. Role denial and concurrent-use rejection were source-reviewed, not live-tested. The owner also requested a wider action menu; 192px width keeps Retire equipment on one line. Phaeno help corpus regenerated (`5db2af000a47`). No Git mutation or deployment occurred. The stopped local API was started from the updated CodexRetirement build on port 44399 for verification.
+
+Authorized scope: Supervisors and Operations Administrators can retire an asset from its Actions menu after entering a reason. Retirement retains identity, calibration and execution-use records and stores the reason, actor and timestamp. Retired equipment is hidden by default with Show retired to include it, and cannot be selected or recorded for new use. Retirement is final in this scope; no deletion/reactivation is added. A version check prevents stale retirement, and equipment use participates in the same version check so a concurrent retirement cannot slip through. The local additive migration adds retirement metadata; existing Active assets are unchanged. Acceptance: reason required, retired visibility toggle, retained history, role/concurrency enforcement and rejection of retired use. Keep the walkthrough's preparation asset active; verify retirement on a separate synthetic fixture.
+
+## Equipment retirement — September 11, 2026
+
+Authorized scope: Supervisors and Operations Administrators can retire an asset from its Actions menu after entering a reason. Retirement retains identity, calibration and execution-use records and stores the reason, actor and timestamp. Retired equipment is hidden by default with Show retired to include it, and cannot be selected or recorded for new use. Retirement is final in this scope; no deletion/reactivation is added. A version check prevents stale retirement, and equipment use participates in the same version check so a concurrent retirement cannot slip through. The local additive migration adds retirement metadata; existing Active assets are unchanged. Acceptance: reason required, retired visibility toggle, retained history, role/concurrency enforcement and rejection of retired use. Keep the walkthrough's preparation asset active; verify retirement on a separate synthetic fixture.
+
+## Equipment list presentation — September 11, 2026
+
+The owner identified the Materials list as the template for Equipment. Equipment now uses the same shaded header and divider, 16px body inset, bordered rounded rows with subtle shadow, compact name/identifier and metadata lines, and trailing status. The list has an accessible name and an explicit empty state. Connected Edge verified the 1px header/row borders, 16px inset/padding and preserved asset details. Scoped ESLint passed; no automated suite was run. This is presentation only; existing help remains accurate and asset records/actions are unchanged.
+
+## Equipment modal spacing — September 11, 2026
+
+The owner also requested Equipment type and Location on separate rows. Both fields now span the form width; calibration dates retain their paired layout. Connected Edge confirmed separate rows at the same 478px width as Name, with all five entered values preserved. Scoped ESLint passed. Current reference behavior was clarified: types are inferred from equipment and all protocol versions; locations combine equipment names and active storage locations. Inline creation stores a string on the asset, not a separately managed type/location catalog record.
+
+Removed the equipment form grid's extra 20px top/bottom margins because the shared dialog body already supplies 16px padding. Connected Edge measurements confirmed the body shrank by 40px while retaining standard padding, and all five unsaved equipment fields remained identical. Scoped ESLint passed. No behavior/help change or automated test was needed for this spacing correction.
+
+## Material-lot date submission guard — September 11, 2026
+
+The test lot's date was visible before creation but stored as NULL. The precise original event failure was not reproduced. The create form now reconciles the native expiration/retest control into form state before validation/submission, preventing a stale form-state snapshot from dropping a displayed date. Invalid or past native dates produce a field error instead of silently becoming absent. Blank dates remain optional. No API/schema contract changed; the existing guide remains accurate. The owner authorized correcting the one local synthetic lot: its expiration is now December 31, 2026, version 2, with quantity 100 mL and Pending QC preserved. Connected Edge confirmed the saved display. Lint and TypeScript passed; a targeted regression case was added but not run under the repository test policy.
+
+## Protocol management tabs and discarded filter — September 11, 2026
+
+The owner requested separate Protocols and Service workflows tabs. Protocols opens by default; each panel contains its corresponding creation action and list. Protocols with only Discarded versions are hidden by default and can be restored with Show discarded. Empty identities and any history with a non-discarded version remain visible. This supersedes the earlier working-list policy that retained discarded-only identities in the default view. Saved records, version history, approval and workflow rules are unchanged. Phaeno help was updated. Scoped lint and frontend TypeScript passed; connected Edge verified the default view, filter on/off, and ArrowRight/ArrowLeft tab navigation. Automated suites were not run.
+
+## Protocol card action placement — September 11, 2026
+
+At the owner's request, protocol cards reserve a trailing column for Actions, aligned with the title at the top. The text column can shrink and wrap long content without pushing Actions onto a later row. Scoped ESLint passed; connected Edge measurements confirmed top alignment and containment on all three current protocol cards. No automated suite was run. Existing help instructions remain accurate; action behavior and protocol data are unchanged.
+
+## Role-neutral step confirmation wording — September 11, 2026
+
+The owner identified ambiguity between the Operator role and the protocol builder's “Operator confirmation required” control when a step requires Supervisor. The builder and approval preview now use **Confirmation required**, with helper text identifying the person performing the step. Execution history uses **Step confirmation recorded**. Required-role enforcement, confirmation flags and saved evidence contracts remain unchanged. The Phaeno protocol guide explains the distinction and has a September 11 review date. The three-step readiness candidate is now saved/reopened as Draft v1 and remains unapproved; see the [run record](../testing/runs/2026-09-11-protocol-preparation.md) for live-refresh recovery and exact field preservation.
+
+## Protocol capture spacing — September 11, 2026
+
+The owner reported excessive vertical gaps and a detached trash button in the initial protocol builder. Each capture now groups its label/type in a responsive field row, keeps any unit/choices with the fields, and aligns Required and its named remove button on one compact footer row. The former unconditional checkbox padding and button top margin are removed. Scope is presentation; capture values/types, required validation, add/remove behavior and draft-save semantics are unchanged. Existing protocol help remains accurate. The [run record](../testing/runs/2026-09-11-protocol-preparation.md) records rendered, keyboard, static and unsaved-state checks.
+
+## Work-record tab reflow — September 11, 2026
+
+During test-protocol preparation the owner reported that the second row of Work tabs overlapped the panel. The shared TabsList's horizontal height variant overrode the page's plain `h-auto`. The Work page now overrides that same variant, gives each trigger a 36px minimum height and uses two/three/six columns across narrow/tablet/wide layouts. Scope is this record's tab layout and accessible group name; routes, selection, scientific actions and data are unchanged. The existing user guide remains accurate and needs no procedural change. Verification is recorded in the [September 11 run record](../testing/runs/2026-09-11-protocol-preparation.md).
+
+## Receipt and accession update Job progress — September 10, 2026
+
+The owner authorized fixing Jobs stranded between accession and Work and correcting the two reported local Jobs from saved evidence. Users are Phaeno receiving operators and Customer/Partner users tracking their Jobs. First shipment arrival advances awaiting Lab work to Received and the Commercial Job to In progress. Verified tube receipt updates the sample; Accessioned requires all expected tubes across active shipments. Holds, terminal/later states, scientific acceptance, turnaround targets and physical identities are preserved.
+
+Receipt/accession publish a monotonic intake snapshot in the existing outbox within the physical action transaction. Its additive internal payload contains physical receipt presence, submitted-specimen IDs, receipt timestamps, completed accession IDs and the operator for audit. It excludes storage, receipt notes and scientific decisions. Commercial applies the snapshot under the authorization/organization boundary; projection, Job/sample status, timeline, receipt and acknowledgment commit atomically. Duplicate/older delivery cannot reapply progress. Shipment receipt refreshes Lab Work. No public provider milestone, persisted field or migration changes. Local correction and verification evidence belong in [the intake correction run record](../testing/runs/2026-09-10-intake-progress-correction.md).
+
+## Shipment receiving views — October 2, 2026
+
+Accession simplification follow-up: Open container lookup is in the header of Received containers awaiting accession, with one shared card and the queue below. The field and Open container button remain available when no containers are listed. Alternative-identifier help, read-only lookup results/errors, draft retention, the existing accession dialog and focus return are retained. Lookup does not write container arrival or accession; prior-receipt and individual tube checks remain enforced. Shared Field spacing replaces local label/input margins. Existing navigation regression source also checks header placement and the direct Open container action.
+
+Shipment rows show the saved PH-P- shipping-insert barcode beneath the shipment link in small, muted monospace text when available. The same identifier is visible in expected, received-history and accession queues; viewing it does not acknowledge arrival. Missing inserts do not produce a fabricated number or empty identifier line.
+
+PH-P display follow-up passed frontend typecheck, scoped lint and documentation checks, plus desktop/light and 390 px/dark synthetic review. The identifier renders at 12 px below the 14 px shipment link; missing identifiers are omitted and the narrow table stays contained. Screenshot: `output/shipment-receipt-evidence/expected-insert-number.png`. No test suite or operational write was performed; temporary preview files/cache were cleaned.
+
+Phaeno receiving staff use a compact pill toggle under Receive shipments: **Receive a shipment | Expected shipments | Shipments received**. Receive a shipment opens by default. Only the selected view is visible; changing views keeps the barcode draft and receipt feedback during the visit and performs no receipt or accession write. The scan remains an explicit, permission-checked physical-arrival action. Its focused task view retains the existing scanner-workspace exception to list-only presentation; the two queue views contain no form.
+
+Shipments received is arrival history, most recent first, with Customer/Job, destination, carrier/tracking, arrival time and accession counts. Completed accession remains visible here. The dedicated GET shipments/received read returns a counted page of existing row DTOs. Search is case-insensitive, treats characters literally, and covers shipment, Job, Customer, destination, carrier/tracking and the current non-voided PH-P insert. Search/count and stable arrival/ID ordering apply before Skip/Take; tube and insert details are loaded for that page only. The UI requests 20 arrivals per page; the API caps page size at 50 and clamps stale/out-of-range pages to a valid page. Expected and unfinished accession queues retain their existing read. The earlier unbounded includeCompleted flag from this local refinement is replaced by the dedicated history read. Existing Lab-role access, receipt mutation, tenant boundaries and row DTO fields remain unchanged. No persistence change, migration, data repair or operational write is needed.
+
+History has a header search with an accessible name and descriptive placeholder, a Clear search action, and Previous/Next controls with total/page counts. Search queries debounce for 300 ms and reset to page one. The receiving view, search and page are URL-backed, retain unrelated filters, and survive switching, refresh and shipment-detail return. Search persists in the URL immediately so changing views during the debounce does not lose it. Loading, failure, disconnected, empty history and no matches remain distinct; search stays available in empty/error states. Updated frontend navigation and PostgreSQL regression sources cover these behaviors; suites remain unexecuted under the request-only policy.
+
+Acceptance: compact rather than full-width toggle, one visible view, keyboard arrows and visible focus, retained scan draft, completed containers in arrival history, unfinished-only accession queue, contained narrow-screen tables and light/dark themes. Existing frontend navigation and PostgreSQL receipt/accession regression sources are extended; automated suites remain unexecuted under the request-only policy. Local static and synthetic browser verification are recorded at this checkpoint.
+
+Verification passed: isolated solution build (0 warnings/errors), frontend typecheck, scoped ESLint, documentation generation/check and diff whitespace check. Synthetic browser review verified Left/Right selection, retained receipt draft, one visible view, expected and received rows, completed accession counts, empty/failure/permission/session messages, and 390 px dark layout with table-contained scrolling. Evidence: `output/shipment-receipt-evidence/README.md`. The temporary server, preview/cache and isolated build output are removed; no operational writes, migrations, Git mutations or deployment were performed.
+
+## Container receipt and separate accession tab — September 10, 2026
+
+The Product Owner superseded the read-only receiving workflow: Receive shipments now lists all expected physical containers (not dashboard work orders), with Customer/Job, carrier, tracking, destination and tube count. It excludes packing pools, empty placeholders, cancelled configurations and already-arrived containers. Prepared containers may appear before carrier handoff with their actual stage and missing-tracking text.
+
+Submitting a valid current PH-P- insert in Receive shipments explicitly acknowledges physical container arrival. Other barcode kinds cannot write receipt. A separate Accession samples tab lists arrived containers with unaccessioned tubes, supports read-only insert lookup and tube comparison, and opens individual accession. Successful accession establishes the verified tube's intake and Lab container; the container scan does not bulk-receive, accession or accept any tubes. The existing printed shipping insert is unchanged.
+
+Implementation uses existing DeliveredAt/Delivered for container arrival and ReceivedAt/Received for completed tube receipt. A ShipmentReceived Lab work event retains the actor, shipment, scanned revision and time. Receipt is serialized with shipment changes and tube receipt, repeats retain the first timestamp/event, and void/cancelled/preparing scans are rejected. Arrival without reported carrier handoff does not invent carrier, tracking or shipment time. Delivered shipments cannot be cancelled. No persisted model change, migration, backfill or production write is required.
+
+The internal Lab API adds GET shipments/queue and POST shipments/receipt under /api/platform/lab-operations; existing GET packet scan remains read-only and adds optional containerReceivedAt. Reads retain assigned Lab-role access; receipt requires Operator/Supervisor. The source-only change includes updated backend receipt-to-accession and frontend queue/navigation/receipt regression coverage. Automated suites and physical scanner acceptance have not been requested. Local build/static checks and remaining browser/runtime gates are reported separately.
+
+## Shipping and receiving tabs — September 10, 2026
+
+Phaeno staff need to focus on one shipping or intake queue as request and kit
+volumes grow. The owner approved splitting the stacked Receipt & accession
+workspace into **Kit requests**, **Prepare kits**, **Kits sent** and
+**Receive samples** tabs. Receive samples groups shipping-barcode lookup, tube
+comparison and authorized work awaiting specimens. Other Lab operations areas
+retain their current sidebar navigation.
+
+The selected tab is URL-backed, supports Back/Forward and refresh, and preserves
+both request and standard-kit searches, statuses and pages. Record return links
+select their owning tab; existing shipment links open Kits sent and
+old named queue anchors remain supported. Kit-management tabs retain their
+existing configuration capability requirement; other operators start in Receive
+samples. Hidden queues mount only on selection. Scanner drafts and comparison
+results remain available when switching tabs during the same visit. Kits sent now provides an explicit empty state when opened as a tab.
+
+Acceptance: one visible task panel; keyboard-operable tabs; narrow-screen tab
+scrolling without whole-page overflow; preserved query filters and record return
+context; no changed receipt, accession, dispatch, stock or permissions behavior.
+Success is a focused queue with its existing bounded list presentation rather
+than all operational sections rendered together. This changes frontend navigation
+only; server-side paging of currently client-filtered queues remains separate.
+
+
+## 2026-09-07 follow-up consistency review
+
+Receipt links retain the scanned packet, shipment, exact tube when compared, and
+receiving section. Work-order and execution returns preserve the originating
+section/shipment even after laboratory status changes. An identity-check request
+failure now offers retry separately from a confirmed tube mismatch; receipt and
+accession remain explicit authorized decisions. Focused navigation regression
+source was added in `LabReceiptAccessionPanel.test.tsx`; suites and physical
+scanner/receipt acceptance were not run during this review.
+
+## 2026-09-07 workspace consolidation
+
+- Commercial kit/assembly order details retain decisions and status; execution/input-validation/fulfillment controls live only in the Lab workspace with reciprocal links.
+- Packet/tube comparison carries validated identity into the receiving work order; explicit receipt continues to accession with known fields retained. Receipt and accession remain separate recorded decisions.
+- Protocol assignment selects named active Lab operators. Library QC captures observations and named measurements without raw JSON. Scientific review selects the exact ready output package; the service workflow supplies the release definition and optional Customer-safe prose supplies the projection.
+- Each ready sample package receives its own scientific approval, including packages reviewed after another package moved the work order to ReadyForRelease. Existing actor-separation and clean-artifact gates remain enforced.
+- Assembly output review lists uploaded files, including prior-session uploads. The server derives manifest, pipeline and provenance from stored files/run facts. No persisted-model change or migration.
+- Focused frontend regression cases added for package confirmation/retry, independent permissions and structured QC; automated suites intentionally not run under the repository verification policy. Root task batches build/type/lint/documentation checks. Physical scanner/printer and hosted populated acceptance remain outstanding.
+
+## 2026-09-05 protocol completion scope
+
+The Product Owner requested completion after a source review found that the
+earlier feature-complete label did not cover guided execution or enforcement
+of a protocol's required evidence. Guided protocol execution is now implemented
+and locally verified. This completion record distinguishes software delivery
+from the remaining hosted and physical acceptance gates.
+
+- Users: Phaeno laboratory operators, supervisors, protocol administrators,
+  and scientific reviewers acting under their existing additive Lab roles.
+- Outcome: an operator opens an execution's exact pinned procedure, records
+  each step with typed captures and explicit confirmation/QC decisions, and
+  resumes from durable progress. No operator-authored results JSON is needed.
+- Server rules: validate the structured definition on draft save and controlled
+  approval/use; validate captures, applicable roles, required sequence,
+  optional/conditional skip reasons, and Pass/Fail/Hold evidence. Completion
+  uses persisted step records and rejects missing evidence or unresolved QC.
+- History: record actors and timestamps on the server. Repeats are allowed
+  only by the procedure; corrections require a supervisor, the step's role,
+  and a reason. Both append history. Approved definitions and completed
+  executions remain immutable. Unsupported historical definitions are retained
+  and displayed with a recovery message; they are never silently rewritten.
+- UI: execution identity opens a dedicated view-first page; a bounded modal
+  records one step/attempt. Show instructions, units, permitted choices,
+  resources, prior evidence, completion blockers, and concurrency recovery.
+  Keep the existing work-order material/equipment actions and traceability.
+- Engineering scope: use the existing definition/results JSON and audited
+  work-event storage, with additive Lab-only endpoints. No schema, dependency,
+  authentication-provider, Commercial-provider-contract, or deployment change.
+- Acceptance: focused backend validation/controller tests and frontend tests
+  cover empty-results rejection, typed evidence, sequence/QC/role denial,
+  immutable/repeat/correction history, stale writes, and the approval lifecycle.
+  Browser checks cover guided recording, return navigation, errors, keyboard,
+  narrow layouts, and both themes. Track exact results in the living test plans.
+- Success measures: all focused checks pass; routine execution needs no JSON
+  entry; invalid or incomplete work cannot be completed through the API.
+  Physical bench acceptance, hosted acceptance, and production activation
+  retain their separate gates in `LAB-OPERATIONS-BENCH-VALIDATION.md`.
+
+### Completion evidence
+
+- The dedicated execution page replaces operator-authored results JSON with
+  ordered step forms and durable, typed evidence. Fail/Hold QC blocks progress;
+  required fields, roles, confirmations, skip decisions, repeats, supervisor
+  corrections, and completion are checked against the pinned definition.
+- Every attempt retains its actor, time, values, and reason. Earlier changes
+  invalidate downstream evidence until reviewed again. Held or finished jobs
+  cannot accept step, material, or equipment evidence. Stale writes reload the
+  current version while preserving the operator's entered values.
+- The shared definition validator rejects unsupported or empty procedures at
+  authoring, approval, workflow use, and execution. Historical unsupported
+  records remain preserved and show a recovery path instead of being rewritten.
+- Local verification passed: 79 focused backend tests, including the isolated
+  PostgreSQL operator journey; 15 frontend tests; six desktop/mobile browser
+  scenarios; TypeScript, focused ESLint, and client/SSR production builds.
+  Browser checks include Axe, keyboard/focus, saved-progress navigation, and
+  mobile dark mode with reduced motion. See the three living test plans for
+  sources, commands, and the distinction between fixtures and hosted proof.
+- Updated the Phaeno execution guide and generated documentation corpus.
+  The existing JSONB and work-event fields retain all evidence; no migration
+  was needed. No Git mutation, deployment, or production activation occurred.
+
+### Release authorization
+
+On 2026-09-05, the Product Owner authorized committing, pushing, and deploying
+this protocol completion. Release the API through `Deploy Portal Green` with
+`apply_migrations=false` and `cutover_clerk_identity=false`, then build and
+deploy the same committed revision to the existing Portal Vercel production
+project. Verify the runtime revision, API health/database ping, frontend source
+revision, production alias, and deployed route. Physical bench acceptance and
+changes to production laboratory procedures remain separate from this software
+release. Retain the deployment evidence under ignored
+`artifacts/protocol-release-2026-09-05/`.
+
 ## 2026-08-29 governed-result and dual-control update
 
 `PSEQ-ORDER-TO-CASH-GAP-CLOSURE-PLAN.md` closes the previously unresolved
@@ -543,6 +1138,24 @@ history are permanent controlled records.
 
 ## Reagent and Material Management
 
+### Named Phaeno reagent products
+
+Users: platform administrators define products, Protocol Administrators own
+their procedures, and laboratory operators manufacture lots. The catalog must
+distinguish each reagent Phaeno makes instead of presenting one generic
+Phaeno reagent. A platform administrator can create multiple named products
+under Phaeno; each has fixed Reagent type, a description, saved unit, and
+active state. A Protocol Administrator can attach at most one versioned
+workflow to each product. Operators select the reagent by name, and each new
+run and resulting lot retain its exact product and procedure revision.
+Deactivating the product prevents new runs while preserving historical lots.
+Existing prepared identities, workflows, and lots remain traceable after
+backfill. Acceptance is a catalog that shows each named reagent separately,
+blocks non-Reagent Phaeno products and duplicate workflow identities, and
+shows the correct product on every manufactured lot.
+
+September 24 review follow-up: prior reagent workflow revisions, including ordered steps, author, approval and override, are retained when a new revision replaces the current procedure. The workflow list exposes those snapshots even when no manufacturing run used the earlier revision. Started runs continue to pin their own exact procedure snapshot. The owner separately approved the additive `revision_history_json` migration, and it was applied to the shared development database. EF reports all 20 migrations applied and no pending model changes.
+
 Lab Operations tracks the laboratory facts needed for materials and internally
 prepared reagents:
 
@@ -560,14 +1173,23 @@ prepared reagents:
 A prepared reagent cannot be available for use until its required QC and
 approval are complete.
 
-POMS owns a reusable material definition with a system-assigned immutable key;
-operators select that identity when receiving or preparing a lot rather than
-typing a key per lot. Supplier and storage location are controlled, auditable
-reference records. Supplier is required only for a supplier lot. Retired
-references remain available to historical records but cannot be selected for
-new work. A missing material, supplier, or storage reference can be named in a
-focused related-record modal without abandoning the lot form; the draft name
-returns as the selected option and the reference is created with the lot.
+POMS owns reusable material definitions with system-assigned immutable keys.
+For a purchased lot, the selected external supplier product supplies the
+material identity and saved inventory unit; staff enter the printed lot number
+and actual amount received. A Phaeno-made reagent starts as a named product
+under the seeded Phaeno internal producer. Its product type is fixed to
+Reagent, and the product supplies its name, description, and saved inventory
+unit. Each product is linked one-to-one to a prepared material identity, which
+may have at most one versioned manufacturing workflow. The workflow records
+the procedure, while the run allocates a lot number and records both the
+exact Phaeno product and approved workflow revision. Existing prepared
+identities and lots are linked to Phaeno products by migration without
+changing their lineage. Supplier and storage location remain
+controlled, auditable reference records. Retired references remain available
+to historical records but cannot be selected for new work. Named material and
+equipment locations are maintained under Lab settings; a new storage name can
+also be entered while receiving a purchased lot. The supplier product must
+already exist in the catalog before its lot is received.
 
 Expiration or retest is stored as a date and remains valid through the end of
 that laboratory day. A future exact time-sensitive prepared-reagent use-by
@@ -575,8 +1197,11 @@ control, if required by bench validation, will be a separate timestamp rather
 than changing every lot to time-of-day expiration.
 
 Prepared-reagent composition is structured lot lineage rather than free-form
-JSON. Creation requires one or more QC-approved, unexpired source lots, records
-the exact quantities and units, and atomically reduces source availability.
+JSON. Operators record each exact use of a QC-approved, in-date source lot
+during the manufacturing run; saving that use immediately reduces available
+source stock, even if the run is later abandoned. Completion requires the
+ordered steps and at least one source use, then records actual yield in the
+reagent's saved unit. The output remains unavailable until QC approval.
 
 Lab Operations is not a purchasing, accounts-payable, or warehouse-management
 system. QuickBooks remains authoritative for vendors, purchase orders, bills,
@@ -838,18 +1463,28 @@ remove competing internal write paths. The durable strategy is recorded in
   scan-first lookup, label history, optional retention, and intake disposition.
 - Complete: structured protocol authoring with ordered steps, typed captures,
   resource requirements, QC gates, JSON preview, cloned version creation,
-  resumable draft editing and discard history, approval withdrawal,
-  one-open-candidate enforcement, approval, Production/Retired control, pinned
-  versioning, execution, and system-owned readable protocol-key allocation.
+  resumable draft editing and discard history, one-Draft enforcement,
+  independent irreversible approval, Approved/Superseded history, pinned
+  versioning, guided execution with enforced evidence and QC, and system-owned
+  readable protocol-key allocation. Production/Retired control belongs to
+  service workflows; approved protocol versions cannot be withdrawn.
 - Complete: one canonical controlled workflow per marketed laboratory service,
   ordered Required, Optional, and Conditional protocol stages, workflow
   Draft/Approved/Production/Retired/Discarded lifecycle, atomic protocol
   promotion, exact work-order and execution pinning, and prior-required-stage
   gating through `AddControlledLabServiceWorkflows`.
 - Complete: controlled material definitions with POMS-assigned keys,
-  supplier/storage references, supplier and prepared-reagent lots, structured
-  component lineage, date-only expiration/retest, consumption, equipment,
-  calibration, and QC records.
+  external supplier products with saved inventory units, a seeded Phaeno
+  internal producer, named storage locations under Lab settings, and purchased
+  lots with automatically derived product identity. Reagent runs retain source
+  use, step evidence, actual yield and component lineage independently of
+  samples and tubes. Date-only expiration/retest, consumption, equipment,
+  calibration, and QC records remain governed.
+- Local implementation pending migration and release: each named Phaeno
+  reagent product has fixed Reagent type, saved unit, and one prepared material
+  identity; its one versioned workflow is configured separately, and each
+  manufactured lot records the exact product. The migration backfills existing
+  prepared identities and lots without changing their lineage.
 - Production gate: validate minimum fields, labels, scanners, and degraded-mode
   procedures with representative PSeq bench work before activation. The
   software preflight is complete; the physical scenarios and exposed gaps are
@@ -860,7 +1495,7 @@ remove competing internal write paths. The durable strategy is recorded in
 - Complete: library lineage and preparation execution.
 - Complete: internal batching across authorized work orders, including
   scan-first QC-passed-library entry and duplicate/wrong-context rejection.
-  POMS uses the library container barcode as the library key and allocates
+  POMS uses the container barcode as the library key for POMS-barcoded tubes and a distinct internal key for manufacturer-barcoded tubes, and allocates
   date-stamped, scanner-safe batch numbers.
 - Complete: provider-neutral NGS send-out manifests, custody, provider identifiers, timing, and
   exception handling.
@@ -956,3 +1591,198 @@ For future Lab Operations changes:
 ## Trial parent integration (2026-09-05)
 
 The distinct Trial workflow now invokes the existing PSeq Lab provider with a frozen approved workflow, creates shared shipments after Prospect acceptance and sample validation, and releases governed packages through the shared retention lifecycle. Complete packages freeze policy and close the Trial; partial packages do not start that clock. Trial holds serialize with scientific writes and byte cleanup. See `PROSPECT-TRIAL-PROJECT-PLAN.md` and `TRIAL-INTEGRATION-CLOSEOUT.md` for evidence and remaining production activation gates. Promotional Customer freebie issuance remains separate.
+
+Verification: 41 focused tests across six suites passed, along with frontend
+TypeScript, scoped ESLint, documentation generation/freshness (56 guides) and
+whitespace checks. Signed-in local browser checks confirmed one visible panel,
+request/stock filter retention, kit detail return, browser Back, refresh and
+keyboard-arrow selection. At a 390 CSS-pixel viewport the tab strip scrolls within
+the page with no horizontal page overflow. Screenshot capture timed out, so this
+records DOM/accessibility and measured reflow evidence, not screenshot review.
+The temporary review tab was closed and viewport restored; no operational writes,
+commit or deployment were performed.
+
+## Kit request next action — September 10, 2026
+
+The owner approved replacing ambiguous Fulfill request / Open standard kits
+controls with a state-based next step. Zero matching ready stock makes Prepare
+kits primary and hides shipment entry. Preparation opens the existing guarded
+stock form for missing requested sizes and returns through the created kit for
+tube registration to the originating request. Matching ready stock exposes
+Record kit shipment; shortages remain separately actionable and partial shipment
+is retained. Missing quantities subtract ready stock as well as previous dispatch.
+Closed requests expose neither action; stale request errors block new actions.
+Existing dispatch concurrency, idempotency and saved-draft checks remain in scope.
+
+Verification: all 23 focused request and stock-kit tests passed, plus frontend
+TypeScript, scoped ESLint, docs generation/freshness (56 guides) and whitespace
+checks. The signed-in local request showed Prepare kits, the missing one 10-tube
+and one 20-tube kit, and no shipment action for zero ready stock. Opening Prepare
+kits offered exactly those two sizes; the form was cancelled without saving.
+Preparation-to-registration return context, partial-stock shipment and dispatch
+retry/draft protections are covered by automated tests. No stock or shipment was
+created during browser verification; no commit or deployment.
+
+### Receiving barcode clarity — September 10, 2026
+
+Receive samples now directs staff to the PH-P- barcode at the top right of the existing shipping insert. The field is labeled Shipping insert barcode, with an explicit complete-code instruction. Expandable guidance distinguishes PH-S- shipment barcodes from SHP shipment references, PH-O-/PH-M- lookups, and physical KIT-/tube barcodes. The printed insert and accepted barcode behavior remain unchanged. Existing receiving test selectors follow the new accessible label. Static checks cover this wording change; automated suites and physical scanner acceptance remain unrun.
+
+Verification: solution build passed with zero warnings/errors using a separate output folder because Visual Studio/IIS Express held the normal output files. Frontend TypeScript, scoped ESLint, documentation freshness (56 guides) and whitespace passed. Read-only signed-in local browser inspection confirmed the separate tabs, two expected container rows with distinct tracking numbers for 69SJN4PA, and a received HS5Y7DB7 container showing 0/18 tubes accessioned. Desktop screenshot review passed. The agent did not submit receipt or accession. Automated suites, narrow/dark layouts, physical scanner and completed tube-accession acceptance remain unrun. The existing shipping insert files have no additional working-tree diff from this work.
+
+## Container accession scan loop — 2026-09-10
+
+October 2: the Product Owner authorized [accession by freezer box](ACCESSION-BOX-PLACEMENT-PLAN.md). This supersedes the repeated per-tube box-entry form with one active box, explicit tube placement scans and atomic saving of each reviewed box group. Existing shipment receipt, exception, audit, concurrency and retry rules are retained; the deferred box inventory scope remains separate.
+
+The subsequent single-handling correction combines identity and pending placement in one scan within the same container dialog. Open the box first, inspect/scan/place each acceptable tube once, record exceptions from expected rows, then review and save that box. The initial identification selection and later tube rescan are removed; pending and persisted locations stay distinct.
+
+- Users: Phaeno laboratory operators and supervisors. Goal: accession every physical tube in a received container without navigating between records.
+- PH-P lookup opens a modal showing the complete expected crosswalk and saved tube count. Tube scan opens a nested freezer-box barcode form. Only saving that form accessions the matched tube; successful save returns focus to the tube scanner until every expected tube is complete. Closing preserves partial progress.
+- Box barcode is required, trimmed, at most 255 characters, stored per tube in existing LabContainer.Location; no freezer registry, box position, model migration, or shipping-insert content change is introduced. Existing specimen accession numbers are retained; otherwise the server allocates a stable unique ACC-prefixed specimen identifier. Tubes remain separate containers under the same specimen.
+- Additive Portal API scope: POST work-orders/{workOrderId}/shipments/{shipmentId}/tubes/accession receives packetBarcode, supplierTubeBarcode and freezerBoxBarcode. It reuses laboratory accession validation, role authorization, trial guards and serialized per-work writes. Same-tube/same-box replay returns the saved result; a different box conflicts instead of relocating. Container arrival is mandatory.
+- Acceptance: correct container modal; wrong/void/unreceived rejection; no write before box submission; separate tube locations; repeated scan/retry without duplicate records; focus returns for the next tube; completion only at all expected tubes; reopen partial progress. Success is completing the container using barcode scans without leaving the modal.
+- Verification: build, typecheck, scoped lint and generated-document checks at completion. Automated tests are maintained but not executed without request; physical scanner and populated save acceptance remain separate gates.
+
+Verification checkpoint: solution build completed with zero warnings/errors; frontend typecheck and scoped lint passed; documentation corpus 07bbdca8fc5f passed docs:check. Read-only signed-in browser check opened a received 18-tube container with all expected rows and focus in the tube field. Browser input automation detached, so nested prompt interaction, physical scanning and saved-tube loop are not claimed as verified. No actual receipt/accession writes or test-suite execution were performed.
+
+## Deferred: freezer-box location and movement history — 2026-09-10
+
+Status: saved at the Product Owner's request for future implementation. This is
+not part of the current accession change and does not authorize implementation.
+
+Problem: accession currently records the freezer-box barcode against each tube
+in LabContainer.Location, but does not identify where the box physically sits.
+Laboratory staff need to locate a tube through its box and retain storage history.
+
+Proposed scope for future discovery and implementation:
+
+- Give each freezer box a record with its unique barcode, physical location
+  (room, freezer, rack, and shelf/position), and contained tubes.
+- During accession, scanning a known box displays its location for confirmation;
+  scanning an unknown box prompts staff to register its location.
+- Record each box movement with the previous location, new location, operator,
+  and timestamp. Moving a box updates the effective location of its contents
+  through their box association while preserving the movement history.
+- Consider capturing each tube's position within the box, such as B4, separately
+  from the box's physical location. Whether grid positions are needed, and the
+  supported box layouts, remain product decisions for future discovery.
+
+Future acceptance should demonstrate locating a tube, registering an unknown
+box, confirming a known box during accession, moving a populated box without
+editing every tube, and reviewing its movement history. Preserve existing tube
+barcodes, specimen accessions, and saved box IDs when introducing box records.
+Keep this proposed behavior out of current user guides until implemented.
+
+
+### QR rendering update - September 10, 2026
+
+Superseded for POMS-generated laboratory tube labels by the September 23 DataMatrix implementation below. Shipping inserts, stock kits and trays retain their printable QR symbols; post-scan result displays use readable text.
+
+The owner requested all Portal-generated barcode graphics use QR codes and
+spacing be adjusted accordingly. This supersedes older Code 39/128 rendering
+and linear-size assertions. Shipping inserts use 32 mm squares with four-module
+quiet zones and a 14 mm gap between target blocks; ordinary displays and stock
+kit prints use 28 mm squares. Lab labels keep 50 x 25 mm stock with an 18 mm QR
+and rearranged human-readable identity/context. Values, checksum normalization,
+manufacturer labels, receipt and accession semantics remain unchanged. No new
+label or successful print is recorded merely by rendering the QR.
+
+Verify exact decoding (including case/underscore), square undistorted rendering,
+quiet zones, current-revision checks, frozen manifests, Letter/A4 one-page
+receiving output and the lab-label print boundary. Preserve the full manifest
+and preparation guidance in the Portal. Physical 2D scanner, printer/stock and
+handling acceptance remain explicit gates; former Code 39-only hardware proof
+cannot establish QR compatibility. The shared renderer is pinned qrcode.react
+4.2.0; no backend model or migration change is required.
+
+## Product Owner workflow review — September 11, 2026
+
+September 15 UAT correction: a live edited specimen-attempt dialog discarded entries on Escape without confirmation. Subscribe to the form's dirty state during render, then use that state for close/navigation protection, including pending before-unload protection. Retest declined and accepted discard, focus return and no-save navigation guards. This is a bounded recovery correction within the existing attempt workflow; no scientific rules or backend contract changes.
+
+September 15 UAT correction: a live edited specimen-attempt dialog discarded entries on Escape without confirmation. Subscribe to the form's dirty state during render, then use that state for close/navigation protection, including pending before-unload protection. Retest declined and accepted discard, focus return and no-save navigation guards. This is a bounded recovery correction within the existing attempt workflow; no scientific rules or backend contract changes.
+
+Receipt/accession, protocols/workflows, materials and equipment are accepted as broadly sound in the current walkthrough. Rename the sidebar Protocols to Protocols & workflows (implemented). Batches and Data assembly need clearer explanation and placement. PSeq kits should receive acceptance testing, then be hidden from the normal operating navigation when the owner is ready; do not hide or enable a rollout yet. Lab work needs workflow discovery and redesign around coherent specimen progression, reducing repeated entry and disconnected container/execution/library actions. These are product-review priorities, not authorization to replace existing scientific gates or change workflow contracts.
+
+## Library prep and Results & review navigation — September 11, 2026
+
+Implemented the first navigation slice: Library prep replaces the Lab work sidebar label (existing work URL retained); Results & review follows Sequencing batches and opens the existing job Review tab with section=results return context. Both queues retain received job visibility; no readiness is inferred from inclusion. Preserve the owner's three sidebar dividers and later groups. Shared job history and existing approval gates remain intact. This is not tray-based preparation or a new data-processing pipeline.
+
+Manual verification: Results & review → HS5Y7DB7 opens Review, retains Processing and No scientific approval recorded, and its breadcrumb returns to section=results. Verify Library prep → Specimens and legacy work links, keyboard navigation and narrow layout. No operational writes for this change.
+
+## Preparation batches and connected Library prep — scope recorded
+
+See [Library preparation batches and connected workflow](LAB-WORK-JOURNEY-PLAN.md) for the agreed configurable single-tray model, mixed-job/partial batches, membership locked after start, batch-first evidence with tube exceptions, and reuse of preparation QC. The same implementation explicitly addresses disconnected container/resource entry, repeated identity linking, separate library creation/QC and sequencing handoff. This supersedes earlier open questions about tray continuity, mixed jobs, partial trays and duplicate QC in the journey plan. New preparation-batch behavior is planned, not implemented.
+
+September 15 policy/history closeout: LAB-09 one-/three-tube policy crosswalk, older unfinalized Customer confirmation, historical V1 replay and Completed historical protection now pass on isolated TEST ONLY records. Earlier source/hold/QC/retirement checkpoints remain retained. [Current crosswalk](../testing/runs/2026-09-15-policy-history-and-shipping-access-uat.md). Only positive independent scientific approval remains; no synthetic result is promoted to that evidence.
+
+## Sequencing list consolidation — September 18, 2026
+
+Sequencing batches now uses one card: its shaded header contains the title, Status filter, New batch action and a collapsed Scan libraries disclosure. The existing authorized scan form lives inside that disclosure rather than a separate introductory card. Collapsing keeps the mounted scanner and entered values; successful scans still clear/refocus the barcode input. This retains the bounded laboratory scanning exception to form-free lists while keeping discovery compact. Membership, QC, permissions and mutation behavior are unchanged.
+
+## Jobs and specimens workspace — September 18, 2026
+
+The owner requested a dedicated list page separate from Library prep. Jobs & specimens now appears immediately above Library prep in the Lab operations sidebar, using the existing addressable section navigation (`section=jobs`). It owns container lookup and the existing received-job/specimen history list. Library prep contains preparation batches only. Record links and returns preserve the originating section, including Results & review and receipt contexts; preparation batch links retain Library prep. No permissions, data filters, API contracts or stored records change. Manual acceptance covers sidebar order, direct navigation/reload, list separation, container lookup, job/specimen/execution returns and existing preparation links; automated execution was not requested.
+
+Follow-up: Jobs & specimens hides `ReadyForRelease` work orders by default, matching the domain transition that stamps laboratory completion. Show complete in the list header includes them and persists in the URL across reload and record returns. Results & review retains all of its existing jobs; cancelled jobs are not reclassified as completed. Container lookup is a collapsed, chevron-marked disclosure inside the list header and retains its values when collapsed. No API or database changes.
+
+## Proposed Jobs deadline workspace — September 18, 2026
+
+Planning only: [Jobs workspace and deadline tracking](LAB-JOB-DEADLINE-TRACKING-PLAN.md) proposes renaming the open-work page to Jobs, exposing due dates and reasoned risk, and preserving a path to multiple independently dated phases under one contract. The owner confirmed that the deadline means data for all samples under the job is made available to the customer through the Portal, calculated initially from a configurable standard TAT and adjustable by an authorized Phaeno employee. Retain the original baseline and adjustment history; laboratory completion alone will not close the job in this proposed workspace. This proposal does not mark these capabilities implemented or authorize execution.
+
+## Physical container barcode identity — September 23, 2026
+
+The physical container keeps its UUID identity. Each lab container now has a primary barcode row with value, namespace, symbology and source; historical symbol types are recorded as unknown because the database did not retain their physical print type. POMS-generated codes use the `PHAENO` namespace and DataMatrix labels. Manufacturer tubes use the namespace of the active supplier selected at kit assembly, library-tube assignment or sequencing-tube assignment. The database enforces namespace-plus-value uniqueness while permitting the same printed value from different suppliers. Manufacturer-barcoded libraries receive an internal `LIB-` key derived from their UUID, leaving the manufacturer's printed value as the physical scan identity; existing POMS-barcoded library keys remain unchanged. Existing records are backfilled from the selected supplier product or a uniquely matching historical supplier name; unresolved records remain in the conservative `LEGACY` namespace. Existing legacy barcode collisions continue to be rejected.
+
+Shipment and packet scans resolve supplier tube identity within that shipment. An unscoped lookup reports ambiguity when two laboratory containers share printed text; it does not choose a physical tube arbitrarily. Library preparation lets the operator select an eligible tube from its job before scanning it into a tray. A source and destination in one biological transfer must have different printed values even if their manufacturer namespaces differ, because two identical scans cannot prove which tube was used. POMS-generated tubes remain unusable until the printed DataMatrix is scanned back after printing. A newly rejected POMS tube still requires that first scan-back if its intake is corrected; migrated historical tubes retain their available state. A failed label print is recorded before retrying. Saved scan results show readable identifiers without repeating the QR image. The print CSS keeps the label's dialog portal visible and clips the output to the 50 × 25 mm stock. Thermal printer stock, DataMatrix scanner decoding, adhesion and scan-back are physical acceptance gates.
+
+The tube detail page adds an operator or supervisor action to scan the container, scan a destination freezer box or location barcode and confirm a move. The container's stored location and immutable job event record the previous location, destination, actor and time. The detail page reads those move events as location history. The destination is a scanned text identifier under the existing free-text location model; a registered freezer-box inventory and box-position model remain governed by the deferred location plan above.
+
+September 30 local phase implementation: [MULTI-PHASE-LAB-JOBS-PLAN.md](MULTI-PHASE-LAB-JOBS-PLAN.md) now owns the implemented sequential cohort extension, derived mixed progress, phase-specific receipt/TAT/deadline, unsent-only mutual rephasing, first-tube cancellation cutoff and explicit partial/combined phase invoices. It supersedes older whole-Job completion invoicing and single-status assumptions for phased PSeq Jobs. Local migration applied after the authorized Job purge; connected/browser/physical/scientific acceptance and release remain separate, unverified gates.
+
+### Service workflow header — October 3, 2026
+
+Keep **New service workflow** on the same row as **Controlled service workflows**. Give the heading/description a flexible minimum-zero width and prevent the creation button from shrinking; the description wraps into the remaining space. On exceptionally narrow content widths, bound the button to 55% of its row and let its label wrap with a minimum standard control height, so neither the heading nor description collapses. Preserve filters below and keyboard behavior. This layout-only change needs scoped lint/type checking and visual inspection; no user-guide change is necessary.
+
+## Completed hosted release — October 5, 2026
+
+This implementation batch is included in application
+`c781988630ddfdb07f0d76dd7c3bb9753c15d660`, now deployed as matching API/UI with
+the two preserving EF migrations. Full regression, fresh recovery verification,
+hosted row/runtime preservation and public smoke checks pass under
+[the completed release receipt](../operations/portal-workflow-release-20261005.md).
+This supersedes earlier request-only test/release statements for this batch;
+physical/scientific/provider and authenticated operator acceptance remain separate.
+
+## Material lot QC action placement — October 5, 2026
+
+The owner requested Record QC on the card's top row at the trailing edge, with
+material details wrapping to accommodate it. Purchasing supervisors need the
+pending-QC action visible without scanning below a long identity/details row.
+Use a non-wrapping outer row, a flexible minimum-width-zero information column,
+wrappable detail/failure/component text and a non-shrinking Record QC button.
+Keep the QC badge below the information. Preserve the primary record link,
+Pending/supervisor gate, button ID, modal workflow, concurrency and scientific
+outcome rules. This is presentation-only with no persisted model change.
+
+Scoped lint/TypeScript and read-only simulated 1,440/320 px light/dark inspection
+pass: top-right action geometry, details wrapping without overlap/overflow,
+modal Cancel focus return, action absent for an operator, zero browser/accessibility
+errors and no API requests or QC writes. The existing materials guide remains
+accurate; its generic Record QC instructions do not describe card placement.
+Retain the API-compatible bundled help/corpus version for this UI-only follow-up.
+Automated regression suites were not requested; no behavior-test changes are
+needed because the labels, identifiers, guards and callbacks are preserved.
+
+Include this adjustment in the active authorized commit/push and UI deployment.
+Follow the preserving UI-only process used by the
+[supplier tabs release](../operations/supplier-tabs-ui-release-20261005.md): frozen
+committed source, production configuration, staged source/root checks, promotion,
+public smoke, unchanged API source/twenty migrations, held automatic deployment
+controls and task-only cleanup. Roll back to UI
+`dpl_Fk24GZmK2zmyHojYgLw1StfatFkj` if activation fails. Record results in the
+[QC layout release receipt](../operations/material-lot-qc-ui-release-20261005.md).
+
+Completed UI-only release: `2fe9571d5ed722365a6c91f687703ade267b7e72` is pushed
+and active in UI `dpl_HkmQDYddxbcAj37ZKc1MvgGinis2`. Frozen-source production
+build, staging/source/alias verification, live sign-in/health/proxy and unchanged
+API/twenty migrations checks pass. See the completed QC layout release receipt.
+No QC outcome was recorded by verification or deployment.

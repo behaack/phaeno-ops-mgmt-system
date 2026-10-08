@@ -27,121 +27,10 @@ public sealed class DataProvisioningAdminController(
         [FromBody] CreateProvisionedOrganizationRequest request,
         CancellationToken cancellationToken)
     {
-        var actor = await RequirePlatformAdminAsync(cancellationToken);
-        if (request.Kind == OrganizationKind.Phaeno)
-        {
-            throw new DataProvisioningException(
-                "organization_kind_not_allowed",
-                "New tenant organizations must be a Prospect, Customer, or Partner.");
-        }
-
-        var name = RequireText(request.Name, "name", 255);
-        if (await dbContext.Organizations.AnyAsync(
-            organization => organization.Name.ToLower() == name.ToLower(),
-            cancellationToken))
-        {
-            throw new DataProvisioningException(
-                "organization_name_exists",
-                "An organization with this name already exists.",
-                StatusCodes.Status409Conflict);
-        }
-
-        var versionIds = request.DatasetVersionIds.Distinct().ToList();
-        var versions = await dbContext.CuratedDatasetVersions
-            .Include(version => version.CuratedDataset)
-            .Where(version => versionIds.Contains(version.Id))
-            .ToDictionaryAsync(version => version.Id, cancellationToken);
-        var organization = new Organization(
-            name,
-            request.Kind,
-            OptionalText(request.Description, "description", 2000));
-        dbContext.Organizations.Add(organization);
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        var grantResults = new List<ProvisioningResultDto>();
-        foreach (var versionId in versionIds)
-        {
-            if (!versions.TryGetValue(versionId, out var datasetVersion))
-            {
-                grantResults.Add(FailedProvisioningResult(
-                    $"organization-create-{organization.Id:N}-{versionId:N}",
-                    "dataset_version_not_found",
-                    "The selected curated dataset version was not found."));
-                continue;
-            }
-
-            var now = DateTime.UtcNow;
-            var idempotencyKey = $"organization-create-{organization.Id:N}-{versionId:N}";
-            var run = new ProvisioningRun(
-                organization,
-                datasetVersion,
-                idempotencyKey,
-                actor.Id,
-                now,
-                ProvisioningRunKind.OrganizationCreationGrant);
-            if (datasetVersion.Status != CuratedDatasetVersionStatus.Published
-                || datasetVersion.CuratedDataset.EligibleVersionId != datasetVersion.Id
-                || !datasetVersion.CuratedDataset.IsActive)
-            {
-                run.Fail(
-                    "dataset_version_not_grantable",
-                    "The selected exact version is not currently eligible for organization assignment.",
-                    now);
-                dbContext.ProvisioningRuns.Add(run);
-                await dbContext.SaveChangesAsync(cancellationToken);
-                grantResults.Add(ToProvisioningResult(run, grant: null));
-                continue;
-            }
-
-            try
-            {
-                profile.EnsureExternalPublicationAllowed(datasetVersion.IsSynthetic);
-                var grant = new OrganizationDatasetGrant(
-                    organization,
-                    datasetVersion.CuratedDataset,
-                    datasetVersion,
-                    actor.Id,
-                    now);
-                dbContext.OrganizationDatasetGrants.Add(grant);
-                run.Succeed(grant.Id, now);
-                dbContext.ProvisioningRuns.Add(run);
-                dbContext.DataProvisioningNotices.Add(CreateNotice(
-                    organization,
-                    DataProvisioningNoticeKind.Grant,
-                    $"Sample data assigned: {datasetVersion.CuratedDataset.Name}",
-                    $"Phaeno assigned {datasetVersion.CuratedDataset.Name} version {datasetVersion.VersionNumber} to your organization.",
-                    now,
-                    grantId: grant.Id));
-                await dbContext.SaveChangesAsync(cancellationToken);
-                grantResults.Add(ToProvisioningResult(run, grant));
-            }
-            catch (DataProvisioningException exception)
-            {
-                run.Fail(exception.ErrorCode, exception.Message, DateTime.UtcNow);
-                dbContext.ProvisioningRuns.Add(run);
-                await dbContext.SaveChangesAsync(cancellationToken);
-                grantResults.Add(ToProvisioningResult(run, grant: null));
-            }
-        }
-
-        var result = new CreateProvisionedOrganizationResultDto
-        {
-            Organization = new OrganizationDto
-            {
-                Id = organization.Id,
-                Name = organization.Name,
-                Description = organization.Description,
-                Kind = organization.Kind,
-                PortalReadiness = organization.PortalReadiness,
-                PortalReadinessNote = organization.PortalReadinessNote,
-                IsActive = organization.IsActive,
-                CreatedAt = organization.CreatedAt,
-                UpdatedAt = organization.UpdatedAt,
-                Version = organization.Version
-            },
-            PackageGrants = grantResults
-        };
-        return Created($"/api/organizations/{organization.Id}", result);
+        await RequirePlatformAdminAsync(cancellationToken);
+        throw new DataProvisioningException("company_access_workflow_required",
+            "Create or open the CRM Company and request Portal access there. Return to data provisioning to assign an existing access scope.",
+            StatusCodes.Status410Gone);
     }
 
     [HttpGet("source-samples")]
@@ -293,6 +182,31 @@ public sealed class DataProvisioningAdminController(
             await fileStorage.DeleteIfExistsAsync(stored.StorageKey, CancellationToken.None);
             throw;
         }
+    }
+
+    [HttpPost("source-samples/{id:guid}/files/{fileId:guid}/retry-scan")]
+    public async Task<SourceSampleDto> RetrySourceFileScan(
+        Guid id, Guid fileId, [FromBody] VersionedCommandRequest request,
+        CancellationToken cancellationToken)
+    {
+        var actor = await RequirePlatformAdminAsync(cancellationToken);
+        var source = await ReadSourceAsync(id, tracking: true, cancellationToken);
+        EnsureVersion(source.Version, request.Version);
+        EnsureSourceDraft(source);
+        var file = source.Files.SingleOrDefault(item => item.Id == fileId)
+            ?? throw NotFound("source_file_not_found", "The managed file was not found in this source revision.");
+        if (file.ScanStatus is not (ManagedFileScanStatus.Pending or ManagedFileScanStatus.Unavailable))
+            throw new DataProvisioningException("source_file_scan_not_retryable",
+                "Only a pending or unavailable scan on a draft source can be retried.", StatusCodes.Status409Conflict);
+        var previousStatus = file.ScanStatus;
+        var scan = await fileScanner.ScanAsync(file.StorageKey, cancellationToken);
+        file.RecordScan(scan.Status, scan.Message);
+        source.MarkUpdated(DateTime.UtcNow, actor.Id);
+        AccountAudit.Add(dbContext, HttpContext, nameof(ManagedFile), file.Id, "SourceFileScanRetried",
+            organizationId: null, actor.Id, new { sourceId = source.Id, previousStatus, scanStatus = scan.Status });
+        // Source and file concurrency checks keep a delayed scan from changing a frozen revision.
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return DataProvisioningMappings.ToDto(source);
     }
 
     [HttpPost("source-samples/{id:guid}/ready")]

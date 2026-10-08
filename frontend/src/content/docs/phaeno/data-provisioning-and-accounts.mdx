@@ -2,7 +2,11 @@
 
 Phaeno controls organization access and the lifecycle of Phaeno-owned source samples and curated package versions. Customer and Partner operational data is a separate access class and is never automatically reused for curated packages.
 
+Open **More → Data provisioning** in the toolbar. On narrow screens, open the user menu and choose **Data provisioning** under **More**. Access depends on your Phaeno roles.
+
 Use the far-left sidebar beneath the toolbar to move among **Source registry**, **Curated catalog**, **Organization grants**, and **Governance**. The sidebar header identifies Data provisioning and, on wider screens, provides the pin or unpin icon. Pointer users can preview an unpinned sidebar by approaching the left edge; keyboard and touch users open it from the edge tab. Choosing a section closes an unpinned sidebar.
+
+The selected section remains in the page address, so refresh keeps it open and browser Back returns to the previous section. From a source sample workspace, **Back to Source registry** returns to its owning list.
 
 ## Understand the lifecycle
 
@@ -16,13 +20,15 @@ Use the far-left sidebar beneath the toolbar to move among **Source registry**, 
 
 Each step is explicit. Source readiness does not publish a package. Publication does not grant access. Eligibility does not grant access. A later version does not upgrade an existing grant.
 
+When creating a dataset, editing its details, deactivating it, or retiring an exact version, POMS asks before discarding an edited draft. The dialog stays open while the change is being processed. If saving fails, the error appears at the top and your entries remain available for review. Discarding a draft clears those unsaved entries before the next action.
+
 ## Use the correct access
 
 Only authorized Phaeno users register sources, publish versions, manage eligibility, create or upgrade grants, revoke access, or open and resolve governance incidents. When assigning a package, choose **All departments (organization-wide)** or one active Department. Prospect, Customer, and Partner users can view only exact active versions granted organization-wide or to their currently selected Department. Department administrators see download history for that same scope; organization administrators retain access across Departments and are the only external users who can submit an organization-wide governance attestation.
 
-Organization membership and lifecycle are managed in **Accounts**. A Prospect-to-Customer or Prospect-to-Partner conversion preserves the organization identity, memberships, grants, pinned versions, and audit history. Conversion never creates, replaces, upgrades, or revokes a curated-data grant.
+Company identity, relationship, membership, and lifecycle are managed in **CRM → Companies**. In Organization grants, **Open Company access setup** takes you there; **Return to pending data assignment** returns to the grant screen with its draft selections retained in this browser session. Data provisioning assigns packages to existing access scopes and does not create a separate tenant. A Prospect-to-Customer or Prospect-to-Partner conversion preserves the organization identity, memberships, grants, pinned versions, and audit history. Conversion never creates, replaces, upgrades, or revokes a curated-data grant.
 
-For a Customer using PSeq Lab Service, the account overview shows derived **Operational readiness**. Resolve account, administrator, entitlement, offering, order/sample/shipping/result-destination/instruction, and manual blockers before quote issuance or Customer commitment. Billing, terms, tax, and Finance approval remain visible but may be completed after acceptance; they must be complete before invoicing. An internal staged order needs only the active Customer, Ready PSeq service entitlement, active offering, and no manual block. Historical Portal readiness text is informational and does not authorize a transaction.
+For a Customer using PSeq Lab Service, Company **Services → Overview** shows derived, Department-specific readiness. Resolve account, administrator, entitlement, offering, order/sample/shipping/result-destination/instruction, and manual blockers before quote issuance or Customer commitment. Billing, terms, tax, and Finance approval remain visible but may be completed after acceptance; they must be complete before invoicing. Beginning pricing needs the active Customer, the selected Department's effective Ready PSeq service entitlement, active offering, and no operational block. Historical Portal readiness text is informational and does not authorize a transaction.
 
 Invitation access and email delivery are separate. Review the delivery state, sends, error, and expiry before retrying. A hard bounce requires revoking the invitation and issuing a new one to the corrected address; never copy or bypass an invitation token.
 

@@ -24,7 +24,7 @@ Every feature begins with product discovery. Before implementation, identify the
 - Make technical decisions autonomously when they do not materially affect product behavior, business outcomes, regulatory or compliance obligations, cost, or user experience.
 - Escalate only true product tradeoffs, reduced to the smallest clear decision with a recommendation and default.
 - Do not present technical alternatives for their own sake. Record consequential engineering decisions in the repository's established planning or decision documents.
-- This autonomy does not expand task scope or override existing rules requiring confirmation for shared-database migrations, authentication, dependencies, deployments, Git operations, or other high-impact changes.
+- This autonomy does not expand task scope or override existing rules requiring confirmation for migrations outside the configured local development database, destructive data changes, authentication, dependencies, deployments, Git operations, or other high-impact changes.
 
 ### Phaeno Portal Scientific Workflow Focus
 
@@ -64,10 +64,13 @@ Keep the owner focused on scientific meaning, sequencing and laboratory workflow
 - Preserve optimistic concurrency, centralized audit stamping, and soft-deactivation rules for users and organizations.
 - Use snake_case database identifiers, UUID primary keys named `Id` in C#, and unambiguous role-specific foreign-key names.
 - Keep runtime configuration and credentials out of source; use `ConnectionStrings:DefaultConnection` and environment-specific settings.
-- Create EF migrations when an authorized implementation changes the persisted model, and apply them to the configured local development database after appropriate verification. Get explicit approval before removing a migration or applying one to any shared, staging, or production database.
+- During ongoing development, do not add backward-compatibility code when modifying the data model. Implement against the current model without legacy fields, fallback behavior, dual writes, or compatibility adapters solely to preserve older model behavior.
+- Before applying a data-model change that may cause compatibility issues with existing development or test data, warn the owner, identify the affected data and workflows, and present applicable remedies with a recommendation. Options must include deletion or reset of affected data where applicable, alongside one-time data repair/conversion or reseeding. Explain any data loss and obtain the required authorization before destructive remedies or migrations outside the configured local development database.
+- Create EF migrations when an authorized implementation changes the persisted model. Apply them to the configured local development database after appropriate verification without separate approval. Obtain authorization first if a migration would delete or irreversibly transform existing data.
 - Whenever the persisted database model or an EF migration changes, update `docs/database-erd.md` in the same change so it remains complete across all application schemas, entities, fields, keys, and relationships.
 - Do not add dependencies, change auth, or change a cross-app contract without a short plan and explicit scope.
 - Do not stage, commit, or perform other Git mutations unless asked.
+- Deployment hold (September 28, 2026): do not deploy the Portal API, publish or promote Portal frontend changes, remove the existing Vercel Git deployment holds, or re-enable `Deploy Portal Green` until a separate deployment plan addresses the new production-hosted test database. The plan must identify the target and preserved/reset data, verified database and file backups, replacement-database preparation, cutover, rollback, and acceptance checks. The local clean-database plan does not satisfy this gate. Plan creation does not itself authorize destructive database changes or deployment; follow the owner's explicit release scope. See `docs/operations-readiness.md` for the hold state.
 
 ## UI expectations
 
@@ -75,10 +78,16 @@ Keep the owner focused on scientific meaning, sequencing and laboratory workflow
 - Meet WCAG 2.2 AA, including keyboard behavior, focus visibility, names, errors, contrast, and reduced motion.
 - Use semantic design tokens and keep light/dark themes working.
 - Apply the application-wide record-management flow from `docs/ui-ux-principles.md`: lists are form-free discovery and management surfaces; a record's primary identifier opens its dedicated, view-first detail page; and bounded create/edit actions use modals from either surface. Use a dedicated create/edit page only when the documented complexity criteria apply, and record any exception in the owning plan.
+- Enforce a single **Actions** dropdown whenever a Portal page header, record, row, card, or version offers two or more actions for the same context. Put all of those actions, including assignment and status transitions, inside that dropdown; do not render them as separate adjacent or wrapping buttons or duplicate them outside the menu. For example, **Assignment**, **Request changes**, and **Decline request** belong in one **Actions** dropdown. Apply this rule to new and touched UI at every viewport size. When exactly one action is shown, use a directly labeled button; when none are shown, omit the control. Keep page-level creation and form Save/Cancel controls separate, as specified in `docs/ui-ux-principles.md`. Preserve permissions, disabled-state explanations, confirmations, and accessible keyboard/focus behavior when grouping actions. Check this rule before completing every UI change.
 - For the public Website, use the scoped rules in `website/AGENTS.md` and the
   existing tokens and patterns under `website/src/styles/`. Portal
   record-management conventions do not automatically apply to marketing pages.
 - Use pointer cursors for mouse-clickable actions and accessible labels for icon-only controls.
+- Use the shared `ActionMenu` from `frontend/src/components/ui/dropdown-menu.tsx` for contextual Actions menus, with `DropdownMenuTrigger asChild` wrapping a labeled `Button`. It supplies the dropdown chevron for multiple actions and renders one action directly without a chevron. Do not hand-author the chevron in new Actions triggers or bypass `ActionMenu` with a plain dropdown. Verify one visible indicator, accessible name, keyboard opening and focus return on touched menus.
+- Owner-approved exception: Customer/Partner Lab Job and phase cancellation requests stay inside a neutral **Actions** dropdown even when they are the sole action. Use `ActionMenu keepSingleActionInMenu`, a red destructive cancellation item, and a destructive confirmation action. Keep other sole actions directly visible; see `docs/ui-ux-principles.md`.
+- Use shared `Field` spacing and `NativeSelect` sizing for new or touched single-line form fields. `Input`, `SearchableSelect` and `NativeSelect` use the same control styles. Do not mix local height overrides or per-control label margins within a form row; verify aligned control edges and label gaps with both text inputs and selects.
+- Use the shared Portal `Dialog` for in-page confirmations instead of `window.confirm`. Name the affected scope and consequence, initially focus the cancel action, and restore focus to the invoking control or a surviving adjacent control. Browser-required unload prompts remain browser-managed.
+- Every confirmation dialog must have three visible regions: a header with the title, a body explaining the affected scope and consequences, and an action footer. Do not put all explanatory content in `DialogHeader` and leave the body absent. The shared `DialogContent` moves direct `DialogDescription` children into the header; wrap a body description in a body container. Inspect the rendered dialog to verify that a meaningful `[data-slot="dialog-body"]` sits between the header and footer.
 - Keep required-field presentation consistent: label, tightly spaced required
   marker, control, and error. Every form with required fields must include a
   visible `* Required` legend. Place the legend in the footer of modal forms,
@@ -105,6 +114,8 @@ Keep the owner focused on scientific meaning, sequencing and laboratory workflow
 ## Verification
 
 Run only the checks appropriate to the change and requested scope. Standard commands are:
+
+- Clean up temporary build artifacts after use, including isolated verification output directories. Remove only artifacts created for the task that are no longer needed; preserve output required by a running application or development session. Verify the resolved cleanup path stays within the intended workspace before deleting it.
 
 - Backend: `dotnet build backend/PSeq.Operations.slnx` and `dotnet test backend/PSeq.Operations.slnx`.
 - Frontend: from `frontend/`, `pnpm run lint`, `pnpm run typecheck`, `pnpm run test`, and `pnpm run test:e2e`.

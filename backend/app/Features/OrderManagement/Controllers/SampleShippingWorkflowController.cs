@@ -21,10 +21,11 @@ public sealed class SampleShippingWorkflowController(
     SampleShippingWorkflowReader reader) : ControllerBase
 {
     [HttpGet]
-    public async Task<IReadOnlyList<SampleShipmentWorkflowDto>> Shipments(CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<SampleShipmentWorkflowDto>> Shipments(CancellationToken cancellationToken,
+        [FromQuery] Guid? sourceId = null)
     {
         var tenant = await requestContext.RequireSampleShippingTenantAsync(HttpContext, false, cancellationToken);
-        return await reader.ListAsync(tenant.Organization.Id, tenant.Department.Id, cancellationToken);
+        return await reader.ListAsync(tenant.Organization.Id, tenant.Department.Id, cancellationToken, sourceId);
     }
 
     [HttpGet("{shipmentId:guid}")]
@@ -42,6 +43,12 @@ public sealed class SampleShippingWorkflowController(
         CancellationToken cancellationToken)
     {
         var tenant = await requestContext.RequireSampleShippingTenantAsync(HttpContext, true, cancellationToken);
+        var authorizationId = await dbContext.SampleShipments.AsNoTracking()
+            .Where(value => value.Id == shipmentId && value.OrganizationId == tenant.Organization.Id
+                && value.DepartmentId == tenant.Department.Id)
+            .Select(value => (Guid?)value.AuthorizationSourceId).SingleOrDefaultAsync(cancellationToken) ?? throw Missing();
+        await using var transaction = await SampleShippingPackingData.BeginAsync(dbContext,
+            $"sample-shipping:{authorizationId}", cancellationToken);
         var shipment = await dbContext.SampleShipments
             .Include(item => item.Items)
                 .ThenInclude(item => item.TubeSlots)
@@ -61,54 +68,74 @@ public sealed class SampleShippingWorkflowController(
             throw Conflict(
                 "sample_tube_assignment_locked",
                 "Tube assignments can be corrected only before the return shipment is recorded as shipped.");
-        if (shipment.ReturnKit is not { Status: SampleReturnKitStatus.Fulfilled } kit)
-            throw Conflict("sample_return_kit_not_fulfilled", "Phaeno must fulfill the registered return kit before tubes can be matched.");
         var item = shipment.Items.SingleOrDefault(value => value.Id == shipmentItemId) ?? throw Missing();
-        var slot = request.TubeSlotId.HasValue
-            ? item.TubeSlots.SingleOrDefault(value => value.Id == request.TubeSlotId.Value) ?? throw Missing()
-            : null;
-        if (item.TubeSlots.Count > 0 && slot is null)
-            throw Invalid("sample_tube_slot_required", "Select the specific tube slot to match.");
-        EnsureVersion(slot?.Version ?? item.Version, request.Version);
+        var slot = item.TubeSlots.SingleOrDefault(value => value.Id == request.TubeSlotId)
+            ?? throw Invalid("sample_tube_slot_required", "Select the specific tube slot to match.");
+        EnsureVersion(slot.Version, request.Version);
         if (!SupplierTubeBarcode.TryNormalize(request.SupplierBarcode, out var normalized))
             throw Invalid("supplier_tube_barcode_invalid", "Scan or enter the complete barcode from a Phaeno-supplied tube.");
+        if (request.CustomerDeclaredQuantity is not > 0 || string.IsNullOrWhiteSpace(request.CustomerDeclaredQuantityUnit))
+            throw Invalid("sample_tube_material_required", "Enter the amount of biological material in this physical tube and its unit.");
+        await TransportationKitSupplyGuard.EnsurePreparationAsync(dbContext, shipment, cancellationToken);
+        SampleReturnKit kit;
+        if (shipment.ReturnKit is { Status: SampleReturnKitStatus.Fulfilled } existingKit) kit = existingKit;
+        else if (shipment.ReturnKit is null && shipment.ContainerDefinitionId.HasValue)
+            kit = await SampleShippingPackingData.BindStockAsync(dbContext, shipment, normalized, cancellationToken);
+        else throw Conflict("sample_return_kit_not_fulfilled", "Phaeno must dispatch a registered kit before tubes can be matched.");
+        await SampleShippingPackingData.LockAsync(dbContext, $"supplier-tube:{normalized}", cancellationToken);
         var tube = kit.Tubes.SingleOrDefault(value => value.SupplierBarcode == normalized)
             ?? throw Missing("supplier_tube_not_in_kit", "That tube is not part of this Phaeno return kit.");
         var assignedElsewhere = shipment.Items.Any(value =>
-            value.RegisteredSampleTubeId == tube.Id
-            || value.TubeSlots.Any(valueSlot => valueSlot.RegisteredSampleTubeId == tube.Id
-                && (slot is null || valueSlot.Id != slot.Id)));
+            value.TubeSlots.Any(valueSlot => valueSlot.RegisteredSampleTubeId == tube.Id
+                && valueSlot.Id != slot.Id));
         if (assignedElsewhere)
             throw Conflict("supplier_tube_already_assigned", "That tube is already matched to another tube slot in this shipment.");
-        if ((slot?.RegisteredSampleTubeId ?? item.RegisteredSampleTubeId) == tube.Id)
+        var sameTube = slot.RegisteredSampleTubeId == tube.Id;
+        var sameDeclaration = tube.CustomerDeclaredQuantity == request.CustomerDeclaredQuantity
+            && tube.CustomerDeclaredQuantityUnit == request.CustomerDeclaredQuantityUnit.Trim();
+        if (sameTube && sameDeclaration)
+        {
+            if (transaction is not null) await transaction.CommitAsync(cancellationToken);
             return await reader.ReadAsync(shipment.Id, tenant.Organization.Id, tenant.Department.Id, cancellationToken);
+        }
+        if (tube.ReceivedAt.HasValue || tube.Status is RegisteredSampleTubeStatus.Accessioned or RegisteredSampleTubeStatus.Retired)
+            throw Conflict("physical_tube_assignment_locked", "This physical tube has already been received or retired and cannot be reassigned.");
 
         var now = DateTime.UtcNow;
-        var previousTubeId = slot?.RegisteredSampleTubeId ?? item.RegisteredSampleTubeId;
-        if (currentPacket is not null && string.IsNullOrWhiteSpace(request.Reason))
+        var previousTubeId = slot.RegisteredSampleTubeId;
+        if ((currentPacket is not null || sameTube && tube.CustomerDeclaredQuantity.HasValue)
+            && string.IsNullOrWhiteSpace(request.Reason))
             throw Invalid(
                 "sample_tube_correction_reason_required",
-                "Enter a reason for changing the frozen tube assignment and replacing the shipping packet.");
-        if (previousTubeId.HasValue)
+                "Enter a reason for correcting the tube or its declared material amount.");
+        if (previousTubeId.HasValue && !sameTube)
         {
             if (string.IsNullOrWhiteSpace(request.Reason))
                 throw Invalid("sample_tube_correction_reason_required", "Enter a reason for changing the tube assignment.");
             var previousTube = kit.Tubes.Single(value => value.Id == previousTubeId.Value);
-            if (slot is null) item.ClearTube(); else slot.ClearTube();
+            if (previousTube.ReceivedAt.HasValue || previousTube.Status == RegisteredSampleTubeStatus.Accessioned)
+                throw Conflict("physical_tube_assignment_locked", "The previous tube has already been received and its sample assignment is locked.");
+            slot.ClearTube();
             previousTube.MarkAvailable();
             dbContext.SampleTubeAssignmentEvents.Add(new SampleTubeAssignmentEvent(
-                shipment.Id, item.Id, slot?.Id, previousTube.Id, item.CustomerSampleId,
+                shipment.Id, item.Id, slot.Id, previousTube.Id, item.CustomerSampleId,
                 previousTube.SupplierBarcode, SampleTubeAssignmentAction.Cleared,
-                request.Reason, tenant.Actor.Id, now));
+                request.Reason, tenant.Actor.Id, now,
+                previousTube.CustomerDeclaredQuantity, previousTube.CustomerDeclaredQuantityUnit));
         }
 
         tube.MarkAssigned(now);
-        if (slot is null) item.AssignTube(tube.Id, now); else slot.AssignTube(tube.Id, now);
+        Execute(() => tube.DeclareMaterial(request.CustomerDeclaredQuantity.Value,
+            request.CustomerDeclaredQuantityUnit, tenant.Actor.Id, now));
+        slot.AssignTube(tube.Id, now);
         dbContext.SampleTubeAssignmentEvents.Add(new SampleTubeAssignmentEvent(
-            shipment.Id, item.Id, slot?.Id, tube.Id, item.CustomerSampleId,
+            shipment.Id, item.Id, slot.Id, tube.Id, item.CustomerSampleId,
             tube.SupplierBarcode,
-            previousTubeId.HasValue ? SampleTubeAssignmentAction.Reassigned : SampleTubeAssignmentAction.Assigned,
-            request.Reason, tenant.Actor.Id, now));
+            sameTube ? SampleTubeAssignmentAction.MaterialDeclarationUpdated
+                : previousTubeId.HasValue ? SampleTubeAssignmentAction.Reassigned : SampleTubeAssignmentAction.Assigned,
+            request.Reason, tenant.Actor.Id, now,
+            tube.CustomerDeclaredQuantity, tube.CustomerDeclaredQuantityUnit));
+        dbContext.Entry(shipment).Property(value => value.Version).IsModified = true;
         if (currentPacket is not null)
         {
             await packetService.IssueAsync(
@@ -122,6 +149,7 @@ public sealed class SampleShippingWorkflowController(
         {
             await dbContext.SaveChangesAsync(cancellationToken);
         }
+        if (transaction is not null) await transaction.CommitAsync(cancellationToken);
         return await reader.ReadAsync(shipment.Id, tenant.Organization.Id, tenant.Department.Id, cancellationToken);
     }
 
@@ -132,18 +160,25 @@ public sealed class SampleShippingWorkflowController(
         CancellationToken cancellationToken)
     {
         var tenant = await requestContext.RequireSampleShippingTenantAsync(HttpContext, true, cancellationToken);
+        var authorizationId = await dbContext.SampleShipments.AsNoTracking().Where(item => item.Id == shipmentId
+                && item.OrganizationId == tenant.Organization.Id && item.DepartmentId == tenant.Department.Id)
+            .Select(item => (Guid?)item.AuthorizationSourceId).SingleOrDefaultAsync(cancellationToken) ?? throw Missing();
+        await using var transaction = await SampleShippingPackingData.BeginAsync(dbContext,
+            $"sample-shipping:{authorizationId}", cancellationToken);
         var shipment = await dbContext.SampleShipments.AsNoTracking()
             .SingleOrDefaultAsync(item => item.Id == shipmentId
                 && item.OrganizationId == tenant.Organization.Id
                 && item.DepartmentId == tenant.Department.Id, cancellationToken)
             ?? throw Missing();
         EnsureVersion(shipment.Version, request.Version);
+        await TransportationKitSupplyGuard.EnsureBoundReceiptAsync(dbContext, shipment.Id, cancellationToken);
         await packetService.IssueAsync(
             shipment.Id,
             request.Version,
             DateTime.UtcNow,
             request.ReplacementReason,
             cancellationToken);
+        if (transaction is not null) await transaction.CommitAsync(cancellationToken);
         return await reader.ReadAsync(shipment.Id, tenant.Organization.Id, tenant.Department.Id, cancellationToken);
     }
 
@@ -154,13 +189,41 @@ public sealed class SampleShippingWorkflowController(
         CancellationToken cancellationToken)
     {
         var tenant = await requestContext.RequireSampleShippingTenantAsync(HttpContext, true, cancellationToken);
+        var authorizationId = await dbContext.SampleShipments.AsNoTracking().Where(item => item.Id == shipmentId
+                && item.OrganizationId == tenant.Organization.Id && item.DepartmentId == tenant.Department.Id)
+            .Select(item => (Guid?)item.AuthorizationSourceId).SingleOrDefaultAsync(cancellationToken) ?? throw Missing();
+        await using var transaction = await SampleShippingPackingData.BeginAsync(dbContext,
+            $"sample-shipping:{authorizationId}", cancellationToken);
         var shipment = await dbContext.SampleShipments.SingleOrDefaultAsync(item => item.Id == shipmentId
             && item.OrganizationId == tenant.Organization.Id
             && item.DepartmentId == tenant.Department.Id, cancellationToken) ?? throw Missing();
         EnsureVersion(shipment.Version, request.Version);
         var shippedAt = RequireUtc(request.ShippedAt, "Shipment time");
+        await LabPhaseShippingSequence.RequireShipmentAsync(dbContext, shipment, cancellationToken);
+        await TransportationKitSupplyGuard.EnsureBoundReceiptAsync(dbContext, shipment.Id, cancellationToken);
+        var shippingPacket = await dbContext.SampleShippingPacketRevisions.AsNoTracking()
+            .Where(item => item.SampleShipmentId == shipment.Id && item.VoidedAt == null)
+            .OrderByDescending(item => item.Revision).FirstOrDefaultAsync(cancellationToken);
+        if (shippingPacket is null || !HasDeclaredTubeAmounts(shippingPacket.ManifestSnapshotJson))
+            throw Invalid("sample_tube_material_required", "Record the material amount and unit for every tube, then review the updated shipping insert before dispatch.");
         Execute(() => shipment.RecordShipment(request.Carrier, request.TrackingNumber, shippedAt));
+        if (shipment.AuthorizationSource == SampleShipmentAuthorizationSource.CustomerLabServiceOrder)
+        {
+            var sampleIds = await dbContext.SampleShipmentItems.Where(item => item.SampleShipmentId == shipment.Id)
+                .Select(item => item.SubmittedSpecimenId).ToListAsync(cancellationToken);
+            var samples = await dbContext.LabSamples.Where(sample => sample.LabServiceOrderId == shipment.AuthorizationSourceId
+                && sampleIds.Contains(sample.Id)).ToListAsync(cancellationToken);
+            var family = await SampleShippingPackingData.FamilyAsync(dbContext, shipment, cancellationToken);
+            foreach (var sample in samples)
+            {
+                var stillUnshipped = family.Any(other => other.Id != shipment.Id
+                    && (other.Status is SampleShipmentStatus.Preparing or SampleShipmentStatus.ReadyToShip)
+                    && other.Items.Any(item => item.SubmittedSpecimenId == sample.Id));
+                if (!stillUnshipped) sample.RecordCustomerShipment(shipment.Carrier, shipment.TrackingNumber, shippedAt);
+            }
+        }
         await dbContext.SaveChangesAsync(cancellationToken);
+        if (transaction is not null) await transaction.CommitAsync(cancellationToken);
         return await reader.ReadAsync(shipment.Id, tenant.Organization.Id, tenant.Department.Id, cancellationToken);
     }
 
@@ -184,7 +247,7 @@ public sealed class SampleShippingWorkflowController(
             || samples.ValueKind != JsonValueKind.Array)
             throw Conflict("sample_shipping_crosswalk_unavailable", "The frozen packet crosswalk could not be read.");
         var builder = new StringBuilder();
-        builder.AppendLine("Shipment number,Packet number,Customer sample ID,Tube ordinal,Tube count,Sample name,Sample type,Supplier tube barcode");
+        builder.AppendLine("Shipment number,Packet number,Customer sample ID,Tube ordinal,Tube count,Sample name,Sample type,Supplier tube barcode,Total sample tubes,Other shipments,Unallocated tubes,Customer declared material amount,Material unit,Declared at UTC");
         foreach (var item in samples.EnumerateArray())
         {
             builder.Append(Csv(shipment.ShipmentNumber)).Append(',')
@@ -194,13 +257,31 @@ public sealed class SampleShippingWorkflowController(
                 .Append(SnapshotNumber(item, "tubeCount", 1)).Append(',')
                 .Append(Csv(SnapshotText(item, "sampleName"))).Append(',')
                 .Append(Csv(SnapshotText(item, "sampleTypeName"))).Append(',')
-                .Append(Csv(SnapshotText(item, "supplierTubeBarcode"))).AppendLine();
+                .Append(Csv(SnapshotText(item, "supplierTubeBarcode"))).Append(',')
+                .Append(SnapshotNumber(item, "totalSampleTubeCount", SnapshotNumber(item, "tubeCount", 1))).Append(',')
+                .Append(Csv(item.TryGetProperty("otherShipments", out var related) && related.ValueKind == JsonValueKind.Array
+                    ? string.Join("; ", related.EnumerateArray().Select(value => $"{SnapshotText(value, "shipmentNumber")}: {SnapshotNumber(value, "tubeCount", 0)} tubes"))
+                    : string.Empty)).Append(',')
+                .Append(SnapshotNumber(item, "unallocatedTubeCount", 0)).Append(',')
+                .Append(Csv(item.TryGetProperty("customerDeclaredQuantity", out var amount) && amount.ValueKind == JsonValueKind.Number ? amount.GetRawText() : string.Empty)).Append(',')
+                .Append(Csv(SnapshotText(item, "customerDeclaredQuantityUnit"))).Append(',')
+                .Append(Csv(SnapshotText(item, "customerDeclaredAt"))).AppendLine();
         }
         return File(Encoding.UTF8.GetBytes(builder.ToString()), "text/csv; charset=utf-8",
             $"{shipment.ShipmentNumber}-tube-crosswalk.csv");
     }
 
     private static string Csv(string value) => $"\"{value.Replace("\"", "\"\"")}\"";
+
+    private static bool HasDeclaredTubeAmounts(string manifestJson)
+    {
+        using var manifest = JsonDocument.Parse(manifestJson);
+        return manifest.RootElement.TryGetProperty("samples", out var rows)
+            && rows.ValueKind == JsonValueKind.Array && rows.GetArrayLength() > 0
+            && rows.EnumerateArray().All(row => row.TryGetProperty("customerDeclaredQuantity", out var amount)
+                && amount.ValueKind == JsonValueKind.Number && amount.TryGetDecimal(out var quantity) && quantity > 0
+                && !string.IsNullOrWhiteSpace(SnapshotText(row, "customerDeclaredQuantityUnit")));
+    }
 
     private static string SnapshotText(JsonElement item, string propertyName) =>
         item.TryGetProperty(propertyName, out var value) && value.ValueKind == JsonValueKind.String

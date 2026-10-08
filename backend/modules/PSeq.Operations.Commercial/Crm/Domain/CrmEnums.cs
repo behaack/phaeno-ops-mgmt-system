@@ -15,7 +15,8 @@ public enum CrmCommunicationPreference
     Unknown,
     Permitted,
     OptedOut,
-    DoNotContact
+    DoNotContact,
+    Suppressed
 }
 
 public enum CrmLeadKind

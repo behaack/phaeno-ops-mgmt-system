@@ -62,6 +62,14 @@ public sealed class CommercialLabAuthorization : IAudit, IConcurrency
     }
 
     public void MarkCancelled() => Status = CommercialLabAuthorizationStatus.Cancelled;
+    public void RecordAmendment(int version, Guid commandId, string snapshot)
+    {
+        if (Status != CommercialLabAuthorizationStatus.Accepted || version != AuthorizationVersion + 1)
+            throw new InvalidOperationException("Only the next version of an accepted authorization can be recorded.");
+        AuthorizationVersion = version;
+        CommandId = commandId;
+        AuthorizationSnapshotJson = snapshot;
+    }
     public void MarkCreated(DateTime utcNow, Guid? actorUserId) { CreatedAt = utcNow; CreatedByUserId = actorUserId; }
     public void MarkUpdated(DateTime utcNow, Guid? actorUserId) { UpdatedAt = utcNow; UpdatedByUserId = actorUserId; }
     public void IncrementVersion() => Version++;

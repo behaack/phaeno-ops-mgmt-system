@@ -1,0 +1,31 @@
+.shipping-packet .packet-scan-targets { display: grid; gap: 14mm; }
+.shipping-packet .packet-scan-target { padding: 2mm; background: white; color: black; break-inside: avoid; }
+.shipping-packet .packet-scan-target .shipping-barcode { margin: 2mm auto 0; }
+.shipping-packet .packet-scan-target h2, .shipping-packet .packet-scan-target p { text-align: center; }
+
+@media print {
+  @page sample-shipping { size: auto; margin: 10mm 12mm 15mm !important; background: white; color: black; }
+  .shipping-packet-page { page: sample-shipping; }
+  html:has(.shipping-packet), body:has(.shipping-packet) { background: white !important; color: black !important; color-scheme: light; transition: none !important; }
+  body:has(.shipping-packet) { page: sample-shipping; }
+  body:has(.shipping-packet) [data-portal-shell] { display: block; min-height: 0; }
+  body:has(.shipping-packet) [data-portal-header],
+  body:has(.shipping-packet) [data-portal-shell] > footer { display: none !important; }
+  .shipping-packet { font-size: 10pt; line-height: 1.25; padding-bottom: 0; }
+  .shipping-packet > * { margin-block: 0 5mm; }
+  .shipping-packet .text-sm { font-size: 10pt; line-height: 1.3; }
+  .shipping-packet .text-muted-foreground { color: #333; }
+  .shipping-packet h1 { font-size: 18pt; margin-top: 2mm; }
+  .shipping-packet h2 { font-size: 12pt; }
+  .shipping-packet .packet-header { padding-bottom: 3mm; }
+  .shipping-packet .packet-header img { width: 28mm; height: auto; }
+  .shipping-packet .packet-header > p { margin-top: 2mm; }
+  .shipping-packet .packet-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm 8mm; }
+  .shipping-packet .packet-summary p { margin: 0; overflow-wrap: anywhere; }
+  .shipping-packet .packet-scan-targets { gap: 14mm; }
+  .shipping-packet .packet-scan-target .shipping-barcode svg { width: 32mm; height: 32mm; }
+  .shipping-packet .packet-scan-target .shipping-barcode figcaption { font-size: 10pt; line-height: 1.3; margin-top: 2mm; }
+  .shipping-packet .packet-receiving-notes { break-inside: avoid; overflow-wrap: anywhere; }
+  .shipping-packet .packet-receiving-notes > * { margin: 0 0 2mm; }
+  .shipping-packet .packet-full-details, .shipping-packet footer { display: none !important; }
+}

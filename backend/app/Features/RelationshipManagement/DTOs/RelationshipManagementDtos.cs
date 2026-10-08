@@ -125,9 +125,27 @@ public sealed record CreatePortalIntegrationRequest
 public sealed record DecidePortalIntegrationRequest
 {
     public required bool Approved { get; init; }
-    public required string Reason { get; init; }
+    public string? Reason { get; init; }
     public required long Version { get; init; }
     public Guid? ExistingOrganizationId { get; init; }
+    public IReadOnlyList<RequestedServiceEntitlement> ServiceEntitlements { get; init; } = [];
+}
+
+public sealed record RequestedServiceEntitlement
+{
+    public required PortalService Service { get; init; }
+    public Guid? DepartmentId { get; init; }
+    public required DateTime EffectiveFrom { get; init; }
+    public DateTime? EffectiveTo { get; init; }
+    public required EntitlementConfigurationStatus ConfigurationStatus { get; init; }
+    public Guid? ExistingEntitlementId { get; init; }
+    public long? ExistingEntitlementVersion { get; init; }
+}
+
+public sealed record SaveApprovedServiceEntitlementsRequest
+{
+    public required long Version { get; init; }
+    public required IReadOnlyList<RequestedServiceEntitlement> ServiceEntitlements { get; init; }
 }
 
 public sealed record CreateAccountFromPortalIntegrationRequest
@@ -140,7 +158,7 @@ public sealed record ApplyPortalIntegrationRequest
 {
     public Guid? OrganizationId { get; init; }
 
-    public required string Notes { get; init; }
+    public string? Notes { get; init; }
     public required long Version { get; init; }
 }
 
@@ -149,3 +167,7 @@ public sealed record CancelPortalIntegrationRequest
     public required string Reason { get; init; }
     public required long Version { get; init; }
 }
+
+public sealed record RequestCompletionReadinessDto(bool CanComplete, IReadOnlyList<string> Blockers, bool CompletesAutomatically = false);
+
+public sealed record ReconcileOnlineAccessRequest(long Version);

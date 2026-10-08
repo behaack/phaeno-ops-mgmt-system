@@ -1,11 +1,16 @@
+import { useCrmPermissions } from './use-crm-permissions';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { Link2, Plus, Send, Unlink } from 'lucide-react'
+import { ChevronDown, Link2, Plus, Send, Unlink } from 'lucide-react'
 import { useState } from 'react'
 
 import {
   apiErrorMessage,
   associateCompanyContact,
+  createCrmContact,
+  updateCompanyContact,
+  type CrmCompanyContact,
+  type CrmContactInput,
   linkCrmContactUser,
   listCompanyContacts,
   listCrmCompanyPeople,
@@ -16,7 +21,7 @@ import {
   createInvitation,
   listDepartments,
 } from '#/api/organization-management'
-import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
+import { Alert, AlertDescription } from '#/components/ui/alert'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import {
@@ -32,15 +37,24 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFeedback,
   DialogHeader,
   DialogTitle,
 } from '#/components/ui/dialog'
+import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/required-field'
 import { Textarea } from '#/components/ui/textarea'
+import { OrganizationInvitationDialog, type OrganizationInviteValues } from '#/features/invitations/OrganizationInvitationDialog'
+import { CrmPersonAccessDialog } from './CrmPersonAccessDialog'
+import { CrmPersonInvitationDialog, type PersonInvitationAction } from './CrmPersonInvitationDialog'
+import { CrmCompanyContactEditDialog } from './CrmCompanyContactEditDialog'
+import { CrmContactDialog } from './CrmContactDialog'
 import { CrmAssociationRecordCombobox } from './CrmAssociationRecordCombobox'
 import { CrmRelationshipRoleSelect } from './CrmRelationshipRoleSelect'
+import { CrmCollectionFeedback, type CrmCollectionQueryState } from './CrmCollectionFeedback'
+import { useOrderDraftGuard } from '#/features/orders/use-order-draft-guard'
 
 type IdentityAction =
   | { kind: 'link'; person: CrmCompanyPerson }
@@ -49,18 +63,29 @@ type IdentityAction =
 
 export function CrmCompanyPeople({
   companyId,
+  companyName,
   accessOrganizationId,
 }: {
   companyId: string
+  companyName?: string
   accessOrganizationId: string | null
 }) {
+  const { canAdminister } = useCrmPermissions();
   const client = useQueryClient()
   const [associateOpen, setAssociateOpen] = useState(false)
+  const [createOpen, setCreateOpen] = useState(false)
+  const [relationshipTarget, setRelationshipTarget] = useState<CrmCompanyContact | null>(null)
+  const [personActionTrigger, setPersonActionTrigger] = useState<HTMLElement | null>(null)
+  const [invitationAction, setInvitationAction] = useState<{ person: CrmCompanyPerson; action: PersonInvitationAction } | null>(null)
+  const [invitationFeedback, setInvitationFeedback] = useState<string | null>(null)
+  const [accessTarget, setAccessTarget] = useState<CrmCompanyPerson | null>(null)
   const [inviteTarget, setInviteTarget] = useState<CrmCompanyPerson | null>(null)
   const [identityAction, setIdentityAction] = useState<IdentityAction>(null)
   const people = useQuery({
     queryKey: ['crm-company-people', companyId],
     queryFn: () => listCrmCompanyPeople(companyId),
+    refetchInterval: 60_000, // Keep time-derived invitation expiry current while People stays open.
+    enabled: canAdminister,
   })
   const contacts = useQuery({
     queryKey: ['crm-company-contacts', companyId],
@@ -69,7 +94,7 @@ export function CrmCompanyPeople({
   const departments = useQuery({
     queryKey: ['organization-departments', accessOrganizationId, false],
     queryFn: () => listDepartments(accessOrganizationId!, false),
-    enabled: Boolean(accessOrganizationId),
+    enabled: canAdminister && Boolean(accessOrganizationId),
   })
 
   const refresh = async () => {
@@ -93,36 +118,22 @@ export function CrmCompanyPeople({
       await refresh()
     },
   })
+  const editRelationship = useMutation({
+    mutationFn: (input: Parameters<typeof updateCompanyContact>[2]) => updateCompanyContact(companyId, relationshipTarget!.id, input),
+    onSuccess: async () => { setRelationshipTarget(null); await refresh(); await client.invalidateQueries({ queryKey: ['crm-contact'] }) },
+  })
+  const create = useMutation({
+    mutationFn: (input: CrmContactInput) => createCrmContact({ ...input, companyId }),
+    onSuccess: async () => { setCreateOpen(false); await refresh(); await client.invalidateQueries({ queryKey: ['crm-contacts'] }) },
+  })
   const invite = useMutation({
-    mutationFn: ({
-      person,
-      departmentIds,
-    }: {
-      person: CrmCompanyPerson
-      departmentIds: string[]
-    }) => {
-      if (!accessOrganizationId || !person.contactId || !person.email) {
-        throw new Error('This Contact is not ready for a Portal invitation.')
-      }
-      return createInvitation({
-        organizationId: accessOrganizationId,
-        crmContactId: person.contactId,
-        firstName: person.firstName,
-        lastName: person.lastName,
-        email: person.email,
-        isOrganizationAdmin: false,
-        departments: departmentIds.map((departmentId) => ({
-          departmentId,
-          isDepartmentAdmin: false,
-        })),
-        labRoles: [],
-        businessRoles: [],
-      })
+    mutationFn: (values: OrganizationInviteValues) => {
+      if (!accessOrganizationId || !inviteTarget?.contactId) throw new Error('Select a Contact with approved Company access first.')
+      return createInvitation({ organizationId: accessOrganizationId, crmContactId: inviteTarget.contactId,
+        firstName: values.firstName, lastName: values.lastName, email: values.email,
+        isOrganizationAdmin: values.role === 'Administrator', departments: values.departments, labRoles: [], businessRoles: [] })
     },
-    onSuccess: async () => {
-      setInviteTarget(null)
-      await refresh()
-    },
+    onSuccess: async () => { setInviteTarget(null); await refresh() },
   })
   const identity = useMutation({
     mutationFn: async ({ action, reason }: { action: NonNullable<IdentityAction>; reason: string }) => {
@@ -151,43 +162,43 @@ export function CrmCompanyPeople({
       await refresh()
     },
   })
-  const error = people.error ?? contacts.error ?? departments.error
+  const contactsUnavailable = contacts.isPending || contacts.isError
 
   return (
     <>
-      <Card>
-        <CardHeader>
+      <Card className="gap-0 py-0">
+        <CardHeader className="border-b bg-muted/50 p-4">
           <CardTitle>People</CardTitle>
           <CardDescription>
-            Company contacts, Portal identities, invitations, and department access in one reviewed list.
+            {canAdminister ? 'Company contacts, Portal identities, invitations, and department access in one reviewed list.' : 'Company contacts and their roles. A Phaeno administrator manages Portal invitations and access.'}
           </CardDescription>
-          <CardAction>
-            <Button size="sm" variant="outline" onClick={() => setAssociateOpen(true)}>
+          <CardAction className="flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" disabled={contactsUnavailable} onClick={() => setAssociateOpen(true)}>
               <Plus data-icon="inline-start" />
-              Associate contact
+              Add existing person
             </Button>
+            <Button size="sm" onClick={() => { create.reset(); setCreateOpen(true) }}>New person</Button>
           </CardAction>
         </CardHeader>
-        <CardContent className="space-y-3">
-          {error ? (
-            <Alert variant="destructive">
-              <AlertTitle>People could not be loaded</AlertTitle>
-              <AlertDescription>{apiErrorMessage(error)}</AlertDescription>
-            </Alert>
-          ) : null}
-          {people.isLoading ? (
-            <p className="text-sm text-muted-foreground" role="status">Loading people…</p>
-          ) : null}
-          {(people.data ?? []).map((person) => (
+        <CardContent className="space-y-3 p-4">
+          {invitationFeedback ? <p role="status" className="text-sm">{invitationFeedback}</p> : null}
+          {canAdminister ? <CrmCollectionFeedback name="people" query={people} /> : null}
+          <CrmCollectionFeedback name="contacts" query={contacts} />
+          {canAdminister && accessOrganizationId ? <CrmCollectionFeedback name="departments" query={departments} /> : null}
+          {!canAdminister ? (contacts.data ?? []).map(contact => <div key={contact.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3"><div><Link to="/crm/contacts/$contactId" params={{ contactId: contact.contactId }} className="font-medium underline underline-offset-4">{contact.contactName}</Link><p className="text-sm text-muted-foreground">{[contact.jobTitle, contact.relationshipRole, contact.isPrimaryCompany ? 'Primary Company' : null, contact.isActive ? null : 'Ended relationship'].filter(Boolean).join(' · ') || 'Company contact'}</p></div><Button size="sm" variant="outline" onClick={() => { editRelationship.reset(); setRelationshipTarget(contact) }}>Manage relationship</Button></div>) : null}
+          {(canAdminister ? people.data ?? [] : []).map((person) => (
             <PersonRow
               key={`${person.recordKind}-${person.contactAssociationId ?? person.contactId ?? person.portalUserId ?? person.invitationId}`}
               person={person}
-              canInvite={Boolean(accessOrganizationId && person.contactId && person.isContactActive && person.email && person.portalAccessState === 'NotInvited' && !person.suggestedPortalUserId && !person.suggestedInvitationId)}
+              canInvite={Boolean(people.isSuccess && departments.isSuccess && accessOrganizationId && person.contactId && person.isContactActive && person.email && ['NotInvited', 'MembershipInactive', 'Inactive'].includes(person.portalAccessState) && !person.suggestedPortalUserId && !person.suggestedInvitationId)}
               onInvite={() => { invite.reset(); setInviteTarget(person) }}
+              onManageAccess={accessOrganizationId ? () => { setPersonActionTrigger(document.getElementById(personActionsId(person))); setAccessTarget(person) } : undefined}
+              onInvitationAction={accessOrganizationId ? action => { setPersonActionTrigger(document.getElementById(personActionsId(person))); setInvitationFeedback(null); setInvitationAction({ person, action }) } : undefined}
+              onEditRelationship={contacts.data?.some(value => value.id === person.contactAssociationId) ? () => { editRelationship.reset(); setRelationshipTarget(contacts.data?.find(value => value.id === person.contactAssociationId) ?? null) } : undefined}
               onIdentityAction={(action) => { identity.reset(); setIdentityAction(action) }}
             />
           ))}
-          {!people.isLoading && !people.error && !(people.data?.length ?? 0) ? (
+          {(canAdminister ? people.isSuccess && people.data.length === 0 : contacts.isSuccess && contacts.data.length === 0) ? (
             <p className="rounded-lg border p-6 text-center text-sm text-muted-foreground">
               No people are associated with this Company.
             </p>
@@ -195,27 +206,28 @@ export function CrmCompanyPeople({
         </CardContent>
       </Card>
 
-      <AssociatePersonDialog
+      {associateOpen ? <AssociatePersonDialog
         open={associateOpen}
         excludedContactIds={(contacts.data ?? [])
           .filter((contact) => contact.isActive)
           .map((contact) => contact.contactId)}
         pending={associate.isPending}
         error={associate.error}
+        contactsQuery={contacts}
         onOpenChange={setAssociateOpen}
         onSubmit={(input) => associate.mutate(input)}
-      />
-      <PortalInviteDialog
-        key={inviteTarget?.contactId ?? 'closed-invite'}
-        person={inviteTarget}
-        departments={departments.data ?? []}
-        pending={invite.isPending}
-        error={invite.error}
-        onOpenChange={(open) => { if (!open) setInviteTarget(null) }}
-        onSubmit={(departmentIds) => {
-          if (inviteTarget) invite.mutate({ person: inviteTarget, departmentIds })
-        }}
-      />
+      /> : null}
+      {relationshipTarget ? <CrmCompanyContactEditDialog value={relationshipTarget} pending={editRelationship.isPending} error={editRelationship.error} onOpenChange={open => { if (!open) setRelationshipTarget(null) }} onSubmit={input => editRelationship.mutate({ ...input, version: relationshipTarget.version })} /> : null}
+      <CrmContactDialog open={createOpen} pending={create.isPending} error={create.error ? apiErrorMessage(create.error) : undefined} onOpenChange={setCreateOpen} onSubmit={input => create.mutate(input)} />
+      {inviteTarget?.email && accessOrganizationId ? <OrganizationInvitationDialog
+        key={inviteTarget.contactId} organizationId={accessOrganizationId} organizationName={companyName}
+        contact={{ firstName: inviteTarget.firstName, lastName: inviteTarget.lastName, email: inviteTarget.email }}
+        isPending={invite.isPending} error={invite.error} onOpenChange={open => { if (!open) setInviteTarget(null) }}
+        onSubmit={values => invite.mutateAsync(values)} /> : null}
+      {accessTarget && accessOrganizationId ? <CrmPersonAccessDialog organizationId={accessOrganizationId} person={accessTarget} returnFocusTo={personActionTrigger} onClose={() => setAccessTarget(null)} /> : null}
+      {invitationAction && accessOrganizationId ? <CrmPersonInvitationDialog organizationId={accessOrganizationId}
+        person={invitationAction.person} action={invitationAction.action} returnFocusTo={personActionTrigger}
+        onClose={() => setInvitationAction(null)} onCompleted={async message => { setInvitationFeedback(message); await refresh() }} /> : null}
       <IdentityReviewDialog
         key={`${identityAction?.kind ?? ''}-${identityAction?.person.contactId ?? ''}`}
         action={identityAction}
@@ -235,12 +247,19 @@ function PersonRow({
   canInvite,
   onInvite,
   onIdentityAction,
+  onManageAccess,
+  onInvitationAction,
+  onEditRelationship,
 }: {
   person: CrmCompanyPerson
   canInvite: boolean
   onInvite: () => void
+  onManageAccess?: () => void
+  onInvitationAction?: (action: PersonInvitationAction) => void
+  onEditRelationship?: () => void
   onIdentityAction: (action: NonNullable<IdentityAction>) => void
 }) {
+  const hasInvitation = Boolean(person.invitationId || person.suggestedInvitationId) && ['InvitationPending', 'InvitationExpired', 'NotInvited', 'MembershipInactive'].includes(person.portalAccessState)
   const identityLabel = person.contactUserLinkId
     ? 'Contact and Portal user linked'
     : person.recordKind === 'Contact'
@@ -290,86 +309,23 @@ function PersonRow({
             ) : null}
           </div>
         </div>
-        <div className="flex shrink-0 flex-wrap gap-2">
-          {canInvite ? (
-            <Button size="sm" onClick={onInvite}>
-              <Send data-icon="inline-start" />
-              Invite to Portal
-            </Button>
-          ) : null}
-          {person.suggestedPortalUserId ? (
-            <Button size="sm" variant="outline" onClick={() => onIdentityAction({ kind: 'link', person })}>
-              <Link2 data-icon="inline-start" />
-              Review and link
-            </Button>
-          ) : null}
-          {person.contactUserLinkId ? (
-            <Button size="sm" variant="outline" onClick={() => onIdentityAction({ kind: 'unlink', person })}>
-              <Unlink data-icon="inline-start" />
-              Unlink identity
-            </Button>
-          ) : null}
-        </div>
+        <ActionMenu>
+          <DropdownMenuTrigger asChild><Button id={personActionsId(person)} size="sm" variant="outline" className="shrink-0" aria-label={`Actions for ${person.displayName}`}>Actions<ChevronDown aria-hidden="true" /></Button></DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-max min-w-48 max-w-[calc(100vw-2rem)]">
+            {onEditRelationship ? <DropdownMenuItem onSelect={onEditRelationship}>Edit relationship</DropdownMenuItem> : null}
+            {canInvite ? <DropdownMenuItem onSelect={onInvite}><Send aria-hidden="true" />Invite to Portal</DropdownMenuItem> : null}
+            {hasInvitation && onInvitationAction ? <>
+              <DropdownMenuItem onSelect={() => onInvitationAction('edit')}>Edit invited access</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => onInvitationAction('resend')}>Resend invite</DropdownMenuItem>
+              <DropdownMenuItem variant="destructive" onSelect={() => onInvitationAction('revoke')}>Revoke invite</DropdownMenuItem>
+            </> : null}
+            {!hasInvitation && person.portalAccessState === 'Active' && onManageAccess ? <DropdownMenuItem onSelect={onManageAccess}>Manage access</DropdownMenuItem> : null}
+            {person.suggestedPortalUserId ? <DropdownMenuItem onSelect={() => onIdentityAction({ kind: 'link', person })}><Link2 aria-hidden="true" />Review and link</DropdownMenuItem> : null}
+            {person.contactUserLinkId ? <DropdownMenuItem onSelect={() => onIdentityAction({ kind: 'unlink', person })}><Unlink aria-hidden="true" />Unlink identity</DropdownMenuItem> : null}
+          </DropdownMenuContent>
+        </ActionMenu>
       </div>
     </article>
-  )
-}
-
-function PortalInviteDialog({
-  person,
-  departments,
-  pending,
-  error,
-  onOpenChange,
-  onSubmit,
-}: {
-  person: CrmCompanyPerson | null
-  departments: Array<{ id: string; name: string; isDefault: boolean }>
-  pending: boolean
-  error: unknown
-  onOpenChange: (open: boolean) => void
-  onSubmit: (departmentIds: string[]) => void
-}) {
-  const [validationError, setValidationError] = useState<string | null>(null)
-  return (
-    <Dialog open={Boolean(person)} onOpenChange={(open) => { if (!pending) onOpenChange(open) }}>
-      <DialogContent>
-        <form onSubmit={(event) => {
-          event.preventDefault()
-          const data = new FormData(event.currentTarget)
-          const departmentIds = data.getAll('departmentId').map(String)
-          if (!departmentIds.length) {
-            setValidationError('Select at least one department before sending the invitation.')
-            event.currentTarget.querySelector<HTMLElement>('[role="checkbox"]')?.focus()
-            return
-          }
-          setValidationError(null)
-          onSubmit(departmentIds)
-        }}>
-          <DialogHeader>
-            <DialogTitle>Invite Contact to Portal</DialogTitle>
-            <DialogDescription>
-              Invite {person?.displayName} to the selected departments. Access and the Contact/User link begin only after the recipient accepts this reviewed invitation.
-            </DialogDescription>
-          </DialogHeader>
-          {error ? <Alert variant="destructive"><AlertDescription>{apiErrorMessage(error)}</AlertDescription></Alert> : null}
-          {validationError ? <Alert variant="destructive"><AlertDescription>{validationError}</AlertDescription></Alert> : null}
-          <fieldset disabled={pending} className="grid gap-2">
-            <legend className="text-sm font-medium"><RequiredFieldName>Department access</RequiredFieldName></legend>
-            {departments.map((department) => (
-              <Label key={department.id} className="flex cursor-pointer items-center gap-2 rounded-md border p-3 font-normal">
-                <Checkbox name="departmentId" value={department.id} defaultChecked={department.isDefault} onCheckedChange={() => setValidationError(null)} />
-                {department.name}{department.isDefault ? ' (default)' : ''}
-              </Label>
-            ))}
-          </fieldset>
-          <RequiredDialogFooter>
-            <Button type="button" variant="outline" disabled={pending} onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="submit" disabled={pending || !departments.length}>{pending ? 'Sending invitation…' : 'Send invitation'}</Button>
-          </RequiredDialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
   )
 }
 
@@ -423,6 +379,7 @@ function AssociatePersonDialog({
   excludedContactIds,
   pending,
   error,
+  contactsQuery,
   onOpenChange,
   onSubmit,
 }: {
@@ -430,6 +387,7 @@ function AssociatePersonDialog({
   excludedContactIds: string[]
   pending: boolean
   error: unknown
+  contactsQuery: CrmCollectionQueryState
   onOpenChange: (open: boolean) => void
   onSubmit: (value: {
     contactId: string
@@ -440,11 +398,18 @@ function AssociatePersonDialog({
   }) => void
 }) {
   const [primary, setPrimary] = useState(false)
+  const [dirty, setDirty] = useState(false)
+  useOrderDraftGuard(dirty, pending)
+  const close = (nextOpen: boolean) => {
+    if (pending || (!nextOpen && dirty && !window.confirm('Discard unsaved Company association changes?'))) return
+    onOpenChange(nextOpen)
+  }
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={close}>
       <DialogContent>
-        <form onSubmit={(event) => {
+        <form onChange={() => setDirty(true)} onSubmit={(event) => {
           event.preventDefault()
+          if (pending || contactsQuery.isPending || contactsQuery.isError) return
           const data = new FormData(event.currentTarget)
           onSubmit({
             contactId: String(data.get('contactId')),
@@ -458,25 +423,30 @@ function AssociatePersonDialog({
             <DialogTitle>Associate contact</DialogTitle>
             <DialogDescription>Add an existing CRM Contact to this Company without granting Portal access.</DialogDescription>
           </DialogHeader>
+          {contactsQuery.isPending || contactsQuery.isError ? <DialogFeedback><CrmCollectionFeedback name="contacts" query={contactsQuery} /></DialogFeedback> : null}
           {error ? <Alert variant="destructive"><AlertDescription>{apiErrorMessage(error)}</AlertDescription></Alert> : null}
           <div className="grid gap-4">
             <div className="grid gap-1.5">
               <Label htmlFor="people-association-contact"><RequiredFieldName>Contact</RequiredFieldName></Label>
-              <CrmAssociationRecordCombobox id="people-association-contact" name="contactId" kind="contact" excludedIds={excludedContactIds} required />
+              <CrmAssociationRecordCombobox id="people-association-contact" name="contactId" kind="contact" excludedIds={excludedContactIds} required onValueChange={() => setDirty(true)} />
             </div>
             <div className="grid gap-1.5"><Label htmlFor="people-association-title">Job title</Label><Input id="people-association-title" name="jobTitle" maxLength={150} /></div>
             <div className="grid gap-1.5"><Label htmlFor="people-association-role">Relationship role</Label><CrmRelationshipRoleSelect id="people-association-role" /></div>
             <div className="grid gap-1.5"><Label htmlFor="people-association-date"><RequiredFieldName>Effective from</RequiredFieldName></Label><Input id="people-association-date" name="effectiveFrom" type="date" required defaultValue={new Date().toISOString().slice(0, 10)} /></div>
-            <Label className="flex cursor-pointer items-center gap-2 font-normal"><Checkbox checked={primary} onCheckedChange={(value) => setPrimary(value === true)} />Primary Company for this Contact</Label>
+            <Label className="flex cursor-pointer items-center gap-2 font-normal"><Checkbox checked={primary} onCheckedChange={(value) => { setPrimary(value === true); setDirty(true) }} />Primary Company for this Contact</Label>
           </div>
           <RequiredDialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="submit" disabled={pending}>Associate contact</Button>
+            <Button type="button" variant="outline" disabled={pending} onClick={() => close(false)}>Cancel</Button>
+            <Button type="submit" disabled={pending || contactsQuery.isPending || contactsQuery.isError}>Associate contact</Button>
           </RequiredDialogFooter>
         </form>
       </DialogContent>
     </Dialog>
   )
+}
+
+function personActionsId(person: CrmCompanyPerson) {
+  return `company-person-actions-${person.contactAssociationId ?? person.contactId ?? person.portalUserId ?? person.invitationId}`
 }
 
 function portalAccessLabel(value: string) {

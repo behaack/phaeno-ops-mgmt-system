@@ -1,0 +1,83 @@
+import { api } from './client'
+import type { CustomerDeliveryLocation } from './customer-delivery-locations'
+import type { ContainerQuantity, ContainerRecommendation, ShippingContainerDefinition } from './shipping-containers'
+
+export type LocationStockKit = {
+  stockKitId: string; kitNumber: string; container: { definitionId: string; sku: string; commonName: string; capacity: number }; version: number
+  status: 'OnTheWay' | 'Available' | 'Assigned' | 'InUse' | 'NeedsReview'; deliveryLocationId: string
+  requestId: string | null; originatingJobId: string | null; originatingJobNumber: string | null
+  assignedJobId: string | null; assignedJobNumber: string | null; reservedShipmentId: string | null; boundShipmentId: string | null
+  dispatchedAt: string | null; receivedAt: string | null
+}
+export type LocationKitInventory = { location: CustomerDeliveryLocation; kits: LocationStockKit[]; requests: TransportationKitRequest[]; canManageInventory: boolean }
+
+type Envelope<T> = { success: boolean; data: T; error: { message: string } | null }
+export type TransportationKitRequestLine = { id: string; containerDefinitionId: string; sku: string; commonName: string; tubeCapacity: number; requestedQuantity: number; dispatchedQuantity: number; receivedQuantity: number }
+export type TransportationKitDispatch = { stockKitId: string; kitNumber: string; requestLineId: string; containerDefinitionId: string; outboundCarrier: string; outboundTrackingNumber: string; dispatchedAt: string; receivedAt: string | null }
+export type TransportationKitRequest = {
+  id: string; jobId: string; jobNumber: string; organizationId: string; organizationName: string; departmentId: string; departmentName: string; deliveryLocationId: string
+  deliveryAddress: CustomerDeliveryLocation
+  status: 'Pending' | 'PartiallyDispatched' | 'Dispatched' | 'Received' | 'Cancelled'
+  requestedAt: string; version: number; includedInLabOrder: true
+  lines: TransportationKitRequestLine[]; kits: TransportationKitDispatch[]
+  canConfirmReceipt: boolean; canCancel: boolean; cancellationReason: string | null
+  phaseId?: string | null; phaseName?: string | null
+}
+export type LabPhaseKitSupply = {
+  phaseId: string; phaseName: string; sampleCount: number; deliveryLocationId: string | null
+  recommendation: ContainerRecommendation; receivedStock: AvailableTransportationStockKit[]
+  canRequest: boolean; blockedReason: string | null
+}
+export type LabOrderKitWorkspace = { requests: TransportationKitRequest[]; phases: LabPhaseKitSupply[]; locations: CustomerDeliveryLocation[] }
+export async function getLabPhaseKitSupply(orderId: string, deliveryLocationId?: string) {
+  return read((await api.get<Envelope<LabOrderKitWorkspace>>(`/lab-service-orders/${orderId}/phase-kit-supply`, { params: { deliveryLocationId } })).data)
+}
+export async function requestLabPhaseKits(orderId: string, input: { orderVersion: number; phaseIds: string[]; deliveryLocationId: string; deliveryLocationVersion: number }, key: string) {
+  return read((await api.post<Envelope<LabOrderKitWorkspace>>(`/lab-service-orders/${orderId}/phase-kit-requests`, input, { headers: { 'Idempotency-Key': key } })).data)
+}
+export type ShipmentKitSupply = {
+  shipmentId: string; shipmentVersion: number; jobId: string; jobNumber: string; tubeCount: number
+  sampleTypeName?: string | null
+  deliveryLocationId: string | null; locations: CustomerDeliveryLocation[]; recommendation: ContainerRecommendation
+  recordedStock: Array<{ containerDefinitionId: string; availableQuantity: number; inTransitQuantity: number }>
+  inventoryStatus: 'Unknown' | 'RecordedForThisJob' | 'RecordedForLocation'; request: TransportationKitRequest | null
+  inventoryKits?: LocationStockKit[]; canManageInventory?: boolean
+  containerTypes?: ShippingContainerDefinition[]
+  canRequestKits: boolean; requestBlockedReason: string | null; canPrepareSamples: boolean; preparationBlockedReason: string | null
+}
+export type TransportationKitOrderInput = { shipmentVersion: number; deliveryLocationId: string; deliveryLocationVersion: number; containers: ContainerQuantity[] }
+function read<T>(value: Envelope<T>): T { if (!value.success) throw new Error(value.error?.message ?? 'The transportation kit request could not be completed.'); return value.data }
+export async function getLocationKitInventory(locationId: string) {
+  return read((await api.get<Envelope<LocationKitInventory>>(`/customer-delivery-locations/${locationId}/transportation-kits`)).data)
+}
+export async function confirmLocationKitsReceived(locationId: string, input: { kits: { stockKitId: string; version: number }[] }, idempotencyKey: string) {
+  return read((await api.post<Envelope<LocationKitInventory>>(`/customer-delivery-locations/${locationId}/transportation-kits/received`, input, { headers: { 'Idempotency-Key': idempotencyKey } })).data)
+}
+export async function getTransportationKitRequest(id: string) {
+  return read((await api.get<Envelope<TransportationKitRequest>>(`/transportation-kit-requests/${id}`)).data)
+}
+export async function getLabOrderTransportationKits(orderId: string) {
+  return read((await api.get<Envelope<TransportationKitRequest | null>>(`/lab-service-orders/${orderId}/transportation-kits`)).data)
+}
+export async function getShipmentKitSupply(shipmentId: string, deliveryLocationId?: string) {
+  return read((await api.get<Envelope<ShipmentKitSupply>>(`/sample-shipping/${shipmentId}/kit-supply`, { params: { deliveryLocationId } })).data)
+}
+export async function orderTransportationKits(shipmentId: string, input: TransportationKitOrderInput, idempotencyKey: string) {
+  return read((await api.post<Envelope<TransportationKitRequest>>(`/sample-shipping/${shipmentId}/kit-requests`, input, { headers: { 'Idempotency-Key': idempotencyKey } })).data)
+}
+export async function confirmTransportationKitsReceived(id: string, input: { version: number; stockKitIds: string[]; scannedKitBarcode?: string }, idempotencyKey: string) {
+  return read((await api.post<Envelope<TransportationKitRequest>>(`/transportation-kit-requests/${id}/received`, input, { headers: { 'Idempotency-Key': idempotencyKey } })).data)
+}
+export async function cancelTransportationKitRequest(id: string, input: { version: number; reason?: string }, idempotencyKey: string) {
+  return read((await api.post<Envelope<TransportationKitRequest>>(`/transportation-kit-requests/${id}/cancel`, input, { headers: { 'Idempotency-Key': idempotencyKey } })).data)
+}
+
+export type AvailableTransportationStockKit = { id: string; kitNumber: string; containerDefinitionId: string; sku: string; commonName: string; tubeCapacity: number; version: number }
+export type TransportationKitTypeAvailability = { containerDefinitionId: string; sku: string; commonName: string; tubeCapacity: number; requestedQuantity: number; dispatchedQuantity: number; availableQuantity: number }
+export type TransportationKitRequestDetail = { request: TransportationKitRequest; availableTypes: TransportationKitTypeAvailability[]; canDispatch: boolean; dispatchBlockedReason: string | null; selectedPhaenoDestinationId?: string | null; phaenoDestinations?: Array<{ id: string; name: string; revision: number; isCurrentForNewWork?: boolean }> }
+const platformPath = '/platform/sample-shipping/kit-requests'
+export async function getPlatformTransportationKitRequests(status?: string) { return read((await api.get<Envelope<TransportationKitRequest[]>>(platformPath, { params: { status } })).data) }
+export async function getPlatformTransportationKitRequest(id: string) { return read((await api.get<Envelope<TransportationKitRequestDetail>>(`${platformPath}/${id}`)).data) }
+export async function resolveTransportationKitBarcode(id: string, barcode: string) { return read((await api.post<Envelope<AvailableTransportationStockKit>>(`${platformPath}/${id}/resolve-kit`, { barcode })).data) }
+export async function dispatchTransportationKitRequest(id: string, input: { version: number; stockKitIds: string[]; outboundCarrier: string; outboundTrackingNumber: string; fulfilledAt: string; phaenoDestinationId?: string; confirmUnavailableFixedDestination?: boolean }, idempotencyKey: string) { return read((await api.post<Envelope<TransportationKitRequestDetail>>(`${platformPath}/${id}/dispatch`, input, { headers: { 'Idempotency-Key': idempotencyKey } })).data) }
+export async function cancelPlatformTransportationKitRequest(id: string, input: { version: number; reason?: string }, idempotencyKey: string) { return read((await api.post<Envelope<TransportationKitRequest>>(`${platformPath}/${id}/cancel`, input, { headers: { 'Idempotency-Key': idempotencyKey } })).data) }

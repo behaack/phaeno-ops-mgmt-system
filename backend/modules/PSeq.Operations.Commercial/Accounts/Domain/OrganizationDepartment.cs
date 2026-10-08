@@ -52,12 +52,12 @@ public sealed class OrganizationDepartment : IAudit, IConcurrency
 
         OrganizationId = organizationId;
         IsDefault = isDefault;
-        Update(code, name, description);
+        Code = Required(code, nameof(code), 50).ToUpperInvariant();
+        Update(name, description);
     }
 
-    public void Update(string code, string name, string? description)
+    public void Update(string name, string? description)
     {
-        Code = Required(code, nameof(code), 50).ToUpperInvariant();
         Name = Required(name, nameof(name), 150);
         Description = Optional(description, 1000);
     }

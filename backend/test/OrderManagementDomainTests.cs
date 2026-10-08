@@ -9,7 +9,50 @@ public class OrderManagementDomainTests
     private static readonly DateTime Now = new(2026, 7, 14, 12, 0, 0, DateTimeKind.Utc);
 
     [Fact]
-    public void LabRequestPricesFromJobProfileAndOpensSamplesAfterQuoteAcceptance()
+    public void PendingRequestCanBeRevisedUntilPricingIsIssued()
+    {
+        var actor = Guid.NewGuid();
+        var order = new LabServiceOrder(Guid.NewGuid(), Guid.NewGuid(), OrderNumberGenerator.Lab(), "revision-job", null,
+            1, false, "Human PBMCs", "Frozen", "No known hazards", "Ship cold");
+        order.SourceGroups.Add(new LabServiceSourceGroup(order.Id, "Human PBMCs", 1));
+        order.Submit(actor, Now);
+        order.BeginQuotePreparation();
+        order.RevisePendingRequest();
+        order.UpdateDraft("Updated job", "Updated scope", 1, false, "Human PBMCs", "Frozen", "No known hazards");
+        order.Submit(actor, Now.AddMinutes(1));
+        Assert.Equal(2, order.RequestRevision);
+        Assert.Equal(LabServiceOrderStatus.SubmittedForQuote, order.Status);
+        Assert.Empty(order.Samples);
+        Assert.Null(order.PlacedAt);
+        order.BeginQuotePreparation();
+        order.MarkQuoteIssued(Guid.NewGuid());
+        Assert.Throws<InvalidOperationException>(order.RevisePendingRequest);
+    }
+
+    [Fact]
+    public void ReagentDraftRetainsPurchaseAndDeliveryWithoutFreezingPlacement()
+    {
+        var order = new PartnerReagentOrder(Guid.NewGuid(), Guid.NewGuid(), "REAGENT-DRAFT");
+        var addressId = Guid.NewGuid();
+        order.UpdateDraftDetails(" PO-17 ", addressId, Now.AddDays(3), " Keep cool ");
+        Assert.Equal("PO-17", order.PurchaseOrderNumber);
+        Assert.Equal(addressId, order.ShippingAddressId);
+        Assert.Equal(Now.AddDays(3), order.RequestedDeliveryDate);
+        Assert.Equal("Keep cool", order.ShippingInstructions);
+        Assert.Equal(ReagentOrderStatus.Draft, order.Status);
+        Assert.Null(order.PlacementSnapshotJson);
+        Assert.Null(order.ShippingAddressSnapshotJson);
+        order.UpdateDraftDetails(null, null, null, null);
+        Assert.Null(order.PurchaseOrderNumber);
+        Assert.Null(order.ShippingAddressId);
+        Assert.Null(order.RequestedDeliveryDate);
+        Assert.Null(order.ShippingInstructions);
+        order.CancelBeforeAcceptance("No longer needed");
+        Assert.Throws<InvalidOperationException>(() => order.UpdateDraftDetails("Changed", addressId, null, null));
+    }
+
+    [Fact]
+    public void LabRequestPricesFromJobProfileButCannotCompleteWithoutSamples()
     {
         var actor = Guid.NewGuid();
         var order = new LabServiceOrder(Guid.NewGuid(), Guid.NewGuid(), OrderNumberGenerator.Lab(), "customer-job", null,
@@ -28,6 +71,27 @@ public class OrderManagementDomainTests
 
         Assert.Equal(LabServiceOrderStatus.PlacedAwaitingSamples, order.Status);
         Assert.Equal(QuoteStatus.Accepted, quote.Status);
+        order.MarkWorkStarted();
+        Assert.Throws<InvalidOperationException>(() => order.Complete(Now));
+        Assert.Null(order.CompletedAt);
+        Assert.Equal(LabServiceOrderStatus.InProgress, order.Status);
+    }
+
+    [Fact]
+    public void LabSampleRosterCanBeFinalizedAfterQuoteAcceptance()
+    {
+        var actor = Guid.NewGuid();
+        var order = new LabServiceOrder(Guid.NewGuid(), Guid.NewGuid(), OrderNumberGenerator.Lab(), "customer-job", null,
+            1, false, "Human PBMCs", "Keep frozen.", "No known hazards.", "Ship cold");
+        order.SourceGroups.Add(new LabServiceSourceGroup(order.Id, "Human PBMCs", 1));
+        order.Submit(actor, Now);
+        order.BeginQuotePreparation();
+        var quote = new LabServiceQuote(order.Id, 1, QuotePurpose.Initial, "[]", 100, 5, "USD", Now, Now.AddDays(30));
+        quote.MarkIssued();
+        order.Quotes.Add(quote);
+        order.MarkQuoteIssued(quote.Id);
+        quote.Accept(actor, Now.AddMinutes(1));
+        order.AcceptQuote(quote.Id, Now.AddMinutes(1));
         Assert.True(order.CanEditSampleRoster);
         order.Samples.Add(Sample(order.Id, "S-1", "Human PBMCs"));
         order.FinalizeSampleRoster(actor, Now.AddMinutes(2));
@@ -162,6 +226,27 @@ public class OrderManagementDomainTests
         held.TransitionTo(LabSampleStatus.Accessioned, "Replacement aliquot received", null);
 
         Assert.Equal(LabSampleStatus.Accessioned, held.Status);
+    }
+
+    [Theory]
+    [InlineData(LabSampleStatus.Completed)]
+    [InlineData(LabSampleStatus.Failed)]
+    [InlineData(LabSampleStatus.Rejected)]
+    [InlineData(LabSampleStatus.Cancelled)]
+    public void AuthoritativeFinalOutcomesAreDistinctIdempotentAndCannotReplaceAHold(LabSampleStatus outcome)
+    {
+        var sample = Sample(Guid.NewGuid(), "FINAL");
+        Assert.True(sample.ApplyLaboratoryOutcome(outcome, "Reviewed final outcome"));
+        Assert.True(sample.IsTerminal());
+        Assert.False(sample.ApplyLaboratoryOutcome(outcome, "Replay must not rewrite the original reason"));
+        Assert.Equal("Reviewed final outcome", sample.TenantSafeReason);
+        Assert.Throws<InvalidOperationException>(() => sample.ApplyLaboratoryOutcome(
+            outcome == LabSampleStatus.Completed ? LabSampleStatus.Failed : LabSampleStatus.Completed, null));
+        var held = Sample(Guid.NewGuid(), "HELD");
+        held.TransitionTo(LabSampleStatus.OnHold, "Waiting for review", null);
+        Assert.False(held.ApplyLaboratoryOutcome(outcome, null));
+        Assert.Equal(LabSampleStatus.OnHold, held.Status);
+        Assert.False(held.IsTerminal());
     }
 
     [Fact]

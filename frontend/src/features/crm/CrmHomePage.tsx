@@ -1,6 +1,7 @@
+import { useCrmPermissions } from './use-crm-permissions';
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { AlertTriangle, ArrowRight, Search } from "lucide-react";
+import { AlertTriangle, ArrowRight, CheckCircle2, Search } from "lucide-react";
 import { useState } from "react";
 
 import {
@@ -21,8 +22,11 @@ import {
 } from "#/components/ui/card";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
+import { CrmCollectionFeedback } from './CrmCollectionFeedback';
+import type { CrmNavigationSearch } from './CrmListNavigation';
 
 export function CrmHomePage() {
+  const { canAdminister } = useCrmPermissions();
   const client = useQueryClient();
   const [draftSearch, setDraftSearch] = useState("");
   const [search, setSearch] = useState("");
@@ -46,7 +50,10 @@ export function CrmHomePage() {
     },
   });
 
-  const attention = dashboard.data?.attention;
+  const attention = dashboard.isSuccess ? dashboard.data.attention : undefined;
+  const hasAttention = attention ? [attention.overdueTasks, attention.dueSoonTasks,
+    attention.leadsNeedingNextAction, attention.staleOpportunities,
+    canAdminister ? attention.dataQualityWarnings : 0].some(value => value > 0) : false;
   return (
     <main className="page-wrap space-y-6 px-4 py-8">
       <section>
@@ -102,13 +109,14 @@ export function CrmHomePage() {
           </form>
           {search.length >= 2 ? (
             <div className="grid gap-2" aria-live="polite">
+              <CrmCollectionFeedback name="CRM search results" query={results} />
               {(results.data ?? []).map((result) => (
                 <SearchResult
                   key={`${result.recordType}-${result.id}`}
                   result={result}
                 />
               ))}
-              {!results.isLoading && !(results.data?.length ?? 0) ? (
+              {results.isSuccess && !(results.data?.length ?? 0) ? (
                 <p className="text-sm text-muted-foreground">
                   No CRM records match this search.
                 </p>
@@ -120,37 +128,55 @@ export function CrmHomePage() {
 
       <section aria-labelledby="crm-attention-title">
         <div className="mb-3 flex items-center gap-2">
-          <AlertTriangle className="size-5 text-amber-600" aria-hidden="true" />
+          {attention ? hasAttention
+            ? <AlertTriangle className="size-5 text-primary" aria-hidden="true" />
+            : <CheckCircle2 className="size-5 text-muted-foreground" aria-hidden="true" /> : null}
           <h2 id="crm-attention-title" className="text-xl font-semibold">
-            Needs attention
+            {attention ? hasAttention ? "Needs attention" : "No items need attention" : "Attention summary"}
           </h2>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <p className="mb-3 text-sm text-muted-foreground" role="status">
+          {attention ? hasAttention
+            ? "Choose a highlighted category to review the matching records."
+            : "No items match the follow-up checks below. Recent updates are listed separately."
+            : dashboard.isError ? "Attention checks could not be loaded." : "Checking follow-up…"}
+        </p>
+        {dashboard.isError ? <Button size="sm" variant="outline" className="mb-3" onClick={() => void dashboard.refetch()}>Retry attention checks</Button> : null}
+        <div className={`grid gap-3 sm:grid-cols-2 ${canAdminister ? 'lg:grid-cols-5' : 'lg:grid-cols-4'}`}>
           <Metric
             label="Overdue tasks"
+            description="Unfinished tasks past their due date."
+            search={{ overdue: true, page: 1 }}
             value={attention?.overdueTasks}
             to="/crm/tasks"
           />
           <Metric
             label="Due in 7 days"
+            description="Unfinished tasks due within the next 7 days."
+            search={{ dueSoon: true, page: 1 }}
             value={attention?.dueSoonTasks}
             to="/crm/tasks"
           />
           <Metric
             label="Leads needing next action"
+            description="Active leads with no next action recorded."
+            search={{ needsNextAction: true, page: 1 }}
             value={attention?.leadsNeedingNextAction}
             to="/crm/leads"
           />
           <Metric
             label="Stale opportunities"
+            description="Open opportunities unchanged for over 30 days."
+            search={{ stale: true, board: false, page: 1 }}
             value={attention?.staleOpportunities}
             to="/crm/opportunities"
           />
-          <Metric
+          {canAdminister ? <Metric
             label="Data warnings"
+            description="Possible duplicates or missing required custom fields."
             value={attention?.dataQualityWarnings}
             to="/crm/administration"
-          />
+          /> : null}
         </div>
       </section>
 
@@ -206,7 +232,7 @@ export function CrmHomePage() {
           <CardHeader>
             <CardTitle>Recently changed opportunities</CardTitle>
             <CardDescription>
-              Latest movement across every active pipeline.
+              Recent updates for reference across pipelines.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -243,22 +269,29 @@ export function CrmHomePage() {
   );
 }
 
-function Metric({
-  label,
-  value,
-  to,
-}: {
+function Metric({ label, description, value, to, search }: {
   label: string;
+  description: string;
   value?: number;
   to: string;
+  search?: CrmNavigationSearch;
 }) {
+  const content = <>
+    <p className="text-2xl font-semibold">{value ?? "—"}</p>
+    <p className="mt-1 text-sm font-medium">{label}</p>
+    <p className="mt-2 text-xs text-muted-foreground">{description}</p>
+  </>;
+  if (value == null || value === 0) {
+    return <div className="rounded-lg border bg-card p-4 text-muted-foreground">{content}</div>;
+  }
   return (
     <Link
       to={to}
-      className="cursor-pointer rounded-lg border bg-card p-4 hover:bg-muted/50 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+      search={search ?? {}}
+      className="cursor-pointer rounded-lg border border-primary/40 bg-primary/5 p-4 hover:bg-primary/10 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
     >
-      <p className="text-2xl font-semibold">{value ?? "—"}</p>
-      <p className="mt-1 text-xs text-muted-foreground">{label}</p>
+      {content}
+      <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-primary">Review <ArrowRight className="size-4" aria-hidden="true" /></span>
     </Link>
   );
 }

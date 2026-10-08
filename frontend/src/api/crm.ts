@@ -1,12 +1,23 @@
 import { api } from "./client";
+import type { Department, DepartmentInput } from './organization-management';
 
 export { apiErrorMessage, existingAccessScopeCandidate } from "./api-error";
+
+export async function createCrmCompanyDepartment(companyId: string, input: DepartmentInput) {
+  const response = await api.post<ApiEnvelope<Department>>(`/platform/crm/companies/${companyId}/departments`, input);
+  return unwrap(response.data);
+}
 
 type ApiEnvelope<T> = {
   success: boolean;
   data: T;
   error: null | { code: string; message: string; details?: unknown };
 };
+
+export async function listCrmOwners() {
+  const response = await api.get<ApiEnvelope<Array<{ id: string; firstName: string; lastName: string; email: string }>>>("/platform/crm/owners");
+  return unwrap(response.data);
+}
 
 export type CrmCompany = {
   id: string;
@@ -31,6 +42,7 @@ export type CrmCompany = {
   ownerUserId: string;
   ownerName: string;
   accessOrganizationId: string | null;
+  setupOrganizationId?: string | null;
   portalRelationship: "Prospect" | "Customer" | "Partner" | null;
   portalReadiness: "NotReviewed" | "Pending" | "Ready" | "Blocked" | null;
   portalAccessStatus: "NotEnabled" | "Enabled" | "Suspended";
@@ -77,7 +89,8 @@ export type CrmCommunicationPreference =
   | "Unknown"
   | "Permitted"
   | "OptedOut"
-  | "DoNotContact";
+  | "DoNotContact"
+  | "Suppressed";
 export type CrmLeadKind = "Individual" | "Company";
 export type CrmLeadStatus =
   | "New"
@@ -147,6 +160,11 @@ export type CrmContact = {
   communicationPreference: CrmCommunicationPreference;
   lawfulContactBasis: string | null;
   communicationNotes: string | null;
+  outreachPermissionSource?: string | null;
+  outreachRecordedOn?: string | null;
+  outreachSuppressionReason?: string | null;
+  outreachStatus?: 'NotEstablished' | 'Allowed' | 'Suppressed';
+  canReceiveOutreach?: boolean;
   tags: string[];
   aliases: string[];
   mergedIntoContactId: string | null;
@@ -157,6 +175,7 @@ export type CrmContact = {
 };
 
 export type CrmContactInput = {
+  companyId?: string;
   firstName: string;
   lastName: string;
   email: string | null;
@@ -167,6 +186,13 @@ export type CrmContactInput = {
   communicationNotes: string | null;
   tags: string[];
   version?: number;
+  outreachDecision?: {
+    preference: 'Unknown' | 'Permitted' | 'Suppressed';
+    permissionSource: string;
+    recordedOn: string;
+    suppressionReason: string | null;
+    explanation: string;
+  };
 };
 
 export type CrmCompanyContact = {
@@ -286,6 +312,8 @@ export type CrmOpportunity = {
   name: string;
   companyId: string;
   companyName: string;
+  departmentId: string | null;
+  departmentName: string | null;
   pipelineId: string;
   pipelineName: string;
   stageId: string;
@@ -313,6 +341,7 @@ export type CrmOpportunity = {
 export type CrmOpportunityInput = {
   name: string;
   companyId: string;
+  departmentId?: string | null;
   pipelineId: string;
   stageId?: string | null;
   ownerUserId?: string | null;
@@ -326,6 +355,15 @@ export type CrmOpportunityInput = {
   tags: string[];
   version?: number;
 };
+
+export type CrmOpportunityDepartment = { id: string; name: string };
+
+export async function listCrmOpportunityDepartments(companyId: string) {
+  const response = await api.get<ApiEnvelope<CrmOpportunityDepartment[]>>(
+    `/platform/crm/companies/${companyId}/departments/opportunity-choices`,
+  );
+  return response.data.data!;
+}
 
 export type CrmOpportunityContact = {
   id: string;
@@ -520,15 +558,6 @@ export async function getCrmCompany(id: string) {
   return unwrap(response.data);
 }
 
-export async function getCrmCompanyByAccessOrganization(
-  organizationId: string,
-) {
-  const response = await api.get<ApiEnvelope<CrmCompany>>(
-    `/platform/crm/companies/by-access/${organizationId}`,
-  );
-  return unwrap(response.data);
-}
-
 export async function createCrmCompany(input: CrmCompanyInput) {
   const response = await api.post<ApiEnvelope<CrmCompany>>(
     "/platform/crm/companies",
@@ -718,6 +747,7 @@ export async function updateCompanyContact(
 }
 
 export async function listCrmLeads(input: {
+  needsNextAction?: boolean;
   search?: string;
   status?: CrmLeadStatus;
   includeInactive?: boolean;
@@ -770,6 +800,7 @@ export async function convertCrmLead(
   input: {
     existingCompanyId?: string | null;
     createCompany: boolean;
+    companyName?: string | null;
     createContact: boolean;
     createOpportunity: boolean;
     opportunityName?: string | null;
@@ -821,6 +852,9 @@ export async function updateCrmPipeline(
     input,
   );
   return unwrap(response.data);
+}
+export async function deleteCrmPipeline(id: string, version: number) {
+  await api.delete(`/platform/crm/pipelines/${id}`, { data: { version } });
 }
 export async function changeCrmPipelineActive(
   id: string,
@@ -881,6 +915,7 @@ export async function changeCrmPipelineStageActive(
 }
 
 export async function listCrmOpportunities(input: {
+  staleOnly?: boolean;
   search?: string;
   pipelineId?: string;
   stageId?: string;
@@ -895,6 +930,28 @@ export async function listCrmOpportunities(input: {
   );
   return unwrap(response.data);
 }
+export type CrmOpportunityStageSummary = {
+  stageId: string;
+  stageName: string;
+  pipelineName: string;
+  probability?: number;
+  count: number;
+  unpricedCount: number;
+  currencyTotals: { currency: string; amount: number }[];
+};
+
+export async function getCrmOpportunityStageSummary(input: {
+  search?: string;
+  pipelineId?: string;
+  staleOnly?: boolean;
+}) {
+  const response = await api.get<ApiEnvelope<CrmOpportunityStageSummary[]>>(
+    "/platform/crm/opportunities/stage-summary",
+    { params: input },
+  );
+  return unwrap(response.data);
+}
+
 export async function getCrmOpportunity(id: string) {
   const response = await api.get<ApiEnvelope<CrmOpportunity>>(
     `/platform/crm/opportunities/${id}`,
@@ -1019,6 +1076,8 @@ export async function createCrmActivity(input: {
   return unwrap(response.data);
 }
 export async function listCrmTasks(input: {
+  dueSoonOnly?: boolean;
+  search?: string;
   status?: CrmTaskStatus;
   ownerUserId?: string;
   companyId?: string;
@@ -1035,7 +1094,7 @@ export async function listCrmTasks(input: {
   );
   return unwrap(response.data);
 }
-export async function createCrmTask(input: {
+export type CrmTaskInput = {
   title: string;
   description: string | null;
   ownerUserId?: string | null;
@@ -1047,11 +1106,20 @@ export async function createCrmTask(input: {
   contactId?: string | null;
   leadId?: string | null;
   opportunityId?: string | null;
-}) {
+};
+export async function createCrmTask(input: CrmTaskInput) {
   const response = await api.post<ApiEnvelope<CrmTask>>(
     "/platform/crm/tasks",
     input,
   );
+  return unwrap(response.data);
+}
+export async function getCrmTask(id: string) {
+  const response = await api.get<ApiEnvelope<CrmTask>>(`/platform/crm/tasks/${id}`);
+  return unwrap(response.data);
+}
+export async function updateCrmTask(id: string, input: CrmTaskInput & { version: number }) {
+  const response = await api.put<ApiEnvelope<CrmTask>>(`/platform/crm/tasks/${id}`, input);
   return unwrap(response.data);
 }
 export async function changeCrmTaskStatus(

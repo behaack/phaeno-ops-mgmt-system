@@ -3,6 +3,7 @@ namespace PhaenoPortal.Test;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using Microsoft.Extensions.Options;
 using PSeq.Operations.Commercial.Accounts.Application;
 using PhaenoPortal.App.Features.Accounts.Services;
@@ -65,7 +66,13 @@ public class MailgunInvitationEmailSenderTests
         Assert.Equal("true", form["o:require-tls"]);
         Assert.Equal("false", form["o:skip-verification"]);
         Assert.Contains("https://portal.example.test/accept-invite?token=abc", form["text"]);
-        Assert.Contains("Acme Health", form["html"]);
+        Assert.Equal("organization-invitation.en-us", form["template"]);
+        Assert.False(form.ContainsKey("html"));
+        using var variables = JsonDocument.Parse(form["t:variables"]);
+        Assert.Equal("Acme Health", variables.RootElement.GetProperty("organization_name").GetString());
+        Assert.Equal("https://portal.example.test/accept-invite?token=abc", variables.RootElement.GetProperty("invite_url").GetString());
+        Assert.Equal("person@example.com", variables.RootElement.GetProperty("recipient_email").GetString());
+        Assert.DoesNotContain("v:invite_url", form.Keys);
     }
 
     [Fact]

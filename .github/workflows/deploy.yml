@@ -3,6 +3,32 @@ name: Deploy Portal Green
 on:
   workflow_dispatch:
     inputs:
+      file_storage_provider:
+        description: Preserve the selected storage provider, or explicitly select persistent Local storage or Disabled; no bytes are migrated
+        required: true
+        default: Preserve
+        type: choice
+        options:
+          - Preserve
+          - Local
+          - Disabled
+      file_scanning_provider:
+        description: Preserve scanning, or explicitly activate the private managed ClamAV scanner or disable scanning
+        required: true
+        default: Preserve
+        type: choice
+        options:
+          - Preserve
+          - ClamAv
+          - Disabled
+      bootstrap_runtime_configuration:
+        description: Preserve the existing bootstrap setting, or explicitly reinstall the configured bootstrap administrator
+        required: true
+        default: Preserve
+        type: choice
+        options:
+          - Preserve
+          - Install
       apply_migrations:
         description: Apply pending Portal migrations after creating an encrypted database backup
         required: true
@@ -62,6 +88,7 @@ jobs:
       - name: Validate deployment secrets
         env:
           APPLY_MIGRATIONS: ${{ inputs.apply_migrations }}
+          BOOTSTRAP_CONFIGURATION: ${{ inputs.bootstrap_runtime_configuration }}
           CUTOVER_CLERK_IDENTITY: ${{ inputs.cutover_clerk_identity }}
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
@@ -87,10 +114,6 @@ jobs:
             DEPLOY_KNOWN_HOSTS \
             DEPLOY_SSH_KEY \
             DEPLOY_USER \
-            PORTAL_BOOTSTRAP_ADMIN_EMAIL \
-            PORTAL_BOOTSTRAP_ADMIN_FIRST_NAME \
-            PORTAL_BOOTSTRAP_ADMIN_LAST_NAME \
-            PORTAL_BOOTSTRAP_ORGANIZATION_NAME \
             PORTAL_CLERK_AUTHORITY \
             PORTAL_CLERK_SECRET_KEY \
             PORTAL_MAILGUN_WEBHOOK_SIGNING_KEY; do
@@ -100,7 +123,17 @@ jobs:
             fi
           done
 
-          if [ -n "$PORTAL_BOOTSTRAP_ADMIN_EMAIL" ]; then
+          if [ "$BOOTSTRAP_CONFIGURATION" = "Install" ]; then
+            for name in \
+              PORTAL_BOOTSTRAP_ADMIN_EMAIL \
+              PORTAL_BOOTSTRAP_ADMIN_FIRST_NAME \
+              PORTAL_BOOTSTRAP_ADMIN_LAST_NAME \
+              PORTAL_BOOTSTRAP_ORGANIZATION_NAME; do
+              if [ -z "${!name}" ]; then
+                echo "::error::Missing bootstrap configuration ${name}."
+                missing=1
+              fi
+            done
             case "$PORTAL_BOOTSTRAP_ADMIN_EMAIL" in
               *@*.*) ;;
               *)
@@ -108,6 +141,12 @@ jobs:
                 missing=1
                 ;;
             esac
+          fi
+
+          if [ "$CUTOVER_CLERK_IDENTITY" = "true" ] \
+            && [ "$BOOTSTRAP_CONFIGURATION" != "Install" ]; then
+            echo "::error::Clerk identity cutover requires explicit bootstrap configuration installation."
+            missing=1
           fi
 
           if [ -n "$PORTAL_CLERK_SECRET_KEY" ]; then
@@ -212,6 +251,22 @@ jobs:
           printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/deploy_key ~/.ssh/known_hosts
 
+      - name: Set up documentation build runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Set up documentation package manager
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.24.0
+
+      - name: Validate packaged Portal documentation
+        working-directory: frontend
+        run: |
+          pnpm install --frozen-lockfile
+          node scripts/generate-documentation.mjs --check
+
       - name: Create deployment archive
         env:
           DEPLOY_ARCHIVE: ${{ steps.release.outputs.archive_name }}
@@ -288,11 +343,25 @@ jobs:
             "$release_path/deployment/hetzner/green/deploy-release.sh" \
             "$release_path/deployment/hetzner/green/install-bootstrap-runtime-config.sh" \
             "$release_path/deployment/hetzner/green/install-clerk-runtime-secret.sh" \
-            "$release_path/deployment/hetzner/green/install-disabled-file-storage-runtime-config.sh" \
+            "$release_path/deployment/hetzner/green/install-file-storage-runtime-config.sh" \
+            "$release_path/deployment/hetzner/green/install-file-scanning-runtime-config.sh" \
+            "$release_path/deployment/hetzner/green/preflight-file-services.sh" \
             "$release_path/deployment/hetzner/green/install-mailgun-invitation-runtime-config.sh" \
             "$release_path/deployment/hetzner/green/install-s3-runtime-config.sh" \
             "$release_path/deployment/hetzner/green/install-website-preview-search-runtime-config.sh"
           REMOTE
+
+      - name: Check file-service capacity and existing references before changing runtime settings
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          RELEASE_PATH: ${{ steps.release.outputs.release_path }}
+          FILE_STORAGE_PROVIDER: ${{ inputs.file_storage_provider }}
+          FILE_SCANNING_PROVIDER: ${{ inputs.file_scanning_provider }}
+        run: |
+          printf '%s\n%s\n' "$FILE_STORAGE_PROVIDER" "$FILE_SCANNING_PROVIDER" \
+            | ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
+                "$RELEASE_PATH/deployment/hetzner/green/preflight-file-services.sh '$DEPLOY_ROOT'"
 
       - name: Install Clerk runtime secret
         env:
@@ -309,6 +378,7 @@ jobs:
                 "$RELEASE_PATH/deployment/hetzner/green/install-clerk-runtime-secret.sh '$DEPLOY_ROOT'"
 
       - name: Install Portal bootstrap runtime configuration
+        if: inputs.bootstrap_runtime_configuration == 'Install'
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
@@ -338,15 +408,27 @@ jobs:
             | ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
                 "$RELEASE_PATH/deployment/hetzner/green/install-mailgun-invitation-runtime-config.sh '$DEPLOY_ROOT'"
 
-      - name: Install disabled file-storage runtime configuration
+      - name: Preserve or explicitly select file-storage runtime configuration
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           RELEASE_PATH: ${{ steps.release.outputs.release_path }}
+          FILE_STORAGE_PROVIDER: ${{ inputs.file_storage_provider }}
         run: |
-          printf 'FileStorage__Provider=Disabled\n' \
+          printf '%s\n' "$FILE_STORAGE_PROVIDER" \
             | ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
-                "$RELEASE_PATH/deployment/hetzner/green/install-disabled-file-storage-runtime-config.sh '$DEPLOY_ROOT'"
+                "$RELEASE_PATH/deployment/hetzner/green/install-file-storage-runtime-config.sh '$DEPLOY_ROOT'"
+
+      - name: Preserve or explicitly select file-scanning runtime configuration
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          RELEASE_PATH: ${{ steps.release.outputs.release_path }}
+          FILE_SCANNING_PROVIDER: ${{ inputs.file_scanning_provider }}
+        run: |
+          printf '%s\n' "$FILE_SCANNING_PROVIDER" \
+            | ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
+                "$RELEASE_PATH/deployment/hetzner/green/install-file-scanning-runtime-config.sh '$DEPLOY_ROOT'"
 
       - name: Install Website Preview search runtime configuration
         if: ${{ vars.WEBSITE_PREVIEW_SEARCH_URL != '' }}

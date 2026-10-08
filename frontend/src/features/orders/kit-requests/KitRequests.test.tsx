@@ -1,0 +1,139 @@
+import { supplierCatalogFixture as baseCatalog, tubeSupplierId, tubeProductId, shipperSupplierId, shipperProductId } from '#/test-helpers/supplier-catalog'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import type { ReactNode } from 'react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { availableTransportationStockKitsFixture as stockKits, kitRequestDetailFixture as detail, kitRequestFixture as request } from '#/test-helpers/transportation-kit-requests'
+import { containerDefinition as baseDefinition, standardKit } from '#/test-helpers/shipping-containers'
+import { KitRequestsPanel } from './KitRequestsPanel'
+import { KitRequestDetailPage } from './KitRequestDetailPage'
+import { KitRequestDispatchDialog } from './KitRequestDispatchDialog'
+
+const mocks = vi.hoisted(() => ({ catalog: vi.fn(), list: vi.fn(), get: vi.fn(), resolve: vi.fn(), dispatch: vi.fn(), cancel: vi.fn(), definitions: vi.fn(), create: vi.fn(), navigate: vi.fn(), workflows: vi.fn(), allowed: true }))
+const supplierCatalogFixture = baseCatalog
+const containerDefinition = { ...baseDefinition, shippingContainerProductId: shipperProductId, kitContents: [
+  { supplierProductId: tubeProductId, supplierId: tubeSupplierId, supplierName: baseCatalog[0].name, productNumber: baseCatalog[0].products[0].productNumber, productDescription: baseCatalog[0].products[0].description, productTypeName: 'Tube', kind: 'Tube' as const, quantity: 20 },
+  { supplierProductId: shipperProductId, supplierId: shipperSupplierId, supplierName: baseCatalog[1].name, productNumber: baseCatalog[1].products[0].productNumber, productDescription: baseCatalog[1].products[0].description, productTypeName: 'Shipping Container', kind: 'ShippingContainer' as const, quantity: 1 },
+] }
+vi.mock('#/api/transportation-kit-requests', () => ({ getPlatformTransportationKitRequests: mocks.list, getPlatformTransportationKitRequest: mocks.get, resolveTransportationKitBarcode: mocks.resolve, dispatchTransportationKitRequest: mocks.dispatch, cancelPlatformTransportationKitRequest: mocks.cancel }))
+vi.mock('#/api/lab-kit-assembly', async original => ({ ...await original<typeof import('#/api/lab-kit-assembly')>(), getKitAssemblyWorkflows: mocks.workflows }))
+vi.mock('#/api/supplier-catalog', async importOriginal => ({ ...await importOriginal<typeof import('#/api/supplier-catalog')>(), useSupplierCatalog: () => mocks.catalog() }))
+vi.mock('#/api/shipping-containers', () => ({ getShippingContainerDefinitions: mocks.definitions, createShippingStockKit: mocks.create }))
+vi.mock('#/features/auth/session-context', () => ({ usePhaenoSession: () => ({ session: { capabilities: { canManageOrderConfiguration: mocks.allowed } } }) }))
+vi.mock('../use-order-draft-guard', () => ({ useOrderDraftGuard: () => vi.fn() }))
+vi.mock('@tanstack/react-router', () => ({ useNavigate: () => mocks.navigate, useSearch: () => ({}), Link: ({ children, to, params }: { children: ReactNode; to: string; params?: Record<string, string> }) => <a href={Object.entries(params ?? {}).reduce((path, [key, value]) => path.replace(`$${key}`, value), to)}>{children}</a> }))
+function mount(node: ReactNode) { return render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}>{node}</QueryClientProvider>) }
+function fill(label: string, value: string, group?: string) { fireEvent.change((group ? within(screen.getByRole('group', { name: group })) : screen).getByLabelText(new RegExp(label)), { target: { value } }) }
+async function scanKit(barcode: string, accepted = true) { fill('Kit barcode', barcode); fireEvent.click(screen.getByRole('button', { name: 'Add kit' })); await waitFor(() => expect(mocks.resolve).toHaveBeenCalledWith(request.id, barcode)); if (accepted) await screen.findByRole('button', { name: `Remove ${barcode}` }) }
+beforeEach(() => { vi.clearAllMocks(); mocks.workflows.mockResolvedValue([]); mocks.catalog.mockReturnValue({ data: supplierCatalogFixture, isPending: false, isError: false, error: null }); mocks.allowed = true; mocks.definitions.mockResolvedValue([{ ...containerDefinition, id: request.lines[0].containerDefinitionId }, { ...containerDefinition, id: '40000000-0000-4000-8000-000000000004', commonName: 'Unrequested size' }]); mocks.create.mockResolvedValue(standardKit); mocks.list.mockResolvedValue([request]); mocks.get.mockResolvedValue(detail); mocks.resolve.mockImplementation(async (_id: string, barcode: string) => stockKits.find(kit => kit.kitNumber === barcode) ?? Promise.reject(new Error('Kit not ready.'))); mocks.dispatch.mockResolvedValue(detail); mocks.cancel.mockResolvedValue({ ...request, status: 'Cancelled' }) })
+
+describe('transportation-kit fulfillment', () => {
+  it('opens dispatch in the list only after checking the current request', async () => {
+    mount(<KitRequestsPanel apiEnabled />)
+    const actions = await screen.findByRole('button', { name: 'Actions for Request 20000000' })
+    expect(mocks.get).not.toHaveBeenCalled()
+    fireEvent.pointerDown(actions, { button: 0, ctrlKey: false })
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Record kit shipment' }))
+    expect(await screen.findByRole('dialog', { name: 'Record kit shipment' })).toBeTruthy()
+    expect(await screen.findByLabelText(/Tracking number/)).toBeTruthy()
+    expect(mocks.get).toHaveBeenCalledWith(request.id)
+    expect(mocks.dispatch).not.toHaveBeenCalled()
+    expect(mocks.navigate).not.toHaveBeenCalled()
+  })
+
+  it('rechecks cancellation permission instead of writing from a stale list row', async () => {
+    mocks.get.mockResolvedValue({ ...detail, request: { ...request, status: 'Dispatched', canCancel: false }, canDispatch: false })
+    mount(<KitRequestsPanel apiEnabled />)
+    fireEvent.pointerDown(await screen.findByRole('button', { name: 'Actions for Request 20000000' }), { button: 0, ctrlKey: false })
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Cancel request' }))
+    expect(await screen.findByText(/This request can no longer be cancelled/)).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Cancel request' })).toBeNull()
+    expect(mocks.cancel).not.toHaveBeenCalled()
+  })
+  it('links an open request to its dedicated detail without embedding a dispatch form', async () => { mount(<KitRequestsPanel apiEnabled />); expect((await screen.findByRole('link', { name: 'Request 20000000' })).getAttribute('href')).toBe(`/lab-operations/kit-requests/${request.id}`); expect(screen.getByText('Example Customer · Research')).toBeTruthy(); expect(screen.queryByLabelText(/Tracking number/)).toBeNull() })
+  it('does not request staff data without configuration access', () => { mocks.allowed = false; mount(<KitRequestDetailPage requestId={request.id} />); expect(screen.getByText('A Phaeno configuration administrator is required.')).toBeTruthy(); expect(mocks.get).not.toHaveBeenCalled() })
+  it('shows a frozen address and stock shortage while explaining a blocked dispatch', async () => { mocks.get.mockResolvedValue({ ...detail, availableTypes: detail.availableTypes.map(type => ({ ...type, availableQuantity: 0 })), canDispatch: false, dispatchBlockedReason: 'Prepare fully registered kits first.' }); mount(<KitRequestDetailPage requestId={request.id} />); expect(await screen.findByText('100 Science Avenue')).toBeTruthy(); expect(screen.getByText('Prepare kits before shipping')).toBeTruthy(); expect(screen.getByText('Prepare fully registered kits first.')).toBeTruthy(); expect(screen.queryByRole('button', { name: 'Record kit shipment' })).toBeNull(); expect(screen.getByRole('button', { name: 'Actions' })).toBeTruthy() })
+  it('keeps partial shipment available and shows only the actual missing quantity', async () => {
+    mocks.get.mockResolvedValue({ ...detail, availableTypes: detail.availableTypes.map(type => ({ ...type, availableQuantity: 1 })) })
+    mount(<KitRequestDetailPage requestId={request.id} />)
+    expect(await screen.findByRole('button', { name: 'Actions' })).toBeTruthy()
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Actions' }), { button: 0, ctrlKey: false })
+    expect(screen.getByRole('menuitem', { name: 'Record kit shipment' })).toBeTruthy()
+    expect(screen.getByRole('menuitem', { name: 'Prepare kits' })).toBeTruthy()
+    expect(screen.getByText('1 × 20-tube transportation kit · 1 ready')).toBeTruthy()
+  })
+  it('does not offer shipment for stock of an unrelated size', async () => {
+    mocks.get.mockResolvedValue({ ...detail, availableTypes: [{ ...detail.availableTypes[0], containerDefinitionId: 'other-size' }] })
+    mount(<KitRequestDetailPage requestId={request.id} />)
+    expect(await screen.findByRole('button', { name: 'Actions' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Record kit shipment' })).toBeNull()
+  })
+  it('saves an unfinished assembly for a missing size and returns to its request', async () => {
+    mocks.get.mockResolvedValue({ ...detail, availableTypes: detail.availableTypes.map(type => ({ ...type, availableQuantity: 0 })) })
+    mount(<KitRequestDetailPage requestId={request.id} />)
+    fireEvent.pointerDown(await screen.findByRole('button', { name: 'Actions' }), { button: 0, ctrlKey: false }); fireEvent.click(screen.getByRole('menuitem', { name: 'Prepare kits' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Assemble transportation kit' })
+    expect(within(dialog).queryByRole('option', { name: /Unrequested size/ })).toBeNull()
+    fireEvent.change(within(dialog).getByLabelText(/Kit specification/), { target: { value: request.lines[0].containerDefinitionId } })
+    expect(within(dialog).getByText(/Tube maker · T-001/)).toBeTruthy()
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Save for later' }))
+    await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith(expect.objectContaining({
+      to: '/lab-operations/stock-kits/$kitId', params: { kitId: standardKit.id },
+      search: expect.objectContaining({ returnKitRequestId: request.id })
+    })))
+    expect(mocks.dispatch).not.toHaveBeenCalled()
+  })
+  it('requires a barcode scan before dispatch', async () => { mount(<KitRequestDispatchDialog detail={detail} onClose={vi.fn()} onSaved={vi.fn()} />); fill('Carrier', 'Carrier'); fill('Tracking number', 'TRACK-1'); fireEvent.click(screen.getByRole('button', { name: 'Record kit shipment' })); expect(await screen.findByText('Scan at least one physical kit to dispatch.')).toBeTruthy(); expect(mocks.dispatch).not.toHaveBeenCalled() })
+  it('keeps a resolved kit selectable and rejects an invalid barcode beside the input', async () => {
+    mount(<KitRequestDispatchDialog detail={detail} onClose={vi.fn()} onSaved={vi.fn()} />)
+    await scanKit('KIT-001')
+    fill('Kit barcode', 'KIT-UNKNOWN')
+    fireEvent.click(screen.getByRole('button', { name: 'Add kit' }))
+    expect(await screen.findByText('Kit not ready.')).toBeTruthy()
+    expect(screen.queryByText('A scanned kit could not be verified. Scan it again.')).toBeNull()
+    expect(screen.getByRole('button', { name: 'Remove KIT-001' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Remove KIT-UNKNOWN' })).toBeNull()
+    const input = screen.getByLabelText('Kit barcode') as HTMLInputElement
+    expect(input.value).toBe('KIT-UNKNOWN')
+    expect(input.getAttribute('aria-invalid')).toBe('true')
+    expect(input.getAttribute('aria-describedby')).toContain('request-kit-barcode-error')
+    fill('Carrier', 'Carrier')
+    fill('Tracking number', 'TRACK-1')
+    fireEvent.click(screen.getByRole('button', { name: 'Record kit shipment' }))
+    await waitFor(() => expect(mocks.dispatch).toHaveBeenCalledWith(request.id,
+      expect.objectContaining({ stockKitIds: [stockKits[0].id] }), expect.any(String)))
+  })
+  it('requires receiving confirmation before continuing on an inactive saved destination', async () => {
+    const destinationId = '40000000-0000-4000-8000-000000000009'
+    const inactiveDetail = { ...detail, selectedPhaenoDestinationId: destinationId,
+      phaenoDestinations: [{ id: destinationId, name: 'Original receiving', revision: 2, isCurrentForNewWork: false }],
+      request: { ...request, status: 'PartiallyDispatched' as const } }
+    mount(<KitRequestDispatchDialog detail={inactiveDetail} onClose={vi.fn()} onSaved={vi.fn()} />)
+    expect(screen.getByText('Saved destination no longer active')).toBeTruthy()
+    await scanKit('KIT-001')
+    fill('Carrier', 'Carrier')
+    fill('Tracking number', 'TRACK-1')
+    fireEvent.click(screen.getByRole('button', { name: 'Record kit shipment' }))
+    expect(await screen.findByText('Confirm that receiving can accept the remaining kits at this saved destination.')).toBeTruthy()
+    expect(mocks.dispatch).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('checkbox', { name: /Receiving can accept the remaining kits/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Record kit shipment' }))
+    await waitFor(() => expect(mocks.dispatch).toHaveBeenCalledWith(request.id,
+      expect.objectContaining({ phaenoDestinationId: destinationId, confirmUnavailableFixedDestination: true }), expect.any(String)))
+  })
+  it('limits scans to the remaining requested quantity', async () => { mount(<KitRequestDispatchDialog detail={detail} onClose={vi.fn()} onSaved={vi.fn()} />); await scanKit('KIT-001'); await scanKit('KIT-002'); await scanKit('KIT-003', false); expect(await screen.findByText(/requested quantity of 20-tube transportation kit is already scanned/)).toBeTruthy(); expect(screen.getAllByRole('listitem').filter(item => item.textContent?.includes('KIT-'))).toHaveLength(2) })
+  it('records scanned identity and reuses the same dispatch key on a failed retry', async () => { mocks.dispatch.mockRejectedValue(new Error('Temporary dispatch failure.')); mount(<KitRequestDispatchDialog detail={detail} onClose={vi.fn()} onSaved={vi.fn()} />); await scanKit('KIT-001'); fill('Carrier', 'Carrier'); fill('Tracking number', 'TRACK-1'); fireEvent.click(screen.getByRole('button', { name: 'Record kit shipment' })); expect(await screen.findByText('Dispatch was not recorded')).toBeTruthy(); fireEvent.click(screen.getByRole('button', { name: 'Record kit shipment' })); await waitFor(() => expect(mocks.dispatch).toHaveBeenCalledTimes(2)); expect(mocks.dispatch.mock.calls[0]).toEqual([request.id, expect.objectContaining({ version: 3, stockKitIds: [stockKits[0].id], outboundTrackingNumber: 'TRACK-1', fulfilledAt: expect.stringMatching(/Z$/) }), expect.any(String)]); expect(mocks.dispatch.mock.calls[0][2]).toBe(mocks.dispatch.mock.calls[1][2]); expect((screen.getByLabelText(/Tracking number/) as HTMLInputElement).value).toBe('TRACK-1') })
+  it('keeps dirty dispatch entries when discard is declined and prevents closing during save', async () => { const close = vi.fn(); vi.spyOn(window, 'confirm').mockReturnValue(false); mocks.dispatch.mockImplementation(() => new Promise(() => {})); mount(<KitRequestDispatchDialog detail={detail} onClose={close} onSaved={vi.fn()} />); fill('Carrier', 'Carrier'); fireEvent.click(screen.getByRole('button', { name: 'Cancel' })); expect(close).not.toHaveBeenCalled(); await scanKit('KIT-001'); fill('Tracking number', 'TRACK-1'); fireEvent.click(screen.getByRole('button', { name: 'Record kit shipment' })); await waitFor(() => expect((screen.getByRole('button', { name: 'Cancel' }) as HTMLButtonElement).disabled).toBe(true)); expect((screen.getByLabelText(/Carrier/) as HTMLInputElement).disabled).toBe(true) })
+  it('shows in-transit and received kits distinctly without offering another dispatch after completion', async () => { mocks.get.mockResolvedValue({ ...detail, canDispatch: false, request: { ...request, status: 'Dispatched', canCancel: false, kits: [{ stockKitId: 'kit-1', kitNumber: 'KIT-SENT', outboundCarrier: 'Carrier', outboundTrackingNumber: 'TRACK-1', dispatchedAt: request.requestedAt, receivedAt: null }, { stockKitId: 'kit-2', kitNumber: 'KIT-RECEIVED', outboundCarrier: 'Carrier', outboundTrackingNumber: 'TRACK-2', dispatchedAt: request.requestedAt, receivedAt: request.requestedAt }] } }); mount(<KitRequestDetailPage requestId={request.id} />); expect(await screen.findByText('On the way')).toBeTruthy(); expect(screen.getByText('Received by Customer')).toBeTruthy(); expect(screen.queryByRole('button', { name: 'Record kit shipment' })).toBeNull(); expect(screen.queryByRole('button', { name: 'Actions' })).toBeNull() })
+  it('retains an open fulfillment draft when its request refresh fails', async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(<QueryClientProvider client={client}><KitRequestDetailPage requestId={request.id} /></QueryClientProvider>)
+    fireEvent.pointerDown(await screen.findByRole('button', { name: 'Actions' }), { button: 0, ctrlKey: false }); fireEvent.click(screen.getByRole('menuitem', { name: 'Record kit shipment' })); fill('Tracking number', 'RETAIN-THIS')
+    mocks.get.mockRejectedValueOnce(new Error('Connection interrupted.'))
+    await act(async () => { await client.invalidateQueries({ queryKey: ['platform-transportation-kit-request', request.id] }) })
+    const dialog = screen.getByRole('dialog'); expect(await within(dialog).findByText('Request refresh failed')).toBeTruthy()
+    expect((within(dialog).getByLabelText(/Tracking number/) as HTMLInputElement).value).toBe('RETAIN-THIS'); expect((within(dialog).getByRole('button', { name: 'Record kit shipment' }) as HTMLButtonElement).disabled).toBe(true)
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Retry request check' })); await waitFor(() => expect(within(dialog).queryByText('Request refresh failed')).toBeNull())
+    expect((within(dialog).getByLabelText(/Tracking number/) as HTMLInputElement).value).toBe('RETAIN-THIS'); expect(mocks.dispatch).not.toHaveBeenCalled()
+  })
+})

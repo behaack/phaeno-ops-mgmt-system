@@ -29,16 +29,17 @@ import { selectClass, textareaClass } from './OrganizationFormDialog'
 
 export type RequestAction = 'approve' | 'decline' | 'apply' | 'cancel'
 
-const schema = z.object({
-  explanation: z
-    .string()
-    .trim()
-    .min(1, 'Record the reason or completed work.')
-    .max(2000),
-  organizationId: z.string(),
-})
+const schema = (optionalExplanation: boolean) =>
+  z.object({
+    explanation: z
+      .string()
+      .trim()
+      .min(optionalExplanation ? 0 : 1, 'Record the reason.')
+      .max(2000),
+    organizationId: z.string(),
+  })
 
-type Values = z.infer<typeof schema>
+type Values = z.infer<ReturnType<typeof schema>>
 
 export function RequestActionDialog({
   action,
@@ -62,15 +63,20 @@ export function RequestActionDialog({
   request: RelationshipRequest | null
 }) {
   const open = Boolean(action && request)
+  const optionalApprovalNote = action === 'approve' && Boolean(request && (
+    request.requestType === 'Onboarding' || request.requestType === 'Evaluation'
+    || request.requestType === 'Offboarding' || request.requestType === 'ServiceChange'
+  ))
+  const optionalExplanation = optionalApprovalNote || action === 'apply'
   const form = useForm<Values>({
     defaultValues: { explanation: '', organizationId: '' },
     mode: 'onBlur',
-    resolver: zodResolver(schema),
+    resolver: zodResolver(schema(optionalExplanation)),
   })
 
   useEffect(() => {
     if (open) form.reset({ explanation: '', organizationId: request?.organizationId ?? '' })
-  }, [form, open, request?.organizationId])
+  }, [form, open, action, request?.id, request?.organizationId])
 
   if (!action || !request) return null
 
@@ -79,7 +85,9 @@ export function RequestActionDialog({
     && !request.organizationId
     && (request.requestType === 'Onboarding' || request.requestType === 'Evaluation')
     && (request.requestedOrganizationKind === 'Prospect' || request.requestedOrganizationKind === 'Customer' || request.requestedOrganizationKind === 'Partner')
-  const content = actionContent(action, enablesAccessOnApproval)
+  const content = action === 'apply' && request.requestType === 'RelationshipChange'
+    ? { title: 'Apply approved relationship change', description: `This converts the Prospect to ${request.requestedOrganizationKind}, preserving users, history, and data grants. Services remain separately authorized.`, label: 'Completed work', submitLabel: 'Apply relationship change' }
+    : actionContent(action, enablesAccessOnApproval)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -154,22 +162,26 @@ export function RequestActionDialog({
             </div>
           ) : null}
           <Label htmlFor="request-action-explanation">
-            <RequiredFieldName>{content.label}</RequiredFieldName>
+            {optionalApprovalNote ? 'Approval note (optional)' : action === 'apply'
+              ? 'Completed work (optional)' : <RequiredFieldName>{content.label}</RequiredFieldName>}
           </Label>
           <textarea
             id="request-action-explanation"
             className={textareaClass}
             rows={4}
+            required={!optionalExplanation}
+            maxLength={2000}
             aria-invalid={Boolean(form.formState.errors.explanation)}
+            aria-describedby={form.formState.errors.explanation ? 'request-action-explanation-error' : undefined}
             {...form.register('explanation')}
           />
           {form.formState.errors.explanation ? (
-            <p className="text-sm text-destructive" role="alert">
+            <p id="request-action-explanation-error" className="text-sm text-destructive" role="alert">
               {form.formState.errors.explanation.message}
             </p>
           ) : null}
         </form>
-        <RequiredDialogFooter>
+        <RequiredDialogFooter showLegend={!optionalExplanation || (action === 'apply' && !request.organizationId)}>
           <Button
             type="button"
             variant="outline"
@@ -206,28 +218,28 @@ function actionContent(action: RequestAction, enablesAccessOnApproval: boolean) 
             submitLabel: 'Approve and enable access',
           }
         : {
-            title: 'Approve Portal request',
+            title: 'Approve Company request',
             description: 'Approval records the decision but does not provision access, services, or an order.',
             label: 'Approval reason',
             submitLabel: 'Approve request',
           }
     case 'decline':
       return {
-        title: 'Decline Portal request',
+        title: 'Decline Company request',
         description: 'The request will close without applying any operational change.',
         label: 'Decline reason',
         submitLabel: 'Decline request',
       }
     case 'apply':
       return {
-        title: 'Complete Portal access request',
+        title: 'Complete Company request',
         description: 'Confirm the owning Company access, invitation, entitlement, or order work was completed first.',
         label: 'Completed work',
         submitLabel: 'Complete request',
       }
     case 'cancel':
       return {
-        title: 'Cancel Portal request',
+        title: 'Cancel Company request',
         description: 'The request will close without applying further operational change.',
         label: 'Cancellation reason',
         submitLabel: 'Cancel request',

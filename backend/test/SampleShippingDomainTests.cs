@@ -21,49 +21,36 @@ public class SampleShippingDomainTests
     }
 
     [Fact]
-    public void CompatibleSampleTypesResolveToOneDestinationPacket()
+    public void DifferentSampleTypesCannotSharePacketEvenWithTheSameProcedure()
     {
         var destination = Destination();
         var first = SampleType("RNA", "Extracted RNA");
         var second = SampleType("CDNA", "cDNA");
-        var rules = new[]
+        var procedure = Procedure();
+        var procedures = new Dictionary<Guid, SampleShippingProcedure>
         {
-            Rule(destination, first, "FROZEN", requiresSeparateShipment: false),
-            Rule(destination, second, "FROZEN", requiresSeparateShipment: false)
+            [first.Id] = procedure,
+            [second.Id] = procedure
         };
 
-        var resolution = SampleShippingCompatibilityResolver.Resolve(
+        var error = Assert.Throws<InvalidOperationException>(() => SampleShippingCompatibilityResolver.Resolve(
             destination,
             new[] { first, second },
-            rules,
-            Now);
+            procedures,
+            Now));
 
-        Assert.Equal("FROZEN", resolution.CompatibilityGroup);
-        Assert.Equal(2, resolution.Rules.Count);
-        Assert.False(resolution.RequiresSeparateShipment);
+        Assert.Contains("only one sample type", error.Message);
     }
 
     [Fact]
-    public void IncompatibleOrIncompleteSelectionCannotResolveACombinedPacket()
+    public void MissingProcedureCannotResolveAPacket()
     {
         var destination = Destination();
         var first = SampleType("RNA", "Extracted RNA");
-        var second = SampleType("TISSUE", "Frozen tissue");
-        var incompatibleRules = new[]
-        {
-            Rule(destination, first, "FROZEN_RNA", requiresSeparateShipment: false),
-            Rule(destination, second, "FROZEN_TISSUE", requiresSeparateShipment: true)
-        };
-
-        Assert.Throws<InvalidOperationException>(() => SampleShippingCompatibilityResolver.Resolve(
-            destination,
-            new[] { first, second },
-            incompatibleRules,
-            Now));
         Assert.Throws<InvalidOperationException>(() => SampleShippingCompatibilityResolver.Resolve(
             destination,
             new[] { first },
-            Array.Empty<SampleShippingInstructionRule>(),
+            new Dictionary<Guid, SampleShippingProcedure>(),
             Now));
     }
 
@@ -78,6 +65,22 @@ public class SampleShippingDomainTests
         Assert.True(destination.IsEffectiveAt(nextEffective.AddTicks(-1)));
         Assert.False(destination.IsEffectiveAt(nextEffective));
         Assert.Throws<InvalidOperationException>(() => destination.EndAt(nextEffective.AddDays(1)));
+    }
+
+    [Fact]
+    public void SampleTypeDeactivationPreservesIdentityAndCannotReopenEndedHistory()
+    {
+        var sample = SampleType("RNA", "Extracted RNA");
+        var id = sample.Id;
+        var from = sample.EffectiveFrom;
+        sample.SetActive(false, Now);
+        Assert.False(sample.IsEffectiveAt(Now));
+        Assert.Throws<InvalidOperationException>(() => sample.SetActive(true, Now));
+        Assert.Equal(id, sample.Id);
+        Assert.Equal(1, sample.Revision);
+        Assert.Equal(from, sample.EffectiveFrom);
+        sample.EndAt(Now.AddDays(1));
+        Assert.Throws<InvalidOperationException>(() => sample.SetActive(true, Now.AddDays(2)));
     }
 
     [Fact]
@@ -135,13 +138,13 @@ public class SampleShippingDomainTests
             "LOT-1",
             "Therapak",
             "37806 / Fisher 22-130-029",
-            2);
-        kit.Tubes.Add(new RegisteredSampleTube(kit.Id, "TUBE-0001"));
+            2, tubeBarcodeNamespace: "TEST_SUPPLIER");
+        kit.Tubes.Add(new RegisteredSampleTube(kit.Id, "TUBE-0001", "TEST_SUPPLIER"));
 
         Assert.Throws<InvalidOperationException>(() =>
             kit.Fulfill("Carrier", "TRACK-1", Now));
 
-        kit.Tubes.Add(new RegisteredSampleTube(kit.Id, "TUBE-0002"));
+        kit.Tubes.Add(new RegisteredSampleTube(kit.Id, "TUBE-0002", "TEST_SUPPLIER"));
         kit.Fulfill("Carrier", "TRACK-1", Now);
 
         Assert.Equal(SampleReturnKitStatus.Fulfilled, kit.Status);
@@ -149,10 +152,39 @@ public class SampleShippingDomainTests
     }
 
     [Fact]
+    public void CustomerDeclaredTubeMaterialStartsUnknownAndRetainsItsProvenance()
+    {
+        var tube = new RegisteredSampleTube(Guid.NewGuid(), "DECLARED-TUBE-1", "TEST_SUPPLIER");
+        var actor = Guid.NewGuid();
+        Assert.Null(tube.CustomerDeclaredQuantity);
+        Assert.Null(tube.CustomerDeclaredQuantityUnit);
+        tube.DeclareMaterial(12.5m, " µL ", actor, Now);
+        Assert.Equal(12.5m, tube.CustomerDeclaredQuantity);
+        Assert.Equal("µL", tube.CustomerDeclaredQuantityUnit);
+        Assert.Equal(actor, tube.CustomerDeclaredByUserId);
+        Assert.Equal(Now, tube.CustomerDeclaredAt);
+        tube.MarkAssigned(Now);
+        tube.MarkAccessioned(Now.AddMinutes(1));
+        Assert.Throws<InvalidOperationException>(() => tube.DeclareMaterial(10m, "µL", actor, Now.AddMinutes(2)));
+        Assert.Equal(12.5m, tube.CustomerDeclaredQuantity);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    [InlineData(0.0000001)]
+    public void CustomerDeclaredTubeMaterialRejectsNonpositiveOrUnrepresentableAmounts(decimal amount)
+    {
+        var tube = new RegisteredSampleTube(Guid.NewGuid(), "DECLARED-TUBE-2", "TEST_SUPPLIER");
+        Assert.Throws<ArgumentOutOfRangeException>(() => tube.DeclareMaterial(amount, "µL", Guid.NewGuid(), Now));
+        Assert.Null(tube.CustomerDeclaredQuantity);
+    }
+
+    [Fact]
     public void TubeAssignmentAndSupplierBarcodeAdoptionPreserveOnePhysicalIdentity()
     {
         var shipmentId = Guid.NewGuid();
-        var tube = new RegisteredSampleTube(Guid.NewGuid(), "TUBE-0003");
+        var tube = new RegisteredSampleTube(Guid.NewGuid(), "TUBE-0003", "TEST_SUPPLIER");
         var item = new SampleShipmentItem(
             shipmentId,
             Guid.NewGuid(),
@@ -163,7 +195,9 @@ public class SampleShippingDomainTests
             "uL");
 
         tube.MarkAssigned(Now);
-        item.AssignTube(tube.Id, Now);
+        var slot = new SampleShipmentTubeSlot(item.Id, 1);
+        slot.AssignTube(tube.Id, Now);
+        item.TubeSlots.Add(slot);
         var container = new LabContainer(
             Guid.NewGuid(),
             Guid.NewGuid(),
@@ -176,10 +210,11 @@ public class SampleShippingDomainTests
             "uL",
             null,
             LabContainerBarcodeSource.RegisteredSupplier,
-            tube.Id);
+            tube.Id,
+            barcodeNamespace: tube.BarcodeNamespace);
         tube.MarkAccessioned(Now.AddMinutes(1));
 
-        Assert.Equal(tube.Id, item.RegisteredSampleTubeId);
+        Assert.Equal(tube.Id, slot.RegisteredSampleTubeId);
         Assert.Equal(LabContainerBarcodeSource.RegisteredSupplier, container.BarcodeSource);
         Assert.Equal(tube.Id, container.ExternalBarcodeReferenceId);
         Assert.Equal("TUBE-0003", container.Barcode);
@@ -232,28 +267,16 @@ public class SampleShippingDomainTests
         null,
         48,
         Now.AddDays(-1),
-        true);
+        true,
+        Guid.NewGuid());
 
-    private static SampleShippingInstructionRule Rule(
-        SampleShippingDestination destination,
-        SampleTypeDefinition sampleType,
-        string compatibilityGroup,
-        bool requiresSeparateShipment) => new(
-            Guid.NewGuid(),
-            1,
-            null,
-            destination.Id,
-            sampleType.Id,
-            compatibilityGroup,
+    private static SampleShippingProcedure Procedure() => new(
+            Guid.NewGuid(), 1, null, "Shared procedure",
             "Pack with approved absorbent and secondary containment.",
             "Maintain the approved temperature range.",
             "Use an approved traceable carrier service.",
             "Dispatch only for an open receiving window.",
-            "Deliver to Sample Receiving.",
             "Include the current shipment packet.",
             "Contact Phaeno if delayed or damaged.",
-            null,
-            requiresSeparateShipment,
-            Now.AddDays(-1),
-            true);
+            null, true);
 }

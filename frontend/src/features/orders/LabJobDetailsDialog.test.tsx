@@ -7,18 +7,18 @@ import { LabJobDetailsDialog } from "./LabJobDetailsDialog";
 const api = vi.hoisted(() => ({
   createLabOrder: vi.fn(),
   initiateCustomerLabOrder: vi.fn(),
-  listDepartments: vi.fn(),
-}));
-
-vi.mock("#/api/organization-management", async (importOriginal) => ({
-  ...await importOriginal<typeof import("#/api/organization-management")>(),
-  listDepartments: api.listDepartments,
+  listCustomerOrderDepartments: vi.fn(),
+  getCustomerOrderReadiness: vi.fn(),
+  listLabOrderSampleTypes: vi.fn(),
 }));
 
 vi.mock("#/api/order-management", async (importOriginal) => {
   const original = await importOriginal<typeof import("#/api/order-management")>();
   return {
     ...original,
+    listCustomerOrderDepartments: api.listCustomerOrderDepartments,
+    getCustomerOrderReadiness: api.getCustomerOrderReadiness,
+    listLabOrderSampleTypes: api.listLabOrderSampleTypes,
     createLabOrder: api.createLabOrder,
     initiateCustomerLabOrder: api.initiateCustomerLabOrder,
   };
@@ -27,7 +27,9 @@ vi.mock("#/api/order-management", async (importOriginal) => {
 vi.mock("#/features/auth/session-context", () => ({
   usePhaenoSession: () => ({
     authProvider: "clerk",
+    selectedOrganizationId: 'partner-organization',
     session: {
+      memberships: [{ organizationId: 'partner-organization', organizationKind: 'Partner' }],
       capabilities: {
         canCreateLabServiceRequests: true,
         canQuoteLabServiceWork: true,
@@ -36,36 +38,15 @@ vi.mock("#/features/auth/session-context", () => ({
   }),
 }));
 
-describe("LabJobDetailsDialog price proposal", () => {
+describe("Partner LabJobDetailsDialog request submission", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    api.getCustomerOrderReadiness.mockResolvedValue({ canStartPricing: true, startPricingBlockers: [], quoteBlockers: [], invoiceBlockers: [] });
     api.createLabOrder.mockResolvedValue({ id: "order-1" });
+    api.listLabOrderSampleTypes.mockResolvedValue([{ id: '22222222-2222-4222-8222-222222222221', name: 'PSeq Total RNA', revision: 4 }]);
   });
 
-  it("sends the explicitly selected Customer department when staff start pricing", async () => {
-    api.listDepartments.mockResolvedValue([
-      { id: 'general', name: 'General', isDefault: true },
-      { id: 'research', name: 'Research', isDefault: false },
-    ]);
-    api.initiateCustomerLabOrder.mockResolvedValue({ id: 'order-2' });
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    render(<QueryClientProvider client={client}><LabJobDetailsDialog open onOpenChange={vi.fn()} onSaved={vi.fn()}
-      platformOrganizations={[{ id: 'customer', name: 'Atlas Research' }]}
-      sourceHandoff={{ requestId: 'request', requestNumber: 'REQ-1', organizationId: 'customer', organizationName: 'Atlas Research' }}
-    /></QueryClientProvider>);
-    const department = await screen.findByRole('combobox', { name: 'Department' });
-    await waitFor(() => expect(department).toHaveProperty('value', 'general'));
-    fireEvent.change(department, { target: { value: 'research' } });
-    fireEvent.change(screen.getByRole('textbox', { name: 'Job name' }), { target: { value: 'Research job' } });
-    fireEvent.change(screen.getByRole('textbox', { name: 'Biological source for source group 1' }), { target: { value: 'RNA' } });
-    fireEvent.change(screen.getByRole('textbox', { name: 'Storage requirements' }), { target: { value: 'Frozen' } });
-    fireEvent.change(screen.getByRole('textbox', { name: 'Safety declaration' }), { target: { value: 'No hazard' } });
-    fireEvent.click(screen.getByRole('checkbox', { name: /I confirm/ }));
-    fireEvent.click(screen.getByRole('button', { name: 'Start pricing' }));
-    await waitFor(() => expect(api.initiateCustomerLabOrder).toHaveBeenCalledWith(expect.objectContaining({ organizationId: 'customer', departmentId: 'research' })));
-  });
-
-  it("submits an optional USD price proposal with the job scope", async () => {
+  it("submits Partner scope directly for pricing without a price proposal", async () => {
     const client = new QueryClient({
       defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
     });
@@ -80,20 +61,24 @@ describe("LabJobDetailsDialog price proposal", () => {
     );
 
     fireEvent.change(screen.getByRole("textbox", { name: "Job name" }), { target: { value: "Hopkins pilot" } });
+    await screen.findByRole('option', { name: 'PSeq Total RNA' });
+    fireEvent.change(screen.getByRole("combobox", { name: "Sample type" }), { target: { value: "22222222-2222-4222-8222-222222222221" } });
     fireEvent.change(screen.getByRole("textbox", { name: "Biological source for source group 1" }), { target: { value: "Human PBMCs" } });
-    fireEvent.click(screen.getByRole("checkbox", { name: /Propose a price/ }));
-    fireEvent.change(screen.getByRole("spinbutton", { name: "Proposed price per specimen" }), { target: { value: "120.50" } });
-    fireEvent.change(screen.getByLabelText(/Pricing note/), { target: { value: "Sales-discussed pilot rate." } });
+    expect(screen.queryByRole("checkbox", { name: /Propose a price/ })).toBeNull();
+    expect(screen.getByRole("dialog", { name: "Submit lab service request" })).toBeTruthy();
+    expect(screen.getByText(/pricing for you to accept or decline/)).toBeTruthy();
     fireEvent.change(screen.getByRole("textbox", { name: "Storage requirements" }), { target: { value: "Ship frozen." } });
     fireEvent.change(screen.getByRole("textbox", { name: "Safety declaration" }), { target: { value: "No known hazards." } });
-    fireEvent.click(screen.getByRole("button", { name: "Create job" }));
+    fireEvent.change(screen.getByRole("spinbutton", { name: "Sample-sequencing runs" }), { target: { value: "20" } });
+    fireEvent.click(screen.getByRole("button", { name: "Submit request" }));
 
     await waitFor(() => expect(api.createLabOrder).toHaveBeenCalledWith(
       expect.objectContaining({
         customerReference: "Hopkins pilot",
-        proposedUnitPrice: 120.5,
-        priceProposalNote: "Sales-discussed pilot rate.",
+        sampleTypeDefinitionId: "22222222-2222-4222-8222-222222222221",
+        submitForPricing: true,
         requestedSpecimenCount: 1,
+        sequencingRunCount: 20,
       }),
     ));
   });

@@ -18,15 +18,63 @@ using static PhaenoPortal.App.Features.Crm.Services.CrmAccess;
 public sealed class CrmOpportunitiesController(PSeqOperationsDbContext dbContext, IExternalIdentityContext externalIdentityContext) : ControllerBase
 {
     [HttpGet]
-    public async Task<CrmPageDto<CrmOpportunityDto>> List([FromQuery] string? search, [FromQuery] Guid? companyId, [FromQuery] Guid? pipelineId, [FromQuery] Guid? stageId, [FromQuery] bool includeInactive = false, [FromQuery] int page = 1, [FromQuery] int pageSize = 100, CancellationToken cancellationToken = default)
+    public async Task<CrmPageDto<CrmOpportunityDto>> List([FromQuery] string? search, [FromQuery] Guid? companyId, [FromQuery] Guid? pipelineId, [FromQuery] Guid? stageId, [FromQuery] bool includeInactive = false, [FromQuery] int page = 1, [FromQuery] int pageSize = 100, CancellationToken cancellationToken = default, [FromQuery] bool staleOnly = false)
     {
         await RequireActor(cancellationToken);
         EnsurePagination(page, pageSize);
+        var query = FilteredQuery(search, companyId, pipelineId, includeInactive, staleOnly);
+        if (stageId.HasValue) query = query.Where(value => value.StageId == stageId);
+
+        var totalCount = await query.CountAsync(cancellationToken);
+        var values = await query.OrderBy(value => value.Stage.Position).ThenBy(value => value.ExpectedCloseDate).ThenBy(value => value.Name).ThenBy(value => value.Id)
+            .Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
+        return new CrmPageDto<CrmOpportunityDto> { Items = values.Select(value => ToDto(value)).ToList(), Page = page, PageSize = pageSize, TotalCount = totalCount };
+    }
+
+    [HttpGet("stage-summary")]
+    public async Task<IReadOnlyList<CrmOpportunityStageSummaryDto>> StageSummary(
+        [FromQuery] string? search, [FromQuery] Guid? companyId, [FromQuery] Guid? pipelineId,
+        [FromQuery] bool includeInactive = false, [FromQuery] bool staleOnly = false,
+        CancellationToken cancellationToken = default)
+    {
+        await RequireActor(cancellationToken);
+        // Stage and page intentionally do not restrict the overview of the matching pipeline.
+        var query = FilteredQuery(search, companyId, pipelineId, includeInactive, staleOnly);
+        var totals = await query.GroupBy(value => new { value.StageId, value.Currency })
+            .Select(group => new
+            {
+                group.Key.StageId,
+                group.Key.Currency,
+                Count = group.Count(),
+                UnpricedCount = group.Count(value => value.Amount == null),
+                Amount = group.Sum(value => value.Amount ?? 0m),
+            }).ToListAsync(cancellationToken);
+        var populatedStageIds = totals.Select(value => value.StageId).Distinct().ToArray();
+        var stages = await dbContext.CrmPipelineStages.AsNoTracking()
+            .Where(value => (!pipelineId.HasValue || value.PipelineId == pipelineId)
+                && ((value.IsActive && value.Pipeline.IsActive) || populatedStageIds.Contains(value.Id)))
+            .OrderBy(value => value.Pipeline.Name).ThenBy(value => value.PipelineId)
+            .ThenBy(value => value.Position).ThenBy(value => value.Id)
+            .Select(value => new { value.Id, value.Name, PipelineName = value.Pipeline.Name, value.Probability })
+            .ToListAsync(cancellationToken);
+        var byStage = totals.ToLookup(value => value.StageId);
+        return stages.Select(stage => new CrmOpportunityStageSummaryDto(
+            stage.Id, stage.Name, stage.PipelineName, stage.Probability,
+            byStage[stage.Id].Sum(value => value.Count),
+            byStage[stage.Id].Sum(value => value.UnpricedCount),
+            byStage[stage.Id].Where(value => value.Count > value.UnpricedCount)
+                .OrderBy(value => value.Currency)
+                .Select(value => new CrmOpportunityCurrencyTotalDto(value.Currency, value.Amount)).ToList()
+        )).ToList();
+    }
+
+    private IQueryable<CrmOpportunity> FilteredQuery(string? search, Guid? companyId, Guid? pipelineId, bool includeInactive, bool staleOnly)
+    {
         var query = Query(tracking: false);
         if (!includeInactive) query = query.Where(value => value.IsActive);
         if (companyId.HasValue) query = query.Where(value => value.CompanyId == companyId);
         if (pipelineId.HasValue) query = query.Where(value => value.PipelineId == pipelineId);
-        if (stageId.HasValue) query = query.Where(value => value.StageId == stageId);
+        if (staleOnly) query = CrmAttentionFilters.StaleOpportunities(query, DateTime.UtcNow);
         if (!string.IsNullOrWhiteSpace(search))
         {
             var pattern = $"%{EscapeLike(search.Trim())}%";
@@ -36,10 +84,7 @@ public sealed class CrmOpportunitiesController(PSeqOperationsDbContext dbContext
                 || (value.ProductInterest != null && EF.Functions.ILike(value.ProductInterest, pattern, "\\")));
         }
 
-        var totalCount = await query.CountAsync(cancellationToken);
-        var values = await query.OrderBy(value => value.Stage.Position).ThenBy(value => value.ExpectedCloseDate).ThenBy(value => value.Name)
-            .Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
-        return new CrmPageDto<CrmOpportunityDto> { Items = values.Select(value => ToDto(value)).ToList(), Page = page, PageSize = pageSize, TotalCount = totalCount };
+        return query;
     }
 
     [HttpGet("{opportunityId:guid}")]
@@ -54,9 +99,11 @@ public sealed class CrmOpportunitiesController(PSeqOperationsDbContext dbContext
     {
         var actor = await RequireActor(cancellationToken);
         var company = await RequireCompany(request.CompanyId, cancellationToken);
+        var departmentId = await CrmOpportunityDepartments.ResolveAsync(dbContext, company, request.DepartmentId, cancellationToken);
         var stage = await RequireInitialStage(request.PipelineId, request.StageId, cancellationToken);
         var owner = request.OwnerUserId.HasValue ? await RequireOwner(request.OwnerUserId.Value, cancellationToken) : actor;
         var value = Execute(() => new CrmOpportunity(request.Name, company.Id, stage, owner.Id, request.ProductInterest, request.Amount, request.Currency, request.ExpectedCloseDate, request.NextStep, request.Competitors, request.Description, request.Tags));
+        value.AssignDepartment(departmentId);
         dbContext.CrmOpportunities.Add(value);
         dbContext.CrmOpportunityStageHistory.Add(new CrmOpportunityStageHistory(value.Id, null, stage.Id, "Opportunity created.", actor.Id, DateTime.UtcNow));
         dbContext.CrmActivities.Add(new CrmActivity(CrmActivityType.StatusChange, "Opportunity created", $"Created in {stage.Name}.", DateTime.UtcNow, CrmActivityVisibility.Internal, actor.Id, company.Id, opportunityId: value.Id));
@@ -71,9 +118,11 @@ public sealed class CrmOpportunitiesController(PSeqOperationsDbContext dbContext
         await RequireActor(cancellationToken);
         var value = await Require(opportunityId, true, cancellationToken);
         EnsureVersion(value.Version, request.Version ?? 0);
-        if (request.CompanyId != value.CompanyId) await RequireCompany(request.CompanyId, cancellationToken);
+        var company = await RequireCompany(request.CompanyId, cancellationToken);
+        var departmentId = await CrmOpportunityDepartments.ResolveAsync(dbContext, company, request.DepartmentId, cancellationToken);
         Execute(() => value.UpdateProfile(request.Name, request.ProductInterest, request.Amount, request.Currency, request.ExpectedCloseDate, request.NextStep, request.Competitors, request.Description, request.Tags));
         if (request.CompanyId != value.CompanyId) value.ReassignCompany(request.CompanyId);
+        value.AssignDepartment(departmentId);
         User? owner = null;
         if (request.OwnerUserId.HasValue && request.OwnerUserId.Value != value.OwnerUserId)
         {
@@ -99,9 +148,7 @@ public sealed class CrmOpportunitiesController(PSeqOperationsDbContext dbContext
         dbContext.CrmOpportunityStageHistory.Add(new CrmOpportunityStageHistory(value.Id, priorStageId, stage.Id, request.Reason, actor.Id, DateTime.UtcNow));
         dbContext.CrmActivities.Add(new CrmActivity(CrmActivityType.StatusChange, $"Opportunity moved to {stage.Name}", $"Previous stage: {priorStageName}.{(string.IsNullOrWhiteSpace(request.Reason) ? string.Empty : $" Reason: {request.Reason.Trim()}")}", DateTime.UtcNow, CrmActivityVisibility.Internal, actor.Id, value.CompanyId, opportunityId: value.Id));
         await dbContext.SaveChangesAsync(cancellationToken);
-        dbContext.Entry(value).Reference(item => item.Stage).IsLoaded = false;
-        await dbContext.Entry(value).Reference(item => item.Stage).LoadAsync(cancellationToken);
-        return ToDto(value);
+        return ToDto(await Require(opportunityId, false, cancellationToken));
     }
 
     [HttpGet("{opportunityId:guid}/stage-history")]
@@ -183,7 +230,7 @@ public sealed class CrmOpportunitiesController(PSeqOperationsDbContext dbContext
 
     private IQueryable<CrmOpportunity> Query(bool tracking)
     {
-        var query = dbContext.CrmOpportunities.Include(value => value.Company).Include(value => value.Pipeline).Include(value => value.Stage).Include(value => value.Owner).AsQueryable();
+        var query = dbContext.CrmOpportunities.Include(value => value.Company).Include(value => value.Department).Include(value => value.Pipeline).Include(value => value.Stage).Include(value => value.Owner).AsQueryable();
         return tracking ? query : query.AsNoTracking();
     }
 
@@ -202,14 +249,14 @@ public sealed class CrmOpportunitiesController(PSeqOperationsDbContext dbContext
             ?? throw NotFound("crm_open_stage_not_found", "The selected pipeline has no active open stage.");
     }
 
-    private async Task<User> RequireActor(CancellationToken cancellationToken) => await RequirePlatformAdminAsync(HttpContext, dbContext, externalIdentityContext, cancellationToken);
+    private async Task<User> RequireActor(CancellationToken cancellationToken) => await RequireCrmAccessAsync(HttpContext, dbContext, externalIdentityContext, cancellationToken);
 
     internal static CrmOpportunityDto ToDto(CrmOpportunity value, User? owner = null)
     {
         var resolvedOwner = owner ?? value.Owner;
         return new(value.Id, value.OpportunityNumber, value.Name, value.CompanyId, value.Company.Name, value.PipelineId, value.Pipeline.Name, value.StageId, value.Stage.Name, value.Stage.Category,
             value.OwnerUserId, $"{resolvedOwner.FirstName} {resolvedOwner.LastName}".Trim(), value.ProductInterest, value.Amount, value.Currency, value.Probability,
-            value.ExpectedCloseDate, value.NextStep, value.Competitors, value.Description, value.Tags, value.ClosedAt, value.OutcomeReason, value.IsActive, value.CreatedAt, value.UpdatedAt, value.Version);
+            value.ExpectedCloseDate, value.NextStep, value.Competitors, value.Description, value.Tags, value.ClosedAt, value.OutcomeReason, value.IsActive, value.CreatedAt, value.UpdatedAt, value.Version, value.DepartmentId, value.Department?.Name);
     }
 
     private static string EscapeLike(string value) => value.Replace("\\", "\\\\", StringComparison.Ordinal).Replace("%", "\\%", StringComparison.Ordinal).Replace("_", "\\_", StringComparison.Ordinal);

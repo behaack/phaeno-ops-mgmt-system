@@ -1,0 +1,213 @@
+# Shared, single-use master mix for library preparation
+
+## Library Lab step sources and demo setup — October 3, 2026
+
+The owner requires library preparation to include both specimen biological
+material and prepared master mix through reusable Lab steps. Keep these distinct:
+the former records each specimen's physical source-to-library-tube transfer;
+the latter pins an approved master-mix workflow revision and records actual
+shared-preparation use during tray execution. Existing source balances,
+exhaustion adjustments, barcode verification, QC and immutable version lineage
+remain authoritative.
+
+The Lab step field Type now explicitly offers **Biological material from specimen**
+and **Master mix**. The mix selector offers exact approved revisions, inherits
+their unit and omits inventory-lot controls. Engineering decision: this is an
+authoring distinction over the existing saved material/workflow reference, so
+serialization retains the current API contract and database model. Reopening
+that reference presents the explicit Master mix choice. Reagent-only mix
+preparation steps cannot contain either library source field. The Phaeno guide
+and frontend schema regression source describe this behavior.
+
+The owner also requested a fake PSeq library setup through the local UI, including
+specimen transfer, master-mix addition, reusable steps, an assembled protocol,
+service workflow and a named library tray format. Keep fixture names explicitly
+DEMO and record honest demo-only administrator approval overrides when needed
+for assembly. The owner subsequently requested an end-to-end tray run. Approve
+the local demo workflow revision for that simulated run; production promotion
+and deployment remain separate. This configuration and its simulated bench
+entries do not represent physical processing or scientific qualification.
+
+UI configuration checkpoint: `DEMO PSeq 2 × 3` is active with six usable grid
+positions. The approved v1 Lab steps are `DEMO PSeq — Transfer specimen material`
+(`a77b184e-9978-40bc-b6ac-68e0a754c2b3`), `DEMO PSeq — Add master mix`
+(`3df63ea7-c7cb-4b03-84e5-5f7faff658d5`), and `DEMO PSeq — Library yield and QC`.
+`DEMO PSeq library preparation` v1 pins those three required steps in order and
+is approved with an explicit demo-only override. `DEMO PSeq library workflow`
+(`86288cff-8f59-4da7-a9de-c4907f618a6d`) v1 pins that approved protocol and is
+approved locally, without production promotion. Its preparation batch
+`f98d854e-8575-4923-b783-14b83540e4f1` has been created and remains empty/Draft.
+Its saved demo tray barcode is `DEMO-PSEQ-TRAY-20261003`; resume at loading
+accessioned tubes into A1 through B3 after the specimen decision is resolved.
+The master-mix preview validates a fictional 10 µL per sample entry across two
+example tubes (20 µL total) without saving execution evidence.
+
+The requested run is in progress. Automatic approval review blocked detailed
+access to existing customer-labeled accessioned specimens; explicit confirmation
+that local job `6WTMNUFE` contains fake specimens is pending. Do not access or
+process those records while the question is pending. Independent prerequisite
+setup uses only the newly created DEMO reagent lots and mix preparation.
+
+Mix prerequisite checkpoint: UI-created lots `DEMO-BUF-20261003`
+(`463e8452-6f35-4c5f-9cb9-12019f1bcf48`, initially 1000 µL) and
+`DEMO-ENZ-20261003` (`59f9a8b6-5bdc-4916-af6a-6cc9bdacd1e7`, initially
+500 µL, demo expiration December 31) have simulated Pass QC. Preparation
+`e4025d9a-162b-4d4d-b82a-c0c3eaa79ba0` is Ready with 100 µL after the
+recorded 80/20 µL lot uses, two required step confirmations, a fake 30-second
+mixing duration and Pass QC. Step notes explicitly identify simulated evidence
+and absence of physical work. No tray use is recorded yet. Its assigned barcode
+is `PH-MX-E4025D9A162B4D4DB82AC0C3EAA79BA0`.
+
+The UI walkthrough exposed a master-mix detail crash caused by combining
+`dateStyle`/`timeStyle` with `timeZoneName` in `Intl.DateTimeFormat`. Explicit
+date/time components preserve the laboratory timezone and PDT/PST suffix and
+render the saved preparation successfully. Protocol approval review now uses
+readable field labels and shows the exact mix revision and quantity basis.
+
+## Assemble approved Lab steps — October 3, 2026
+
+The owner requires a master-mix workflow to assemble ordered Lab steps, with
+the complete recipe derived from those steps. This supersedes the separate
+ingredient editor and free-text procedure rows described below.
+
+- Author reusable master-mix Lab steps with batch-scoped entries. Each reagent
+  entry pins a purchased Reagent product or an internally prepared reagent,
+  its unit and positive exact planned amount. Lot capture is mandatory.
+- Assemble exact approved versions in order; preserve pinned content and
+  explicit adoption of newer approved versions. Derive and display the recipe
+  from the material entries, including repeated occurrences. Do not maintain
+  a second editable recipe or pin a physical lot in reusable configuration.
+- During preparation, record each actual reagent lot and amount against its
+  step and field. Exclude tubes, containers and other products in the UI and
+  backend. Do not display the internal SupplierLot enumeration.
+- Retain typed batch entries, operator confirmation, roles, equipment and QC
+  evidence from the approved steps. QC failures/holds block subsequent work;
+  permitted repeats and Supervisor corrections preserve prior evidence.
+- Preserve exact quantities, source-stock deductions, replay recovery,
+  independent approval, cutoff, shared tray use, deviation review and discard.
+
+Compatibility: a read-only inspection of the configured local loopback database
+on October 3 found zero workflows, preparations, ingredient uses, step records
+and tray uses. No local conversion or deletion is needed. The migration must
+refuse a nonempty master-mix target. Existing data elsewhere would require a
+separately reviewed one-time conversion preserving snapshots and lineage,
+or an explicitly authorized reset of disposable test records (losing that
+master-mix history). Recommend preservation for retained scientific records.
+Do not apply this migration or deploy outside configured local development.
+Update the ERD, Phaeno guide and living test plans with the implementation.
+
+Local implementation checkpoint: structured approved-version assembly, derived
+recipe, reagent-only selection, required actual numbered lot use per step/field,
+typed evidence, equipment eligibility, QC blocking, repeat and Supervisor
+correction history are implemented. `20261003231435_AssembleMasterMixLabSteps`
+was applied to configured loopback development after verifying all six
+master-mix tables empty. EF reports no pending model changes. Whole-solution
+Release build, frontend TypeScript, scoped ESLint, documentation generation/check
+(56 guides) and diff checks pass. Browser checks without saving verify the
+assembly editor, one Actions indicator, quantity-only unit controls and exclusion
+of the RNA tube from reagent options. Existing local draft configuration was
+left unchanged. The service-workflow creation button shares the heading's row
+at normal and narrow widths; description space remains positive with no page
+horizontal overflow. The normal viewport was restored.
+
+Meaningful domain and frontend authoring test source was updated, including
+correction invalidation of later evidence; automated suites were not run for this
+new scope. Connected preparation/stock/replay acceptance and physical qualification
+remain separate. The running Visual Studio/IIS Express Debug session was preserved;
+restart the local API to load the new backend before saving master-mix definitions.
+No external database migration or release was performed by this implementation.
+
+## Mix amount unit picker — October 3, 2026
+
+In the create/revise workflow dialog, add the shared **Units** picker below
+**Mix amount unit**, aligned to the input's trailing edge. Following the owner's
+clarification, offer quantity units only: µL, mL, L, ng, µg, mg, g and kg. Omit
+mathematical symbols, Greek letters, temperature, time and percentages. Selecting
+a unit replaces the field and returns focus to it. Preserve custom unit text,
+the required-field/error association and the 50-character limit. This is a local entry convenience;
+units, recipes, quantities, approval rules and saved revisions retain their meaning.
+Update Phaeno help and check scoped lint, typing, documentation consistency and
+unsaved browser interaction. Automated suites and release are not requested for
+this correction.
+
+Local checkpoint: scoped ESLint, TypeScript, documentation generation/check (56
+guides, corpus `74a9256591bf`) and diff whitespace pass. The authenticated create
+dialog exposes the trailing **Units** link, and keyboard opening shows exactly
+the eight configured quantity units. A screenshot records the control and an mL
+value in the open unsaved dialog. Selection/focus-return, validation, revise-dialog,
+narrow and theme scenarios were not independently completed during concurrent
+browser use. No workflow was saved and no automated suite, Git mutation or release
+was performed.
+
+## List header refinement — September 30, 2026
+
+Operators need the list's start action and discovery controls together in its
+header. Place **Start master mix** at the upper right of the title row. Keep the
+description beside the button and let it wrap within a shrinking left column.
+Move the name/barcode and status filters into the same shaded header. The fields
+fill the available width beside Search on wide screens and stack at full width
+on narrow screens. Keep the existing permissions, filter application, recovery
+and creation workflow.
+
+Acceptance: the start action stays on the first row, the description wraps without
+overlap, filters span the header, and results remain below its divider. Verify
+desktop/narrow layout, labeled controls and opening/cancelling the start dialog
+without creating a preparation. Use scoped lint, typecheck and documentation
+checks; no new automated test is needed for this reversible layout adjustment.
+The production deployment hold remains in effect.
+
+Local checkpoint: the rendered desktop header confirms the top-right start action,
+wrapping description and expanding filter row. At an observed 520 px CSS viewport,
+DOM measurements confirm equal full-width search/status controls, title/start
+alignment and no horizontal page overflow. The start dialog opened and cancelled
+without creating a mix. Narrow screenshots were unavailable from the connected
+browser; no smaller-device or theme-specific visual acceptance is claimed. Backend
+build (zero warnings/errors), frontend typecheck/scoped lint, documentation
+generation/consistency and diff checks passed. Automated suites were not run.
+
+## Product decision — September 24, 2026
+
+Laboratory Operators prepare one master-mix batch that may serve several library trays. The mix is consumed within that work session and any remainder is discarded. It is not a received or manufactured inventory lot and must not appear as available stock. The existing untracked Material used field records a tray quantity but cannot identify one mix across trays. The existing reagent-manufacturing run creates an inventory lot, storage assignment and QC-pending stock, so it does not express this workflow.
+
+Operators need to prepare the mix once, retain its procedure identity and source ingredient lots, record the actual amount made, link each tray use to that same preparation, and close the preparation with a discard record. Supervisors need an auditable view of the resulting ingredient and tray lineage. Customer-facing results and commercial orders do not change.
+
+## Workflow and rules
+
+1. Configure, independently approve and revise a dedicated POMS master-mix workflow. Each revision contains exact required source material definitions, amounts and units plus ordered instructions; approval shows the complete recipe. Pin an explicitly selected approved revision in each Lab step; saving a draft must not silently adopt a newer revision. An active tray may still require an earlier approved revision after the workflow is revised, so operators may prepare that revision while the workflow remains available. Retain an immutable recipe and procedure snapshot, operator, preparation time, mix name, quantity and unit. Do not create a `LabMaterialLot` or supplier product for the mix.
+2. Record each source ingredient's exact eligible inventory lot and actual amount once during preparation. Apply the existing QC, expiry, unit, stock, concurrency and exhaustion safeguards to those source lots. Compare actual ingredient totals by source material and unit to the frozen exact recipe. A different Supervisor may approve a documented deviation; another ingredient use invalidates that approval. Source consumption is retained if the mix is later discarded.
+3. A ready mix can be selected only for a compatible configured master-mix Material used field in a library tray running the applicable workflow. Use one mix preparation per material field on each tray, including per-sample entries. The step save records the actual amount used by that tray, links it to the mix, and remains atomic with the existing preparation-step evidence and request replay protections. Several trays may link to the same mix. A correction must not silently consume it again; a repeat records fresh use.
+4. Every tray use must have a known positive quantity, including when the field is configured per sample or with sample exceptions. The sum of tray uses cannot exceed the amount made. Present the amount made, used and remaining. A skipped step does not use the mix. Preserve per-sample quantities and explicit sample exceptions in the existing step-entry workflow.
+5. POMS freezes use-by at the end of the preparation's `America/Los_Angeles` local calendar day. After that instant, ingredient recording, completion and tray use are blocked; the mix appears in an Overdue filter until discarded. Closing the mix marks every remaining quantity discarded and prevents later use. Retain actor, time, reason and an optional measured discarded amount, even when a physical measurement differs from the calculated balance. Do not present a calculated remainder as a physical measurement. A discarded mix and all linked records remain readable.
+6. The mix is not offered in Materials inventory, lot QC, reagent manufacturing, shipping kits or supplier catalog. Existing records and approved definitions are not rewritten; there is no master-mix legacy backfill.
+7. Give each preparation a stable, printable `PH-MX-` container barcode. An Operator scans the physical label in each tray step; the server checks it against the selected mix. Search and page the mix list by name, barcode and status, with an explicit Overdue filter. Show responsible actors and timestamps for preparation, steps, ingredients, tray uses, discard, deviation and corrections.
+8. Persist each ingredient command and its request ID in scoped browser recovery storage before sending it. After an interrupted response, reopen the mix to confirm the saved receipt or retry that exact command; do not create a fresh source-lot withdrawal while it is uncertain. A stale tray use refreshes the ready-mix catalog while preserving the reviewed step entry.
+9. A Supervisor may void an ingredient or tray-use entry only after affirming that no material was physically dispensed. Retain the original entry and append a correction with reason and actor. Restore ordinary source-lot balance or mix allocation in the same transaction; a voided ingredient closes the mix. An exhaustion override or already held lot requires a physical count before stock restoration. Material actually dispensed, or whose fate is uncertain, is retained as a discrepancy; close the mix and hold an affected ingredient lot for recount. Tray history shows voids and links to the mix correction record.
+10. Retirement blocks new mix preparations and creation of library trays whose pinned protocol references the retired recipe. Already open trays retain their frozen protocol and may use already Ready mixes until each mix's local-day cutoff; staff must review the remaining amount and finish those uses before that cutoff. Retirement is refused while an approved active Lab step still selects the workflow. New tray creation and new mix preparation share the workflow lock with retirement, so neither can commit after a completed retirement. The new-tray picker excludes service workflow versions that reference a retired master-mix recipe.
+
+## Acceptance
+
+- An Operator can prepare a mix from eligible source lots and record a positive made quantity in the configured unit; invalid, expired, held, failed-QC, depleted and mismatched source lots are rejected without partial consumption.
+- Two compatible library trays can use the same mix, with each actual use visible from the mix and tray; incompatible fields/workflows and unknown amounts cannot select it.
+- Replays, stale versions and competing tray uses cannot double-consume or over-allocate the mix or its ingredient lots.
+- Discard prevents further use, retains actual tray use and source consumption, and distinguishes a measured discard amount from the computed unused balance.
+- Staff can find a mix, open its view-first record, and return to the originating tray. Phaeno help explains creation, selection, recovery and discard.
+- Required ingredient totals are checked against the frozen approved recipe; a missing, extra, differently measured or differently united ingredient requires current independent Supervisor deviation approval.
+- A mix cannot be used after its Los Angeles local-day cutoff, including across a daylight-saving transition; overdue records are discoverable until closed.
+- A printed container barcode must be scanned and match the selected preparation on every tray step. Staff can find the record by its full barcode, name, status or overdue filter and view every actor and correction.
+- An uncertain ingredient save survives a page reload and can only be retried with its original request ID. A verified void and a discrepancy take different audited paths; exhaustion overrides are never automatically restored without a count.
+- Retirement refuses an active approved Lab step, lets an already open tray use an eligible Ready mix until its frozen cutoff, and excludes or rejects new trays whose protocol references the retired recipe. Concurrent new tray and mix preparation starts cannot pass a completed retirement.
+- Recipe, ingredient, made, measured discard and tray-use amounts travel as exact decimal text; a valid 0.1 amount across three samples fits a 0.3 remainder. A stale mix conflict refreshes the ready catalog before retry.
+
+## Success measures
+
+For each shared preparation, every recorded library-tray use points to the same retained mix identity and approved recipe revision, cumulative use never exceeds recorded yield, and the final operator closure is **Discarded** with reason and actor. No master-mix preparation appears as available inventory stock.
+
+## Implementation boundary
+
+Use feature-owned Lab domain, API and frontend code, an additive EF migration, and the complete ERD update. Respect the existing preparation transaction, authorization and audit model. Update Phaeno help and the living backend, frontend and E2E plans. Do not apply a migration to a shared database without explicit approval. Do not run automated tests unless requested by the owner; use build, typecheck, lint, documentation and diff checks at the implementation checkpoint.
+
+## Status
+
+The owner selected an approved POMS workflow as the controlled recipe source. On September 24, the owner further selected the end of the local calendar day, existing Ready mixes remaining usable after workflow retirement, independent Supervisor approval for recipe variance, and a guarded verified void only when no material was physically dispensed. The domain, API, UI, help, test source, ERD and additive gap-closure migration are implemented locally. The retirement follow-up permits existing trays to use Ready mixes while blocking new trays that pin a retired recipe. The Lab step naming, `AddSingleUseMasterMix`, and `CloseMasterMixGaps` migrations were applied to configured local PostgreSQL development database `phaeno_ops_clean_20260919` on `localhost:5432`. EF lists all three as applied and reports no pending model changes. The owner approved production deployment of these three migrations and their three earlier prerequisites after review of the production baseline.
+
+The September 24–25 release completed at source `16a06b92a55c0fb2e45e16d38e0034e6c2514385`. The production backup restore check passed from a 17-migration baseline, all six owner-approved migrations applied, and the API and Portal production deployments passed public smoke checks. The [release record](../operations/master-mix-release-20260924.md) captures exact identities and test evidence. The exact release tree passed 760 disconnected backend tests, 1,217 frontend unit tests, and 190 browser tests. The shared checkout's connected backend run passed 1,106 tests against a disposable migrated PostgreSQL database, then dropped it. These suites cover general regressions; feature-specific connected master-mix and signed-in browser journeys and physical bench qualification remain separate acceptance work.

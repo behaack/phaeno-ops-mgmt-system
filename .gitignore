@@ -1,6 +1,10 @@
 # Build output
 tmp
+.tmp/
 artifacts
+/output/
+/.artifacts/
+/_mastermix_release_check/
 **/bin/
 **/obj/
 **/dist/
@@ -16,6 +20,7 @@ artifacts
 # Test and coverage output
 **/coverage/
 **/test-results/
+**/TestResults/
 **/playwright-report/
 
 # Local configuration, documents and secrets
@@ -44,3 +49,8 @@ deployment/hetzner/green/runtime/
 *.sln.docstates
 .DS_Store
 Thumbs.db
+
+# Local Portal documentation search generations
+**/__DOCUMENTATION_INDEX/
+
+.env*

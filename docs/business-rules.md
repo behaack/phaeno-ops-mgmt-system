@@ -1,11 +1,65 @@
 # Business rules
 
+## Company request decision reasons
+
+Online-access approvals (onboarding, evaluation and offboarding) and service-change
+approvals may omit a reason. Optional notes are retained when supplied. Every
+decline requires a reason; relationship-change and sales-assisted-order approvals
+still require one. The request, decision, reviewer and timestamp are retained even
+when an approval note is absent. Completed-work notes are optional; completion
+retains its actor and timestamp and still requires the current readiness checks
+and confirmation that the work is done. Cancellation always requires a reason.
+
+## Company departments before online access
+
+Platform administrators may create and configure departments on an active CRM
+Company before online-access approval. Internal department setup remains
+inactive for sign-in and grants no invitations, memberships, entitlements or
+work. Later onboarding/evaluation approval retains those departments and
+settings in the same Organization. Department setup alone is not an approved
+Prospect, Customer or Partner relationship.
+
+## Department-led external Companies
+
+Organization administration is optional for external Companies. Active Company access plus
+accepted organization-admin or active-Department-admin access satisfies access-only onboarding
+and Portal evaluation. Readiness for a specific Department requires an active administrator of
+that Department or an organization administrator; unrelated Departments do not satisfy it.
+Organization and assigned-Department administrators may place configured Lab/Kit purchases,
+accept or decline changed prices, request custom work, and accept Prospect Trial terms and
+submit samples within the assigned Department. Ordinary members cannot commit work.
+Phaeno staff retain company-wide setup and invitation support when no organization admin exists.
+Company-wide identity, roles, defaults, governance attestations and cross-Department visibility
+are not delegated. Last-administrator protection remains: an external organization's last
+organization admin may be removed/demoted when an active Department administrator remains;
+Phaeno's platform-admin protection is unchanged.
+
+
+## Department-led external Companies
+
+Organization administration is optional for external Companies. Active Company access plus
+accepted organization-admin or active-Department-admin access satisfies access-only onboarding
+and Portal evaluation. Readiness for a specific Department requires an active administrator of
+that Department or an organization administrator; unrelated Departments do not satisfy it.
+Organization and assigned-Department administrators may place configured Lab/Kit purchases,
+accept or decline changed prices, request custom work, and accept Prospect Trial terms and
+submit samples within the assigned Department. Ordinary members cannot commit work.
+Phaeno staff retain company-wide setup and invitation support when no organization admin exists.
+Company-wide identity, roles, defaults, governance attestations and cross-Department visibility
+are not delegated. Last-administrator protection remains: an external organization's last
+organization admin may be removed/demoted when an active Department administrator remains;
+Phaeno's platform-admin protection is unchanged.
+
+
 ## Accounts and tenants
 
 - A Clerk identity must resolve to an active internal `User` before it can act in the product.
 - Users receive access through active `OrganizationMembership` records.
 - Every organization has one active default Department; existing records use
   the backfilled General department until a deliberate department is selected.
+- New administrator-created Departments receive an automatic DEPT-000001-style
+  reference unique within their Organization. Saved references are immutable; renaming
+  or deactivating a Department preserves its reference, including legacy codes and GENERAL.
 - Non-organization administrators can act only in Departments granted through
   an active `OrganizationDepartmentMembership`. Organization administrators
   can act across all active Departments in their Organization.
@@ -13,6 +67,11 @@
   and be available to the current User. Invalid department context fails closed.
 - Customer operational roots, address books, searches, exports, downloads, and
   outbound operational notifications are scoped by Department.
+- POMS Customer order intake requires an explicit Department choice when the
+  Customer has multiple active Departments. Starting pricing requires at least
+  one active Customer user with access to the selected Department, through
+  active Department membership or organization administration. The Customer
+  administrator needed to approve a quote may be activated later.
 - New curated download history retains the Department at the time of the event,
   including Organization-wide packages. Department admins see only their selected
   Department. Unknown historical Department rows remain Organization-admin-only;
@@ -28,9 +87,26 @@
 
 ## Invitations
 
+- Recipients explicitly accept the reviewed access before account verification.
+  Their choice may resume after email/password/MFA setup only for the same
+  invitation token and reviewed version. The authenticated acceptance endpoint
+  still validates verified email, lifecycle and current access intent before
+  granting membership. Changed access requires a new explicit review. Successful
+  acceptance refreshes access and opens home in the invited organization.
 - Onboarding is invite-only; public self-registration is not the product model.
 - Invitations are organization-scoped and have explicit lifecycle states: `Pending`, `Accepted`, `Revoked`, and `Declined`.
 - Invitation tokens must be protected and expire according to configuration.
+- Authorized administrators may edit a pending external invitation's Organization role and
+  Department intent in place. Preserve recipient, link, expiry and delivery history; no email
+  or membership is created by an intent edit. Department-only edits advance the parent version.
+  Terminal invitations reject edits; expired Pending invitations remain expired until resend.
+- Current web recipients review offered roles and Departments and send the reviewed version on
+  acceptance. Changed intent requires a fresh review and explicit acceptance. Legacy clients
+  retain the optional-version contract; concurrent acceptance and edits still use tracked versions.
+- Actual active external membership/Department-role changes and removals queue an informational
+  access notice in the same transaction as the audited update. No-op or rejected updates queue
+  none. The exact affected user is the only recipient, including after removal; never substitute
+  an administrator or a Department routing address. Delivery retries do not reverse access.
 - Email delivery uses Mailgun when configured and a logging implementation only
   in Development/Test. Invitation delivery status is tracked durably and
   independently from invitation access state; signed webhook events record
@@ -257,7 +333,7 @@ Confirmed Prospect rules:
   creates the corresponding Lab authorization, Lab work, shipment, specimen
   identities, and physical tube slots.
 - An authorized Phaeno order-pricing user may initiate the same Job pricing
-  profile for an active Customer that has an active organization administrator.
+  profile for an active Customer; quote readiness requires an active organization or assigned-Department administrator.
   After the Phaeno user makes the no-PHI attestation, the Phaeno-initiated Job
   enters quote preparation with an immutable submitted request revision. It does
   not let Phaeno accept on the Customer's behalf and creates no Lab authorization
@@ -316,9 +392,9 @@ Confirmed Prospect rules:
   assembled data/results for availability to the Partner's customers.
 - Seed data is separate from lab service results and data assembly inputs or
   outputs.
-- Active Customer and Partner organization administrators create and submit or
+- Active Customer and Partner organization or assigned-Department administrators create and submit or
   place work, accept applicable quotes or commercial changes, request
-  cancellations, and manage their own organization memberships. Active
+  cancellations within their Department. Organization administrators manage organization memberships. Active
   non-admin members have read, progress, and eligible released-file access.
 - Prospect memberships never grant ordering capabilities.
 - Customer laboratory work and Partner data assembly are priced per job through
@@ -416,12 +492,36 @@ organization's download audit; staff investigation reasons remain Phaeno-only.
 
 A Trial is a no-charge Prospect project linked to a first-party CRM Opportunity.
 Commercial and Scientific Operations approvals must come from different active
-authorized people for the same immutable scope version. An organization
+authorized people for the same immutable scope version. An organization or assigned-Department
 administrator accepts that scope and RUO/no-PHI terms before coded extracted-RNA
-submissions within the frozen allowance and dates. Department administrators do
-not gain this acceptance authority. Initial analyses and acceptance rules reuse
+submissions within the frozen allowance and dates. Department authority stays
+within the Trial’s Department. Initial analyses and acceptance rules reuse
 PSeq definitions and the pinned Lab workflow. Complete result release alone marks
 successful completion and starts the shared frozen retention policy. Partial
 release does neither. Conversion preserves department ownership and original
 download/deletion dates. Commercial closeout and explicit Prospect deactivation
 remain separate audited actions.
+
+
+### Repeated sample sequencing
+
+For phased and non-phased orders, standard pricing is per sample and includes one library preparation, one sequencing run and data assembly. Price additional sequencing runs separately, using the existing prepared library while material remains available. Quote quantities are one standard service per sample plus only the runs beyond the first per sample: `samples × sample price + (total runs − samples) × additional-run price`. One sample sequenced twenty times buys one standard service and nineteen additional runs; twenty samples sequenced once buy twenty standard services. Both still allocate twenty purchased runs for laboratory execution. Physical tubes and preparation attempts do not determine the purchased quantity. A library preparation may provide enough material for multiple runs. For each run, Lab explicitly records a new preparation or use of an existing prepared library, preserving the actual library, source and preparation evidence. Authorized allocations are frozen in the Lab authorization. Additional files, linked replacements after failure and reanalysis retain the purchased run number and count once. Approved and released results must cover all allocated runs before completion and full delivery, respectively. Accepted pricing is immutable.
+
+When the purchased run count equals the accepted sample count, each sample has
+one fixed run during sample identification and editing. Customers may increase
+tube counts to provide reserve material in case of failure; this does not increase
+purchased runs. Explicit additional-run purchases retain allocation of their
+accepted total.
+
+
+## Customer standard-order rules — September 30, 2026
+
+New Customer self-service Lab orders have one scope and one included run per sample, with no Customer-authored phase configuration or pricing proposal. Additional runs and phased scope require Sales. A Job name permits an incomplete Draft save; placement requires reviewed scope, current permission/readiness, confirmed Sample type and kit delivery address, approved tax and a final total.
+
+Each service catalog item has an explicit nullable maximum Customer sample count. Null disables Customer standard placement; a configured positive limit allows exactly that count and sends larger orders to Sales, even with a negotiated rate. No commercial default is inferred from the 10,000-record technical cap.
+
+A current negotiated USD service price applies at Organization scope or within the selected Department. One applicable rate overrides the standard catalog price. When both apply, use the lower negotiated rate; another Department's rate never applies. Active effective windows are non-overlapping within one service/scope. Pricing records grant no service access. Placement rechecks price/configuration and freezes the unit price, source, selected-rate identity/version and catalog evidence. Later changes cannot alter accepted commitments. Existing orders are not converted.
+
+### Ordered phase shipping and laboratory processing
+
+For accepted phased Jobs, each phase requests its own transportation kits on demand. The next shipping phase becomes available after confirmed preparation and recorded carrier handoff for every required active shipment of the preceding phase, with full sample coverage. Partial dispatch or result delivery alone cannot open it. Approved cancelled/superseded phases are skipped. Sent phases retain physical receipt, customer-safe laboratory progress and Portal result counts. Laboratory processing keeps the separate preceding-phase full-result-delivery rule; opening shipping does not start laboratory work. Each phase’s TAT starts at full physical receipt of its required samples.

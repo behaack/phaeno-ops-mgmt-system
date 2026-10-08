@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import {
   ArrowRight,
   FlaskConical,
@@ -19,7 +19,9 @@ import {
   listReagentOrders,
   type OrderListItem,
   type PagedResult,
+  type CustomerLabDashboardView,
 } from '#/api/order-management'
+import { listTrials } from '#/api/trials'
 import { getSampleShipments } from '#/api/sample-shipping'
 import type { SessionMembership } from '#/api/session'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
@@ -27,7 +29,6 @@ import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import {
   Card,
-  CardAction,
   CardContent,
   CardDescription,
   CardFooter,
@@ -35,6 +36,9 @@ import {
   CardTitle,
 } from '#/components/ui/card'
 import { usePhaenoSession } from '#/features/auth/session-context'
+import { CustomerLabRequestsCard } from './CustomerLabRequestsCard'
+import { CustomerDashboardMetrics } from './CustomerDashboardMetrics'
+import { useCustomerDashboardQuery } from './customer-dashboard-query'
 
 type ExternalDashboardContentProps = {
   membership: SessionMembership | null | undefined
@@ -47,10 +51,12 @@ type WorkflowCardProps = {
   href:
     | '/data-assembly'
     | '/data-library'
+    | '/departments'
     | '/lab-services'
     | '/phaeno-users'
     | '/reagent-orders'
     | '/sample-shipping'
+    | '/order-operations/lab-services/trials'
   icon: LucideIcon
   isLoading: boolean
   mock: boolean
@@ -63,16 +69,27 @@ type WorkflowCardProps = {
 export function ExternalDashboardContent({
   membership,
 }: ExternalDashboardContentProps) {
-  const { authProvider, session, selectedOrganizationId } = usePhaenoSession()
+  const { authProvider, session, selectedOrganizationId, selectedDepartmentId } = usePhaenoSession()
+  const [requestView, setRequestView] = useState<CustomerLabDashboardView>('active')
+  const [requestPagination, setRequestPagination] = useState({ scope: '', page: 1 })
+  const requestScope = `${selectedOrganizationId}:${selectedDepartmentId}`
+  const requestPage = requestPagination.scope === requestScope ? requestPagination.page : 1
   const capabilities = session?.capabilities
   const kind = membership?.organizationKind
   const apiEnabled = authProvider !== 'mock'
   const isCustomer = kind === 'Customer'
   const isPartner = kind === 'Partner'
-  const canViewData = Boolean(capabilities?.canViewOrganizationDatasets)
-  const canViewLab = isCustomer && Boolean(capabilities?.canViewLabServiceOrders)
+  const showDataLibrary = !isCustomer && Boolean(capabilities?.canViewOrganizationDatasets)
+  const canViewLab = (isCustomer || isPartner) && Boolean(capabilities?.canViewLabServiceOrders)
+  const customerDashboard = useCustomerDashboardQuery(requestView, requestPage,
+    selectedOrganizationId, selectedDepartmentId,
+    apiEnabled && isCustomer && canViewLab && Boolean(selectedOrganizationId && selectedDepartmentId))
+  const selectRequestView = (view: CustomerLabDashboardView) => {
+    setRequestView(view)
+    setRequestPagination({ scope: requestScope, page: 1 })
+  }
   const canViewShipping =
-    (kind === 'Prospect' || isCustomer) &&
+    (kind === 'Prospect' || isCustomer || isPartner) &&
     Boolean(capabilities?.canViewSampleShipping)
   const canViewReagents =
     isPartner && Boolean(capabilities?.canViewReagentOrders)
@@ -82,10 +99,15 @@ export function ExternalDashboardContent({
     Boolean(membership?.isOrganizationAdmin) &&
     Boolean(capabilities?.canManageMembers)
 
+  const trials = useQuery({
+    queryKey: ['trials', selectedOrganizationId, selectedDepartmentId, '', '', ''],
+    queryFn: () => listTrials(''),
+    enabled: apiEnabled && Boolean(capabilities?.canViewTrialProjects),
+  })
   const labOrders = useQuery({
-    queryKey: ['dashboard', 'lab-service-orders', selectedOrganizationId],
+    queryKey: ['dashboard', 'lab-service-orders', selectedOrganizationId, selectedDepartmentId],
     queryFn: () => listLabOrders({ page: 1, pageSize: 1 }),
-    enabled: apiEnabled && canViewLab,
+    enabled: apiEnabled && canViewLab && !isCustomer,
   })
   const reagentOrders = useQuery({
     queryKey: ['dashboard', 'reagent-orders', selectedOrganizationId],
@@ -105,7 +127,7 @@ export function ExternalDashboardContent({
   const datasets = useQuery({
     queryKey: ['curated-data', selectedOrganizationId],
     queryFn: listTenantDatasets,
-    enabled: apiEnabled && canViewData,
+    enabled: apiEnabled && showDataLibrary,
   })
 
   if (!membership || !kind || kind === 'Phaeno') {
@@ -123,7 +145,16 @@ export function ExternalDashboardContent({
 
   const cards: ReactNode[] = []
 
-  if (canViewLab) {
+  if (capabilities?.canViewTrialProjects) {
+    const awaitingAcceptance = trials.data?.filter(trial => trial.status === 'AwaitingAcceptance' && !trial.isOnHold).length ?? 0
+    const awaitingSamples = trials.data?.filter(trial => trial.status === 'AwaitingSamples' && !trial.isOnHold).length ?? 0
+    cards.push(<WorkflowCard key="trials" title="Trial projects" description="Review approved scope, prepare samples, follow progress, and open released results." icon={FlaskConical}
+      href="/order-operations/lab-services/trials" actionLabel="Open Trial projects" total={trials.data?.length} totalLabel="Trials"
+      summary={awaitingAcceptance ? `${awaitingAcceptance} ${awaitingAcceptance === 1 ? 'Trial awaits' : 'Trials await'} scope acceptance.` : awaitingSamples ? `${awaitingSamples} ${awaitingSamples === 1 ? 'Trial awaits' : 'Trials await'} samples. Open the Trial to check its approved window.` : trials.data?.length ? 'Review current progress, released results, and retained Trial history.' : 'No Trial projects have been shared in this Department.'}
+      isLoading={trials.isLoading} error={Boolean(trials.error)} mock={!apiEnabled} />)
+  }
+
+  if (canViewLab && !isCustomer) {
     cards.push(
       <WorkflowCard
         key="lab-services"
@@ -165,14 +196,14 @@ export function ExternalDashboardContent({
     cards.push(
       <WorkflowCard
         key="reagent-orders"
-        title="Reagent orders"
+        title="PSeq Kit orders"
         description="Place Partner-eligible orders and track fulfillment."
         icon={Package}
         href="/reagent-orders"
-        actionLabel="Open reagent orders"
+        actionLabel="Open PSeq Kit orders"
         total={reagentOrders.data?.totalCount}
         totalLabel="orders"
-        summary={orderSummary(reagentOrders.data, 'No reagent orders yet.')}
+        summary={orderSummary(reagentOrders.data, 'No PSeq Kit orders yet.')}
         isLoading={reagentOrders.isLoading}
         error={Boolean(reagentOrders.error)}
         mock={!apiEnabled}
@@ -184,11 +215,11 @@ export function ExternalDashboardContent({
     cards.push(
       <WorkflowCard
         key="data-assembly"
-        title="Data assembly"
+        title="Assembly cases"
         description="Submit scientific inputs and retrieve released output packages."
         icon={Workflow}
         href="/data-assembly"
-        actionLabel="Open data assembly"
+        actionLabel="Open assembly cases"
         total={assemblyRequests.data?.totalCount}
         totalLabel="requests"
         summary={orderSummary(assemblyRequests.data, 'No assembly requests yet.')}
@@ -199,7 +230,7 @@ export function ExternalDashboardContent({
     )
   }
 
-  if (canViewData) {
+  if (showDataLibrary) {
     cards.push(
       <WorkflowCard
         key="data-library"
@@ -225,7 +256,7 @@ export function ExternalDashboardContent({
         title="User management"
         description={`Manage members and pending invitations for ${membership.organizationName}.`}
         icon={UsersRound}
-        href="/phaeno-users"
+        href={isCustomer ? '/departments' : '/phaeno-users'}
         actionLabel="Manage users"
         summary="Administrator access"
         isLoading={false}
@@ -236,14 +267,20 @@ export function ExternalDashboardContent({
   }
 
   return (
+    <div className="space-y-6">
+    {isCustomer && canViewLab ? <CustomerDashboardMetrics view={requestView} onSelect={selectRequestView}
+      query={customerDashboard} enabled={apiEnabled && Boolean(selectedOrganizationId && selectedDepartmentId)} /> : null}
     <section aria-labelledby="your-work-heading" className="space-y-4">
-      <div>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
         <h2 id="your-work-heading" className="text-lg font-semibold">
           Your work
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
           Live activity and starting points for {membership.organizationName}.
         </p>
+        </div>
+        {isCustomer && canViewLab && requestView !== 'active' ? <Button type="button" variant="outline" onClick={() => selectRequestView('active')}>All active requests</Button> : null}
       </div>
 
       {!apiEnabled ? (
@@ -255,9 +292,14 @@ export function ExternalDashboardContent({
         </Alert>
       ) : null}
 
+      {isCustomer && canViewLab ? <CustomerLabRequestsCard view={requestView} page={requestPage}
+        onPageChange={page => setRequestPagination({ scope: requestScope, page })} query={customerDashboard} /> : null}
+
       {cards.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{cards}</div>
-      ) : (
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,20rem),1fr))] gap-4">
+          {cards}
+        </div>
+      ) : !(isCustomer && canViewLab) ? (
         <Card className="max-w-2xl border-dashed">
           <CardHeader>
             <CardTitle>No workspace actions available</CardTitle>
@@ -267,8 +309,9 @@ export function ExternalDashboardContent({
             </CardDescription>
           </CardHeader>
         </Card>
-      )}
+      ) : null}
     </section>
+    </div>
   )
 }
 
@@ -288,20 +331,20 @@ function WorkflowCard({
   const value = loadingValue(isLoading, error, mock, total)
 
   return (
-    <Card className="h-full">
-      <CardHeader>
-        <div className="mb-2 flex size-9 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-          <Icon aria-hidden="true" className="size-4" />
-        </div>
-        <CardTitle>{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
-        {totalLabel ? (
-          <CardAction>
-            <Badge variant="outline">
+    <Card className="h-full min-w-0 gap-3 border border-border ring-0">
+      <CardHeader className="block">
+        <div className="flex items-center gap-3">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+            <Icon aria-hidden="true" className="size-4" />
+          </div>
+          <CardTitle className="min-w-0 flex-1">{title}</CardTitle>
+          {totalLabel ? (
+            <Badge variant="outline" className="shrink-0">
               {value} {value === '1' ? singular(totalLabel) : totalLabel}
             </Badge>
-          </CardAction>
-        ) : null}
+          ) : null}
+        </div>
+        <CardDescription className="mt-3">{description}</CardDescription>
       </CardHeader>
       <CardContent className="mt-auto">
         <p
@@ -317,12 +360,9 @@ function WorkflowCard({
                 : summary}
         </p>
       </CardContent>
-      <CardFooter>
+      <CardFooter className="py-2">
         <Button asChild variant="ghost" className="-ml-3">
-          <Link to={href}>
-            {actionLabel}
-            <ArrowRight data-icon="inline-end" />
-          </Link>
+          {href === '/departments' ? <Link to="/departments" search={{ settingsTab: 'people' }}>{actionLabel}<ArrowRight data-icon="inline-end" /></Link> : <Link to={href}>{actionLabel}<ArrowRight data-icon="inline-end" /></Link>}
         </Button>
       </CardFooter>
     </Card>

@@ -1,0 +1,114 @@
+name: Reconstruct Portal Database
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Preview counts or clear all data except Phaeno users/access, built-in product types and holiday calendars
+        required: true
+        default: preview
+        type: choice
+        options:
+          - preview
+          - reset
+      confirmation:
+        description: For reset, type RESET PORTAL DATABASE
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phaeno-portal-green-production
+  cancel-in-progress: false
+
+env:
+  DEPLOY_ROOT: /opt/phaeno.portal-green
+
+jobs:
+  reconstruct:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: production
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Check out maintenance source
+        uses: actions/checkout@v6
+
+      - name: Validate request and protected connection
+        env:
+          MODE: ${{ inputs.mode }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          [[ "$MODE" == preview || "$MODE" == reset ]]
+          if [[ "$MODE" == reset && "$CONFIRMATION" != 'RESET PORTAL DATABASE' ]]; then
+            echo '::error::Reset requires the exact confirmation phrase.'
+            exit 1
+          fi
+          for name in DEPLOY_HOST DEPLOY_USER DEPLOY_KNOWN_HOSTS DEPLOY_SSH_KEY; do
+            [[ -n "${!name}" ]] || { echo "::error::Missing production configuration $name."; exit 1; }
+          done
+          [[ "$GITHUB_SHA" =~ ^[0-9a-f]{40}$ && "$GITHUB_RUN_ID" =~ ^[0-9]+$ && "$GITHUB_RUN_ATTEMPT" =~ ^[0-9]+$ ]]
+          operation="github-actions-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          echo "OPERATION_ID=$operation" >> "$GITHUB_ENV"
+          echo "REMOTE_HELPERS=$DEPLOY_ROOT/maintenance/reconstruction-$operation" >> "$GITHUB_ENV"
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/deploy_key ~/.ssh/known_hosts
+
+      - name: Upload reset helpers
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" "install -d -m 700 '$REMOTE_HELPERS'"
+          scp -q -i ~/.ssh/deploy_key \
+            deployment/hetzner/green/reconstruct-portal-database.sh \
+            deployment/hetzner/green/reconstruct-portal-database.sql \
+            "$DEPLOY_USER@$DEPLOY_HOST:$REMOTE_HELPERS/"
+          ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
+            "chmod 600 '$REMOTE_HELPERS/reconstruct-portal-database.sh' '$REMOTE_HELPERS/reconstruct-portal-database.sql'"
+
+      - name: Preview or reset Portal data
+        env:
+          MODE: ${{ inputs.mode }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
+            bash "$REMOTE_HELPERS/reconstruct-portal-database.sh" \
+              "$DEPLOY_ROOT" "$MODE" "$GITHUB_SHA" "$OPERATION_ID" \
+            | tee "$RUNNER_TEMP/reconstruction-counts.txt"
+          {
+            echo '## Portal database reconstruction'
+            echo
+            echo '```text'
+            cat "$RUNNER_TEMP/reconstruction-counts.txt"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Clean up maintenance helpers
+        if: ${{ always() }}
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          set -euo pipefail
+          [[ -n "${REMOTE_HELPERS:-}" && -f ~/.ssh/deploy_key ]] || exit 0
+          [[ "$REMOTE_HELPERS" == "$DEPLOY_ROOT/maintenance/reconstruction-github-actions-"* ]]
+          ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
+            "rm -f '$REMOTE_HELPERS/reconstruct-portal-database.sh' '$REMOTE_HELPERS/reconstruct-portal-database.sql'; rmdir '$REMOTE_HELPERS'" || true
+          rm -f "$RUNNER_TEMP/reconstruction-counts.txt" ~/.ssh/deploy_key

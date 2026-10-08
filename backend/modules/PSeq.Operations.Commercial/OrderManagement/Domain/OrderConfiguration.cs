@@ -2,6 +2,8 @@ namespace PSeq.Operations.Commercial.OrderManagement.Domain;
 
 using PSeq.Operations.Commercial.Common.Persistence;
 
+public enum CatalogServiceFamily { Other, PSeqLabService }
+
 public sealed class QboCatalogItem : IAudit, IConcurrency
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
@@ -12,6 +14,9 @@ public sealed class QboCatalogItem : IAudit, IConcurrency
     public decimal BasePrice { get; private set; }
     public string Currency { get; private set; } = "USD";
     public bool IsActive { get; private set; } = true;
+    public CatalogServiceFamily ServiceFamily { get; private set; }
+    public int? MaximumCustomerSamples { get; private set; }
+    public decimal? MinimumSequencingVolumeUl { get; private set; }
     public DateTime LastSyncedAt { get; private set; }
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
     public Guid? CreatedByUserId { get; private set; }
@@ -29,9 +34,34 @@ public sealed class QboCatalogItem : IAudit, IConcurrency
         decimal basePrice,
         string currency,
         bool isActive,
-        DateTime syncedAt)
+        DateTime syncedAt,
+        CatalogServiceFamily? serviceFamily = null)
     {
         Sync(externalItemId, name, description, salesUnit, basePrice, currency, isActive, syncedAt);
+        SetServiceFamily(serviceFamily ?? (OrderServiceKeys.IsPSeqLabService(externalItemId)
+            ? CatalogServiceFamily.PSeqLabService : CatalogServiceFamily.Other));
+    }
+
+    public void SetServiceFamily(CatalogServiceFamily family)
+    {
+        if (!Enum.IsDefined(family)) throw new ArgumentOutOfRangeException(nameof(family));
+        ServiceFamily = family;
+    }
+
+    public void SetMaximumCustomerSamples(int? maximum)
+    {
+        if (maximum is < 1 or > 10000) throw new ArgumentException("Use a Customer sample limit from 1 to 10,000, or leave it unconfigured.");
+        if (maximum.HasValue && ServiceFamily != CatalogServiceFamily.PSeqLabService)
+            throw new ArgumentException("Customer sample limits apply to Lab services.");
+        MaximumCustomerSamples = maximum;
+    }
+
+    public void SetMinimumSequencingVolume(decimal? minimumUl)
+    {
+        if (minimumUl is <= 0) throw new ArgumentException("Enter a positive minimum sequencing volume in µL, or leave it unconfigured.");
+        if (minimumUl.HasValue && ServiceFamily != CatalogServiceFamily.PSeqLabService)
+            throw new ArgumentException("Sequencing requirements apply to PSeq Lab services.");
+        MinimumSequencingVolumeUl = minimumUl;
     }
 
     public void Sync(
@@ -118,6 +148,12 @@ public sealed class AnalysisDefinition : IAudit, IConcurrency
 
 public sealed class PartnerReagentOffering : IAudit, IConcurrency
 {
+    public Guid? IncludedAssemblyProfileId { get; private set; }
+    public void SetIncludedAssemblyProfile(Guid? profileId)
+    {
+        if (profileId == Guid.Empty) throw new ArgumentException("Select a valid included Assembly profile.");
+        IncludedAssemblyProfileId = profileId;
+    }
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid PartnerOrganizationId { get; private set; }
     public Guid QboCatalogItemId { get; private set; }
@@ -409,6 +445,7 @@ public sealed class OrderSystemConfiguration : IAudit, IConcurrency
     public string ShippingConfigurationJson { get; private set; } = "{}";
     public string SampleConfigurationJson { get; private set; } = "{}";
     public string ResultDestinationConfigurationJson { get; private set; } = "{}";
+    public Guid? DefaultShippingDestinationDefinitionKey { get; private set; }
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
     public Guid? CreatedByUserId { get; private set; }
     public DateTime UpdatedAt { get; private set; } = DateTime.UtcNow;
@@ -432,12 +469,36 @@ public sealed class OrderSystemConfiguration : IAudit, IConcurrency
         string sampleConfigurationJson,
         string resultDestinationConfigurationJson)
     {
-        SampleConfigurationJson = OrderText.Json(sampleConfigurationJson);
-        ResultDestinationConfigurationJson = OrderText.Json(resultDestinationConfigurationJson);
-        if (SampleConfigurationJson == "{}")
-            throw new ArgumentException("Complete sample configuration is required.", nameof(sampleConfigurationJson));
-        if (ResultDestinationConfigurationJson == "{}")
-            throw new ArgumentException("A result destination is required.", nameof(resultDestinationConfigurationJson));
+        var sample = OrderText.Json(sampleConfigurationJson);
+        var destination = OrderText.Json(resultDestinationConfigurationJson);
+        if (!HasSupportedSampleConfiguration(sample))
+            throw new ArgumentException("Select the exact sample roster workflow.", nameof(sampleConfigurationJson));
+        if (!HasSupportedResultDestination(destination))
+            throw new ArgumentException("Select governed Portal delivery for results.", nameof(resultDestinationConfigurationJson));
+        SampleConfigurationJson = sample;
+        ResultDestinationConfigurationJson = destination;
+    }
+
+    public void SetDefaultShippingDestination(Guid definitionKey)
+    {
+        if (definitionKey == Guid.Empty) throw new ArgumentException("Choose a Phaeno ship-to destination.", nameof(definitionKey));
+        DefaultShippingDestinationDefinitionKey = definitionKey;
+    }
+
+    public static bool HasSupportedSampleConfiguration(string? value) => HasSetting(value, "mode", "ExactSampleRoster");
+    public static bool HasSupportedResultDestination(string? value) => HasSetting(value, "destination", "GovernedPortal");
+    private static bool HasSetting(string? value, string key, string expected)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return false;
+        try
+        {
+            using var document = System.Text.Json.JsonDocument.Parse(value);
+            return document.RootElement.ValueKind == System.Text.Json.JsonValueKind.Object
+                && document.RootElement.EnumerateObject().Count() == 1
+                && document.RootElement.TryGetProperty(key, out var setting)
+                && setting.ValueKind == System.Text.Json.JsonValueKind.String && setting.GetString() == expected;
+        }
+        catch (System.Text.Json.JsonException) { return false; }
     }
 
     public void MarkCreated(DateTime utcNow, Guid? actorUserId) { CreatedAt = utcNow; CreatedByUserId = actorUserId; }

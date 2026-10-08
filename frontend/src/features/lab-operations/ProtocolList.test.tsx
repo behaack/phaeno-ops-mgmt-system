@@ -10,6 +10,7 @@ import { ProtocolList } from './LabOperationsPage'
 vi.mock('@tanstack/react-router', () => ({
   Link: ({ children }: { children: ReactNode }) => <a href="#protocol">{children}</a>,
   useNavigate: () => vi.fn(),
+  useBlocker: vi.fn(),
 }))
 
 const unconfiguredProtocol: LabProtocol = {

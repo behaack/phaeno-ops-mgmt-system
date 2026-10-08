@@ -1,17 +1,20 @@
 import {
-  Activity,
   Database,
   BookOpenText,
   Library,
   LayoutDashboard,
   ClipboardList,
+  CircleDollarSign,
+  PlugZap,
   Microscope,
   FlaskConical,
-  FolderClock,
   Handshake,
   Package,
   PackageCheck,
   Settings,
+  FolderClock,
+  Cog,
+  Truck,
   UsersRound,
   Workflow,
   type LucideIcon,
@@ -30,7 +33,7 @@ type NavigationContext = {
   selectedMembership?: SessionMembership | null
 }
 
-export type NavigationGroup = 'workspace' | 'administration' | 'resources'
+export type NavigationGroup = 'workspace' | 'more' | 'administration' | 'resources'
 
 type MainMenuItem = {
   label: string
@@ -47,10 +50,20 @@ type MainMenuItem = {
 export const mainMenuItems: readonly MainMenuItem[] = [
   {
     label: 'Trial projects',
-    to: '/trial-projects',
+    to: '/order-operations/lab-services/trials',
     icon: FlaskConical,
     group: 'workspace',
-    visibleWhen: (session) => session?.state === 'ready' && Boolean(session.capabilities.canViewTrialProjects),
+    visibleWhen: (session, context) => session?.state === 'ready' && isExternalOrganizationKind(context.selectedOrganizationKind) && Boolean(session.capabilities.canViewTrialProjects),
+  },
+  {
+    label: 'Customer settings',
+    to: '/departments',
+    icon: Settings,
+    group: 'administration',
+    visibleWhen: (session, context) => session?.state === 'ready'
+      && context.selectedOrganizationKind === 'Customer'
+      && Boolean(context.selectedMembership?.isOrganizationAdmin
+        || context.selectedMembership?.departments?.some((department) => department.isDepartmentAdmin)),
   },
   {
     label: departmentMessages.departments,
@@ -59,6 +72,7 @@ export const mainMenuItems: readonly MainMenuItem[] = [
     group: 'administration',
     visibleWhen: (session, context) => session?.state === 'ready'
       && isExternalOrganizationKind(context.selectedOrganizationKind)
+      && context.selectedOrganizationKind !== 'Customer'
       && Boolean(context.selectedMembership?.isOrganizationAdmin
         || context.selectedMembership?.departments?.some((department) => department.isDepartmentAdmin)),
   },
@@ -77,17 +91,7 @@ export const mainMenuItems: readonly MainMenuItem[] = [
     visibleWhen: (session, context) =>
       isPhaenoEmployee(session) &&
       context.selectedOrganizationKind === 'Phaeno' &&
-      Boolean(session?.capabilities.canManageOrganizations),
-  },
-  {
-    label: 'Data provisioning',
-    to: '/data-provisioning',
-    icon: Database,
-    group: 'resources',
-    visibleWhen: (session, context) =>
-      isPhaenoEmployee(session) &&
-      context.selectedOrganizationKind === 'Phaeno' &&
-      Boolean(session?.capabilities.canViewDatasetConfiguration),
+      Boolean(session?.capabilities.canAccessCrm),
   },
   {
     label: 'Data library',
@@ -104,7 +108,7 @@ export const mainMenuItems: readonly MainMenuItem[] = [
     icon: FlaskConical,
     group: 'workspace',
     visibleWhen: (session, context) =>
-      context.selectedOrganizationKind === 'Customer' &&
+      (context.selectedOrganizationKind === 'Customer' || context.selectedOrganizationKind === 'Partner') &&
       Boolean(session?.capabilities.canViewLabServiceOrders),
   },
   {
@@ -117,7 +121,7 @@ export const mainMenuItems: readonly MainMenuItem[] = [
       Boolean(session?.capabilities.canViewSampleShipping),
   },
   {
-    label: 'Reagent orders',
+    label: 'PSeq kit orders',
     to: '/reagent-orders',
     icon: Package,
     group: 'workspace',
@@ -126,7 +130,7 @@ export const mainMenuItems: readonly MainMenuItem[] = [
       Boolean(session?.capabilities.canViewReagentOrders),
   },
   {
-    label: 'Data assembly',
+    label: 'Assembly cases',
     to: '/data-assembly',
     icon: Workflow,
     group: 'workspace',
@@ -141,7 +145,7 @@ export const mainMenuItems: readonly MainMenuItem[] = [
     group: 'workspace',
     visibleWhen: (session, context) =>
       context.selectedOrganizationKind === 'Phaeno' &&
-      Boolean(session?.capabilities.canViewAllOperationalOrders),
+      Boolean(session?.capabilities.canManageOrderConfiguration || session?.capabilities.canQuoteLabServiceWork || session?.capabilities.canViewTrialProjects),
   },
   {
     label: 'Lab ops',
@@ -150,19 +154,89 @@ export const mainMenuItems: readonly MainMenuItem[] = [
     group: 'workspace',
     visibleWhen: (session, context) =>
       context.selectedOrganizationKind === 'Phaeno' &&
+      Boolean(session?.capabilities.canManageLabOperations || session?.capabilities.canReleasePSeqResults),
+  },
+  {
+    label: 'Finance',
+    to: '/finance',
+    icon: CircleDollarSign,
+    group: 'more',
+    visibleWhen: (session, context) => context.selectedOrganizationKind === 'Phaeno' && Boolean(session?.capabilities.canManagePSeqBilling || session?.capabilities.canManagePSeqCash || session?.capabilities.canReconcilePSeqCash),
+  },
+  {
+    label: 'Purchasing',
+    to: '/purchasing',
+    icon: PackageCheck,
+    group: 'more',
+    visibleWhen: (session, context) =>
+      context.selectedOrganizationKind === 'Phaeno' &&
+      Boolean(session?.capabilities.canManageOrderConfiguration || session?.capabilities.canManageLabOperations),
+  },
+  {
+    label: 'Equipment',
+    to: '/equipment',
+    icon: Microscope,
+    group: 'more',
+    visibleWhen: (session, context) =>
+      context.selectedOrganizationKind === 'Phaeno' &&
       Boolean(session?.capabilities.canManageLabOperations),
   },
   {
-    label: 'Order configuration',
+    label: 'Data provisioning',
+    to: '/data-provisioning',
+    icon: Database,
+    group: 'more',
+    visibleWhen: (session, context) =>
+      isPhaenoEmployee(session) &&
+      context.selectedOrganizationKind === 'Phaeno' &&
+      Boolean(session?.capabilities.canViewDatasetConfiguration),
+  },
+  {
+    label: 'Legacy integrations',
+    to: '/legacy-integrations',
+    icon: PlugZap,
+    group: 'more',
+    visibleWhen: (session, context) => context.selectedOrganizationKind === 'Phaeno' && Boolean(session?.capabilities.canManageOrderConfiguration),
+  },
+  {
+    label: 'Order settings',
     to: '/order-configuration',
     icon: Settings,
+    group: 'administration',
+    visibleWhen: (session, context) =>
+      context.selectedOrganizationKind === 'Phaeno' &&
+      Boolean(session?.capabilities.canManageOrderConfiguration || session?.capabilities.canManageTrialProjects),
+  },
+  {
+    label: 'Lab settings',
+    to: '/lab-configuration',
+    icon: Cog,
+    group: 'administration',
+    visibleWhen: (session, context) =>
+      context.selectedOrganizationKind === 'Phaeno' &&
+      Boolean(session?.capabilities.canManageLabOperations),
+  },
+  {
+    label: 'CRM settings',
+    to: '/crm/administration',
+    icon: Settings,
+    group: 'administration',
+    visibleWhen: (session, context) =>
+      session?.state === 'ready' &&
+      context.selectedOrganizationKind === 'Phaeno' &&
+      Boolean(session.capabilities.canAccessCrm && session.capabilities.canAdministerCrm),
+  },
+  {
+    label: 'Samples & shipping settings',
+    to: '/sample-shipping-settings',
+    icon: Truck,
     group: 'administration',
     visibleWhen: (session, context) =>
       context.selectedOrganizationKind === 'Phaeno' &&
       Boolean(session?.capabilities.canManageOrderConfiguration),
   },
   {
-    label: 'File management',
+    label: 'File retention policies',
     to: '/file-management',
     icon: FolderClock,
     group: 'administration',
@@ -171,25 +245,13 @@ export const mainMenuItems: readonly MainMenuItem[] = [
       Boolean(session?.capabilities.canManageFileManagementConfiguration),
   },
   {
-    label: 'Docs',
+    label: 'Documentation',
     to: '/docs',
     icon: BookOpenText,
-    group: 'workspace',
+    group: 'resources',
     visibleWhen: (_session, context) =>
       isExternalOrganizationKind(context.selectedOrganizationKind) ||
       context.selectedOrganizationKind === 'Phaeno',
-  },
-  {
-    label: 'Project',
-    to: '/about',
-    icon: LayoutDashboard,
-    group: 'resources',
-  },
-  {
-    label: 'Query demo',
-    to: '/demo/tanstack-query',
-    icon: Activity,
-    group: 'resources',
   },
 ] as const
 
@@ -242,4 +304,10 @@ export function isPhaenoEmployee(session: SessionResponse | null) {
       (membership) => membership.organizationKind === 'Phaeno',
     ),
   )
+}
+
+export function isMainMenuRouteActive(pathname: string, to: string, exact?: boolean) {
+  if (to === '/crm' && (pathname === '/crm/administration' || pathname.startsWith('/crm/administration/'))) return false
+  if (to === '/' && pathname === '/dashboard/attention') return true
+  return pathname === to || (!exact && pathname.startsWith(`${to}/`))
 }

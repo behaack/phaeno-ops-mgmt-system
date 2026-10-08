@@ -54,8 +54,11 @@ export type SessionSelectedDepartment = {
 }
 
 export type SessionCapabilities = {
+  canAccessCrm: boolean
+  canAdministerCrm: boolean
   canViewTrialProjects?: boolean
   canManageTrialProjects?: boolean
+  canCreateTrialProjects?: boolean
   canInviteUsers: boolean
   canManageMembers: boolean
   canChangeMemberRoles: boolean
@@ -69,6 +72,7 @@ export type SessionCapabilities = {
   canProvisionOrganizationData: boolean
   canViewOrganizationDatasets: boolean
   canViewLabServiceOrders: boolean
+  canViewLabServiceInvoices?: boolean
   canCreateLabServiceRequests: boolean
   canSubmitLabServiceRequests: boolean
   canAcceptLabServiceQuotes: boolean

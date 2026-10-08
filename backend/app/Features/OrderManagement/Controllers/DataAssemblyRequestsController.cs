@@ -19,7 +19,7 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 [ApiController]
 [Authorize]
 [Route("api/data-assembly-requests")]
-public sealed class DataAssemblyRequestsController(
+public sealed partial class DataAssemblyRequestsController(
     PSeqOperationsDbContext dbContext,
     OrderRequestContext requestContext,
     OrderIdempotencyService idempotency,
@@ -101,34 +101,8 @@ public sealed class DataAssemblyRequestsController(
     [HttpPost]
     public async Task<DataAssemblyRequestDto> Create([FromBody] AssemblyWriteRequest request, CancellationToken cancellationToken)
     {
-        var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Partner, true, cancellationToken);
-        var key = idempotency.RequireKey(HttpContext);
-        var execution = await idempotency.ExecuteAsync(
-            tenant.Actor.Id,
-            "assembly:create",
-            key,
-            request,
-            async operationCancellationToken =>
-            {
-                var profile = await dbContext.AssemblyProfiles.AsNoTracking().FirstOrDefaultAsync(item => item.Id == request.AssemblyProfileId && item.IsActive && !item.IsSynthetic, operationCancellationToken)
-                    ?? throw Invalid("assembly_profile_unavailable", "Select an active data-assembly profile.");
-                DataAssemblyRequest item;
-                try
-                {
-                    item = new DataAssemblyRequest(tenant.Organization.Id, tenant.Department.Id, OrderNumberGenerator.Assembly(), request.ProjectReference,
-                        profile.Id, profile.ProfileVersion, profile.Name, profile.Instructions, request.MetadataJson,
-                        request.RequestedOutput, request.ProcessingNotes, request.ProhibitedDataConfirmed);
-                }
-                catch (ArgumentException exception) { throw Invalid("assembly_request_invalid", exception.Message); }
-                dbContext.DataAssemblyRequests.Add(item);
-                Event(item, "Created", item.Status.ToString(), tenant.Actor.Id);
-                await dbContext.SaveChangesAsync(operationCancellationToken);
-                return await MapAsync(item, true, false, operationCancellationToken);
-            },
-            StatusCodes.Status201Created,
-            cancellationToken);
-        Response.StatusCode = execution.StatusCode;
-        return execution.Response;
+        await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Partner, true, cancellationToken);
+        throw Conflict("included_kit_case_required", "Open a purchased Kit order and prepare its included Assembly case. Request custom work for a different scope.");
     }
 
     [HttpPatch("{requestId:guid}")]
@@ -136,6 +110,7 @@ public sealed class DataAssemblyRequestsController(
     {
         var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Partner, true, cancellationToken);
         var item = await ReadAsync(requestId, tenant, cancellationToken); EnsureVersion(item.Version, request.Version);
+        await RequireEditableIncludedCaseAsync(item, cancellationToken);
         if (request.AssemblyProfileId != item.AssemblyProfileId)
             throw Conflict("assembly_profile_frozen", "Create a new request to use a different assembly profile.");
         Execute(() => item.UpdateDraft(request.ProjectReference, request.MetadataJson, request.RequestedOutput,
@@ -149,35 +124,64 @@ public sealed class DataAssemblyRequestsController(
     public async Task<OperationalFileDto> UploadInput(Guid requestId, [FromForm] IFormFile file, CancellationToken cancellationToken)
     {
         var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Partner, true, cancellationToken);
-        var item = await ReadAsync(requestId, tenant, cancellationToken);
-        if (item.Status is not (AssemblyRequestStatus.Draft or AssemblyRequestStatus.ChangesRequested))
-            throw Conflict("assembly_input_not_editable", "Inputs can be uploaded only while the request is editable.");
-        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
-        if (!options.Value.AllowedFileKinds.ContainsKey(extension)) throw Invalid("file_kind_not_allowed", "This input file type is not allowed.");
-        var profile = await dbContext.AssemblyProfiles.AsNoTracking().FirstOrDefaultAsync(value => value.Id == item.AssemblyProfileId, cancellationToken) ?? throw Invalid("assembly_profile_unavailable", "The request profile is unavailable.");
-        var allowedKinds = AllowedFileKinds(profile.AllowedFileKindsJson);
-        if (profile.IsSynthetic || (item.InputRevision == 0 && !profile.IsActive) || !allowedKinds.Contains(extension))
-            throw Invalid("file_kind_not_allowed", "This file type is not allowed by the selected assembly profile.");
-        if (file.Length > profile.MaximumFileSizeBytes) throw Invalid("file_too_large", "This file exceeds the selected assembly profile's per-file limit.");
-        var existingBytes = await dbContext.ManagedOperationalFiles.AsNoTracking().Where(value => value.WorkflowId == requestId
-            && value.Purpose == OperationalFilePurpose.AssemblyInput && value.ReleaseStatus != FileReleaseStatus.Withdrawn).SumAsync(value => (long?)value.SizeBytes, cancellationToken) ?? 0;
-        if (existingBytes + file.Length > profile.MaximumTotalSizeBytes) throw Invalid("assembly_total_size_exceeded", "The active input files exceed the selected assembly profile's total-size limit.");
-        StoredOperationalFile stored;
-        await using (var stream = file.OpenReadStream()) stored = await fileStorage.SaveAsync(stream, extension, options.Value.MaximumFileBytes, cancellationToken);
-        try
+        string? uploadedStorageKey = null;
+        async Task<OperationalFileDto> UploadCore(CancellationToken operationCancellationToken)
         {
-            var scan = await fileScanner.ScanAsync(stored.StorageKey, cancellationToken);
+            var item = await ReadAsync(requestId, tenant, operationCancellationToken);
+            if (item.Status is not (AssemblyRequestStatus.Draft or AssemblyRequestStatus.ChangesRequested))
+                throw Conflict("assembly_input_not_editable", "Inputs can be uploaded only while the request is editable.");
+            await RequireEditableIncludedCaseAsync(item, operationCancellationToken);
+            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+            if (!options.Value.AllowedFileKinds.ContainsKey(extension)) throw Invalid("file_kind_not_allowed", "This input file type is not allowed.");
+            var profile = await new KitBundleService(dbContext).ReadProfileAsync(item, operationCancellationToken);
+            var allowedKinds = AllowedFileKinds(profile.AllowedFileKindsJson);
+            if (profile.IsSynthetic || (item.InputRevision == 0 && !profile.IsActive) || !allowedKinds.Contains(extension))
+                throw Invalid("file_kind_not_allowed", "This file type is not allowed by the selected assembly profile.");
+            if (file.Length > profile.MaximumFileSizeBytes) throw Invalid("file_too_large", "This file exceeds the selected assembly profile's per-file limit.");
+            var existingBytes = await dbContext.ManagedOperationalFiles.AsNoTracking().Where(value => value.WorkflowId == requestId
+                && value.Purpose == OperationalFilePurpose.AssemblyInput && value.ReleaseStatus != FileReleaseStatus.Withdrawn).SumAsync(value => (long?)value.SizeBytes, operationCancellationToken) ?? 0;
+            if (existingBytes + file.Length > profile.MaximumTotalSizeBytes) throw Invalid("assembly_total_size_exceeded", "The active input files exceed the selected assembly profile's total-size limit.");
+            StoredOperationalFile stored;
+            await using (var stream = file.OpenReadStream()) stored = await fileStorage.SaveAsync(stream, extension, options.Value.MaximumFileBytes, operationCancellationToken);
+            uploadedStorageKey = stored.StorageKey;
+            var scan = await fileScanner.ScanAsync(stored.StorageKey, operationCancellationToken);
             var managed = new ManagedOperationalFile(item.OrganizationId, OrderWorkflowTypes.DataAssembly, item.Id, null,
                 OperationalFilePurpose.AssemblyInput, file.FileName, extension, file.ContentType ?? "application/octet-stream",
                 stored.SizeBytes, stored.Sha256, stored.StorageKey);
             managed.RecordScan(scan.Status, scan.Message);
             dbContext.ManagedOperationalFiles.Add(managed);
-            await dbContext.SaveChangesAsync(cancellationToken);
+            await dbContext.SaveChangesAsync(operationCancellationToken);
             return managed.ToDto();
+        }
+        try
+        {
+            if (!HttpContext.Request.Headers.ContainsKey("Idempotency-Key"))
+                return await UploadCore(cancellationToken);
+            var key = idempotency.RequireKey(HttpContext);
+            await using var fingerprintStream = file.OpenReadStream();
+            var checksum = Convert.ToHexString(await System.Security.Cryptography.SHA256.HashDataAsync(fingerprintStream, cancellationToken));
+            var execution = await idempotency.ExecuteAsync(tenant.Actor.Id, $"assembly:{requestId}:upload", key,
+                new { file.FileName, file.Length, file.ContentType, Checksum = checksum }, UploadCore,
+                cancellationToken: cancellationToken, concurrencyScope: $"assembly:{requestId}:inputs");
+            return execution.Response;
         }
         catch
         {
-            await fileStorage.DeleteIfExistsAsync(stored.StorageKey, cancellationToken);
+            if (uploadedStorageKey is not null)
+            {
+                try
+                {
+                    // The idempotency transaction has finished or rolled back. An
+                    // interrupted response must not remove a committed input file.
+                    var committed = await dbContext.ManagedOperationalFiles.AsNoTracking()
+                        .AnyAsync(item => item.StorageKey == uploadedStorageKey, CancellationToken.None);
+                    if (!committed) await fileStorage.DeleteIfExistsAsync(uploadedStorageKey, CancellationToken.None);
+                }
+                catch (Exception cleanupError)
+                {
+                    fileDownloadLogger.LogWarning(cleanupError, "Assembly input bytes were retained because the upload outcome or cleanup could not be verified.");
+                }
+            }
             throw;
         }
     }
@@ -189,6 +193,7 @@ public sealed class DataAssemblyRequestsController(
         var item = await ReadAsync(requestId, tenant, cancellationToken);
         if (item.Status is not (AssemblyRequestStatus.Draft or AssemblyRequestStatus.ChangesRequested))
             throw Conflict("assembly_input_not_editable", "Inputs can be removed only while the request is editable.");
+        await RequireEditableIncludedCaseAsync(item, cancellationToken);
         var file = await dbContext.ManagedOperationalFiles.FirstOrDefaultAsync(value => value.Id == inputId && value.WorkflowId == requestId
             && value.OrganizationId == tenant.Organization.Id && value.Purpose == OperationalFilePurpose.AssemblyInput, cancellationToken) ?? throw Missing();
         if (file.Version != version) throw new DbUpdateConcurrencyException();
@@ -211,8 +216,8 @@ public sealed class DataAssemblyRequestsController(
             {
                 var item = await ReadAsync(requestId, tenant, operationCancellationToken);
                 EnsureVersion(item.Version, request.Version);
-                var profile = await dbContext.AssemblyProfiles.AsNoTracking().FirstOrDefaultAsync(value => value.Id == item.AssemblyProfileId, operationCancellationToken)
-                    ?? throw Invalid("assembly_profile_unavailable", "The request profile is unavailable.");
+                var included = await RequireEditableIncludedCaseAsync(item, operationCancellationToken);
+                var profile = await new KitBundleService(dbContext).ReadProfileAsync(item, operationCancellationToken);
                 if (profile.IsSynthetic || (item.InputRevision == 0 && !profile.IsActive))
                     throw Invalid("assembly_profile_unavailable", "The selected assembly profile is not active for Partner submissions.");
                 ValidateMetadata(profile.MetadataSchemaJson, item.MetadataJson);
@@ -231,11 +236,17 @@ public sealed class DataAssemblyRequestsController(
                     throw Invalid("assembly_profile_file_rules_failed", "One or more inputs do not meet the selected assembly profile's file rules.");
                 var revision = new AssemblyInputRevision(item.Id, item.InputRevision + 1, item.CurrentInputRevisionId,
                     request.ManifestJson, item.Status == AssemblyRequestStatus.ChangesRequested ? item.TenantSafeReason : null,
-                    request.ValidationSummaryJson, tenant.Actor.Id, DateTime.UtcNow);
+                    request.ValidationSummaryJson, tenant.Actor.Id, DateTime.UtcNow, included?.CurrentKitUnitId);
                 foreach (var input in inputs.Where(file => !file.ParentRecordId.HasValue)) input.AttachToParent(revision.Id);
                 item.InputRevisions.Add(revision);
+                dbContext.AssemblyInputRevisions.Add(revision);
                 var before = item.Status.ToString();
                 Execute(() => item.Submit(revision.Id, DateTime.UtcNow));
+                if (included is not null)
+                {
+                    Execute(() => included.Submit(item.Id, tenant.Actor.Id, DateTime.UtcNow));
+                    KitBundleService.TrackNewHistory(dbContext, included);
+                }
                 Event(item, before, item.Status.ToString(), tenant.Actor.Id);
                 Notice(item, "assembly-submitted", "Data assembly request submitted", $"{item.RequestNumber} was submitted for intake validation.");
                 await dbContext.SaveChangesAsync(operationCancellationToken);
@@ -251,6 +262,7 @@ public sealed class DataAssemblyRequestsController(
         var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Partner, true, cancellationToken);
         var item = await ReadAsync(requestId, tenant, cancellationToken); EnsureVersion(item.Version, request.Version);
         var before = item.Status.ToString(); Execute(() => item.Withdraw(request.Reason)); Event(item, before, item.Status.ToString(), tenant.Actor.Id, request.Reason);
+        await new KitBundleService(dbContext).SyncAssemblyClosureAsync(item, tenant.Actor.Id, request.Reason, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken); return await MapAsync(item, true, false, cancellationToken);
     }
 
@@ -480,7 +492,7 @@ public sealed class DataAssemblyRequestsController(
         var cancellations = await dbContext.OrderCancellationRequests.AsNoTracking().Where(value => value.WorkflowType == OrderWorkflowTypes.DataAssembly && value.WorkflowId == item.Id).OrderBy(value => value.CreatedAt).ToListAsync(cancellationToken);
         var timeline = await dbContext.OrderStatusEvents.AsNoTracking().Where(value => value.WorkflowType == OrderWorkflowTypes.DataAssembly && value.WorkflowId == item.Id).OrderBy(value => value.OccurredAt).ToListAsync(cancellationToken);
         var editable = item.Status is AssemblyRequestStatus.Draft or AssemblyRequestStatus.ChangesRequested;
-        return new DataAssemblyRequestDto(item.Id, item.OrganizationId, item.RequestNumber, item.ProjectReference, item.AssemblyProfileId,
+        var dto = new DataAssemblyRequestDto(item.Id, item.OrganizationId, item.RequestNumber, item.ProjectReference, item.AssemblyProfileId,
             item.AssemblyProfileVersion, item.ProfileNameSnapshot, item.ProfileInstructionsSnapshot, item.MetadataJson, item.RequestedOutput,
             item.ProcessingNotes, item.ProhibitedDataConfirmed, item.Status.ToString(), item.InputRevision, item.PurchaseOrderNumber,
             item.SubmittedAt, item.PlacedAt, item.CompletedAt, item.TenantSafeReason, platform ? item.InternalNote : null, item.CreatedAt,
@@ -503,6 +515,7 @@ public sealed class DataAssemblyRequestsController(
             files.Where(file => file.Purpose == OperationalFilePurpose.AssemblyInput && file.ReleaseStatus != FileReleaseStatus.Withdrawn).Select(file => file.ToDto()).ToList(),
             docs.Select(value => value.ToDto(platform)).ToList(), cancellations.Select(value => value.ToDto()).ToList(), timeline.Select(value => value.ToDto(platform)).ToList(),
             ResumeStatus: item.ResumeStatus?.ToString());
+        return await new KitBundleService(dbContext).EnrichAsync(dto, cancellationToken);
     }
 
     private static AssemblyOutputReleaseDto MapRelease(

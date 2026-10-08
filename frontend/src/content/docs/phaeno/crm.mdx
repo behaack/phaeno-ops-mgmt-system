@@ -6,23 +6,32 @@ CRM records are internal Phaeno records. The Company is the canonical Customer, 
 
 ## Access CRM
 
-Open **CRM** from the Phaeno toolbar. CRM access requires an active Phaeno platform-administrator account. External organization users cannot see CRM navigation or CRM data.
+Open **CRM** from the Phaeno toolbar while working in the Phaeno organization. An active Phaeno account with the **Commercial operator** role or platform-administrator access can use CRM. External organization users cannot see CRM navigation or CRM data.
 
-Use the far-left sidebar beneath the toolbar to move among the complete CRM workspace. **Relationships** contains Companies and Contacts; **Sales** contains Leads and Opportunities; **Follow-up** contains Tasks and Requests; **Insights** contains Reports; and **Administration** contains CRM configuration. **Home** remains the starting summary. The sidebar header identifies CRM and, on wider screens, provides the pin or unpin icon. Pointer users can preview an unpinned sidebar from the left edge; keyboard and touch users open it from the edge tab. Choosing a section closes an unpinned sidebar.
+Use the far-left sidebar beneath the toolbar to move among the CRM sections available to your role. **Relationships** contains Companies and People; **Sales** contains Leads and Opportunities; **Follow-up** contains Tasks and, for administrators, Requests; **Insights** contains Reports. Administrators open **CRM settings** from the user menu, immediately below **Lab settings**, for CRM configuration. **Home** remains the starting summary. The sidebar header identifies CRM and, on wider screens, provides the pin or unpin icon. Pointer users can preview an unpinned sidebar from the left edge; keyboard and touch users open it from the edge tab. Choosing a section closes an unpinned sidebar.
 
 ## Start from Home
 
-Home answers what needs attention. It shows overdue and due-soon Tasks, Leads without a next action, stale Opportunities, required-data warnings, your next Tasks, and recently changed Opportunities.
+Home separates follow-up checks from your next Tasks and recently changed Opportunities. When all visible counts are zero, it says **No items need attention**. Categories with matching records are highlighted and offer **Review** to open their queue; zero-count categories remain neutral. Each category explains its rule: unfinished overdue or due-soon Tasks, active Leads without a next action, and open Opportunities unchanged for more than 30 days. Administrators also see possible duplicates and missing required custom-field values under **Data warnings**. Recently changed Opportunities are shown separately for reference. A missing Opportunity amount alone does not trigger an attention warning.
 
 Use **Find anything** to search active Companies, Contacts, Leads, Opportunities, and Tasks. Enter at least two characters, then choose a result to open its owning workspace. Search does not cross into Portal users, specimens, files, or laboratory records.
+
+Commercial staff can maintain Companies, Contacts, relationships, Leads, Opportunities, Tasks, ordinary Internal Activities, personal saved views, and Internal custom values, and read Reports. A platform administrator manages Company and Contact deactivation/reactivation and merges, Portal identity and access, Company Requests, pipelines and field definitions, imports, exports, shared-view publication, and Restricted Activities and custom values. Administrative sections and actions are shown only to administrators.
 
 ## Keep the domain boundaries clear
 
 - **CRM** owns the canonical Company, commercial relationship facts, qualification, pursuits, follow-up, sales history, and the central Requests review queue.
 - Company detail presents the internal tenant scope, memberships, invitations, readiness, and service entitlements after Portal access is enabled. That scope is not a second customer record.
-- **Order operations** owns reviewed commercial orders, quotes, fulfillment, accounting source records, and release decisions.
+- **Order ops**, grouped into **LAB SERVICES** and **PARTNER SERVICES**, owns commercial records, quotes, cancellation and hold decisions. **More → Finance** owns billing and cash. **Lab operations** owns physical fulfillment, laboratory execution, scientific approval and governed result release.
 - **Lab operations** owns physical specimens, accession, controlled execution, materials, equipment, libraries, batches, sendouts, exceptions, and scientific approval.
 
-Use a reviewed CRM handoff when relationship context should enable or change Portal access or enter Order operations. Never copy patient information, sample identifiers, scientific results, credentials, confidential file contents, or internal laboratory investigation notes into CRM.
+Use a reviewed CRM handoff when relationship context should enable or change Portal access or enter the owning service workspace. Never copy patient information, sample identifiers, scientific results, credentials, confidential file contents, or internal laboratory investigation notes into CRM.
 
 Use the CRM subtopics in this guide for complete field, status, workflow, administration, handoff, and recovery instructions.
+
+
+## Customer Lab service prices
+
+Phaeno Commercial staff maintain **Lab service pricing** in a Customer Company's **Services** tab. Add an Organization-wide negotiated price or a price for one Department and one service. The lower rate wins when both scopes apply; without a negotiated rate, Customers use standard catalog pricing. Active status and UTC effective dates control applicability. Existing accepted orders retain their original price and source. Service prices are separate from entitlements: they do not enable ordering or override a service's maximum Customer sample count.
+
+When adding a negotiated price, the **Service** dropdown lists active catalog services only. If none are available, activate a Lab service in **Order settings → Service catalog** first. Existing prices retain their service names after catalog deactivation; editing those prices keeps the saved service fixed and marks it **Inactive**.

@@ -1,6 +1,6 @@
 import { Outlet, createFileRoute, useRouterState } from '@tanstack/react-router'
 
-import { DocumentationPage } from '#/features/documentation/DocumentationPage'
+import { DocumentationPage, DocumentationLayout } from '#/features/documentation/DocumentationPage'
 
 export const Route = createFileRoute('/docs')({
   component: DocumentationRoute,
@@ -11,5 +11,5 @@ function DocumentationRoute() {
     select: (state) => state.location.pathname !== '/docs',
   })
 
-  return isChildRoute ? <Outlet /> : <DocumentationPage />
+  return <DocumentationLayout>{isChildRoute ? <Outlet /> : <DocumentationPage />}</DocumentationLayout>
 }

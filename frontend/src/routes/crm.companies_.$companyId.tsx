@@ -1,8 +1,9 @@
+import { validateCrmNavigationSearch } from '#/features/crm/CrmListNavigation'
 import { createFileRoute } from '@tanstack/react-router'
 
 import { CrmCompanyDetailPage } from '#/features/crm/CrmCompanyDetailPage'
 
-export const Route = createFileRoute('/crm/companies_/$companyId')({
+export const Route = createFileRoute('/crm/companies_/$companyId')({ validateSearch: validateCrmNavigationSearch,
   component: CrmCompanyRoute,
 })
 

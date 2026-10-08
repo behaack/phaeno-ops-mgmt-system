@@ -13,10 +13,11 @@ public static class OrderManagementModelConfiguration
 {
     public static void Configure(ModelBuilder modelBuilder, string commercialSchema)
     {
-        ConfigureCatalog(modelBuilder);
+        ConfigureCatalog(modelBuilder, commercialSchema);
         ConfigureCommercial(modelBuilder);
         ConfigureAccountsReceivable(modelBuilder, commercialSchema);
         ConfigureCommercialLabServiceRecords(modelBuilder, commercialSchema);
+        LabJobPhaseModelConfiguration.Configure(modelBuilder, commercialSchema);
         ConfigurePSeqResultDelivery(modelBuilder, commercialSchema);
         ConfigureSampleShipping(modelBuilder);
         ConfigureReagents(modelBuilder);
@@ -26,9 +27,32 @@ public static class OrderManagementModelConfiguration
 
     private static void ConfigureSampleShipping(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<SampleShippingProcedure>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Lifecycle).HasConversion<string>().HasMaxLength(24);
+            entity.HasIndex(e => e.DefinitionKey).IsUnique().HasFilter("lifecycle = 'Draft'")
+                .HasDatabaseName("ux_shipping_procedure_one_draft");
+            Text(entity.Property(e => e.Name), 255);
+            Text(entity.Property(e => e.Description), 4000);
+            Text(entity.Property(e => e.PackingInstructions), 4000);
+            Text(entity.Property(e => e.TemperatureInstructions), 4000);
+            Text(entity.Property(e => e.CarrierInstructions), 4000);
+            Text(entity.Property(e => e.DispatchInstructions), 4000);
+            Text(entity.Property(e => e.RequiredDocuments), 4000);
+            Text(entity.Property(e => e.ExceptionInstructions), 4000);
+            Text(entity.Property(e => e.InternationalCustomsInstructions), 4000, false);
+            entity.HasIndex(e => new { e.DefinitionKey, e.Revision }).IsUnique();
+            entity.HasIndex(e => e.SupersedesProcedureId).IsUnique();
+            entity.HasOne<SampleShippingProcedure>().WithMany().HasForeignKey(e => e.SupersedesProcedureId).OnDelete(DeleteBehavior.Restrict);
+            Audit(entity);
+        });
         modelBuilder.Entity<SampleShippingDestination>(entity =>
         {
             entity.HasKey(e => e.Id);
+            entity.Property(e => e.Lifecycle).HasConversion<string>().HasMaxLength(24);
+            entity.HasIndex(e => e.DefinitionKey).IsUnique().HasFilter("lifecycle = 'Draft'")
+                .HasDatabaseName("ux_shipping_destination_one_draft");
             Text(entity.Property(e => e.Code), 50);
             Text(entity.Property(e => e.Name), 255);
             Text(entity.Property(e => e.RecipientName), 255);
@@ -59,6 +83,10 @@ public static class OrderManagementModelConfiguration
         modelBuilder.Entity<SampleTypeDefinition>(entity =>
         {
             entity.HasKey(e => e.Id);
+            entity.Property(e => e.Lifecycle).HasConversion<string>().HasMaxLength(24);
+            entity.HasIndex(e => e.DefinitionKey).IsUnique().HasFilter("lifecycle = 'Draft'")
+                .HasDatabaseName("ux_sample_type_one_draft");
+            entity.HasOne<SampleShippingProcedure>().WithMany().HasForeignKey(e => e.ShippingProcedureId).OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_sample_type_shipping_procedure");
             Text(entity.Property(e => e.Code), 50);
             Text(entity.Property(e => e.Name), 255);
             Text(entity.Property(e => e.Description), 2000);
@@ -66,6 +94,8 @@ public static class OrderManagementModelConfiguration
             Quantity(entity.Property(e => e.MinimumQuantity));
             Quantity(entity.Property(e => e.MaximumQuantity));
             Text(entity.Property(e => e.QuantityUnit), 100);
+            Quantity(entity.Property(e => e.MinimumSampleAmount));
+            Text(entity.Property(e => e.SampleAmountUnit), 8, false);
             Text(entity.Property(e => e.PrimaryContainerRequirements), 2000);
             Text(entity.Property(e => e.TemperatureRequirements), 2000);
             Text(entity.Property(e => e.StabilizerRequirements), 2000, false);
@@ -84,33 +114,17 @@ public static class OrderManagementModelConfiguration
             Audit(entity);
         });
 
-        modelBuilder.Entity<SampleShippingInstructionRule>(entity =>
+        modelBuilder.Entity<SampleTypeProcedureLink>(entity =>
         {
             entity.HasKey(e => e.Id);
-            Text(entity.Property(e => e.CompatibilityGroup), 50);
-            Text(entity.Property(e => e.PackingInstructions), 4000);
-            Text(entity.Property(e => e.TemperatureInstructions), 4000);
-            Text(entity.Property(e => e.CarrierInstructions), 4000);
-            Text(entity.Property(e => e.DispatchInstructions), 4000);
-            Text(entity.Property(e => e.DeliveryInstructions), 4000);
-            Text(entity.Property(e => e.RequiredDocuments), 4000);
-            Text(entity.Property(e => e.ExceptionInstructions), 4000);
-            Text(entity.Property(e => e.InternationalCustomsInstructions), 4000, false);
-            entity.HasIndex(e => new { e.DefinitionKey, e.Revision }).IsUnique();
-            entity.HasIndex(e => new { e.DestinationId, e.SampleTypeDefinitionId, e.EffectiveFrom });
-            entity.HasIndex(e => new { e.IsActive, e.EffectiveFrom, e.EffectiveTo });
-            entity.HasOne<SampleShippingDestination>()
-                .WithMany()
-                .HasForeignKey(e => e.DestinationId)
-                .OnDelete(DeleteBehavior.Restrict);
-            entity.HasOne<SampleTypeDefinition>()
-                .WithMany()
-                .HasForeignKey(e => e.SampleTypeDefinitionId)
-                .OnDelete(DeleteBehavior.Restrict);
-            entity.HasOne<SampleShippingInstructionRule>()
-                .WithMany()
-                .HasForeignKey(e => e.SupersedesInstructionRuleId)
-                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasIndex(e => e.SampleTypeAnchorId).IsUnique();
+            entity.HasOne<SampleTypeDefinition>().WithMany().HasForeignKey(e => e.SampleTypeAnchorId)
+                .OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_sample_type_procedure_link_sample_anchor");
+            entity.HasOne<SampleShippingProcedure>().WithMany().HasForeignKey(e => e.ProcedureAnchorId)
+                .OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_sample_type_procedure_link_procedure_anchor");
+            entity.HasOne<PSeq.Operations.Commercial.Accounts.Domain.User>().WithMany()
+                .HasForeignKey(e => e.ChangedByUserId).OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("fk_sample_type_procedure_link_actor");
             Audit(entity);
         });
 
@@ -145,10 +159,12 @@ public static class OrderManagementModelConfiguration
 
         modelBuilder.Entity<SampleReturnKit>(entity =>
         {
+            entity.Property(e => e.ProductExpirySnapshotJson).HasColumnType("jsonb");
             entity.HasKey(e => e.Id);
             Text(entity.Property(e => e.KitNumber), 100);
             EnumText(entity.Property(e => e.AuthorizationSource));
             Text(entity.Property(e => e.TubeSupplierName), 255);
+            Text(entity.Property(e => e.TubeBarcodeNamespace), 50);
             Text(entity.Property(e => e.TubeProductNumber), 100);
             Text(entity.Property(e => e.TubeLotNumber), 100, false);
             Text(entity.Property(e => e.ShipperSupplierName), 255);
@@ -174,9 +190,16 @@ public static class OrderManagementModelConfiguration
         modelBuilder.Entity<RegisteredSampleTube>(entity =>
         {
             entity.HasKey(e => e.Id);
+            entity.Property(e => e.CustomerDeclaredQuantity).HasPrecision(18, 6);
+            Text(entity.Property(e => e.CustomerDeclaredQuantityUnit), 50, false);
+            entity.HasOne<User>().WithMany().HasForeignKey(e => e.CustomerDeclaredByUserId).OnDelete(DeleteBehavior.Restrict);
             Text(entity.Property(e => e.SupplierBarcode), 100);
+            Text(entity.Property(e => e.BarcodeNamespace), 50);
             EnumText(entity.Property(e => e.Status));
-            entity.HasIndex(e => e.SupplierBarcode).IsUnique();
+            entity.HasIndex(e => e.SupplierBarcode);
+            entity.HasIndex(e => new { e.BarcodeNamespace, e.SupplierBarcode }).IsUnique();
+            entity.HasIndex(e => e.SourceStockTubeId).IsUnique();
+            entity.HasOne<SampleShippingStockTube>().WithMany().HasForeignKey(e => e.SourceStockTubeId).OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_registered_tube_source_stock_tube");
             entity.HasIndex(e => new { e.SampleReturnKitId, e.Status });
             entity.HasOne<SampleReturnKit>()
                 .WithMany(e => e.Tubes)
@@ -195,7 +218,6 @@ public static class OrderManagementModelConfiguration
             entity.HasIndex(e => new { e.SampleShipmentId, e.SubmittedSpecimenId }).IsUnique();
             entity.HasIndex(e => new { e.SampleShipmentId, e.CustomerSampleId }).IsUnique();
             entity.HasIndex(e => e.SampleTypeDefinitionId);
-            entity.HasIndex(e => e.RegisteredSampleTubeId).IsUnique();
             entity.HasOne<SampleShipment>()
                 .WithMany(e => e.Items)
                 .HasForeignKey(e => e.SampleShipmentId)
@@ -203,10 +225,6 @@ public static class OrderManagementModelConfiguration
             entity.HasOne<SampleTypeDefinition>()
                 .WithMany()
                 .HasForeignKey(e => e.SampleTypeDefinitionId)
-                .OnDelete(DeleteBehavior.Restrict);
-            entity.HasOne<RegisteredSampleTube>()
-                .WithMany()
-                .HasForeignKey(e => e.RegisteredSampleTubeId)
                 .OnDelete(DeleteBehavior.Restrict);
             Audit(entity);
         });
@@ -230,6 +248,8 @@ public static class OrderManagementModelConfiguration
         modelBuilder.Entity<SampleTubeAssignmentEvent>(entity =>
         {
             entity.HasKey(e => e.Id);
+            entity.Property(e => e.CustomerDeclaredQuantity).HasPrecision(18, 6);
+            Text(entity.Property(e => e.CustomerDeclaredQuantityUnit), 50, false);
             Text(entity.Property(e => e.CustomerSampleId), 100);
             Text(entity.Property(e => e.SupplierBarcode), 100);
             EnumText(entity.Property(e => e.Action));
@@ -279,7 +299,7 @@ public static class OrderManagementModelConfiguration
         });
     }
 
-    private static void ConfigureCatalog(ModelBuilder modelBuilder)
+    private static void ConfigureCatalog(ModelBuilder modelBuilder, string commercialSchema)
     {
         modelBuilder.Entity<QboCatalogItem>(entity =>
         {
@@ -288,10 +308,24 @@ public static class OrderManagementModelConfiguration
             Text(entity.Property(e => e.Name), 255);
             Text(entity.Property(e => e.Description), 2000);
             Text(entity.Property(e => e.SalesUnit), 100);
+            EnumText(entity.Property(e => e.ServiceFamily));
+            entity.Property(e => e.MinimumSequencingVolumeUl).HasColumnType("numeric");
             Money(entity.Property(e => e.BasePrice));
             Text(entity.Property(e => e.Currency), 3);
             entity.HasIndex(e => e.ExternalItemId).IsUnique();
             entity.HasIndex(e => new { e.IsActive, e.Name });
+            Audit(entity);
+        });
+
+        modelBuilder.Entity<LabServiceNegotiatedPrice>(entity =>
+        {
+            entity.ToTable("lab_service_negotiated_prices", commercialSchema);
+            entity.HasKey(e => e.Id);
+            Money(entity.Property(e => e.UnitPrice));
+            entity.HasOne<Organization>().WithMany().HasForeignKey(e => e.OrganizationId).OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_lab_service_negotiated_prices_organization");
+            entity.HasOne<OrganizationDepartment>().WithMany().HasForeignKey(e => e.DepartmentId).OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_lab_service_negotiated_prices_department");
+            entity.HasOne<QboCatalogItem>().WithMany().HasForeignKey(e => e.CatalogItemId).OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_lab_service_negotiated_prices_catalog");
+            entity.HasIndex(e => new { e.OrganizationId, e.CatalogItemId, e.DepartmentId, e.EffectiveFrom }).HasDatabaseName("ix_lab_service_negotiated_prices_scope");
             Audit(entity);
         });
 
@@ -515,8 +549,8 @@ public static class OrderManagementModelConfiguration
             Text(entity.Property(e => e.PdfSha256), 64);
             Text(entity.Property(e => e.VoidReason), 2000, false);
             entity.HasIndex(e => e.InvoiceNumber).IsUnique();
-            entity.HasIndex(e => e.LabServiceOrderId).IsUnique();
-            entity.HasIndex(e => e.AcceptedQuoteId).IsUnique();
+            entity.HasIndex(e => e.LabServiceOrderId);
+            entity.HasIndex(e => e.AcceptedQuoteId);
             entity.HasIndex(e => new { e.OrganizationId, e.Status, e.DueOn });
             entity.HasOne<Organization>().WithMany().HasForeignKey(e => e.OrganizationId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<LabServiceOrder>().WithMany().HasForeignKey(e => e.LabServiceOrderId).OnDelete(DeleteBehavior.Restrict);
@@ -612,6 +646,7 @@ public static class OrderManagementModelConfiguration
             Money(entity.Property(e => e.Difference));
             EnumText(entity.Property(e => e.Status));
             Json(entity.Property(e => e.CloseoutReportJson), false);
+            Json(entity.Property(e => e.DraftChangesJson), false);
             entity.HasIndex(e => e.BatchNumber).IsUnique();
             entity.HasIndex(e => new { e.Status, e.PeriodEnd });
             Audit(entity);
@@ -743,10 +778,23 @@ public static class OrderManagementModelConfiguration
             Text(entity.Property(e => e.NormalizedJobName), 255);
             Text(entity.Property(e => e.Description), 2000, false);
             Text(entity.Property(e => e.SharedBiologicalSource), 500, false);
+            entity.HasOne<SampleTypeDefinition>().WithMany().HasForeignKey(e => e.SampleTypeDefinitionId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<SampleShippingProcedure>().WithMany().HasForeignKey(e => e.ShippingProcedureRevisionId)
+                .OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_lab_service_order_shipping_procedure_revision");
+            Text(entity.Property(e => e.ShippingSafetyHoldReason), 2000, false);
+            entity.HasOne<User>().WithMany().HasForeignKey(e => e.ShippingSafetyHeldByUserId)
+                .OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_lab_service_order_shipping_hold_actor");
+            entity.HasOne<User>().WithMany().HasForeignKey(e => e.ShippingSafetyHoldResolvedByUserId)
+                .OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_lab_service_order_shipping_hold_resolver");
+            entity.HasOne<SampleShippingDestination>().WithMany().HasForeignKey(e => e.ShippingDestinationId)
+                .OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_lab_service_order_ship_to_revision");
+            Text(entity.Property(e => e.SampleTypeMaterialClassSnapshot), 100, false);
+            entity.Property(e => e.TubeUsePolicyKey).HasMaxLength(100);
             Text(entity.Property(e => e.StorageRequirements), 2000);
             Text(entity.Property(e => e.SafetyDeclaration), 2000);
             Text(entity.Property(e => e.SubmissionInstructionsSnapshot), 8000);
             Json(entity.Property(e => e.PlacementSnapshotJson), false);
+            Json(entity.Property(e => e.CustomerDraftJson), false);
             entity.Property(e => e.ProposedUnitPrice).HasPrecision(18, 2);
             Text(entity.Property(e => e.PriceProposalNote), 1000, false);
             EnumText(entity.Property(e => e.Status));
@@ -797,6 +845,7 @@ public static class OrderManagementModelConfiguration
 
         modelBuilder.Entity<LabSample>(entity =>
         {
+            entity.Property(e => e.SequencingRunCount).HasDefaultValue(1);
             entity.ToTable("lab_samples", commercialSchema);
             entity.HasKey(e => e.Id);
             Text(entity.Property(e => e.CustomerSampleId), 255);
@@ -825,6 +874,35 @@ public static class OrderManagementModelConfiguration
             Audit(entity);
         });
 
+        modelBuilder.Entity<LabSampleTubeKitSelection>(entity =>
+        {
+            entity.ToTable("lab_sample_tube_kit_selections", commercialSchema);
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.LabServiceOrderId, e.StockKitId }).IsUnique();
+            entity.HasIndex(e => e.StockKitId).IsUnique();
+            entity.HasOne<LabServiceOrder>().WithMany().HasForeignKey(e => e.LabServiceOrderId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<SampleShippingStockKit>().WithMany().HasForeignKey(e => e.StockKitId).OnDelete(DeleteBehavior.Restrict);
+            Audit(entity);
+        });
+
+        modelBuilder.Entity<LabSampleTubePair>(entity =>
+        {
+            entity.ToTable("lab_sample_tube_pairs", commercialSchema);
+            entity.HasKey(e => e.Id);
+            Text(entity.Property(e => e.CustomerSampleId), 255);
+            Text(entity.Property(e => e.BiologicalSource), 500);
+            Text(entity.Property(e => e.SupplierTubeBarcode), 255);
+            Text(entity.Property(e => e.DeclaredQuantityUnit), 50);
+            Quantity(entity.Property(e => e.DeclaredQuantity));
+            entity.HasIndex(e => new { e.LabServiceOrderId, e.CustomerSampleId }).IsUnique();
+            entity.HasIndex(e => new { e.LabServiceOrderId, e.StockTubeId }).IsUnique();
+            entity.HasIndex(e => e.StockTubeId).IsUnique();
+            entity.HasOne<LabServiceOrder>().WithMany().HasForeignKey(e => e.LabServiceOrderId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<SampleShippingStockKit>().WithMany().HasForeignKey(e => e.StockKitId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<SampleShippingStockTube>().WithMany().HasForeignKey(e => e.StockTubeId).OnDelete(DeleteBehavior.Restrict);
+            Audit(entity);
+        });
+
         modelBuilder.Entity<LabServiceRequestRevision>(entity =>
         {
             entity.ToTable("lab_service_request_revisions", commercialSchema);
@@ -844,6 +922,8 @@ public static class OrderManagementModelConfiguration
             EnumText(entity.Property(e => e.Purpose));
             EnumText(entity.Property(e => e.Status));
             Json(entity.Property(e => e.LinesJson));
+            Json(entity.Property(e => e.ChangeScopeSnapshotJson), false);
+            Json(entity.Property(e => e.AcceptedAmendmentSnapshotJson), false);
             Money(entity.Property(e => e.Subtotal)); Money(entity.Property(e => e.Tax)); Money(entity.Property(e => e.Total));
             Text(entity.Property(e => e.Currency), 3);
             Json(entity.Property(e => e.BillingContactSnapshotJson), false);
@@ -856,6 +936,20 @@ public static class OrderManagementModelConfiguration
             entity.HasOne<LabServiceOrder>().WithMany(e => e.Quotes).HasForeignKey(e => e.LabServiceOrderId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<LabServiceQuote>().WithMany().HasForeignKey(e => e.SupersededByQuoteId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<User>().WithMany().HasForeignKey(e => e.PricingDecidedByUserId).OnDelete(DeleteBehavior.Restrict);
+            Audit(entity);
+        });
+
+        modelBuilder.Entity<LabServiceQuoteExtensionRequest>(entity =>
+        {
+            entity.ToTable("lab_service_quote_extension_requests", commercialSchema);
+            entity.HasKey(e => e.Id);
+            Text(entity.Property(e => e.Reason), 2000, false);
+            entity.HasIndex(e => e.QuoteId).IsUnique();
+            entity.HasIndex(e => new { e.LabServiceOrderId, e.ResolvedAt });
+            entity.HasOne<LabServiceOrder>().WithMany().HasForeignKey(e => e.LabServiceOrderId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<LabServiceQuote>().WithMany().HasForeignKey(e => e.QuoteId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<LabServiceQuote>().WithMany().HasForeignKey(e => e.ReplacementQuoteId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<User>().WithMany().HasForeignKey(e => e.RequestedByUserId).OnDelete(DeleteBehavior.Restrict);
             Audit(entity);
         });
 

@@ -1,10 +1,94 @@
 namespace PhaenoPortal.Test;
 
 using PSeq.Operations.Laboratory.Domain;
+using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PhaenoPortal.App.Features.LabOperations.Services;
 
 public class LabOperationsDomainTests
 {
+    [Fact]
+    public void ManufacturerTubesKeepSamePrintedValueInDistinctSupplierNamespaces()
+    {
+        var firstSupplier = Guid.NewGuid();
+        var secondSupplier = Guid.NewGuid();
+        var first = new LabContainer(Guid.NewGuid(), Guid.NewGuid(), null, LabContainerKind.Library,
+            "001234", "First tube", "Box A", null, null, null,
+            LabContainerBarcodeSource.Manufacturer,
+            barcodeNamespace: SupplierTubeBarcode.NamespaceForSupplier(firstSupplier));
+        var second = new LabContainer(Guid.NewGuid(), Guid.NewGuid(), null, LabContainerKind.Library,
+            "001234", "Second tube", "Box B", null, null, null,
+            LabContainerBarcodeSource.Manufacturer,
+            barcodeNamespace: SupplierTubeBarcode.NamespaceForSupplier(secondSupplier));
+
+        Assert.Equal(first.Barcode, second.Barcode);
+        Assert.NotEqual(first.BarcodeNamespace, second.BarcodeNamespace);
+        Assert.All(new[] { first, second }, tube => Assert.Equal(tube.Barcode, Assert.Single(tube.Barcodes).Value));
+        Assert.All(new[] { first, second }, tube => Assert.True(Assert.Single(tube.Barcodes).IsPrimary));
+    }
+
+    [Fact]
+    public void NewlyAllocatedPomsTubeBecomesAvailableOnlyAfterVerifiedPrintIsRecorded()
+    {
+        var workId = Guid.NewGuid();
+        var specimenId = Guid.NewGuid();
+        var tube = new LabContainer(workId, specimenId, null, LabContainerKind.SubmittedSpecimen,
+            "PH-S-EXAMPLE", "Test tube", "Freezer A", null, null, null,
+            labelVerificationRequired: true);
+
+        Assert.Equal(LabContainerStatus.LabelPending, tube.Status);
+        tube.ReviewIntake(LabSpecimenIntakeDisposition.Accepted, null, null, Guid.NewGuid(), DateTime.UtcNow);
+        Assert.Equal(LabContainerStatus.LabelPending, tube.Status);
+        tube.RecordLabelPrint(Guid.NewGuid(), DateTime.UtcNow);
+        Assert.Equal(LabContainerStatus.Available, tube.Status);
+        Assert.Equal(1, tube.LabelPrintCount);
+    }
+
+    [Fact]
+    public void IntakeCorrectionKeepsHistoricalAvailablePomsTubeAvailable()
+    {
+        var tube = new LabContainer(Guid.NewGuid(), Guid.NewGuid(), null, LabContainerKind.SubmittedSpecimen,
+            "PH-S-EXISTING", "Existing tube", "Freezer A", null, null, null);
+        var actor = Guid.NewGuid();
+        tube.ReviewIntake(LabSpecimenIntakeDisposition.Accepted, null, null, actor, DateTime.UtcNow);
+        tube.ReviewIntake(LabSpecimenIntakeDisposition.OnHold, "identity_mismatch", "Review identity", actor, DateTime.UtcNow);
+
+        Assert.Equal(0, tube.LabelPrintCount);
+        Assert.Equal(LabContainerStatus.Available, tube.Status);
+    }
+
+    [Fact]
+    public void RejectedNewPomsTubeStillNeedsFirstVerifiedPrintAfterIntakeCorrection()
+    {
+        var tube = new LabContainer(Guid.NewGuid(), Guid.NewGuid(), null, LabContainerKind.SubmittedSpecimen,
+            "PH-S-NEW", "New tube", null, null, null, null,
+            rejectedAtIntake: true, labelVerificationRequired: true);
+        var actor = Guid.NewGuid();
+        tube.ReviewIntake(LabSpecimenIntakeDisposition.Rejected, "identity_mismatch", "Check tube", actor, DateTime.UtcNow,
+            firstLabelVerificationRequired: true);
+        tube.Move("Freezer A");
+        tube.ReviewIntake(LabSpecimenIntakeDisposition.Accepted, null, "Correction", actor, DateTime.UtcNow,
+            firstLabelVerificationRequired: true);
+
+        Assert.Equal(LabContainerStatus.LabelPending, tube.Status);
+        tube.RecordLabelPrint(actor, DateTime.UtcNow);
+        Assert.Equal(LabContainerStatus.Available, tube.Status);
+    }
+
+    [Fact]
+    public void ManufacturerLibraryGetsUniqueInternalKeySeparateFromPhysicalBarcode()
+    {
+        var first = new LabContainer(Guid.NewGuid(), Guid.NewGuid(), null, LabContainerKind.Library,
+            "001234", "First tube", "Box A", null, null, null, LabContainerBarcodeSource.Manufacturer,
+            barcodeNamespace: SupplierTubeBarcode.NamespaceForSupplier(Guid.NewGuid()));
+        var second = new LabContainer(Guid.NewGuid(), Guid.NewGuid(), null, LabContainerKind.Library,
+            "001234", "Second tube", "Box B", null, null, null, LabContainerBarcodeSource.Manufacturer,
+            barcodeNamespace: SupplierTubeBarcode.NamespaceForSupplier(Guid.NewGuid()));
+
+        Assert.NotEqual(first.Barcode, LabLibrary.KeyForContainer(first));
+        Assert.NotEqual(LabLibrary.KeyForContainer(first), LabLibrary.KeyForContainer(second));
+        Assert.StartsWith("LIB-", LabLibrary.KeyForContainer(first));
+    }
+
     [Fact]
     public void WorkOrderAcceptsOnlyNewerAuthorizationVersions()
     {
@@ -30,9 +114,11 @@ public class LabOperationsDomainTests
             "Cold room");
         specimen.AssignAccession("ACC-1");
 
-        Assert.Throws<ArgumentException>(() =>
-            specimen.RecordIntakeDisposition(LabSpecimenIntakeDisposition.OnHold, null));
-        specimen.RecordIntakeDisposition(LabSpecimenIntakeDisposition.Accepted, null);
+        var tube = new LabContainer(specimen.LabWorkOrderId, specimen.Id, null,
+            LabContainerKind.SubmittedSpecimen, "TUBE-1", "Tube", "Cold room", null, null, null);
+        Assert.Throws<ArgumentException>(() => tube.ReviewIntake(LabSpecimenIntakeDisposition.OnHold, null, null, Guid.NewGuid(), DateTime.UtcNow));
+        tube.ReviewIntake(LabSpecimenIntakeDisposition.Accepted, null, null, Guid.NewGuid(), DateTime.UtcNow);
+        specimen.RefreshIntakeFromTubes([tube], DateTime.UtcNow);
 
         Assert.Equal("ACC-1", specimen.AccessionNumber);
         Assert.Equal(LabSpecimenIntakeDisposition.Accepted, specimen.IntakeDisposition);
@@ -134,7 +220,7 @@ public class LabOperationsDomainTests
     {
         var protocol = new LabProtocol("rna-prep", "RNA preparation", null);
         protocol.RecordVersion(1);
-        var version = new LabProtocolVersion(protocol.Id, 1, "{\"steps\":[]}",
+        var version = new LabProtocolVersion(protocol.Id, 1, LabProtocolTestData.Definition(),
             Guid.NewGuid(), DateTime.UtcNow);
 
         Assert.Throws<InvalidOperationException>(() => version.Activate(Guid.NewGuid()));
@@ -149,17 +235,17 @@ public class LabOperationsDomainTests
     {
         var protocol = new LabProtocol("rna-prep", "RNA preparation", null);
         protocol.RecordVersion(1);
-        var approvedVersion = new LabProtocolVersion(protocol.Id, 1, "{\"steps\":[]}",
+        var approvedVersion = new LabProtocolVersion(protocol.Id, 1, LabProtocolTestData.Definition(),
             Guid.NewGuid(), DateTime.UtcNow);
 
-        approvedVersion.UpdateDraft("""{"steps":[{"key":"verify"}]}""");
+        approvedVersion.UpdateDraft(LabProtocolTestData.Definition("verify"));
         approvedVersion.Approve(Guid.NewGuid(), DateTime.UtcNow);
         Assert.Throws<InvalidOperationException>(() =>
             approvedVersion.UpdateDraft("""{"steps":[{"key":"changed-after-approval"}]}"""));
         Assert.Throws<InvalidOperationException>(approvedVersion.Discard);
 
         protocol.RecordVersion(2);
-        var discardedVersion = new LabProtocolVersion(protocol.Id, 2, "{\"steps\":[]}",
+        var discardedVersion = new LabProtocolVersion(protocol.Id, 2, LabProtocolTestData.Definition(),
             Guid.NewGuid(), DateTime.UtcNow);
         discardedVersion.Discard();
         Assert.Equal(LabProtocolStatus.Discarded, discardedVersion.Status);
@@ -304,14 +390,11 @@ public class LabOperationsDomainTests
     [Fact]
     public void ExecutionCanCompleteWithoutADeviationNote()
     {
-        var execution = new LabProtocolExecution(
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            Guid.NewGuid());
-
+        var protocol = LabProtocolTestData.Version();
+        var execution = new LabProtocolExecution(Guid.NewGuid(), null, protocol.Id, Guid.NewGuid());
         execution.Start(DateTime.UtcNow);
-        execution.Complete("""{"status":"passed"}""", null, DateTime.UtcNow);
+        execution.RecordStep(protocol, LabProtocolTestData.Input(), Guid.NewGuid(), new HashSet<LabRole> { LabRole.Operator }, DateTime.UtcNow);
+        execution.Complete(protocol, null, DateTime.UtcNow);
 
         Assert.Equal(LabExecutionStatus.Completed, execution.Status);
         Assert.Null(execution.DeviationNote);
@@ -424,6 +507,37 @@ public class LabOperationsDomainTests
         batch.Complete(completedAt);
         Assert.Equal(LabBatchStatus.Complete, batch.Status);
         Assert.Equal(completedAt, batch.CompletedAtUtc);
+    }
+
+    [Fact]
+    public void EmptyActiveBatchCanReturnToDraftWithoutChangingItsIdentity()
+    {
+        var batch = new LabOperationalBatch("PH-BAT-RECOVERY", "Demo", "Retained notes");
+        var id = batch.Id;
+        batch.Start(DateTime.UtcNow);
+        batch.ReturnEmptyToDraft(0, false);
+        Assert.Equal(id, batch.Id);
+        Assert.Equal("PH-BAT-RECOVERY", batch.BatchNumber);
+        Assert.Equal("Demo", batch.Name);
+        Assert.Equal("Retained notes", batch.Notes);
+        Assert.Equal(LabBatchStatus.Draft, batch.Status);
+        Assert.Null(batch.StartedAtUtc);
+        Assert.Null(batch.CompletedAtUtc);
+    }
+
+    [Theory]
+    [InlineData(1, false, false)]
+    [InlineData(0, true, false)]
+    [InlineData(0, false, true)]
+    public void BatchRecoveryRejectsExistingWork(int memberCount, bool hasSendout, bool completed)
+    {
+        var batch = new LabOperationalBatch("PH-BAT-RECOVERY", null, null);
+        var startedAt = DateTime.UtcNow;
+        batch.Start(startedAt);
+        if (completed) batch.Complete(startedAt.AddHours(1));
+        Assert.Throws<InvalidOperationException>(() => batch.ReturnEmptyToDraft(memberCount, hasSendout));
+        Assert.Equal(startedAt, batch.StartedAtUtc);
+        Assert.Equal(completed ? LabBatchStatus.Complete : LabBatchStatus.InProgress, batch.Status);
     }
 
     private static LabWorkOrder WorkOrder(int authorizationVersion) => new(

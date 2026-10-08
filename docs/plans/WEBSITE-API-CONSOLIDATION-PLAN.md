@@ -1,5 +1,26 @@
 # Website API consolidation plan
 
+## September 15 simulated Website intake and delivery acceptance
+
+WEB-02/04 pass the continuing approved simulated software scope: public form recovery/duplicates, optional technical-brief opt-in, non-binding inquiry isolation, durable bounded attempts, reviewed recovery and separate simulated provider/inbox evidence. Fifteen backend, thirteen administration component and two Website error checks plus desktop/phone actual-form runs pass. No API contract, product behavior, dependency, provider configuration or deployment change. The acceptance script now explicitly reflects the existing optional brief checkbox. The local configured PDF is three pages; external Mailgun template copy, real inbox receipt and deployed exact-link/PDF identity remain open. [Full WEB-02/04 crosswalk and limits](../testing/runs/2026-09-15-website-intake-recovery-software-acceptance.md).
+
+## Public search error recovery — September 14, 2026
+
+WEB-01 reproduced an HTTP 503 displayed as no matches on the published Website. The local Search component now gives distinct loading, empty and unavailable states, retains the query, and offers Try again with keyboard focus returned to the input. It rejects failed/malformed envelopes and ignores aborted responses. No API contract or deployment change. The 17-page Website build and connected local/public search, navigation, PDF, phone/no-JavaScript and discovery checks pass. [Exact baseline and acceptance](../testing/runs/2026-09-14-next-ten-uat.md). The public production correction is not deployed.
+
+
+## 2026-09-05 inquiry and delivery recovery
+
+The Product Owner authorized the [review gap closure](REVIEW-GAP-CLOSURE-2026-09-05.md).
+Website intake now persists durable notification intent and retained attempt history,
+bounded automatic delivery retries, and platform-administrator recovery. Public
+route and duplicate-contact behavior remain compatible; intake success confirms
+receipt and queued delivery, not inbox delivery. Contact form failures preserve
+entries and use the API error code to distinguish duplicates from validation.
+The additive delivery migration, local verification and release boundaries are
+recorded in the review plan. Shared migrations and real provider acceptance are
+separate from local implementation evidence.
+
 ## Status
 
 The code consolidation is implemented in `phaeno-portal`. The isolated Portal

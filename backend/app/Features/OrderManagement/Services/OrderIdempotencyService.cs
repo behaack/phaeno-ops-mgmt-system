@@ -38,6 +38,9 @@ public sealed class OrderIdempotencyService(PSeqOperationsDbContext dbContext)
             cancellationToken);
     }
 
+    public Task AcquireOrderLockAsync(string concurrencyScope, CancellationToken cancellationToken)
+        => AcquireTransactionLockAsync($"order-operation|{concurrencyScope}", cancellationToken);
+
     public async Task<OrderIdempotencyExecution<T>> ExecuteAsync<T>(
         Guid actorUserId,
         string scope,
@@ -46,11 +49,12 @@ public sealed class OrderIdempotencyService(PSeqOperationsDbContext dbContext)
         Func<CancellationToken, Task<T>> operation,
         int statusCode = StatusCodes.Status200OK,
         CancellationToken cancellationToken = default,
-        string? concurrencyScope = null)
+        string? concurrencyScope = null,
+        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
         where T : class
     {
         await using var transaction = await dbContext.Database.BeginTransactionAsync(
-            IsolationLevel.ReadCommitted,
+            isolationLevel,
             cancellationToken);
 
         await AcquireTransactionLockAsync(

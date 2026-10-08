@@ -18,7 +18,7 @@ public sealed class TrialCrmProjection(PSeqOperationsDbContext db)
             // The durable Trial event is the outbox record. Its identifier is the CRM
             // receipt key, so retries do not duplicate a relationship-safe milestone.
             var activity = new CrmActivity(CrmActivityType.PortalEvent, $"{value.Number}: {value.item.Kind}",
-                $"{value.item.Summary} /trial-projects/{value.item.TrialProjectId}", value.item.OccurredAtUtc,
+                $"{value.item.Summary} /order-operations/lab-services/trials/{value.item.TrialProjectId}", value.item.OccurredAtUtc,
                 CrmActivityVisibility.Internal, value.item.ActorUserId, companyId: value.CompanyId, opportunityId: value.OpportunityId);
             db.CrmActivities.Add(activity); db.Entry(activity).Property(item => item.Id).CurrentValue = value.item.Id;
         }

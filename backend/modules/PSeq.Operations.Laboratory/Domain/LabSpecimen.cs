@@ -19,10 +19,43 @@ public sealed class LabSpecimen : IAudit, IConcurrency
     public Guid SubmittedSpecimenId { get; private set; }
     public string? AccessionNumber { get; private set; }
     public DateTime? ReceivedAtUtc { get; private set; }
+    public DateTime? AcceptedAtUtc { get; private set; }
+    public DateTime? OriginalTargetAtUtc { get; private set; }
+    public DateTime? CompletedAtUtc { get; private set; }
     public LabSpecimenIntakeDisposition IntakeDisposition { get; private set; } = LabSpecimenIntakeDisposition.AwaitingReceipt;
     public string? ReceiptCondition { get; private set; }
     public string? IntakeReasonCode { get; private set; }
     public string? CurrentLocation { get; private set; }
+    public LabSpecimenProcessingState? ProcessingState { get; private set; }
+    public string? ProcessingReasonCode { get; private set; }
+    public string? ProcessingNote { get; private set; }
+    public Guid? ProcessingOwnerUserId { get; private set; }
+    public string? ProcessingNextAction { get; private set; }
+    public DateTime? ProcessingUpdatedAtUtc { get; private set; }
+
+    public void RecordProcessingState(LabSpecimenProcessingState state, Guid actorId, DateTime utcNow,
+        string? reasonCode = null, string? note = null, string? nextAction = null)
+    {
+        if (ProcessingState is LabSpecimenProcessingState.Failed or LabSpecimenProcessingState.Succeeded)
+            throw new InvalidOperationException("The specimen processing outcome is final.");
+        if (state == LabSpecimenProcessingState.Failed && reasonCode != "material_exhausted")
+            throw new ArgumentException("Confirm material exhaustion before failing the specimen.");
+        if (state is LabSpecimenProcessingState.Failed or LabSpecimenProcessingState.OnHold)
+            LabAuditedEntity.Required(note!, "Processing evidence", 4000);
+        if (state == LabSpecimenProcessingState.OnHold)
+            LabAuditedEntity.Required(nextAction!, "Next action", 2000);
+        ProcessingState = state; ProcessingReasonCode = reasonCode;
+        ProcessingNote = LabAuditedEntity.Optional(note); ProcessingNextAction = LabAuditedEntity.Optional(nextAction, 2000);
+        ProcessingOwnerUserId = actorId; ProcessingUpdatedAtUtc = utcNow;
+    }
+    public void BeginAdditionalPreparation(Guid actorId, DateTime utcNow)
+    {
+        if (ProcessingState != LabSpecimenProcessingState.Succeeded)
+            throw new InvalidOperationException("Only a completed preparation can be reopened for an additional authorized preparation.");
+        ProcessingState = LabSpecimenProcessingState.Ready;
+        RecordProcessingState(LabSpecimenProcessingState.Ready, actorId, utcNow,
+            "additional_preparation", "New preparation for an outstanding purchased sequencing run.");
+    }
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
     public Guid? CreatedByUserId { get; private set; }
     public DateTime UpdatedAt { get; private set; } = DateTime.UtcNow;
@@ -74,33 +107,33 @@ public sealed class LabSpecimen : IAudit, IConcurrency
             : accessionNumber.Trim();
     }
 
-    public void RecordIntakeDisposition(LabSpecimenIntakeDisposition disposition, string? reasonCode)
+    public void RefreshIntakeFromTubes(IReadOnlyCollection<LabContainer> tubes, DateTime utcNow)
     {
-        if (ReceivedAtUtc is null)
-        {
-            throw new InvalidOperationException("A specimen must be received before intake disposition.");
-        }
+        if (IntakeDisposition == LabSpecimenIntakeDisposition.Cancelled)
+            throw new InvalidOperationException("A cancelled specimen cannot receive an intake review.");
+        if (ReceivedAtUtc is null || string.IsNullOrWhiteSpace(AccessionNumber))
+            throw new InvalidOperationException("Receive and accession the specimen's tube before intake review.");
+        if (tubes.Any(tube => tube.LabSpecimenId != Id || tube.LabWorkOrderId != LabWorkOrderId
+            || tube.Kind != LabContainerKind.SubmittedSpecimen))
+            throw new ArgumentException("Intake must be derived from this specimen's submitted tubes.");
+        IntakeDisposition = tubes.Any(tube => tube.IntakeDisposition == LabSpecimenIntakeDisposition.Accepted)
+            ? LabSpecimenIntakeDisposition.Accepted
+            : tubes.Any(tube => tube.IntakeDisposition == LabSpecimenIntakeDisposition.OnHold)
+                ? LabSpecimenIntakeDisposition.OnHold : LabSpecimenIntakeDisposition.Received;
+        IntakeReasonCode = null;
+        if (IntakeDisposition == LabSpecimenIntakeDisposition.Accepted) AcceptedAtUtc ??= utcNow;
+    }
 
-        if (disposition is LabSpecimenIntakeDisposition.AwaitingReceipt
-            or LabSpecimenIntakeDisposition.Received
-            or LabSpecimenIntakeDisposition.Cancelled)
-        {
-            throw new ArgumentOutOfRangeException(nameof(disposition));
-        }
+    public void SetOriginalTarget(int maximumTurnaroundDays)
+    {
+        if (AcceptedAtUtc is null || maximumTurnaroundDays is < 1 or > 365)
+            throw new InvalidOperationException("A valid accepted specimen and turnaround range are required.");
+        OriginalTargetAtUtc ??= AcceptedAtUtc.Value.AddDays(maximumTurnaroundDays);
+    }
 
-        if (string.IsNullOrWhiteSpace(AccessionNumber))
-        {
-            throw new InvalidOperationException("A specimen must be accessioned before intake disposition.");
-        }
-
-        if ((disposition is LabSpecimenIntakeDisposition.OnHold or LabSpecimenIntakeDisposition.Rejected)
-            && string.IsNullOrWhiteSpace(reasonCode))
-        {
-            throw new ArgumentException("A controlled reason code is required for a hold or rejection.", nameof(reasonCode));
-        }
-
-        IntakeDisposition = disposition;
-        IntakeReasonCode = Optional(reasonCode);
+    public void Complete(DateTime utcNow)
+    {
+        if (AcceptedAtUtc.HasValue && IntakeDisposition != LabSpecimenIntakeDisposition.Rejected) CompletedAtUtc ??= utcNow;
     }
 
     public void CancelBeforeReceipt(string reasonCode)

@@ -1,3 +1,8 @@
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useBlocker } from '@tanstack/react-router'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
+import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/required-field'
 import { useEffect, useMemo, useState } from 'react'
 
 import type { LabProtocol } from '#/api/lab-operations'
@@ -14,12 +19,16 @@ import {
 } from '#/components/ui/dialog'
 import { Label } from '#/components/ui/label'
 
-import { deserializeProtocolDefinition } from './protocol-definition'
+import { deserializeProtocolDefinition, protocolCaptureLabel, protocolDefinitionFormSchema } from './protocol-definition'
 
 type ProtocolVersion = LabProtocol['versions'][number]
 
+const captureScopeLabels = { tube: 'Sample — record individually', batch: 'Batch — same entry for all selected samples', shared: 'Same entry with sample exceptions' }
+const qcScopeLabels = { tube: 'Tube — assess individually', batch: 'Batch — applies to all covered tubes', shared: 'Shared outcome with tube exceptions' }
+
 export function ProtocolApprovalDialog({
   error,
+  override = false,
   isPending,
   onApprove,
   onOpenChange,
@@ -27,28 +36,39 @@ export function ProtocolApprovalDialog({
   version,
 }: {
   error?: string
+  override?: boolean
   isPending: boolean
-  onApprove: () => void
+  onApprove: (reason?: string) => void
   onOpenChange: (open: boolean) => void
   protocol: LabProtocol | null
   version: ProtocolVersion | null
 }) {
   const [confirmed, setConfirmed] = useState(false)
+  const form = useForm<{ reason: string }>({ resolver: zodResolver(z.object({ reason: z.string().trim().min(1, 'Enter a reason for bypassing independent review.').max(2000) })), defaultValues: { reason: '' } })
+  const { isDirty } = form.formState
+  const confirmLeave = () => !override || !isDirty || window.confirm('Discard the unsaved approval override reason?')
+  const close = () => { if (!isPending && confirmLeave()) onOpenChange(false) }
+  useBlocker({ shouldBlockFn: () => isPending || !confirmLeave(), enableBeforeUnload: () => isPending || override && isDirty })
+  const Footer = override ? RequiredDialogFooter : DialogFooter
   const definition = useMemo(
-    () => version ? deserializeProtocolDefinition(version.definitionJson) : null,
+    () => {
+      const parsed = version ? deserializeProtocolDefinition(version.definitionJson) : null
+      return parsed && protocolDefinitionFormSchema.safeParse(parsed).success ? parsed : null
+    },
     [version],
   )
 
   useEffect(() => {
     setConfirmed(false)
-  }, [version?.id])
+    form.reset({ reason: '' })
+  }, [version?.id, override, form])
 
   return (
-    <Dialog open={protocol !== null && version !== null} onOpenChange={onOpenChange}>
+    <Dialog open={protocol !== null && version !== null} onOpenChange={open => { if (!open) close() }}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>
-            Approve {protocol?.name} version {version?.protocolVersion}?
+            {override ? 'Administrator protocol approval override' : 'Approve protocol'}
           </DialogTitle>
           <DialogDescription>
             Approval is a formal controlled release. It locks this exact version,
@@ -73,6 +93,10 @@ export function ProtocolApprovalDialog({
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Version</p>
             <p className="mt-1 font-medium">{version?.protocolVersion}</p>
           </div>
+          {definition ? <div className="sm:col-span-2">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Preparation batches</p>
+            <p className="mt-1 font-medium">{definition.preparationBatchEnabled ? 'Enabled — review the evidence and QC scopes below.' : 'Not enabled for this version.'}</p>
+          </div> : null}
         </div>
 
         <section aria-labelledby="protocol-approval-definition">
@@ -95,16 +119,27 @@ export function ProtocolApprovalDialog({
                   {step.equipmentTypes ? <ReviewDetail label="Equipment" value={step.equipmentTypes} /> : null}
                   {step.captures.length > 0 ? (
                     <ReviewDetail
-                      label="Captured values"
-                      value={step.captures.map((capture) => `${capture.label} (${capture.type}${capture.required ? ', required' : ''}${capture.unit ? `, ${capture.unit}` : ''})`).join('; ')}
+                      label="Fields to record"
+                      value={step.captures.map((capture) => {
+                        const material = capture.material
+                        const source = material?.masterMixWorkflowId
+                          ? `; master mix: ${material.name} · revision ${material.masterMixWorkflowRevision}`
+                          : material ? `; material: ${material.name}; vendor: ${material.vendor || 'Not specified'}${material.productNumber ? `; product: ${material.productNumber}` : ''}` : ''
+                        const quantity = capture.type === 'masterMix' || capture.type === 'material'
+                          ? `; quantity: ${capture.quantityBasis === 'total' ? 'total batch' : 'per sample'}; ${capture.type === 'masterMix' ? 'prepared container barcode required' : capture.includeTracking ? 'tracked lot' : 'configured material, no stock use'}`
+                          : ''
+                        return `${capture.label} (${protocolCaptureLabel(capture.type)}${capture.required ? ', required' : ''}${capture.unit ? `, ${capture.unit}` : ''}${capture.type === 'choice' ? `; choices: ${capture.choices}` : ''}${definition.preparationBatchEnabled && capture.scope ? `; evidence scope: ${captureScopeLabels[capture.scope]}` : ''}${capture.sourceTube ? '; must match the selected source tube' : ''}${source}${quantity}${capture.type === 'biologicalMaterial' ? '; selected source to barcoded library tube; actual amount; optional exhausted override' : ''}${capture.type === 'equipment' ? '; registered equipment selection required' : ''})`
+                      }).join('; ')}
                     />
                   ) : null}
                   {step.qcEnabled ? <ReviewDetail label="QC acceptance criteria" value={step.qcCriteria} /> : null}
+                  {definition.preparationBatchEnabled && step.qcEnabled && step.qcScope ? <ReviewDetail label="QC scope" value={qcScopeLabels[step.qcScope]} /> : null}
                   {step.repeatable || step.operatorConfirmation ? (
                     <p className="mt-2 text-xs text-muted-foreground">
-                      {[step.repeatable ? 'May repeat' : null, step.operatorConfirmation ? 'Operator confirmation required' : null].filter(Boolean).join(' · ')}
+                      {[step.repeatable ? 'May repeat' : null, step.operatorConfirmation ? 'Confirmation required' : null].filter(Boolean).join(' · ')}
                     </p>
                   ) : null}
+                  {step.attachmentKind && step.attachmentKind !== 'none' ? <p className="text-sm">{step.attachmentRequired ? 'Required' : 'Optional'} batch PDF: {step.attachmentKind === 'qc' ? 'QC report' : 'Preparation report or worksheet'}</p> : null}
                 </li>
               ))}
             </ol>
@@ -116,6 +151,13 @@ export function ProtocolApprovalDialog({
           )}
         </section>
 
+        {override ? <form id="protocol-approval-override" onSubmit={form.handleSubmit(values => { if (confirmed && definition && !isPending) onApprove(values.reason) })} className="space-y-2">
+          <p className="text-sm">You are approving your own work without independent review. Your identity, time and reason will be retained as an administrator override.</p>
+          <Label htmlFor="protocol-override-reason"><RequiredFieldName>Override reason</RequiredFieldName></Label>
+          <textarea id="protocol-override-reason" className="min-h-24 w-full rounded-md border bg-background p-3 text-sm" maxLength={2000} disabled={isPending} aria-invalid={Boolean(form.formState.errors.reason)} aria-describedby={form.formState.errors.reason ? 'protocol-override-error' : undefined} {...form.register('reason')} />
+          {form.formState.errors.reason ? <p id="protocol-override-error" role="alert" className="text-sm text-destructive">{form.formState.errors.reason.message}</p> : null}
+        </form> : null}
+
         <div className="flex items-start gap-3 rounded-lg border border-primary/30 bg-primary/5 p-3">
           <Checkbox
             id="confirm-protocol-approval"
@@ -124,19 +166,18 @@ export function ProtocolApprovalDialog({
             onCheckedChange={(checked) => setConfirmed(checked === true)}
           />
           <Label htmlFor="confirm-protocol-approval" className="cursor-pointer text-sm leading-5">
-            I reviewed this exact version and confirm that it is complete and ready
-            to govern future laboratory work. I understand that approval locks it.
+            {override ? 'I reviewed this exact version, accept responsibility for bypassing independent review, and understand that approval locks it.' : 'I reviewed this exact version and confirm that it is complete and ready to govern future laboratory work. I understand that approval locks it.'}
           </Label>
         </div>
 
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+        <Footer>
+          <Button type="button" variant="outline" disabled={isPending} onClick={close}>
             Cancel
           </Button>
-          <Button type="button" disabled={!confirmed || !definition || isPending} onClick={onApprove}>
-            {isPending ? 'Approving…' : `Approve version ${version?.protocolVersion ?? ''}`}
+          <Button type={override ? "submit" : "button"} form={override ? "protocol-approval-override" : undefined} disabled={!confirmed || !definition || isPending} onClick={override ? undefined : () => onApprove()}>
+            {isPending ? 'Approving…' : override ? 'Approve with override' : `Approve version ${version?.protocolVersion ?? ''}`}
           </Button>
-        </DialogFooter>
+        </Footer>
       </DialogContent>
     </Dialog>
   )

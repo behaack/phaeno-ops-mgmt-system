@@ -8,7 +8,7 @@ import {
   Send,
   UserMinus,
 } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 
 import {
   getWebOpsErrorMessage,
@@ -67,12 +67,14 @@ type WebOpsDashboardContentProps = {
   mailingList: WebOpsPanelState<WebOpsMailingListContact>
   demoRequests: WebOpsPanelState<WebOpsDemoRequest>
   isMockData?: boolean
+  notificationPanel?: ReactNode
 }
 
 export function WebOpsDashboardContent({
   mailingList,
   demoRequests,
   isMockData = false,
+  notificationPanel,
 }: WebOpsDashboardContentProps) {
   const [contactToUnsubscribe, setContactToUnsubscribe] =
     useState<WebOpsMailingListContact>()
@@ -84,6 +86,10 @@ export function WebOpsDashboardContent({
   const demoRequestActionButton = useRef<HTMLElement | null>(null)
   const mailingListHeading = useRef<HTMLHeadingElement | null>(null)
   const demoRequestsHeading = useRef<HTMLHeadingElement | null>(null)
+  const hasNotificationPanel = Boolean(notificationPanel)
+  const responsiveTabClass = hasNotificationPanel
+    ? 'flex-col gap-0.5 sm:flex-row sm:gap-1.5'
+    : undefined
 
   const closeUnsubscribeDialog = () => {
     setContactToUnsubscribe(undefined)
@@ -147,8 +153,9 @@ export function WebOpsDashboardContent({
             Web Operations
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Review mailing-list signups and demo requests received from the
-            public Website.
+            {hasNotificationPanel
+              ? 'Review public Website signups, demo requests, and email delivery.'
+              : 'Review mailing-list signups and demo requests received from the public Website.'}
           </p>
         </div>
         <Badge variant="outline">
@@ -157,21 +164,25 @@ export function WebOpsDashboardContent({
       </div>
 
       <Tabs defaultValue="mailing-list">
-        <TabsList aria-label="Web Operations lists">
-          <TabsTrigger value="mailing-list">
-            <Mail aria-hidden="true" />
-            Mailing List
-            <Badge variant="secondary" className="ml-1 tabular-nums">
+        <TabsList aria-label="Web Operations lists" className={hasNotificationPanel ? 'grid w-full grid-cols-3 sm:w-fit' : undefined}>
+          <TabsTrigger value="mailing-list" className={responsiveTabClass}>
+            <Mail aria-hidden="true" className={hasNotificationPanel ? 'hidden sm:block' : undefined} />
+            <span>Mailing List</span>
+            <Badge variant="secondary" className={hasNotificationPanel ? 'tabular-nums sm:ml-1' : 'ml-1 tabular-nums'}>
               {mailingList.data?.totalCount ?? 0}
             </Badge>
           </TabsTrigger>
-          <TabsTrigger value="demo-requests">
-            <Send aria-hidden="true" />
-            Demo Requests
-            <Badge variant="secondary" className="ml-1 tabular-nums">
+          <TabsTrigger value="demo-requests" className={responsiveTabClass}>
+            <Send aria-hidden="true" className={hasNotificationPanel ? 'hidden sm:block' : undefined} />
+            <span>Demo Requests</span>
+            <Badge variant="secondary" className={hasNotificationPanel ? 'tabular-nums sm:ml-1' : 'ml-1 tabular-nums'}>
               {demoRequests.data?.totalCount ?? 0}
             </Badge>
           </TabsTrigger>
+          {hasNotificationPanel ? <TabsTrigger value="email-delivery" className={responsiveTabClass}>
+            <Mail aria-hidden="true" className="hidden sm:block" />
+            <span>Email delivery</span>
+          </TabsTrigger> : null}
         </TabsList>
 
         <TabsContent value="mailing-list">
@@ -253,6 +264,7 @@ export function WebOpsDashboardContent({
                           >
                             {formatDateTime(contact.createdAtUtc)}
                           </time>
+
                           {mailingList.action ? (
                             <Button
                               type="button"
@@ -411,6 +423,7 @@ export function WebOpsDashboardContent({
             ) : null}
           </Card>
         </TabsContent>
+        {hasNotificationPanel ? <TabsContent value="email-delivery">{notificationPanel}</TabsContent> : null}
       </Tabs>
 
       <WebOpsActionDialog

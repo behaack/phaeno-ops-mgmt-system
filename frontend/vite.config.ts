@@ -4,15 +4,24 @@ import { fileURLToPath } from 'node:url'
 
 import { tanstackStart } from '@tanstack/react-start/plugin/vite'
 import mdx from '@mdx-js/rollup'
+import { documentationMarkdown } from './scripts/documentation-markdown.mjs'
 import { nitro } from 'nitro/vite'
 
 import viteReact from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
 const config = defineConfig(({ command, mode }) => ({
+  // Keep the running Portal separate from standalone previews and test optimization.
+  cacheDir: `node_modules/.vite-portal-${mode}`,
   server: {
     host: '127.0.0.1',
     port: 3000,
+    // Give POMS notifications an explicit upgrade route alongside the HTTP API proxy.
+    proxy: {
+      '/api/platform/lab-operations/assembly-notifications': {
+        target: 'https://localhost:44399', changeOrigin: true, secure: false, ws: true,
+      },
+    },
     https:
       command === 'serve' && mode !== 'test'
         ? {
@@ -39,7 +48,7 @@ const config = defineConfig(({ command, mode }) => ({
     },
   },
   plugins: [
-    { enforce: 'pre', ...mdx() },
+    { enforce: 'pre', ...mdx({ remarkPlugins: [documentationMarkdown] }) },
     tailwindcss(),
     ...(mode === 'test'
       ? []

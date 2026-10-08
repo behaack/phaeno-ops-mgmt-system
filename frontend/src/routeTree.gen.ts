@@ -10,21 +10,27 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TrialProjectsRouteImport } from './routes/trial-projects'
+import { Route as SampleShippingSettingsRouteImport } from './routes/sample-shipping-settings'
 import { Route as SampleShippingRouteImport } from './routes/sample-shipping'
 import { Route as ReleasedDeliverablesRouteImport } from './routes/released-deliverables'
 import { Route as ReagentOrdersRouteImport } from './routes/reagent-orders'
+import { Route as PurchasingRouteImport } from './routes/purchasing'
 import { Route as PhaenoUsersRouteImport } from './routes/phaeno-users'
 import { Route as OrderOperationsRouteImport } from './routes/order-operations'
 import { Route as OrderConfigurationRouteImport } from './routes/order-configuration'
+import { Route as LegacyIntegrationsRouteImport } from './routes/legacy-integrations'
 import { Route as LabServicesRouteImport } from './routes/lab-services'
 import { Route as LabOperationsRouteImport } from './routes/lab-operations'
+import { Route as LabConfigurationRouteImport } from './routes/lab-configuration'
+import { Route as FinanceRouteImport } from './routes/finance'
 import { Route as FileManagementRouteImport } from './routes/file-management'
+import { Route as EquipmentRouteImport } from './routes/equipment'
 import { Route as DocsRouteImport } from './routes/docs'
 import { Route as DepartmentsRouteImport } from './routes/departments'
+import { Route as DeliveryLocationsRouteImport } from './routes/delivery-locations'
 import { Route as DataProvisioningRouteImport } from './routes/data-provisioning'
 import { Route as DataLibraryRouteImport } from './routes/data-library'
 import { Route as DataAssemblyRouteImport } from './routes/data-assembly'
-import { Route as CustomersRouteImport } from './routes/customers'
 import { Route as CrmRouteImport } from './routes/crm'
 import { Route as AcceptInviteRouteImport } from './routes/accept-invite'
 import { Route as AboutRouteImport } from './routes/about'
@@ -36,15 +42,22 @@ import { Route as SampleShippingShipmentIdRouteImport } from './routes/sample-sh
 import { Route as ReleasedDeliverablesSnapshotIdRouteImport } from './routes/released-deliverables.$snapshotId'
 import { Route as ReagentOrdersNewRouteImport } from './routes/reagent-orders.new'
 import { Route as ReagentOrdersOrderIdRouteImport } from './routes/reagent-orders.$orderId'
+import { Route as OrderOperationsPartnerServicesRouteImport } from './routes/order-operations.partner-services'
+import { Route as OrderOperationsNewRouteImport } from './routes/order-operations.new'
+import { Route as OrderOperationsLabServicesRouteImport } from './routes/order-operations.lab-services'
 import { Route as LabServicesNewRouteImport } from './routes/lab-services.new'
 import { Route as LabServicesOrderIdRouteImport } from './routes/lab-services.$orderId'
+import { Route as LabOperationsResultReleaseRouteImport } from './routes/lab-operations.result-release'
 import { Route as LabOperationsWorkOrderIdRouteImport } from './routes/lab-operations.$workOrderId'
+import { Route as DocsSearchRouteImport } from './routes/docs.search'
 import { Route as DemoTanstackQueryRouteImport } from './routes/demo/tanstack-query'
+import { Route as DeliveryLocationsLocationIdRouteImport } from './routes/delivery-locations.$locationId'
 import { Route as DataLibraryDatasetIdRouteImport } from './routes/data-library.$datasetId'
 import { Route as DataAssemblyNewRouteImport } from './routes/data-assembly.new'
 import { Route as DataAssemblyRequestIdRouteImport } from './routes/data-assembly.$requestId'
-import { Route as CustomersCustomerIdRouteImport } from './routes/customers.$customerId'
+import { Route as DashboardAttentionRouteImport } from './routes/dashboard.attention'
 import { Route as CrmTasksRouteImport } from './routes/crm.tasks'
+import { Route as CrmRequestsRouteImport } from './routes/crm.requests'
 import { Route as CrmReportsRouteImport } from './routes/crm.reports'
 import { Route as CrmOpportunitiesRouteImport } from './routes/crm.opportunities'
 import { Route as CrmLeadsRouteImport } from './routes/crm.leads'
@@ -53,12 +66,30 @@ import { Route as CrmCompaniesRouteImport } from './routes/crm.companies'
 import { Route as CrmAdministrationRouteImport } from './routes/crm.administration'
 import { Route as TrialProjectsTrialIdScopeRouteImport } from './routes/trial-projects.$trialId.scope'
 import { Route as SampleShippingShipmentIdPacketRouteImport } from './routes/sample-shipping.$shipmentId.packet'
+import { Route as SampleShippingSettingsKitSpecificationsContainerIdRouteImport } from './routes/sample-shipping-settings_.kit-specifications.$containerId'
 import { Route as ReagentOrdersOrderIdEditRouteImport } from './routes/reagent-orders.$orderId.edit'
+import { Route as PurchasingSuppliersSupplierIdRouteImport } from './routes/purchasing.suppliers.$supplierId'
+import { Route as PurchasingProductTypesProductTypeIdRouteImport } from './routes/purchasing.product-types.$productTypeId'
+import { Route as PurchasingMaterialsMaterialLotIdRouteImport } from './routes/purchasing.materials.$materialLotId'
+import { Route as OrderOperationsResultPackagesPackageIdRouteImport } from './routes/order-operations.result-packages.$packageId'
+import { Route as OrderOperationsLabServicesTrialsRouteImport } from './routes/order-operations.lab-services.trials'
 import { Route as OrderOperationsIntakeOrderIdRouteImport } from './routes/order-operations.intake.$orderId'
 import { Route as OrderOperationsWorkflowOrderIdRouteImport } from './routes/order-operations.$workflow.$orderId'
+import { Route as OrderConfigurationCatalogCatalogItemIdRouteImport } from './routes/order-configuration.catalog.$catalogItemId'
 import { Route as LabServicesOrderIdEditRouteImport } from './routes/lab-services.$orderId.edit'
+import { Route as LabOperationsStockKitsKitIdRouteImport } from './routes/lab-operations.stock-kits.$kitId'
+import { Route as LabOperationsStepsStepIdRouteImport } from './routes/lab-operations.steps.$stepId'
+import { Route as LabOperationsResultPackagesPackageIdRouteImport } from './routes/lab-operations.result-packages.$packageId'
+import { Route as LabOperationsReagentRunsRunIdRouteImport } from './routes/lab-operations.reagent-runs.$runId'
 import { Route as LabOperationsPseqKitOrdersOrderIdRouteImport } from './routes/lab-operations.pseq-kit-orders.$orderId'
+import { Route as LabOperationsPreparationPreparationBatchIdRouteImport } from './routes/lab-operations.preparation.$preparationBatchId'
+import { Route as LabOperationsMasterMixesMixIdRouteImport } from './routes/lab-operations.master-mixes.$mixId'
+import { Route as LabOperationsKitRequestsRequestIdRouteImport } from './routes/lab-operations.kit-requests.$requestId'
+import { Route as LabOperationsExecutionsExecutionIdRouteImport } from './routes/lab-operations.executions.$executionId'
 import { Route as LabOperationsDataAssemblyOrderIdRouteImport } from './routes/lab-operations.data-assembly.$orderId'
+import { Route as LabOperationsBatchesBatchIdRouteImport } from './routes/lab-operations.batches.$batchId'
+import { Route as LabOperationsAssemblyJobsJobIdRouteImport } from './routes/lab-operations.assembly-jobs.$jobId'
+import { Route as FinanceKindRecordIdRouteImport } from './routes/finance.$kind.$recordId'
 import { Route as DocsAudienceSlugRouteImport } from './routes/docs.$audience.$slug'
 import { Route as DataProvisioningSourcesSourceSampleIdRouteImport } from './routes/data-provisioning.sources.$sourceSampleId'
 import { Route as DataAssemblyRequestIdEditRouteImport } from './routes/data-assembly.$requestId.edit'
@@ -66,14 +97,39 @@ import { Route as CrmOpportunitiesOpportunityIdRouteImport } from './routes/crm.
 import { Route as CrmLeadsLeadIdRouteImport } from './routes/crm.leads_.$leadId'
 import { Route as CrmContactsContactIdRouteImport } from './routes/crm.contacts_.$contactId'
 import { Route as CrmCompaniesCompanyIdRouteImport } from './routes/crm.companies_.$companyId'
+import { Route as PurchasingProductsSupplierIdProductIdRouteImport } from './routes/purchasing.products.$supplierId.$productId'
+import { Route as OrderOperationsPartnerServicesPseqKitsOrderIdRouteImport } from './routes/order-operations.partner-services.pseq-kits.$orderId'
+import { Route as OrderOperationsPartnerServicesDataAssemblyOrderIdRouteImport } from './routes/order-operations.partner-services.data-assembly.$orderId'
+import { Route as OrderOperationsLabServicesTrialsConfigurationRouteImport } from './routes/order-operations.lab-services.trials.configuration'
+import { Route as OrderOperationsLabServicesTrialsTrialIdRouteImport } from './routes/order-operations.lab-services.trials.$trialId'
+import { Route as OrderOperationsLabServicesOrdersNewRouteImport } from './routes/order-operations.lab-services.orders.new'
+import { Route as OrderOperationsLabServicesOrdersOrderIdRouteImport } from './routes/order-operations.lab-services.orders.$orderId'
+import { Route as OrderOperationsLabServicesIntakeOrderIdRouteImport } from './routes/order-operations.lab-services.intake.$orderId'
+import { Route as OrderOperationsFinanceKindRecordIdRouteImport } from './routes/order-operations.finance.$kind.$recordId'
+import { Route as OrderOperationsDraftsOrderIdEditRouteImport } from './routes/order-operations.drafts.$orderId.edit'
+import { Route as LabOperationsStepsStepIdEditRouteImport } from './routes/lab-operations.steps.$stepId.edit'
+import { Route as LabOperationsBatchesBatchIdRecordResultsRouteImport } from './routes/lab-operations.batches.$batchId_.record-results'
+import { Route as LabOperationsAssemblyJobsJobIdRecordQcRouteImport } from './routes/lab-operations.assembly-jobs.$jobId_.record-qc'
+import { Route as LabOperationsAssemblyJobsJobIdQcRouteImport } from './routes/lab-operations.assembly-jobs.$jobId_.qc'
+import { Route as LabOperationsWorkOrderIdSpecimensSpecimenIdRouteImport } from './routes/lab-operations.$workOrderId_.specimens.$specimenId'
+import { Route as LabOperationsWorkOrderIdContainersContainerIdRouteImport } from './routes/lab-operations.$workOrderId_.containers.$containerId'
+import { Route as OrderOperationsLabServicesTrialsTrialIdScopeRouteImport } from './routes/order-operations.lab-services.trials.$trialId.scope'
+import { Route as OrderOperationsLabServicesDraftsOrderIdEditRouteImport } from './routes/order-operations.lab-services.drafts.$orderId.edit'
 import { Route as LabOperationsWorkflowsWorkflowIdVersionsNewRouteImport } from './routes/lab-operations.workflows.$workflowId.versions.new'
 import { Route as LabOperationsProtocolsProtocolIdVersionsNewRouteImport } from './routes/lab-operations.protocols.$protocolId.versions.new'
+import { Route as LabOperationsBatchesBatchIdResultsResultVersionRouteImport } from './routes/lab-operations.batches.$batchId_.results.$resultVersion'
 import { Route as LabOperationsWorkflowsWorkflowIdVersionsVersionIdEditRouteImport } from './routes/lab-operations.workflows.$workflowId.versions.$versionId.edit'
 import { Route as LabOperationsProtocolsProtocolIdVersionsVersionIdEditRouteImport } from './routes/lab-operations.protocols.$protocolId.versions.$versionId.edit'
+import { Route as LabOperationsWorkOrderIdSpecimensSpecimenIdEvidenceKindRecordIdRouteImport } from './routes/lab-operations.$workOrderId_.specimens.$specimenId_.evidence.$kind.$recordId'
 
 const TrialProjectsRoute = TrialProjectsRouteImport.update({
   id: '/trial-projects',
   path: '/trial-projects',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SampleShippingSettingsRoute = SampleShippingSettingsRouteImport.update({
+  id: '/sample-shipping-settings',
+  path: '/sample-shipping-settings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SampleShippingRoute = SampleShippingRouteImport.update({
@@ -91,6 +147,11 @@ const ReagentOrdersRoute = ReagentOrdersRouteImport.update({
   path: '/reagent-orders',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PurchasingRoute = PurchasingRouteImport.update({
+  id: '/purchasing',
+  path: '/purchasing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PhaenoUsersRoute = PhaenoUsersRouteImport.update({
   id: '/phaeno-users',
   path: '/phaeno-users',
@@ -106,6 +167,11 @@ const OrderConfigurationRoute = OrderConfigurationRouteImport.update({
   path: '/order-configuration',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LegacyIntegrationsRoute = LegacyIntegrationsRouteImport.update({
+  id: '/legacy-integrations',
+  path: '/legacy-integrations',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LabServicesRoute = LabServicesRouteImport.update({
   id: '/lab-services',
   path: '/lab-services',
@@ -116,9 +182,24 @@ const LabOperationsRoute = LabOperationsRouteImport.update({
   path: '/lab-operations',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LabConfigurationRoute = LabConfigurationRouteImport.update({
+  id: '/lab-configuration',
+  path: '/lab-configuration',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FinanceRoute = FinanceRouteImport.update({
+  id: '/finance',
+  path: '/finance',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FileManagementRoute = FileManagementRouteImport.update({
   id: '/file-management',
   path: '/file-management',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EquipmentRoute = EquipmentRouteImport.update({
+  id: '/equipment',
+  path: '/equipment',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DocsRoute = DocsRouteImport.update({
@@ -129,6 +210,11 @@ const DocsRoute = DocsRouteImport.update({
 const DepartmentsRoute = DepartmentsRouteImport.update({
   id: '/departments',
   path: '/departments',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DeliveryLocationsRoute = DeliveryLocationsRouteImport.update({
+  id: '/delivery-locations',
+  path: '/delivery-locations',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DataProvisioningRoute = DataProvisioningRouteImport.update({
@@ -144,11 +230,6 @@ const DataLibraryRoute = DataLibraryRouteImport.update({
 const DataAssemblyRoute = DataAssemblyRouteImport.update({
   id: '/data-assembly',
   path: '/data-assembly',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CustomersRoute = CustomersRouteImport.update({
-  id: '/customers',
-  path: '/customers',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CrmRoute = CrmRouteImport.update({
@@ -209,6 +290,23 @@ const ReagentOrdersOrderIdRoute = ReagentOrdersOrderIdRouteImport.update({
   path: '/$orderId',
   getParentRoute: () => ReagentOrdersRoute,
 } as any)
+const OrderOperationsPartnerServicesRoute =
+  OrderOperationsPartnerServicesRouteImport.update({
+    id: '/partner-services',
+    path: '/partner-services',
+    getParentRoute: () => OrderOperationsRoute,
+  } as any)
+const OrderOperationsNewRoute = OrderOperationsNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => OrderOperationsRoute,
+} as any)
+const OrderOperationsLabServicesRoute =
+  OrderOperationsLabServicesRouteImport.update({
+    id: '/lab-services',
+    path: '/lab-services',
+    getParentRoute: () => OrderOperationsRoute,
+  } as any)
 const LabServicesNewRoute = LabServicesNewRouteImport.update({
   id: '/new',
   path: '/new',
@@ -219,17 +317,34 @@ const LabServicesOrderIdRoute = LabServicesOrderIdRouteImport.update({
   path: '/$orderId',
   getParentRoute: () => LabServicesRoute,
 } as any)
+const LabOperationsResultReleaseRoute =
+  LabOperationsResultReleaseRouteImport.update({
+    id: '/result-release',
+    path: '/result-release',
+    getParentRoute: () => LabOperationsRoute,
+  } as any)
 const LabOperationsWorkOrderIdRoute =
   LabOperationsWorkOrderIdRouteImport.update({
     id: '/$workOrderId',
     path: '/$workOrderId',
     getParentRoute: () => LabOperationsRoute,
   } as any)
+const DocsSearchRoute = DocsSearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => DocsRoute,
+} as any)
 const DemoTanstackQueryRoute = DemoTanstackQueryRouteImport.update({
   id: '/demo/tanstack-query',
   path: '/demo/tanstack-query',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DeliveryLocationsLocationIdRoute =
+  DeliveryLocationsLocationIdRouteImport.update({
+    id: '/$locationId',
+    path: '/$locationId',
+    getParentRoute: () => DeliveryLocationsRoute,
+  } as any)
 const DataLibraryDatasetIdRoute = DataLibraryDatasetIdRouteImport.update({
   id: '/$datasetId',
   path: '/$datasetId',
@@ -245,14 +360,19 @@ const DataAssemblyRequestIdRoute = DataAssemblyRequestIdRouteImport.update({
   path: '/$requestId',
   getParentRoute: () => DataAssemblyRoute,
 } as any)
-const CustomersCustomerIdRoute = CustomersCustomerIdRouteImport.update({
-  id: '/$customerId',
-  path: '/$customerId',
-  getParentRoute: () => CustomersRoute,
+const DashboardAttentionRoute = DashboardAttentionRouteImport.update({
+  id: '/dashboard/attention',
+  path: '/dashboard/attention',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const CrmTasksRoute = CrmTasksRouteImport.update({
   id: '/tasks',
   path: '/tasks',
+  getParentRoute: () => CrmRoute,
+} as any)
+const CrmRequestsRoute = CrmRequestsRouteImport.update({
+  id: '/requests',
+  path: '/requests',
   getParentRoute: () => CrmRoute,
 } as any)
 const CrmReportsRoute = CrmReportsRouteImport.update({
@@ -297,11 +417,47 @@ const SampleShippingShipmentIdPacketRoute =
     path: '/packet',
     getParentRoute: () => SampleShippingShipmentIdRoute,
   } as any)
+const SampleShippingSettingsKitSpecificationsContainerIdRoute =
+  SampleShippingSettingsKitSpecificationsContainerIdRouteImport.update({
+    id: '/sample-shipping-settings_/kit-specifications/$containerId',
+    path: '/sample-shipping-settings/kit-specifications/$containerId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ReagentOrdersOrderIdEditRoute =
   ReagentOrdersOrderIdEditRouteImport.update({
     id: '/edit',
     path: '/edit',
     getParentRoute: () => ReagentOrdersOrderIdRoute,
+  } as any)
+const PurchasingSuppliersSupplierIdRoute =
+  PurchasingSuppliersSupplierIdRouteImport.update({
+    id: '/suppliers/$supplierId',
+    path: '/suppliers/$supplierId',
+    getParentRoute: () => PurchasingRoute,
+  } as any)
+const PurchasingProductTypesProductTypeIdRoute =
+  PurchasingProductTypesProductTypeIdRouteImport.update({
+    id: '/product-types/$productTypeId',
+    path: '/product-types/$productTypeId',
+    getParentRoute: () => PurchasingRoute,
+  } as any)
+const PurchasingMaterialsMaterialLotIdRoute =
+  PurchasingMaterialsMaterialLotIdRouteImport.update({
+    id: '/materials/$materialLotId',
+    path: '/materials/$materialLotId',
+    getParentRoute: () => PurchasingRoute,
+  } as any)
+const OrderOperationsResultPackagesPackageIdRoute =
+  OrderOperationsResultPackagesPackageIdRouteImport.update({
+    id: '/result-packages/$packageId',
+    path: '/result-packages/$packageId',
+    getParentRoute: () => OrderOperationsRoute,
+  } as any)
+const OrderOperationsLabServicesTrialsRoute =
+  OrderOperationsLabServicesTrialsRouteImport.update({
+    id: '/trials',
+    path: '/trials',
+    getParentRoute: () => OrderOperationsLabServicesRoute,
   } as any)
 const OrderOperationsIntakeOrderIdRoute =
   OrderOperationsIntakeOrderIdRouteImport.update({
@@ -315,15 +471,69 @@ const OrderOperationsWorkflowOrderIdRoute =
     path: '/$workflow/$orderId',
     getParentRoute: () => OrderOperationsRoute,
   } as any)
+const OrderConfigurationCatalogCatalogItemIdRoute =
+  OrderConfigurationCatalogCatalogItemIdRouteImport.update({
+    id: '/catalog/$catalogItemId',
+    path: '/catalog/$catalogItemId',
+    getParentRoute: () => OrderConfigurationRoute,
+  } as any)
 const LabServicesOrderIdEditRoute = LabServicesOrderIdEditRouteImport.update({
   id: '/edit',
   path: '/edit',
   getParentRoute: () => LabServicesOrderIdRoute,
 } as any)
+const LabOperationsStockKitsKitIdRoute =
+  LabOperationsStockKitsKitIdRouteImport.update({
+    id: '/stock-kits/$kitId',
+    path: '/stock-kits/$kitId',
+    getParentRoute: () => LabOperationsRoute,
+  } as any)
+const LabOperationsStepsStepIdRoute =
+  LabOperationsStepsStepIdRouteImport.update({
+    id: '/steps/$stepId',
+    path: '/steps/$stepId',
+    getParentRoute: () => LabOperationsRoute,
+  } as any)
+const LabOperationsResultPackagesPackageIdRoute =
+  LabOperationsResultPackagesPackageIdRouteImport.update({
+    id: '/result-packages/$packageId',
+    path: '/result-packages/$packageId',
+    getParentRoute: () => LabOperationsRoute,
+  } as any)
+const LabOperationsReagentRunsRunIdRoute =
+  LabOperationsReagentRunsRunIdRouteImport.update({
+    id: '/reagent-runs/$runId',
+    path: '/reagent-runs/$runId',
+    getParentRoute: () => LabOperationsRoute,
+  } as any)
 const LabOperationsPseqKitOrdersOrderIdRoute =
   LabOperationsPseqKitOrdersOrderIdRouteImport.update({
     id: '/pseq-kit-orders/$orderId',
     path: '/pseq-kit-orders/$orderId',
+    getParentRoute: () => LabOperationsRoute,
+  } as any)
+const LabOperationsPreparationPreparationBatchIdRoute =
+  LabOperationsPreparationPreparationBatchIdRouteImport.update({
+    id: '/preparation/$preparationBatchId',
+    path: '/preparation/$preparationBatchId',
+    getParentRoute: () => LabOperationsRoute,
+  } as any)
+const LabOperationsMasterMixesMixIdRoute =
+  LabOperationsMasterMixesMixIdRouteImport.update({
+    id: '/master-mixes/$mixId',
+    path: '/master-mixes/$mixId',
+    getParentRoute: () => LabOperationsRoute,
+  } as any)
+const LabOperationsKitRequestsRequestIdRoute =
+  LabOperationsKitRequestsRequestIdRouteImport.update({
+    id: '/kit-requests/$requestId',
+    path: '/kit-requests/$requestId',
+    getParentRoute: () => LabOperationsRoute,
+  } as any)
+const LabOperationsExecutionsExecutionIdRoute =
+  LabOperationsExecutionsExecutionIdRouteImport.update({
+    id: '/executions/$executionId',
+    path: '/executions/$executionId',
     getParentRoute: () => LabOperationsRoute,
   } as any)
 const LabOperationsDataAssemblyOrderIdRoute =
@@ -332,6 +542,23 @@ const LabOperationsDataAssemblyOrderIdRoute =
     path: '/data-assembly/$orderId',
     getParentRoute: () => LabOperationsRoute,
   } as any)
+const LabOperationsBatchesBatchIdRoute =
+  LabOperationsBatchesBatchIdRouteImport.update({
+    id: '/batches/$batchId',
+    path: '/batches/$batchId',
+    getParentRoute: () => LabOperationsRoute,
+  } as any)
+const LabOperationsAssemblyJobsJobIdRoute =
+  LabOperationsAssemblyJobsJobIdRouteImport.update({
+    id: '/assembly-jobs/$jobId',
+    path: '/assembly-jobs/$jobId',
+    getParentRoute: () => LabOperationsRoute,
+  } as any)
+const FinanceKindRecordIdRoute = FinanceKindRecordIdRouteImport.update({
+  id: '/$kind/$recordId',
+  path: '/$kind/$recordId',
+  getParentRoute: () => FinanceRoute,
+} as any)
 const DocsAudienceSlugRoute = DocsAudienceSlugRouteImport.update({
   id: '/$audience/$slug',
   path: '/$audience/$slug',
@@ -370,6 +597,114 @@ const CrmCompaniesCompanyIdRoute = CrmCompaniesCompanyIdRouteImport.update({
   path: '/companies/$companyId',
   getParentRoute: () => CrmRoute,
 } as any)
+const PurchasingProductsSupplierIdProductIdRoute =
+  PurchasingProductsSupplierIdProductIdRouteImport.update({
+    id: '/products/$supplierId/$productId',
+    path: '/products/$supplierId/$productId',
+    getParentRoute: () => PurchasingRoute,
+  } as any)
+const OrderOperationsPartnerServicesPseqKitsOrderIdRoute =
+  OrderOperationsPartnerServicesPseqKitsOrderIdRouteImport.update({
+    id: '/pseq-kits/$orderId',
+    path: '/pseq-kits/$orderId',
+    getParentRoute: () => OrderOperationsPartnerServicesRoute,
+  } as any)
+const OrderOperationsPartnerServicesDataAssemblyOrderIdRoute =
+  OrderOperationsPartnerServicesDataAssemblyOrderIdRouteImport.update({
+    id: '/data-assembly/$orderId',
+    path: '/data-assembly/$orderId',
+    getParentRoute: () => OrderOperationsPartnerServicesRoute,
+  } as any)
+const OrderOperationsLabServicesTrialsConfigurationRoute =
+  OrderOperationsLabServicesTrialsConfigurationRouteImport.update({
+    id: '/configuration',
+    path: '/configuration',
+    getParentRoute: () => OrderOperationsLabServicesTrialsRoute,
+  } as any)
+const OrderOperationsLabServicesTrialsTrialIdRoute =
+  OrderOperationsLabServicesTrialsTrialIdRouteImport.update({
+    id: '/$trialId',
+    path: '/$trialId',
+    getParentRoute: () => OrderOperationsLabServicesTrialsRoute,
+  } as any)
+const OrderOperationsLabServicesOrdersNewRoute =
+  OrderOperationsLabServicesOrdersNewRouteImport.update({
+    id: '/orders/new',
+    path: '/orders/new',
+    getParentRoute: () => OrderOperationsLabServicesRoute,
+  } as any)
+const OrderOperationsLabServicesOrdersOrderIdRoute =
+  OrderOperationsLabServicesOrdersOrderIdRouteImport.update({
+    id: '/orders/$orderId',
+    path: '/orders/$orderId',
+    getParentRoute: () => OrderOperationsLabServicesRoute,
+  } as any)
+const OrderOperationsLabServicesIntakeOrderIdRoute =
+  OrderOperationsLabServicesIntakeOrderIdRouteImport.update({
+    id: '/intake/$orderId',
+    path: '/intake/$orderId',
+    getParentRoute: () => OrderOperationsLabServicesRoute,
+  } as any)
+const OrderOperationsFinanceKindRecordIdRoute =
+  OrderOperationsFinanceKindRecordIdRouteImport.update({
+    id: '/finance/$kind/$recordId',
+    path: '/finance/$kind/$recordId',
+    getParentRoute: () => OrderOperationsRoute,
+  } as any)
+const OrderOperationsDraftsOrderIdEditRoute =
+  OrderOperationsDraftsOrderIdEditRouteImport.update({
+    id: '/drafts/$orderId/edit',
+    path: '/drafts/$orderId/edit',
+    getParentRoute: () => OrderOperationsRoute,
+  } as any)
+const LabOperationsStepsStepIdEditRoute =
+  LabOperationsStepsStepIdEditRouteImport.update({
+    id: '/edit',
+    path: '/edit',
+    getParentRoute: () => LabOperationsStepsStepIdRoute,
+  } as any)
+const LabOperationsBatchesBatchIdRecordResultsRoute =
+  LabOperationsBatchesBatchIdRecordResultsRouteImport.update({
+    id: '/batches/$batchId_/record-results',
+    path: '/batches/$batchId/record-results',
+    getParentRoute: () => LabOperationsRoute,
+  } as any)
+const LabOperationsAssemblyJobsJobIdRecordQcRoute =
+  LabOperationsAssemblyJobsJobIdRecordQcRouteImport.update({
+    id: '/assembly-jobs/$jobId_/record-qc',
+    path: '/assembly-jobs/$jobId/record-qc',
+    getParentRoute: () => LabOperationsRoute,
+  } as any)
+const LabOperationsAssemblyJobsJobIdQcRoute =
+  LabOperationsAssemblyJobsJobIdQcRouteImport.update({
+    id: '/assembly-jobs/$jobId_/qc',
+    path: '/assembly-jobs/$jobId/qc',
+    getParentRoute: () => LabOperationsRoute,
+  } as any)
+const LabOperationsWorkOrderIdSpecimensSpecimenIdRoute =
+  LabOperationsWorkOrderIdSpecimensSpecimenIdRouteImport.update({
+    id: '/$workOrderId_/specimens/$specimenId',
+    path: '/$workOrderId/specimens/$specimenId',
+    getParentRoute: () => LabOperationsRoute,
+  } as any)
+const LabOperationsWorkOrderIdContainersContainerIdRoute =
+  LabOperationsWorkOrderIdContainersContainerIdRouteImport.update({
+    id: '/$workOrderId_/containers/$containerId',
+    path: '/$workOrderId/containers/$containerId',
+    getParentRoute: () => LabOperationsRoute,
+  } as any)
+const OrderOperationsLabServicesTrialsTrialIdScopeRoute =
+  OrderOperationsLabServicesTrialsTrialIdScopeRouteImport.update({
+    id: '/scope',
+    path: '/scope',
+    getParentRoute: () => OrderOperationsLabServicesTrialsTrialIdRoute,
+  } as any)
+const OrderOperationsLabServicesDraftsOrderIdEditRoute =
+  OrderOperationsLabServicesDraftsOrderIdEditRouteImport.update({
+    id: '/drafts/$orderId/edit',
+    path: '/drafts/$orderId/edit',
+    getParentRoute: () => OrderOperationsLabServicesRoute,
+  } as any)
 const LabOperationsWorkflowsWorkflowIdVersionsNewRoute =
   LabOperationsWorkflowsWorkflowIdVersionsNewRouteImport.update({
     id: '/workflows/$workflowId/versions/new',
@@ -380,6 +715,12 @@ const LabOperationsProtocolsProtocolIdVersionsNewRoute =
   LabOperationsProtocolsProtocolIdVersionsNewRouteImport.update({
     id: '/protocols/$protocolId/versions/new',
     path: '/protocols/$protocolId/versions/new',
+    getParentRoute: () => LabOperationsRoute,
+  } as any)
+const LabOperationsBatchesBatchIdResultsResultVersionRoute =
+  LabOperationsBatchesBatchIdResultsResultVersionRouteImport.update({
+    id: '/batches/$batchId_/results/$resultVersion',
+    path: '/batches/$batchId/results/$resultVersion',
     getParentRoute: () => LabOperationsRoute,
   } as any)
 const LabOperationsWorkflowsWorkflowIdVersionsVersionIdEditRoute =
@@ -394,27 +735,41 @@ const LabOperationsProtocolsProtocolIdVersionsVersionIdEditRoute =
     path: '/protocols/$protocolId/versions/$versionId/edit',
     getParentRoute: () => LabOperationsRoute,
   } as any)
+const LabOperationsWorkOrderIdSpecimensSpecimenIdEvidenceKindRecordIdRoute =
+  LabOperationsWorkOrderIdSpecimensSpecimenIdEvidenceKindRecordIdRouteImport.update(
+    {
+      id: '/$workOrderId_/specimens/$specimenId_/evidence/$kind/$recordId',
+      path: '/$workOrderId/specimens/$specimenId/evidence/$kind/$recordId',
+      getParentRoute: () => LabOperationsRoute,
+    } as any,
+  )
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/accept-invite': typeof AcceptInviteRoute
   '/crm': typeof CrmRouteWithChildren
-  '/customers': typeof CustomersRouteWithChildren
   '/data-assembly': typeof DataAssemblyRouteWithChildren
   '/data-library': typeof DataLibraryRouteWithChildren
   '/data-provisioning': typeof DataProvisioningRouteWithChildren
+  '/delivery-locations': typeof DeliveryLocationsRouteWithChildren
   '/departments': typeof DepartmentsRoute
   '/docs': typeof DocsRouteWithChildren
+  '/equipment': typeof EquipmentRoute
   '/file-management': typeof FileManagementRoute
+  '/finance': typeof FinanceRouteWithChildren
+  '/lab-configuration': typeof LabConfigurationRoute
   '/lab-operations': typeof LabOperationsRouteWithChildren
   '/lab-services': typeof LabServicesRouteWithChildren
-  '/order-configuration': typeof OrderConfigurationRoute
+  '/legacy-integrations': typeof LegacyIntegrationsRoute
+  '/order-configuration': typeof OrderConfigurationRouteWithChildren
   '/order-operations': typeof OrderOperationsRouteWithChildren
   '/phaeno-users': typeof PhaenoUsersRoute
+  '/purchasing': typeof PurchasingRouteWithChildren
   '/reagent-orders': typeof ReagentOrdersRouteWithChildren
   '/released-deliverables': typeof ReleasedDeliverablesRouteWithChildren
   '/sample-shipping': typeof SampleShippingRouteWithChildren
+  '/sample-shipping-settings': typeof SampleShippingSettingsRoute
   '/trial-projects': typeof TrialProjectsRouteWithChildren
   '/crm/administration': typeof CrmAdministrationRoute
   '/crm/companies': typeof CrmCompaniesRoute
@@ -422,15 +777,22 @@ export interface FileRoutesByFullPath {
   '/crm/leads': typeof CrmLeadsRoute
   '/crm/opportunities': typeof CrmOpportunitiesRoute
   '/crm/reports': typeof CrmReportsRoute
+  '/crm/requests': typeof CrmRequestsRoute
   '/crm/tasks': typeof CrmTasksRoute
-  '/customers/$customerId': typeof CustomersCustomerIdRoute
+  '/dashboard/attention': typeof DashboardAttentionRoute
   '/data-assembly/$requestId': typeof DataAssemblyRequestIdRouteWithChildren
   '/data-assembly/new': typeof DataAssemblyNewRoute
   '/data-library/$datasetId': typeof DataLibraryDatasetIdRoute
+  '/delivery-locations/$locationId': typeof DeliveryLocationsLocationIdRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
+  '/docs/search': typeof DocsSearchRoute
   '/lab-operations/$workOrderId': typeof LabOperationsWorkOrderIdRoute
+  '/lab-operations/result-release': typeof LabOperationsResultReleaseRoute
   '/lab-services/$orderId': typeof LabServicesOrderIdRouteWithChildren
   '/lab-services/new': typeof LabServicesNewRoute
+  '/order-operations/lab-services': typeof OrderOperationsLabServicesRouteWithChildren
+  '/order-operations/new': typeof OrderOperationsNewRoute
+  '/order-operations/partner-services': typeof OrderOperationsPartnerServicesRouteWithChildren
   '/reagent-orders/$orderId': typeof ReagentOrdersOrderIdRouteWithChildren
   '/reagent-orders/new': typeof ReagentOrdersNewRoute
   '/released-deliverables/$snapshotId': typeof ReleasedDeliverablesSnapshotIdRoute
@@ -445,39 +807,83 @@ export interface FileRoutesByFullPath {
   '/data-assembly/$requestId/edit': typeof DataAssemblyRequestIdEditRoute
   '/data-provisioning/sources/$sourceSampleId': typeof DataProvisioningSourcesSourceSampleIdRoute
   '/docs/$audience/$slug': typeof DocsAudienceSlugRoute
+  '/finance/$kind/$recordId': typeof FinanceKindRecordIdRoute
+  '/lab-operations/assembly-jobs/$jobId': typeof LabOperationsAssemblyJobsJobIdRoute
+  '/lab-operations/batches/$batchId': typeof LabOperationsBatchesBatchIdRoute
   '/lab-operations/data-assembly/$orderId': typeof LabOperationsDataAssemblyOrderIdRoute
+  '/lab-operations/executions/$executionId': typeof LabOperationsExecutionsExecutionIdRoute
+  '/lab-operations/kit-requests/$requestId': typeof LabOperationsKitRequestsRequestIdRoute
+  '/lab-operations/master-mixes/$mixId': typeof LabOperationsMasterMixesMixIdRoute
+  '/lab-operations/preparation/$preparationBatchId': typeof LabOperationsPreparationPreparationBatchIdRoute
   '/lab-operations/pseq-kit-orders/$orderId': typeof LabOperationsPseqKitOrdersOrderIdRoute
+  '/lab-operations/reagent-runs/$runId': typeof LabOperationsReagentRunsRunIdRoute
+  '/lab-operations/result-packages/$packageId': typeof LabOperationsResultPackagesPackageIdRoute
+  '/lab-operations/steps/$stepId': typeof LabOperationsStepsStepIdRouteWithChildren
+  '/lab-operations/stock-kits/$kitId': typeof LabOperationsStockKitsKitIdRoute
   '/lab-services/$orderId/edit': typeof LabServicesOrderIdEditRoute
+  '/order-configuration/catalog/$catalogItemId': typeof OrderConfigurationCatalogCatalogItemIdRoute
   '/order-operations/$workflow/$orderId': typeof OrderOperationsWorkflowOrderIdRoute
   '/order-operations/intake/$orderId': typeof OrderOperationsIntakeOrderIdRoute
+  '/order-operations/lab-services/trials': typeof OrderOperationsLabServicesTrialsRouteWithChildren
+  '/order-operations/result-packages/$packageId': typeof OrderOperationsResultPackagesPackageIdRoute
+  '/purchasing/materials/$materialLotId': typeof PurchasingMaterialsMaterialLotIdRoute
+  '/purchasing/product-types/$productTypeId': typeof PurchasingProductTypesProductTypeIdRoute
+  '/purchasing/suppliers/$supplierId': typeof PurchasingSuppliersSupplierIdRoute
   '/reagent-orders/$orderId/edit': typeof ReagentOrdersOrderIdEditRoute
+  '/sample-shipping-settings/kit-specifications/$containerId': typeof SampleShippingSettingsKitSpecificationsContainerIdRoute
   '/sample-shipping/$shipmentId/packet': typeof SampleShippingShipmentIdPacketRoute
   '/trial-projects/$trialId/scope': typeof TrialProjectsTrialIdScopeRoute
+  '/lab-operations/$workOrderId/containers/$containerId': typeof LabOperationsWorkOrderIdContainersContainerIdRoute
+  '/lab-operations/$workOrderId/specimens/$specimenId': typeof LabOperationsWorkOrderIdSpecimensSpecimenIdRoute
+  '/lab-operations/assembly-jobs/$jobId/qc': typeof LabOperationsAssemblyJobsJobIdQcRoute
+  '/lab-operations/assembly-jobs/$jobId/record-qc': typeof LabOperationsAssemblyJobsJobIdRecordQcRoute
+  '/lab-operations/batches/$batchId/record-results': typeof LabOperationsBatchesBatchIdRecordResultsRoute
+  '/lab-operations/steps/$stepId/edit': typeof LabOperationsStepsStepIdEditRoute
+  '/order-operations/drafts/$orderId/edit': typeof OrderOperationsDraftsOrderIdEditRoute
+  '/order-operations/finance/$kind/$recordId': typeof OrderOperationsFinanceKindRecordIdRoute
+  '/order-operations/lab-services/intake/$orderId': typeof OrderOperationsLabServicesIntakeOrderIdRoute
+  '/order-operations/lab-services/orders/$orderId': typeof OrderOperationsLabServicesOrdersOrderIdRoute
+  '/order-operations/lab-services/orders/new': typeof OrderOperationsLabServicesOrdersNewRoute
+  '/order-operations/lab-services/trials/$trialId': typeof OrderOperationsLabServicesTrialsTrialIdRouteWithChildren
+  '/order-operations/lab-services/trials/configuration': typeof OrderOperationsLabServicesTrialsConfigurationRoute
+  '/order-operations/partner-services/data-assembly/$orderId': typeof OrderOperationsPartnerServicesDataAssemblyOrderIdRoute
+  '/order-operations/partner-services/pseq-kits/$orderId': typeof OrderOperationsPartnerServicesPseqKitsOrderIdRoute
+  '/purchasing/products/$supplierId/$productId': typeof PurchasingProductsSupplierIdProductIdRoute
+  '/lab-operations/batches/$batchId/results/$resultVersion': typeof LabOperationsBatchesBatchIdResultsResultVersionRoute
   '/lab-operations/protocols/$protocolId/versions/new': typeof LabOperationsProtocolsProtocolIdVersionsNewRoute
   '/lab-operations/workflows/$workflowId/versions/new': typeof LabOperationsWorkflowsWorkflowIdVersionsNewRoute
+  '/order-operations/lab-services/drafts/$orderId/edit': typeof OrderOperationsLabServicesDraftsOrderIdEditRoute
+  '/order-operations/lab-services/trials/$trialId/scope': typeof OrderOperationsLabServicesTrialsTrialIdScopeRoute
   '/lab-operations/protocols/$protocolId/versions/$versionId/edit': typeof LabOperationsProtocolsProtocolIdVersionsVersionIdEditRoute
   '/lab-operations/workflows/$workflowId/versions/$versionId/edit': typeof LabOperationsWorkflowsWorkflowIdVersionsVersionIdEditRoute
+  '/lab-operations/$workOrderId/specimens/$specimenId/evidence/$kind/$recordId': typeof LabOperationsWorkOrderIdSpecimensSpecimenIdEvidenceKindRecordIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/accept-invite': typeof AcceptInviteRoute
   '/crm': typeof CrmRouteWithChildren
-  '/customers': typeof CustomersRouteWithChildren
   '/data-assembly': typeof DataAssemblyRouteWithChildren
   '/data-library': typeof DataLibraryRouteWithChildren
   '/data-provisioning': typeof DataProvisioningRouteWithChildren
+  '/delivery-locations': typeof DeliveryLocationsRouteWithChildren
   '/departments': typeof DepartmentsRoute
   '/docs': typeof DocsRouteWithChildren
+  '/equipment': typeof EquipmentRoute
   '/file-management': typeof FileManagementRoute
+  '/finance': typeof FinanceRouteWithChildren
+  '/lab-configuration': typeof LabConfigurationRoute
   '/lab-operations': typeof LabOperationsRouteWithChildren
   '/lab-services': typeof LabServicesRouteWithChildren
-  '/order-configuration': typeof OrderConfigurationRoute
+  '/legacy-integrations': typeof LegacyIntegrationsRoute
+  '/order-configuration': typeof OrderConfigurationRouteWithChildren
   '/order-operations': typeof OrderOperationsRouteWithChildren
   '/phaeno-users': typeof PhaenoUsersRoute
+  '/purchasing': typeof PurchasingRouteWithChildren
   '/reagent-orders': typeof ReagentOrdersRouteWithChildren
   '/released-deliverables': typeof ReleasedDeliverablesRouteWithChildren
   '/sample-shipping': typeof SampleShippingRouteWithChildren
+  '/sample-shipping-settings': typeof SampleShippingSettingsRoute
   '/trial-projects': typeof TrialProjectsRouteWithChildren
   '/crm/administration': typeof CrmAdministrationRoute
   '/crm/companies': typeof CrmCompaniesRoute
@@ -485,15 +891,22 @@ export interface FileRoutesByTo {
   '/crm/leads': typeof CrmLeadsRoute
   '/crm/opportunities': typeof CrmOpportunitiesRoute
   '/crm/reports': typeof CrmReportsRoute
+  '/crm/requests': typeof CrmRequestsRoute
   '/crm/tasks': typeof CrmTasksRoute
-  '/customers/$customerId': typeof CustomersCustomerIdRoute
+  '/dashboard/attention': typeof DashboardAttentionRoute
   '/data-assembly/$requestId': typeof DataAssemblyRequestIdRouteWithChildren
   '/data-assembly/new': typeof DataAssemblyNewRoute
   '/data-library/$datasetId': typeof DataLibraryDatasetIdRoute
+  '/delivery-locations/$locationId': typeof DeliveryLocationsLocationIdRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
+  '/docs/search': typeof DocsSearchRoute
   '/lab-operations/$workOrderId': typeof LabOperationsWorkOrderIdRoute
+  '/lab-operations/result-release': typeof LabOperationsResultReleaseRoute
   '/lab-services/$orderId': typeof LabServicesOrderIdRouteWithChildren
   '/lab-services/new': typeof LabServicesNewRoute
+  '/order-operations/lab-services': typeof OrderOperationsLabServicesRouteWithChildren
+  '/order-operations/new': typeof OrderOperationsNewRoute
+  '/order-operations/partner-services': typeof OrderOperationsPartnerServicesRouteWithChildren
   '/reagent-orders/$orderId': typeof ReagentOrdersOrderIdRouteWithChildren
   '/reagent-orders/new': typeof ReagentOrdersNewRoute
   '/released-deliverables/$snapshotId': typeof ReleasedDeliverablesSnapshotIdRoute
@@ -508,18 +921,56 @@ export interface FileRoutesByTo {
   '/data-assembly/$requestId/edit': typeof DataAssemblyRequestIdEditRoute
   '/data-provisioning/sources/$sourceSampleId': typeof DataProvisioningSourcesSourceSampleIdRoute
   '/docs/$audience/$slug': typeof DocsAudienceSlugRoute
+  '/finance/$kind/$recordId': typeof FinanceKindRecordIdRoute
+  '/lab-operations/assembly-jobs/$jobId': typeof LabOperationsAssemblyJobsJobIdRoute
+  '/lab-operations/batches/$batchId': typeof LabOperationsBatchesBatchIdRoute
   '/lab-operations/data-assembly/$orderId': typeof LabOperationsDataAssemblyOrderIdRoute
+  '/lab-operations/executions/$executionId': typeof LabOperationsExecutionsExecutionIdRoute
+  '/lab-operations/kit-requests/$requestId': typeof LabOperationsKitRequestsRequestIdRoute
+  '/lab-operations/master-mixes/$mixId': typeof LabOperationsMasterMixesMixIdRoute
+  '/lab-operations/preparation/$preparationBatchId': typeof LabOperationsPreparationPreparationBatchIdRoute
   '/lab-operations/pseq-kit-orders/$orderId': typeof LabOperationsPseqKitOrdersOrderIdRoute
+  '/lab-operations/reagent-runs/$runId': typeof LabOperationsReagentRunsRunIdRoute
+  '/lab-operations/result-packages/$packageId': typeof LabOperationsResultPackagesPackageIdRoute
+  '/lab-operations/steps/$stepId': typeof LabOperationsStepsStepIdRouteWithChildren
+  '/lab-operations/stock-kits/$kitId': typeof LabOperationsStockKitsKitIdRoute
   '/lab-services/$orderId/edit': typeof LabServicesOrderIdEditRoute
+  '/order-configuration/catalog/$catalogItemId': typeof OrderConfigurationCatalogCatalogItemIdRoute
   '/order-operations/$workflow/$orderId': typeof OrderOperationsWorkflowOrderIdRoute
   '/order-operations/intake/$orderId': typeof OrderOperationsIntakeOrderIdRoute
+  '/order-operations/lab-services/trials': typeof OrderOperationsLabServicesTrialsRouteWithChildren
+  '/order-operations/result-packages/$packageId': typeof OrderOperationsResultPackagesPackageIdRoute
+  '/purchasing/materials/$materialLotId': typeof PurchasingMaterialsMaterialLotIdRoute
+  '/purchasing/product-types/$productTypeId': typeof PurchasingProductTypesProductTypeIdRoute
+  '/purchasing/suppliers/$supplierId': typeof PurchasingSuppliersSupplierIdRoute
   '/reagent-orders/$orderId/edit': typeof ReagentOrdersOrderIdEditRoute
+  '/sample-shipping-settings/kit-specifications/$containerId': typeof SampleShippingSettingsKitSpecificationsContainerIdRoute
   '/sample-shipping/$shipmentId/packet': typeof SampleShippingShipmentIdPacketRoute
   '/trial-projects/$trialId/scope': typeof TrialProjectsTrialIdScopeRoute
+  '/lab-operations/$workOrderId/containers/$containerId': typeof LabOperationsWorkOrderIdContainersContainerIdRoute
+  '/lab-operations/$workOrderId/specimens/$specimenId': typeof LabOperationsWorkOrderIdSpecimensSpecimenIdRoute
+  '/lab-operations/assembly-jobs/$jobId/qc': typeof LabOperationsAssemblyJobsJobIdQcRoute
+  '/lab-operations/assembly-jobs/$jobId/record-qc': typeof LabOperationsAssemblyJobsJobIdRecordQcRoute
+  '/lab-operations/batches/$batchId/record-results': typeof LabOperationsBatchesBatchIdRecordResultsRoute
+  '/lab-operations/steps/$stepId/edit': typeof LabOperationsStepsStepIdEditRoute
+  '/order-operations/drafts/$orderId/edit': typeof OrderOperationsDraftsOrderIdEditRoute
+  '/order-operations/finance/$kind/$recordId': typeof OrderOperationsFinanceKindRecordIdRoute
+  '/order-operations/lab-services/intake/$orderId': typeof OrderOperationsLabServicesIntakeOrderIdRoute
+  '/order-operations/lab-services/orders/$orderId': typeof OrderOperationsLabServicesOrdersOrderIdRoute
+  '/order-operations/lab-services/orders/new': typeof OrderOperationsLabServicesOrdersNewRoute
+  '/order-operations/lab-services/trials/$trialId': typeof OrderOperationsLabServicesTrialsTrialIdRouteWithChildren
+  '/order-operations/lab-services/trials/configuration': typeof OrderOperationsLabServicesTrialsConfigurationRoute
+  '/order-operations/partner-services/data-assembly/$orderId': typeof OrderOperationsPartnerServicesDataAssemblyOrderIdRoute
+  '/order-operations/partner-services/pseq-kits/$orderId': typeof OrderOperationsPartnerServicesPseqKitsOrderIdRoute
+  '/purchasing/products/$supplierId/$productId': typeof PurchasingProductsSupplierIdProductIdRoute
+  '/lab-operations/batches/$batchId/results/$resultVersion': typeof LabOperationsBatchesBatchIdResultsResultVersionRoute
   '/lab-operations/protocols/$protocolId/versions/new': typeof LabOperationsProtocolsProtocolIdVersionsNewRoute
   '/lab-operations/workflows/$workflowId/versions/new': typeof LabOperationsWorkflowsWorkflowIdVersionsNewRoute
+  '/order-operations/lab-services/drafts/$orderId/edit': typeof OrderOperationsLabServicesDraftsOrderIdEditRoute
+  '/order-operations/lab-services/trials/$trialId/scope': typeof OrderOperationsLabServicesTrialsTrialIdScopeRoute
   '/lab-operations/protocols/$protocolId/versions/$versionId/edit': typeof LabOperationsProtocolsProtocolIdVersionsVersionIdEditRoute
   '/lab-operations/workflows/$workflowId/versions/$versionId/edit': typeof LabOperationsWorkflowsWorkflowIdVersionsVersionIdEditRoute
+  '/lab-operations/$workOrderId/specimens/$specimenId/evidence/$kind/$recordId': typeof LabOperationsWorkOrderIdSpecimensSpecimenIdEvidenceKindRecordIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -527,21 +978,27 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/accept-invite': typeof AcceptInviteRoute
   '/crm': typeof CrmRouteWithChildren
-  '/customers': typeof CustomersRouteWithChildren
   '/data-assembly': typeof DataAssemblyRouteWithChildren
   '/data-library': typeof DataLibraryRouteWithChildren
   '/data-provisioning': typeof DataProvisioningRouteWithChildren
+  '/delivery-locations': typeof DeliveryLocationsRouteWithChildren
   '/departments': typeof DepartmentsRoute
   '/docs': typeof DocsRouteWithChildren
+  '/equipment': typeof EquipmentRoute
   '/file-management': typeof FileManagementRoute
+  '/finance': typeof FinanceRouteWithChildren
+  '/lab-configuration': typeof LabConfigurationRoute
   '/lab-operations': typeof LabOperationsRouteWithChildren
   '/lab-services': typeof LabServicesRouteWithChildren
-  '/order-configuration': typeof OrderConfigurationRoute
+  '/legacy-integrations': typeof LegacyIntegrationsRoute
+  '/order-configuration': typeof OrderConfigurationRouteWithChildren
   '/order-operations': typeof OrderOperationsRouteWithChildren
   '/phaeno-users': typeof PhaenoUsersRoute
+  '/purchasing': typeof PurchasingRouteWithChildren
   '/reagent-orders': typeof ReagentOrdersRouteWithChildren
   '/released-deliverables': typeof ReleasedDeliverablesRouteWithChildren
   '/sample-shipping': typeof SampleShippingRouteWithChildren
+  '/sample-shipping-settings': typeof SampleShippingSettingsRoute
   '/trial-projects': typeof TrialProjectsRouteWithChildren
   '/crm/administration': typeof CrmAdministrationRoute
   '/crm/companies': typeof CrmCompaniesRoute
@@ -549,15 +1006,22 @@ export interface FileRoutesById {
   '/crm/leads': typeof CrmLeadsRoute
   '/crm/opportunities': typeof CrmOpportunitiesRoute
   '/crm/reports': typeof CrmReportsRoute
+  '/crm/requests': typeof CrmRequestsRoute
   '/crm/tasks': typeof CrmTasksRoute
-  '/customers/$customerId': typeof CustomersCustomerIdRoute
+  '/dashboard/attention': typeof DashboardAttentionRoute
   '/data-assembly/$requestId': typeof DataAssemblyRequestIdRouteWithChildren
   '/data-assembly/new': typeof DataAssemblyNewRoute
   '/data-library/$datasetId': typeof DataLibraryDatasetIdRoute
+  '/delivery-locations/$locationId': typeof DeliveryLocationsLocationIdRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
+  '/docs/search': typeof DocsSearchRoute
   '/lab-operations/$workOrderId': typeof LabOperationsWorkOrderIdRoute
+  '/lab-operations/result-release': typeof LabOperationsResultReleaseRoute
   '/lab-services/$orderId': typeof LabServicesOrderIdRouteWithChildren
   '/lab-services/new': typeof LabServicesNewRoute
+  '/order-operations/lab-services': typeof OrderOperationsLabServicesRouteWithChildren
+  '/order-operations/new': typeof OrderOperationsNewRoute
+  '/order-operations/partner-services': typeof OrderOperationsPartnerServicesRouteWithChildren
   '/reagent-orders/$orderId': typeof ReagentOrdersOrderIdRouteWithChildren
   '/reagent-orders/new': typeof ReagentOrdersNewRoute
   '/released-deliverables/$snapshotId': typeof ReleasedDeliverablesSnapshotIdRoute
@@ -572,18 +1036,56 @@ export interface FileRoutesById {
   '/data-assembly/$requestId/edit': typeof DataAssemblyRequestIdEditRoute
   '/data-provisioning/sources/$sourceSampleId': typeof DataProvisioningSourcesSourceSampleIdRoute
   '/docs/$audience/$slug': typeof DocsAudienceSlugRoute
+  '/finance/$kind/$recordId': typeof FinanceKindRecordIdRoute
+  '/lab-operations/assembly-jobs/$jobId': typeof LabOperationsAssemblyJobsJobIdRoute
+  '/lab-operations/batches/$batchId': typeof LabOperationsBatchesBatchIdRoute
   '/lab-operations/data-assembly/$orderId': typeof LabOperationsDataAssemblyOrderIdRoute
+  '/lab-operations/executions/$executionId': typeof LabOperationsExecutionsExecutionIdRoute
+  '/lab-operations/kit-requests/$requestId': typeof LabOperationsKitRequestsRequestIdRoute
+  '/lab-operations/master-mixes/$mixId': typeof LabOperationsMasterMixesMixIdRoute
+  '/lab-operations/preparation/$preparationBatchId': typeof LabOperationsPreparationPreparationBatchIdRoute
   '/lab-operations/pseq-kit-orders/$orderId': typeof LabOperationsPseqKitOrdersOrderIdRoute
+  '/lab-operations/reagent-runs/$runId': typeof LabOperationsReagentRunsRunIdRoute
+  '/lab-operations/result-packages/$packageId': typeof LabOperationsResultPackagesPackageIdRoute
+  '/lab-operations/steps/$stepId': typeof LabOperationsStepsStepIdRouteWithChildren
+  '/lab-operations/stock-kits/$kitId': typeof LabOperationsStockKitsKitIdRoute
   '/lab-services/$orderId/edit': typeof LabServicesOrderIdEditRoute
+  '/order-configuration/catalog/$catalogItemId': typeof OrderConfigurationCatalogCatalogItemIdRoute
   '/order-operations/$workflow/$orderId': typeof OrderOperationsWorkflowOrderIdRoute
   '/order-operations/intake/$orderId': typeof OrderOperationsIntakeOrderIdRoute
+  '/order-operations/lab-services/trials': typeof OrderOperationsLabServicesTrialsRouteWithChildren
+  '/order-operations/result-packages/$packageId': typeof OrderOperationsResultPackagesPackageIdRoute
+  '/purchasing/materials/$materialLotId': typeof PurchasingMaterialsMaterialLotIdRoute
+  '/purchasing/product-types/$productTypeId': typeof PurchasingProductTypesProductTypeIdRoute
+  '/purchasing/suppliers/$supplierId': typeof PurchasingSuppliersSupplierIdRoute
   '/reagent-orders/$orderId/edit': typeof ReagentOrdersOrderIdEditRoute
+  '/sample-shipping-settings_/kit-specifications/$containerId': typeof SampleShippingSettingsKitSpecificationsContainerIdRoute
   '/sample-shipping/$shipmentId/packet': typeof SampleShippingShipmentIdPacketRoute
   '/trial-projects/$trialId/scope': typeof TrialProjectsTrialIdScopeRoute
+  '/lab-operations/$workOrderId_/containers/$containerId': typeof LabOperationsWorkOrderIdContainersContainerIdRoute
+  '/lab-operations/$workOrderId_/specimens/$specimenId': typeof LabOperationsWorkOrderIdSpecimensSpecimenIdRoute
+  '/lab-operations/assembly-jobs/$jobId_/qc': typeof LabOperationsAssemblyJobsJobIdQcRoute
+  '/lab-operations/assembly-jobs/$jobId_/record-qc': typeof LabOperationsAssemblyJobsJobIdRecordQcRoute
+  '/lab-operations/batches/$batchId_/record-results': typeof LabOperationsBatchesBatchIdRecordResultsRoute
+  '/lab-operations/steps/$stepId/edit': typeof LabOperationsStepsStepIdEditRoute
+  '/order-operations/drafts/$orderId/edit': typeof OrderOperationsDraftsOrderIdEditRoute
+  '/order-operations/finance/$kind/$recordId': typeof OrderOperationsFinanceKindRecordIdRoute
+  '/order-operations/lab-services/intake/$orderId': typeof OrderOperationsLabServicesIntakeOrderIdRoute
+  '/order-operations/lab-services/orders/$orderId': typeof OrderOperationsLabServicesOrdersOrderIdRoute
+  '/order-operations/lab-services/orders/new': typeof OrderOperationsLabServicesOrdersNewRoute
+  '/order-operations/lab-services/trials/$trialId': typeof OrderOperationsLabServicesTrialsTrialIdRouteWithChildren
+  '/order-operations/lab-services/trials/configuration': typeof OrderOperationsLabServicesTrialsConfigurationRoute
+  '/order-operations/partner-services/data-assembly/$orderId': typeof OrderOperationsPartnerServicesDataAssemblyOrderIdRoute
+  '/order-operations/partner-services/pseq-kits/$orderId': typeof OrderOperationsPartnerServicesPseqKitsOrderIdRoute
+  '/purchasing/products/$supplierId/$productId': typeof PurchasingProductsSupplierIdProductIdRoute
+  '/lab-operations/batches/$batchId_/results/$resultVersion': typeof LabOperationsBatchesBatchIdResultsResultVersionRoute
   '/lab-operations/protocols/$protocolId/versions/new': typeof LabOperationsProtocolsProtocolIdVersionsNewRoute
   '/lab-operations/workflows/$workflowId/versions/new': typeof LabOperationsWorkflowsWorkflowIdVersionsNewRoute
+  '/order-operations/lab-services/drafts/$orderId/edit': typeof OrderOperationsLabServicesDraftsOrderIdEditRoute
+  '/order-operations/lab-services/trials/$trialId/scope': typeof OrderOperationsLabServicesTrialsTrialIdScopeRoute
   '/lab-operations/protocols/$protocolId/versions/$versionId/edit': typeof LabOperationsProtocolsProtocolIdVersionsVersionIdEditRoute
   '/lab-operations/workflows/$workflowId/versions/$versionId/edit': typeof LabOperationsWorkflowsWorkflowIdVersionsVersionIdEditRoute
+  '/lab-operations/$workOrderId_/specimens/$specimenId_/evidence/$kind/$recordId': typeof LabOperationsWorkOrderIdSpecimensSpecimenIdEvidenceKindRecordIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -592,21 +1094,27 @@ export interface FileRouteTypes {
     | '/about'
     | '/accept-invite'
     | '/crm'
-    | '/customers'
     | '/data-assembly'
     | '/data-library'
     | '/data-provisioning'
+    | '/delivery-locations'
     | '/departments'
     | '/docs'
+    | '/equipment'
     | '/file-management'
+    | '/finance'
+    | '/lab-configuration'
     | '/lab-operations'
     | '/lab-services'
+    | '/legacy-integrations'
     | '/order-configuration'
     | '/order-operations'
     | '/phaeno-users'
+    | '/purchasing'
     | '/reagent-orders'
     | '/released-deliverables'
     | '/sample-shipping'
+    | '/sample-shipping-settings'
     | '/trial-projects'
     | '/crm/administration'
     | '/crm/companies'
@@ -614,15 +1122,22 @@ export interface FileRouteTypes {
     | '/crm/leads'
     | '/crm/opportunities'
     | '/crm/reports'
+    | '/crm/requests'
     | '/crm/tasks'
-    | '/customers/$customerId'
+    | '/dashboard/attention'
     | '/data-assembly/$requestId'
     | '/data-assembly/new'
     | '/data-library/$datasetId'
+    | '/delivery-locations/$locationId'
     | '/demo/tanstack-query'
+    | '/docs/search'
     | '/lab-operations/$workOrderId'
+    | '/lab-operations/result-release'
     | '/lab-services/$orderId'
     | '/lab-services/new'
+    | '/order-operations/lab-services'
+    | '/order-operations/new'
+    | '/order-operations/partner-services'
     | '/reagent-orders/$orderId'
     | '/reagent-orders/new'
     | '/released-deliverables/$snapshotId'
@@ -637,39 +1152,83 @@ export interface FileRouteTypes {
     | '/data-assembly/$requestId/edit'
     | '/data-provisioning/sources/$sourceSampleId'
     | '/docs/$audience/$slug'
+    | '/finance/$kind/$recordId'
+    | '/lab-operations/assembly-jobs/$jobId'
+    | '/lab-operations/batches/$batchId'
     | '/lab-operations/data-assembly/$orderId'
+    | '/lab-operations/executions/$executionId'
+    | '/lab-operations/kit-requests/$requestId'
+    | '/lab-operations/master-mixes/$mixId'
+    | '/lab-operations/preparation/$preparationBatchId'
     | '/lab-operations/pseq-kit-orders/$orderId'
+    | '/lab-operations/reagent-runs/$runId'
+    | '/lab-operations/result-packages/$packageId'
+    | '/lab-operations/steps/$stepId'
+    | '/lab-operations/stock-kits/$kitId'
     | '/lab-services/$orderId/edit'
+    | '/order-configuration/catalog/$catalogItemId'
     | '/order-operations/$workflow/$orderId'
     | '/order-operations/intake/$orderId'
+    | '/order-operations/lab-services/trials'
+    | '/order-operations/result-packages/$packageId'
+    | '/purchasing/materials/$materialLotId'
+    | '/purchasing/product-types/$productTypeId'
+    | '/purchasing/suppliers/$supplierId'
     | '/reagent-orders/$orderId/edit'
+    | '/sample-shipping-settings/kit-specifications/$containerId'
     | '/sample-shipping/$shipmentId/packet'
     | '/trial-projects/$trialId/scope'
+    | '/lab-operations/$workOrderId/containers/$containerId'
+    | '/lab-operations/$workOrderId/specimens/$specimenId'
+    | '/lab-operations/assembly-jobs/$jobId/qc'
+    | '/lab-operations/assembly-jobs/$jobId/record-qc'
+    | '/lab-operations/batches/$batchId/record-results'
+    | '/lab-operations/steps/$stepId/edit'
+    | '/order-operations/drafts/$orderId/edit'
+    | '/order-operations/finance/$kind/$recordId'
+    | '/order-operations/lab-services/intake/$orderId'
+    | '/order-operations/lab-services/orders/$orderId'
+    | '/order-operations/lab-services/orders/new'
+    | '/order-operations/lab-services/trials/$trialId'
+    | '/order-operations/lab-services/trials/configuration'
+    | '/order-operations/partner-services/data-assembly/$orderId'
+    | '/order-operations/partner-services/pseq-kits/$orderId'
+    | '/purchasing/products/$supplierId/$productId'
+    | '/lab-operations/batches/$batchId/results/$resultVersion'
     | '/lab-operations/protocols/$protocolId/versions/new'
     | '/lab-operations/workflows/$workflowId/versions/new'
+    | '/order-operations/lab-services/drafts/$orderId/edit'
+    | '/order-operations/lab-services/trials/$trialId/scope'
     | '/lab-operations/protocols/$protocolId/versions/$versionId/edit'
     | '/lab-operations/workflows/$workflowId/versions/$versionId/edit'
+    | '/lab-operations/$workOrderId/specimens/$specimenId/evidence/$kind/$recordId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/about'
     | '/accept-invite'
     | '/crm'
-    | '/customers'
     | '/data-assembly'
     | '/data-library'
     | '/data-provisioning'
+    | '/delivery-locations'
     | '/departments'
     | '/docs'
+    | '/equipment'
     | '/file-management'
+    | '/finance'
+    | '/lab-configuration'
     | '/lab-operations'
     | '/lab-services'
+    | '/legacy-integrations'
     | '/order-configuration'
     | '/order-operations'
     | '/phaeno-users'
+    | '/purchasing'
     | '/reagent-orders'
     | '/released-deliverables'
     | '/sample-shipping'
+    | '/sample-shipping-settings'
     | '/trial-projects'
     | '/crm/administration'
     | '/crm/companies'
@@ -677,15 +1236,22 @@ export interface FileRouteTypes {
     | '/crm/leads'
     | '/crm/opportunities'
     | '/crm/reports'
+    | '/crm/requests'
     | '/crm/tasks'
-    | '/customers/$customerId'
+    | '/dashboard/attention'
     | '/data-assembly/$requestId'
     | '/data-assembly/new'
     | '/data-library/$datasetId'
+    | '/delivery-locations/$locationId'
     | '/demo/tanstack-query'
+    | '/docs/search'
     | '/lab-operations/$workOrderId'
+    | '/lab-operations/result-release'
     | '/lab-services/$orderId'
     | '/lab-services/new'
+    | '/order-operations/lab-services'
+    | '/order-operations/new'
+    | '/order-operations/partner-services'
     | '/reagent-orders/$orderId'
     | '/reagent-orders/new'
     | '/released-deliverables/$snapshotId'
@@ -700,39 +1266,83 @@ export interface FileRouteTypes {
     | '/data-assembly/$requestId/edit'
     | '/data-provisioning/sources/$sourceSampleId'
     | '/docs/$audience/$slug'
+    | '/finance/$kind/$recordId'
+    | '/lab-operations/assembly-jobs/$jobId'
+    | '/lab-operations/batches/$batchId'
     | '/lab-operations/data-assembly/$orderId'
+    | '/lab-operations/executions/$executionId'
+    | '/lab-operations/kit-requests/$requestId'
+    | '/lab-operations/master-mixes/$mixId'
+    | '/lab-operations/preparation/$preparationBatchId'
     | '/lab-operations/pseq-kit-orders/$orderId'
+    | '/lab-operations/reagent-runs/$runId'
+    | '/lab-operations/result-packages/$packageId'
+    | '/lab-operations/steps/$stepId'
+    | '/lab-operations/stock-kits/$kitId'
     | '/lab-services/$orderId/edit'
+    | '/order-configuration/catalog/$catalogItemId'
     | '/order-operations/$workflow/$orderId'
     | '/order-operations/intake/$orderId'
+    | '/order-operations/lab-services/trials'
+    | '/order-operations/result-packages/$packageId'
+    | '/purchasing/materials/$materialLotId'
+    | '/purchasing/product-types/$productTypeId'
+    | '/purchasing/suppliers/$supplierId'
     | '/reagent-orders/$orderId/edit'
+    | '/sample-shipping-settings/kit-specifications/$containerId'
     | '/sample-shipping/$shipmentId/packet'
     | '/trial-projects/$trialId/scope'
+    | '/lab-operations/$workOrderId/containers/$containerId'
+    | '/lab-operations/$workOrderId/specimens/$specimenId'
+    | '/lab-operations/assembly-jobs/$jobId/qc'
+    | '/lab-operations/assembly-jobs/$jobId/record-qc'
+    | '/lab-operations/batches/$batchId/record-results'
+    | '/lab-operations/steps/$stepId/edit'
+    | '/order-operations/drafts/$orderId/edit'
+    | '/order-operations/finance/$kind/$recordId'
+    | '/order-operations/lab-services/intake/$orderId'
+    | '/order-operations/lab-services/orders/$orderId'
+    | '/order-operations/lab-services/orders/new'
+    | '/order-operations/lab-services/trials/$trialId'
+    | '/order-operations/lab-services/trials/configuration'
+    | '/order-operations/partner-services/data-assembly/$orderId'
+    | '/order-operations/partner-services/pseq-kits/$orderId'
+    | '/purchasing/products/$supplierId/$productId'
+    | '/lab-operations/batches/$batchId/results/$resultVersion'
     | '/lab-operations/protocols/$protocolId/versions/new'
     | '/lab-operations/workflows/$workflowId/versions/new'
+    | '/order-operations/lab-services/drafts/$orderId/edit'
+    | '/order-operations/lab-services/trials/$trialId/scope'
     | '/lab-operations/protocols/$protocolId/versions/$versionId/edit'
     | '/lab-operations/workflows/$workflowId/versions/$versionId/edit'
+    | '/lab-operations/$workOrderId/specimens/$specimenId/evidence/$kind/$recordId'
   id:
     | '__root__'
     | '/'
     | '/about'
     | '/accept-invite'
     | '/crm'
-    | '/customers'
     | '/data-assembly'
     | '/data-library'
     | '/data-provisioning'
+    | '/delivery-locations'
     | '/departments'
     | '/docs'
+    | '/equipment'
     | '/file-management'
+    | '/finance'
+    | '/lab-configuration'
     | '/lab-operations'
     | '/lab-services'
+    | '/legacy-integrations'
     | '/order-configuration'
     | '/order-operations'
     | '/phaeno-users'
+    | '/purchasing'
     | '/reagent-orders'
     | '/released-deliverables'
     | '/sample-shipping'
+    | '/sample-shipping-settings'
     | '/trial-projects'
     | '/crm/administration'
     | '/crm/companies'
@@ -740,15 +1350,22 @@ export interface FileRouteTypes {
     | '/crm/leads'
     | '/crm/opportunities'
     | '/crm/reports'
+    | '/crm/requests'
     | '/crm/tasks'
-    | '/customers/$customerId'
+    | '/dashboard/attention'
     | '/data-assembly/$requestId'
     | '/data-assembly/new'
     | '/data-library/$datasetId'
+    | '/delivery-locations/$locationId'
     | '/demo/tanstack-query'
+    | '/docs/search'
     | '/lab-operations/$workOrderId'
+    | '/lab-operations/result-release'
     | '/lab-services/$orderId'
     | '/lab-services/new'
+    | '/order-operations/lab-services'
+    | '/order-operations/new'
+    | '/order-operations/partner-services'
     | '/reagent-orders/$orderId'
     | '/reagent-orders/new'
     | '/released-deliverables/$snapshotId'
@@ -763,18 +1380,56 @@ export interface FileRouteTypes {
     | '/data-assembly/$requestId/edit'
     | '/data-provisioning/sources/$sourceSampleId'
     | '/docs/$audience/$slug'
+    | '/finance/$kind/$recordId'
+    | '/lab-operations/assembly-jobs/$jobId'
+    | '/lab-operations/batches/$batchId'
     | '/lab-operations/data-assembly/$orderId'
+    | '/lab-operations/executions/$executionId'
+    | '/lab-operations/kit-requests/$requestId'
+    | '/lab-operations/master-mixes/$mixId'
+    | '/lab-operations/preparation/$preparationBatchId'
     | '/lab-operations/pseq-kit-orders/$orderId'
+    | '/lab-operations/reagent-runs/$runId'
+    | '/lab-operations/result-packages/$packageId'
+    | '/lab-operations/steps/$stepId'
+    | '/lab-operations/stock-kits/$kitId'
     | '/lab-services/$orderId/edit'
+    | '/order-configuration/catalog/$catalogItemId'
     | '/order-operations/$workflow/$orderId'
     | '/order-operations/intake/$orderId'
+    | '/order-operations/lab-services/trials'
+    | '/order-operations/result-packages/$packageId'
+    | '/purchasing/materials/$materialLotId'
+    | '/purchasing/product-types/$productTypeId'
+    | '/purchasing/suppliers/$supplierId'
     | '/reagent-orders/$orderId/edit'
+    | '/sample-shipping-settings_/kit-specifications/$containerId'
     | '/sample-shipping/$shipmentId/packet'
     | '/trial-projects/$trialId/scope'
+    | '/lab-operations/$workOrderId_/containers/$containerId'
+    | '/lab-operations/$workOrderId_/specimens/$specimenId'
+    | '/lab-operations/assembly-jobs/$jobId_/qc'
+    | '/lab-operations/assembly-jobs/$jobId_/record-qc'
+    | '/lab-operations/batches/$batchId_/record-results'
+    | '/lab-operations/steps/$stepId/edit'
+    | '/order-operations/drafts/$orderId/edit'
+    | '/order-operations/finance/$kind/$recordId'
+    | '/order-operations/lab-services/intake/$orderId'
+    | '/order-operations/lab-services/orders/$orderId'
+    | '/order-operations/lab-services/orders/new'
+    | '/order-operations/lab-services/trials/$trialId'
+    | '/order-operations/lab-services/trials/configuration'
+    | '/order-operations/partner-services/data-assembly/$orderId'
+    | '/order-operations/partner-services/pseq-kits/$orderId'
+    | '/purchasing/products/$supplierId/$productId'
+    | '/lab-operations/batches/$batchId_/results/$resultVersion'
     | '/lab-operations/protocols/$protocolId/versions/new'
     | '/lab-operations/workflows/$workflowId/versions/new'
+    | '/order-operations/lab-services/drafts/$orderId/edit'
+    | '/order-operations/lab-services/trials/$trialId/scope'
     | '/lab-operations/protocols/$protocolId/versions/$versionId/edit'
     | '/lab-operations/workflows/$workflowId/versions/$versionId/edit'
+    | '/lab-operations/$workOrderId_/specimens/$specimenId_/evidence/$kind/$recordId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -782,24 +1437,32 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   AcceptInviteRoute: typeof AcceptInviteRoute
   CrmRoute: typeof CrmRouteWithChildren
-  CustomersRoute: typeof CustomersRouteWithChildren
   DataAssemblyRoute: typeof DataAssemblyRouteWithChildren
   DataLibraryRoute: typeof DataLibraryRouteWithChildren
   DataProvisioningRoute: typeof DataProvisioningRouteWithChildren
+  DeliveryLocationsRoute: typeof DeliveryLocationsRouteWithChildren
   DepartmentsRoute: typeof DepartmentsRoute
   DocsRoute: typeof DocsRouteWithChildren
+  EquipmentRoute: typeof EquipmentRoute
   FileManagementRoute: typeof FileManagementRoute
+  FinanceRoute: typeof FinanceRouteWithChildren
+  LabConfigurationRoute: typeof LabConfigurationRoute
   LabOperationsRoute: typeof LabOperationsRouteWithChildren
   LabServicesRoute: typeof LabServicesRouteWithChildren
-  OrderConfigurationRoute: typeof OrderConfigurationRoute
+  LegacyIntegrationsRoute: typeof LegacyIntegrationsRoute
+  OrderConfigurationRoute: typeof OrderConfigurationRouteWithChildren
   OrderOperationsRoute: typeof OrderOperationsRouteWithChildren
   PhaenoUsersRoute: typeof PhaenoUsersRoute
+  PurchasingRoute: typeof PurchasingRouteWithChildren
   ReagentOrdersRoute: typeof ReagentOrdersRouteWithChildren
   ReleasedDeliverablesRoute: typeof ReleasedDeliverablesRouteWithChildren
   SampleShippingRoute: typeof SampleShippingRouteWithChildren
+  SampleShippingSettingsRoute: typeof SampleShippingSettingsRoute
   TrialProjectsRoute: typeof TrialProjectsRouteWithChildren
+  DashboardAttentionRoute: typeof DashboardAttentionRoute
   DemoTanstackQueryRoute: typeof DemoTanstackQueryRoute
   SessionTasksSetupMfaRoute: typeof SessionTasksSetupMfaRoute
+  SampleShippingSettingsKitSpecificationsContainerIdRoute: typeof SampleShippingSettingsKitSpecificationsContainerIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -809,6 +1472,13 @@ declare module '@tanstack/react-router' {
       path: '/trial-projects'
       fullPath: '/trial-projects'
       preLoaderRoute: typeof TrialProjectsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sample-shipping-settings': {
+      id: '/sample-shipping-settings'
+      path: '/sample-shipping-settings'
+      fullPath: '/sample-shipping-settings'
+      preLoaderRoute: typeof SampleShippingSettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sample-shipping': {
@@ -832,6 +1502,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReagentOrdersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/purchasing': {
+      id: '/purchasing'
+      path: '/purchasing'
+      fullPath: '/purchasing'
+      preLoaderRoute: typeof PurchasingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/phaeno-users': {
       id: '/phaeno-users'
       path: '/phaeno-users'
@@ -853,6 +1530,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrderConfigurationRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/legacy-integrations': {
+      id: '/legacy-integrations'
+      path: '/legacy-integrations'
+      fullPath: '/legacy-integrations'
+      preLoaderRoute: typeof LegacyIntegrationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lab-services': {
       id: '/lab-services'
       path: '/lab-services'
@@ -867,11 +1551,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LabOperationsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lab-configuration': {
+      id: '/lab-configuration'
+      path: '/lab-configuration'
+      fullPath: '/lab-configuration'
+      preLoaderRoute: typeof LabConfigurationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/finance': {
+      id: '/finance'
+      path: '/finance'
+      fullPath: '/finance'
+      preLoaderRoute: typeof FinanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/file-management': {
       id: '/file-management'
       path: '/file-management'
       fullPath: '/file-management'
       preLoaderRoute: typeof FileManagementRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/equipment': {
+      id: '/equipment'
+      path: '/equipment'
+      fullPath: '/equipment'
+      preLoaderRoute: typeof EquipmentRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/docs': {
@@ -886,6 +1591,13 @@ declare module '@tanstack/react-router' {
       path: '/departments'
       fullPath: '/departments'
       preLoaderRoute: typeof DepartmentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/delivery-locations': {
+      id: '/delivery-locations'
+      path: '/delivery-locations'
+      fullPath: '/delivery-locations'
+      preLoaderRoute: typeof DeliveryLocationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/data-provisioning': {
@@ -907,13 +1619,6 @@ declare module '@tanstack/react-router' {
       path: '/data-assembly'
       fullPath: '/data-assembly'
       preLoaderRoute: typeof DataAssemblyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/customers': {
-      id: '/customers'
-      path: '/customers'
-      fullPath: '/customers'
-      preLoaderRoute: typeof CustomersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/crm': {
@@ -993,6 +1698,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReagentOrdersOrderIdRouteImport
       parentRoute: typeof ReagentOrdersRoute
     }
+    '/order-operations/partner-services': {
+      id: '/order-operations/partner-services'
+      path: '/partner-services'
+      fullPath: '/order-operations/partner-services'
+      preLoaderRoute: typeof OrderOperationsPartnerServicesRouteImport
+      parentRoute: typeof OrderOperationsRoute
+    }
+    '/order-operations/new': {
+      id: '/order-operations/new'
+      path: '/new'
+      fullPath: '/order-operations/new'
+      preLoaderRoute: typeof OrderOperationsNewRouteImport
+      parentRoute: typeof OrderOperationsRoute
+    }
+    '/order-operations/lab-services': {
+      id: '/order-operations/lab-services'
+      path: '/lab-services'
+      fullPath: '/order-operations/lab-services'
+      preLoaderRoute: typeof OrderOperationsLabServicesRouteImport
+      parentRoute: typeof OrderOperationsRoute
+    }
     '/lab-services/new': {
       id: '/lab-services/new'
       path: '/new'
@@ -1007,6 +1733,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LabServicesOrderIdRouteImport
       parentRoute: typeof LabServicesRoute
     }
+    '/lab-operations/result-release': {
+      id: '/lab-operations/result-release'
+      path: '/result-release'
+      fullPath: '/lab-operations/result-release'
+      preLoaderRoute: typeof LabOperationsResultReleaseRouteImport
+      parentRoute: typeof LabOperationsRoute
+    }
     '/lab-operations/$workOrderId': {
       id: '/lab-operations/$workOrderId'
       path: '/$workOrderId'
@@ -1014,12 +1747,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LabOperationsWorkOrderIdRouteImport
       parentRoute: typeof LabOperationsRoute
     }
+    '/docs/search': {
+      id: '/docs/search'
+      path: '/search'
+      fullPath: '/docs/search'
+      preLoaderRoute: typeof DocsSearchRouteImport
+      parentRoute: typeof DocsRoute
+    }
     '/demo/tanstack-query': {
       id: '/demo/tanstack-query'
       path: '/demo/tanstack-query'
       fullPath: '/demo/tanstack-query'
       preLoaderRoute: typeof DemoTanstackQueryRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/delivery-locations/$locationId': {
+      id: '/delivery-locations/$locationId'
+      path: '/$locationId'
+      fullPath: '/delivery-locations/$locationId'
+      preLoaderRoute: typeof DeliveryLocationsLocationIdRouteImport
+      parentRoute: typeof DeliveryLocationsRoute
     }
     '/data-library/$datasetId': {
       id: '/data-library/$datasetId'
@@ -1042,18 +1789,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DataAssemblyRequestIdRouteImport
       parentRoute: typeof DataAssemblyRoute
     }
-    '/customers/$customerId': {
-      id: '/customers/$customerId'
-      path: '/$customerId'
-      fullPath: '/customers/$customerId'
-      preLoaderRoute: typeof CustomersCustomerIdRouteImport
-      parentRoute: typeof CustomersRoute
+    '/dashboard/attention': {
+      id: '/dashboard/attention'
+      path: '/dashboard/attention'
+      fullPath: '/dashboard/attention'
+      preLoaderRoute: typeof DashboardAttentionRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/crm/tasks': {
       id: '/crm/tasks'
       path: '/tasks'
       fullPath: '/crm/tasks'
       preLoaderRoute: typeof CrmTasksRouteImport
+      parentRoute: typeof CrmRoute
+    }
+    '/crm/requests': {
+      id: '/crm/requests'
+      path: '/requests'
+      fullPath: '/crm/requests'
+      preLoaderRoute: typeof CrmRequestsRouteImport
       parentRoute: typeof CrmRoute
     }
     '/crm/reports': {
@@ -1112,12 +1866,54 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SampleShippingShipmentIdPacketRouteImport
       parentRoute: typeof SampleShippingShipmentIdRoute
     }
+    '/sample-shipping-settings_/kit-specifications/$containerId': {
+      id: '/sample-shipping-settings_/kit-specifications/$containerId'
+      path: '/sample-shipping-settings/kit-specifications/$containerId'
+      fullPath: '/sample-shipping-settings/kit-specifications/$containerId'
+      preLoaderRoute: typeof SampleShippingSettingsKitSpecificationsContainerIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reagent-orders/$orderId/edit': {
       id: '/reagent-orders/$orderId/edit'
       path: '/edit'
       fullPath: '/reagent-orders/$orderId/edit'
       preLoaderRoute: typeof ReagentOrdersOrderIdEditRouteImport
       parentRoute: typeof ReagentOrdersOrderIdRoute
+    }
+    '/purchasing/suppliers/$supplierId': {
+      id: '/purchasing/suppliers/$supplierId'
+      path: '/suppliers/$supplierId'
+      fullPath: '/purchasing/suppliers/$supplierId'
+      preLoaderRoute: typeof PurchasingSuppliersSupplierIdRouteImport
+      parentRoute: typeof PurchasingRoute
+    }
+    '/purchasing/product-types/$productTypeId': {
+      id: '/purchasing/product-types/$productTypeId'
+      path: '/product-types/$productTypeId'
+      fullPath: '/purchasing/product-types/$productTypeId'
+      preLoaderRoute: typeof PurchasingProductTypesProductTypeIdRouteImport
+      parentRoute: typeof PurchasingRoute
+    }
+    '/purchasing/materials/$materialLotId': {
+      id: '/purchasing/materials/$materialLotId'
+      path: '/materials/$materialLotId'
+      fullPath: '/purchasing/materials/$materialLotId'
+      preLoaderRoute: typeof PurchasingMaterialsMaterialLotIdRouteImport
+      parentRoute: typeof PurchasingRoute
+    }
+    '/order-operations/result-packages/$packageId': {
+      id: '/order-operations/result-packages/$packageId'
+      path: '/result-packages/$packageId'
+      fullPath: '/order-operations/result-packages/$packageId'
+      preLoaderRoute: typeof OrderOperationsResultPackagesPackageIdRouteImport
+      parentRoute: typeof OrderOperationsRoute
+    }
+    '/order-operations/lab-services/trials': {
+      id: '/order-operations/lab-services/trials'
+      path: '/trials'
+      fullPath: '/order-operations/lab-services/trials'
+      preLoaderRoute: typeof OrderOperationsLabServicesTrialsRouteImport
+      parentRoute: typeof OrderOperationsLabServicesRoute
     }
     '/order-operations/intake/$orderId': {
       id: '/order-operations/intake/$orderId'
@@ -1133,12 +1929,47 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrderOperationsWorkflowOrderIdRouteImport
       parentRoute: typeof OrderOperationsRoute
     }
+    '/order-configuration/catalog/$catalogItemId': {
+      id: '/order-configuration/catalog/$catalogItemId'
+      path: '/catalog/$catalogItemId'
+      fullPath: '/order-configuration/catalog/$catalogItemId'
+      preLoaderRoute: typeof OrderConfigurationCatalogCatalogItemIdRouteImport
+      parentRoute: typeof OrderConfigurationRoute
+    }
     '/lab-services/$orderId/edit': {
       id: '/lab-services/$orderId/edit'
       path: '/edit'
       fullPath: '/lab-services/$orderId/edit'
       preLoaderRoute: typeof LabServicesOrderIdEditRouteImport
       parentRoute: typeof LabServicesOrderIdRoute
+    }
+    '/lab-operations/stock-kits/$kitId': {
+      id: '/lab-operations/stock-kits/$kitId'
+      path: '/stock-kits/$kitId'
+      fullPath: '/lab-operations/stock-kits/$kitId'
+      preLoaderRoute: typeof LabOperationsStockKitsKitIdRouteImport
+      parentRoute: typeof LabOperationsRoute
+    }
+    '/lab-operations/steps/$stepId': {
+      id: '/lab-operations/steps/$stepId'
+      path: '/steps/$stepId'
+      fullPath: '/lab-operations/steps/$stepId'
+      preLoaderRoute: typeof LabOperationsStepsStepIdRouteImport
+      parentRoute: typeof LabOperationsRoute
+    }
+    '/lab-operations/result-packages/$packageId': {
+      id: '/lab-operations/result-packages/$packageId'
+      path: '/result-packages/$packageId'
+      fullPath: '/lab-operations/result-packages/$packageId'
+      preLoaderRoute: typeof LabOperationsResultPackagesPackageIdRouteImport
+      parentRoute: typeof LabOperationsRoute
+    }
+    '/lab-operations/reagent-runs/$runId': {
+      id: '/lab-operations/reagent-runs/$runId'
+      path: '/reagent-runs/$runId'
+      fullPath: '/lab-operations/reagent-runs/$runId'
+      preLoaderRoute: typeof LabOperationsReagentRunsRunIdRouteImport
+      parentRoute: typeof LabOperationsRoute
     }
     '/lab-operations/pseq-kit-orders/$orderId': {
       id: '/lab-operations/pseq-kit-orders/$orderId'
@@ -1147,12 +1978,61 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LabOperationsPseqKitOrdersOrderIdRouteImport
       parentRoute: typeof LabOperationsRoute
     }
+    '/lab-operations/preparation/$preparationBatchId': {
+      id: '/lab-operations/preparation/$preparationBatchId'
+      path: '/preparation/$preparationBatchId'
+      fullPath: '/lab-operations/preparation/$preparationBatchId'
+      preLoaderRoute: typeof LabOperationsPreparationPreparationBatchIdRouteImport
+      parentRoute: typeof LabOperationsRoute
+    }
+    '/lab-operations/master-mixes/$mixId': {
+      id: '/lab-operations/master-mixes/$mixId'
+      path: '/master-mixes/$mixId'
+      fullPath: '/lab-operations/master-mixes/$mixId'
+      preLoaderRoute: typeof LabOperationsMasterMixesMixIdRouteImport
+      parentRoute: typeof LabOperationsRoute
+    }
+    '/lab-operations/kit-requests/$requestId': {
+      id: '/lab-operations/kit-requests/$requestId'
+      path: '/kit-requests/$requestId'
+      fullPath: '/lab-operations/kit-requests/$requestId'
+      preLoaderRoute: typeof LabOperationsKitRequestsRequestIdRouteImport
+      parentRoute: typeof LabOperationsRoute
+    }
+    '/lab-operations/executions/$executionId': {
+      id: '/lab-operations/executions/$executionId'
+      path: '/executions/$executionId'
+      fullPath: '/lab-operations/executions/$executionId'
+      preLoaderRoute: typeof LabOperationsExecutionsExecutionIdRouteImport
+      parentRoute: typeof LabOperationsRoute
+    }
     '/lab-operations/data-assembly/$orderId': {
       id: '/lab-operations/data-assembly/$orderId'
       path: '/data-assembly/$orderId'
       fullPath: '/lab-operations/data-assembly/$orderId'
       preLoaderRoute: typeof LabOperationsDataAssemblyOrderIdRouteImport
       parentRoute: typeof LabOperationsRoute
+    }
+    '/lab-operations/batches/$batchId': {
+      id: '/lab-operations/batches/$batchId'
+      path: '/batches/$batchId'
+      fullPath: '/lab-operations/batches/$batchId'
+      preLoaderRoute: typeof LabOperationsBatchesBatchIdRouteImport
+      parentRoute: typeof LabOperationsRoute
+    }
+    '/lab-operations/assembly-jobs/$jobId': {
+      id: '/lab-operations/assembly-jobs/$jobId'
+      path: '/assembly-jobs/$jobId'
+      fullPath: '/lab-operations/assembly-jobs/$jobId'
+      preLoaderRoute: typeof LabOperationsAssemblyJobsJobIdRouteImport
+      parentRoute: typeof LabOperationsRoute
+    }
+    '/finance/$kind/$recordId': {
+      id: '/finance/$kind/$recordId'
+      path: '/$kind/$recordId'
+      fullPath: '/finance/$kind/$recordId'
+      preLoaderRoute: typeof FinanceKindRecordIdRouteImport
+      parentRoute: typeof FinanceRoute
     }
     '/docs/$audience/$slug': {
       id: '/docs/$audience/$slug'
@@ -1203,6 +2083,132 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CrmCompaniesCompanyIdRouteImport
       parentRoute: typeof CrmRoute
     }
+    '/purchasing/products/$supplierId/$productId': {
+      id: '/purchasing/products/$supplierId/$productId'
+      path: '/products/$supplierId/$productId'
+      fullPath: '/purchasing/products/$supplierId/$productId'
+      preLoaderRoute: typeof PurchasingProductsSupplierIdProductIdRouteImport
+      parentRoute: typeof PurchasingRoute
+    }
+    '/order-operations/partner-services/pseq-kits/$orderId': {
+      id: '/order-operations/partner-services/pseq-kits/$orderId'
+      path: '/pseq-kits/$orderId'
+      fullPath: '/order-operations/partner-services/pseq-kits/$orderId'
+      preLoaderRoute: typeof OrderOperationsPartnerServicesPseqKitsOrderIdRouteImport
+      parentRoute: typeof OrderOperationsPartnerServicesRoute
+    }
+    '/order-operations/partner-services/data-assembly/$orderId': {
+      id: '/order-operations/partner-services/data-assembly/$orderId'
+      path: '/data-assembly/$orderId'
+      fullPath: '/order-operations/partner-services/data-assembly/$orderId'
+      preLoaderRoute: typeof OrderOperationsPartnerServicesDataAssemblyOrderIdRouteImport
+      parentRoute: typeof OrderOperationsPartnerServicesRoute
+    }
+    '/order-operations/lab-services/trials/configuration': {
+      id: '/order-operations/lab-services/trials/configuration'
+      path: '/configuration'
+      fullPath: '/order-operations/lab-services/trials/configuration'
+      preLoaderRoute: typeof OrderOperationsLabServicesTrialsConfigurationRouteImport
+      parentRoute: typeof OrderOperationsLabServicesTrialsRoute
+    }
+    '/order-operations/lab-services/trials/$trialId': {
+      id: '/order-operations/lab-services/trials/$trialId'
+      path: '/$trialId'
+      fullPath: '/order-operations/lab-services/trials/$trialId'
+      preLoaderRoute: typeof OrderOperationsLabServicesTrialsTrialIdRouteImport
+      parentRoute: typeof OrderOperationsLabServicesTrialsRoute
+    }
+    '/order-operations/lab-services/orders/new': {
+      id: '/order-operations/lab-services/orders/new'
+      path: '/orders/new'
+      fullPath: '/order-operations/lab-services/orders/new'
+      preLoaderRoute: typeof OrderOperationsLabServicesOrdersNewRouteImport
+      parentRoute: typeof OrderOperationsLabServicesRoute
+    }
+    '/order-operations/lab-services/orders/$orderId': {
+      id: '/order-operations/lab-services/orders/$orderId'
+      path: '/orders/$orderId'
+      fullPath: '/order-operations/lab-services/orders/$orderId'
+      preLoaderRoute: typeof OrderOperationsLabServicesOrdersOrderIdRouteImport
+      parentRoute: typeof OrderOperationsLabServicesRoute
+    }
+    '/order-operations/lab-services/intake/$orderId': {
+      id: '/order-operations/lab-services/intake/$orderId'
+      path: '/intake/$orderId'
+      fullPath: '/order-operations/lab-services/intake/$orderId'
+      preLoaderRoute: typeof OrderOperationsLabServicesIntakeOrderIdRouteImport
+      parentRoute: typeof OrderOperationsLabServicesRoute
+    }
+    '/order-operations/finance/$kind/$recordId': {
+      id: '/order-operations/finance/$kind/$recordId'
+      path: '/finance/$kind/$recordId'
+      fullPath: '/order-operations/finance/$kind/$recordId'
+      preLoaderRoute: typeof OrderOperationsFinanceKindRecordIdRouteImport
+      parentRoute: typeof OrderOperationsRoute
+    }
+    '/order-operations/drafts/$orderId/edit': {
+      id: '/order-operations/drafts/$orderId/edit'
+      path: '/drafts/$orderId/edit'
+      fullPath: '/order-operations/drafts/$orderId/edit'
+      preLoaderRoute: typeof OrderOperationsDraftsOrderIdEditRouteImport
+      parentRoute: typeof OrderOperationsRoute
+    }
+    '/lab-operations/steps/$stepId/edit': {
+      id: '/lab-operations/steps/$stepId/edit'
+      path: '/edit'
+      fullPath: '/lab-operations/steps/$stepId/edit'
+      preLoaderRoute: typeof LabOperationsStepsStepIdEditRouteImport
+      parentRoute: typeof LabOperationsStepsStepIdRoute
+    }
+    '/lab-operations/batches/$batchId_/record-results': {
+      id: '/lab-operations/batches/$batchId_/record-results'
+      path: '/batches/$batchId/record-results'
+      fullPath: '/lab-operations/batches/$batchId/record-results'
+      preLoaderRoute: typeof LabOperationsBatchesBatchIdRecordResultsRouteImport
+      parentRoute: typeof LabOperationsRoute
+    }
+    '/lab-operations/assembly-jobs/$jobId_/record-qc': {
+      id: '/lab-operations/assembly-jobs/$jobId_/record-qc'
+      path: '/assembly-jobs/$jobId/record-qc'
+      fullPath: '/lab-operations/assembly-jobs/$jobId/record-qc'
+      preLoaderRoute: typeof LabOperationsAssemblyJobsJobIdRecordQcRouteImport
+      parentRoute: typeof LabOperationsRoute
+    }
+    '/lab-operations/assembly-jobs/$jobId_/qc': {
+      id: '/lab-operations/assembly-jobs/$jobId_/qc'
+      path: '/assembly-jobs/$jobId/qc'
+      fullPath: '/lab-operations/assembly-jobs/$jobId/qc'
+      preLoaderRoute: typeof LabOperationsAssemblyJobsJobIdQcRouteImport
+      parentRoute: typeof LabOperationsRoute
+    }
+    '/lab-operations/$workOrderId_/specimens/$specimenId': {
+      id: '/lab-operations/$workOrderId_/specimens/$specimenId'
+      path: '/$workOrderId/specimens/$specimenId'
+      fullPath: '/lab-operations/$workOrderId/specimens/$specimenId'
+      preLoaderRoute: typeof LabOperationsWorkOrderIdSpecimensSpecimenIdRouteImport
+      parentRoute: typeof LabOperationsRoute
+    }
+    '/lab-operations/$workOrderId_/containers/$containerId': {
+      id: '/lab-operations/$workOrderId_/containers/$containerId'
+      path: '/$workOrderId/containers/$containerId'
+      fullPath: '/lab-operations/$workOrderId/containers/$containerId'
+      preLoaderRoute: typeof LabOperationsWorkOrderIdContainersContainerIdRouteImport
+      parentRoute: typeof LabOperationsRoute
+    }
+    '/order-operations/lab-services/trials/$trialId/scope': {
+      id: '/order-operations/lab-services/trials/$trialId/scope'
+      path: '/scope'
+      fullPath: '/order-operations/lab-services/trials/$trialId/scope'
+      preLoaderRoute: typeof OrderOperationsLabServicesTrialsTrialIdScopeRouteImport
+      parentRoute: typeof OrderOperationsLabServicesTrialsTrialIdRoute
+    }
+    '/order-operations/lab-services/drafts/$orderId/edit': {
+      id: '/order-operations/lab-services/drafts/$orderId/edit'
+      path: '/drafts/$orderId/edit'
+      fullPath: '/order-operations/lab-services/drafts/$orderId/edit'
+      preLoaderRoute: typeof OrderOperationsLabServicesDraftsOrderIdEditRouteImport
+      parentRoute: typeof OrderOperationsLabServicesRoute
+    }
     '/lab-operations/workflows/$workflowId/versions/new': {
       id: '/lab-operations/workflows/$workflowId/versions/new'
       path: '/workflows/$workflowId/versions/new'
@@ -1215,6 +2221,13 @@ declare module '@tanstack/react-router' {
       path: '/protocols/$protocolId/versions/new'
       fullPath: '/lab-operations/protocols/$protocolId/versions/new'
       preLoaderRoute: typeof LabOperationsProtocolsProtocolIdVersionsNewRouteImport
+      parentRoute: typeof LabOperationsRoute
+    }
+    '/lab-operations/batches/$batchId_/results/$resultVersion': {
+      id: '/lab-operations/batches/$batchId_/results/$resultVersion'
+      path: '/batches/$batchId/results/$resultVersion'
+      fullPath: '/lab-operations/batches/$batchId/results/$resultVersion'
+      preLoaderRoute: typeof LabOperationsBatchesBatchIdResultsResultVersionRouteImport
       parentRoute: typeof LabOperationsRoute
     }
     '/lab-operations/workflows/$workflowId/versions/$versionId/edit': {
@@ -1231,6 +2244,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LabOperationsProtocolsProtocolIdVersionsVersionIdEditRouteImport
       parentRoute: typeof LabOperationsRoute
     }
+    '/lab-operations/$workOrderId_/specimens/$specimenId_/evidence/$kind/$recordId': {
+      id: '/lab-operations/$workOrderId_/specimens/$specimenId_/evidence/$kind/$recordId'
+      path: '/$workOrderId/specimens/$specimenId/evidence/$kind/$recordId'
+      fullPath: '/lab-operations/$workOrderId/specimens/$specimenId/evidence/$kind/$recordId'
+      preLoaderRoute: typeof LabOperationsWorkOrderIdSpecimensSpecimenIdEvidenceKindRecordIdRouteImport
+      parentRoute: typeof LabOperationsRoute
+    }
   }
 }
 
@@ -1241,6 +2261,7 @@ interface CrmRouteChildren {
   CrmLeadsRoute: typeof CrmLeadsRoute
   CrmOpportunitiesRoute: typeof CrmOpportunitiesRoute
   CrmReportsRoute: typeof CrmReportsRoute
+  CrmRequestsRoute: typeof CrmRequestsRoute
   CrmTasksRoute: typeof CrmTasksRoute
   CrmCompaniesCompanyIdRoute: typeof CrmCompaniesCompanyIdRoute
   CrmContactsContactIdRoute: typeof CrmContactsContactIdRoute
@@ -1255,6 +2276,7 @@ const CrmRouteChildren: CrmRouteChildren = {
   CrmLeadsRoute: CrmLeadsRoute,
   CrmOpportunitiesRoute: CrmOpportunitiesRoute,
   CrmReportsRoute: CrmReportsRoute,
+  CrmRequestsRoute: CrmRequestsRoute,
   CrmTasksRoute: CrmTasksRoute,
   CrmCompaniesCompanyIdRoute: CrmCompaniesCompanyIdRoute,
   CrmContactsContactIdRoute: CrmContactsContactIdRoute,
@@ -1263,18 +2285,6 @@ const CrmRouteChildren: CrmRouteChildren = {
 }
 
 const CrmRouteWithChildren = CrmRoute._addFileChildren(CrmRouteChildren)
-
-interface CustomersRouteChildren {
-  CustomersCustomerIdRoute: typeof CustomersCustomerIdRoute
-}
-
-const CustomersRouteChildren: CustomersRouteChildren = {
-  CustomersCustomerIdRoute: CustomersCustomerIdRoute,
-}
-
-const CustomersRouteWithChildren = CustomersRoute._addFileChildren(
-  CustomersRouteChildren,
-)
 
 interface DataAssemblyRequestIdRouteChildren {
   DataAssemblyRequestIdEditRoute: typeof DataAssemblyRequestIdEditRoute
@@ -1327,31 +2337,113 @@ const DataProvisioningRouteChildren: DataProvisioningRouteChildren = {
 const DataProvisioningRouteWithChildren =
   DataProvisioningRoute._addFileChildren(DataProvisioningRouteChildren)
 
+interface DeliveryLocationsRouteChildren {
+  DeliveryLocationsLocationIdRoute: typeof DeliveryLocationsLocationIdRoute
+}
+
+const DeliveryLocationsRouteChildren: DeliveryLocationsRouteChildren = {
+  DeliveryLocationsLocationIdRoute: DeliveryLocationsLocationIdRoute,
+}
+
+const DeliveryLocationsRouteWithChildren =
+  DeliveryLocationsRoute._addFileChildren(DeliveryLocationsRouteChildren)
+
 interface DocsRouteChildren {
+  DocsSearchRoute: typeof DocsSearchRoute
   DocsAudienceSlugRoute: typeof DocsAudienceSlugRoute
 }
 
 const DocsRouteChildren: DocsRouteChildren = {
+  DocsSearchRoute: DocsSearchRoute,
   DocsAudienceSlugRoute: DocsAudienceSlugRoute,
 }
 
 const DocsRouteWithChildren = DocsRoute._addFileChildren(DocsRouteChildren)
 
+interface FinanceRouteChildren {
+  FinanceKindRecordIdRoute: typeof FinanceKindRecordIdRoute
+}
+
+const FinanceRouteChildren: FinanceRouteChildren = {
+  FinanceKindRecordIdRoute: FinanceKindRecordIdRoute,
+}
+
+const FinanceRouteWithChildren =
+  FinanceRoute._addFileChildren(FinanceRouteChildren)
+
+interface LabOperationsStepsStepIdRouteChildren {
+  LabOperationsStepsStepIdEditRoute: typeof LabOperationsStepsStepIdEditRoute
+}
+
+const LabOperationsStepsStepIdRouteChildren: LabOperationsStepsStepIdRouteChildren =
+  {
+    LabOperationsStepsStepIdEditRoute: LabOperationsStepsStepIdEditRoute,
+  }
+
+const LabOperationsStepsStepIdRouteWithChildren =
+  LabOperationsStepsStepIdRoute._addFileChildren(
+    LabOperationsStepsStepIdRouteChildren,
+  )
+
 interface LabOperationsRouteChildren {
   LabOperationsWorkOrderIdRoute: typeof LabOperationsWorkOrderIdRoute
+  LabOperationsResultReleaseRoute: typeof LabOperationsResultReleaseRoute
+  LabOperationsAssemblyJobsJobIdRoute: typeof LabOperationsAssemblyJobsJobIdRoute
+  LabOperationsBatchesBatchIdRoute: typeof LabOperationsBatchesBatchIdRoute
   LabOperationsDataAssemblyOrderIdRoute: typeof LabOperationsDataAssemblyOrderIdRoute
+  LabOperationsExecutionsExecutionIdRoute: typeof LabOperationsExecutionsExecutionIdRoute
+  LabOperationsKitRequestsRequestIdRoute: typeof LabOperationsKitRequestsRequestIdRoute
+  LabOperationsMasterMixesMixIdRoute: typeof LabOperationsMasterMixesMixIdRoute
+  LabOperationsPreparationPreparationBatchIdRoute: typeof LabOperationsPreparationPreparationBatchIdRoute
   LabOperationsPseqKitOrdersOrderIdRoute: typeof LabOperationsPseqKitOrdersOrderIdRoute
+  LabOperationsReagentRunsRunIdRoute: typeof LabOperationsReagentRunsRunIdRoute
+  LabOperationsResultPackagesPackageIdRoute: typeof LabOperationsResultPackagesPackageIdRoute
+  LabOperationsStepsStepIdRoute: typeof LabOperationsStepsStepIdRouteWithChildren
+  LabOperationsStockKitsKitIdRoute: typeof LabOperationsStockKitsKitIdRoute
+  LabOperationsWorkOrderIdContainersContainerIdRoute: typeof LabOperationsWorkOrderIdContainersContainerIdRoute
+  LabOperationsWorkOrderIdSpecimensSpecimenIdRoute: typeof LabOperationsWorkOrderIdSpecimensSpecimenIdRoute
+  LabOperationsAssemblyJobsJobIdQcRoute: typeof LabOperationsAssemblyJobsJobIdQcRoute
+  LabOperationsAssemblyJobsJobIdRecordQcRoute: typeof LabOperationsAssemblyJobsJobIdRecordQcRoute
+  LabOperationsBatchesBatchIdRecordResultsRoute: typeof LabOperationsBatchesBatchIdRecordResultsRoute
+  LabOperationsBatchesBatchIdResultsResultVersionRoute: typeof LabOperationsBatchesBatchIdResultsResultVersionRoute
   LabOperationsProtocolsProtocolIdVersionsNewRoute: typeof LabOperationsProtocolsProtocolIdVersionsNewRoute
   LabOperationsWorkflowsWorkflowIdVersionsNewRoute: typeof LabOperationsWorkflowsWorkflowIdVersionsNewRoute
   LabOperationsProtocolsProtocolIdVersionsVersionIdEditRoute: typeof LabOperationsProtocolsProtocolIdVersionsVersionIdEditRoute
   LabOperationsWorkflowsWorkflowIdVersionsVersionIdEditRoute: typeof LabOperationsWorkflowsWorkflowIdVersionsVersionIdEditRoute
+  LabOperationsWorkOrderIdSpecimensSpecimenIdEvidenceKindRecordIdRoute: typeof LabOperationsWorkOrderIdSpecimensSpecimenIdEvidenceKindRecordIdRoute
 }
 
 const LabOperationsRouteChildren: LabOperationsRouteChildren = {
   LabOperationsWorkOrderIdRoute: LabOperationsWorkOrderIdRoute,
+  LabOperationsResultReleaseRoute: LabOperationsResultReleaseRoute,
+  LabOperationsAssemblyJobsJobIdRoute: LabOperationsAssemblyJobsJobIdRoute,
+  LabOperationsBatchesBatchIdRoute: LabOperationsBatchesBatchIdRoute,
   LabOperationsDataAssemblyOrderIdRoute: LabOperationsDataAssemblyOrderIdRoute,
+  LabOperationsExecutionsExecutionIdRoute:
+    LabOperationsExecutionsExecutionIdRoute,
+  LabOperationsKitRequestsRequestIdRoute:
+    LabOperationsKitRequestsRequestIdRoute,
+  LabOperationsMasterMixesMixIdRoute: LabOperationsMasterMixesMixIdRoute,
+  LabOperationsPreparationPreparationBatchIdRoute:
+    LabOperationsPreparationPreparationBatchIdRoute,
   LabOperationsPseqKitOrdersOrderIdRoute:
     LabOperationsPseqKitOrdersOrderIdRoute,
+  LabOperationsReagentRunsRunIdRoute: LabOperationsReagentRunsRunIdRoute,
+  LabOperationsResultPackagesPackageIdRoute:
+    LabOperationsResultPackagesPackageIdRoute,
+  LabOperationsStepsStepIdRoute: LabOperationsStepsStepIdRouteWithChildren,
+  LabOperationsStockKitsKitIdRoute: LabOperationsStockKitsKitIdRoute,
+  LabOperationsWorkOrderIdContainersContainerIdRoute:
+    LabOperationsWorkOrderIdContainersContainerIdRoute,
+  LabOperationsWorkOrderIdSpecimensSpecimenIdRoute:
+    LabOperationsWorkOrderIdSpecimensSpecimenIdRoute,
+  LabOperationsAssemblyJobsJobIdQcRoute: LabOperationsAssemblyJobsJobIdQcRoute,
+  LabOperationsAssemblyJobsJobIdRecordQcRoute:
+    LabOperationsAssemblyJobsJobIdRecordQcRoute,
+  LabOperationsBatchesBatchIdRecordResultsRoute:
+    LabOperationsBatchesBatchIdRecordResultsRoute,
+  LabOperationsBatchesBatchIdResultsResultVersionRoute:
+    LabOperationsBatchesBatchIdResultsResultVersionRoute,
   LabOperationsProtocolsProtocolIdVersionsNewRoute:
     LabOperationsProtocolsProtocolIdVersionsNewRoute,
   LabOperationsWorkflowsWorkflowIdVersionsNewRoute:
@@ -1360,6 +2452,8 @@ const LabOperationsRouteChildren: LabOperationsRouteChildren = {
     LabOperationsProtocolsProtocolIdVersionsVersionIdEditRoute,
   LabOperationsWorkflowsWorkflowIdVersionsVersionIdEditRoute:
     LabOperationsWorkflowsWorkflowIdVersionsVersionIdEditRoute,
+  LabOperationsWorkOrderIdSpecimensSpecimenIdEvidenceKindRecordIdRoute:
+    LabOperationsWorkOrderIdSpecimensSpecimenIdEvidenceKindRecordIdRoute,
 }
 
 const LabOperationsRouteWithChildren = LabOperationsRoute._addFileChildren(
@@ -1391,18 +2485,143 @@ const LabServicesRouteWithChildren = LabServicesRoute._addFileChildren(
   LabServicesRouteChildren,
 )
 
+interface OrderConfigurationRouteChildren {
+  OrderConfigurationCatalogCatalogItemIdRoute: typeof OrderConfigurationCatalogCatalogItemIdRoute
+}
+
+const OrderConfigurationRouteChildren: OrderConfigurationRouteChildren = {
+  OrderConfigurationCatalogCatalogItemIdRoute:
+    OrderConfigurationCatalogCatalogItemIdRoute,
+}
+
+const OrderConfigurationRouteWithChildren =
+  OrderConfigurationRoute._addFileChildren(OrderConfigurationRouteChildren)
+
+interface OrderOperationsLabServicesTrialsTrialIdRouteChildren {
+  OrderOperationsLabServicesTrialsTrialIdScopeRoute: typeof OrderOperationsLabServicesTrialsTrialIdScopeRoute
+}
+
+const OrderOperationsLabServicesTrialsTrialIdRouteChildren: OrderOperationsLabServicesTrialsTrialIdRouteChildren =
+  {
+    OrderOperationsLabServicesTrialsTrialIdScopeRoute:
+      OrderOperationsLabServicesTrialsTrialIdScopeRoute,
+  }
+
+const OrderOperationsLabServicesTrialsTrialIdRouteWithChildren =
+  OrderOperationsLabServicesTrialsTrialIdRoute._addFileChildren(
+    OrderOperationsLabServicesTrialsTrialIdRouteChildren,
+  )
+
+interface OrderOperationsLabServicesTrialsRouteChildren {
+  OrderOperationsLabServicesTrialsTrialIdRoute: typeof OrderOperationsLabServicesTrialsTrialIdRouteWithChildren
+  OrderOperationsLabServicesTrialsConfigurationRoute: typeof OrderOperationsLabServicesTrialsConfigurationRoute
+}
+
+const OrderOperationsLabServicesTrialsRouteChildren: OrderOperationsLabServicesTrialsRouteChildren =
+  {
+    OrderOperationsLabServicesTrialsTrialIdRoute:
+      OrderOperationsLabServicesTrialsTrialIdRouteWithChildren,
+    OrderOperationsLabServicesTrialsConfigurationRoute:
+      OrderOperationsLabServicesTrialsConfigurationRoute,
+  }
+
+const OrderOperationsLabServicesTrialsRouteWithChildren =
+  OrderOperationsLabServicesTrialsRoute._addFileChildren(
+    OrderOperationsLabServicesTrialsRouteChildren,
+  )
+
+interface OrderOperationsLabServicesRouteChildren {
+  OrderOperationsLabServicesTrialsRoute: typeof OrderOperationsLabServicesTrialsRouteWithChildren
+  OrderOperationsLabServicesIntakeOrderIdRoute: typeof OrderOperationsLabServicesIntakeOrderIdRoute
+  OrderOperationsLabServicesOrdersOrderIdRoute: typeof OrderOperationsLabServicesOrdersOrderIdRoute
+  OrderOperationsLabServicesOrdersNewRoute: typeof OrderOperationsLabServicesOrdersNewRoute
+  OrderOperationsLabServicesDraftsOrderIdEditRoute: typeof OrderOperationsLabServicesDraftsOrderIdEditRoute
+}
+
+const OrderOperationsLabServicesRouteChildren: OrderOperationsLabServicesRouteChildren =
+  {
+    OrderOperationsLabServicesTrialsRoute:
+      OrderOperationsLabServicesTrialsRouteWithChildren,
+    OrderOperationsLabServicesIntakeOrderIdRoute:
+      OrderOperationsLabServicesIntakeOrderIdRoute,
+    OrderOperationsLabServicesOrdersOrderIdRoute:
+      OrderOperationsLabServicesOrdersOrderIdRoute,
+    OrderOperationsLabServicesOrdersNewRoute:
+      OrderOperationsLabServicesOrdersNewRoute,
+    OrderOperationsLabServicesDraftsOrderIdEditRoute:
+      OrderOperationsLabServicesDraftsOrderIdEditRoute,
+  }
+
+const OrderOperationsLabServicesRouteWithChildren =
+  OrderOperationsLabServicesRoute._addFileChildren(
+    OrderOperationsLabServicesRouteChildren,
+  )
+
+interface OrderOperationsPartnerServicesRouteChildren {
+  OrderOperationsPartnerServicesDataAssemblyOrderIdRoute: typeof OrderOperationsPartnerServicesDataAssemblyOrderIdRoute
+  OrderOperationsPartnerServicesPseqKitsOrderIdRoute: typeof OrderOperationsPartnerServicesPseqKitsOrderIdRoute
+}
+
+const OrderOperationsPartnerServicesRouteChildren: OrderOperationsPartnerServicesRouteChildren =
+  {
+    OrderOperationsPartnerServicesDataAssemblyOrderIdRoute:
+      OrderOperationsPartnerServicesDataAssemblyOrderIdRoute,
+    OrderOperationsPartnerServicesPseqKitsOrderIdRoute:
+      OrderOperationsPartnerServicesPseqKitsOrderIdRoute,
+  }
+
+const OrderOperationsPartnerServicesRouteWithChildren =
+  OrderOperationsPartnerServicesRoute._addFileChildren(
+    OrderOperationsPartnerServicesRouteChildren,
+  )
+
 interface OrderOperationsRouteChildren {
+  OrderOperationsLabServicesRoute: typeof OrderOperationsLabServicesRouteWithChildren
+  OrderOperationsNewRoute: typeof OrderOperationsNewRoute
+  OrderOperationsPartnerServicesRoute: typeof OrderOperationsPartnerServicesRouteWithChildren
   OrderOperationsWorkflowOrderIdRoute: typeof OrderOperationsWorkflowOrderIdRoute
   OrderOperationsIntakeOrderIdRoute: typeof OrderOperationsIntakeOrderIdRoute
+  OrderOperationsResultPackagesPackageIdRoute: typeof OrderOperationsResultPackagesPackageIdRoute
+  OrderOperationsDraftsOrderIdEditRoute: typeof OrderOperationsDraftsOrderIdEditRoute
+  OrderOperationsFinanceKindRecordIdRoute: typeof OrderOperationsFinanceKindRecordIdRoute
 }
 
 const OrderOperationsRouteChildren: OrderOperationsRouteChildren = {
+  OrderOperationsLabServicesRoute: OrderOperationsLabServicesRouteWithChildren,
+  OrderOperationsNewRoute: OrderOperationsNewRoute,
+  OrderOperationsPartnerServicesRoute:
+    OrderOperationsPartnerServicesRouteWithChildren,
   OrderOperationsWorkflowOrderIdRoute: OrderOperationsWorkflowOrderIdRoute,
   OrderOperationsIntakeOrderIdRoute: OrderOperationsIntakeOrderIdRoute,
+  OrderOperationsResultPackagesPackageIdRoute:
+    OrderOperationsResultPackagesPackageIdRoute,
+  OrderOperationsDraftsOrderIdEditRoute: OrderOperationsDraftsOrderIdEditRoute,
+  OrderOperationsFinanceKindRecordIdRoute:
+    OrderOperationsFinanceKindRecordIdRoute,
 }
 
 const OrderOperationsRouteWithChildren = OrderOperationsRoute._addFileChildren(
   OrderOperationsRouteChildren,
+)
+
+interface PurchasingRouteChildren {
+  PurchasingMaterialsMaterialLotIdRoute: typeof PurchasingMaterialsMaterialLotIdRoute
+  PurchasingProductTypesProductTypeIdRoute: typeof PurchasingProductTypesProductTypeIdRoute
+  PurchasingSuppliersSupplierIdRoute: typeof PurchasingSuppliersSupplierIdRoute
+  PurchasingProductsSupplierIdProductIdRoute: typeof PurchasingProductsSupplierIdProductIdRoute
+}
+
+const PurchasingRouteChildren: PurchasingRouteChildren = {
+  PurchasingMaterialsMaterialLotIdRoute: PurchasingMaterialsMaterialLotIdRoute,
+  PurchasingProductTypesProductTypeIdRoute:
+    PurchasingProductTypesProductTypeIdRoute,
+  PurchasingSuppliersSupplierIdRoute: PurchasingSuppliersSupplierIdRoute,
+  PurchasingProductsSupplierIdProductIdRoute:
+    PurchasingProductsSupplierIdProductIdRoute,
+}
+
+const PurchasingRouteWithChildren = PurchasingRoute._addFileChildren(
+  PurchasingRouteChildren,
 )
 
 interface ReagentOrdersOrderIdRouteChildren {
@@ -1497,24 +2716,33 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   AcceptInviteRoute: AcceptInviteRoute,
   CrmRoute: CrmRouteWithChildren,
-  CustomersRoute: CustomersRouteWithChildren,
   DataAssemblyRoute: DataAssemblyRouteWithChildren,
   DataLibraryRoute: DataLibraryRouteWithChildren,
   DataProvisioningRoute: DataProvisioningRouteWithChildren,
+  DeliveryLocationsRoute: DeliveryLocationsRouteWithChildren,
   DepartmentsRoute: DepartmentsRoute,
   DocsRoute: DocsRouteWithChildren,
+  EquipmentRoute: EquipmentRoute,
   FileManagementRoute: FileManagementRoute,
+  FinanceRoute: FinanceRouteWithChildren,
+  LabConfigurationRoute: LabConfigurationRoute,
   LabOperationsRoute: LabOperationsRouteWithChildren,
   LabServicesRoute: LabServicesRouteWithChildren,
-  OrderConfigurationRoute: OrderConfigurationRoute,
+  LegacyIntegrationsRoute: LegacyIntegrationsRoute,
+  OrderConfigurationRoute: OrderConfigurationRouteWithChildren,
   OrderOperationsRoute: OrderOperationsRouteWithChildren,
   PhaenoUsersRoute: PhaenoUsersRoute,
+  PurchasingRoute: PurchasingRouteWithChildren,
   ReagentOrdersRoute: ReagentOrdersRouteWithChildren,
   ReleasedDeliverablesRoute: ReleasedDeliverablesRouteWithChildren,
   SampleShippingRoute: SampleShippingRouteWithChildren,
+  SampleShippingSettingsRoute: SampleShippingSettingsRoute,
   TrialProjectsRoute: TrialProjectsRouteWithChildren,
+  DashboardAttentionRoute: DashboardAttentionRoute,
   DemoTanstackQueryRoute: DemoTanstackQueryRoute,
   SessionTasksSetupMfaRoute: SessionTasksSetupMfaRoute,
+  SampleShippingSettingsKitSpecificationsContainerIdRoute:
+    SampleShippingSettingsKitSpecificationsContainerIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -6,7 +6,9 @@ public enum LabServiceWorkflowStatus
     Approved,
     Production,
     Retired,
-    Discarded
+    Discarded,
+    Invalid,
+    Invalidated
 }
 
 public enum LabServiceWorkflowStageRequirement
@@ -51,8 +53,20 @@ public sealed class LabServiceWorkflowVersion : LabAuditedEntity
     public DateTime AuthoredAtUtc { get; private set; }
     public Guid? ApprovedByUserId { get; private set; }
     public DateTime? ApprovedAtUtc { get; private set; }
+    public string? ApprovalOverrideReason { get; private set; }
     public Guid? ProductionByUserId { get; private set; }
     public DateTime? ProductionAtUtc { get; private set; }
+    public DateTime? InvalidatedAtUtc { get; private set; }
+    public string? InvalidationReason { get; private set; }
+
+    public void Invalidate(string reason, DateTime utcNow, bool editable = false)
+    {
+        if (editable && Status is not (LabServiceWorkflowStatus.Draft or LabServiceWorkflowStatus.Invalid))
+            throw new InvalidOperationException("Only an unapproved candidate can become an editable invalid workflow.");
+        InvalidationReason = LabAuditedEntity.Required(reason, nameof(reason), 2000);
+        InvalidatedAtUtc = utcNow;
+        Status = editable ? LabServiceWorkflowStatus.Invalid : LabServiceWorkflowStatus.Invalidated;
+    }
 
     private LabServiceWorkflowVersion() { }
 
@@ -73,7 +87,7 @@ public sealed class LabServiceWorkflowVersion : LabAuditedEntity
 
     public void Approve(Guid actorUserId, DateTime utcNow, bool enforceActorSeparation = true)
     {
-        if (Status != LabServiceWorkflowStatus.Draft)
+        if (Status is not (LabServiceWorkflowStatus.Draft or LabServiceWorkflowStatus.Invalid))
             throw new InvalidOperationException("Only a draft workflow can be approved.");
         RequireActor(actorUserId, "An approval actor is required.");
         if (enforceActorSeparation && actorUserId == AuthoredByUserId)
@@ -90,23 +104,39 @@ public sealed class LabServiceWorkflowVersion : LabAuditedEntity
         Status = LabServiceWorkflowStatus.Draft;
         ApprovedByUserId = null;
         ApprovedAtUtc = null;
+        ApprovalOverrideReason = null;
     }
 
     public void Discard()
     {
-        if (Status != LabServiceWorkflowStatus.Draft)
+        if (Status is not (LabServiceWorkflowStatus.Draft or LabServiceWorkflowStatus.Invalid))
             throw new InvalidOperationException("Only a draft workflow can be discarded.");
         Status = LabServiceWorkflowStatus.Discarded;
     }
 
-    public void PromoteToProduction(Guid actorUserId, DateTime utcNow,
-        bool enforceActorSeparation = true)
+    public void ApproveWithOverride(Guid actorUserId, DateTime utcNow, string reason)
+    {
+        var validatedReason = LabAuditedEntity.Required(reason, nameof(reason), 2000);
+        if (actorUserId != AuthoredByUserId)
+            throw new InvalidOperationException("Use independent approval when the approver is not the author.");
+        Approve(actorUserId, utcNow, enforceActorSeparation: false);
+        ApprovalOverrideReason = validatedReason;
+    }
+
+    public void RequireReleaseApproval()
+    {
+        if (ApprovedByUserId is null || ApprovedByUserId == Guid.Empty
+            || ApprovedAtUtc is null
+            || ApprovedByUserId == AuthoredByUserId && string.IsNullOrWhiteSpace(ApprovalOverrideReason))
+            throw new InvalidOperationException("The workflow requires independent approval or a recorded administrator override before production use.");
+    }
+
+    public void PromoteToProduction(Guid actorUserId, DateTime utcNow)
     {
         if (Status != LabServiceWorkflowStatus.Approved)
             throw new InvalidOperationException("Only an approved workflow can enter production.");
         RequireActor(actorUserId, "A production actor is required.");
-        if (enforceActorSeparation && actorUserId == AuthoredByUserId)
-            throw new InvalidOperationException("A workflow author cannot promote the same workflow version.");
+        RequireReleaseApproval();
         Status = LabServiceWorkflowStatus.Production;
         ProductionByUserId = actorUserId;
         ProductionAtUtc = utcNow;

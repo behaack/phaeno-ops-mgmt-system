@@ -46,6 +46,19 @@ public sealed class ApiResponseEnvelopeFilter : IAsyncResultFilter
         if (context.Result is ObjectResult obj)
         {
             var meta = ApiMetaFactory.Create(context.HttpContext);
+            if (obj.Value is ValidationProblemDetails validation)
+            {
+                var messages = validation.Errors.Values.SelectMany(errors => errors).Distinct().Take(3).ToArray();
+                var error = new ApiError("invalid_request", "validation_error",
+                    messages.Length > 0 ? string.Join(" ", messages) : validation.Title ?? "Review the submitted fields and try again.",
+                    validation.Errors.Select(field => new { field = field.Key, messages = field.Value }).ToArray());
+                context.Result = new ObjectResult(ApiResponse<object?>.Fail(error, meta))
+                {
+                    StatusCode = obj.StatusCode ?? validation.Status ?? StatusCodes.Status400BadRequest
+                };
+                await next();
+                return;
+            }
             var wrapped = ApiResponse<object?>.Ok(obj.Value, meta);
 
             context.Result = new ObjectResult(wrapped)

@@ -214,14 +214,19 @@ activates them in the same transaction as the Phaeno membership.
 
 User documentation is authored as portable MDX. Prospect, Customer, and Partner
 content is stored by locale, with `en-US` as the only current locale;
-Phaeno-only content may remain US English. The frontend registry owns audience,
-locale, slug, parent topic, overview label, summary, section, order, and review
-metadata. Phaeno Data Provisioning, Order Ops, and Lab Ops guides use one
+Phaeno-only content may remain US English. A validated data-only catalog owns
+audience, locale, slug, navigation, summary, review dates, controlled topics,
+workflows, guide type and related links; the registry separately maps components. Phaeno Data Provisioning, Order Ops, and Lab Ops guides use one
 expandable navigation level backed by independently routed MDX pages. The current
 organization is the exclusive audience boundary for the offered guide set;
 cross-audience routes are not exposed. Because the current corpus is compiled into
-browser assets, it contains no confidential procedures. Future help search will
-use a backend index with authenticated audience and locale filtering.
+browser assets, it contains no confidential procedures. Documentation search uses
+`Features/Documentation/Search`, an authenticated endpoint, and its own Lucene
+volume, readers and rebuild lifecycle. A generated, versioned guide artifact ships
+with the API; heading anchors share the MDX renderer rule. Audience and locale
+constraints precede search results and facet counts. Website search has separate
+endpoints, content and indexes. No application schema change is required. See
+`docs/documentation-search-operations.md` for packaging and recovery.
 
 ## Public Website
 
@@ -348,10 +353,16 @@ remain accessible after byte deletion. Physical deletion defaults off.
 
 ## Trial Projects
 
-Commercial owns the distinct Trial aggregate, versioned scope, domain approval
-authorities, acceptance, coded samples, replacement authorizations, immutable
-release manifests and safe event outbox. The first-party CRM Company Opportunity
-is its commercial parent. Trial events project asynchronously into CRM activity
+Commercial owns the distinct Trial aggregate, versioned scope, acceptance, coded
+samples, replacement authorizations, immutable release manifests and safe event
+outbox. Business Development, Commercial leadership and Platform administrators create
+Trials directly for a CRM Company and its Department, without an Opportunity or
+CRM request. Administrator/leadership scope submission records Commercial approval
+in the same transaction; other staff submit for a leadership decision. Each
+approved revision becomes available for Prospect
+acceptance. Scientific Operations authority continues to govern catalog and
+laboratory controls separately. Historical CRM parents and named approval
+authorities remain readable without being created for new Trials. Trial events project asynchronously into CRM activity
 receipts and never carry scientific payloads. Trials create no paid order or QBO
 transaction. The Lab provider consumes a TrialProject authorization pinned to the
 approved PSeq workflow version; shared shipping and governed result services keep

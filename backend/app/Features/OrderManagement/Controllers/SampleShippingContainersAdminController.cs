@@ -1,0 +1,89 @@
+namespace PhaenoPortal.App.Features.OrderManagement.Controllers;
+
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using PhaenoPortal.App.Features.OrderManagement.DTOs;
+using PhaenoPortal.App.Features.OrderManagement.Services;
+
+[ApiController]
+[Authorize]
+[Route("api/platform/sample-shipping/container-types")]
+[Route("api/platform/lab-operations/sample-shipping/container-types")]
+public sealed class SampleShippingContainersAdminController(OrderRequestContext requestContext,
+    SampleShippingContainerCatalogService catalog) : ControllerBase
+{
+    [HttpGet]
+    public async Task<IReadOnlyList<SampleShippingContainerDefinitionDto>> List(CancellationToken cancellationToken)
+    {
+        await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        return await catalog.ReadAllAsync(cancellationToken);
+    }
+    [HttpGet("{id:guid}")]
+    public async Task<SampleShippingContainerDefinitionDto> Get(Guid id, CancellationToken cancellationToken)
+    {
+        await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        return await catalog.ReadAsync(id, cancellationToken);
+    }
+    [HttpGet("{id:guid}/revisions")]
+    public async Task<IReadOnlyList<SampleShippingContainerDefinitionDto>> Revisions(Guid id, CancellationToken cancellationToken)
+    {
+        await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        return await catalog.ReadRevisionsAsync(id, cancellationToken);
+    }
+    [HttpPost]
+    public async Task<SampleShippingContainerDefinitionDto> Create([FromBody] CreateSampleShippingContainerRequest request, CancellationToken cancellationToken)
+    {
+        await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        if (!request.ShippingContainerProductId.HasValue)
+            throw new OrderManagementException("kit_product_required",
+                "Choose a purchased Shipping Container before creating its kit specification.", 400);
+        return await catalog.CreateAsync(request, cancellationToken);
+    }
+    [HttpPost("{id:guid}/revisions")]
+    public async Task<SampleShippingContainerDefinitionDto> Revise(Guid id, [FromBody] ReviseSampleShippingContainerRequest request, CancellationToken cancellationToken)
+    {
+        await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        return await catalog.ReviseAsync(id, request, cancellationToken);
+    }
+    [HttpPut("{id:guid}/draft")]
+    public async Task<SampleShippingContainerDefinitionDto> EditDraft(Guid id,
+        [FromBody] EditSampleShippingContainerDraftRequest request, CancellationToken cancellationToken)
+    {
+        await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        return await catalog.EditDraftAsync(id, request, cancellationToken);
+    }
+    [HttpPost("{id:guid}/discard")]
+    public async Task<SampleShippingContainerDefinitionDto> DiscardDraft(Guid id,
+        [FromBody] DiscardSampleShippingContainerDraftRequest request, CancellationToken cancellationToken)
+    {
+        await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        return await catalog.DiscardDraftAsync(id, request.Version, cancellationToken);
+    }
+    [HttpPost("recommendation")]
+    public async Task<ContainerPackingPreviewDto> Preview([FromBody] ContainerPackingPreviewRequest request, CancellationToken cancellationToken)
+    {
+        await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        var definitions = await catalog.ReadCompatibleAsync(request.Contexts, cancellationToken, request.IncludeDraftDefinitionId);
+        return SampleShippingContainerPacker.Preview(definitions, request.TubeCount, request.Availability, request.Selection);
+    }
+    [HttpPost("{id:guid}/deactivate")]
+    public async Task<SampleShippingContainerDefinitionDto> Deactivate(Guid id, [FromBody] DeactivateSampleShippingContainerRequest request, CancellationToken cancellationToken)
+    {
+        await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        return await catalog.DeactivateAsync(id, request.Version, cancellationToken);
+    }
+    [HttpPost("{id:guid}/activate")]
+    public async Task<SampleShippingContainerDefinitionDto> Activate(Guid id, [FromBody] ActivateSampleShippingContainerRequest request, CancellationToken cancellationToken)
+    {
+        await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        return await catalog.ActivateAsync(id, request.Version, cancellationToken);
+    }
+
+    [HttpPost("{id:guid}/sample-type")]
+    public async Task<SampleShippingContainerDefinitionDto> LinkSampleType(Guid id,
+        [FromBody] LinkTransportationKitSampleTypeRequest request, CancellationToken cancellationToken)
+    {
+        var actor = await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        return await catalog.LinkSampleTypeAsync(id, request.SampleTypeDefinitionId, request.Version, actor.Id, cancellationToken);
+    }
+}

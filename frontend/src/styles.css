@@ -22,6 +22,9 @@
   --accent: oklch(0.93 0.04 160);
   --accent-foreground: oklch(0.25 0.055 160);
   --destructive: #9f1239;
+  --warning: #78350f;
+  --warning-background: #fffbeb;
+  --warning-border: #b45309;
   --border: oklch(0.89 0.02 246);
   --input: oklch(0.89 0.02 246);
   --ring: oklch(0.58 0.115 245);
@@ -59,7 +62,10 @@
   --muted-foreground: oklch(0.73 0.025 250);
   --accent: oklch(0.31 0.05 160);
   --accent-foreground: oklch(0.9 0.04 160);
-  --destructive: oklch(0.68 0.18 24);
+  --destructive: oklch(0.73 0.16 24);
+  --warning: #fcd34d;
+  --warning-background: #34290f;
+  --warning-border: #d97706;
   --border: oklch(1 0 0 / 12%);
   --input: oklch(1 0 0 / 16%);
   --ring: oklch(0.72 0.12 245);
@@ -100,6 +106,9 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-warning: var(--warning);
+  --color-warning-background: var(--warning-background);
+  --color-warning-border: var(--warning-border);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -134,7 +143,6 @@
 
   body {
     @apply bg-background text-foreground;
-    min-width: 320px;
     margin: 0;
     background-image: linear-gradient(
       180deg,
@@ -187,6 +195,13 @@ html {
   margin-inline: auto;
 }
 
+@media (max-width: 1023px) {
+  html {
+    /* Keep the mobile toolbar edge to edge when desktop browsers reserve a scrollbar gutter. */
+    scrollbar-width: none;
+  }
+}
+
 @media (max-width: 767px) {
   .page-wrap.px-4 {
     padding-inline: 0.5rem;
@@ -200,7 +215,8 @@ html {
 }
 
 @media (min-width: 1024px) and (max-width: 1691px) {
-  .workspace-sidebar-pinned {
+  .workspace-sidebar-pinned,
+  [data-portal-shell]:has(.workspace-sidebar-pinned) > footer {
     padding-left: 16rem;
   }
 }
@@ -265,34 +281,74 @@ html {
   }
 }
 
+.lab-label-print-surface {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 8rem;
+  gap: .25rem .75rem;
+  width: 100%;
+  max-width: 26rem;
+  margin-inline: auto;
+  padding: .75rem;
+  border: 1px solid var(--border);
+  border-radius: .5rem;
+  background: white;
+  color: black;
+}
+.lab-label-heading {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  justify-content: space-between;
+  gap: .5rem;
+  font-size: .625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.lab-label-title { grid-column: 1; grid-row: 2; margin: 0; font-size: .75rem; font-weight: 600; overflow-wrap: anywhere; }
+.lab-label-metadata { grid-column: 1; grid-row: 3; display: flex; flex-direction: column; font-size: .625rem; line-height: 1.35; overflow-wrap: anywhere; }
+.lab-label-print-surface .identifier-data-matrix { display: contents; }
+.lab-label-print-surface .identifier-data-matrix img { grid-column: 2; grid-row: 1 / span 3; align-self: center; width: 8rem; height: 8rem; object-fit: contain; }
+.lab-label-print-surface .identifier-data-matrix figcaption { grid-column: 1 / -1; grid-row: 4; margin-top: .25rem; font-size: .75rem; text-align: center; }
+
+@media (max-width: 400px) {
+  .lab-label-print-surface { grid-template-columns: minmax(0, 1fr) 5rem; gap: .25rem .5rem; padding: .5rem; }
+  .lab-label-print-surface .identifier-data-matrix img { width: 5rem; height: 5rem; }
+}
+
 @media print {
   @page {
     size: auto;
     margin: 0;
   }
 
-  body:has(.lab-label-print-surface) * {
-    visibility: hidden !important;
-  }
-
-  .lab-label-print-surface,
-  .lab-label-print-surface * {
-    visibility: visible !important;
-  }
-
-  @page lab-label { size: 50mm 25mm; margin: 0; }
+  html:has(.lab-label-print-dialog) { min-width: 0 !important; width: 50mm; min-height: 0 !important; height: auto !important; overflow: visible !important; }
+  body:has(.lab-label-print-dialog) { min-width: 0 !important; width: 50mm; background: white !important; min-height: 0 !important; height: auto !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; }
+  body:has(.lab-label-print-dialog) > :not(:has(.lab-label-print-dialog)):not(.lab-label-print-dialog) { display: none !important; }
+  .lab-label-print-dialog { position: static !important; inset: auto !important; translate: none !important; transform: none !important; animation: none !important; display: block !important; width: 50mm; max-width: none; max-height: none; overflow: visible; border: 0; padding: 0; margin: 0; gap: 0; box-shadow: none; background: white; color: black; }
+  .lab-label-print-dialog > :not([data-slot="dialog-body"]) { display: none !important; }
+  .lab-label-print-dialog [data-slot="dialog-body"] { display: block; padding: 0; overflow: visible; }
+  .lab-label-print-dialog [data-slot="dialog-body"] > :not(.lab-label-preview), .lab-label-preview > :not(.lab-label-print-surface) { display: none !important; }
 
   .lab-label-print-surface {
-    page: lab-label;
-    position: absolute;
-    inset: 0 auto auto 0;
     width: 50mm;
     height: 25mm;
-    overflow: hidden;
+    max-width: none;
+    margin: 0;
+    box-sizing: border-box;
+    grid-template-columns: 28mm 18mm;
+    grid-template-rows: 2mm 3mm 15mm 3mm;
+    gap: 0 2mm;
+    break-inside: avoid;
     border: 0 !important;
     border-radius: 0 !important;
-    padding: 2mm !important;
+    padding: 1mm !important;
   }
+  .lab-label-heading { font-size: 5pt; line-height: 2mm; gap: 1mm; }
+  .lab-label-title { font-size: 5pt; line-height: 1.5mm; }
+  .lab-label-metadata { font-size: 4.5pt; line-height: 1.8mm; word-break: break-all; }
+  .lab-label-print-surface .identifier-data-matrix img { width: 18mm; height: 18mm; object-fit: contain; }
+  .lab-label-print-surface .identifier-data-matrix figcaption { font-size: 6pt; line-height: 3mm; margin: 0; }
+
 }
 
 @media (prefers-reduced-motion: reduce) {

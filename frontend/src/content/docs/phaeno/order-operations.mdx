@@ -1,35 +1,92 @@
 # Order operations
 
-When starting a Customer Job, select the Customer department as well as the
-Company. A single available department is shown automatically. The department
-owns the Job and determines Customer access and the applicable service rule;
-a Blocked department rule cannot be bypassed by a Ready organization default.
+Open **Order ops**. Its sidebar groups **Order intake** and **Trial projects** under **LAB SERVICES**, and **PSeq kits** and **Data assembly** under **PARTNER SERVICES**, using the same group headings as CRM. Pricing and commercial decisions stay with the owning service. Reusable defaults and scientific offerings are maintained in **Order settings**.
 
-Order operations is the Commercial workspace for Customer laboratory orders, Partner PSeq kit fulfillment, and Partner data assembly. POMS owns operational state, assignments, tenant-safe communication, PSeq result release, and PSeq accounts receivable.
+The Dashboard summarizes your assigned service work. **Needs attention** shows authorized unresolved items and CRM recovery; choose **View all** to assign or resolve work. **More → Finance** owns billing and cash. **More → Legacy integrations** owns retained connector and notification recovery. **Lab ops → Result release** owns governed PSeq publication, alongside the separate **Results & scientific review** scientific workspace.
 
-Use the far-left sidebar beneath the toolbar to move among **Order intake**, **Order staging**, **PSeq kits**, **Assembly**, **Attention**, **Result release**, **Finance**, and **Legacy integrations**, subject to your explicit roles. **Order intake** combines sales handoffs, commercial review, pricing, and quotes in one active queue. **Order staging** shows every Customer and its readiness blockers; a Commercial Operator may prepare internal PSeq work before the Customer administrator is active when the stage-eligibility minimum is met. Quote issue and Customer commitment require all non-billing readiness items and an active Customer administrator. Billing readiness may be completed after acceptance but is required before invoicing.
+When starting a Customer Job, select its Company and Department. A single available Department is selected automatically. The Department owns the Job and determines Customer access and the applicable service rule; a Blocked Department rule cannot be bypassed by a Ready organization default.
 
-When the Portal API and frontend are both running in their local development environments, **Simulate HubSpot handoff** can create a durable pending request for either a sales-assisted order or a no-charge Trial Project. The simulator requires a unique HubSpot Deal identifier and clearly identifies the resulting request as simulated. It does not contact HubSpot, bypass review, create an executable sales-assisted order, or implement the Trial Project lifecycle. Review the resulting request in **Accounts**.
+The **Order operations** sidebar contains two labeled groups, filtered by your roles. **LAB SERVICES** contains **Order intake** and **Trial projects**. **PARTNER SERVICES** contains **PSeq kits** and **Data assembly**. Order intake covers paid lab-service orders only; kit and Assembly records belong under **PARTNER SERVICES**. Eligible organizations can place a configured standard Lab Service bundle from their own Job; its accepted commitment appears on the same order. Trial projects handles no-charge evaluations. Prospect, Customer and Partner users retain their audience-specific Trial access.
+
+Choose **New Order** in **Commercial order intake** to open the order-entry page. Sales selects the active Customer and Department, enters a unique Job name, and chooses the **Catalog service** for the whole order. The service is optional for an incomplete Draft and required for pricing submission; inactive or unrelated catalog items are unavailable. **Save draft** retains incomplete entries as **Draft** without submitting them or making them visible to the Customer. Customer setup can be completed while the Draft is saved. Reopen its record from intake and choose **Edit draft**.
+
+The saved Draft shows bold labels with counts and proposed prices beside them, such as **Samples:** 5. Handling and notes remain below their labels.
+
+For **Safety declaration**, describe the handling risks or select **Insert “No known hazards”** beside the guidance above the empty field when that declaration applies. The shortcut fills editable text; review it before saving or submitting. An existing declaration is retained, and the shortcut is available again after clearing the field.
+
+The **Use different storage requirements** checkbox sits beside the **Storage requirements** heading. Leave it unchecked to use the Sample type default shown below, or check it to enter different requirements.
+
+After submission, **Commercial scope** uses bold labels for specimen counts, biological sources, handling, proposed pricing and the current quote.
+
+The default order has one scope. Check **Use phases** and enter the **Phase count** when the Customer agrees sequential delivery cohorts. For each phase, enter biological sources, the sample count for each source and sequencing runs per sample. **Add source** is at the right end of the **Biological-source composition** heading. Runs per sample can differ between phases. For both single-scope and phased orders, optionally propose a USD price per sample and a separate price per additional sequencing run. The sample price includes one library preparation, one run and data assembly. The additional-run field appears when runs per sample exceed one. The proposed subtotal is the sample count multiplied by the sample price, plus only the runs beyond the first per sample multiplied by the additional-run price. Three samples with three runs each means three standard services and six additional runs. Additional runs use existing prepared-library material while it remains available; the purchased run count does not establish material availability. Add a pricing note when needed.
+
+Storage requirements use the selected Sample type's Preservation requirements by default. **Shared handling and notes** shows that text. Check **Use different storage requirements** only when this order needs an exception, then edit the requirements. The choice and any entered exception are retained in the Draft. Pricing submission retains the selected requirements on the order. An empty exception blocks submission; clear the checkbox to use the Sample type default. The safety declaration and Job notes apply to the order. Do not enter patient names or identifying information in notes.
+
+Clearing **Use phases**, reducing the count or choosing **Remove phase** opens a POMS confirmation that explains which scope and proposed prices will be removed. Choose **Cancel** to retain all entries. Clearing **Use phases** keeps the first phase's scope and proposed pricing.
+
+**Submit for pricing** saves the entries and validates the complete scope and Customer readiness. The order moves to **Submitted for pricing**. If readiness blocks submission, the saved Draft remains available with the submission error. The pricing operator retains the selected catalog service, begins quote preparation and reviews each scope's sample price, additional-run price and business-day turnaround before issuing one Customer quote. Amending proposed prices requires a reason. Submission does not authorize laboratory work. Exact Sample IDs and tubes are prepared after Customer acceptance.
+
+Lab Service orders in **Quote In Preparation** show a bold **Next step for Phaeno**
+message in the intake list. Open the Job by selecting its name, then select
+**Review and issue quote** under **Commercial control**, or **Issue quote** if no
+price was proposed. Review the price and terms and issue the quote for Customer
+acceptance. **Quote Issued** means the quote is available for the Customer to review.
+
+The Customer dashboard lists each active Lab Service request in its selected
+Department with a Job name, next step and direct link. Issued quotes have a
+**Review pricing** link for administrators; other members see **View pricing**.
+Requests still being priced show **Waiting for Phaeno**. Customers can page through
+active requests or open **View all lab services** for history.
+
+The Customer dashboard's **Items requiring attention** and **New results** metrics
+cover the selected Department and filter the Jobs below. New results are released,
+downloadable laboratory result packages without a complete Department download;
+failed or partial transfers do not clear them. This count can include completed
+Jobs and can be larger than the number of Jobs containing the results.
 
 The sidebar header identifies Order operations and, on wider screens, provides the pin or unpin icon. Pointer users can preview an unpinned sidebar by approaching the left edge; keyboard and touch users open it from the edge tab. Choosing a section closes an unpinned sidebar.
 
 ## Enter and find orders
 
-- **Order intake** covers Customer and Partner commercial requests through review, pricing, quote issuance, and Customer acceptance. Accepted work leaves the active intake queue and continues in its owning Lab Operations queue.
-- **PSeq kits** covers Partner order review, substitutions, backorders, shipments, and fulfillment.
-- **Assembly** covers Partner intake validation, quoting, processing, quality review, and output release.
-- **Attention** owns invitation, readiness, staged-order, projection/scan, unreleased-result, overdue-invoice, unapplied-cash, and reconciliation-difference exceptions.
-- **Result release** publishes a scientifically approved, complete PSeq package per sample without a payment gate.
-- **Finance** owns PSeq invoices, receipts/import, explicit allocation, aging, and reconciliation.
-- **Legacy integrations** covers retained accounting-connector and notification recovery outside the active native PSeq AR workflow.
+Open **Order ops** from the main menu or Dashboard, then select the relevant grouped section. Release-only staff entering Lab ops land at **Result release**, without general Lab or Lab settings access. Finance work remains in **More → Finance**. Saved Order operations and Trial links redirect to the new subject routes with record identity and applicable filters retained.
 
-Search Order intake by order, Job, Company, or request number. A PSeq Lab Service row identifies an optional proposed price so Commercial users can find pricing decisions without opening every record. On the order, **Review proposed price** compares the proposed USD price per specimen with the active catalog price, requested quantity, difference, and subtotal. **Approve price and issue quote** preserves the proposal unchanged; **Amend price and issue quote** requires an internal reason. Tax is system-calculated: include and freeze it when the billing and tax profile is complete and Finance-approved, or issue an explicitly pre-tax quote and calculate tax at invoicing. The issued quote, not the proposal, is the offer a Customer administrator may accept. The operational detail shows the current quote value, revision, and status. **Internal context** in the audit timeline explains Phaeno-only decisions; it is informational, not a Customer-facing warning. Assign an owner and due date when the workflow supports them. A queue assignment coordinates work; it does not grant authorization or change the workflow state.
+**Order intake** is available to platform administrators and assigned Commercial Operators. Commercial Operators can open Lab Service orders, select an active Customer and Department, check readiness, start pricing, and manage quotes. When business roles are enforced, platform administration alone does not grant pricing authority. **PSeq kits**, **Assembly**, **Legacy integrations**, and configuration administration retain their separate administrator access. Laboratory review and release/Finance roles alone do not grant Order intake access.
+
+**Dashboard → Needs attention → View all** keeps two responsibilities distinct. Assigned commercial, release or Finance roles use operational attention queues when enabled. Platform administrators can recover **CRM sale summaries** without those business roles. The Dashboard loads only the attention data your responsibilities authorize. Reading a notification does not resolve a blocker.
+
+- **Order intake** covers Customer and Partner lab-service requests through review, pricing, quote issuance, and Customer acceptance. Held orders remain in active intake. Use **On hold** to focus on blockers and **All orders and history** to find accepted, completed or cancelled work. Laboratory execution continues in Lab Ops.
+- **PSeq kits** shows commercial status and opens the same order in Lab Ops for review, substitutions, backorders, shipments and fulfillment.
+- **Assembly** shows commercial context and opens the same request in Lab Ops for processing, quality review and output release.
+- **Dashboard → Needs attention** owns invitation, readiness, staged-order, projection/scan, unreleased-result, overdue-invoice, unapplied-cash, and reconciliation-difference exceptions.
+- **Lab ops → Result release** publishes a scientifically approved, complete PSeq package per sample without a payment gate.
+- **More → Finance** owns PSeq invoices, receipts/import, explicit allocation, aging, and reconciliation.
+- **More → Legacy integrations** covers retained accounting-connector and notification recovery outside the active native PSeq AR workflow.
+
+Search Order intake by order, Job, Company, or request number. Order search runs across all matching records, with 25 orders per page. Pending CRM handoffs appear on the first active-intake page. The view, search and page stay in the address so you can return to the same queue. **Clear filters** restores active intake. A PSeq Lab Service row identifies an optional proposed price so Commercial users can find pricing decisions without opening every record. On the order, **Review and issue quote** compares the proposed USD price per specimen with the active catalog price, requested quantity, difference, and subtotal. **Approve price and issue quote** preserves the proposal unchanged; **Amend price and issue quote** requires an internal reason. Tax is system-calculated: include and freeze it when the billing and tax profile is complete and Finance-approved, or issue an explicitly pre-tax quote and calculate tax at invoicing. The issued quote, not the proposal, is the offer a Customer administrator may accept. The operational detail shows the current quote value, revision, and status. **Internal context** in the audit timeline explains Phaeno-only decisions; it is informational, not a Customer-facing warning. Assign an owner and due date when the workflow supports them. A queue assignment coordinates work; it does not grant authorization or change the workflow state.
+
+## Review Customer quote proposals
+
+A Customer or Partner administrator can choose **Propose changes** on a current initial quote and send one explanation. The Job returns to **Quote in preparation** and acceptance pauses. Open it from Order intake to read **Customer proposed changes** under **Commercial control**, including the exact quote revision and submission time.
+
+Choose **Review proposal and revise quote** from Commercial control's **Actions**. Review the requested changes and prepare a new quote through the existing pricing workflow. If the request needs corrected sample or phase scope, use the established correction workflow first. Issuing the new revision ends the pending proposal and supersedes the earlier offer; the original terms and Customer explanation remain in the audit timeline. A declined initial quote closes the entire unaccepted Job, including its phases, and retains its history.
+
+## Review quote extension requests
+
+An **Extension requested** marker in active Order intake identifies a Lab Service quote that needs review. Open the Job to read the request and its optional reason. A Phaeno user with Order Operations access and quote-issuance authority can select **Review extension** to prepare a new quote revision. **Reissue quote** is also available while an issued manual quote awaits the organization's decision.
+
+Reissuing starts with the saved quote's line items and unit prices. Review them, choose a future expiration date, and issue the new revision through the normal commercial review. POMS checks that the source quote and Job are still current. Successful issuance resolves the extension request and supersedes the old quote while preserving its original facts. The organization receives the normal quote-ready notice and must review and accept the new revision separately. A request never changes the old deadline or grants automatic acceptance.
+
+## Review configured bundles
+
+A standard Lab Service order includes specimen processing and data assembly in one accepted scope. Review its saved offering version, final price and **Turnaround and progress** on the order. Exact sample entry still follows commitment; roster finalization owns Lab and shipping authorization.
+
+A PSeq Kit purchase includes one assembly case per whole kit unit. Its order shows unit shipment facts, frozen profiles, deadlines and case history. Partner input corrections stay with the same case; included Assembly does not create a second quote or sale. **Open Lab work** leads to the existing execution workspace.
 
 ## Keep state boundaries visible
 
-Operational status, quote status, accounting-source readiness, payment, scientific readiness, file scanning, and publication are separate facts. Do not mark one complete merely because another succeeded. Tenant users receive a curated timeline, so record a tenant-safe reason separately from internal notes whenever an action can be seen outside Phaeno.
+Operational status, quote status, accounting-source readiness, payment, scientific readiness, file scanning, and publication are separate facts. Do not mark one complete merely because another succeeded. External users receive a limited timeline, so record a reason suitable for the affected Customer or Partner separately from internal notes whenever an action can be seen outside Phaeno.
 
-Order Ops ends at the Commercial boundary for a Customer laboratory order: it remains in **Order intake** while pricing and quote decisions are active. After acceptance and exact sample-roster finalization authorize that work, use **Lab Ops** for return-kit preparation, shipment-packet and tube comparison, specimen receipt and accession, protocol execution, materials, equipment, libraries, batches, sequencing sendouts, exceptions, and scientific approval. The separate **PSeq kits** and **Assembly** sections continue to own their non-laboratory operational workflows. Lab readiness never publishes a file by itself.
+Order Ops ends at the Commercial boundary for a Customer laboratory order: it remains in **Order intake** while pricing and quote decisions are active. After acceptance and exact sample-roster finalization authorize that work, use **Lab Ops** for return-kit preparation, shipment-packet and tube comparison, specimen receipt and accession, protocol execution, materials, equipment, libraries, batches, sequencing sendouts, exceptions, and scientific approval. The **PARTNER SERVICES → PSeq kits** and **Data assembly** sections show the commercial record and link to their owning Lab Ops execution screen; the same physical action is recorded once. Lab readiness never publishes a file by itself.
 
 ## Triage safely
 
@@ -44,3 +101,30 @@ POMS checks the latest Job immediately before issuing a quote. If the record cha
 ## Review queued notifications
 
 Order notices check the current active organization, department, user, and administrator assignments when dispatched. The department notification address is included when configured; otherwise the organization notification default applies. An inactive or mismatched department cannot use either route. Review failed notices with no eligible recipients before retrying them; changing an assignment after a notice was queued changes who can receive it.
+
+## Use Finance
+
+Open **More → Finance**, then use its sidebar to choose **Invoices and aging**, **Receipts**, **Customer billing**, **Import receipts**, or **Reconciliation**. A Customer filter carries between sections, into the record and back. Open the invoice, receipt, Customer, or batch number to review its details, then choose the relevant action. Editing happens in a dialog and errors retain the entered values. Invoice adjustments and receipt reversals retain a required reason.
+
+The dashboard summarizes recorded commercial and laboratory work and links to the owning screens. If data is unavailable, refresh or use the workspace directly; an unavailable count is not zero work.
+
+## Configure and amend Job phases
+
+Each phase card uses bold labels to distinguish progress, receipt, delivery, timing and pricing facts from their values. **Phase price** shows the phase's pre-tax quoted amount; the adjacent invoiced amount shows billing recorded so far. The quote's status identifies whether the Customer has accepted it.
+
+Sales configures phase source counts and sequencing runs in the initial Draft. Submitted Sales scope is retained for pricing review. Review prices and TAT by phase when issuing the quote. Customer-originated requests retain their separate **Configure phases** action before quote issuance. Named sample assignments must reconcile to the agreed source and run scope before laboratory authorization. A saved Sales Draft can be incomplete; an order submitted for pricing cannot.
+
+After acceptance, choose **Propose rephasing** for eligible future work. Only unsent samples may move. Sent and received samples keep their phase and position; started, delivered and cancelled phases retain their scope and terms. The Customer administrator must accept the exact reviewed proposal before it applies. Current shipping and processing facts are checked again. Replacement phases attribute already invoiced amounts to the new plan while issued invoices retain their original phase snapshots.
+
+Review phase cancellation requests using **Approve cancellation** or **Decline cancellation**. Approval requires no required tube receipt or processing start. Pending cancellation blocks phase starts. Approved cancellation retains scope history and does not erase invoices or declare results delivered. Finance decides any financial adjustment separately.
+
+Approved cancelled phases no longer require physical sample/tube pairing to finalize the remaining work. Accepted counts stay in the commercial record; preparation shows the non-cancelled source counts and runs. Existing cancelled pairs remain marked as history and do not enter new shipments. If a phase has no recorded source/run allocation, establish its named allocation before approving partial cancellation.
+
+
+## On-demand transportation kits and phase preparation
+
+Before acceptance, the Customer or Partner sees **Review and Accept Order**, with scope, pricing and quote actions; the shipping step strip and next-step card are hidden. Job acceptance confirms commercial terms and Sample type without ordering kits. The Customer or entitled Partner then follows the earliest unfinished phase in the agreed order, identified by **Shipping: Phase N · Phase name (X samples)**. **Next step** provides the action and its button; no phase selection is needed. Kits can be requested only for the current phase, with its Department delivery address confirmed at that time. Capacity is calculated from physical sample counts; sequencing runs do not increase the required sample-tube count. Received compatible stock is allocated to only one phase and new fulfillment covers the shortage.
+
+When previously received kits cover the entire phase, the Customer steps show **Existing kits allocated** and **Received · existing stock**, and explain that no new delivery is needed. Allocation alone does not establish physical receipt. An outstanding outbound request keeps the Customer at **Receive kits** until every requested kit is confirmed received. Before dispatch, **Next step** shows **Wait for Phaeno to send kits**, with no receipt action. **Record kit receipt** is available to an authorized Customer or Partner administrator only when a dispatched kit is awaiting receipt; if all kits in a partial dispatch are received, the next step returns to waiting for the remaining dispatch. The saved kit order remains viewable. Under **Receive kits**, the status shows **Request received**, **Sent**, or **Received**; partial dispatch and receipt show **Partially sent** or **Partially received**.
+
+Each phase repeats requesting, physical kit receipt, Sample ID/tube preparation and outbound sample shipping. Confirming a phase authorizes its exact specimens and creates its return shipments while future sample identities remain unentered. The next phase opens after every required result from the preceding phase is Portal-accessible; preparation or sending alone does not advance the phase. Approved cancelled phases are skipped. TAT remains tied to complete physical sample receipt. Review cancelled, superseded or changed phase scope before dispatching a pending request. Existing quote, request and dispatch histories stay unchanged.

@@ -12,14 +12,132 @@ It does not change Nginx or expose the Portal database on the host.
 
 The Portal API reads public Website documents and private Website credentials
 from `/opt/phaeno.portal-green/documents`. Its Lucene index and Portal-owned
-legacy application files use separate Portal volumes. New production managed
-file storage is currently disabled: the API starts, but file operations return
-HTTP 503 and no bytes are written. Amazon S3 remains the production target.
+legacy application files use separate Portal volumes. Managed file storage may
+explicitly use Local on its own persistent volume, remain Disabled, or later select
+S3. The previously recorded production selection was Disabled; source changes
+alone do not activate runtime storage or scanning.
 Keep the legacy `portal_green_app_data` volume until existing curated-data and
-order-file rows and bytes have been inventoried and, if necessary, migrated to
-S3.
+order-file rows and bytes have been inventoried and, if necessary, explicitly
+migrated to the chosen provider.
 
 ## Runtime files
+
+### Local storage activation and recovery
+
+Before selecting Local, inventory file metadata and referenced bytes in any existing
+provider or legacy volume. The installer refuses to repoint a recorded different
+local root or an active S3 provider. Any byte migration must be deliberate, preserve
+area/key identity, verify checksums and retain the prior store until acceptance.
+The new Local setting uses these protected `portal.env` values:
+
+```text
+FileStorage__Provider=Local
+FileStorage__LocalRootPath=/var/lib/phaeno-portal/files
+FileStorage__LocalPersistentVolumeConfirmed=true
+```
+
+The deployment's explicit Local choice installs those values; later runs should use
+Preserve. `portal_green_managed_files` is a dedicated Docker named volume mounted
+into the API and migration service. It is separate from `/app`, Website documents,
+public roots, source checkouts and the retained legacy app-data volume. Keep volume
+access limited to the API and trusted administrators. Do not mount it through a
+static file server or remove it during releases. Include its bytes in encrypted
+backups together with a coordinated database snapshot; verify restoration of both
+metadata and files before claiming disaster recovery. A database dump alone is not
+a file backup. Multi-host deployment requires shared storage or the later S3 provider.
+
+### Scanner setup
+
+File storage and malware scanning are separate. The code supports ClamAV's
+[INSTREAM protocol](https://docs.clamav.net/manual/Usage/ClamdProtocol.html) over a
+private TCP connection. The optional `scanner` Compose profile runs the official
+`clamav/clamav:1.4_base` image from the supported
+[1.4 LTS line](https://docs.clamav.net/faq/faq-eol.html), with a persistent
+`portal_green_scanner_signatures` volume. The API and scanner share only the dedicated
+internal `portal_scanning` network. The scanner alone also joins `scanner_updates`
+for outbound signature downloads; it publishes no host port. Keep these network
+boundaries intact because [the scanner socket is unauthenticated](https://docs.clamav.net/manual/Usage/Scanning.html).
+The scanner never mounts managed file bytes: POMS streams them over the private connection.
+
+Use `file_scanning_provider=ClamAv` with the existing Deploy Portal Green workflow
+for explicit first activation; use `file_storage_provider=Local` when the reviewed
+empty-store inventory permits first Local activation. Both inputs default to Preserve.
+The preflight runs before any runtime-setting installer and emits only capacity,
+current-provider classification, process UID and scoped metadata/file counts. Initial
+Local activation refuses nonempty metadata references or managed/legacy byte areas,
+including a target volume not mounted in the old API. No reference or byte migration
+is inferred. First scanner activation requires at least 5 GiB available host memory
+(4 GiB scanner budget plus 1 GiB reserve) and 3 GiB free Docker disk space. An existing
+scanner requires the 1 GiB reserve. Confirm outbound DNS and HTTPS access to Docker Hub
+and the ClamAV signature service; respect provider download limits.
+
+The official image's FreshClam daemon checks signatures 12 times daily, not just when
+the image is deployed. The selected LTS feature tag is pulled on managed-scanner
+releases to pick up patch/security updates. See the
+[official container guidance](https://docs.clamav.net/manual/Installing/Docker.html)
+for persistent databases, update frequency and memory requirements. Loaded-signature
+health checks require PONG, a running FreshClam process and a database version no older
+than three days. The scanner supervisor restarts the container after three failed
+checks following readiness; startup refuses expired databases and waits up to 20
+minutes for initial downloads. A missed update or unavailable scanner must be resolved
+through its health/logs and network access; never record a clean verdict manually.
+
+Configure the approved private endpoint and limits in protected runtime settings:
+`FileScanning__Provider=ClamAv`, `FileScanning__Host`, `FileScanning__Port` (normally
+3310), `FileScanning__TimeoutSeconds` (default 120), and
+`FileScanning__MaximumStreamBytes` (default 104857600). Verify the daemon's
+`StreamMaxLength`, `MaxFileSize`, `MaxScanSize`, archive recursion/file limits and
+timeouts against the approved uploads. Enable `AlertExceedsMax yes` and
+`AlertEncrypted yes` so skipped/over-limit/encrypted content cannot masquerade as
+clean; keep scanning for the approved content formats enabled. These switches are
+documented in the [official daemon configuration](https://github.com/Cisco-Talos/clamav/blob/main/etc/clamd.conf.sample).
+Only then set `FileScanning__ClamAvLimitsConfirmed=true`. Startup rejects an
+unconfirmed ClamAV configuration. The managed installer sets Host=`scanner`, Port=3310,
+TimeoutSeconds=120, MaximumStreamBytes=104857600 and ClamAvLimitsConfirmed=true against
+the reviewed `scanner/clamd.conf`: 100 MiB stream/file limit, 400 MiB expanded scan,
+90-second scan limit, recursion 16, 10,000 contained files and encrypted/limit alerts.
+Two scan threads and non-concurrent database reloads bound resource use; reloads can
+temporarily make scanning unavailable. Set the approved `DataProvisioning__AllowedFileKinds`
+and `OrderManagement__AllowedFileKinds` separately; no scientific formats are guessed.
+
+Verify representative clean, harmless antivirus-test, encrypted, oversize, nested
+archive, interrupted, timeout and unavailable-daemon cases through authenticated
+uploads before activation. An unavailable or incomplete scan blocks the existing
+clean-file gates and shows a retry/support message; it never records Clean. Disabled
+scanning is the production default. DevelopmentFixture is restricted to Development.
+Retention enforcement/notices/deletion retain their independent activation gates.
+
+Before API replacement or migrations, deployment waits for scanner health and runs
+`scanner/smoke.sh` inside that container. It requires a clean text verdict, rejection
+of the harmless EICAR antivirus test, rejection of a valid encrypted ZIP containing
+only synthetic text, and the exact daemon stream-limit error for an INSTREAM header
+declaring a chunk one byte larger than 100 MiB. This direct protocol check avoids
+`clamdscan` silently truncating its own outgoing stream at the configured limit.
+Only sanitized pass markers are emitted; all fixtures are removed from container
+temporary storage. It then runs the new API image with `--verify-file-services` when
+storage is Local/S3 and scanning is ClamAv, exercising the injected adapters and both
+real storage areas without HTTP, background workers or database access. The operator
+verification uses and removes only its own synthetic files. Container checks do not
+replace signed-in workflow, approved-format or real scientific acceptance.
+
+Scanner configuration has its own protected rollback receipt. Failed non-migration
+releases restore prior scanner settings along with storage settings before API-image
+rollback; successful releases clear both receipts. Settings changed concurrently are
+not overwritten. After migrations, recovery remains an explicit forward fix. Disabled
+scanning prevents new clean verdicts but does not delete signatures, managed bytes or
+historical scan records; stopping the optional service is an explicit operator action.
+
+The image prepares the managed mount point with mode 0700 under its existing user;
+no process UID change is included. Startup sets the configured Unix root to owner-
+only access and verifies create/write/delete with a temporary probe. Inspect the
+deployed image/container UID and named-volume ownership before activating Local,
+especially if a custom image or existing volume changes the owner. Never make the
+volume world-writable to work around a mismatch. The first activation is covered by
+a protected storage-settings-only rollback receipt: a failed non-migration release
+restores the previous provider/root before reverting the API image. A successful
+release clears that receipt. Concurrently changed settings are not overwritten;
+after a migration, recovery remains the release's explicit forward-fix decision.
+No rollback deletes or moves the managed or legacy volume.
 
 Create these server-only files under `/opt/phaeno.portal-green/runtime` with
 directory mode `700` and file mode `600`:
@@ -27,7 +145,7 @@ directory mode `700` and file mode `600`:
 - `compose.env`: versioned image tag and source revision
 - `database.env`: PostgreSQL database, role, and random password
 - `portal.env`: the Portal connection string, transferred Website runtime
-  configuration, and the explicit disabled file-storage provider setting
+  configuration, and the selected file-storage provider and scanner settings
 
 These files are ignored and must never be committed or printed.
 
@@ -148,17 +266,18 @@ atomically installs the signing key and fixed production invitation URL without
 printing credentials. Other configured
 values are streamed over the pinned SSH connection without placing them in the
 release archive and update only their corresponding entries in the
-root-protected `runtime/portal.env`. The workflow also installs
-`FileStorage__Provider=Disabled` and removes stale S3/AWS entries. The API
-recreation then loads the updated values. The workflow never prints secret
-values. The server-side release script accepts the explicit disabled stub or a
-complete S3 configuration; it continues to reject local production storage.
+root-protected `runtime/portal.env`. The workflow's `file_storage_provider` choice
+defaults to Preserve: ordinary releases leave provider/configuration untouched.
+Explicit Local or Disabled selections update only the relevant storage settings,
+without deleting S3 credentials or moving bytes. The API recreation then loads
+the selected values. The workflow never prints secret values. The server-side
+release script validates Disabled, persistent Local, or complete S3 configuration.
 
 S3 activation is a TODO in `docs/plans/FILE-MANAGEMENT-PLAN.md`. It includes
 obtaining protected least-privilege AWS keys or an approved workload identity.
 Before the first S3-backed deployment, inventory the existing managed-file
-database records and the retained `portal_green_app_data` volume. Copy any
-referenced legacy objects to
+database records, the selected Local store and the retained `portal_green_app_data`
+volume. Copy any referenced objects to
 `{PORTAL_S3_KEY_PREFIX}/{provisioning-files|order-files}/{storageKey}` and verify
 representative authorized downloads before considering the local volume
 retired. Do not remove the volume as part of an ordinary application release.
@@ -172,9 +291,22 @@ configured on the server.
 The workflow input `apply_migrations` defaults to `false`. Selecting `true` is
 the explicit shared-database approval gate. Before running the migration
 container, the server creates a root-only custom-format PostgreSQL dump,
-validates its catalog, encrypts it with a random passphrase, wraps that
+restores it into an isolated ephemeral PostgreSQL container, verifies its schemas,
+latest migration and selected table counts against that dump, then encrypts it
+with a random passphrase and wraps that
 passphrase to `PORTAL_MIGRATION_BACKUP_PUBLIC_KEY`, verifies encrypted
 checksums, and removes the plaintext dump and passphrase.
+
+The restore check uses no network or published ports, a read-only dump, 512 MiB
+of temporary database memory storage and a 1 GiB container memory limit. It
+requires 1.5 GiB available host memory and removes only its uniquely owned
+container. A failed restore or cleanup stops deployment before migration. This
+proves database recovery from that snapshot. Coordinated database/Local-file
+snapshots, isolated populated-file restoration, daily host scheduling, encrypted
+off-server collection and guarded 35-day exported-backup rotation have a separate
+[backup runbook](BACKUP-RUNBOOK.md). Their new protected workflow must be activated
+and its actual outage/restore/schedule/artifact evidence recorded before those
+operational gates are marked complete. Ordinary release backups remain unchanged.
 
 The first Clerk Production transition has a separate one-time gate:
 `cutover_clerk_identity=true` plus the exact
@@ -186,6 +318,25 @@ the configured bootstrap administrator, the existing subject matches the input,
 and the replacement Clerk user has the same verified primary email. The command
 is idempotent and writes `ClerkProductionIdentityCutover` to the audit log. Leave
 the gate off for every ordinary deployment.
+
+## Portal database reconstruction
+
+The manual **Reconstruct Portal Database** workflow is defined in
+`.github/workflows/reconstruct-portal-database.yml`. Run `preview` to inspect
+count-only preservation/clear/reseed results. Run `reset` with the exact phrase
+`RESET PORTAL DATABASE` to clear operational data while retaining Phaeno users
+and their access dependencies, the three canonical product types, and every
+holiday-calendar revision/date. It recreates the standard model reference
+defaults and records one new maintenance audit. It keeps the current schema
+and migration history and pauses/restarts only the existing Portal API.
+
+This is a single transactional data reset, with no separate backup, replacement
+database or rollback process. External identities, runtime configuration,
+physical file bytes, other databases and OCIA services are outside its scope.
+Future schema migrations are separate. See the
+[owning plan](../../../docs/plans/PORTAL-DATABASE-RECONSTRUCTION-WORKFLOW-PLAN.md)
+for exact preservation rules, deferred destructive verification and activation
+boundaries. The workflow must be published to GitHub before it can be selected.
 
 ## Retired Web Operations record cleanup
 
@@ -225,3 +376,17 @@ counts.
 This is the post-cutover production deployment path. The standalone Website
 API, bridge, File Browser, and legacy database resources were retired on
 2026-07-18 after the final encrypted backup and Portal verification passed.
+
+## September 2026 baseline reset
+
+The [guarded reset runbook](../../../docs/operations/database-rebase-20260919.md) replaces the old migration chain with one initial migration. Do not run that baseline against an old populated database. The controlled rename retains the canonical `phaeno_portal_green` database name so normal deployment and backup targeting remain valid. PostgreSQL now starts with `track_commit_timestamp=on`, required for verifiable governed-download commit timing. The reset retained the matched old database, image, runtime configuration and encrypted file/database backup until separately approved cleanup. Portal's old production database storage was subsequently retired as recorded below; retain the encrypted archives and matched release/runtime records.
+
+## PostgreSQL 18 production engine
+
+The completed [PostgreSQL 18 upgrade plan](../../../docs/plans/POSTGRESQL-18-UPGRADE-PLAN.md) moved the active database to official `postgres:18.6-trixie`, with transaction timestamps enabled and an external named volume `phaeno-portal-green-postgres18-data` mounted at `/var/lib/postgresql`. The owner separately authorized removal of the unused `phaeno-portal-green_portal_green_postgres_data` volume after verification on September 19, 2026. Recovery now uses the retained encrypted backups and matched release/runtime records; the old production volume and database-rename rollback are no longer available. The shared `postgres:17` image remains in use by Emmaus/OCIA and must not be removed as Portal cleanup. See the [retirement receipt](../../../docs/plans/POSTGRESQL-18-UPGRADE-PLAN.md#authorized-postgresql-17-storage-retirement).
+
+Normal releases verify the live major version and exact volume before any mutation. A missing external volume or a version 17 server requires the dedicated approved upgrade procedure; changing an image tag alone is insufficient. Fresh infrastructure also needs an explicitly initialized and verified cluster before ordinary application deployment.
+
+Backup restore checks and the legacy maintenance catalog check use the same version 18 image. Keep that image available locally on the host. Reinstall the existing coordinated-backup timer from the exact upgraded helper revision after proving a version 18 encrypted backup and isolated restore. Preserve its key and 2 a.m. Pacific schedule with the existing 3 a.m. DST fallback. Scheduled GitHub collection retrieves the latest encrypted snapshot; it does not change the host helper revision.
+
+The engine upgrade changes neither the application EF baseline nor the Portal frontend. Record infrastructure revision separately from the running API image and frontend source. See the plan for full-transfer verification, commit-evidence preconditions, rollback and execution results.

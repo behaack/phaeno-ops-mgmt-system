@@ -10,7 +10,7 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 
 public sealed record TrialActor(User User, bool IsStaff, bool IsPlatformAdmin, OrderTenantContext? Tenant)
 {
-    public bool IsOrganizationAdmin => Tenant?.Membership.IsOrganizationAdmin == true;
+    public bool IsDepartmentAdmin => Tenant?.IsDepartmentAdmin == true;
 }
 public sealed class TrialAccess(PSeqOperationsDbContext db, IExternalIdentityContext identity, OrderRequestContext context)
 {
@@ -20,7 +20,8 @@ public sealed class TrialAccess(PSeqOperationsDbContext db, IExternalIdentityCon
         var platform = AccountAuthorization.IsPlatformAdmin(user);
         var phaeno = user.Memberships.Any(value => value.IsActive && value.Organization is { IsActive: true, Kind: OrganizationKind.Phaeno });
         var staff = phaeno && (platform || await db.BusinessRoleAssignments.AnyAsync(value => value.UserId == user.Id && value.IsActive
-            && (value.Role == BusinessRole.CommercialOperator || value.Role == BusinessRole.ResultReleaseManager), token)
+            && (value.Role == BusinessRole.CommercialOperator || value.Role == BusinessRole.ResultReleaseManager
+                || value.Role == BusinessRole.BusinessDevelopment || value.Role == BusinessRole.CommercialLeadership), token)
             || await db.LabRoleAssignments.AnyAsync(value => value.UserId == user.Id && value.IsActive && (value.Role == PSeq.Operations.Laboratory.Domain.LabRole.Operator
                 || value.Role == PSeq.Operations.Laboratory.Domain.LabRole.Supervisor || value.Role == PSeq.Operations.Laboratory.Domain.LabRole.ScientificReviewer), token)
             || await db.TrialApprovalAuthorities.AnyAsync(value => value.UserId == user.Id && value.RevokedAtUtc == null, token));
@@ -32,10 +33,29 @@ public sealed class TrialAccess(PSeqOperationsDbContext db, IExternalIdentityCon
         return new(user, false, false, await context.RequireTenantAsync(http, membership.Organization.Kind, false, token));
     }
     public static void RequireStaff(TrialActor actor) { if (!actor.IsStaff) throw Error("trial_staff_required", "An authorized Phaeno Trial operator is required.", 403); }
+    public async Task RequireCreateAsync(TrialActor actor, CancellationToken token)
+    {
+        RequireStaff(actor);
+        if (actor.IsPlatformAdmin || await db.BusinessRoleAssignments.AnyAsync(value => value.UserId == actor.User.Id && value.IsActive
+            && (value.Role == BusinessRole.BusinessDevelopment || value.Role == BusinessRole.CommercialLeadership), token)) return;
+        throw Error("trial_business_role_required", "Active Business Development, Commercial leadership or Platform administrator access is required to create a Trial.", 403);
+    }
+    public static async Task<bool> CanApproveScopeOnSubmissionAsync(PSeqOperationsDbContext db, TrialActor actor, CancellationToken token) =>
+        actor.IsStaff && (actor.IsPlatformAdmin || await db.BusinessRoleAssignments.AnyAsync(value => value.UserId == actor.User.Id
+            && value.IsActive && value.Role == BusinessRole.CommercialLeadership, token));
+    public async Task RequireRoleAsync(TrialActor actor, BusinessRole role, CancellationToken token)
+    {
+        RequireStaff(actor);
+        if (!await db.BusinessRoleAssignments.AnyAsync(value => value.UserId == actor.User.Id && value.IsActive && value.Role == role, token))
+            throw Error("trial_business_role_required", role == BusinessRole.BusinessDevelopment
+                ? "Active Business Development access is required to create a Trial."
+                : "Active Commercial leadership access is required to decide Trial scope.", 403);
+    }
     public async Task RequireCommercialAsync(TrialActor actor, CancellationToken token)
     {
         RequireStaff(actor);
-        if (actor.IsPlatformAdmin || await db.BusinessRoleAssignments.AnyAsync(value => value.UserId == actor.User.Id && value.IsActive && value.Role == BusinessRole.CommercialOperator, token)) return;
+        if (actor.IsPlatformAdmin || await db.BusinessRoleAssignments.AnyAsync(value => value.UserId == actor.User.Id && value.IsActive
+            && (value.Role == BusinessRole.CommercialOperator || value.Role == BusinessRole.BusinessDevelopment || value.Role == BusinessRole.CommercialLeadership), token)) return;
         await RequireAuthorityAsync(actor, TrialApprovalDomain.Commercial, token);
     }
     public static async Task GuardProspectDeactivationAsync(PSeqOperationsDbContext db, Guid organizationId, CancellationToken token)
@@ -44,8 +64,9 @@ public sealed class TrialAccess(PSeqOperationsDbContext db, IExternalIdentityCon
             && await db.TrialProjects.AnyAsync(value => value.OrganizationId == organizationId, token))
             throw Error("trial_closeout_required", "Use the Trial Project's Close Prospect access action to review remaining relationships and record a deactivation reason.", 409);
     }
-    public static void RequireTenantAdmin(TrialActor actor)
-    { if (actor.IsStaff || !actor.IsOrganizationAdmin || actor.Tenant?.Organization.Kind != OrganizationKind.Prospect) throw Error("trial_organization_admin_required", "An active Prospect organization administrator must perform this action.", 403); }
+    public static void RequireTenantAdmin(TrialActor actor, TrialProject trial)
+    { if (actor.IsStaff || !actor.IsDepartmentAdmin || actor.Tenant?.Organization.Kind != OrganizationKind.Prospect
+        || trial.OrganizationId != actor.Tenant.Organization.Id || trial.DepartmentId != actor.Tenant.Department.Id) throw Error("trial_organization_admin_required", "An active Prospect organization or assigned-department administrator must perform this action.", 403); }
     public static IQueryable<TrialProject> Scope(IQueryable<TrialProject> query, TrialActor actor) => actor.IsStaff ? query
         : query.Where(value => value.OrganizationId == actor.Tenant!.Organization.Id && value.DepartmentId == actor.Tenant.Department.Id && value.ApprovedScopeRevision != null);
     public async Task<TrialApprovalAuthority> RequireAuthorityAsync(TrialActor actor, TrialApprovalDomain domain, CancellationToken token)

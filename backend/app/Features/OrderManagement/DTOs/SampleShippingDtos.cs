@@ -3,7 +3,12 @@ namespace PhaenoPortal.App.Features.OrderManagement.DTOs;
 public sealed record SampleShippingConfigurationDto(
     IReadOnlyList<SampleShippingDestinationDto> Destinations,
     IReadOnlyList<SampleTypeDefinitionDto> SampleTypes,
-    IReadOnlyList<SampleShippingInstructionRuleDto> InstructionRules);
+
+    IReadOnlyList<SampleShippingProcedureDto>? Procedures = null,
+    Guid? DefaultDestinationDefinitionKey = null,
+    long DefaultDestinationVersion = 0);
+
+public sealed record SetDefaultShippingDestinationRequest(Guid DefinitionKey, long Version);
 
 public sealed record SampleShippingDestinationDto(
     Guid Id,
@@ -31,7 +36,8 @@ public sealed record SampleShippingDestinationDto(
     DateTime EffectiveFrom,
     DateTime? EffectiveTo,
     bool IsActive,
-    long Version);
+    long Version,
+    string Lifecycle = "Released");
 
 public sealed record SampleShippingDestinationWriteRequest(
     Guid? SupersedesDestinationId,
@@ -81,7 +87,17 @@ public sealed record SampleTypeDefinitionDto(
     DateTime EffectiveFrom,
     DateTime? EffectiveTo,
     bool IsActive,
-    long Version);
+    long Version,
+    Guid? ShippingProcedureId = null,
+    string Lifecycle = "Released",
+    decimal? MinimumSampleAmount = null,
+    string? SampleAmountUnit = null);
+
+public sealed record SampleShippingStatusRequest(bool IsActive, long Version);
+public sealed record ChangeSampleTypeProcedureRequest(Guid ProcedureId, long Version);
+public sealed record UpdateShippingDestinationDraftRequest(long Version, SampleShippingDestinationWriteRequest Draft);
+public sealed record UpdateSampleTypeDraftRequest(long Version, SampleTypeDefinitionWriteRequest Draft);
+public sealed record DiscardShippingDraftRequest(long Version);
 
 public sealed record SampleTypeDefinitionWriteRequest(
     Guid? SupersedesSampleTypeId,
@@ -103,49 +119,10 @@ public sealed record SampleTypeDefinitionWriteRequest(
     string? CarrierRestrictions,
     int? MaximumTransitHours,
     DateTime EffectiveFrom,
-    bool IsActive);
-
-public sealed record SampleShippingInstructionRuleDto(
-    Guid Id,
-    Guid DefinitionKey,
-    int Revision,
-    Guid? SupersedesInstructionRuleId,
-    Guid DestinationId,
-    string DestinationName,
-    Guid SampleTypeDefinitionId,
-    string SampleTypeName,
-    string CompatibilityGroup,
-    string PackingInstructions,
-    string TemperatureInstructions,
-    string CarrierInstructions,
-    string DispatchInstructions,
-    string DeliveryInstructions,
-    string RequiredDocuments,
-    string ExceptionInstructions,
-    string? InternationalCustomsInstructions,
-    bool RequiresSeparateShipment,
-    DateTime EffectiveFrom,
-    DateTime? EffectiveTo,
     bool IsActive,
-    long Version);
-
-public sealed record SampleShippingInstructionRuleWriteRequest(
-    Guid? SupersedesInstructionRuleId,
-    long? SupersededVersion,
-    Guid DestinationId,
-    Guid SampleTypeDefinitionId,
-    string CompatibilityGroup,
-    string PackingInstructions,
-    string TemperatureInstructions,
-    string CarrierInstructions,
-    string DispatchInstructions,
-    string DeliveryInstructions,
-    string RequiredDocuments,
-    string ExceptionInstructions,
-    string? InternationalCustomsInstructions,
-    bool RequiresSeparateShipment,
-    DateTime EffectiveFrom,
-    bool IsActive);
+    Guid? ShippingProcedureId = null,
+    decimal? MinimumSampleAmount = null,
+    string? SampleAmountUnit = null);
 
 public sealed record SampleShippingPreviewRequest(
     Guid DestinationId,
@@ -155,8 +132,6 @@ public sealed record SampleShippingPreviewRequest(
 public sealed record SampleShippingPreviewDto(
     DateTime EffectiveAt,
     SampleShippingDestinationDto Destination,
-    string CompatibilityGroup,
-    bool RequiresSeparateShipment,
     IReadOnlyList<SampleShippingPreviewRuleDto> SampleRules);
 
 public sealed record SampleShippingPreviewRuleDto(
@@ -169,7 +144,8 @@ public sealed record SampleShippingPreviewRuleDto(
     string RequiredDocuments,
     string ExceptionInstructions,
     string? InternationalCustomsInstructions,
-    bool RequiresSeparateShipment);
+    Guid? ShippingProcedureId = null,
+    string? DestinationInstructions = null);
 
 public sealed record SampleShippingPacketScanDto(
     Guid PacketRevisionId,
@@ -201,7 +177,14 @@ public sealed record SampleShippingPacketScanDto(
     int AwaitingReceiptSampleCount,
     string ReceiptState,
     DateTime IssuedAt,
-    IReadOnlyList<SampleShippingCrosswalkItemDto> Crosswalk);
+    IReadOnlyList<SampleShippingCrosswalkItemDto> Crosswalk,
+    int ExpectedTubeCount = 0,
+    int ReceivedTubeCount = 0,
+    int OrderExpectedTubeCount = 0,
+    int OrderReceivedTubeCount = 0,
+    DateTime? ContainerReceivedAt = null);
+
+public sealed record SampleContainerKitIdentityDto(Guid Id, string KitNumber, string Barcode);
 
 public sealed record SampleShippingCrosswalkItemDto(
     Guid ShipmentItemId,
@@ -217,7 +200,17 @@ public sealed record SampleShippingCrosswalkItemDto(
     long Version,
     Guid? TubeSlotId = null,
     int TubeOrdinal = 1,
-    int TubeCount = 1);
+    int TubeCount = 1,
+    string? SampleBarcode = null,
+    int TotalSampleTubeCount = 1,
+    IReadOnlyList<SampleOtherShipmentDto>? OtherShipments = null,
+    int ReceivedTubeCount = 0,
+    int UnallocatedTubeCount = 0,
+    bool IsReceived = false,
+    decimal? CustomerDeclaredQuantity = null,
+    string? CustomerDeclaredQuantityUnit = null,
+    DateTime? CustomerDeclaredAt = null,
+    Guid? CustomerDeclaredByUserId = null);
 
 public sealed record RegisteredSampleTubeDto(
     Guid Id,
@@ -245,7 +238,8 @@ public sealed record SampleReturnKitDto(
     string? OutboundTrackingNumber,
     DateTime? FulfilledAt,
     long Version,
-    IReadOnlyList<RegisteredSampleTubeDto> Tubes);
+    IReadOnlyList<RegisteredSampleTubeDto> Tubes,
+    IReadOnlyList<StockKitProductExpiryDto>? ProductExpirations = null);
 
 public sealed record SampleShipmentWorkflowDto(
     Guid Id,
@@ -266,7 +260,15 @@ public sealed record SampleShipmentWorkflowDto(
     long Version,
     SampleReturnKitDto? ReturnKit,
     IReadOnlyList<SampleShippingCrosswalkItemDto> Crosswalk,
-    SampleShippingPacketSummaryDto? CurrentPacket);
+    SampleShippingPacketSummaryDto? CurrentPacket,
+    ShipmentContainerDto? Container = null,
+    bool IsPackingPool = false,
+    int ExpectedTubeCount = 0,
+    int ReceivedTubeCount = 0,
+    int OrderExpectedTubeCount = 0,
+    int OrderReceivedTubeCount = 0,
+    Guid? DepartureDeliveryLocationId = null,
+    LocationStockKitDto? AssignedContainer = null, string? OrganizationKind = null);
 
 public sealed record SampleShippingPacketSummaryDto(
     Guid Id,
@@ -288,7 +290,10 @@ public sealed record CreateSampleReturnKitRequest(
     string TubeProductNumber,
     string? TubeLotNumber,
     string ShipperSupplierName,
-    string ShipperProductNumber);
+    string ShipperProductNumber,
+    Guid? TubeSupplierProductId = null,
+    Guid? ShipperSupplierProductId = null,
+    IReadOnlyList<StockKitProductExpiryRequest>? ProductExpirations = null);
 
 public sealed record RegisterSampleTubesRequest(
     IReadOnlyList<string> SupplierBarcodes,
@@ -304,7 +309,9 @@ public sealed record AssignSampleTubeRequest(
     string SupplierBarcode,
     string? Reason,
     long Version,
-    Guid? TubeSlotId = null);
+    Guid? TubeSlotId = null,
+    decimal? CustomerDeclaredQuantity = null,
+    string? CustomerDeclaredQuantityUnit = null);
 
 public sealed record IssueSampleShippingPacketRequest(
     long Version,
@@ -326,4 +333,5 @@ public sealed record RegisteredSampleTubeScanDto(
     string? SampleName,
     string? TubeStatus,
     bool IsAccessioned,
-    string Outcome);
+    string Outcome,
+    bool IsReceived = false);

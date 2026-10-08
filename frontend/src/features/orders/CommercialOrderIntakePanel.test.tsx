@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -15,11 +15,13 @@ vi.mock("#/api/crm", () => ({ listCrmOrderHandoffs: apiMocks.handoffs }));
 vi.mock("#/api/order-management", () => ({
   getOrderErrorMessage: (_error: unknown, fallback: string) => fallback,
   listCommercialOrders: apiMocks.orders,
-  listEligibleCustomerCompanies: apiMocks.customers,
+  listCustomerOrderOptions: apiMocks.customers,
 }));
+const router = vi.hoisted(() => ({ search: {} as Record<string, string | number>, navigate: vi.fn() }));
 vi.mock("@tanstack/react-router", () => ({
   Link: ({ children }: { children: ReactNode }) => <a href="#test">{children}</a>,
-  useNavigate: () => vi.fn(),
+  useNavigate: () => router.navigate,
+  useSearch: () => router.search,
 }));
 vi.mock("./LabJobDetailsDialog", () => ({
   LabJobDetailsDialog: ({ open, sourceHandoff }: { open: boolean; sourceHandoff?: { requestNumber: string } | null }) =>
@@ -28,7 +30,8 @@ vi.mock("./LabJobDetailsDialog", () => ({
 
 describe("Commercial order intake CRM handoffs", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
+    router.search = {};
     apiMocks.customers.mockResolvedValue([{ id: "customer-1", name: "Example Customer" }]);
     apiMocks.orders.mockResolvedValue({ items: [], page: 1, pageSize: 100, totalCount: 0 });
     apiMocks.handoffs.mockResolvedValue([{
@@ -57,11 +60,20 @@ describe("Commercial order intake CRM handoffs", () => {
     }]);
   });
 
+  it("keeps administrator readers from starting either direct or handoff pricing", async () => {
+    renderIntake(false);
+    await screen.findByText("PRQ-100");
+    expect(screen.getByRole("button", { name: "New Order" })).toHaveProperty('disabled', true);
+    expect(screen.getByRole("button", { name: "Start Customer order" })).toHaveProperty('disabled', true);
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
   it("starts pricing from the approved immutable handoff instead of a free Customer choice", async () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
       <QueryClientProvider client={client}>
         <CommercialOrderIntakePanel
+          canCreate
           apiEnabled
           mock={false}
           userId="user-1"
@@ -73,7 +85,8 @@ describe("Commercial order intake CRM handoffs", () => {
     expect(await screen.findByText("PRQ-100")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Start Customer order" }));
 
-    expect(screen.getByRole("dialog").textContent).toBe("Start PRQ-100");
+    expect(router.navigate).toHaveBeenCalledWith({ to: "/order-operations/lab-services/orders/new", search: { organizationId: "customer-1", sourceRequestId: "request-1" } });
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 
   it("shows active pricing work in the same intake queue", async () => {
@@ -104,6 +117,7 @@ describe("Commercial order intake CRM handoffs", () => {
     render(
       <QueryClientProvider client={client}>
         <CommercialOrderIntakePanel
+          canCreate
           apiEnabled
           mock={false}
           userId="user-1"
@@ -115,8 +129,8 @@ describe("Commercial order intake CRM handoffs", () => {
     expect(await screen.findByRole("link", { name: "Johns Hopkins pilot" })).toBeTruthy();
     expect(screen.getByText(/JOB-1001 · Johns Hopkins University/)).toBeTruthy();
     expect(screen.getByText("Quote In Preparation")).toBeTruthy();
-    expect(screen.getByText("Price proposed · $120.00 per specimen")).toBeTruthy();
-    expect(apiMocks.orders).toHaveBeenCalledWith({ activeIntake: true, pageSize: 100 });
+    expect(screen.getByText("Price proposed · $120.00 per sample")).toBeTruthy();
+    expect(apiMocks.orders).toHaveBeenCalledWith({ orderType: "PSeqLabService", activeIntake: true, holds: false, search: undefined, page: 1, pageSize: 25 });
   });
 
   it("does not present a failed intake request as an empty queue", async () => {
@@ -129,6 +143,7 @@ describe("Commercial order intake CRM handoffs", () => {
     render(
       <QueryClientProvider client={client}>
         <CommercialOrderIntakePanel
+          canCreate
           apiEnabled
           mock={false}
           userId="user-1"
@@ -146,4 +161,62 @@ describe("Commercial order intake CRM handoffs", () => {
       screen.queryByText("No commercial intake work is awaiting action."),
     ).toBeNull();
   });
+
+  it("makes pending quote extension requests visible in active intake", async () => {
+    apiMocks.handoffs.mockResolvedValue([]);
+    apiMocks.orders.mockResolvedValue({ items: [{
+      id: "order-extension", orderType: "PSeqLabService", number: "JOB-EXT", reference: "Extension review",
+      organizationId: "customer-1", status: "QuoteIssued", updatedAt: "2026-09-08T12:00:00Z",
+      hasPendingQuoteExtension: true,
+    }], totalCount: 1, page: 1, pageSize: 25 });
+    renderIntake();
+    expect(await screen.findByText("Extension requested")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Extension review" })).toBeTruthy();
+    expect(screen.getByText("Quote Issued")).toBeTruthy();
+  });
+
+  it("restores the On hold view and search from the URL without adding pending CRM handoffs", async () => {
+    router.search = { intakeView: "holds", intakeSearch: " Atlas " };
+    renderIntake();
+    await waitFor(() => expect(apiMocks.orders).toHaveBeenCalledWith({ orderType: "PSeqLabService", activeIntake: false, holds: true, search: "Atlas", page: 1, pageSize: 25 }));
+    expect(screen.getByLabelText("View")).toHaveProperty("value", "holds");
+    expect(screen.getByLabelText("Search intake")).toHaveProperty("value", " Atlas ");
+    expect(screen.queryByText("PRQ-100")).toBeNull();
+  });
+
+  it("preserves the selected history view and search while moving through all returned orders", async () => {
+    router.search = { intakeView: "all", intakeSearch: "Atlas", intakePage: 2 };
+    apiMocks.orders.mockResolvedValue({ items: [], page: 2, pageSize: 25, totalCount: 76 });
+    renderIntake();
+    await screen.findByText("76 orders · Page 2 of 4");
+    expect(apiMocks.orders).toHaveBeenCalledWith({ orderType: "PSeqLabService", activeIntake: false, holds: false, search: "Atlas", page: 2, pageSize: 25 });
+    expect(screen.queryByText("PRQ-100")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    const navigation = router.navigate.mock.calls.at(-1)?.[0];
+    expect(navigation.to).toBe("/order-operations/lab-services");
+    expect(navigation.replace).toBe(true);
+    expect(navigation.search({ ...router.search, financeSection: "receipts" })).toEqual({
+      intakeView: "all", intakeSearch: "Atlas", intakePage: 3, financeSection: "receipts",
+    });
+  });
+
+  it("resets the page when filters change and retains unrelated workspace context", async () => {
+    router.search = { intakeView: "all", intakeSearch: "old query", intakePage: 4 };
+    renderIntake();
+    await waitFor(() => expect(apiMocks.orders).toHaveBeenCalledOnce());
+    fireEvent.change(screen.getByLabelText("Search intake"), { target: { value: "new query" } });
+    let navigation = router.navigate.mock.calls.at(-1)?.[0];
+    expect(navigation.search({ ...router.search, financeCustomer: "customer-2" })).toEqual({
+      intakeView: "all", intakeSearch: "new query", intakePage: 1, financeCustomer: "customer-2",
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
+    navigation = router.navigate.mock.calls.at(-1)?.[0];
+    expect(navigation.search(router.search)).toEqual({ intakeView: "active", intakeSearch: "", intakePage: 1 });
+  });
+
 });
+
+function renderIntake(canCreate = true) {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(<QueryClientProvider client={client}><CommercialOrderIntakePanel canCreate={canCreate} apiEnabled mock={false} userId="user-1" organizations={[{ id: "customer-1", name: "Example Customer" }]} /></QueryClientProvider>);
+}

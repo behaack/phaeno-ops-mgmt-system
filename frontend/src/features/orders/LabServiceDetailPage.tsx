@@ -1,163 +1,339 @@
+import { QuoteTurnaround } from './QuoteTurnaround'
+import { LabPhasesPanel } from './LabPhasesPanel'
+import { LabChangeQuotes } from './LabChangeQuotes'
+import { customerLabStatus } from './lab-customer-progress'
+import { LabJobWorkspaceActions } from './LabJobWorkspaceActions'
+import { LabOrderQuoteReview } from './LabOrderQuoteReview'
+import { QuoteSummary } from './QuoteSummary'
+import { LabQuoteActions } from './LabQuoteActions'
+import { labJobVisibility } from './lab-job-visibility'
+import { hasMultipleLabPhases, labSampleCount } from './lab-job-presentation'
+import { LabJobShippingWorkspace } from './LabJobShippingWorkspace'
+import { LabJobPhaseShipping } from './LabJobPhaseShipping'
+import { currentShippingPhase, phaseShippingProgress } from './lab-phase-shipping'
+import { buildLabJobProgress } from './lab-job-progress'
+import { LabJobDetailTabs, type LabJobDetailTab } from './LabJobDetailTabs'
+import { LabJobHistory } from './LabJobHistory'
+import { LabJobHoldNotice, LabJobTrackingSummary } from './LabJobTrackingSummary'
+import { customerSpecimenHoldsEnabled } from './use-specimen-holds'
+import { useLabPhasePlan } from './use-lab-phases'
+import { LabJobOrderProgress } from './LabJobOrderProgress'
+import type { ChangeLabJobWorkspace, LabJobWorkspaceSearch } from './lab-job-workspace-search'
+import { getLabPhaseKitSupply, type ShipmentKitSupply } from '#/api/transportation-kit-requests'
+import type { ShipmentHeaderAction } from '#/features/sample-shipping/SampleShippingDetailPage'
+import { useSourceSampleShipments } from '#/features/sample-shipping/use-source-sample-shipments'
 import { LabManagedResultReleases } from './LabManagedResultReleases'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link } from '@tanstack/react-router'
-import { Download, FileCheck2 } from 'lucide-react'
-import { useState } from 'react'
+import { Link, useBlocker, useNavigate } from '@tanstack/react-router'
+import { ArrowLeft, Download, FileCheck2 } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 
-import { acceptLabQuote, getLabOrder, getOrderErrorMessage, recordLabSampleShipment, requestLabCancellation, submitLabOrder, type Quote, withdrawLabOrder } from '#/api/order-management'
+import { acceptLabQuote, declineLabQuote, downloadLabQuotePdf, getLabOrder, getLabSampleTubePairs, getOrderErrorMessage, isOrderConcurrencyError, requestLabCancellation, submitLabOrder, type Quote, withdrawLabOrder } from '#/api/order-management'
 import { downloadCustomerInvoicePdf, downloadCustomerResultArtifact, listCustomerInvoices, listCustomerResultPackages, type CustomerResultPackage, type InvoiceReceivable } from '#/api/pseq-order-to-cash'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '#/components/ui/dialog'
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '#/components/ui/dialog'
 import { Input } from '#/components/ui/input'
+import { Field } from '#/components/ui/field'
+import { NativeSelect } from '#/components/ui/native-select'
 import { Label } from '#/components/ui/label'
 import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/required-field'
 import { usePhaenoSession } from '#/features/auth/session-context'
 import { GovernedResultPackagePanel } from './GovernedResultPackagePanel'
-import { humanizeStatus, OrderStatusBadge } from './OrderStatusBadge'
+import { OrderStatusBadge } from './OrderStatusBadge'
+import { useOrderDecisionDismissal } from './use-order-decision-dismissal'
+import { StandardLabServicePanel } from './StandardLabServicePanel'
+import { LabQuoteExtensionDialog } from './LabQuoteExtensionDialog'
+import { LabQuoteDeclineDialog } from './LabQuoteDeclineDialog'
+import { LabQuoteProposalDialog } from './LabQuoteProposalDialog'
+import { currentLabQuote, quoteStatusAt, useQuoteStatus } from './use-quote-status'
 
-export function LabServiceDetailPage({ orderId }: { orderId: string }) {
+export function LabServiceDetailPage({ orderId, workspace: controlledWorkspace, onWorkspaceChange }: { orderId: string; workspace?: LabJobWorkspaceSearch; onWorkspaceChange?: ChangeLabJobWorkspace }) {
   const { authProvider, session } = usePhaenoSession()
   const queryClient = useQueryClient()
-  const [dialog, setDialog] = useState<'accept' | 'cancel' | 'withdraw' | 'shipment' | null>(null)
+  const navigate = useNavigate()
+  const shipping = useSourceSampleShipments(orderId)
+  const [localWorkspace, setLocalWorkspace] = useState<LabJobWorkspaceSearch>({})
+  const workspace = controlledWorkspace ?? localWorkspace
+  const orderActionRef = useRef<HTMLButtonElement>(null)
+  const quoteActionRef = useRef<HTMLButtonElement>(null)
+  const [headerTarget, setHeaderTarget] = useState<HTMLDivElement | null>(null)
+  const [sampleReviewTarget, setSampleReviewTarget] = useState<HTMLDivElement | null>(null)
+  const [sendActionTarget, setSendActionTarget] = useState<HTMLDivElement | null>(null)
+  const [shippingActive, setShippingActive] = useState(false)
+  const [navigationLocked, setNavigationLocked] = useState(false)
+  const [kitSupply, setKitSupply] = useState<ShipmentKitSupply | undefined>(undefined)
+  const [kitOrderOpen, setKitOrderOpen] = useState(false)
+  const [phaseDialogOpen, setPhaseDialogOpen] = useState(false)
+  const [holdDialogOpen, setHoldDialogOpen] = useState(false)
+  const [phaseDecisionOpen, setPhaseDecisionOpen] = useState(false)
+  useBlocker({ shouldBlockFn: () => navigationLocked, enableBeforeUnload: navigationLocked, disabled: !navigationLocked })
+  const changeWorkspace: ChangeLabJobWorkspace = (patch, options) => {
+    if (onWorkspaceChange) return onWorkspaceChange(patch, options)
+    if (!shippingActive) setLocalWorkspace(previous => ({ ...previous, ...patch }))
+    return Promise.resolve()
+  }
+  const [dialog, setDialog] = useState<'accept' | 'cancel' | 'withdraw' | 'decline' | 'propose' | null>(null)
   const [cancellationReason, setCancellationReason] = useState('')
-  const [shipmentSampleId, setShipmentSampleId] = useState('')
-  const [carrier, setCarrier] = useState('')
-  const [trackingNumber, setTrackingNumber] = useState('')
   const [purchaseOrderNumber, setPurchaseOrderNumber] = useState('')
+  const [sampleTypeConfirmed, setSampleTypeConfirmed] = useState(false)
+  const [extensionQuote, setExtensionQuote] = useState<Quote | null>(null)
+  const [decisionQuote, setDecisionQuote] = useState<Quote | null>(null)
+  const [decisionVersion, setDecisionVersion] = useState<number | null>(null)
+  const declineAttempt = useRef<{ payload: string; key: string } | null>(null)
   const apiEnabled = Boolean(session?.capabilities.canViewLabServiceOrders) && authProvider !== 'mock'
+  const canViewInvoices = session?.capabilities.canViewLabServiceInvoices === true
   const orderQuery = useQuery({ queryKey: ['lab-service-order', orderId], queryFn: () => getLabOrder(orderId), enabled: apiEnabled })
-  const invoicesQuery = useQuery({ queryKey: ['customer-invoices'], queryFn: listCustomerInvoices, enabled: apiEnabled })
+  const pairWorkspace = useQuery({ queryKey: ['lab-sample-tube-pairs', orderId], queryFn: () => getLabSampleTubePairs(orderId),
+    enabled: apiEnabled && orderQuery.data?.usesPairedPreparation === true && Boolean(orderQuery.data.placedAt) })
+  const phasePlan = useLabPhasePlan(orderId, false, apiEnabled && Boolean(orderQuery.data?.placedAt || orderQuery.data?.quotes.some(q => q.status === 'Accepted')))
+  const shippingPhase = currentShippingPhase(phasePlan.data?.phases, orderQuery.data, pairWorkspace.data, shipping.related)
+  const phaseSupply = useQuery({ queryKey: ['lab-phase-kit-supply', orderId, undefined, shippingPhase?.id, phasePlan.data?.revision],
+    queryFn: () => getLabPhaseKitSupply(orderId), enabled: apiEnabled && orderQuery.data?.usesPairedPreparation === true && Boolean(orderQuery.data.placedAt && shippingPhase) })
+  const quote = orderQuery.data ? currentLabQuote(orderQuery.data.quotes) : null
+  const quoteStatus = useQuoteStatus(quote)
+  const deadlinePassed = quote?.status === 'Issued' && quoteStatus === 'Expired'
+  useEffect(() => {
+    if (deadlinePassed) void queryClient.invalidateQueries({ queryKey: ['lab-service-order', orderId] })
+  }, [deadlinePassed, orderId, queryClient])
+  const invoicesQuery = useQuery({ queryKey: ['customer-invoices', session?.selectedOrganization?.organizationId, session?.selectedDepartment?.departmentId], queryFn: listCustomerInvoices, enabled: apiEnabled && canViewInvoices })
   const resultPackagesQuery = useQuery({ queryKey: ['customer-result-packages', orderId], queryFn: () => listCustomerResultPackages(orderId), enabled: apiEnabled })
   const invoiceDownload = useMutation({ mutationFn: (invoice: InvoiceReceivable) => downloadCustomerInvoicePdf(invoice) })
+  const quoteDownload = useMutation({ mutationFn: ({ orderNumber, quote }: { orderNumber: string; quote: Quote }) => downloadLabQuotePdf(orderId, orderNumber, quote) })
   const resultDownload = useMutation({ mutationFn: ({ resultPackage, artifact }: { resultPackage: CustomerResultPackage; artifact: CustomerResultPackage['artifacts'][number] }) => downloadCustomerResultArtifact(orderId, resultPackage, artifact), onSettled: () => queryClient.invalidateQueries({ queryKey: ['customer-result-packages', orderId] }) })
   const action = useMutation({
-    mutationFn: async (kind: 'submit' | 'accept' | 'cancel' | 'withdraw' | 'shipment') => {
+    mutationFn: async (kind: 'submit' | 'accept' | 'cancel' | 'withdraw' | { kind: 'decline'; reason: string }) => {
       const order = orderQuery.data
       if (!order) throw new Error('The order has not loaded.')
+      if (typeof kind === 'object') {
+        const current = currentLabQuote(order.quotes)
+        if (!current || current.id !== decisionQuote?.id || decisionVersion !== order.version || !order.canDeclineQuote)
+          throw new Error('The order or quote changed. Close this dialog and review the current quote.')
+        const payload = JSON.stringify({ quoteId: current.id, version: decisionVersion, reason: kind.reason })
+        if (declineAttempt.current?.payload !== payload) declineAttempt.current = { payload, key: crypto.randomUUID() }
+        return declineLabQuote(order.id, current.id, decisionVersion, kind.reason, declineAttempt.current.key)
+      }
       if (kind === 'submit') return submitLabOrder(order.id, order.version)
       if (kind === 'accept') {
-        const quote = currentQuote(order.quotes)
-        if (!quote) throw new Error('No current quote is available.')
-        return acceptLabQuote(order.id, quote.id, order.version, purchaseOrderNumber)
+        const current = currentLabQuote(order.quotes)
+        if (!current || current.id !== decisionQuote?.id) throw new Error('The quote changed. Close this dialog and review the current quote.')
+        if (quoteStatusAt(current, Date.now()) === 'Expired') throw new Error('This quote has expired and cannot be accepted. Request an extension to continue.')
+        if (!order.canAcceptQuote) throw new Error(order.quoteAcceptanceBlockedReason || 'This quote is not available for acceptance.')
+        if (!sampleTypeConfirmed || !order.sampleTypeDefinitionId) throw new Error('Confirm the quoted Sample type.')
+        return acceptLabQuote(order.id, current.id, order.version, purchaseOrderNumber, order.sampleTypeDefinitionId)
       }
       if (kind === 'withdraw') return withdrawLabOrder(order.id, order.version, cancellationReason)
-      if (kind === 'shipment') {
-        const sample = order.samples.find((item) => item.id === shipmentSampleId)
-        if (!sample) throw new Error('Select a sample before recording shipment.')
-        return recordLabSampleShipment(order.id, sample.id, { version: sample.version, carrier: carrier || null, trackingNumber: trackingNumber || null, shippedAt: new Date().toISOString() })
-      }
       return requestLabCancellation(order.id, order.version, cancellationReason)
     },
-    onSuccess: async () => {
-      setDialog(null); setCancellationReason(''); setShipmentSampleId(''); setCarrier(''); setTrackingNumber(''); setPurchaseOrderNumber('')
+    onSuccess: async (updated, kind) => {
+      queryClient.setQueryData(['lab-service-order', orderId], updated)
+      setDialog(null); setCancellationReason(''); setPurchaseOrderNumber(''); setSampleTypeConfirmed(false)
+      if (kind === 'accept') await changeWorkspace({ detailTab: 'phases', shipmentId: undefined, phaseId: undefined }, { afterSave: true })
       await queryClient.invalidateQueries({ queryKey: ['lab-service-order', orderId] })
       await queryClient.invalidateQueries({ queryKey: ['lab-service-orders'] })
     },
+    onError: async error => { if (isOrderConcurrencyError(error)) await queryClient.invalidateQueries({ queryKey: ['lab-service-order', orderId] }) },
   })
 
-  if (!apiEnabled) return <main className="page-wrap px-4 py-8"><Alert><AlertTitle>Connected order detail is unavailable</AlertTitle><AlertDescription>Use a signed-in Customer session to review this laboratory request.</AlertDescription></Alert></main>
+  const dialogDirty = dialog === 'accept' ? purchaseOrderNumber !== '' || sampleTypeConfirmed : (dialog === 'withdraw' || dialog === 'cancel') && cancellationReason !== ''
+  const decisionDismissal = useOrderDecisionDismissal(dialogDirty, (dialog === 'accept' || dialog === 'withdraw' || dialog === 'cancel') && action.isPending, () => setDialog(null), { scope: 'order changes', description: 'The entries in this dialog will be discarded. Your saved order will remain unchanged.' })
+  function openDecision(next: 'accept' | 'cancel' | 'withdraw' | 'decline' | 'propose') {
+    if (action.isPending) return
+    action.reset(); setCancellationReason(''); setPurchaseOrderNumber(''); setSampleTypeConfirmed(false); setDecisionQuote(['accept', 'decline', 'propose'].includes(next) ? quote : null); setDecisionVersion(orderQuery.data?.version ?? null); setDialog(next)
+  }
+  function closeDecision() {
+    decisionDismissal.close()
+  }
+
+  if (!apiEnabled) return <main className="page-wrap px-4 py-8"><Alert><AlertTitle>Connected order detail is unavailable</AlertTitle><AlertDescription>Use a signed-in Customer or Partner session to review this laboratory request.</AlertDescription></Alert></main>
   if (orderQuery.isLoading) return <main className="page-wrap px-4 py-8"><p role="status">Loading laboratory order…</p></main>
   if (orderQuery.error || !orderQuery.data) return <main className="page-wrap px-4 py-8"><Alert variant="destructive"><AlertTitle>Laboratory order could not be loaded</AlertTitle><AlertDescription>{getOrderErrorMessage(orderQuery.error, 'Return to Lab services and try again.')}</AlertDescription></Alert></main>
 
   const order = orderQuery.data
-  const quote = currentQuote(order.quotes)
+  const canManageQuotes = order.canManageQuotes ?? (order.canAcceptQuote || session?.capabilities.canAcceptLabServiceQuotes === true)
+  const awaitingQuoteAcceptance = order.status === 'QuoteIssued' && !order.placedAt && !order.standardCommercialSnapshot && (quoteStatus === 'Issued' || quoteStatus === 'Expired')
+  const proposal = order.quoteChangeProposal
+  const declineUnavailable = !order.canDeclineQuote || quote?.id !== decisionQuote?.id || order.version !== decisionVersion
+    ? 'The order or quote changed. Close this dialog and review the current quote before declining.' : undefined
+  const restoreQuoteFocus = () => {
+    const target = quoteActionRef.current ?? orderActionRef.current ?? document.getElementById('job-commercial')
+    target?.focus()
+  }
+  const extensionPending = quote?.extensionRequest?.status === 'Pending'
+  const acceptanceBlocked = quoteStatus === 'Expired' || !order.canAcceptQuote || (awaitingQuoteAcceptance && !quote?.deliveryTargetBusinessDays)
+  const acceptanceExplanation = quoteStatus === 'Expired'
+    ? 'This quote has expired and cannot be accepted. Phaeno must issue a new revision before you can continue.'
+    : !quote?.deliveryTargetBusinessDays ? 'Phaeno must issue a new quote revision with a business-day delivery target before this order can be approved.'
+    : order.quoteAcceptanceBlockedReason || 'This quote is not currently available for acceptance. Contact Phaeno for help.'
   const requiresPurchaseOrder = session?.selectedDepartment?.purchaseOrderRequired === true
-  const invoices = invoicesQuery.data?.filter((invoice) => invoice.labServiceOrderId === order.id) ?? []
+  const invoices = canViewInvoices ? invoicesQuery.data?.filter((invoice) => invoice.labServiceOrderId === order.id) ?? [] : []
   const resultPackages = resultPackagesQuery.data ?? []
+  const visibility = labJobVisibility(order, shipping.related, resultPackages.length > 0)
+  const shippingPhaseId = shippingPhase?.id
+  // Retain the mounted task during background refresh; its controls still use current query/error guards.
+  const taskProgress = order.usesPairedPreparation && shippingPhase && phaseSupply.data && pairWorkspace.data && shipping.shipments.data
+    ? phaseShippingProgress(shippingPhase, order, phaseSupply.data.requests, pairWorkspace.data, shipping.related) : null
+  const legacyShippingFinished = !order.usesPairedPreparation && buildLabJobProgress({ order, shipments: shipping.related, shippingState: shipping.receiptState, kitSupply,
+    canManageShipping: session?.capabilities.canManageSampleShipping === true, canAcceptOrder: Boolean(canManageQuotes || order.canPlaceStandardOrder), now: Date.now() }).allSent
+  const showShippingWorkspace = visibility.samplesRelevant && (order.usesPairedPreparation ? taskProgress?.next === 'prepare' || taskProgress?.next === 'send' : !legacyShippingFinished)
+  const detailsDisabled = navigationLocked || shippingActive || action.isPending || kitOrderOpen || phaseDialogOpen || holdDialogOpen || phaseDecisionOpen || Boolean(dialog) || Boolean(extensionQuote)
+  const detailTab = workspace.detailTab ?? (visibility.confirmed ? 'phases' : 'billing')
+  const changeDetails = (tab: LabJobDetailTab, phaseId?: string) => {
+    if (detailsDisabled) return
+    void changeWorkspace({ detailTab: tab, ...(phaseId && tab === 'phases' ? { detailPhaseId: phaseId } : phaseId && tab === 'results' ? { resultPhaseId: phaseId } : {}) }).then(() => {
+      if (phaseId) window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
+        const target = document.getElementById(tab === 'phases' ? `phase-summary-${phaseId}` : 'results')
+        target?.scrollIntoView({ block: 'nearest' }); target?.focus({ preventScroll: true })
+      }))
+    })
+  }
+  const filteredSampleIds = workspace.resultPhaseId ? new Set([
+    ...order.samples.filter(s => s.phaseId === workspace.resultPhaseId).map(s => s.id),
+    ...(phasePlan.data?.samples.filter(s => s.phaseId === workspace.resultPhaseId).map(s => s.id) ?? []),
+    ...(phasePlan.data?.phases.find(p => p.id === workspace.resultPhaseId)?.sampleIds ?? []),
+  ]) : null
+  const filteredResultPackages = resultPackages.filter(p => !filteredSampleIds || filteredSampleIds.has(p.labSampleId))
+  const filteredReleases = order.resultReleases.filter(r => !filteredSampleIds || filteredSampleIds.has(r.labSampleId))
+  const orderActions: ShipmentHeaderAction[] = []
+  const openKitOrder = () => {
+    if (shippingActive || navigationLocked || dialog || extensionQuote) return
+    setKitOrderOpen(true)
+  }
+  if (order.canEdit) orderActions.push({ kind: 'command', label: order.customerDraft ? 'Edit Draft' : 'Edit request', disabled: shippingActive || action.isPending, onSelect: () => { void navigate({ to: '/lab-services/$orderId/edit', params: { orderId: order.id }, search: previous => previous }) } })
+  if (order.canSubmit) orderActions.push({ kind: 'command', label: 'Submit for pricing', disabled: shippingActive || action.isPending, onSelect: () => action.mutate('submit') })
+  if (order.canWithdraw && !awaitingQuoteAcceptance) orderActions.push({ kind: 'command', label: 'Withdraw request', disabled: shippingActive || action.isPending, onSelect: () => openDecision('withdraw') })
+  if (order.canRequestCancellation) orderActions.push({ kind: 'command', label: 'Request cancellation', variant: 'destructive', keepInMenu: true, disabled: shippingActive || action.isPending, onSelect: () => openDecision('cancel') })
+  const quoteActions = quote && !order.standardCommercialSnapshot ? <LabQuoteActions
+    canAccept={awaitingQuoteAcceptance && canManageQuotes} canPropose={awaitingQuoteAcceptance && canManageQuotes && order.canProposeQuoteChanges === true}
+    canDecline={awaitingQuoteAcceptance && canManageQuotes && order.canDeclineQuote === true}
+    canExtend={awaitingQuoteAcceptance && !extensionPending && order.canRequestQuoteExtension === true && quoteStatus === 'Expired'}
+    canDownload downloadBusy={quoteDownload.isPending} disabled={shippingActive || action.isPending}
+    acceptanceBlocked={acceptanceBlocked} triggerRef={quoteActionRef}
+    onAccept={() => openDecision('accept')} onPropose={() => openDecision('propose')} onDecline={() => openDecision('decline')}
+    onExtend={() => setExtensionQuote(quote)} onDownload={() => quoteDownload.mutate({ orderNumber: order.orderNumber, quote })} /> : null
+  const openStep = (step: string) => {
+    if (step === 'receive-kits') { openKitOrder(); return }
+    const targetId = step === 'confirm-order' ? 'job-commercial' : step === 'phase-progress' ? 'job-phase-progress' : step === 'prepare' ? 'paired-sample-preparation' : 'samples-and-shipping'
+    const showTarget = () => window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
+      const target = document.getElementById(targetId); target?.scrollIntoView({ block: 'start' }); target?.focus({ preventScroll: true })
+    }))
+    if (step === 'confirm-order' || step === 'phase-progress') void changeWorkspace({ detailTab: step === 'confirm-order' ? 'billing' : 'phases' }).then(showTarget)
+    else void changeWorkspace({ phaseId: shippingPhaseId, shippingView: step === 'samples' || step === 'receive-kits' || step === 'prepare' ? undefined : 'tubes', orderKits: undefined }).then(showTarget)
+  }
   return (
     <main className="page-wrap px-4 py-8">
       <section className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div><p className="text-sm text-muted-foreground"><Link to="/lab-services" className="hover:underline">Lab services</Link> / <span className="font-mono">{order.orderNumber}</span></p><div className="mt-2 flex flex-wrap items-center gap-3"><h1 className="text-3xl font-semibold">{order.orderNumber}</h1><OrderStatusBadge status={order.status} /></div><p className="mt-2 text-sm text-muted-foreground">{order.customerReference || 'No Customer reference'} · Updated {formatDate(order.updatedAt)}</p></div>
-        <div className="flex flex-wrap gap-2">{order.canEdit ? <Button type="button" variant="outline" asChild><Link to="/lab-services/$orderId/edit" params={{ orderId: order.id }}>Edit request</Link></Button> : null}{order.canSubmit ? <Button type="button" onClick={() => action.mutate('submit')} disabled={action.isPending}>Submit for pricing</Button> : null}{order.canAcceptQuote ? <Button type="button" onClick={() => setDialog('accept')}>Accept quote</Button> : null}{order.canWithdraw ? <Button type="button" variant="outline" onClick={() => setDialog('withdraw')}>Withdraw</Button> : null}{order.canRequestCancellation ? <Button type="button" variant="outline" onClick={() => setDialog('cancel')}>Request cancellation</Button> : null}</div>
+        <div><Link to="/lab-services" search={previous => previous} className="inline-flex min-h-6 cursor-pointer items-center gap-1.5 rounded-sm text-sm text-muted-foreground hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><ArrowLeft className="size-4" aria-hidden="true" />Back to lab services</Link><div className="mt-2 flex flex-wrap items-center gap-3"><h1 className="text-3xl font-semibold">{order.orderNumber}</h1><OrderStatusBadge status={order.status === 'QuoteIssued' && quoteStatus === 'Expired' ? 'QuoteExpired' : customerLabStatus(order.status, order.laboratoryProgress)} /></div><p className="mt-2 text-sm text-muted-foreground">{order.customerReference || 'No Customer reference'} · Updated {formatDate(order.updatedAt)}</p>{visibility.confirmed && phasePlan.data ? <p className="mt-1 text-xs text-muted-foreground">{labSampleCount(phasePlan.data.sampleCount)}{hasMultipleLabPhases(order, phasePlan.data) ? ` · ${phasePlan.data.phases.length} phases` : ''} · {phasePlan.data.phases.reduce((total, phase) => total + phase.deliveredSamples, 0)} results available</p> : null}</div>
+        <div ref={setHeaderTarget} className="shrink-0">{!showShippingWorkspace ? <LabJobWorkspaceActions orderActions={orderActions} triggerRef={orderActionRef} dialogOpen={Boolean(dialog) || Boolean(extensionQuote) || kitOrderOpen || phaseDialogOpen} /> : null}</div>
       </section>
-      {order.tenantSafeReason ? <Alert className="mb-5"><AlertTitle>Action needed</AlertTitle><AlertDescription>{order.tenantSafeReason}</AlertDescription></Alert> : null}
+      {order.tenantSafeReason && (order.status === 'ChangesRequested' || order.tenantSafeReason !== proposal?.reason) ? <Alert className="mb-5"><AlertTitle>Action needed</AlertTitle><AlertDescription>{order.tenantSafeReason}</AlertDescription></Alert> : null}
+      {customerSpecimenHoldsEnabled && visibility.trackingRelevant ? <LabJobHoldNotice order={order} onReview={phaseId => changeDetails('phases', phaseId)} /> : null}
       {order.labCustomerActionSummary ? <Alert className="mb-5"><AlertTitle>Laboratory action needed</AlertTitle><AlertDescription>{order.labCustomerActionSummary}</AlertDescription></Alert> : null}
-      {action.error ? <Alert variant="destructive" className="mb-5"><AlertTitle>Order was not updated</AlertTitle><AlertDescription>{getOrderErrorMessage(action.error, 'Reload and try again.')}</AlertDescription></Alert> : null}
-
-      {order.labMilestone ? <Card className="mb-5"><CardHeader><CardTitle>Laboratory progress</CardTitle><CardDescription>Current customer-safe milestone from the laboratory record.</CardDescription></CardHeader><CardContent><div className="flex flex-wrap items-center gap-3"><OrderStatusBadge status={order.labMilestone} />{order.labScheduleHealth ? <span className="text-sm text-muted-foreground">Schedule: {humanizeStatus(order.labScheduleHealth)}</span> : null}{order.labExpectedCompletionAtUtc ? <span className="text-sm text-muted-foreground">Expected {formatDate(order.labExpectedCompletionAtUtc)}</span> : null}</div>{order.labPermittedQcProjectionJson ? <details className="mt-3"><summary className="cursor-pointer text-sm font-medium">Approved QC summary</summary><pre className="mt-2 overflow-x-auto rounded-md bg-muted p-3 text-xs">{prettyJson(order.labPermittedQcProjectionJson)}</pre></details> : null}{order.labReadyForRelease ? <p className="mt-3 text-sm">Scientific review is complete. Phaeno must still complete the Commercial release before any result file appears here.</p> : null}</CardContent></Card> : null}
-
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(18rem,1fr)]">
-        <div className="space-y-5">
-          <Card><CardHeader><CardTitle>Samples</CardTitle><CardDescription>Each sample progresses independently after physical receipt and accession.</CardDescription></CardHeader><CardContent className="divide-y">{order.samples.map((sample) => <section key={sample.id} className="py-4 first:pt-0 last:pb-0"><div className="flex flex-wrap items-start justify-between gap-2"><div><h2 className="font-medium">{sample.customerSampleId}</h2><p className="mt-1 text-sm text-muted-foreground">{sample.materialType} · {sample.quantity} {sample.quantityUnit} · {sample.biologicalSource}</p></div><div className="flex flex-wrap items-center gap-2"><OrderStatusBadge status={sample.status} />{!sample.receivedAt && order.placedAt ? <Button type="button" size="sm" variant="outline" onClick={() => { setShipmentSampleId(sample.id); setCarrier(sample.carrier ?? ''); setTrackingNumber(sample.trackingNumber ?? ''); setDialog('shipment') }}>Record shipment</Button> : null}</div></div>{sample.accessionId ? <p className="mt-2 text-sm">Accession <span className="font-mono">{sample.accessionId}</span></p> : null}{sample.trackingNumber ? <p className="mt-2 text-sm">Shipment {sample.carrier ?? ''} <span className="font-mono">{sample.trackingNumber}</span></p> : null}{sample.receiptCondition ? <p className="mt-1 text-sm text-muted-foreground">Receipt: {sample.receiptCondition}</p> : null}{sample.tenantSafeReason ? <p className="mt-2 text-sm text-destructive">{sample.tenantSafeReason}</p> : null}</section>)}</CardContent></Card>
-
-          <Card>
+      {action.error && !dialog ? <Alert variant="destructive" className="mb-5"><AlertTitle>Order was not updated</AlertTitle><AlertDescription>{getOrderErrorMessage(action.error, 'Reload and try again.')}</AlertDescription></Alert> : null}
+      {quoteDownload.error ? <Alert variant="destructive" className="mb-5"><AlertTitle>Quote could not be downloaded</AlertTitle><AlertDescription>{getOrderErrorMessage(quoteDownload.error, 'Try Download quote PDF again. If the problem continues, contact Phaeno.')}</AlertDescription></Alert> : null}
+      <section id="ordering-and-shipping" className="space-y-5">
+        {order.placedAt && order.usesPairedPreparation ? <LabJobPhaseShipping order={order} phasePlan={phasePlan.data}
+          phaseState={phasePlan.error ? 'unavailable' : phasePlan.data ? 'ready' : 'loading'} onPhaseRefresh={() => { void phasePlan.refetch() }}
+          pairs={pairWorkspace.data} shipments={shipping.related} shippingReady={shipping.receiptState === 'ready'}
+          canManage={session?.capabilities.canManageSampleShipping === true} actionsDisabled={shippingActive || navigationLocked || action.isPending} requestOpen={kitOrderOpen}
+          onRequestOpenChange={setKitOrderOpen} onModalChange={setPhaseDialogOpen} onStepSelect={openStep} sendActionTargetRef={setSendActionTarget} />
+          : <LabJobOrderProgress order={order} shipments={shipping.related} shippingState={shipping.receiptState} kitSupply={kitSupply}
+            canManageShipping={session?.capabilities.canManageSampleShipping === true} canAcceptOrder={Boolean(canManageQuotes || order.canPlaceStandardOrder)}
+            onStepSelect={openStep} sendActionTargetRef={setSendActionTarget} sampleReviewTargetRef={setSampleReviewTarget} />}
+        {showShippingWorkspace ? <LabJobShippingWorkspace order={order} taskOnly={order.usesPairedPreparation} workspace={{ ...workspace, phaseId: shippingPhaseId }} onWorkspaceChange={changeWorkspace} headerTarget={headerTarget} sendActionTarget={sendActionTarget} sampleReviewTarget={sampleReviewTarget} orderActions={orderActions} orderDialogOpen={Boolean(dialog) || Boolean(extensionQuote) || kitOrderOpen || phaseDialogOpen || holdDialogOpen || phaseDecisionOpen} onActivityChange={setShippingActive} navigationLocked={navigationLocked} onNavigationLockChange={setNavigationLocked} onKitSupplyChange={setKitSupply} pairWorkspace={pairWorkspace.data} pairState={pairWorkspace.isLoading ? 'loading' : pairWorkspace.error ? 'unavailable' : 'ready'} onPairRefresh={() => { void pairWorkspace.refetch() }} /> : null}
+      </section>
+      <LabJobDetailTabs value={detailTab} onChange={tab => changeDetails(tab)} disabled={detailsDisabled}
+        phases={visibility.confirmed ? <div className="space-y-4">
+          <LabPhasesPanel order={order} onSaved={async () => { await queryClient.invalidateQueries({ queryKey: ['lab-service-order', orderId] }); await queryClient.invalidateQueries({ queryKey: ['lab-service-orders'] }) }}
+            onModalChange={setPhaseDecisionOpen} tracking={{ shipments: shipping.related, shippingReady: shipping.receiptState === 'ready', pairs: pairWorkspace.data, requests: phaseSupply.data?.requests,
+              expandedPhaseId: workspace.detailPhaseId, onExpand: id => { if (!detailsDisabled) void changeWorkspace({ detailPhaseId: id }) }, onResults: id => changeDetails('results', hasMultipleLabPhases(order, phasePlan.data) ? id : undefined),
+              disabled: detailsDisabled, onHoldModalChange: setHoldDialogOpen }} />
+          <LabJobTrackingSummary order={order} />
+        </div> : <p className="rounded-lg border bg-card p-4 text-sm text-muted-foreground">Progress becomes available after the order is accepted. Review scope and pricing in Order and billing.</p>}
+        results={          <Card>
             <CardHeader>
               <CardTitle>Files and results</CardTitle>
-              <CardDescription>Scientific approval and release are governed in POMS. Payment balance and credit status never gate PSeq result release.</CardDescription>
+              <CardDescription>Phaeno manages scientific approval and release. Payment balance and credit status do not delay result release.</CardDescription>
             </CardHeader>
             <CardContent>
+              {phasePlan.data && phasePlan.data.phases.length > 1 ? <Field className="mb-4 max-w-sm"><Label htmlFor="result-phase-filter">Phase</Label><NativeSelect id="result-phase-filter" value={workspace.resultPhaseId ?? ''} onChange={event => { void changeWorkspace({ resultPhaseId: event.target.value || undefined }) }}><option value="">All phases</option>{phasePlan.data.phases.map(phase => <option key={phase.id} value={phase.id}>{phase.name}</option>)}</NativeSelect></Field> : null}
+              {workspace.resultPhaseId && !phasePlan.data?.phases.some(phase => phase.id === workspace.resultPhaseId) ? <Alert><AlertTitle>Selected phase is unavailable</AlertTitle><AlertDescription><Button variant="outline" size="sm" onClick={() => { void changeWorkspace({ resultPhaseId: undefined }) }}>Show all results</Button></AlertDescription></Alert> : null}
               {resultPackagesQuery.isLoading ? <p role="status" className="text-sm text-muted-foreground">Checking released result packages…</p> : null}
               {resultPackagesQuery.isFetching && !resultPackagesQuery.isLoading ? <p role="status" className="text-xs text-muted-foreground">Refreshing result availability…</p> : null}
               {resultPackagesQuery.error || resultDownload.error ? <Alert variant="destructive"><AlertTitle>Result files could not be loaded</AlertTitle><AlertDescription>{getOrderErrorMessage(resultPackagesQuery.error ?? resultDownload.error, 'Refresh and try again.')}</AlertDescription></Alert> : null}
-              {resultPackages.length ? <div className="divide-y">{resultPackages.map((resultPackage) => <GovernedResultPackagePanel
+              {filteredResultPackages.length ? <div className="divide-y">{filteredResultPackages.map((resultPackage) => <GovernedResultPackagePanel
                 key={resultPackage.id} resultPackage={resultPackage}
                 sampleName={order.samples.find((item) => item.id === resultPackage.labSampleId)?.customerSampleId ?? 'Sample'}
                 isDownloading={resultDownload.isPending}
                 onDownload={(artifact) => resultDownload.mutate({ resultPackage, artifact })}
               />)}</div> : null}
-              {order.resultFiles.length ? <LabManagedResultReleases orderId={order.id} releases={order.resultReleases} files={order.resultFiles} /> : null}
-              {!resultPackagesQuery.isLoading && !resultPackages.length && !order.resultFiles.length ? <div className="flex flex-col items-center py-8 text-center"><FileCheck2 aria-hidden="true" className="mb-2 size-7 text-muted-foreground" /><p className="font-medium">No released results</p><p className="mt-1 text-sm text-muted-foreground">Results may still be processing, under scientific review, or awaiting a Result Release Manager.</p></div> : null}
+              {order.resultFiles.length ? <LabManagedResultReleases orderId={order.id} releases={filteredReleases} files={order.resultFiles} /> : null}
+              {!resultPackagesQuery.isLoading && !resultPackagesQuery.error && !filteredResultPackages.length && !filteredReleases.some(r => r.releaseStatus === 'Released') ? <div className="flex flex-col items-center py-8 text-center"><FileCheck2 aria-hidden="true" className="mb-2 size-7 text-muted-foreground" /><p className="font-medium">{workspace.resultPhaseId && hasMultipleLabPhases(order, phasePlan.data) ? 'No released results for this phase' : 'No released results'}</p><p className="mt-1 text-sm text-muted-foreground">Results may still be processing, under scientific review, or awaiting a Result Release Manager.</p></div> : null}
             </CardContent>
-          </Card>
+          </Card>} billing={<><StandardLabServicePanel order={order} />
+          <LabChangeQuotes order={order} onSaved={async () => { await queryClient.invalidateQueries({ queryKey: ['lab-service-order', orderId] }); await queryClient.invalidateQueries({ queryKey: ['lab-service-orders'] }) }} />
+          <section aria-labelledby="order-details-heading" className="rounded-lg border bg-card p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3"><h2 id="order-details-heading" className="font-semibold">Order details and billing</h2>{quoteActions}</div>
+            <LabOrderQuoteReview order={order} quote={quote} status={quoteStatus ?? quote?.status}
+              quoteHelp={proposal ? <Alert className="mt-4"><AlertTitle>Changes proposed</AlertTitle><AlertDescription><p>Quote revision {proposal.quoteRevision} · Sent {formatDateTime(proposal.proposedAt)}</p><p className="whitespace-pre-wrap break-words">{proposal.reason}</p><p>Phaeno is reviewing your proposal. Your request remains open. You can accept after Phaeno issues a revised quote.</p></AlertDescription></Alert> : awaitingQuoteAcceptance ? <div className="mt-4 space-y-3">
+              {canManageQuotes ? acceptanceBlocked && acceptanceExplanation ? <p id="quote-acceptance-help" className="text-sm text-muted-foreground">{acceptanceExplanation}</p> : null
+                : <p className="text-sm text-muted-foreground">An organization or department administrator must accept this quote{quoteStatus === 'Expired' ? ' or request an extension' : ''}. Your Member access lets you review and download it.</p>}
+              {extensionPending ? <div className="space-y-1" role="status"><p className="text-sm font-medium">Extension requested</p><p className="text-sm text-muted-foreground">Phaeno is reviewing the request. A new quote revision will appear here if approved.</p></div> : null}
+            </div> : null}
+              billing={<>
+                {canViewInvoices && invoicesQuery.isLoading ? <p role="status" className="mt-4 border-t pt-4 text-sm text-muted-foreground">Loading invoices…</p> : null}{canViewInvoices && invoicesQuery.isFetching && !invoicesQuery.isLoading ? <p role="status" className="mt-4 text-xs text-muted-foreground">Refreshing invoice status…</p> : null}{canViewInvoices && (invoicesQuery.error || invoiceDownload.error) ? <Alert variant="destructive" className="mt-4"><AlertTitle>Invoice could not be loaded</AlertTitle><AlertDescription>{getOrderErrorMessage(invoicesQuery.error ?? invoiceDownload.error, 'Refresh and try again.')}</AlertDescription></Alert> : null}{invoices.map((invoice) => <div key={invoice.id} className="mt-4 border-t pt-4"><div className="flex items-center justify-between gap-2"><span className="text-sm font-medium">Invoice {invoice.invoiceNumber}</span><OrderStatusBadge status={invoice.status} /></div><p className="mt-1 text-sm text-muted-foreground">Due {formatDate(invoice.dueOn)} · Balance {formatMoney(invoice.balance, invoice.currency)}</p><Button type="button" size="sm" variant="outline" className="mt-2" disabled={invoiceDownload.isPending} onClick={() => invoiceDownload.mutate(invoice)}><Download data-icon="inline-start" />Download invoice PDF</Button></div>)}{canViewInvoices && !invoicesQuery.isLoading && !invoicesQuery.error && !invoices.length ? <p className="mt-4 border-t pt-4 text-sm text-muted-foreground">No invoice has been issued for this order.</p> : null}{!canViewInvoices ? <p className="mt-4 border-t pt-4 text-sm text-muted-foreground">Contact Phaeno for billing records.</p> : null}{order.documents.map((document) => <div key={document.id} className="mt-4 border-t pt-4"><div className="flex items-center justify-between gap-2"><span className="text-sm font-medium">Legacy billing source · {document.kind} {document.documentNumber ?? ''}</span><OrderStatusBadge status={document.syncStatus} /></div><p className="mt-1 text-sm text-muted-foreground">Finance review required · Historical balance {formatMoney(document.balance, document.currency)}</p>{document.documentUrl ? <a href={document.documentUrl} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm text-primary hover:underline">Open legacy record</a> : null}</div>)}
+              </>}
+            />
+          </section></>} history={<LabJobHistory order={order} />} />
 
-          {(order.requestRevisions?.length ?? 0) > 0 ? <Card><CardHeader><CardTitle>Submitted request revisions</CardTitle><CardDescription>Each submission preserves the Customer reference, samples, analyses, and instructions that Phaeno reviewed.</CardDescription></CardHeader><CardContent className="divide-y">{order.requestRevisions?.map((revision) => <div key={revision.id} className="flex flex-wrap items-center justify-between gap-3 py-3"><div><p className="font-medium">Revision {revision.revision}</p><p className="text-xs text-muted-foreground">Submitted {formatDateTime(revision.submittedAt)}</p>{revision.correctionReason ? <p className="mt-1 text-sm">Correction: {revision.correctionReason}</p> : null}</div><Button type="button" variant="outline" onClick={() => downloadSnapshot(`${order.orderNumber}-request-r${revision.revision}.json`, revision.snapshotJson)}><Download data-icon="inline-start" />Download snapshot</Button></div>)}</CardContent></Card> : null}
-
-          <Card><CardHeader><CardTitle>Timeline</CardTitle><CardDescription>Customer-safe milestones and reasons for this request.</CardDescription></CardHeader><CardContent><ol className="space-y-4">{order.timeline.map((item) => <li key={item.id} className="border-l-2 border-border pl-4"><p className="text-sm font-medium">{humanizeStatus(item.toStatus)}</p><p className="text-xs text-muted-foreground">{formatDateTime(item.occurredAt)}</p>{item.reason ? <p className="mt-1 text-sm">{item.reason}</p> : null}</li>)}</ol></CardContent></Card>
-        </div>
-
-        <div className="space-y-5">
-          <Card><CardHeader><CardTitle>Quote and billing</CardTitle><CardDescription>Proposed pricing is not a quote. Issued and accepted POMS pricing remains immutable; corrections appear as audited revisions or adjustments.</CardDescription></CardHeader><CardContent>{order.proposedUnitPrice != null ? <div className={quote ? 'mb-4 border-b pb-4' : 'mb-4'}><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Your proposed price</p><p className="mt-1 font-semibold">{formatMoney(order.proposedUnitPrice, order.proposedCurrency ?? 'USD')} per specimen</p><p className="mt-1 text-sm text-muted-foreground">Proposed subtotal {formatMoney(order.proposedUnitPrice * order.requestedSpecimenCount, order.proposedCurrency ?? 'USD')} for {order.requestedSpecimenCount} specimens. Phaeno may approve or amend this before issuing the quote.</p>{order.priceProposalNote ? <p className="mt-2 text-sm">{order.priceProposalNote}</p> : null}</div> : null}{quote ? <><QuoteSummary quote={quote} /><Button type="button" variant="outline" className="mt-4" onClick={() => downloadSnapshot(`${order.orderNumber}-quote-r${quote.revision}.json`, JSON.stringify({ ...quote, lines: parseLines(quote.linesJson) }, null, 2))}><Download data-icon="inline-start" />Download quote</Button></> : <p className="text-sm text-muted-foreground">Phaeno has not issued pricing yet.</p>}{invoicesQuery.isLoading ? <p role="status" className="mt-4 border-t pt-4 text-sm text-muted-foreground">Loading invoices…</p> : null}{invoicesQuery.isFetching && !invoicesQuery.isLoading ? <p role="status" className="mt-4 text-xs text-muted-foreground">Refreshing invoice status…</p> : null}{invoicesQuery.error || invoiceDownload.error ? <Alert variant="destructive" className="mt-4"><AlertTitle>Invoice could not be loaded</AlertTitle><AlertDescription>{getOrderErrorMessage(invoicesQuery.error ?? invoiceDownload.error, 'Refresh and try again.')}</AlertDescription></Alert> : null}{invoices.map((invoice) => <div key={invoice.id} className="mt-4 border-t pt-4"><div className="flex items-center justify-between gap-2"><span className="text-sm font-medium">Invoice {invoice.invoiceNumber}</span><OrderStatusBadge status={invoice.status} /></div><p className="mt-1 text-sm text-muted-foreground">Due {formatDate(invoice.dueOn)} · Balance {formatMoney(invoice.balance, invoice.currency)}</p><Button type="button" size="sm" variant="outline" className="mt-2" disabled={invoiceDownload.isPending} onClick={() => invoiceDownload.mutate(invoice)}><Download data-icon="inline-start" />Download invoice PDF</Button></div>)}{!invoicesQuery.isLoading && !invoices.length ? <p className="mt-4 border-t pt-4 text-sm text-muted-foreground">No POMS invoice has been issued for this order.</p> : null}{order.documents.map((document) => <div key={document.id} className="mt-4 border-t pt-4"><div className="flex items-center justify-between gap-2"><span className="text-sm font-medium">Legacy billing source · {document.kind} {document.documentNumber ?? ''}</span><OrderStatusBadge status={document.syncStatus} /></div><p className="mt-1 text-sm text-muted-foreground">Finance review required · Historical balance {formatMoney(document.balance, document.currency)}</p>{document.documentUrl ? <a href={document.documentUrl} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm text-primary hover:underline">Open legacy record</a> : null}</div>)}</CardContent></Card>
-          <Card><CardHeader><CardTitle>Sample submission</CardTitle></CardHeader><CardContent><p className="whitespace-pre-wrap text-sm leading-6">{order.submissionInstructions || 'Phaeno will provide submission instructions with the quote.'}</p></CardContent></Card>
-        </div>
-      </div>
-
-      <Dialog open={dialog === 'accept'} onOpenChange={(open) => !open && setDialog(null)}>
-        <DialogContent>
+      <Dialog open={dialog === 'accept'} onOpenChange={(open) => { if (!open) closeDecision() }}>
+        <DialogContent showCloseButton={!action.isPending} aria-busy={action.isPending} onOpenAutoFocus={event => { event.preventDefault(); document.getElementById('accept-quote-keep-reviewing')?.focus() }} onCloseAutoFocus={event => { event.preventDefault(); restoreQuoteFocus() }}>
           <DialogHeader>
             <DialogTitle>Accept quote for {order.orderNumber}?</DialogTitle>
-            <DialogDescription>
-              This places the complete quoted scope and authorizes Phaeno to perform the work.{' '}
-              {quote?.taxDecisionSnapshotJson ? 'The displayed total includes the current tax determination.' : 'This quote is pre-tax; applicable tax will be calculated at invoicing.'}{' '}
-              The accepted Department and commercial settings remain in the order history.
-            </DialogDescription>
-          </DialogHeader>
-          {quote ? <QuoteSummary quote={quote} /> : null}
-          {requiresPurchaseOrder ? (
-            <div>
-              <Label htmlFor="labPurchaseOrderNumber"><RequiredFieldName>Purchase order number</RequiredFieldName></Label>
-              <Input id="labPurchaseOrderNumber" className="mt-2" value={purchaseOrderNumber} onChange={(event) => setPurchaseOrderNumber(event.target.value)} />
+            <DialogDescription>Review the quote, then confirm your Sample type. Request transportation kits later when ready.</DialogDescription>
+          </DialogHeader>{action.error ? <Alert variant="destructive"><AlertDescription>{getOrderErrorMessage(action.error, 'Review the details and try again.')}</AlertDescription></Alert> : null}
+          {decisionQuote ? <section aria-labelledby="accept-quote-details" className="overflow-hidden rounded-lg border">
+            <h3 id="accept-quote-details" className="border-b bg-muted/50 px-4 py-2 text-sm font-medium">Quote details</h3>
+            <div className="p-4"><QuoteSummary quote={decisionQuote} status={decisionQuote.id === quote?.id ? quoteStatus ?? decisionQuote.status : decisionQuote.status} /><QuoteTurnaround quote={decisionQuote} /></div>
+          </section> : null}
+          {acceptanceBlocked || decisionQuote?.id !== quote?.id ? <Alert variant="destructive"><AlertTitle>Quote cannot be accepted</AlertTitle><AlertDescription>{decisionQuote?.id !== quote?.id ? 'The quote changed. Close this dialog and review the current revision.' : acceptanceExplanation || 'Close this dialog and review the current quote.'}</AlertDescription></Alert> : null}
+          <section aria-labelledby="accept-order-details" className="overflow-hidden rounded-lg border">
+            <h3 id="accept-order-details" className="border-b bg-muted/50 px-4 py-2 text-sm font-medium">Sample type</h3>
+            <div className="space-y-4 p-4">
+              <div className="space-y-2">
+                <Label htmlFor="confirmed-lab-sample-type"><RequiredFieldName>Sample type</RequiredFieldName></Label>
+                <p className="text-sm">{order.sampleTypeName ?? 'No Sample type was quoted'}</p>
+                <label className="flex items-start gap-2 text-sm"><input id="confirmed-lab-sample-type" type="checkbox" className="mt-1" checked={sampleTypeConfirmed} disabled={action.isPending || !order.sampleTypeDefinitionId} onChange={event => setSampleTypeConfirmed(event.target.checked)} /><span>I confirm this is the Sample type I will send. A different type requires a revised quote.</span></label>
+              </div>
+
             </div>
+            <p className="border-t bg-muted/30 px-4 py-3 text-xs text-muted-foreground">Request transportation kits when you are ready. Lab work is authorized after you confirm {hasMultipleLabPhases(order, phasePlan.data) ? 'each phase’s' : 'your'} samples and tubes. Your accepted terms are saved in order history.</p>
+          </section>
+          {requiresPurchaseOrder ? (
+            <section aria-labelledby="accept-billing-reference" className="overflow-hidden rounded-lg border">
+              <h3 id="accept-billing-reference" className="border-b bg-muted/50 px-4 py-2 text-sm font-medium">Billing reference</h3>
+              <Field className="p-4"><Label htmlFor="labPurchaseOrderNumber"><RequiredFieldName>Purchase order number</RequiredFieldName></Label>
+                <Input disabled={action.isPending} id="labPurchaseOrderNumber" value={purchaseOrderNumber} onChange={(event) => setPurchaseOrderNumber(event.target.value)} />
+              </Field>
+            </section>
           ) : null}
-          <RequiredDialogFooter showLegend={requiresPurchaseOrder}>
-            <DialogClose asChild><Button type="button" variant="outline">Keep reviewing</Button></DialogClose>
-            <Button type="button" onClick={() => action.mutate('accept')} disabled={action.isPending || (requiresPurchaseOrder && !purchaseOrderNumber.trim())}>{action.isPending ? 'Accepting…' : 'Accept quote and place order'}</Button>
+          <RequiredDialogFooter showLegend>
+            <DialogClose asChild><Button id="accept-quote-keep-reviewing" type="button" variant="outline" disabled={action.isPending}>Keep reviewing</Button></DialogClose>
+            <Button type="button" onClick={() => action.mutate('accept')} disabled={action.isPending || acceptanceBlocked || decisionQuote?.id !== quote?.id || !sampleTypeConfirmed || (requiresPurchaseOrder && !purchaseOrderNumber.trim())}>{action.isPending ? 'Accepting…' : 'Confirm price and order'}</Button>
           </RequiredDialogFooter>
         </DialogContent>
       </Dialog>
-      <Dialog open={dialog === 'cancel' || dialog === 'withdraw'} onOpenChange={(open) => !open && setDialog(null)}><DialogContent><DialogHeader><DialogTitle>{dialog === 'withdraw' ? 'Withdraw' : 'Request cancellation for'} {order.orderNumber}</DialogTitle><DialogDescription>{dialog === 'withdraw' ? 'This closes the request before work is placed.' : 'Phaeno will review completed work and financial effects before deciding the request.'}</DialogDescription></DialogHeader><div><Label htmlFor="cancellationReason">Reason <span className="text-[var(--ruby-red,#b4233c)]" aria-hidden="true">*</span></Label><textarea id="cancellationReason" value={cancellationReason} onChange={(event) => setCancellationReason(event.target.value)} className="mt-2 min-h-24 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none" /></div><DialogFooter><DialogClose asChild><Button type="button" variant="outline">Keep order</Button></DialogClose><Button type="button" variant="destructive" disabled={!cancellationReason.trim() || action.isPending} onClick={() => action.mutate(dialog === 'withdraw' ? 'withdraw' : 'cancel')}>{action.isPending ? 'Updating…' : dialog === 'withdraw' ? 'Withdraw request' : 'Request cancellation'}</Button></DialogFooter></DialogContent></Dialog>
-      <Dialog open={dialog === 'shipment'} onOpenChange={(open) => !open && setDialog(null)}><DialogContent><DialogHeader><DialogTitle>Record sample shipment</DialogTitle><DialogDescription>Add the carrier and tracking number after the sample leaves your organization.</DialogDescription></DialogHeader><div className="grid gap-4"><div><Label htmlFor="sampleCarrier">Carrier</Label><input id="sampleCarrier" value={carrier} onChange={(event) => setCarrier(event.target.value)} className="mt-2 h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" /></div><div><Label htmlFor="sampleTrackingNumber">Tracking number</Label><input id="sampleTrackingNumber" value={trackingNumber} onChange={(event) => setTrackingNumber(event.target.value)} className="mt-2 h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" /></div></div><DialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="button" disabled={action.isPending} onClick={() => action.mutate('shipment')}>{action.isPending ? 'Saving…' : 'Record shipment'}</Button></DialogFooter></DialogContent></Dialog>
+      {extensionQuote ? <LabQuoteExtensionDialog order={order} quote={extensionQuote} onClose={() => setExtensionQuote(null)} onCloseFocus={restoreQuoteFocus} /> : null}
+      {dialog === 'propose' && decisionQuote ? <LabQuoteProposalDialog order={order} quote={decisionQuote} onClose={() => setDialog(null)} onCloseFocus={restoreQuoteFocus} /> : null}
+      {dialog === 'decline' ? <LabQuoteDeclineDialog orderNumber={order.orderNumber} quoteRevision={decisionQuote?.revision} busy={action.isPending} error={action.error} unavailableReason={declineUnavailable} onDecline={reason => action.mutateAsync({ kind: 'decline', reason })} onClose={() => setDialog(null)} onCloseFocus={restoreQuoteFocus} /> : null}
+      <Dialog open={dialog === 'cancel' || dialog === 'withdraw'} onOpenChange={(open) => { if (!open) closeDecision() }}><DialogContent showCloseButton={!action.isPending} aria-busy={action.isPending}><DialogHeader><DialogTitle>{dialog === 'withdraw' ? 'Withdraw' : 'Request cancellation for'} {order.orderNumber}</DialogTitle><DialogDescription>{dialog === 'withdraw' ? 'This closes the request before work is placed.' : 'Phaeno will review completed work and financial effects before deciding the request.'}</DialogDescription></DialogHeader>{action.error ? <Alert variant="destructive"><AlertDescription>{getOrderErrorMessage(action.error, 'Review the details and try again.')}</AlertDescription></Alert> : null}<div><Label htmlFor="cancellationReason"><RequiredFieldName>Reason</RequiredFieldName></Label><textarea disabled={action.isPending} id="cancellationReason" value={cancellationReason} onChange={(event) => setCancellationReason(event.target.value)} className="mt-2 min-h-24 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none" /></div><RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline" disabled={action.isPending}>Keep order</Button></DialogClose><Button type="button" variant="destructive" disabled={!cancellationReason.trim() || action.isPending} onClick={() => action.mutate(dialog === 'withdraw' ? 'withdraw' : 'cancel')}>{action.isPending ? 'Updating…' : dialog === 'withdraw' ? 'Withdraw request' : 'Request cancellation'}</Button></RequiredDialogFooter></DialogContent></Dialog>
+
+    {decisionDismissal.confirmation}
     </main>
   )
 }
 
-function QuoteSummary({ quote }: { quote: Quote }) {
-  const lines = parseLines(quote.linesJson)
-  const taxIncluded = Boolean(quote.taxDecisionSnapshotJson)
-  return <div><div className="flex items-center justify-between gap-2"><span className="font-medium">Revision {quote.revision}</span><OrderStatusBadge status={quote.status} /></div><p className="mt-1 text-sm text-muted-foreground">Expires {formatDate(quote.expiresAt)}</p>{quote.pricingDecision ? <p className="mt-1 text-sm text-muted-foreground">{pricingDecisionLabel(quote.pricingDecision)}</p> : null}{lines.length ? <ul className="mt-3 divide-y">{lines.map((line, index) => <li key={`${line.description}-${index}`} className="flex justify-between gap-3 py-2 text-sm"><span>{line.description} × {line.quantity}</span><span>{formatMoney(line.quantity * line.unitPrice, quote.currency)}</span></li>)}</ul> : null}<div className="mt-3 space-y-2 border-t pt-3 text-sm"><div className="flex justify-between gap-3"><span>Subtotal</span><span>{formatMoney(quote.subtotal, quote.currency)}</span></div>{taxIncluded ? <div className="flex justify-between gap-3"><span>Tax</span><span>{formatMoney(quote.tax, quote.currency)}</span></div> : null}<div className="flex justify-between gap-3 font-semibold"><span>{taxIncluded ? 'Total' : 'Pre-tax total'}</span><span>{formatMoney(quote.total, quote.currency)}</span></div>{taxIncluded ? null : <p className="text-xs text-muted-foreground">Applicable tax will be calculated at invoicing.</p>}</div></div>
-}
-
-function pricingDecisionLabel(decision: NonNullable<Quote['pricingDecision']>) {
-  if (decision === 'ApprovedAsProposed') return 'Phaeno approved the proposed unit price.'
-  if (decision === 'AmendedProposal') return 'Phaeno amended the proposed unit price when issuing this quote.'
-  return 'Phaeno set the price when issuing this quote.'
-}
-
-function currentQuote(quotes: Quote[]) { return quotes.find((quote) => quote.status === 'Issued') ?? quotes[0] ?? null }
-function parseLines(value: string): Array<{ description: string; quantity: number; unitPrice: number }> { try { return JSON.parse(value) as Array<{ description: string; quantity: number; unitPrice: number }> } catch { return [] } }
 function formatMoney(value: number, currency: string) { return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(value) }
 function formatDate(value: string) { return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' }).format(new Date(value)) }
 function formatDateTime(value: string) { return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) }
-function downloadSnapshot(fileName: string, value: string) { const url = URL.createObjectURL(new Blob([value], { type: 'application/json' })); const link = document.createElement('a'); link.href = url; link.download = fileName; link.click(); URL.revokeObjectURL(url) }
-function prettyJson(value: string) { try { return JSON.stringify(JSON.parse(value), null, 2) } catch { return value } }

@@ -1,0 +1,124 @@
+import { ArrowRight, Boxes, CircleCheck, ClipboardCheck, ListChecks, Package, ScanBarcode, TriangleAlert, Truck } from 'lucide-react'
+import { Popover } from 'radix-ui'
+import { useEffect, useId, useRef, useState, type Ref } from 'react'
+import { Button } from '#/components/ui/button'
+import { cn } from '#/lib/utils'
+import { buildLabJobProgress, labJobProgressStateLabels, type LabJobProgressInput, type LabJobProgressStep, type LabJobProgressStepId } from './lab-job-progress'
+import { currentLabQuote, useQuoteStatus } from './use-quote-status'
+
+export type LabJobOrderProgressProps = Omit<LabJobProgressInput, 'now'> & {
+  /** Select existing work in the Job workspace; this callback must not perform a workflow command. */
+  onStepSelect?: (stepId: string) => void
+  /** The selected shipment owns the direct Send command and its dialogs. */
+  sendActionTargetRef?: Ref<HTMLDivElement>
+  sampleReviewTargetRef?: Ref<HTMLDivElement>
+}
+
+const stepAppearance = {
+  'confirm-order': { icon: ClipboardCheck, label: 'Confirm pricing', purpose: 'Phaeno reviews your request and prepares pricing. Review and accept or decline that pricing before preparing samples.' },
+  samples: { icon: ListChecks, label: 'Sample identification', purpose: 'Enter the sample IDs, biological sources and tube quantities. Review and finalize the exact sample list before preparing containers.' },
+  kits: { icon: Package, label: 'Container supply', purpose: 'Have compatible kits physically received and registered for use. Use available permitted stock or arrange any missing supplies.' },
+  containers: { icon: Boxes, label: 'Assign containers', purpose: 'Review the physical container identities, compatible sizes and tube allocations, then confirm which containers will hold the samples.' },
+  tubes: { icon: ScanBarcode, label: 'Match samples to tubes', purpose: 'Scan each permanent tube barcode to save which physical tube belongs to each sample. Matching tubes is separate from the laboratory recording their receipt.' },
+  'receive-kits': { icon: Package, label: 'Receive transportation kits', purpose: 'Phaeno chooses and dispatches compatible transportation kits. Track each kit and confirm only physical receipt.' },
+  prepare: { icon: ScanBarcode, label: 'Prepare sample shipment', purpose: 'Enter one Sample ID and one tube barcode together. The physical tube must belong to the selected received kit.' },
+  send: { icon: Truck, label: 'Send samples', purpose: 'Review and confirm the current shipping insert, print it and pack it with the matching container. Hand the package to the carrier, then record the carrier, tracking number and shipment time.' },
+} satisfies Record<LabJobProgressStepId, { icon: typeof ClipboardCheck; label: string; purpose: string }>
+
+export function LabJobOrderProgress({ onStepSelect, sendActionTargetRef, sampleReviewTargetRef, ...input }: LabJobOrderProgressProps) {
+  const headingId = useId()
+  const stepsRef = useRef<HTMLOListElement>(null)
+  const [informationStepId, setInformationStepId] = useState<LabJobProgressStepId | null>(null)
+  // Keep the displayed responsibility current when an open quote expires, including after tab resume.
+  useQuoteStatus(currentLabQuote(input.order.quotes))
+  const progress = buildLabJobProgress({ ...input, now: Date.now() })
+  const { nextStep, allSent, exception, shipmentCount } = progress
+  const confirmed = Boolean(input.order.placedAt)
+  const currentStepId = nextStep?.id
+  const currentStepIndex = progress.steps.findIndex(step => step.id === currentStepId)
+  const reviewLabel = nextStep?.actionLabel ?? (currentStepId === 'confirm-order' ? nextStep?.state === 'waiting-for-phaeno' ? 'View request' : 'Review pricing' : currentStepId === 'samples' ? 'Review samples' : currentStepId === 'receive-kits' ? 'View kit order' : currentStepId === 'prepare' ? 'Prepare samples' : 'Show shipping work')
+  useEffect(() => {
+    const strip = stepsRef.current
+    const current = strip?.querySelector<HTMLElement>('[aria-current="step"]')
+    if (!strip || !current) return
+    const left = current.offsetLeft
+    const right = left + current.offsetWidth
+    if (left < strip.scrollLeft) strip.scrollLeft = left
+    else if (right > strip.scrollLeft + strip.clientWidth) strip.scrollLeft = right - strip.clientWidth
+  }, [currentStepId, confirmed])
+
+  return <section aria-labelledby={headingId} className="space-y-4">
+    <div className="space-y-1">
+      <h2 id={headingId} className="text-lg font-semibold">{confirmed ? 'Ordering and shipping' : 'Review and Accept Order'}</h2>
+      <p className="text-sm text-muted-foreground">{confirmed ? 'Complete these steps to prepare and send your samples.' : 'Review the order scope and pricing below.'}</p>
+    </div>
+    {confirmed ? <ol ref={stepsRef} aria-label="Ordering and shipping steps" className={cn('relative grid gap-2 overflow-x-auto px-1 py-1', input.order.usesPairedPreparation ? 'grid-cols-[repeat(4,minmax(7rem,1fr))]' : 'grid-cols-[repeat(6,minmax(6.5rem,1fr))]')}>
+      {progress.steps.map((step, index) => {
+        const current = currentStepId === step.id
+        return <li key={step.id} aria-current={current ? 'step' : undefined} className="min-w-0">
+          <StepInformation step={step} current={current} future={currentStepIndex >= 0 && index > currentStepIndex} index={index} open={informationStepId === step.id} onOpenChange={open => setInformationStepId(previous => open ? step.id : previous === step.id ? null : previous)} />
+        </li>
+      })}
+    </ol> : null}
+    {confirmed || exception ? <div className="rounded-lg border bg-muted/40 px-4 py-3" aria-live="polite" aria-atomic="true">
+      {exception ? <div className="flex gap-3">
+        <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+        <div className="min-w-0 space-y-1"><p className="font-medium">{exception.label}</p><p className="text-sm">{exception.detail}</p><p className="text-xs text-muted-foreground">With: {exception.owner}</p></div>
+      </div> : allSent ? <div className="flex items-start gap-3">
+        <CircleCheck className="mt-0.5 size-4 shrink-0 text-[var(--status-ready)]" aria-hidden="true" />
+        <div className="space-y-1"><p className="font-medium">{shipmentCount === 1 ? 'Your shipment is recorded — track progress below' : 'All shipments recorded — track progress below'}</p><p className="text-sm text-muted-foreground">Receipt and laboratory work appear in Progress. Released files are in Files and results.</p></div>
+      </div> : nextStep ? <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0 flex-1 space-y-1">
+          <p className="text-xs font-medium text-muted-foreground">Your next step</p>
+          <p className="font-medium">{nextStep.label}</p>
+          <p className="text-sm">{nextStep.detail}</p>
+          <p className="text-xs text-muted-foreground">With: {nextStep.owner}</p>
+        </div>
+        {nextStep.id === 'samples' && nextStep.actionLabel && input.order.canEditSamples && sampleReviewTargetRef ? <div ref={sampleReviewTargetRef} className="max-w-full self-start" /> : nextStep.id === 'send' && sendActionTargetRef ? <div ref={sendActionTargetRef} className="max-w-full self-start" /> : onStepSelect ? <Button type="button" variant="outline" size="sm" onClick={() => onStepSelect(nextStep.id)} aria-label={`${reviewLabel}: ${nextStep.label}`}>{reviewLabel}<ArrowRight aria-hidden="true" /></Button> : null}
+      </div> : <p className="text-sm">Review the recorded preparation below.</p>}
+    </div> : null}
+  </section>
+}
+
+function StepInformation({ step, current, future, index, open, onOpenChange: setOpen }: { step: LabJobProgressStep; current: boolean; future: boolean; index: number; open: boolean; onOpenChange: (open: boolean) => void }) {
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const contentId = useId()
+  const titleId = useId()
+  const descriptionId = useId()
+  const appearance = stepAppearance[step.id]
+  const Icon = appearance.icon
+  const cancelClose = () => { if (closeTimer.current !== null) { clearTimeout(closeTimer.current); closeTimer.current = null } }
+  const show = () => { cancelClose(); setOpen(true) }
+  const leave = () => {
+    cancelClose()
+    closeTimer.current = setTimeout(() => {
+      if (document.activeElement !== triggerRef.current && !contentRef.current?.contains(document.activeElement)) setOpen(false)
+    }, 180)
+  }
+  useEffect(() => () => { if (closeTimer.current !== null) clearTimeout(closeTimer.current) }, [])
+
+  return <Popover.Root open={open} onOpenChange={setOpen}>
+    <Popover.Anchor asChild>
+      <button ref={triggerRef} type="button" aria-label={`Information about step ${index + 1}: ${step.label}. ${step.statusLabel ? `${step.statusLabel}. ` : ''}${labJobProgressStateLabels[step.state]}`} aria-haspopup="dialog" aria-expanded={open} aria-controls={open ? contentId : undefined} aria-describedby={open ? descriptionId : undefined}
+        className={cn('flex h-full w-full cursor-help flex-col items-center gap-2 rounded-lg border px-2 py-3 text-center hover:bg-accent/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none', current ? 'border-primary bg-accent/60' : 'border-transparent', future ? 'text-muted-foreground' : 'text-foreground')}
+        onPointerEnter={event => { if (event.pointerType !== 'touch') show() }} onPointerLeave={event => { if (event.pointerType !== 'touch') leave() }} onFocus={show} onBlur={event => { if (!contentRef.current?.contains(event.relatedTarget)) setOpen(false) }} onClick={show}>
+        <span aria-hidden="true" className={cn('relative flex size-9 shrink-0 items-center justify-center rounded-full border', future ? 'border-border text-muted-foreground' : step.state === 'complete' ? 'border-border text-[var(--status-ready)]' : current ? 'border-primary bg-primary text-primary-foreground' : 'border-border text-muted-foreground')}>
+          <Icon className="size-4" />
+          {step.state === 'complete' ? <CircleCheck className="absolute -right-1 -bottom-0.5 size-4 rounded-full bg-background" /> : null}
+        </span>
+        <span className="text-sm font-medium">{step.id === 'confirm-order' && step.state === 'waiting-for-phaeno' ? 'Pricing review' : step.label}</span>
+        {step.statusLabel ? <span className="text-xs font-medium text-muted-foreground">{step.statusLabel}</span> : null}
+      </button>
+    </Popover.Anchor>
+    <Popover.Portal>
+      <Popover.Content ref={contentRef} id={contentId} aria-labelledby={titleId} aria-describedby={descriptionId} side="bottom" sideOffset={8} collisionPadding={16}
+        className="z-50 w-80 max-w-[calc(100vw-2rem)] space-y-3 rounded-lg border bg-popover p-4 text-sm text-popover-foreground shadow-md"
+        onOpenAutoFocus={event => event.preventDefault()} onCloseAutoFocus={event => event.preventDefault()} onPointerEnter={cancelClose} onPointerLeave={leave}>
+        <div className="space-y-1"><p id={titleId} className="font-semibold">{step.label}</p>{step.statusLabel ? <p className="text-xs font-medium">{step.statusLabel}</p> : null}<p className="text-xs text-muted-foreground">{labJobProgressStateLabels[step.state]}</p></div>
+        <div id={descriptionId} className="space-y-3"><p>{appearance.purpose}</p><p>{step.detail}</p>{step.state !== 'complete' ? <p className="text-xs text-muted-foreground">With: {step.owner}</p> : null}</div>
+      </Popover.Content>
+    </Popover.Portal>
+  </Popover.Root>
+}

@@ -1,14 +1,197 @@
 # Operations and production-readiness boundary
 
-## PSeq order-to-cash rollout boundary (2026-08-29)
+## Sequencing results and FASTQ release — October 6, 2026
 
-The repository now contains additive, feature-flagged foundations for durable
-invitation delivery, derived readiness, internal order staging, business roles,
-audit-only/enforced dual control, governed PSeq final-result packages, POMS
-accounts receivable, and owned attention queues. The owning plan records the
-2026-08-29 additive release as complete. That dated release evidence is separate
-from feature activation; the activation gates below remain open. The 2026-09-04
-plan reconciliation did not redeploy or reverify production flag state.
+The Owner's two commit/push checkpoints and preserving API/Portal deployment with
+EF migrations are complete under the [hosted plan](plans/PORTAL-SEQUENCING-RELEASE-20261006-PLAN.md).
+The [release receipt](operations/portal-sequencing-release-20261006.md) records
+matching application `49a90f77b41ceacd42c54d5d0b709c262f797e89`, UI
+`dpl_PLcuDhNJSwjMLbHJeizLqE7ya6Qn`, five rehearsed migrations above twenty,
+unchanged existing table counts/runtime/private services and encrypted restore-
+verified off-server recovery. Full tests pass: 1,280 backend, 1,457 frontend unit
+and 212 browser cases with six documented intentional skips. Public health,
+proxy/authorization, Website and production sign-in checks pass. Workflow and
+Vercel Git holds are restored. Real DPS execution/access/output integration,
+physical/scientific validity and signed-in workflow acceptance remain separate.
+
+## Material lot QC card UI release — October 5, 2026
+
+The in-progress UI release includes the owner's top-right Record QC and wrapped
+details adjustment. The [QC layout receipt](operations/material-lot-qc-ui-release-20261005.md)
+records UI source `2fe9571d5ed722365a6c91f687703ade267b7e72`, deployment
+`dpl_HkmQDYddxbcAj37ZKc1MvgGinis2`, passing production build and live
+sign-in/health/proxy checks. API source `c781988630ddfdb07f0d76dd7c3bb9753c15d660`
+and twenty migrations remain unchanged. Supervisor/Pending gates, scientific QC
+workflow and the API-compatible help corpus are preserved. No QC outcome was
+recorded by verification or deployment. Both disabled protected workflows and
+Vercel Git holds remain in place; authenticated QC execution is separate from
+local simulated layout/focus and public smoke evidence.
+
+## Supplier detail tabs UI-only release — October 5, 2026
+
+The owner's commit/push and UI deployment instruction is complete. The
+[UI release receipt](operations/supplier-tabs-ui-release-20261005.md) records UI
+source `4c61eddb73a94e4c46d26caefc4e0bddaabb7753`, deployment
+`dpl_Fk24GZmK2zmyHojYgLw1StfatFkj`, production build, source/alias verification
+and passing live sign-in/health/proxy checks. API source remains
+`c781988630ddfdb07f0d76dd7c3bb9753c15d660`, healthy with twenty migrations; no
+API deployment or migration occurred. The current generic guide/corpus stays
+aligned with the API so documentation search remains version-compatible.
+Explicit tab help wording is deferred to a paired UI/API release. Both Vercel
+Git holds and disabled protected workflows are preserved. Authenticated supplier
+and documentation-search walkthroughs remain separate from local simulated and
+public smoke evidence.
+
+## Controlled vendor sequencing release — October 5, 2026
+
+The owner's documentation, tests, commit/push and deployment instruction was
+completed under [the hosted release plan](plans/PORTAL-WORKFLOW-RELEASE-20261005-PLAN.md).
+The [completed receipt](operations/portal-workflow-release-20261005.md) records
+matching API/UI source `c781988630ddfdb07f0d76dd7c3bb9753c15d660`, two rehearsed
+additive EF migrations above eighteen, restore-verified encrypted database/file
+recovery and off-server copies. All 231 existing application table counts are
+preserved except the one built-in Sequencing service addition; runtime settings
+and private mounts are preserved. Full regression passes 1,261 backend, 1,448
+frontend unit and 212 desktop/mobile browser cases with seven intentional skips.
+Public health, database/proxy authorization, Website availability and actual
+production Clerk sign-in pass. No reset, local fixture copy, backfill or Clerk
+cutover occurred. Automatic deployment controls remain held and both protected
+workflows are disabled again. Physical/scientific/provider and authenticated
+operator acceptance remain separate.
+
+## Controlled workflow release — October 4, 2026
+
+The owner's commit, push and deploy instruction was executed under the separate
+[hosted release plan](plans/PORTAL-WORKFLOW-RELEASE-20261004-PLAN.md).
+The [completed receipt](operations/portal-workflow-release-20261004.md) records
+matched API/UI source `58f2af34e989c3b7187b39d542174444c2985896`, four rehearsed
+migrations above the existing fourteen, verified encrypted database/private-file
+recovery and off-server copies, unchanged counts for all 226 existing application
+tables, preserved runtime/storage and passing public health, proxy and actual
+Clerk sign-in checks. Full regression passes: 1,244 backend, 1,428 frontend unit
+and 212 desktop/mobile browser cases, with four intentional environment skips.
+No reset, copying of local fake PSeq data, hosted data repair or Clerk cutover
+occurred. Automatic deployment controls remain held and both protected workflows
+were disabled again. Physical/scientific/provider and authenticated operator
+acceptance remain separate.
+
+## Controlled workflow release — October 2, 2026
+
+The owner authorized documentation, complete tests, commit/push, matched API/Portal
+UI deployment and necessary EF migrations under the
+[hosted workflow release plan](plans/PORTAL-WORKFLOW-RELEASE-20261002-PLAN.md).
+The [completed receipt](operations/portal-workflow-release-20261002.md) confirms
+application source `66240861c32c49af1b85ac4fa4c0dcf9f6fcd5c7`, seven rehearsed
+migrations applied above the existing seven, fresh restore-verified encrypted
+database/private-file recovery and off-server copies, unchanged counts for all
+223 existing application tables, preserved runtime/storage and passing live
+health, proxy and production sign-in checks. No reset, hosted data repair or
+Clerk cutover was performed. Automatic deployment controls remain held; both
+protected workflows were disabled again immediately after their manual runs.
+Authenticated operator, physical/scientific and real-provider acceptance remain
+separate.
+
+## Automatic deployment hold — October 1, 2026
+
+The owner authorized turning automatic deployment off while publishing the pending changes without deployment. Both `frontend/vercel.json` and `website/vercel.json` now set `git.deploymentEnabled` to `false`, disabling automatic Git deployments for every branch carrying this configuration. This replaces the previous branch-specific hold. See [Vercel's Git configuration](https://vercel.com/docs/project-configuration/git-configuration#turning-off-all-automatic-deployments).
+
+The live GitHub check found **Deploy Portal Green** (ID `315525604`) enabled despite the earlier recorded hold. It accepts manual dispatch only. The workflow was disabled again and read back as `disabled_manually`, with no active run. No application deployment, promotion or database migration was performed. Keep the GitHub workflow disabled and retain both Vercel controls until a separately authorized release.
+
+## Controlled hosted rebuild — September 29, 2026
+
+The owner explicitly authorized API/Portal UI deployment and a fresh hosted test database, retaining Chris Yourch, William Agnew, Bill Haack and the three built-in product types, with all other application data excluded. The [hosted rebuild plan](plans/HOSTED-CLEAN-DATABASE-20260929-PLAN.md) supplies the preservation/access list, exact target, fresh candidate verification, restore-verified encrypted recovery, cutover and rollback. This authorizes one controlled manual release after its preparation gates; it supersedes the earlier undecided preservation scope and manual release hold for this exercise. The [completed release record](operations/hosted-clean-reset-release-20260929.md) confirms matching API/UI source `04e2b9a785c0b29453f067dd031b627548260693`, a 14-second API pause, three preserved accounts, three built-in types, exact data/access checks, healthy public endpoints and off-server restore-verified recovery. The original database remains retained with connections disabled. GitHub deployment and Vercel automatic Git controls remain held; fresh person sign-in and authenticated/physical workflow acceptance are separate.
+
+## Previous deployment hold — September 28, 2026
+
+The owner blocked deployment until a separate deployment plan addresses the new production-hosted test database. The current source uses `20260928192920_InitialCleanPortal`, which requires an empty database and cannot upgrade the existing populated hosted database. The [local clean-database record](plans/LOCAL-CLEAN-DATABASE-20260928-PLAN.md) documents local execution only and does not satisfy this deployment gate.
+
+The GitHub **Deploy Portal Green** workflow (ID `315525604`) was disabled and read back as `disabled_manually`; no active runs were returned by the workflow check. Both `frontend/vercel.json` and `website/vercel.json` retain their automatic Git deployment hold for `codex/portal-documentation-search-release`. Keep these controls in place, and do not perform manual Portal deployments or promotions while this hold applies. The Vercel controls are branch-specific; they do not disable deployment of every branch or revoke manual provider access.
+
+The future plan must resolve:
+
+- The exact hosted database and storage target, including the Portal-owned public Website API dependencies and isolation from OCIA.
+- The owner's preservation/reset list, required relationships and seed identities, with explicit data-loss consequences.
+- Coordinated database and referenced-file backups, restore verification, and retention of the existing recovery points.
+- Preparation and verification of a replacement database using the clean baseline, without applying it to the existing database.
+- The write-stop and cutover sequence, matching API/frontend revisions, rollback triggers and recovery procedure.
+- Schema, preserved-data, identity/access, public Website API and authenticated workflow acceptance checks.
+
+No replacement database, cutover or deployment is authorized by this hold. Creating the plan does not itself authorize destructive remedies or deployment. Re-enabling the workflow and lifting the Vercel holds belong to a separately authorized release after the database plan is complete.
+
+## Barcode identity and DataMatrix — deployed September 23, 2026
+
+The [release record](operations/barcode-datamatrix-release-20260923.md) documents the separately approved barcode migration, restorable encrypted backup, matching API and Portal application source `b6bab473e0d4c63add8d54eca35e32b76b57c784`, live health checks and the correction that restored the intentionally blank bootstrap administrator setting. The workflow now preserves that setting unless bootstrap installation is explicitly selected. The environment named production is used as staging; physical label/scanner and authenticated operator acceptance remain separate.
+
+## Shipping contents and Customer dashboard — September 22, 2026
+
+The [release record](operations/shipping-dashboard-release-20260922.md) covers the then-pending shipping-kit contents, Department dashboard, sample-entry and CRM guidance release and its verification checkpoint. At that checkpoint, production ran `85fadf139b8953f6293ddb6e59de1ca541b9ac91` and four reviewed database migrations required separate approval. The later [material-tracking release](operations/material-tracking-release-20260923.md) records their authorization and activation.
+
+## Company workflows and repeated sequencing — deployed September 19, 2026
+
+The [release record](operations/repeated-sequencing-release-20260919.md) records the latest matching API/Portal source, `268ba93dbacd66b93c3f9f7f434bd2bf8e76d7e9`. All three explicitly approved EF migrations are applied above the rebased baseline. One prepared library can supply multiple purchased runs with explicit preparation choice and preserved run lineage; pricing, approval and delivery count purchased allocations rather than preparation/file counts. Company access/readiness, completed-request search/pagination and shipping/settings improvements are included.
+
+All 958 backend cases have passing evidence (957 in the full Windows run, one Unix fixture separately), 1,094 frontend tests pass, and 176 applicable browser cases have passing full-run/focused evidence. The production backup was restore-verified and encrypted recovery envelopes were copied off-server with matching checksums. API health, database access, scanner health and fresh Portal sign-in rendering pass. Prior scientific enforcement and disabled bootstrap configuration remain intact. Authenticated hosted workflow, real provider and physical/scientific acceptance are separate boundaries.
+
+## Evidence governance and result-to-tube capture — deployed September 19, 2026
+
+The owner approved indefinite internal evidence preservation, a mandatory scientific minimum and independent Supervisor review of on-behalf entry/performer-time changes. These requirements and the [result-to-tube capture contract](plans/LAB-RESULT-LINEAGE-CONTRACT.md) are now deployed on matching API/Portal source `9ca9820014af07aa7280bd57a73cb66f5ff6044b`. Both `RequireScientificEvidence` and `RequireResultTraceability` are explicitly enabled in production. The owner classified prior operational records as test data, approved no backfill, and required enforcement for subsequent approvals/releases.
+
+The [September 19 database reset/release record](operations/database-rebase-20260919.md) supersedes the earlier local-only migration checkpoint. The clean local and production databases use baseline `20260919153100_InitialPSeqOperationsRebased`, incorporating the retired additive capture/governance migrations. Production users/customer/CRM data and reviewed configuration were preserved; local retains only the owner and configuration. The original local database and encrypted recovery points remain protected. Portal's retired production PostgreSQL 17 storage was removed after separate owner authorization and verification; see the [storage retirement record](plans/POSTGRESQL-18-UPGRADE-PLAN.md#authorized-postgresql-17-storage-retirement).
+
+All 930 backend cases have passing evidence across the full suite and targeted follow-ups; 1,061 UI unit tests and 176 eligible browser cases passed. The [investigation recovery rehearsal](testing/runs/2026-09-18-investigation-restore.md) and a fresh baseline restore prove synthetic database/private-file recovery, including report checksums and result-to-tube relationships. The hosted backup helper also restored the actual new production baseline and checked file references. Production had no real scientific file evidence at reset; populated scientific recovery, real producer/bench handoffs and business sign-off remain separate acceptance gates. The execution record tracks the remaining administrator restart of local PostgreSQL and signed-in browser checks.
+
+Production now runs **PostgreSQL 18.6**, as recorded in the [September 19 engine upgrade](plans/POSTGRESQL-18-UPGRADE-PLAN.md#production-execution-record). Complete row/schema comparisons, 16 focused engine regressions, unchanged EF baseline, enabled transaction timestamps, healthy endpoints and version 18 backup restoration passed. The nightly host timer uses the updated helpers; its next scheduled execution remains distinct from the successful manual recovery checks.
+
+## Repository implementation and rollout evidence
+
+The [September 9 location inventory and shipping insert release](plans/PORTAL-SHIPPING-RELEASE-2026-09-08.md#september-9-location-inventory-and-shipping-insert-release--completed)
+records matching API/UI production source `11699745825e17f6f16d67be1a678e78ea3b3578`,
+successful API workflow `34431957400` and promoted UI deployment
+`dpl_DzwKyZ5yiw3Zb69B3nBzeF8ZXWGP`. The separately approved migration
+`20260909153238_AddTransportationKitLocationReservations` was applied after
+encrypted-backup checksum and isolated restore/cleanup verification. API/Portal
+HTTP 200, database ping HTTP 204, the prepared candidate's exact live CSS/JS assets
+and empty 15-minute runtime-error/5xx queries were verified. Earlier release
+evidence is retained in that record.
+
+The [location-inventory correction](plans/TRANSPORTATION-KIT-LOCATION-INVENTORY-PLAN.md)
+is included in this production release. The local manual walkthrough remains
+[paused at 18 of 18 matched, ReadyToShip, with shipping insert revision 1](testing/runs/2026-09-08-hs5y7db7-local-walkthrough.md#saved-pause-and-resume-checkpoint--september-9-2026).
+Print-dialog cancellation/recovery, physical printing, explicit tube-list paging
+and remaining manual acceptance are outstanding. Local synthetic kit records are
+not production inventory. Signed-in and physical production acceptance remain
+open; new Customer shipping still needs approved production catalog/compatibility
+and fulfillment setup.
+
+The repository implements first-party CRM, durable invitation delivery, derived
+readiness, internal order staging, business roles, dual-control review, governed
+PSeq final-result packages, POMS accounts receivable, Trial Projects, and owned
+attention queues. Independent runtime flags and configuration govern activation
+of the applicable order and retention features. Implementation, local verification,
+historical deployment evidence, and current hosted acceptance are separate facts.
+
+The [PSeq order-to-cash plan](plans/PSEQ-ORDER-TO-CASH-GAP-CLOSURE-PLAN.md)
+records its 2026-08-29 additive release. The
+[Website consolidation plan](plans/WEBSITE-API-CONSOLIDATION-PLAN.md#phase-4-observe-and-retire)
+records the completed July public cutover and standalone-runtime retirement.
+The [September review closure](plans/REVIEW-GAP-CLOSURE-2026-09-05.md) records
+local implementation, migrations, and verification for the later recovery work.
+Those historical reconciliation records did not themselves perform deployment or live provider acceptance; the September 19 execution record above supplies the current reset/release and runtime-flag evidence.
+
+The [feature inventory](feature-readiness.md) reconciles current implementation
+with the approved commercial roadmap. The [September 7 second release](plans/PORTAL-POMS-CONSISTENCY-SECOND-PASS-2026-09-07.md#production-release-evidence)
+records the completed matching API/Portal deployment; the [completion change](plans/PORTAL-COMPLETION-IMPLEMENTATION-2026-09-07.md)
+has its own verification and deployment checkpoint.
+
+The September 7 completion release is now deployed on matching API/Portal source
+`ac0a773e93fe452acc57a47c682d727fc0fadfda`, with the four-field draft migration
+applied and private persistent Local storage plus ClamAV activated. The
+[release evidence](plans/PORTAL-COMPLETION-IMPLEMENTATION-2026-09-07.md#production-release-evidence)
+records the empty-store inventory, native scanner and injected-adapter checks,
+isolated database restoration, encrypted backup checksums and anonymous health
+results. Signed-in role/workflow acceptance, recurring coordinated file/database
+backups, populated file restoration and real scientific/physical validation remain
+separate. No retention processing, enforcement or deletion switch was activated.
 
 Production activation requires a dedicated-staging acceptance run with
 Commercial, Lab Operations, Scientific, Finance, security, and accessibility
@@ -16,10 +199,13 @@ signoff. It also requires Mailgun sender and webhook-signature validation, final
 object-storage/scanner/retention configuration, adequate dual-control staffing,
 restored-production-like migration plus forward-fix proof, backup/restore proof,
 exact frontend/API source-SHA alignment, authenticated smoke testing, and an
-approved rollback or forward-fix procedure. Result release is never
-payment-gated.
+approved rollback or forward-fix procedure. Governed PSeq and Trial scientific
+result release is independent of invoice balance, credit and payment; Partner
+workflows retain their separate commercial rules.
 
-This document records how the application operates in the current repository and what remains required before production activation. It is not a deployment runbook and does not select a hosting provider or production topology.
+This document records current repository behavior and the evidence required for
+the feature being activated. It complements the owning plans and release tooling;
+it does not replace an approved environment-specific deployment or incident runbook.
 
 ## Current runtime
 
@@ -27,44 +213,64 @@ This document records how the application operates in the current repository and
 | --- | --- |
 | Frontend | React 19 and TanStack Start, served by Vite in development and built as client plus SSR assets. |
 | API | .NET 10 ASP.NET Core application. |
-| Database | PostgreSQL through one EF Core `PSeqOperationsDbContext`. The current model maps 112 Commercial/current-flow and Lab-projection tables to `commercial_ops`, 30 Laboratory execution tables to `lab_ops`, two public Website intake tables to `website`, and migration history to `public`; applied migration state remains an environment-specific release check. |
+| Database | PostgreSQL through one EF Core `PSeqOperationsDbContext`, with Commercial/current-flow and Lab projections in `commercial_ops`, Laboratory execution in `lab_ops`, Website intake/delivery/control in `website`, and migration history in `public`. Use the complete [database ERD](database-erd.md) and [EF snapshot](../backend/app/Migrations/PSeqOperationsDbContextModelSnapshot.cs) for current entities, fields, keys and relationships; applied migration state is environment-specific. |
 | Authentication | Clerk-issued bearer JWTs; application authorization comes from internal users, active memberships, and capabilities. |
 | Lab Operations | Feature-complete internal provider with additive Phaeno roles, operator APIs/workspace, receipt and accession, controlled execution, traceability, outsourced NGS sendouts, exceptions, scientific approval, and customer-safe Commercial projections. Production validation and activation remain incomplete. |
-| Curated-data files | `IManagedFileStorage` adapts to the shared `IFileStorage` contract. Development uses local filesystem storage. Production currently selects a non-persisting `Disabled` adapter, so the API starts but file operations return HTTP 503. The S3 adapter is implemented but not configured or live-validated. |
-| Order files | `IOperationalFileStorage` adapts to the shared `IFileStorage` contract. Development uses local filesystem storage. Production currently selects a non-persisting `Disabled` adapter, so the API starts but file operations return HTTP 503. The S3 adapter is implemented but not configured or live-validated. |
-| File scanning | Environment scanner abstractions. Development can trust configured fixture files; production defaults do not. |
+| Curated-data files | `IManagedFileStorage` adapts to shared `IFileStorage`, with Local, Disabled, and S3 providers. Production Local is active on a private persistent volume with explicit acknowledgement. Both managed areas passed write/checksum/readback/scan/deletion checks. File bytes and metadata must be backed up together; populated recovery remains an acceptance gate. |
+| Order files | `IOperationalFileStorage` uses the same provider contract and environment boundary, while retaining its own file ownership, scanning, authorization and release rules. A healthy API with Disabled storage is not evidence of usable file delivery. |
+| Malware scanning | The private managed ClamAV service is active, with persistent definitions, updater/signature-age health checks and confirmed complete-scan limits. Clean text, EICAR rejection, encrypted ZIP rejection and oversized stream rejection passed in production. Authenticated approved-format and failure/recovery journeys remain to be accepted. |
+| File scanning | A shared ClamAV INSTREAM adapter streams managed/operational bytes through the selected storage interface, with bounded limits and explicit verdicts. Production defaults to Disabled scanning; only Development may select trusted fixtures. A configured private daemon, current definitions, approved file kinds and hosted acceptance are required before clean-file workflows work. |
 | PSeq accounts receivable | POMS-owned Customer billing/tax/terms snapshots, immutable invoice/PDF issue at job completion, receipt/import/allocation, aging, adjustments, and independently approved reconciliation behind `NativePSeqAccountsReceivable`. QuickBooks remains legacy/non-PSeq context only. |
-| Relationship CRM | Not implemented. HubSpot is selected for the approved future lifecycle in `docs/plans/HUBSPOT-PORTAL-LIFECYCLE-PLAN.md`. |
-| Email and notices | Portal invitations use durable Mailgun attempts plus signed, idempotent delivery/permanent-failure webhooks behind `InvitationDelivery`. Production rejects incomplete Mailgun API/sender, public URL, or webhook-signing configuration; logging invitation delivery is Development/Test only. Invitation HTML and text are embedded, locale-named templates. Public Website contact/order templates use the same configured Mailgun account. |
-| Public Website API | Anonymous `/api/v1/web-ops` search, database ping, contact, and order endpoints plus `/public` document hosting are implemented in Portal. Historical data and public traffic have not been cut over. |
-| Background work | Hosted dispatchers retry invitation delivery, order integrations, order notifications, data-provisioning notices, and Lab-to-Commercial projection delivery. The historical governed PSeq worker processes only schedules without a policy snapshot. New governed releases use shared policy/completion-aware deadline admission; snapshot-backed warning/grace outboxes, concurrent checkpoints, stream revocation, general execution, and deletion activation remain incomplete. A hosted Website crawler rebuilds the Lucene index on its configured interval. |
-| Help | Browser-bundled MDX with Customer/Partner locale metadata and Phaeno US-English content. Backend search is not implemented. |
+| Relationship CRM | Implemented first-party Companies, Contacts, Leads, Opportunities, pipelines, Activities, Tasks, reporting, administration, and controlled Company requests. CRM is standalone-first; HubSpot runtime integration is not implemented or required. See [CRM](plans/CRM-PLAN.md) and [standalone commercial lifecycle](plans/STANDALONE-COMMERCIAL-LIFECYCLE-PLAN.md). |
+| Email and notices | Portal invitations use durable Mailgun attempts plus signed, idempotent delivery/permanent-failure webhooks behind `InvitationDelivery`. Production rejects incomplete invitation Mailgun/sender, public URL or webhook-signing configuration. Website notices use their own transactional intent, leased attempts, bounded retries and administrator recovery with the configured Mailgun templates. Website provider acceptance is not inbox-delivery confirmation and does not consume invitation webhook events. |
+| Public Website API | Portal owns anonymous `/api/v1/web-ops` search, database ping, contact and order endpoints and `/public` documents. Public traffic/data cutover and old-runtime retirement are recorded as completed historical operations; the new durable Website notification schema and controls still require their own authorized target rollout. |
+| Background work | Hosted workers dispatch invitation, Website, order and provisioning notices and Lab-to-Commercial projections. Governed and general released-package retention have implemented snapshot checkpoints, notice outboxes, verified commit evidence, stream revocation, cleanup retries, holds and reissue lineage. Processing, enforcement and physical deletion retain independent activation gates described below. Public and protected-preview Website crawlers have separate index configuration and schedules. |
+| Help | Browser-bundled, audience-specific MDX and a validated metadata catalog. Dedicated authenticated documentation search and an independent Lucene volume are implemented and included in the completed September application deployments, with packaged corpus validation and scoped facets. Authenticated audience-specific search and cold-index recovery acceptance remain separate; see `docs/documentation-search-operations.md`. |
 | Organization/user administration UI | Invitation acceptance and Phaeno organization list/detail, request, entitlement, invitation, membership, conversion, lifecycle, and User management workspaces use durable APIs. Invitations retain the person’s name and intended membership role. Phaeno invitations and user edits consolidate Platform administrator and additive Laboratory roles; pending Laboratory-role intent activates only on acceptance, while external administration remains organization-scoped. |
 
-Phaeno Portal is the operational and commercial-source system of record. Its first-party CRM owns relationship and pipeline records, and its order workflows own the manual catalog, quotes, credit rules, and accounting source records. No ERP, accounting provider, third-party LIMS, or external CRM is connected to the running application; Laboratory execution is owned by the internal Lab Operations provider.
+Phaeno Portal is the operational and commercial-source system of record. Its
+first-party CRM owns relationship and pipeline records, and its order workflows
+own the commercial catalog, quotes, credit rules, native PSeq AR and accounting
+source records. The repository's implemented workflows require no connected ERP,
+accounting provider, third-party LIMS or external CRM; Laboratory execution uses
+the internal Lab Operations provider.
 
 ## Health and basic verification
 
-- API health: `GET /api/health` returns the standard API envelope with service name and `healthy` status. This is application dial tone, not proof that PostgreSQL, Clerk, QuickBooks, Mailgun, reCAPTCHA, Website search/documents, storage, scanning, or background delivery is fully ready.
+- API health: `GET /api/health` returns the standard API envelope with service name and `healthy` status. This is application dial tone, not proof that PostgreSQL, Clerk, Mailgun, reCAPTCHA, Website search/documents, storage, scanning, or background delivery is fully ready.
 - Backend build and tests: `dotnet build backend/PSeq.Operations.slnx` and `dotnet test backend/PSeq.Operations.slnx`.
 - Frontend checks from `frontend/`: `pnpm run lint`, `pnpm run typecheck`, `pnpm run test`, `pnpm run build`, and `pnpm run test:e2e` when full browser verification is requested.
 - PostgreSQL reference journey: `backend/tools/PSeq.Operations.ReferenceJourney` exercises the curated-data baseline with rollback and isolated temporary storage.
 
 The living backend, frontend, and E2E coverage boundaries are maintained in `docs/plans/BACKEND-TEST-PLAN.md`, `docs/plans/FRONTEND-TEST-PLAN.md`, and `docs/plans/E2E-TEST-PLAN.md`.
 
-Local 2026-08-29 evidence: 13 focused order-to-cash backend tests and the full
+Historical local 2026-08-29 evidence: 13 focused order-to-cash backend tests and the full
 backend suite (169 passed, 10 opt-in PostgreSQL tests skipped) passed; 8 focused
 frontend tests, the zero-warning Release backend build, lint, type validation,
 and the client/SSR/Nitro build passed; EF reported no model drift after the new
 migration; and the staging operator script parsed successfully. The full
-frontend suite has 54 passes plus four reproducible failures in the unchanged
-Web Operations Radix-tab test. These local results do not satisfy restored-
+frontend suite at that checkpoint had 54 passes plus four reproducible failures
+in the then-unchanged Web Operations Radix-tab test. This is a dated checkpoint,
+not the current test status. Later focused and full-suite results, browser/Axe
+evidence and local migration checks are recorded in the
+[September review closure](plans/REVIEW-GAP-CLOSURE-2026-09-05.md#local-evidence)
+and the living test plans. Local results do not satisfy restored-
 database, provider, authenticated browser, dedicated-staging, or cross-
 functional production-activation gates.
 
 ## Configuration ownership
 
-Keep environment-specific values outside source control. `appsettings.Development.json`, `.env`, and `.env.*` are ignored local configuration files. Prefer environment variables, ASP.NET Core user secrets for local work, and the selected deployment platform's secret store for shared environments.
+Keep environment-specific values outside source control. Each development computer
+keeps its own ignored `backend/app/appsettings.Development.json`; create it from
+the tracked, credential-free `appsettings.Development.example.json` and configure
+that computer's database, Clerk Development instance, frontend URL, and any local
+paths or provider credentials. See [Backend Setup](../README.md#backend-setup).
+The shared `appsettings.json` keeps environment-specific database credentials and
+the invitation frontend URL empty. Development settings are excluded from API
+publish output, and the example is excluded from both build and publish output.
+`.env` and `.env.*` are also ignored local configuration files. Prefer environment
+variables and the selected deployment platform's secret store for shared
+environments.
 
 | Section or variable | Purpose | Production expectation |
 | --- | --- | --- |
@@ -76,9 +282,11 @@ Keep environment-specific values outside source control. `appsettings.Developmen
 | `EmailServiceSettings` | Mailgun transactional sender and signed invitation delivery/permanent-failure webhooks | Existing protected Mailgun domain sending key and verified sender/domain, official US or EU Mailgun API URL, `messages` resource, protected `PORTAL_MAILGUN_WEBHOOK_SIGNING_KEY`, delivery and failure monitoring. Before deployment, verify in the authenticated Mailgun dashboard that `delivered` and `permanent_fail` target the exact Portal invitation webhook URL. Deployment validates the existing runtime sending settings and atomically installs the signing key. API startup fails closed when these values are absent or malformed. |
 | `PSeqOrderToCash` | Independent rollout flags, service-authenticated result pipeline, object-storage transfer targets, legacy retention-offset compatibility, and dual-control audit/enforcement | Enable additive slices independently. Keep dual control audit-only until staffing evidence; require a rotated service secret, approved storage/scanner endpoint, an active versioned File Management retention policy, and no production placeholder values. New releases no longer read the legacy four offsets. |
 | `WebsiteApi`, `GoogleAuthSettings`, and `EmailServiceSettings` | Public origins/documents, technical brief, Google reCAPTCHA Enterprise, and Mailgun templates | Existing production credentials and document volume transferred through the secret/storage platform; CORS, rejection, templates, and PDF delivery verified. |
+| Website email processing control | Database-backed pause/resume state, version, actor, timestamp and required reason | Apply the control migration before the new API. The initial state is running (`IsPaused=false`); an administrator can pause durably across API instances/restarts. This is an operational control, not an environment secret or a substitute for rollout approval. |
 | `WebCrawlerSettings`, `WebSearchSettings`, and `ChronJobs:IndexWebsite` | Public-site crawl target, Lucene index path, and rebuild schedule | Durable writable index storage, successful initial crawl, monitoring, and representative search verified. |
 | `WebsitePreviewSearch` | Protected branch crawl target, dedicated Preview Lucene path, Vercel automation bypass, proxy key, and rebuild schedule | Disabled by default; when activated, secrets remain server-side, the index uses its dedicated volume, direct unauthenticated access is denied, and production search remains unchanged. |
-| `FileStorage` | Provider selection, local development root, and S3 bucket, region, key prefix, optional service URL, and path-style setting | Temporary state: `Provider=Disabled`, which permits startup but no file operations. Activation state: `Provider=S3`; bucket and prefix approved; SDK default credential chain uses a least-privilege identity or protected access keys; encryption, lifecycle, permissions, monitoring, and representative upload/download/delete behavior verified. Production refuses the Local provider. |
+| `FileStorage` | Provider selection, private local root/persistent-volume acknowledgement, or S3 bucket/region/prefix and optional service settings | Local requires a private absolute directory outside application/public/source roots; Production additionally requires `LocalPersistentVolumeConfirmed=true`. Green deployments mount `/var/lib/phaeno-portal/files` persistently and preserve provider selection. No automatic byte migration. Disabled blocks file operations; S3 remains an optional later provider with independent credentials, protection, backup and acceptance requirements. |
+| `FileScanning` | Disabled, ClamAv, or Development-only fixture provider; private daemon Host/Port, timeout and maximum streamed bytes | ClamAv requires a privately reachable service with current signatures and matching scan limits. Missing service, incomplete/error verdicts and timeouts remain unavailable. Never expose its unauthenticated TCP port publicly. Selecting storage does not select or activate scanning. |
 | `DataProvisioning` | Upload limit, synthetic policy, scanner, allowed kinds | Synthetic fixtures rejected; real file policy and trusted scanner approved. |
 | `OrderManagement` | Upload limit, scanner, allowed kinds | Trusted scanner and real Customer/Partner file policy approved. |
 | Manual accounting | POMS commercial catalog plus `/api/platform/order-accounting/journal-entries` and CSV export | Catalog ownership, date-range reconciliation, stable source-ID handling, general-ledger account mapping, tax treatment, posting procedure, duplicate prevention, and Finance ownership approved. |
@@ -89,22 +297,42 @@ Keep environment-specific values outside source control. `appsettings.Developmen
 
 Never copy local passwords, Clerk secrets, QuickBooks credentials, Mailgun API or webhook-signing keys, webhook tokens, or connection strings into documentation, logs, audit events, support messages, or committed configuration. Rotate any credential that is accidentally shared.
 
+Mailgun template ownership (2026-09-08): all twelve templates now belong to the
+US sending domain `mg.phaenobiotech.com`; the account-level inventory is empty.
+The three Website templates retain their existing names and content. The eight
+localized technical-brief variants and `organization-invitation.en-us` retain
+their original names after migration from account scope. Template IDs changed;
+maintain name-based references. The invitation's active domain version is
+`branded-20260908`; `initial` remains available for rollback. Its reviewable HTML
+source lives in `backend/app/EmailTemplates/organization-invitation.en-US.html`.
+Keep that source and the deployed domain version aligned when editing branding.
+The local sender uses the domain template with private `t:variables`; releasing
+that application change remains separate from the completed Mailgun changes.
+
+At the owner's request, automatic domain unsubscribe-footer injection is off.
+Existing suppressions and template-authored unsubscribe links were not removed.
+Marketing/subscription templates must still supply their own appropriate
+unsubscribe controls. Local development senders require their actual outbound
+public IP in Mailgun's allowlist; correct credentials alone do not suffice.
+
 ## Database migrations
 
-Committed migrations currently cover:
+The authoritative migration inventory is [backend/app/Migrations](../backend/app/Migrations),
+with the current model in its snapshot and [database ERD](database-erd.md).
+The earlier eight-item inventory described a July/August checkpoint and omitted
+later CRM, department, retention, Trial and Website work; it must not be used to
+decide that a target database is current. The chain begins with
+`20260716220428_InitialPSeqOperations`; `AddWebsiteApi` was applied during the
+historical public cutover rather than remaining universally unapplied.
 
-1. `InitialPSeqOperations`, the clean Commercial/current-flow baseline.
-2. `AddLabOperationsFoundation`.
-3. `AddLabProviderCommandReceipts`.
-4. `CompleteLabOperations`.
-5. `AddLabQcProjection`.
-6. `EnforceLabLibraryLineage`.
-7. `AddWebsiteApi`, generated for the `website` schema and not applied to a
-   shared environment by the consolidation work.
-8. `AddPSeqOrderToCashGapClosure`, additive invitation, readiness, roles,
-   governed-result, native-AR, reconciliation, retention, and attention
-   structures with historical-state backfills; not applied to a shared
-   environment.
+Recent named boundaries include `20260905114659_RecordGovernedDownloadCommitEvidence`,
+`20260905135247_CloseReleasedDeliverableLifecycle`,
+`20260905140916_FreezeReleasedDeliverableReceiptLineage`,
+`20260905172646_AddTrialProjectIntegration`,
+`20260905213944_AddWebsiteNotificationRecovery`, and
+`20260905222201_AddWebsiteNotificationProcessingControl`. This is context, not an
+exhaustive or permanently latest list. Compare the full release artifact with the
+target's `public` EF history.
 
 Use the repository-local EF tool manifest and commands documented in `README.md`. A migration committed or applied to one developer database is not proof that it ran in another environment. Before a shared-environment migration, record the target, backup/restore point, expected duration, application compatibility, verification query or smoke test, and rollback/forward-fix decision. Never apply a migration to shared, staging, or production data without explicit authorization.
 
@@ -123,8 +351,9 @@ Governed-results activation requires PostgreSQL `track_commit_timestamp=on`
 before any governed download transactions begin. Startup refuses governed results
 when this prerequisite is absent; admission also checks it before recording a
 lease. This server setting requires a separately approved restart/configuration
-change in a shared environment. It was tested on an isolated local cluster; the
-existing development server remains unchanged with tracking off.
+change in a shared environment. It was tested on an isolated local cluster;
+read the setting on each target rather than inferring it from another database's
+verification or an older environment note.
 
 Admissions and successful completions retain their full transaction identity in
 the same transaction as the source event. After commit, the API copies the actual
@@ -202,16 +431,136 @@ sender only; they do not establish mailbox delivery or hosted recovery.
 - Manual accounting source records are created transactionally with their billing boundary and keep stable IDs across repeated report downloads. Reconciliation must not rewrite immutable commercial or scientific snapshots.
 - Tenant-safe timelines and messages must remain separate from internal retry details and investigation notes.
 
+## Website public runtime and email recovery
+
+The consolidation plan's dated **Phase 4: observe and retire** record supersedes
+its earlier observation-window descriptions: public traffic moved to Portal and
+the temporary bridge and standalone Website API/database were retired on
+2026-07-18 UTC after reconciliation and backup verification. Treat the old
+loopback listeners and bridge rollback instructions as historical evidence,
+not currently available rollback infrastructure. Current API routing, DNS/TLS,
+document/index mounts and deployed source revisions require fresh target checks;
+they were not reverified by this documentation update.
+
+Website contacts and demo inquiries save their requested notification intent in
+the same database transaction. Intake succeeds once the record and queue entry
+persist; it does not wait for Mailgun. The public contact form says a requested
+brief is queued, retains entries on failure and distinguishes duplicate signup
+from validation/reCAPTCHA/throttling failures. An existing signup cannot be used
+to trigger repeated public sends.
+
+The Website worker processes durable rows outside public requests. Dispatch uses
+a five-minute claim lease, a 45-second provider timeout and optimistic ownership
+checks; interrupted leases are recoverable. Each automatic recovery cycle is
+bounded to five attempts, including interrupted claims. Failed attempts retain
+safe error information and retry with increasing delay. Final failure remains
+available for staff attention. An unconfigured logging sender is recorded as a
+delivery failure, never provider acceptance.
+
+An accepted HTTP response records **Accepted by email provider**. It does not
+prove inbox delivery. If a process loses the acknowledgement, a later attempt
+can duplicate an email already accepted by Mailgun. Retained attempts explain
+interruption; operators must review the recipient and history before resending.
+The invitation webhook contract does not add delivery/permanent-failure state
+to these Website rows.
+
+Phaeno platform administrators use **Web Operations → Email delivery** to inspect
+notification state, retained attempts and intake identity. **Queue resend** uses
+the current version, active-target eligibility and a five-minute cooldown;
+successful recovery retains an immutable actor/time/target audit event. A legacy
+active signup that requested a brief can be explicitly queued when it has no
+delivery record; its historical email status remains unknown. Unsubscribed
+contacts and completed demo requests are rejected for recovery and checked again
+by the worker before sending. Retiring intake cancels queued and failed work
+while preserving attempts. In-flight work may finish; interrupted or late-failing
+attempts resolve without leaving retired intake in the attention queue.
+Expanded attempt history refreshes while open.
+
+### Pause, resume and attention
+
+The singleton `website.web_notification_processing_controls` record makes pause
+state durable across process restarts and serving instances. Its initial state is
+running (`IsPaused=false`). Platform administrators read
+`GET /api/web-ops/notifications/summary` and change processing through
+`POST /api/web-ops/notifications/processing`, supplying the current GUID version,
+the requested `isPaused` value and a required reason of at most 500 characters.
+The change records `ProcessingPaused` or `ProcessingResumed` with actor and time.
+A stale version requires refreshing and reviewing the current setting.
+
+Pause acknowledgement and new claims serialize on the control row. Pausing stops
+new claims after acknowledgement; already-claimed or in-flight messages may finish.
+Public intake and explicit recovery still persist queued work. Resuming releases
+that backlog under the existing lease/retry rules without resetting attempt counts.
+These controls affect Website email only; they do not pause invitations, general
+order notices, retention processing, Website intake or crawling.
+
+The summary reports queued, processing, failed and expired-processing counts,
+the oldest queued creation time, and the last processing-control change.
+The API processing count includes expired leases; the expired count is its subset
+rather than an additional independent population. The UI subtracts expired
+leases from **Sending** and labels those rows **Interrupted**. The attention filter
+`GET /api/web-ops/notifications?attentionOnly=true` selects failed messages and
+processing messages with expired leases. Ordinary queued work remains visible
+in the complete list. A paused queue can therefore have both legitimate backlog
+and separate failures requiring review.
+
+### Monitoring and response
+
+`WebsiteNotificationMonitoringBackgroundService` observes the database every
+30 seconds in its own loop, including while sending is paused or a provider call
+is slow. Its count-only logs exclude intake names, email addresses and operator
+reasons:
+
+| Event | Meaning and response |
+| --- | --- |
+| `5410 WebsiteNotificationAttentionRequired` | Failed rows or expired processing leases exist. Emitted when the attention state changes and as a reminder every 15 minutes while attention persists. Review **Email delivery**, the pause state, recipient/attempt history and provider configuration. |
+| `5411 WebsiteNotificationAttentionCleared` | The previously observed failed/expired population has cleared. This does not prove inbox delivery or that the ordinary queue is empty. |
+| `5412 WebsiteNotificationMonitoringFailed` | Queue state is unknown because observation failed. Check database connectivity, migration state and the worker logs; do not interpret the last gauges as a current healthy result. |
+
+The `PhaenoPortal.Website.Notifications` .NET meter exposes gauges
+`website.notifications.pending`, `website.notifications.processing`,
+`website.notifications.failed`, `website.notifications.expired_processing` and
+`website.notifications.paused` (1 when paused, otherwise 0). They represent the
+last successful observation. Configure the deployment's log collection, metric
+export/collection and alert destination explicitly; defining a meter does not
+provision an external monitoring service or notification route. Alert on failed
+or expired work and monitoring failure; use oldest-queued time from the summary
+to investigate backlog separately. Keep alerts active while processing is paused.
+
+Operator recovery starts by reviewing the current queue/control state and saved
+attempt outcome. Correct provider or database configuration, then retry an
+eligible existing message or resume processing with a reason. Do not recreate
+the signup, erase attempts or assume that an interrupted send was undelivered.
+
+Before rollout, back up the target database and record restore verification,
+prior API/frontend revisions, migrations to apply, provider settings and the
+observation/forward-fix decision. Apply the additive delivery/control schema
+before starting the new API worker or using the new recovery UI. Preserve intent,
+attempt and audit rows during rollback; reverting source does not undo accepted
+email or safely justify deleting queue history. A pre-recovery API version sends
+inline and does not honor the durable queue/control, so a code rollback requires
+an explicit delivery-containment decision. Pausing processing is the appropriate
+way to retain intake while investigating the new worker.
+
+Verify production Mailgun account/domain/templates, technical-brief URL, current
+recipients and cooldown/permission behavior in an explicitly authorized hosted
+acceptance run. Use synthetic intake and fake providers for local verification.
+Do not infer mailbox delivery, successful provider configuration or production
+rollout from local tests, an application health response, or historical cutover
+acceptance.
+
 ## Production activation gates
 
-Production is not ready until all applicable gates are evidenced:
+Before a release or feature activation, collect current evidence for the
+applicable gates. Historical completion in an owning plan is useful context but
+does not establish present provider configuration or grant new rollout authority:
 
 - hosting, domain, TLS, reverse-proxy, and network design;
 - managed PostgreSQL sizing, encryption, backup, restore test, retention, and monitoring;
 - approved deployment, migration, rollback or forward-fix, and release verification runbooks;
 - production Clerk tenant, invitation URL, bootstrap closure, and authentication policy;
 - connected, tenant-safe organization and user administration UI for durable invitation, membership, role, conversion, and lifecycle operations;
-- production S3 bucket/configuration, least-privilege credentials, encryption,
+- production persistent Local volume/ownership/backups, or optional S3 bucket/configuration, least-privilege credentials, encryption,
   monitoring, representative API-proxied upload/download/delete proof, and
   malware scanning for curated-data and order files;
 - approved scientific file kinds, Customer analyses, Partner assembly profiles, reagent offerings/prices, shipping rules, credit decisions, and quote validity;
@@ -223,17 +572,21 @@ Production is not ready until all applicable gates are evidenced:
 - approved external NGS provider services, identifiers, manifest/status
   exchange, custody expectations, returned-output handshake, and support
   ownership;
-- Finance-approved manual journal-entry and invoice procedure, catalog ownership, date-range reconciliation, stable source-ID duplicate prevention, tax/account mapping, and operator acceptance;
+- Finance acceptance of POMS native PSeq invoice, receipt/allocation and
+  reconciliation behavior; separate legacy/non-PSeq journal export and manual
+  posting procedures where applicable, with stable source IDs, tax/account
+  mapping and duplicate prevention;
 - production migration and authenticated validation of the first-party CRM for
   Companies, Contacts, Leads, Opportunities, pipelines, Activities, Tasks,
   reporting, CRM-to-Portal handoffs, duplicate prevention, authorization, and
   operational ownership;
 - Mailgun sender/domain and HMAC signature verification, locale-template review,
   delivery/permanent-failure monitoring, and retry ownership;
-- Website historical-row copy with count/hash comparison, reCAPTCHA and
-  Mailgun secret transfer, public-document/index mounts, CORS, search,
-  technical-brief delivery, API-base/DNS or reverse-proxy switch, rollback
-  window, and standalone API retirement;
+- Website current route/source alignment, reCAPTCHA, document/index mounts,
+  CORS/search and Mailgun acceptance; delivery/control migration, paused and
+  resumed intake/dispatch, recovery/audit, monitoring and rollback/forward-fix
+  acceptance for this release. The completed historical data copy, traffic
+  switch and old-runtime retirement are not pending new work;
 - background-dispatcher monitoring and alerting for stale, failed, or repeatedly retried work;
 - tenant-isolation, file-download, payment-release, accessibility, narrow-viewport, and authenticated database-backed browser journeys;
 - successful execution of the opt-in PostgreSQL Lab provider/projection and
@@ -248,17 +601,23 @@ Until these gates are complete, a passing local build or test suite demonstrates
 
 - A general shared-folder and file-version product outside the feature-owned file boundaries.
 - A confidential Phaeno runbook delivery system; browser-bundled help must remain distributable.
-- Backend-indexed help search and additional Customer/Partner locales.
+- Deployment and hosted acceptance of documentation search; additional external guide locales.
 - Any external CRM integration until a fresh adapter plan is explicitly
   approved, implemented, and production-validated.
 - A third-party LIMS adapter and ownership cutover unless an approved future
   workflow establishes the need.
-- Exceptional curated-package purge and general versioned-policy retention deletion. New governed PSeq releases use the shared frozen policy and now have durable checkpoints/outboxes plus independently verified access-revocation monitoring. Actual commit-time deadline ordering is verified locally. Hosted commit-tracking recovery, general notice mailbox acceptance, authenticated acceptance, and dedicated-staging deletion evidence remain open.
+- Exceptional curated-package purge outside the implemented released-deliverable
+  lifecycle. Governed/general released-package checkpoints, notice outboxes,
+  commit-time evidence, revocation, cleanup retries, holds and reissue are
+  implemented; production deletion/provider activation, hosted recovery,
+  mailbox acceptance and authenticated acceptance remain separate gates in
+  [File Management](plans/FILE-MANAGEMENT-PLAN.md#lifecycle-implementation-checkpoint-2026-09-05).
 
 ## Released-package cleanup and retained receipts
 
-`OrderManagement:ReleasedDeliverableByteDeletion` defaults to false and remains
-held in production with FileStorage disabled. Code deployment does not authorize
+`OrderManagement:ReleasedDeliverableByteDeletion` defaults to false. The owning
+plan records a production storage/deletion hold; verify its current target state
+before changing it. Code deployment does not authorize
 storage/scanner activation or physical deletion. Cleanup selects only enabled
 retention families, takes the package lock used by admission, waits for active
 leases, rechecks exact file ownership/scan state, and defers shared objects and
@@ -275,4 +634,8 @@ receipts describe project-level output without inventing sample mapping.
 Before cleanup activation, verify actual provider deletion/retry behavior,
 reference/lease protection, quarantine stream termination, mailbox delivery and
 hosted restart recovery in dedicated staging. A recorded local test or deployed
-flag-off worker does not satisfy these activation gates.
+flag-off worker does not satisfy these activation gates. Trial complete releases
+now participate in the shared lifecycle through the distinct Trial workflow;
+partial Trial releases do not start the complete-package retention clock. See
+[Trial integration closeout](plans/TRIAL-INTEGRATION-CLOSEOUT.md) for its own
+scientific, storage and hosted-acceptance boundaries.

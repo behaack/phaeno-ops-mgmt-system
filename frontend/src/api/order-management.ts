@@ -1,6 +1,11 @@
 import axios from "axios";
+import type { CommercialDraftForm } from "#/features/orders/commercial-draft";
+import type { CustomerStandardDraft } from './customer-standard-orders';
+
+export type LabOrderPhaseScope = { id: string; position: number; name: string; sampleCount: number; scope: { sources: Array<{ biologicalSource: string; specimenCount: number }>; runsPerSample: number | null; sequencingRunCount: number }; turnaroundBusinessDays: number | null; proposedUnitPrice: number | null; proposedAdditionalRunPrice: number | null; pricingNote: string | null };
 
 import { api } from "./client";
+import type { KitAssemblyCase, KitUnit, LabServiceCommercialSnapshot, LabServiceOffering, LabServiceTiming } from './order-bundles';
 
 type ApiEnvelope<T> = {
   success: boolean;
@@ -15,7 +20,16 @@ export type PagedResult<T> = {
   totalCount: number;
 };
 
+export type LabCustomerProgress = {
+  currentStage: string;
+  jobStage: string | null;
+  hasContainerReceipt: boolean;
+  counts: Array<{ stage: string; count: number }>;
+  samples: Array<{ sampleId: string; stage: string }>;
+};
+
 export type OrderListItem = {
+  laboratoryProgress?: LabCustomerProgress | null;
   id: string;
   number: string;
   status: string;
@@ -28,6 +42,7 @@ export type OrderListItem = {
   assignedToUserId?: string | null;
   dueAt?: string | null;
   isOverdue?: boolean;
+  hasPendingQuoteExtension?: boolean;
 };
 
 export type CommercialOrderListItem = OrderListItem & {
@@ -38,6 +53,7 @@ export type CommercialOrderListItem = OrderListItem & {
 
 export type TimelineItem = {
   id: string;
+  childRecordId?: string | null;
   fromStatus: string;
   toStatus: string;
   reason: string | null;
@@ -81,11 +97,16 @@ export type OperationalFile = {
 };
 
 export type Quote = {
+  deliveryTargetBusinessDays?: number | null;
+  phasePlanSnapshotJson?: string | null;
+  changeScopeSnapshotJson?: string | null;
+  acceptedAmendmentSnapshotJson?: string | null;
   id: string;
   revision: number;
   purpose: string;
   status: string;
   linesJson: string;
+  catalogItemNames?: Record<string, string> | null;
   subtotal: number;
   tax: number;
   total: number;
@@ -104,6 +125,17 @@ export type Quote = {
   pricingDecision?: "PricedWithoutProposal" | "ApprovedAsProposed" | "AmendedProposal" | null;
   pricingDecidedByUserId?: string | null;
   pricingDecidedAt?: string | null;
+  extensionRequest?: QuoteExtensionRequest | null;
+};
+
+export type QuoteExtensionRequest = {
+  id: string;
+  quoteId: string;
+  status: "Pending" | "Resolved";
+  reason: string | null;
+  requestedAt: string;
+  resolvedAt: string | null;
+  replacementQuoteId: string | null;
 };
 
 export type CancellationRequest = {
@@ -118,6 +150,8 @@ export type CancellationRequest = {
 };
 
 export type LabSample = {
+  phaseId?: string | null;
+  sequencingRunCount?: number;
   id: string;
   customerSampleId: string;
   materialType: string;
@@ -162,6 +196,30 @@ export type EligibleCustomerCompany = {
   companyId: string;
   name: string;
 };
+
+export type CustomerOrderReadiness = {
+  canStartPricing: boolean;
+  startPricingBlockers: OrderReadinessBlocker[];
+  quoteBlockers: OrderReadinessBlocker[];
+  invoiceBlockers: OrderReadinessBlocker[];
+};
+export type OrderReadinessBlocker = { code: string; label: string; nextAction: string };
+
+export async function listCustomerOrderOptions() {
+  return get<Array<{ id: string; name: string }>>("/platform/lab-service-orders/customer-options");
+}
+
+export async function listCustomerOrderDepartments(organizationId: string) {
+  return get<Array<{ id: string; name: string; isDefault: boolean }>>(`/platform/lab-service-orders/customer-options/${organizationId}/departments`);
+}
+
+export async function getCommercialPricingCatalog() {
+  return { catalogItems: await get<OrderConfiguration['catalogItems']>('/platform/lab-service-orders/pricing-catalog') };
+}
+
+export async function getCustomerOrderReadiness(organizationId: string, departmentId: string) {
+  return get<CustomerOrderReadiness>(`/platform/lab-service-orders/customer-options/${organizationId}/readiness?departmentId=${encodeURIComponent(departmentId)}`);
+}
 
 export type ReleasedDeliverableRetention = {
   snapshotId?: string | null;
@@ -215,6 +273,23 @@ export type LabRequestRevision = {
 };
 
 export type LabServiceOrder = {
+  requestedCatalogItemId?: string | null;
+  requestedServiceName?: string | null;
+  departmentId: string;
+  commercialDraft?: CommercialDraftForm | null;
+  customerDraft?: CustomerStandardDraft | null;
+  phaseScopes?: LabOrderPhaseScope[] | null;
+  phaseCount?: number;
+  requestedSequencingRunCount?: number;
+  authorizedSampleIds?: string[];
+  canProposeChange?: boolean;
+  tubeUsePolicyKey?: string | null;
+  tubeUsePolicyVersion?: number | null;
+  laboratoryProgress?: LabCustomerProgress | null;
+  entryMode?: 'ManualQuote' | 'ConfiguredDirect' | 'SalesAssisted';
+  standardCommercialSnapshot?: LabServiceCommercialSnapshot | null;
+  canPlaceStandardOrder?: boolean;
+  timing?: LabServiceTiming | null;
   id: string;
   organizationId: string;
   orderNumber: string;
@@ -238,6 +313,12 @@ export type LabServiceOrder = {
   canEdit: boolean;
   canSubmit: boolean;
   canAcceptQuote: boolean;
+  canManageQuotes?: boolean;
+  canProposeQuoteChanges?: boolean;
+  canDeclineQuote?: boolean;
+  quoteChangeProposal?: { quoteId: string; quoteRevision: number; reason: string; proposedAt: string } | null;
+  canRequestQuoteExtension?: boolean;
+  quoteAcceptanceBlockedReason?: string | null;
   canWithdraw: boolean;
   canRequestCancellation: boolean;
   samples: LabSample[];
@@ -258,6 +339,9 @@ export type LabServiceOrder = {
   labPermittedQcProjectionJson?: string | null;
   labReadyForRelease?: boolean;
   requestedSpecimenCount: number;
+  sampleTypeDefinitionId?: string | null;
+  usesPairedPreparation?: boolean;
+  sampleTypeName?: string | null;
   sourceGroups: LabServiceSourceGroup[];
   sampleRosterFinalizedAt: string | null;
   canEditSamples: boolean;
@@ -279,6 +363,9 @@ export type LabServiceOrder = {
 };
 
 export type ReagentOrderLine = {
+  includedOfferingVersion?: number | null;
+  includedAssemblyProfileId?: string | null;
+  includedAssemblyProfileVersion?: number | null;
   id: string;
   offeringId: string;
   qboCatalogItemId: string;
@@ -329,6 +416,10 @@ export type ReagentAdjustment = {
 };
 
 export type ReagentOrder = {
+  isKitBundle?: boolean;
+  kitUnits?: KitUnit[];
+  assemblyCases?: KitAssemblyCase[];
+  operationalSummary?: string;
   id: string;
   organizationId: string;
   orderNumber: string;
@@ -408,6 +499,9 @@ export type AnalysisDefinition = {
 };
 
 export type ReagentOffering = {
+  includedAssemblyProfileId?: string | null;
+  includedAssemblyProfileName?: string | null;
+  includedAssemblyProfileVersion?: number | null;
   id: string;
   partnerOrganizationId: string;
   qboCatalogItemId: string;
@@ -443,6 +537,11 @@ export type AssemblyOutputRelease = {
 };
 
 export type DataAssemblyRequest = {
+  kitAssemblyCaseId?: string | null;
+  kitOrderId?: string | null;
+  kitOrderNumber?: string | null;
+  kitCaseNumber?: string | null;
+  isIncludedAssembly?: boolean;
   id: string;
   organizationId: string;
   requestNumber: string;
@@ -555,8 +654,9 @@ export type ManualJournalEntryRow = {
 };
 
 export type OrderConfiguration = {
+  labServiceOfferings?: LabServiceOffering[];
   system: { id: string; quoteValidityDays: number; sampleSubmissionInstructions: string; shippingConfigurationJson: string; sampleConfigurationJson: string; resultDestinationConfigurationJson: string; version: number }
-  catalogItems: Array<{ id: string; externalItemId: string; name: string; description: string; salesUnit: string; basePrice: number; currency: string; isActive: boolean; isPSeqLabService: boolean; lastSyncedAt: string; version: number }>
+  catalogItems: Array<{ id: string; externalItemId: string; name: string; description: string; salesUnit: string; basePrice: number; currency: string; isActive: boolean; isPSeqLabService: boolean; lastSyncedAt: string; version: number; maximumCustomerSamples?: number | null; minimumSequencingVolumeUlText?: string | null }>
   analyses: AnalysisDefinition[]
   reagentOfferings: ReagentOffering[]
   assemblyProfiles: AssemblyProfile[]
@@ -584,31 +684,62 @@ export async function listLabOrders(
 ) {
   return get<PagedResult<OrderListItem>>("/lab-service-orders", params);
 }
+export type CustomerLabDashboardView = 'active' | 'attention' | 'results';
+export type CustomerLabDashboardSummary = { attentionCount: number; newResultCount: number };
+export type CustomerLabDashboardResponse = { summary: CustomerLabDashboardSummary; requests: PagedResult<OrderListItem> };
+export async function getCustomerLabDashboard(view: CustomerLabDashboardView, page = 1, pageSize = 10) {
+  return get<CustomerLabDashboardResponse>("/lab-service-orders/dashboard", { dashboardView: view, page, pageSize });
+}
+export async function getCustomerLabDashboardSummary() {
+  return get<CustomerLabDashboardSummary>("/lab-service-orders/dashboard-summary");
+}
+export async function listLabDashboardRequests(page = 1, view: CustomerLabDashboardView = 'active', pageSize = 10) {
+  return get<PagedResult<OrderListItem>>("/lab-service-orders", { page, pageSize, dashboard: true, dashboardView: view });
+}
 export async function getLabServiceOrderingEligibility() {
   return get<LabServiceOrderingEligibility>("/lab-service-orders/eligibility");
 }
 export async function getLabOrder(id: string) {
   return get<LabServiceOrder>(`/lab-service-orders/${id}`);
 }
+export async function downloadLabQuotePdf(
+  orderId: string,
+  orderNumber: string,
+  quote: Pick<Quote, "id" | "revision">,
+) {
+  let response;
+  try {
+    response = await api.get<Blob>(
+      `/lab-service-orders/${orderId}/quotes/${quote.id}/pdf`,
+      { responseType: "blob" },
+    );
+  } catch (failure) {
+    if (axios.isAxiosError(failure) && failure.response?.data instanceof Blob) {
+      try {
+        const envelope: unknown = JSON.parse(await failure.response.data.text());
+        if (envelope && typeof envelope === "object") failure.response.data = envelope;
+      } catch { /* Preserve the original error when the response is not JSON. */ }
+    }
+    throw failure;
+  }
+  saveBlob(response.data, `${orderNumber}-quote-r${quote.revision}.pdf`);
+}
 export async function listAnalysisDefinitions() {
   return get<AnalysisDefinition[]>("/order-catalog/analyses");
 }
+export type LabOrderSampleTypeChoice = { id: string; name: string; revision: number; storageRequirements: string };
+export async function listLabOrderSampleTypes(platform = false) {
+  return get<LabOrderSampleTypeChoice[]>(platform ? "/platform/lab-service-orders/sample-types" : "/lab-service-orders/sample-types");
+}
 export type LabPricingProfileWrite = {
+  sampleTypeDefinitionId?: string;
+  sequencingRunCount?: number;
+  submitForPricing?: boolean;
   requestedSpecimenCount: number;
   sourceGroups: Array<{ biologicalSource: string; specimenCount: number }>;
   proposedUnitPrice?: number;
   priceProposalNote?: string;
 };
-export type InitiateCustomerLabOrderInput = {
-  organizationId: string;
-  departmentId?: string;
-  customerReference: string;
-  description?: string;
-  storageRequirements: string;
-  safetyDeclaration: string;
-  prohibitedDataConfirmed: boolean;
-  sourceRequestId?: string;
-} & LabPricingProfileWrite;
 export async function createLabOrder(
   input: {
     customerReference: string;
@@ -654,19 +785,81 @@ export async function withdrawLabOrder(
     reason,
   });
 }
+export async function proposeLabQuoteChanges(orderId: string, quoteId: string, version: number, reason: string, idempotencyKey: string) {
+  return post<LabServiceOrder>(`/lab-service-orders/${orderId}/quotes/${quoteId}/propose-changes`, { version, reason }, true, idempotencyKey);
+}
+export async function declineLabQuote(orderId: string, quoteId: string, version: number, reason: string, idempotencyKey: string) {
+  return post<LabServiceOrder>(`/lab-service-orders/${orderId}/quotes/${quoteId}/decline`, { version, reason }, true, idempotencyKey);
+}
 export async function acceptLabQuote(
   orderId: string,
   quoteId: string,
   version: number,
   purchaseOrderNumber?: string,
+  confirmedSampleTypeId?: string,
 ) {
   return post<LabServiceOrder>(
     `/lab-service-orders/${orderId}/quotes/${quoteId}/accept`,
-    { version, quoteId, purchaseOrderNumber: purchaseOrderNumber || null },
+    { version, quoteId, purchaseOrderNumber: purchaseOrderNumber || null,
+      confirmedSampleTypeId },
     true,
   );
 }
+export type LabSampleTubePair = {
+  phaseId: string;
+  id: string; customerSampleId: string; biologicalSource: string; stockKitId: string; kitNumber: string;
+  supplierTubeBarcode: string; declaredQuantity: number; declaredQuantityUnit: string;
+  sequencingRunCount: number; version: number;
+}
+export type LabSampleTubeWorkspace = {
+  pairs: LabSampleTubePair[];
+  kits: Array<{ id: string; kitNumber: string; tubeCapacity: number; availableTubeCount: number; finishedAt?: string | null; maximumSampleAmount: number | null; sampleAmountUnit: string | null; phaseId?: string | null; isUsable?: boolean }>;
+  expectedSampleCount: number; expectedSequencingRunCount: number; isFinalized: boolean;
+  preparationSources: Array<{ biologicalSource: string; specimenCount: number }>;
+  preparationPhaseIds: string[];
+  preparedPhaseIds?: string[];
+  minimumSampleAmount: number | null; sampleAmountUnit: string | null;
+}
+export type LabSampleTubePairInput = {
+  phaseId?: string;
+  orderVersion: number; stockKitId: string; customerSampleId: string; biologicalSource: string;
+  supplierTubeBarcode: string; declaredQuantity: number; declaredQuantityUnit: string; sequencingRunCount: number;
+}
+export async function getLabSampleTubePairs(orderId: string) {
+  return get<LabSampleTubeWorkspace>(`/lab-service-orders/${orderId}/sample-tube-pairs`)
+}
+export async function saveLabSampleTubeKit(orderId: string, orderVersion: number, kitNumber: string, phaseId?: string) {
+  return post<LabSampleTubeWorkspace>(`/lab-service-orders/${orderId}/sample-tube-pairs/kits`,
+    { orderVersion, kitNumber, phaseId })
+}
+export async function finishLabSampleTubeKit(orderId: string, kitId: string, orderVersion: number) {
+  return post<LabSampleTubeWorkspace>(`/lab-service-orders/${orderId}/sample-tube-pairs/kits/${kitId}/finish`,
+    { orderVersion })
+}
+export async function addLabSampleTubePair(orderId: string, input: LabSampleTubePairInput) {
+  return post<LabSampleTubeWorkspace>(`/lab-service-orders/${orderId}/sample-tube-pairs`, input)
+}
+export async function removeLabSampleTubePair(orderId: string, pairId: string, version: number, reason: string) {
+  return unwrap((await api.delete<ApiEnvelope<LabSampleTubeWorkspace>>(`/lab-service-orders/${orderId}/sample-tube-pairs/${pairId}`,
+    { data: { version, reason } })).data)
+}
+export async function requestLabQuoteExtension(
+  orderId: string,
+  quoteId: string,
+  version: number,
+  reason?: string,
+  idempotencyKey?: string,
+) {
+  return post<LabServiceOrder>(
+    `/lab-service-orders/${orderId}/quotes/${quoteId}/extension-request`,
+    { version, reason: reason?.trim() || null },
+    true,
+    idempotencyKey,
+  );
+}
+
 export type LabSampleRosterWrite = {
+  sequencingRunCount?: number;
   customerSampleId: string;
   biologicalSource: string;
   tubeCount: number;
@@ -711,7 +904,7 @@ export type LabSampleImportPreview = {
     rowNumber: number;
     customerSampleId: string;
     biologicalSource: string;
-    tubeCount: number;
+    tubeCount: number; sequencingRunCount?: number;
   }>;
   errors: Array<{ rowNumber: number; column: string; message: string }>;
   sourceCounts: Record<string, number>;
@@ -745,10 +938,12 @@ export async function confirmLabSampleImport(
 export async function finalizeLabSampleRoster(
   orderId: string,
   version: number,
+  confirmTubeUsePolicy = false,
+  phaseId?: string,
 ) {
   return post<LabServiceOrder>(
     `/lab-service-orders/${orderId}/samples/finalize`,
-    { version },
+    { version, confirmTubeUsePolicy, phaseId },
     true,
   );
 }
@@ -830,10 +1025,18 @@ export async function createShippingAddress(
 ) {
   return post<ShippingAddress>("/partner-shipping-addresses", input);
 }
+export type ReagentDraftDetails = {
+  purchaseOrderNumber: string | null;
+  shippingAddressId: string | null;
+  requestedDeliveryDate: string | null;
+  shippingInstructions: string | null;
+};
 export async function createReagentOrder(
   lines: Array<{ offeringId: string; quantity: number; note?: string }>,
+  details?: ReagentDraftDetails,
+  idempotencyKey?: string,
 ) {
-  return post<ReagentOrder>("/reagent-orders", { lines }, true);
+  return post<ReagentOrder>("/reagent-orders", { lines, details }, true, idempotencyKey);
 }
 export async function createReagentDraftFromPrior(id: string) {
   return post<ReagentOrder>(`/reagent-orders/${id}/create-draft`, {}, true);
@@ -842,8 +1045,9 @@ export async function updateReagentOrder(
   id: string,
   lines: Array<{ offeringId: string; quantity: number; note?: string }>,
   version: number,
+  details?: ReagentDraftDetails,
 ) {
-  return patch<ReagentOrder>(`/reagent-orders/${id}`, { lines, version });
+  return patch<ReagentOrder>(`/reagent-orders/${id}`, { lines, version, details });
 }
 export async function placeReagentOrder(
   id: string,
@@ -854,8 +1058,9 @@ export async function placeReagentOrder(
     requestedDeliveryDate?: string | null;
     shippingInstructions?: string | null;
   },
+  idempotencyKey?: string,
 ) {
-  return post<ReagentOrder>(`/reagent-orders/${id}/place`, input, true);
+  return post<ReagentOrder>(`/reagent-orders/${id}/place`, input, true, idempotencyKey);
 }
 export async function decideReagentAdjustment(
   orderId: string,
@@ -908,8 +1113,8 @@ export async function createAssemblyRequest(input: {
   requestedOutput: string;
   processingNotes?: string;
   prohibitedDataConfirmed: boolean;
-}) {
-  return post<DataAssemblyRequest>("/data-assembly-requests", input, true);
+}, idempotencyKey?: string) {
+  return post<DataAssemblyRequest>("/data-assembly-requests", input, true, idempotencyKey);
 }
 export async function updateAssemblyRequest(
   id: string,
@@ -925,13 +1130,19 @@ export async function updateAssemblyRequest(
 ) {
   return patch<DataAssemblyRequest>(`/data-assembly-requests/${id}`, input);
 }
-export async function uploadAssemblyInput(id: string, file: File) {
+export async function removeAssemblyInput(id: string, file: OperationalFile) {
+  const response = await api.delete<ApiEnvelope<OperationalFile>>(
+    `/data-assembly-requests/${id}/inputs/${file.id}`, { params: { version: file.version } },
+  );
+  return unwrap(response.data);
+}
+export async function uploadAssemblyInput(id: string, file: File, idempotencyKey?: string) {
   const form = new FormData();
   form.append("file", file);
   const response = await api.post<ApiEnvelope<OperationalFile>>(
     `/data-assembly-requests/${id}/inputs`,
     form,
-    { headers: { "Content-Type": undefined } },
+    { headers: { "Content-Type": undefined, ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}) } },
   );
   return unwrap(response.data);
 }
@@ -1045,11 +1256,6 @@ export async function listCommercialOrders(
 ) {
   return get<PagedResult<CommercialOrderListItem>>("/platform/orders", params);
 }
-export async function initiateCustomerLabOrder(
-  input: InitiateCustomerLabOrderInput,
-) {
-  return post<LabServiceOrder>("/platform/lab-service-orders", input, true);
-}
 export async function listEligibleCustomerCompanies() {
   return get<EligibleCustomerCompany[]>(
     "/platform/lab-service-orders/eligible-customers",
@@ -1103,7 +1309,17 @@ export async function runPlatformAction<T>(
 ) {
   return post<T>(`/platform/${path}`, body, idempotent);
 }
+export async function declineLabChangeQuote(orderId: string, quoteId: string, version: number) {
+  return post<LabServiceOrder>(`/lab-service-orders/${orderId}/quotes/${quoteId}/decline-change`, { version });
+}
+
+export function completeLabJob(id: string, version: number, idempotencyKey: string) {
+  return post<LabServiceOrder>(`/platform/lab-service-orders/${id}/complete`, { version }, true, idempotencyKey);
+}
 export type QuoteLineInput = {
+  pricingComponent?: "StandardSample" | "AdditionalRun" | null;
+  phaseId?: string | null;
+  turnaroundBusinessDays?: number | null;
   catalogItemId: string;
   description: string;
   quantity: number;
@@ -1120,6 +1336,11 @@ export async function issuePlatformQuote(
     expiresAt?: string | null;
     purpose: "Initial" | "Change";
     pricingDecisionReason?: string | null;
+    sourceQuoteId?: string;
+    additionalSources?: Array<{ biologicalSource: string; specimenCount: number }>;
+    additionalSequencingRunCount?: number;
+    deliveryTargetBusinessDays?: number | null;
+  phasePlanSnapshotJson?: string | null;
   },
 ) {
   const path =
@@ -1174,6 +1395,8 @@ export async function uploadPlatformLabResult(
     pipelineVersion: string;
     provenance: string;
     qcStatus: string;
+    labAnalysisRunId: string;
+    resultLocator: string;
   },
 ) {
   const form = new FormData();
@@ -1182,6 +1405,8 @@ export async function uploadPlatformLabResult(
   form.append("pipelineVersion", input.pipelineVersion);
   form.append("provenance", input.provenance);
   form.append("qcStatus", input.qcStatus);
+  form.append("labAnalysisRunId", input.labAnalysisRunId);
+  form.append("resultLocator", input.resultLocator);
   const response = await api.post<ApiEnvelope<OperationalFile>>(
     `/platform/lab-service-orders/${orderId}/samples/${sampleId}/results`,
     form,
@@ -1221,7 +1446,8 @@ export async function getOrderConfiguration() {
   return get<OrderConfiguration>("/platform/order-configuration");
 }
 export async function updateOrderSystemConfiguration(
-  input: OrderConfiguration["system"],
+  input: Omit<OrderConfiguration["system"], "sampleConfigurationJson" | "resultDestinationConfigurationJson">
+    & Partial<Pick<OrderConfiguration["system"], "sampleConfigurationJson" | "resultDestinationConfigurationJson">>,
 ) {
   return patch<OrderConfiguration>(
     "/platform/order-configuration/system",
@@ -1239,6 +1465,9 @@ export async function saveCatalogItem(
     currency: string;
     isActive: boolean;
     version?: number;
+    serviceFamily?: 'Other' | 'PSeqLabService';
+    maximumCustomerSamples?: number | null;
+    minimumSequencingVolumeUlText?: string | null;
   },
 ) {
   return id
@@ -1250,6 +1479,12 @@ export async function saveCatalogItem(
         "/platform/order-configuration/catalog/items",
         input,
       );
+}
+export async function getCatalogItemDeletion(id: string) {
+  return get<{ canDelete: boolean; reason: string | null; version: number }>(`/platform/order-configuration/catalog/items/${id}/deletion`);
+}
+export async function deleteCatalogItem(id: string, version: number) {
+  await api.delete(`/platform/order-configuration/catalog/items/${id}`, { params: { version } });
 }
 export async function saveAnalysisDefinition(
   id: string | null,
@@ -1265,6 +1500,7 @@ export async function saveAnalysisDefinition(
 export async function saveReagentOffering(
   id: string | null,
   input: {
+    includedAssemblyProfileId?: string | null;
     partnerOrganizationId: string;
     qboCatalogItemId: string;
     negotiatedUnitPrice: number;
@@ -1358,12 +1594,12 @@ async function get<T>(
   return unwrap(response.data);
 }
 
-async function post<T>(url: string, data: unknown, idempotent = false) {
+async function post<T>(url: string, data: unknown, idempotent = false, idempotencyKey?: string) {
   const response = await api.post<ApiEnvelope<T>>(
     url,
     data,
     idempotent
-      ? { headers: { "Idempotency-Key": crypto.randomUUID() } }
+      ? { headers: { "Idempotency-Key": idempotencyKey ?? crypto.randomUUID() } }
       : undefined,
   );
   return unwrap(response.data);
@@ -1392,6 +1628,11 @@ export function isOrderConcurrencyError(error: unknown) {
     error.response?.status === 409 &&
     error.response.data.error?.code === "concurrency_conflict"
   );
+}
+
+export function isOrderFeatureDisabled(error: unknown, code: 'attention_operations_disabled' | 'governed_results_disabled') {
+  return axios.isAxiosError<ApiEnvelope<unknown>>(error) &&
+    error.response?.status === 404 && error.response.data.error?.code === code;
 }
 
 function saveBlob(blob: Blob, fileName: string) {

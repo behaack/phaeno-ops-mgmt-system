@@ -18,13 +18,14 @@ using static PhaenoPortal.App.Features.Crm.Services.CrmAccess;
 public sealed class CrmLeadsController(PSeqOperationsDbContext dbContext, IExternalIdentityContext externalIdentityContext) : ControllerBase
 {
     [HttpGet]
-    public async Task<CrmPageDto<CrmLeadDto>> List([FromQuery] string? search, [FromQuery] CrmLeadStatus? status, [FromQuery] bool includeInactive = false, [FromQuery] int page = 1, [FromQuery] int pageSize = 25, CancellationToken cancellationToken = default)
+    public async Task<CrmPageDto<CrmLeadDto>> List([FromQuery] string? search, [FromQuery] CrmLeadStatus? status, [FromQuery] bool includeInactive = false, [FromQuery] int page = 1, [FromQuery] int pageSize = 25, CancellationToken cancellationToken = default, [FromQuery] bool needsNextAction = false)
     {
         await RequireActor(cancellationToken);
         EnsurePagination(page, pageSize);
         var query = dbContext.CrmLeads.AsNoTracking().Include(value => value.Owner).AsQueryable();
         if (!includeInactive) query = query.Where(value => value.IsActive);
         if (status.HasValue) query = query.Where(value => value.Status == status);
+        if (needsNextAction) query = CrmAttentionFilters.MissingNextAction(query);
         if (!string.IsNullOrWhiteSpace(search))
         {
             var pattern = $"%{EscapeLike(search.Trim())}%";
@@ -95,7 +96,16 @@ public sealed class CrmLeadsController(PSeqOperationsDbContext dbContext, IExter
         EnsureVersion(lead.Version, request.Version);
         if (lead.Status != CrmLeadStatus.Qualified) throw Conflict("crm_lead_not_qualified", "Qualify the lead before conversion.");
 
-        var duplicateWarnings = await DuplicateWarnings(lead, cancellationToken);
+        var companyName = lead.CompanyName ?? request.CompanyName?.Trim();
+        if (request.CreateCompany && !request.ExistingCompanyId.HasValue)
+        {
+            if (string.IsNullOrWhiteSpace(companyName))
+                throw new CrmException("crm_company_name_required", "Enter a company name before converting this lead.");
+            if (companyName.Length > 255)
+                throw new CrmException("crm_company_name_too_long", "Use 255 characters or fewer for the company name.");
+        }
+
+        var duplicateWarnings = await DuplicateWarnings(lead, companyName, cancellationToken);
         if (request.CreateCompany && duplicateWarnings.Any(value => value.StartsWith("Company", StringComparison.Ordinal)))
         {
             throw Conflict("crm_lead_company_duplicate", "A likely Company match exists. Select the existing Company or resolve the duplicate before conversion.");
@@ -114,7 +124,7 @@ public sealed class CrmLeadsController(PSeqOperationsDbContext dbContext, IExter
         }
         else if (request.CreateCompany)
         {
-            company = Execute(() => new CrmCompany(lead.CompanyName ?? lead.DisplayName, lead.OwnerUserId, source: lead.Source, tags: lead.Tags));
+            company = Execute(() => new CrmCompany(companyName!, lead.OwnerUserId, source: lead.Source, tags: lead.Tags));
             dbContext.CrmCompanies.Add(company);
         }
 
@@ -141,6 +151,7 @@ public sealed class CrmLeadsController(PSeqOperationsDbContext dbContext, IExter
             var stage = pipeline.Stages.Where(value => value.IsActive && value.Category == CrmPipelineStageCategory.Open).OrderBy(value => value.Position).FirstOrDefault()
                 ?? throw Conflict("crm_pipeline_open_stage_missing", "The selected pipeline has no active open stage.");
             opportunity = Execute(() => new CrmOpportunity(request.OpportunityName ?? $"{company.Name} opportunity", company.Id, stage, lead.OwnerUserId, null, null, "USD", null, lead.NextAction, null, lead.QualificationNotes, lead.Tags));
+            opportunity.AssignDepartment(await CrmOpportunityDepartments.ResolveAsync(dbContext, company, null, cancellationToken));
             dbContext.CrmOpportunities.Add(opportunity);
             dbContext.CrmOpportunityStageHistory.Add(new CrmOpportunityStageHistory(opportunity.Id, null, stage.Id, "Created from qualified lead.", actor.Id, DateTime.UtcNow));
             if (contact is not null) dbContext.CrmOpportunityContacts.Add(new CrmOpportunityContact(opportunity.Id, contact.Id, "Lead contact", true));
@@ -163,15 +174,15 @@ public sealed class CrmLeadsController(PSeqOperationsDbContext dbContext, IExter
         return ToDto(value);
     }
 
-    private async Task<IReadOnlyList<string>> DuplicateWarnings(CrmLead lead, CancellationToken cancellationToken)
+    private async Task<IReadOnlyList<string>> DuplicateWarnings(CrmLead lead, string? companyName, CancellationToken cancellationToken)
     {
         var warnings = new List<string>();
-        if (!string.IsNullOrWhiteSpace(lead.CompanyName) && await dbContext.CrmCompanies.AnyAsync(value => value.IsActive && value.Name.ToLower() == lead.CompanyName.ToLower(), cancellationToken)) warnings.Add("Company name matches an existing Company.");
+        if (!string.IsNullOrWhiteSpace(companyName) && await dbContext.CrmCompanies.AnyAsync(value => value.IsActive && value.Name.ToLower() == companyName.ToLower(), cancellationToken)) warnings.Add("Company name matches an existing Company.");
         if (!string.IsNullOrWhiteSpace(lead.NormalizedEmail) && await dbContext.CrmContacts.AnyAsync(value => value.IsActive && value.NormalizedEmail == lead.NormalizedEmail, cancellationToken)) warnings.Add("Contact email matches an existing Contact.");
         return warnings;
     }
 
-    private async Task<User> RequireActor(CancellationToken cancellationToken) => await RequirePlatformAdminAsync(HttpContext, dbContext, externalIdentityContext, cancellationToken);
+    private async Task<User> RequireActor(CancellationToken cancellationToken) => await RequireCrmAccessAsync(HttpContext, dbContext, externalIdentityContext, cancellationToken);
     private async Task<User> RequireOwner(Guid id, CancellationToken cancellationToken) => await dbContext.Users.FirstOrDefaultAsync(value => value.Id == id && value.IsActive && value.Memberships.Any(membership => membership.IsActive && membership.Organization!.Kind == OrganizationKind.Phaeno), cancellationToken) ?? throw NotFound("crm_owner_not_found", "The selected active Phaeno owner was not found.");
     private async Task<CrmLead> Require(Guid id, bool tracking, CancellationToken cancellationToken)
     {

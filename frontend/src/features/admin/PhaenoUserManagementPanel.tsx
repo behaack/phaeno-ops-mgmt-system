@@ -46,7 +46,7 @@ import {
   DialogTitle,
 } from '#/components/ui/dialog'
 import {
-  DropdownMenu,
+  ActionMenu as DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
@@ -70,6 +70,8 @@ const labRoleOptions = [
 ] as const satisfies ReadonlyArray<{ value: LabRole; label: string }>
 
 const businessRoleOptions = [
+  { value: 'BusinessDevelopment', label: 'Business Development' },
+  { value: 'CommercialLeadership', label: 'Commercial leadership' },
   { value: 'CommercialOperator', label: 'Commercial operator' },
   { value: 'ResultReleaseManager', label: 'Result release manager' },
   { value: 'BillingOperator', label: 'Billing operator' },
@@ -376,7 +378,7 @@ export function PhaenoUserManagementPanel({
                           <Ellipsis aria-hidden="true" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
+                      <DropdownMenuContent align="end" className="w-max min-w-48 max-w-[calc(100vw-2rem)]">
                         <DropdownMenuItem
                           disabled={
                             invitationMutation.isPending ||

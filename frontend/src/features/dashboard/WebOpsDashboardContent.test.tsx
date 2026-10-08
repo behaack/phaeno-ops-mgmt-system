@@ -1,4 +1,5 @@
 import {
+  act,
   fireEvent,
   render,
   screen,
@@ -79,6 +80,8 @@ describe('WebOpsDashboardContent', () => {
     expect(screen.getByText('Mock data')).toBeTruthy()
     expect(screen.getByText('Ada Lovelace')).toBeTruthy()
     expect(screen.getByText('Technical brief')).toBeTruthy()
+    expect(screen.getAllByRole('tab')).toHaveLength(2)
+    expect(screen.queryByRole('tab', { name: 'Email delivery' })).toBeNull()
     expect(
       screen.getByText('Showing 1–10 of 12 signups. Page 1 of 2.'),
     ).toBeTruthy()
@@ -98,6 +101,34 @@ describe('WebOpsDashboardContent', () => {
     expect(
       screen.getByText('Showing 1–10 of 12 requests. Page 1 of 2.'),
     ).toBeTruthy()
+  })
+
+  it('mounts email delivery only in its selected tab and supports keyboard movement between all panels', async () => {
+    render(<WebOpsDashboardContent
+      mailingList={{ data: mailingListPage, error: null, isLoading: false, onPageChange: vi.fn(), onRetry: vi.fn() }}
+      demoRequests={{ data: demoRequestPage, error: null, isLoading: false, onPageChange: vi.fn(), onRetry: vi.fn() }}
+      notificationPanel={<section aria-label="Email delivery queue"><h3>Email delivery</h3><button type="button">Review pending messages</button></section>}
+    />)
+    expect(screen.getAllByRole('tab')).toHaveLength(3)
+    expect(screen.getAllByRole('tabpanel')).toHaveLength(1)
+    expect(screen.queryByRole('button', { name: 'Review pending messages', hidden: true })).toBeNull()
+    selectTab(/Demo Requests/)
+    expect(screen.getByText('Compiler Labs')).toBeTruthy()
+    expect(screen.queryByText('Ada Lovelace')).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'Email delivery', hidden: true })).toBeNull()
+    const demoTab = screen.getByRole('tab', { name: /Demo Requests/ })
+    act(() => demoTab.focus())
+    fireEvent.keyDown(demoTab, { key: 'ArrowRight' })
+    await waitFor(() => expect(screen.getByRole('tab', { name: 'Email delivery' }).getAttribute('aria-selected')).toBe('true'))
+    expect(screen.getAllByRole('tabpanel')).toHaveLength(1)
+    expect(screen.getByRole('region', { name: 'Email delivery queue' })).toBeTruthy()
+    expect(screen.queryByText('Compiler Labs')).toBeNull()
+    expect(document.activeElement).toBe(screen.getByRole('tab', { name: 'Email delivery' }))
+    fireEvent.keyDown(screen.getByRole('tab', { name: 'Email delivery' }), { key: 'Home' })
+    await waitFor(() => expect(screen.getByRole('tab', { name: /Mailing List/ }).getAttribute('aria-selected')).toBe('true'))
+    expect(screen.getByText('Ada Lovelace')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Review pending messages', hidden: true })).toBeNull()
+    expect(screen.getAllByRole('tabpanel')).toHaveLength(1)
   })
 
   it('changes each panel page independently', () => {

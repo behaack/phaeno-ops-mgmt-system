@@ -1,6 +1,7 @@
 import { Navigate, createFileRoute } from '@tanstack/react-router'
 import { useSession } from '@clerk/react'
 
+import { getInvitationReturnPath } from '#/features/auth/invitation-storage'
 import { MfaSetupAccessState } from '#/features/auth/session-context'
 
 export const Route = createFileRoute('/session-tasks/setup-mfa')({
@@ -15,7 +16,7 @@ function SetupMfaRoute() {
   }
 
   if (session?.currentTask?.key !== 'setup-mfa') {
-    return <Navigate to="/" replace />
+    return <Navigate to={getInvitationReturnPath()} replace />
   }
 
   return <MfaSetupAccessState />

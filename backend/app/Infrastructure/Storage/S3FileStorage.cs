@@ -7,7 +7,7 @@ using Microsoft.Extensions.Options;
 
 public sealed class S3FileStorage(
     IAmazonS3 s3Client,
-    IOptions<FileStorageOptions> options) : IFileStorage
+    IOptions<FileStorageOptions> options, BackupDeletionLease? deletionLease = null) : IFileStorage
 {
     private readonly S3FileStorageOptions s3Options = options.Value.S3;
 
@@ -22,7 +22,12 @@ public sealed class S3FileStorage(
             Path.GetTempPath(),
             "phaeno-file-storage",
             $"{Guid.NewGuid():N}.upload");
-        Directory.CreateDirectory(Path.GetDirectoryName(temporaryPath)!);
+        var temporaryDirectory = Path.GetDirectoryName(temporaryPath)!;
+        LocalFileStorage.EnsureNoLinks(temporaryDirectory);
+        if (OperatingSystem.IsWindows()) Directory.CreateDirectory(temporaryDirectory);
+        else Directory.CreateDirectory(temporaryDirectory, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        LocalFileStorage.EnsureNoLinks(temporaryPath);
+        var temporaryCreated = false;
 
         try
         {
@@ -36,6 +41,7 @@ public sealed class S3FileStorage(
                 bufferSize: 81_920,
                 FileOptions.Asynchronous | FileOptions.SequentialScan))
             {
+                temporaryCreated = true;
                 var stored = await FileStorageKeys.CopyAndHashAsync(
                     request.Content,
                     temporary,
@@ -49,6 +55,7 @@ public sealed class S3FileStorage(
                 {
                     BucketName = s3Options.BucketName,
                     Key = objectKey,
+                    IfNoneMatch = "*",
                     InputStream = temporary,
                     ContentType = "application/octet-stream"
                 };
@@ -60,8 +67,9 @@ public sealed class S3FileStorage(
         }
         finally
         {
-            if (File.Exists(temporaryPath))
+            if (temporaryCreated && File.Exists(temporaryPath))
             {
+                LocalFileStorage.EnsureNoLinks(temporaryPath);
                 File.Delete(temporaryPath);
             }
         }
@@ -96,6 +104,7 @@ public sealed class S3FileStorage(
         string storageKey,
         CancellationToken cancellationToken)
     {
+        await using var lease = deletionLease is null ? null : await deletionLease.AcquireAsync(cancellationToken);
         await s3Client.DeleteObjectAsync(
             new DeleteObjectRequest
             {

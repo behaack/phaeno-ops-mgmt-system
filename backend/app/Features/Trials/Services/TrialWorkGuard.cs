@@ -41,6 +41,8 @@ public sealed class TrialWorkGuard(PSeqOperationsDbContext db, OrderRequestConte
         if (trialIds.Count == 0) { await next(); return; }
         var path = action.HttpContext.Request.Path.Value ?? "";
         var custodyOnly = path.EndsWith("/receipt") || path.EndsWith("/custody-events") || path.EndsWith("/label-print") || path.EndsWith("/exceptions") || path.Contains("/exceptions/");
+        // Stopping an assembly remains possible while its parent is held. The controller still enforces Lab permissions and exact job scope.
+        custodyOnly |= path.Contains("/assembly-jobs/", StringComparison.Ordinal) && path.EndsWith("/cancel", StringComparison.Ordinal);
         var resultOnly = path.Contains("/pseq-results/") || path.EndsWith("/scientific-approval");
         await using var transaction = db.Database.CurrentTransaction is null ? await db.Database.BeginTransactionAsync(token) : null;
         var parents = new List<TrialProject>();
@@ -62,7 +64,7 @@ public sealed class TrialWorkGuard(PSeqOperationsDbContext db, OrderRequestConte
             if (path.StartsWith("/api/sample-shipping/", StringComparison.Ordinal))
             {
                 var tenant = await context.RequireSampleShippingTenantAsync(action.HttpContext, true, token);
-                if (!tenant.Membership.IsOrganizationAdmin || trial.OrganizationId != tenant.Organization.Id || trial.DepartmentId != tenant.Department.Id)
+                if (!tenant.IsDepartmentAdmin || trial.OrganizationId != tenant.Organization.Id || trial.DepartmentId != tenant.Department.Id)
                     throw TrialAccess.Error("trial_shipping_admin_required", "The Trial organization's administrator must prepare its shipment.", 403);
             }
         }

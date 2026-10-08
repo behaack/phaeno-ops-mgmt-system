@@ -27,7 +27,9 @@ public enum LabSampleStatus
     DataAvailable,
     Completed,
     OnHold,
-    Rejected
+    Rejected,
+    Failed,
+    Cancelled
 }
 
 public enum AssemblyRequestStatus

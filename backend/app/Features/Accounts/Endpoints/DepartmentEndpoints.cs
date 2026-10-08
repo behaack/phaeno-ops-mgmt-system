@@ -17,9 +17,7 @@ public static class DepartmentEndpoints
     {
         var actor = await RequireActor(httpContext, dbContext, externalIdentityContext, cancellationToken);
         if (!CanManageOrganization(actor, organizationId)) return TypedResults.Forbid();
-        var organization = await dbContext.Organizations.AsNoTracking()
-            .SingleOrDefaultAsync(value => value.Id == organizationId && value.IsActive, cancellationToken)
-            ?? throw new BadRequestException("The active organization was not found.");
+        var organization = await RequireConfigurableOrganization(actor, organizationId, dbContext, cancellationToken);
         return TypedResults.Ok(ConfigurationDto(organization));
     }
 
@@ -29,9 +27,7 @@ public static class DepartmentEndpoints
     {
         var actor = await RequireActor(httpContext, dbContext, externalIdentityContext, cancellationToken);
         if (!CanManageOrganization(actor, organizationId)) return TypedResults.Forbid();
-        var organization = await dbContext.Organizations
-            .SingleOrDefaultAsync(value => value.Id == organizationId && value.IsActive, cancellationToken)
-            ?? throw new BadRequestException("The active organization was not found.");
+        var organization = await RequireConfigurableOrganization(actor, organizationId, dbContext, cancellationToken);
         EnsureVersion(organization.Version, request.Version);
         var previous = organization.GetConfigurationDefaults();
         Execute(() => organization.UpdateConfigurationDefaults(new(request.PurchaseOrderRequired,
@@ -108,16 +104,32 @@ public static class DepartmentEndpoints
             return TypedResults.Forbid();
         }
 
-        var organizationExists = await dbContext.Organizations.AsNoTracking()
-            .AnyAsync(value => value.Id == organizationId && value.IsActive, cancellationToken);
-        if (!organizationExists)
-        {
-            throw new BadRequestException("The organization is inactive or unavailable.");
-        }
+        await RequireConfigurableOrganization(actor, organizationId, dbContext, cancellationToken);
 
+        await using var ownedTransaction = dbContext.Database.CurrentTransaction is null
+            ? await dbContext.Database.BeginTransactionAsync(System.Data.IsolationLevel.ReadCommitted, cancellationToken) : null;
+        // Keep allocation and insertion under one lock across all API instances.
+        var referenceLock = $"department-reference:{organizationId:D}";
+        await dbContext.Database.ExecuteSqlInterpolatedAsync(
+            $"SELECT pg_advisory_xact_lock(hashtextextended({referenceLock}, 0))", cancellationToken);
+        var existingCodes = await dbContext.OrganizationDepartments.AsNoTracking()
+            .Where(value => value.OrganizationId == organizationId)
+            .Select(value => value.Code).ToListAsync(cancellationToken);
+        long nextNumber = 1;
+        foreach (var code in existingCodes)
+        {
+            if (code.StartsWith("DEPT-", StringComparison.Ordinal)
+                && long.TryParse(code.AsSpan(5), System.Globalization.NumberStyles.None,
+                    System.Globalization.CultureInfo.InvariantCulture, out var number)
+                && number >= nextNumber)
+            {
+                nextNumber = checked(number + 1);
+            }
+        }
+        var reference = "DEPT-" + nextNumber.ToString("D6", System.Globalization.CultureInfo.InvariantCulture);
         var department = Execute(() => new OrganizationDepartment(
             organizationId,
-            request.Code,
+            reference,
             request.Name,
             request.Description));
         Execute(() => department.UpdateConfiguration(
@@ -131,6 +143,7 @@ public static class DepartmentEndpoints
             AccountAudit.DepartmentCreated, organizationId, actor.Id,
             new { department.Code, department.Name });
         await dbContext.SaveChangesAsync(cancellationToken);
+        if (ownedTransaction is not null) await ownedTransaction.CommitAsync(cancellationToken);
         return TypedResults.Created($"/api/organizations/{organizationId}/departments/{department.Id}", ToDto(department, 0));
     }
 
@@ -144,14 +157,14 @@ public static class DepartmentEndpoints
         CancellationToken cancellationToken)
     {
         var actor = await RequireActor(httpContext, dbContext, externalIdentityContext, cancellationToken);
-        if (!await CanManageDepartment(actor, organizationId, departmentId, dbContext, cancellationToken))
+        if (!await CanManageDepartment(actor, organizationId, departmentId, dbContext, cancellationToken, allowCompanySetup: true))
         {
             return TypedResults.Forbid();
         }
 
         var department = await RequireDepartment(dbContext, organizationId, departmentId, cancellationToken);
         EnsureVersion(department.Version, request.Version);
-        Execute(() => department.Update(request.Code, request.Name, request.Description));
+        Execute(() => department.Update(request.Name, request.Description));
         Execute(() => department.UpdateConfiguration(
             request.PurchaseOrderRequired,
             request.BillingContactEmail,
@@ -181,6 +194,7 @@ public static class DepartmentEndpoints
             return TypedResults.Forbid();
         }
 
+        await RequireConfigurableOrganization(actor, organizationId, dbContext, cancellationToken);
         var department = await RequireDepartment(dbContext, organizationId, departmentId, cancellationToken);
         EnsureVersion(department.Version, request.Version);
         if (lifecycleAction == "deactivate")
@@ -233,6 +247,7 @@ public static class DepartmentEndpoints
             return TypedResults.Forbid();
         }
 
+        await RequireConfigurableOrganization(actor, organizationId, dbContext, cancellationToken);
         var department = await RequireDepartment(dbContext, organizationId, departmentId, cancellationToken);
         EnsureVersion(department.Version, request.Version);
         if (!department.IsActive)
@@ -371,6 +386,7 @@ public static class DepartmentEndpoints
             .Include(value => value.Department)
             .SingleOrDefaultAsync(value => value.OrganizationMembershipId == organizationMembershipId
                 && value.DepartmentId == departmentId, cancellationToken);
+        var accessChanged = assignment is null || !assignment.IsActive || assignment.IsDepartmentAdmin != request.IsDepartmentAdmin;
         if (assignment is null)
         {
             if (request.Version.HasValue)
@@ -387,6 +403,9 @@ public static class DepartmentEndpoints
             assignment.Reactivate();
         }
 
+        if (accessChanged)
+            await CompanyAccessNotifications.QueueAsync(dbContext, organizationMembership,
+                $"Your access to {department.Name} is now {(assignment.IsDepartmentAdmin ? "Department administrator" : "Member")}.", cancellationToken);
         AccountAudit.Add(dbContext, httpContext, nameof(OrganizationDepartmentMembership), assignment.Id,
             AccountAudit.DepartmentMembershipUpdated, organizationId, actor.Id,
             new { organizationMembership.UserId, DepartmentId = departmentId, assignment.IsDepartmentAdmin, IsActive = true });
@@ -443,6 +462,9 @@ public static class DepartmentEndpoints
             }
         }
 
+        if (assignment.IsActive)
+            await CompanyAccessNotifications.QueueAsync(dbContext, organizationMembership,
+                $"Your access to {assignment.Department.Name} has been removed.", cancellationToken);
         assignment.Deactivate();
         AccountAudit.Add(dbContext, httpContext, nameof(OrganizationDepartmentMembership), assignment.Id,
             AccountAudit.DepartmentMembershipUpdated, organizationId, actor.Id,
@@ -491,19 +513,40 @@ public static class DepartmentEndpoints
         AccountAuthorization.IsPlatformAdmin(actor)
         || AccountAuthorization.IsOrganizationAdmin(actor, organizationId);
 
+    private static async Task<Organization> RequireConfigurableOrganization(User actor, Guid organizationId,
+        PSeqOperationsDbContext dbContext, CancellationToken cancellationToken)
+    {
+        var organization = await dbContext.Organizations.SingleOrDefaultAsync(value => value.Id == organizationId, cancellationToken)
+            ?? throw new BadRequestException("The organization is unavailable.");
+        if (!organization.IsActive && !await CanConfigureCompanySetup(actor, organizationId, dbContext, cancellationToken))
+            throw new BadRequestException("The organization is inactive or unavailable.");
+        return organization;
+    }
+
+    private static Task<bool> CanConfigureCompanySetup(User actor, Guid organizationId,
+        PSeqOperationsDbContext dbContext, CancellationToken cancellationToken) =>
+        AccountAuthorization.IsPlatformAdmin(actor)
+            ? dbContext.CrmCompanies.AnyAsync(value => value.IsActive && value.SetupOrganizationId == organizationId
+                && value.AccessOrganizationId == null, cancellationToken)
+            : Task.FromResult(false);
+
     private static async Task<bool> CanManageDepartment(
         User actor,
         Guid organizationId,
         Guid departmentId,
         PSeqOperationsDbContext dbContext,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool allowCompanySetup = false)
     {
         if (!await dbContext.OrganizationDepartments.AsNoTracking().AnyAsync(value =>
-                value.Id == departmentId && value.OrganizationId == organizationId
-                && value.Organization.IsActive, cancellationToken))
+                value.Id == departmentId && value.OrganizationId == organizationId, cancellationToken))
         {
             return false;
         }
+
+        if (!await dbContext.Organizations.AnyAsync(value => value.Id == organizationId && value.IsActive, cancellationToken)
+            && !(allowCompanySetup && await CanConfigureCompanySetup(actor, organizationId, dbContext, cancellationToken)))
+            return false;
 
         if (CanManageOrganization(actor, organizationId))
         {

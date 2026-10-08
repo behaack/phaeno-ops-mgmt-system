@@ -153,7 +153,7 @@ export function EquipmentCreateDialog({
               </DialogDescription>
             </DialogHeader>
 
-            <div className="my-5 grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2">
               <div className="sm:col-span-2">
                 <FormField
                   id="equipment-name"
@@ -175,6 +175,7 @@ export function EquipmentCreateDialog({
 
               <FormField
                 id="equipment-type"
+                className="sm:col-span-2"
                 label="Equipment type"
                 required
                 error={form.formState.errors.equipmentType?.message}
@@ -203,6 +204,7 @@ export function EquipmentCreateDialog({
 
               <FormField
                 id="equipment-location"
+                className="sm:col-span-2"
                 label="Location"
                 required
                 error={form.formState.errors.location?.message}
@@ -291,19 +293,21 @@ export function EquipmentCreateDialog({
 
 function FormField({
   id,
+  className,
   label,
   required,
   error,
   children,
 }: {
   id: string
+  className?: string
   label: string
   required?: boolean
   error?: string
   children: ReactNode
 }) {
   return (
-    <div>
+    <div className={className}>
       <Label htmlFor={id}>
         {required ? <RequiredFieldName>{label}</RequiredFieldName> : label}
       </Label>

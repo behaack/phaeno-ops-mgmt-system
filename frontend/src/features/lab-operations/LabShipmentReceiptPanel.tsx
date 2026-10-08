@@ -1,0 +1,55 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useRef, useState } from 'react'
+import { useNavigate, useSearch } from '@tanstack/react-router'
+import { receiveLabShipment } from '#/api/lab-shipment-receipt'
+import { getLabOperationsError } from '#/api/lab-operations'
+import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
+import { Button } from '#/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
+import { Input } from '#/components/ui/input'
+import { Label } from '#/components/ui/label'
+import { Field, FieldDescription } from '#/components/ui/field'
+import { PillToggle } from '#/components/ui/pill-toggle'
+import { LabShipmentQueue } from './LabShipmentQueue'
+import { LabShipmentHistoryPanel } from './LabShipmentHistoryPanel'
+import { parseShipmentHistorySearch, type ShipmentReceivingView } from './lab-shipment-history-search'
+
+export function LabShipmentReceiptPanel({ apiEnabled, canReceive, onAccession }: {
+  apiEnabled: boolean
+  canReceive: boolean
+  onAccession: (barcode: string) => void
+}) {
+  const client = useQueryClient()
+  const input = useRef<HTMLInputElement>(null)
+  const [barcode, setBarcode] = useState('')
+  const routeSearch = useSearch({ strict: false }), navigate = useNavigate()
+  const view = parseShipmentHistorySearch(routeSearch).receiptView ?? 'receive'
+  const setView = (value: string) => {
+    const next = value as ShipmentReceivingView
+    void navigate({ to: '/lab-operations', search: previous => ({ ...previous, section: 'receipt', receiptTab: 'receiving', receiptView: next }), replace: true, resetScroll: false })
+  }
+  const receipt = useMutation({ mutationFn: receiveLabShipment, retry: false,
+    onSuccess: async () => {
+      setBarcode('')
+      await Promise.all(['lab-shipment-queue', 'sample-shipments', 'platform-sample-shipments', 'sample-shipment', 'lab-receipt-context', 'lab-operations', 'lab-work-order'].map(key => client.invalidateQueries({ queryKey: [key] })))
+    },
+    onSettled: () => window.requestAnimationFrame(() => input.current?.focus()),
+  })
+  return <div className="min-w-0 max-w-full space-y-4">
+    <PillToggle label="Shipment receiving views" value={view} onValueChange={setView} options={[
+      { value: 'receive', label: 'Receive a shipment' },
+      { value: 'expected', label: 'Expected shipments' },
+      { value: 'received', label: 'Shipments received' },
+    ]} />
+    <div role="region" aria-label={view === 'receive' ? 'Receive a shipment' : view === 'expected' ? 'Expected shipments' : 'Shipments received'} className="min-w-0">
+    {view === 'receive' ? <Card className="gap-0 py-0"><CardHeader className="border-b bg-muted/50 p-4"><CardTitle>Receive a shipment</CardTitle><CardDescription>Scan the PH-P- barcode under “Scan to receive this shipment” in the body of the shipping insert when this container physically arrives. Submitting the scan records shipment receipt.</CardDescription></CardHeader><CardContent className="space-y-4 p-4">
+    {canReceive ? <form className="flex flex-wrap items-end gap-3" onSubmit={event => { event.preventDefault(); if (apiEnabled && barcode.trim() && !receipt.isPending) receipt.mutate(barcode.trim()) }}>
+      <Field className="w-full max-w-xl"><Label htmlFor="container-receipt-barcode">Shipping insert barcode</Label><FieldDescription id="container-receipt-help">Use the complete PH-P- code. Order, shipment-reference, container and tube barcodes do not acknowledge receipt here.</FieldDescription><Input ref={input} id="container-receipt-barcode" aria-describedby="container-receipt-help" placeholder="PH-P-…" autoComplete="off" spellCheck={false} value={barcode} disabled={receipt.isPending} onChange={event => { setBarcode(event.target.value); receipt.reset() }} /></Field>
+      <Button type="submit" disabled={!apiEnabled || !barcode.trim() || receipt.isPending}>{receipt.isPending ? 'Receiving…' : 'Receive shipment'}</Button>
+    </form> : <p className="text-sm text-muted-foreground">A laboratory operator or supervisor can acknowledge shipment receipt.</p>}
+    {receipt.error ? <Alert variant="destructive"><AlertTitle>Shipment receipt could not be confirmed</AlertTitle><AlertDescription>{getLabOperationsError(receipt.error, 'Scan the same insert again to check or record its receipt. Repeated scans do not create another receipt.')}</AlertDescription></Alert> : null}
+    {receipt.data ? <Alert><div className="flex flex-wrap items-center justify-between gap-2"><AlertTitle className="min-w-0 wrap-anywhere">{receipt.data.alreadyReceived ? 'Shipment already received' : 'Shipment received'} · {receipt.data.shipmentNumber}</AlertTitle><Button className="ml-auto shrink-0" onClick={() => onAccession(receipt.data.barcode)}>Accession samples</Button></div><AlertDescription><p>Received {new Date(receipt.data.receivedAt).toLocaleString()}. Next, accession the individual tubes.</p></AlertDescription></Alert> : null}
+  </CardContent></Card> : view === 'expected' ? <LabShipmentQueue apiEnabled={apiEnabled} /> : <LabShipmentHistoryPanel apiEnabled={apiEnabled} />}
+    </div>
+  </div>
+}

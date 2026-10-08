@@ -64,6 +64,24 @@ exit 7
             events = trace.read_text().splitlines() if trace.exists() else []
             return result, events
 
+    def test_dead_database_lease_does_not_abort_remaining_cleanup(self):
+        release = "release_backup_lease() {" + SOURCE.split("release_backup_lease() {", 1)[1].split("remove_helper() {", 1)[0]
+        script = r'''set -Eeuo pipefail
+coproc DEAD { read -r command; exit 7; }
+backup_lease_pid=$DEAD_PID
+exec {backup_lease_in}>&${DEAD[1]}
+exec {backup_lease_out}<&${DEAD[0]}
+printf 'stop\n' >&"$backup_lease_in"
+wait "$backup_lease_pid" || true
+''' + release + r'''
+if release_backup_lease; then exit 90; fi
+[[ -z "$backup_lease_pid" ]]
+printf 'remaining_cleanup_runs\n'
+'''
+        result = subprocess.run([SHELL, "-c", script], capture_output=True, text=True, timeout=10)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("remaining_cleanup_runs", result.stdout)
+
     def test_failed_snapshot_resumes_exact_api_and_cleans_owned_helper(self):
         result, events = self.run_case("snapshot_failure")
         self.assertEqual(result.returncode, 7)

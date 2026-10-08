@@ -1,3 +1,4 @@
+import { useCrmPermissions } from './use-crm-permissions';
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft, Pencil } from "lucide-react";
@@ -6,7 +7,6 @@ import {
   apiErrorMessage,
   getCrmOpportunity,
   getCrmOpportunityHistory,
-  listCrmCompanies,
   listCrmPipelines,
   moveCrmOpportunity,
   updateCrmOpportunity,
@@ -35,6 +35,7 @@ export function CrmOpportunityDetailPage({
 }: {
   opportunityId: string;
 }) {
+  const { canAdminister } = useCrmPermissions();
   const client = useQueryClient();
   const [editOpen, setEditOpen] = useState(false);
   const [stageId, setStageId] = useState("");
@@ -47,10 +48,6 @@ export function CrmOpportunityDetailPage({
   const pipelines = useQuery({
     queryKey: ["crm-pipelines"],
     queryFn: () => listCrmPipelines(),
-  });
-  const companies = useQuery({
-    queryKey: ["crm-companies", "choices"],
-    queryFn: () => listCrmCompanies({ pageSize: 100 }),
   });
   const history = useQuery({
     queryKey: ["crm-opportunity-history", opportunityId],
@@ -110,7 +107,7 @@ export function CrmOpportunityDetailPage({
   return (
     <main className="page-wrap space-y-6 px-4 py-8">
       <Button asChild variant="ghost" size="sm">
-        <Link to="/crm/opportunities">
+        <Link to="/crm/opportunities" search={previous => previous}>
           <ArrowLeft data-icon="inline-start" />
           Back to opportunities
         </Link>
@@ -156,6 +153,7 @@ export function CrmOpportunityDetailPage({
           </CardHeader>
           <CardContent>
             <dl className="grid gap-4 sm:grid-cols-2">
+              <Info label="Department" value={opportunity.departmentName ?? "Company-level"} />
               <Info
                 label="Product interest"
                 value={productInterestLabel(opportunity.productInterest)}
@@ -245,13 +243,12 @@ export function CrmOpportunityDetailPage({
         </CardContent>
       </Card>
       <CrmOpportunityContacts opportunityId={opportunityId} />
-      <CrmOpportunityOrderHandoffCard opportunity={opportunity} />
+      {canAdminister ? <CrmOpportunityOrderHandoffCard opportunity={opportunity} /> : null}
       <CrmCustomFields recordType="Opportunity" recordId={opportunityId} />
       <CrmRecordWork links={{ opportunityId }} />
       <CrmOpportunityDialog
         open={editOpen}
         opportunity={opportunity}
-        companies={companies.data?.items ?? []}
         pipelines={pipelines.data ?? []}
         pending={edit.isPending}
         error={edit.error ? apiErrorMessage(edit.error) : undefined}

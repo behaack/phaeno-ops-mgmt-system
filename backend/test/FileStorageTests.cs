@@ -1,4 +1,7 @@
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
+using PhaenoPortal.App.Infrastructure.Persistence;
+using PhaenoPortal.App.Features.LabOperations.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
@@ -67,6 +70,38 @@ public sealed class FileStorageTests
     }
 
     [Fact]
+    public async Task StartupChecksWritableStorageWithoutLeavingAProbeAndFilesSurviveAnotherProviderInstance()
+    {
+        var root = NewTemporaryRoot();
+        try
+        {
+            var first = CreateLocalStorage(root);
+            await new LocalFileStorageStartupCheck(first).StartAsync(CancellationToken.None);
+            Assert.Empty(Directory.EnumerateFiles(root));
+            var stored = await first.SaveAsync(new(FileStorageAreas.OrderManagement, new MemoryStream([42]), ".bin", 10), CancellationToken.None);
+            var restarted = CreateLocalStorage(root);
+            await restarted.VerifyWritableAsync(CancellationToken.None);
+            await using var read = await restarted.OpenReadAsync(FileStorageAreas.OrderManagement, stored.StorageKey, CancellationToken.None);
+            Assert.Equal(42, read.ReadByte());
+        }
+        finally { DeleteTemporaryRoot(root); }
+    }
+
+    [Fact]
+    public async Task StartupRejectsAnUnusableRootWithoutOverwritingExistingContent()
+    {
+        var root = NewTemporaryRoot();
+        var file = Path.Combine(root, "not-a-directory");
+        try
+        {
+            File.WriteAllText(file, "preserve");
+            await Assert.ThrowsAsync<IOException>(() => CreateLocalStorage(file).VerifyWritableAsync(CancellationToken.None));
+            Assert.Equal("preserve", File.ReadAllText(file));
+        }
+        finally { DeleteTemporaryRoot(root); }
+    }
+
+    [Fact]
     public async Task LocalStorageRejectsOversizedContentWithoutLeavingAnObject()
     {
         var root = NewTemporaryRoot();
@@ -128,7 +163,8 @@ public sealed class FileStorageTests
 
             Assert.IsType<LocalFileStorage>(provider.GetRequiredService<IFileStorage>());
             Assert.IsType<ManagedFileStorageAdapter>(provider.GetRequiredService<IManagedFileStorage>());
-            Assert.IsType<OperationalFileStorageAdapter>(provider.GetRequiredService<IOperationalFileStorage>());
+            using var scope = provider.CreateScope();
+            Assert.IsType<InvestigationPreservingFileStorage>(scope.ServiceProvider.GetRequiredService<IOperationalFileStorage>());
         }
         finally
         {
@@ -137,7 +173,7 @@ public sealed class FileStorageTests
     }
 
     [Fact]
-    public void DependencyInjectionRejectsLocalStorageInProduction()
+    public void DependencyInjectionRejectsUnconfirmedOrRelativeLocalStorageInProduction()
     {
         using var provider = BuildProvider(
             Environments.Production,
@@ -149,6 +185,111 @@ public sealed class FileStorageTests
 
         Assert.Throws<OptionsValidationException>(() =>
             provider.GetRequiredService<IFileStorage>());
+    }
+
+    [Fact]
+    public void ProductionCanSelectExplicitPersistentLocalStorage()
+    {
+        var root = NewTemporaryRoot();
+        try
+        {
+            using var provider = BuildProvider(Environments.Production, new Dictionary<string, string?>
+            {
+                ["FileStorage:Provider"] = FileStorageProviders.Local,
+                ["FileStorage:LocalRootPath"] = root,
+                ["FileStorage:LocalPersistentVolumeConfirmed"] = "true"
+            });
+            Assert.IsType<LocalFileStorage>(provider.GetRequiredService<IFileStorage>());
+        }
+        finally { DeleteTemporaryRoot(root); }
+    }
+
+    [Theory]
+    [InlineData("../escape.txt")]
+    [InlineData("2026/../../escape.txt")]
+    [InlineData("/absolute.txt")]
+    [InlineData("2026\\escape.txt")]
+    [InlineData("2026/file.txt:stream")]
+    [InlineData("2026/file.txt.")]
+    [InlineData("2026//file.txt")]
+    public async Task LocalStorageRejectsUnsafeKeysBeforeReadOrDelete(string key)
+    {
+        var root = NewTemporaryRoot();
+        try
+        {
+            var storage = CreateLocalStorage(root);
+            await Assert.ThrowsAsync<ArgumentException>(() => storage.OpenReadAsync(FileStorageAreas.OrderManagement, key, CancellationToken.None));
+            await Assert.ThrowsAsync<ArgumentException>(() => storage.DeleteIfExistsAsync(FileStorageAreas.OrderManagement, key, CancellationToken.None));
+        }
+        finally { DeleteTemporaryRoot(root); }
+    }
+
+    [Fact]
+    public void LocalStorageRejectsApplicationAndPublicRoots()
+    {
+        var root = NewTemporaryRoot();
+        try
+        {
+            var environment = new TestWebHostEnvironment(Environments.Development, root);
+            foreach (var path in new[] { root, Path.Combine(root, "App_Data"), Path.Combine(root, "wwwroot") })
+                Assert.Throws<InvalidOperationException>(() => new LocalFileStorage(environment,
+                    Options.Create(new FileStorageOptions { LocalRootPath = path })));
+        }
+        finally { DeleteTemporaryRoot(root); }
+    }
+
+    [Fact]
+    public void DefaultDevelopmentRootIsPrivateAndOutsideTheApplication()
+    {
+        var root = NewTemporaryRoot();
+        try
+        {
+            var resolved = LocalFileStorage.ResolveRoot(
+                new TestWebHostEnvironment(Environments.Development, root), new FileStorageOptions());
+            Assert.Equal(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "PhaenoPortal", "managed-files", Environments.Development), resolved);
+            Assert.True(Path.IsPathFullyQualified(resolved));
+            Assert.False(resolved.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase));
+        }
+        finally { DeleteTemporaryRoot(root); }
+    }
+
+    [Fact]
+    public async Task CancelledLocalWriteLeavesNoPartialFile()
+    {
+        var root = NewTemporaryRoot();
+        try
+        {
+            using var cancellation = new CancellationTokenSource(); cancellation.Cancel();
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => CreateLocalStorage(root).SaveAsync(
+                new(FileStorageAreas.OrderManagement, new MemoryStream([1, 2, 3]), ".bin", 10), cancellation.Token));
+            Assert.Empty(Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories));
+        }
+        finally { DeleteTemporaryRoot(root); }
+    }
+
+    [UnixSymlinkFact]
+    public async Task LinkedAreaCannotReadWriteOrDeleteAnotherDirectory()
+    {
+        var root = NewTemporaryRoot();
+        var outside = NewTemporaryRoot();
+        var link = Path.Combine(root, FileStorageAreas.OrderManagement);
+        try
+        {
+            File.WriteAllText(Path.Combine(outside, "retained.txt"), "retained");
+            Directory.CreateSymbolicLink(link, outside);
+            var storage = CreateLocalStorage(root);
+            await Assert.ThrowsAsync<IOException>(() => storage.OpenReadAsync(FileStorageAreas.OrderManagement, "retained.txt", CancellationToken.None));
+            await Assert.ThrowsAsync<IOException>(() => storage.DeleteIfExistsAsync(FileStorageAreas.OrderManagement, "retained.txt", CancellationToken.None));
+            await Assert.ThrowsAsync<IOException>(() => storage.SaveAsync(new(FileStorageAreas.OrderManagement, new MemoryStream([1]), ".txt", 10), CancellationToken.None));
+            Assert.Equal("retained", File.ReadAllText(Path.Combine(outside, "retained.txt")));
+            Assert.Single(Directory.EnumerateFiles(outside));
+        }
+        finally
+        {
+            if (Directory.Exists(link)) Directory.Delete(link);
+            DeleteTemporaryRoot(root); DeleteTemporaryRoot(outside);
+        }
     }
 
     [Fact]
@@ -189,7 +330,7 @@ public sealed class FileStorageTests
     }
 
     private static LocalFileStorage CreateLocalStorage(string root) => new(
-        new TestWebHostEnvironment(Environments.Development, root),
+        new TestWebHostEnvironment(Environments.Development, Environment.CurrentDirectory),
         Options.Create(new FileStorageOptions
         {
             Provider = FileStorageProviders.Local,
@@ -205,6 +346,8 @@ public sealed class FileStorageTests
             .Build();
         var environment = new TestWebHostEnvironment(environmentName, Environment.CurrentDirectory);
         var services = new ServiceCollection();
+        services.AddSingleton(Options.Create(new PersistenceOptions()));
+        services.AddDbContext<PSeqOperationsDbContext>(options => options.UseNpgsql("Host=localhost;Database=unused_storage_di_test"));
         services.AddSingleton<IWebHostEnvironment>(environment);
         services.AddSingleton<IHostEnvironment>(environment);
         services.AddFileStorage(configuration, environment);
@@ -270,5 +413,13 @@ public sealed class FileStorageTests
         public string EnvironmentName { get; set; } = environmentName;
         public string ContentRootPath { get; set; } = contentRootPath;
         public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
+    }
+}
+
+public sealed class UnixSymlinkFactAttribute : FactAttribute
+{
+    public UnixSymlinkFactAttribute()
+    {
+        if (OperatingSystem.IsWindows()) Skip = "Symlink fixture requires Unix; Windows symlinks require a separately enabled host privilege.";
     }
 }

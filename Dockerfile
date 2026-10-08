@@ -28,6 +28,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
+RUN install -d -m 700 /var/lib/phaeno-portal/files
 COPY --from=build /app/publish ./
 
 ENV ASPNETCORE_HTTP_PORTS=8080

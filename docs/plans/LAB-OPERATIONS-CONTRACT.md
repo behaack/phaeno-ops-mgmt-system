@@ -1,5 +1,76 @@
 # Commercial to Lab Operations Contract
 
+## Catalog sequencing volume and tube pairing — October 4, 2026
+
+The [pairing plan](CATALOG-SEQUENCING-TUBE-PAIRING-PLAN.md) supersedes batch-editable minimums. Catalog writes accept exact `minimumSequencingVolumeUlText` (positive, or null to leave the service unconfigured) through the existing administrator/versioned Catalog API. Batch creation accepts optional name and notes only. No operator batch-requirement endpoint remains.
+
+Each sequencing workspace member exposes its Catalog identity/name/version, exact minimum text and `requirementCaptured`. Before allocation these are resolved from the work order's normalized service key. Allocation requires the displayed `catalogVersion`, scans the source, and captures the requirement on the member atomically with destination identity. Later transfer/sendout use the captured requirement; Catalog edits cannot silently change an allocated pair. Missing configuration blocks allocation; missing captured evidence blocks transfer/sendout. No batch fallback or inferred minimum.
+
+Both scans, exact positive actual quantity text, source/destination versions and personal performance remain required. Existing locks, command receipts, exact debit/credit and generated-label verification stay authoritative. Schema-2 sendout members retain Catalog identity/version/name/minimum alongside tube/transfer evidence. Each member may have a different minimum. No concentration/mass requirement or inventory-unit rewrite is introduced.
+
+## Storage, purchased inventory and reagent manufacturing — September 24, 2026
+
+Named material and equipment locations are maintained under **Lab settings → Storage locations**. Authorized Laboratory staff can list them; Operators can create, and Supervisors or Operations Administrators can correct an unused name or change active status with the current version. A name referenced by a material lot cannot be changed. Inactive locations stay on historical records and are excluded from new lots and reagent runs. These location records do not represent physical tube or freezer-box positions.
+
+The supplier catalog contains a seeded, protected **Phaeno** record flagged as an internal producer. New Phaeno reagent lots are associated with it automatically; it cannot be used as a purchased-stock supplier or given purchased catalog products. Catalog administrators set `defaultQuantityUnit` on each new external supplier product. Existing products remain unset until a verified unit is entered. `POST material-lots` creates purchased lots only: an active supplier product is required, its stable product-specific material definition is reused when no explicit legacy definition is supplied, and the recorded lot unit must match the product unit. The server stores the product's canonical unit. Historical lot quantities and units are retained; configuring a previously unset product's future unit does not rewrite them. A configured unit cannot be changed to a value conflicting with linked lots. One-time assignment of an older purchased lot to a product also checks its recorded unit when the product has one.
+
+Reagent identity is the prepared material definition and its saved `defaultQuantityUnit`; the database permits at most one reagent workflow identity per definition. Protocol Administrators and Operations Administrators author and revise ordered, sample-independent steps. A revision cannot switch reagents. Approval requires an independent administrator, or a reasoned platform-administrator override by the author. `POST reagent-runs` accepts `materialDefinitionId` and `storageLocationId`, selects that reagent's approved workflow, allocates a `PH-REAG-` lot number, and creates a zero-stock, QC-pending Phaeno lot in the reagent's unit. Each run freezes its workflow revision and steps without a customer order, sample or tube link. `POST reagent-runs/{id}/materials` records an eligible source lot's actual use and deducts it immediately in the same transaction; abandonment retains that deduction and leaves the output unavailable. Ordered step records and at least one use are required before completion. `POST reagent-runs/{id}/complete` records the actual positive produced quantity in the inherited unit and aggregates source-lot lineage. Completion leaves QC Pending until the existing supervisor QC action releases eligible stock. Version checks reject stale writes; there is no unit conversion or automatic replay of an uncertain command.
+
+This is an internal Laboratory inventory workflow. It does not change the Commercial-to-Lab authorization envelope or the sample/tube procedure contract below.
+
+## Material transfers and expiration — September 23, 2026
+
+The additive internal [material tracking scope](SAMPLE-MATERIAL-TRANSFER-PLAN.md) captures customer-declared amounts per shipping tube; accession reads the frozen packet declaration and preserves missing historical amounts as unknown. Library-preparation members identify a separate barcoded library tube. The versioned preparation command adds `allocate-library-tube`; one `biologicalMaterial` field per step records per-member actual quantity/unit, source/destination barcode confirmation, source version, optional `materialExhausted` and performance evidence. A previously allocated tube becomes the output tube after transfer; its prepared yield is measured independently without consuming input twice. Earlier approved definitions retain their original behavior.
+
+`GET batches/{batchId}/sequencing-tubes` returns batch version, sources, assigned tubes and retained transfers. `POST batches/{batchId}/members/{memberId}/sequencing-tube` accepts `requestId`, `batchVersion` and `action` (`allocate` or `transfer`). Allocation chooses `PhaenoGenerated` or `Manufacturer`, optional manufacturer `barcode`, required `location` and `sourceVersion`. Transfer supplies both tube versions, `confirmedSourceBarcode`, `confirmedDestinationBarcode`, actual positive `quantity`/`quantityUnit`, optional `materialExhausted` and personally performed time evidence. Batch/job locks, optimistic concurrency and exact request receipts protect the atomic tube/ledger/balance writes. No unit conversion or guessed historical quantities are introduced.
+
+New sendouts require a recorded transfer for every member and freeze manifest `schemaVersion: 2` with the actual sequencing tube and source-library identity. Legacy sendouts retain their original meaning. `GET work-orders/{workOrderId}/containers/{containerId}/material-transfers` and investigation reads expose immutable transfers and remaining balances. Label printing applies to POMS-generated tubes; manufacturer tube identities are scanned as supplied.
+
+At this September 23 checkpoint, material lot creation still accepted an opening quantity and unit on the lot; the September 24 contract above supersedes unit entry for new purchased lots and creation of prepared lots. Standalone consumption, tracked preparation fields and prepared-reagent components accept optional `materialExhausted`; actual consumption and the final exhaustion adjustment are separate history entries. An uncertain-quantity hold requires reconciliation before exhaustion. Supplier products add `canExpire` (default false); new catalog-linked inventory requires an expiration date when set. Transportation stock freezes each used product's flag/date independently of future catalog edits. New shipment-specific return kits require `tubeSupplierProductId` and `shipperSupplierProductId`; `productExpirations` supplies flagged products' dates, rejects duplicates/unrelated products, and freezes the same product evidence. Assigning a stock kit preserves its original expiry snapshot. Existing unknown dates remain unknown, and existing reagent expiry eligibility is preserved. This does not change the Commercial provider authorization envelope or add a transportation expiry dispatch policy.
+
+The browser stores exact preparation-step and sequencing commands before sending, including original request IDs, concurrency versions and any preparation report File. Recovery is scoped to recorder and batch and survives reload/restart in the same browser. Atomic storage prevents replacing an unresolved command with another request. Storage failure blocks sending; success or a definite refusal clears only the matching request. This supports server receipt replay and does not establish an additional physical transfer. Scanner comparison accepts case differences and surrounding Code 39 asterisks without changing saved tube identity.
+
+Personal step performance and recorder separation are specified in the [step performance contract](LAB-STEP-PERFORMANCE-CONTRACT.md). This additive internal execution/preparation extension preserves existing authorization and compatible clients; it does not change the commercial authorization envelope or activate new release gates.
+
+Phase 1 result lineage is specified in the [result capture contract](LAB-RESULT-LINEAGE-CONTRACT.md). It adds explicit sequencing outputs, completed-analysis inputs and result-to-tube binding under existing Lab/pipeline authorization. It does not change this provider's commercial authorization envelope. Capture and guards are implemented locally; traceability and scientific-evidence enforcement default on following the September 19 immediate-cutoff decision. Existing test jobs receive no backfill or exemption for subsequent approval/release; production deployment remains separate.
+
+## Shared library outputs (2026-09-17)
+
+Preparation detail advertises bulkOutputs. The existing versioned commands endpoint accepts action outputs, stageId and outputs [{memberId, quantity, quantityUnit, location}]. Outputs is omitted when null to preserve existing request hashes. Validate distinct current-batch members, active output-producing protocol, open unheld attempts, no existing output, positive quantities and required bounded unit/location strings. All outputs use individual generated barcodes and attempt/source lineage. Save once under existing batch/job locks and transaction, with outputResults [{memberId, outputContainerId, barcode}] in history. Exact retries return the original receipt without new outputs. Creation does not confirm physical barcodes or QC. The individual output command remains supported.
+
+## Optional preparation reports - September 17, 2026
+
+Preparation detail adds optionalPreparationReports. POST preparation/batches/{id}/commands/with-report accepts the existing multipart payload and file fields; GET preparation/batches/{id}/records/{recordId}/report downloads the saved report. Existing with-qc-report and qc-report routes remain supported. The pinned performed step determines attachment type: QC gate uses qcReport; non-QC steps with preparation-record-reference text in shared/batch scope use preparationReport. Other steps reject attachments. Both metadata objects share filename, content type, size, hash and clean scan status; storageKey remains private. The legacy preparation reference is optional, while other required captures/resources remain enforced. Existing locks, roles, concurrency, replay fingerprinting, PDF validation, scanning and private download authorization apply.
+
+## Automatic preparation review skip — September 17, 2026
+
+Preparation detail adds optional `automaticSkipAvailable`, calculated from the exact recognized conditional-review definition, every continuing execution history, job/attempt eligibility and the current actor's existing step role. Clients may POST the existing versioned/idempotent command with action `evaluate-conditions`; this uses the same locks, job guards and role checks as other preparation writes. A successful step/failure command also evaluates the rule in its transaction. GET never saves evidence. A generated standard skipped step retains empty captures/QC and false performed/resource attestations, plus `automatic: true` and `triggerRequestId` in its preparation record details. Skips never overwrite existing target evidence. Existing correction/staleness rules still apply. This is a bounded compatibility rule for the established prior-step-2 Hold/Fail condition, not a general prose evaluator.
+
+
+## Optional preparation QC reports — September 17, 2026
+
+Preparation detail advertises `optionalQcReports: true`. `POST /platform/lab-operations/preparation/batches/{id}/commands/with-qc-report` accepts multipart `payload` (the existing versioned preparation command) and `file` (one optional report represented by using this endpoint only when selected). Only performed QC steps accept uploads; PDF signature/extension and 10 MiB size limit are checked. File name, length and SHA-256 participate in idempotency. Existing actor, role, version, execution and tube eligibility checks apply before storage. A clean malware scan is required before evidence can commit. Ordinary commands continue to save without attachments.
+
+`GET /platform/lab-operations/preparation/batches/{id}/records/{recordId}/qc-report` is lab-authorized, validates record ownership and clean scan status, and returns a private PDF attachment. Public record details include report metadata but omit storage keys. The two legacy synthetic QC file-reference keys are optional at QC gates; other required protocol captures remain enforced. Approved definitions and prior references are preserved.
+
+
+## Service-based commercial jobs — September 16, 2026
+
+Commercial AuthorizeLabWorkCommand and amendments no longer resolve a Production workflow or require ApprovedWorkflowVersionId. The optional field remains wire-compatible for historical replay and explicitly approved Trial scope. Commercial jobs choose exact procedures at attempt/batch execution; preserve service identity, authorization snapshots and provider command idempotency. Existing job workflow columns are retained historical data, not commercial eligibility restrictions.
+
+Commercial authorization now uses the accepted quote's catalog external item
+identity as `ServiceKey`, matching marketed service workflow identity. The PSeq
+service family remains the specimen's requested scientific/commercial family.
+The `purchased_service_identity_correction` amendment is an explicit audited
+correction for unstarted Commercial jobs only; it verifies the accepted purchase
+and preserves all other authorization scope. It rejects attempts, executions,
+libraries, workflow pins, holds, cancelled jobs and changed/replayed evidence.
+Successful correction advances the current Commercial snapshot for later phase
+additions and retains earlier Lab authorization versions and command receipts.
+No service alias or runtime fallback is introduced. See
+[the approved correction plan](LAB-PURCHASED-SERVICE-IDENTITY-CORRECTION-PLAN.md).
+
+
 This document defines the version 1 application contract between
 Commercial Operations and Lab Operations.
 
@@ -384,6 +455,10 @@ operations.
 
 ## Stable Work Projection
 
+September 10 intake correction: internal durable events also carry a safe intake snapshot (physical receipt present, submitted-specimen ID, actual receipt timestamp, accession ID after all expected tubes are accessioned, and operator for audit). Commercial applies it only with a newer projection version and the matching work authorization/organization. Storage, receipt notes and scientific acceptance stay in Lab. The public provider projection and milestones below remain unchanged.
+
+September 10 customer stages: the approved Customer/Partner list/detail enhancement adds an optional `laboratoryProgress` summary through `LabCustomerProgressService`. This internal read boundary joins only already-authorized Commercial orders to their matching organization/authorization/Lab work, and exposes current stage keys, counts and scoped sample IDs. It reads recorded preparation, sendout and output evidence without returning execution details, storage, provider details or internal QC. This does not change `ILabOperationsProvider`, command/event versions, durable projections or persisted milestones; a replacement provider must supply equivalent safe stage facts before detailed progress can be shown. List responses omit sample IDs; detail responses include them for the authorized roster. Stage availability never authorizes result access.
+
 Commercial Operations stores or refreshes a projection sufficient for customer
 experience, communication, CRM summary, and reconciliation. It is not a
 copy of the Lab execution ledger.
@@ -738,3 +813,34 @@ Shared scientific/pipeline/shipping writes honor the Trial's current approval,
 acceptance and hold. Custody, receipt and exception documentation can continue
 while held. Completed Trials permit only governed correction/reissue work through
 the result path. See `TRIAL-INTEGRATION-CLOSEOUT.md` for release and activation gates.
+
+
+## Reusable Lab step authoring contract - September 17, 2026
+
+`GET /api/platform/lab-operations/steps` returns current and retired identities, exact versions and protocol occurrence usage to authorized Laboratory staff. Protocol Administrator writes: `POST steps`, `POST steps/{id}/versions` (definitionJson, parent version, optional draftId), and `POST steps/{id}/transition` (approve/discard/retire, parent version, selected versionId, retirement reason or explicitly authorized approvalOverrideReason). Phaeno membership, roles and platform override checks reuse existing request context. No deletion or preview-write endpoint exists.
+
+A Lab step version contains one scoped `LabProtocolDefinition` step, unconditionally required and without nested catalog references. A protocol occurrence may add `labStepVersionId`; its existing unique `key` remains the stable evidence identity. The server checks pinned content and approved release provenance, permits occurrence-specific required/condition placement, and preserves exact resolved snapshots. Retired identities cannot be newly selected; retained occurrence pins remain readable/executable. The snapshot's optional `attachmentKind` (`qc`/`preparation`) selects the existing optional PDF attachment presentation. Preview uses these production components locally and creates no operational records.
+
+Step definition report settings: `attachmentKind` accepts none/qc/preparation or absent for legacy behavior; `attachmentRequired` defaults false and requires an explicit report kind plus preparation batch mode when true. Performed entries without the required upload are rejected before execution writes. Skips do not require files and cannot attach one. The individual step endpoint rejects performed entries whose definition requires a batch report.
+
+Preparation step commands must cover exactly the current eligible member set for their stage, step and action. Under the batch/work locks, omitted, duplicate or stale coverage is rejected before recording any sample, using preparation_step_coverage_changed. Failed/closed/operationally held members and unmet prerequisites remain ineligible; initial records and repeats/corrections retain their existing prior-record eligibility rules.
+
+### Inline step resource entries
+
+Preparation detail advertises `inlineResourceFields: true` and `configuredMaterials: true`. GET `steps/material-products` supplies active vendor/product choices under Protocol Administrator authorization for configuration. Supplier administration permissions are unchanged. Step commands may carry `resourceEntries` with the JSON shape documented in the ERD. Resource fields require preparation-batch mode: material/equipment scope is batch or tube, output scope is tube, with one output field per step. Raw resource capture strings are rejected; the server resolves identity and validates use, then records effective capture values. Batch per-sample material quantity is multiplied by exact eligible coverage. Material captures carry a `material` snapshot (name, optional vendor, productId, supplierId and productNumber) resolved when saving configuration. Run-time product/name/vendor overrides are rejected and the frozen snapshot supplies identity. Product assignment does not consume stock; a tracked lot entry uses the existing released/in-date/version/quantity checks. Active supplier products and supplier/type status are validated at configuration save. The selected product and a supplier-backed lot must share a supplier; an exact product/lot relationship is not inferred. Output entries allocate separate containers per attempt, or retain existing outputs without reallocating. These writes participate in the step transaction and request receipt. Corrections reject fresh resource entries and retain prior captured resource values. Preview remains local and does not call these endpoints.
+
+Existing frozen material fields without a material snapshot use their configured label at run time. Embedded/new material configuration must define a snapshot before saving; pinned approved Lab step content is retained unchanged.
+
+### Exact material lot identity - September 17, 2026
+
+This extension supersedes the supplier-only matching described above. Purchased lots expose nullable `supplierProductId` and `productName`; new purchased lots require an active product belonging to their supplier. Prepared lots remain product-free. `GET material-lots/products` supplies the active catalog to existing authorized Laboratory operators. `POST material-lots/{lotId}/product` accepts `supplierProductId` and the current lot `version` for a one-time assignment of an existing unlinked purchased lot. It rejects stale versions, another supplier's product, inactive catalog entries, prepared lots and replacement of an established assignment. No historical lots are automatically mapped.
+
+`GET steps/prepared-materials` supplies active prepared-reagent definitions under Protocol Administrator authorization. Configured material snapshots may carry `materialDefinitionId` instead of product/supplier identity. New tracked material fields require one of those structured identities. Execution requires the exact purchased product and supplier, or the exact prepared material definition and lot kind, before existing QC, expiry, stock, unit and concurrency checks. Legacy unstructured frozen fields retain their earlier matching behavior. Configuration preview supplies fictional matching lots without creating inventory or consumption. See [the implementation plan](MATERIAL-LOT-PRODUCT-LINK-PLAN.md).
+
+Material captures may specify `unit` in their retained JSON; new material authoring requires it. Runtime resource entries must use that configured unit, and tracked lots must match it exactly; no automatic conversion is performed. Frozen definitions without units retain legacy behavior.
+
+### Per-sample material amount exceptions (2026-09-17)
+
+Shared material captures require per-sample quantities. `step.resourceEntries` may contain one common entry and explicit member overrides retaining the same lot/version/unit. Overrides include `amountUnknown`, `exceptionReason` (required, max 2000), and `disposition` (`continue`, `hold`, `fail`). Known quantities accept zero only on overrides; unknown requires no quantity and cannot continue. Common coverage excludes overridden members. Server validation, known consumption, resolved capture evidence, preparation history and tube dispositions commit atomically and retain request-id replay protection. Corrections cannot replace prior resource use. Fail takes precedence over hold.
+
+Unknown tracked use holds the lot through `quantityHoldReason` and appends `quantityHistoryJson` audit data. All consumption paths reject unresolved quantity holds. `POST material-lots/{id}/reconcile-quantity` requires Supervisor/OperationsAdministrator and `{ countedQuantity, reason, version }`; count must be between zero and last balance. It records the balance adjustment, actor/time/reason, clears the hold and leaves historical sample amounts unknown. Preparation action `resume` requires Supervisor and a reason; both preparation and attempt resume paths require supervised review and resolution of uncertain linked lot holds for material exceptions. Existing QC and protocol prerequisites continue to apply.

@@ -1,32 +1,38 @@
+import { SequencingBatchList as BatchList } from './SequencingBatchList'
+import { StageDurations } from './StageDurations'
+import { HolidayCalendar } from './HolidayCalendar'
+import { JobsList } from './JobsList'
+import { LabStepList } from './LabSteps'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { BookOpenCheck, CheckCircle2, ChevronDown, ClipboardList, FlaskConical, Layers3, Microscope, PackageCheck, Pencil, Plus, RefreshCw, ScanLine, Trash2, Workflow } from 'lucide-react'
-import { useState, type FormEvent } from 'react'
+import { CheckCircle2, ChevronDown, FileX, Pencil, Plus, RefreshCw, ShieldCheck, Trash2 } from 'lucide-react'
+import { useRef, useState, type FormEvent } from 'react'
+import { Archive } from 'lucide-react'
+import { retireLabProtocol } from '#/api/lab-operations'
+import { ProtocolRetirementDialog } from './ProtocolRetirementDialog'
 
 import {
   createLabBatch,
   createLabProtocol,
-  createLabSendout,
   deleteLabProtocol,
   getLabOperationsDashboard,
+  labWorkOrderLabel,
   getLabOperationsError,
   recordLabMaterialQc,
-  recordLabCustody,
-  transitionLabBatch,
+  retireLabEquipment,
   transitionLabProtocolVersion,
-  transitionLabSendout,
   updateLabProtocol,
-  type LabBatch,
   type LabMaterialLot,
   type LabProtocol,
 } from '#/api/lab-operations'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
-import { WorkspaceSidebar, type WorkspaceSidebarItem } from '#/components/WorkspaceSidebar'
+import { WorkspaceSidebar } from '#/components/WorkspaceSidebar'
+import { getLabWorkspaceSections } from './LabOperationsSidebar'
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '#/components/ui/dialog'
 import {
-  DropdownMenu,
+  ActionMenu as DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
@@ -34,119 +40,136 @@ import {
   DropdownMenuTrigger,
 } from '#/components/ui/dropdown-menu'
 import { Input } from '#/components/ui/input'
+import { Field as FormField, FieldDescription } from '#/components/ui/field'
 import { Label } from '#/components/ui/label'
+import { Checkbox } from '#/components/ui/checkbox'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '#/components/ui/tabs'
 import {
   RequiredDialogFooter,
   RequiredFieldName,
 } from '#/components/ui/required-field'
 import { usePhaenoSession } from '#/features/auth/session-context'
 
-import { LabBarcodeLookup, LabBatchBarcodeScanner } from './LabBarcodeScanner'
-import { EquipmentCreateDialog } from './EquipmentCreateDialog'
-import { MaterialLotCreateDialog } from './MaterialLotCreateDialog'
+import { EquipmentRetirementDialog } from './EquipmentRetirementDialog'
 import { LabManufacturingQueue } from './LabManufacturingPage'
+import { DataAssemblyWorkspace } from './AssemblyJobs'
 import { LabReceiptAccessionPanel } from './LabReceiptAccessionPanel'
 import { ProtocolApprovalDialog } from './ProtocolApprovalDialog'
 import { ProtocolIdentityDialog, type ProtocolIdentityFormValues } from './ProtocolIdentityDialog'
 import { isProtocolVisible } from './protocol-list'
 import { ServiceWorkflowList } from './ServiceWorkflowList'
+import { PreparationBatchList } from './PreparationBatchList'
+import { TrayFormatList } from './TrayFormatList'
+import { StorageLocations } from './StorageLocations'
+import { ReagentWorkflowSettings } from './ReagentWorkflowSettings'
+import { ReagentManufacturingWorkspace } from './ReagentManufacturingWorkspace'
+import { MasterMixWorkspace } from './MasterMixListV2'
+import { MasterMixWorkflowSettings } from './MasterMixWorkflowSettingsV2'
+import { TransportationKitWorkspace } from './TransportationKitWorkspace'
+import { LabKitRequestQueues } from './LabKitRequestQueues'
+import { KitAssemblyWorkflowSettings } from './KitAssemblyWorkflowSettings'
+import { labConfigurationTabs, parseLabConfigurationTab, type LabConfigurationTab } from './lab-configuration-tabs'
+import { LabSettingsHeader } from './LabSettingsLayout'
 
-type CreateKind = 'protocol' | 'material' | 'equipment' | 'batch' | null
-type SimpleCreateKind = Exclude<CreateKind, 'material' | 'equipment'>
-export type LabSection = 'receipt' | 'work' | 'kits' | 'assembly' | 'protocols' | 'materials' | 'equipment' | 'batches'
+type CreateKind = 'protocol' | 'batch' | null
+type SimpleCreateKind = CreateKind
+export type { LabSection } from './lab-sections'
+import type { LabReceiptTab } from './lab-receipt-tabs'
+import type { LabSection } from './lab-sections'
 
-const labSections: ReadonlyArray<WorkspaceSidebarItem<LabSection>> = [
-  { value: 'receipt', label: 'Receipt & accession', description: 'Kits, shipment intake, and accession', icon: ScanLine },
-  { value: 'work', label: 'Work', description: 'Authorized work and specimen progress', icon: ClipboardList },
-  { value: 'kits', label: 'PSeq kits', description: 'Preparation, shipping, and fulfillment', icon: PackageCheck },
-  { value: 'assembly', label: 'Data assembly', description: 'Input validation, processing, and release', icon: Workflow },
-  { value: 'protocols', label: 'Protocols', description: 'Controlled methods and approved versions', icon: BookOpenCheck },
-  { value: 'materials', label: 'Materials', description: 'Lots, prepared reagents, and QC', icon: FlaskConical },
-  { value: 'equipment', label: 'Equipment', description: 'Assets, availability, and calibration', icon: Microscope },
-  { value: 'batches', label: 'Batches', description: 'Operational and sequencing batches', icon: Layers3 },
-]
-
-export function LabOperationsPage({ section, onSectionChange }: { section: LabSection; onSectionChange: (section: LabSection) => void }) {
+export function LabOperationsPage({ section, shipmentId, receiptTab, onReceiptTabChange, configurationTab, onConfigurationTabChange, onSectionChange }: { section: LabSection; shipmentId?: string; receiptTab?: LabReceiptTab; onReceiptTabChange?: (tab: LabReceiptTab) => void; configurationTab?: LabConfigurationTab; onConfigurationTabChange?: (tab: LabConfigurationTab) => void; onSectionChange: (section: LabSection) => void }) {
   const { authProvider, session } = usePhaenoSession()
   const navigate = useNavigate()
   const canView = Boolean(session?.capabilities.canManageLabOperations)
   const apiEnabled = canView && authProvider !== 'mock'
   const queryClient = useQueryClient()
   const [createKind, setCreateKind] = useState<CreateKind>(null)
-  const dashboard = useQuery({ queryKey: ['lab-operations'], queryFn: getLabOperationsDashboard, enabled: apiEnabled })
-  const refresh = () => queryClient.invalidateQueries({ queryKey: ['lab-operations'] })
+  const [localConfigurationTab, setLocalConfigurationTab] = useState<LabConfigurationTab>('steps')
+  const [workflowKind, setWorkflowKind] = useState<'library' | 'reagent' | 'master-mix' | 'transportation-kit'>('library')
+  const configuring = section === 'protocols'
+  const activeConfiguration = configurationTab ?? localConfigurationTab
+  const needsDashboard = configuring
+    ? activeConfiguration === 'protocols' || activeConfiguration === 'workflows'
+    : section !== 'receipt' && section !== 'kit-requests' && section !== 'transportation-kits' && section !== 'jobs' && section !== 'assembly' && section !== 'reagent-runs' && section !== 'master-mixes'
+  const dashboard = useQuery({ queryKey: ['lab-operations'], queryFn: getLabOperationsDashboard, enabled: apiEnabled && needsDashboard })
+  const refresh = () => Promise.all((section === 'receipt' || section === 'kit-requests' || section === 'transportation-kits'
+    ? ['platform-transportation-kit-requests', 'shipping-stock-kits', 'sample-shipping-workflow', 'lab-shipment-queue']
+    : ['lab-operations', 'lab-storage-locations', 'lab-preparation', 'lab-jobs', 'assembly-jobs', 'assembly-job', 'lab-job-deadline', 'lab-forecast-configuration', 'lab-completion-forecast']).map(key => queryClient.invalidateQueries({ queryKey: [key] })))
 
   if (!canView) return <AccessDenied />
 
   return (
     <main className="py-8">
       <WorkspaceSidebar
-        workspaceLabel="Lab operations"
-        items={labSections}
-        value={section}
-        onValueChange={onSectionChange}
+        workspaceLabel={configuring ? "Lab Settings" : "Lab operations"}
+        items={configuring ? labConfigurationTabs : getLabWorkspaceSections(session?.capabilities)}
+        value={configuring ? activeConfiguration : section}
+        onValueChange={value => {
+          if (configuring) {
+            const next = parseLabConfigurationTab(value)
+            if (next) { setLocalConfigurationTab(next); onConfigurationTabChange?.(next) }
+          } else onSectionChange(value as LabSection)
+        }}
       >
-        <div className="page-wrap px-4">
+        <div className={configuring ? "page-wrap px-4 pt-6 lg:pt-0" : "page-wrap px-4"}>
           <section className="mb-6 flex flex-wrap items-start justify-between gap-4">
-            <div className="max-w-3xl">
+            {configuring ? <LabSettingsHeader /> : <div className="max-w-3xl">
               <h1 className="text-3xl font-semibold">Lab operations</h1>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
                 Internal kit fulfillment, receipt and accession, protocol execution, data assembly,
-                materials, equipment, cross-order batching, exceptions, and release readiness.
+                cross-order batching, exceptions, and release readiness.
               </p>
-            </div>
+            </div>}
             <Button type="button" variant="outline" disabled={!apiEnabled || dashboard.isFetching} onClick={() => refresh()}>
               <RefreshCw data-icon="inline-start" /> Refresh
             </Button>
           </section>
           {authProvider === 'mock' ? <Alert className="mb-5"><AlertTitle>Connected Lab operations are paused</AlertTitle><AlertDescription>Use a real Phaeno session to load or change laboratory records.</AlertDescription></Alert> : null}
-          {dashboard.error ? <Alert className="mb-5" variant="destructive"><AlertTitle>Lab operations could not be loaded</AlertTitle><AlertDescription>{getLabOperationsError(dashboard.error, 'Try refreshing the workspace.')}</AlertDescription></Alert> : null}
-          {dashboard.isLoading ? <p role="status">Loading laboratory workspace…</p> : null}
-          {dashboard.data && section === 'receipt' ? <LabReceiptAccessionPanel apiEnabled={apiEnabled} workOrders={dashboard.data.workOrders} /> : null}
-          {dashboard.data && section === 'work' ? <div className="space-y-5"><LabBarcodeLookup /><WorkQueue items={dashboard.data.workOrders.filter((item) => item.status !== 'AwaitingSpecimens')} /></div> : null}
+          {needsDashboard && dashboard.error ? <Alert className="mb-5" variant="destructive"><AlertTitle>Lab operations could not be loaded</AlertTitle><AlertDescription>{getLabOperationsError(dashboard.error, 'Try refreshing the workspace.')}</AlertDescription></Alert> : null}
+          {needsDashboard && dashboard.isLoading ? <p role="status">Loading laboratory workspace…</p> : null}
+          {section === 'receipt' ? <LabReceiptAccessionPanel canReceiveShipments={Boolean(session?.capabilities.canOperateLabWork)} tab={receiptTab} onTabChange={onReceiptTabChange} apiEnabled={apiEnabled} workOrders={[]} /> : null}
+          {section === 'kit-requests' ? <section aria-labelledby="transportation-kit-requests-heading" className="space-y-5">
+            <div className="space-y-1"><h2 id="transportation-kit-requests-heading" className="text-lg font-semibold">Transportation kit requests</h2><p className="text-sm text-muted-foreground">Fulfill Customer requests and track kit shipments and confirmed receipt.</p></div>
+            <LabKitRequestQueues apiEnabled={apiEnabled} shipmentId={shipmentId} />
+          </section> : null}
+          {section === 'transportation-kits' ? <TransportationKitWorkspace apiEnabled={apiEnabled} shipmentId={shipmentId} /> : null}
+          {section === 'jobs' ? <JobsList enabled={apiEnabled} /> : null}
+          {dashboard.data && section === 'work' ? <PreparationBatchList /> : null}
+          {dashboard.data && section === 'results' ? <ResultsWorkQueue items={dashboard.data.workOrders.filter((item) => item.status !== 'AwaitingSpecimens')} /> : null}
           {section === 'kits' ? <LabManufacturingQueue workflow="reagent" apiEnabled={apiEnabled} /> : null}
-          {section === 'assembly' ? <LabManufacturingQueue workflow="assembly" apiEnabled={apiEnabled} /> : null}
-          {dashboard.data && section === 'protocols' ? <div className="space-y-5"><ServiceWorkflowList workflows={dashboard.data.serviceWorkflows} marketedServices={dashboard.data.marketedServices} canManage={Boolean(session?.capabilities.canManageLabProtocols)} refresh={refresh} /><ProtocolList protocols={dashboard.data.protocols} canManage={Boolean(session?.capabilities.canManageLabProtocols)} onCreate={() => setCreateKind('protocol')} refresh={refresh} /></div> : null}
-          {dashboard.data && section === 'materials' ? <MaterialList items={dashboard.data.materialLots} canManage={Boolean(session?.capabilities.canOperateLabWork)} canApprove={Boolean(session?.capabilities.canSuperviseLabWork)} onCreate={() => setCreateKind('material')} refresh={refresh} /> : null}
-          {dashboard.data && section === 'equipment' ? <EquipmentList items={dashboard.data.equipment} canManage={Boolean(session?.capabilities.canSuperviseLabWork)} onCreate={() => setCreateKind('equipment')} /> : null}
-          {dashboard.data && section === 'batches' ? <BatchList items={dashboard.data.batches} canManage={Boolean(session?.capabilities.canOperateLabWork)} onCreate={() => setCreateKind('batch')} refresh={refresh} /> : null}
-          {dashboard.data ? (
-            <MaterialLotCreateDialog
-              open={createKind === 'material'}
-              definitions={dashboard.data.materialDefinitions}
-              suppliers={dashboard.data.suppliers}
-              storageLocations={dashboard.data.storageLocations}
-              materialLots={dashboard.data.materialLots}
-              onOpenChange={(open) => {
-                if (!open) setCreateKind(null)
-              }}
-              onSaved={async () => {
-                setCreateKind(null)
-                await refresh()
-              }}
-            />
+          {section === 'assembly' ? <DataAssemblyWorkspace apiEnabled={apiEnabled} /> : null}
+          {section === 'reagent-runs' ? <ReagentManufacturingWorkspace enabled={apiEnabled} canOperate={Boolean(session?.capabilities.canOperateLabWork)} /> : null}
+          {section === 'master-mixes' ? <MasterMixWorkspace enabled={apiEnabled} canOperate={Boolean(session?.capabilities.canOperateLabWork)} /> : null}
+          {configuring && activeConfiguration === 'steps' ? <LabStepList /> : null}
+          {dashboard.data && configuring && activeConfiguration === 'protocols' ? <ProtocolList actorId={session?.user?.id} canOverride={Boolean(session?.isPlatformAdmin)} protocols={dashboard.data.protocols} canManage={Boolean(session?.capabilities.canManageLabProtocols)} onCreate={() => setCreateKind('protocol')} refresh={refresh} /> : null}
+          {dashboard.data && configuring && activeConfiguration === 'workflows' ? (
+            <Tabs value={workflowKind} onValueChange={value => setWorkflowKind(value as typeof workflowKind)} className="gap-4">
+              <div className="min-w-0 overflow-x-auto pb-1">
+                <TabsList aria-label="Workflow type" className="w-max min-w-full">
+                  <TabsTrigger value="library">Library preparation</TabsTrigger>
+                  <TabsTrigger value="reagent">Reagent manufacturing</TabsTrigger>
+                  <TabsTrigger value="master-mix">Master mix</TabsTrigger>
+                  <TabsTrigger value="transportation-kit">Transportation kit assembly</TabsTrigger>
+                </TabsList>
+              </div>
+              <TabsContent value="library"><ServiceWorkflowList actorId={session?.user?.id} canOverride={Boolean(session?.isPlatformAdmin)} workflows={dashboard.data.serviceWorkflows} marketedServices={dashboard.data.marketedServices} canManage={Boolean(session?.capabilities.canManageLabProtocols)} refresh={refresh} /></TabsContent>
+              <TabsContent value="reagent"><ReagentWorkflowSettings actorId={session?.user?.id} isPlatformAdmin={Boolean(session?.isPlatformAdmin)} definitions={dashboard.data.materialDefinitions} canManage={Boolean(session?.capabilities.canManageLabProtocols)} /></TabsContent>
+              <TabsContent value="master-mix"><MasterMixWorkflowSettings actorId={session?.user?.id} isPlatformAdmin={Boolean(session?.isPlatformAdmin)} canManage={Boolean(session?.capabilities.canManageLabProtocols)} /></TabsContent>
+              <TabsContent value="transportation-kit"><KitAssemblyWorkflowSettings actorId={session?.user?.id} isPlatformAdmin={Boolean(session?.isPlatformAdmin)} canManage={Boolean(session?.capabilities.canManageLabProtocols)} /></TabsContent>
+            </Tabs>
           ) : null}
-          {dashboard.data ? (
-            <EquipmentCreateDialog
-              open={createKind === 'equipment'}
-              equipment={dashboard.data.equipment}
-              protocols={dashboard.data.protocols}
-              storageLocations={dashboard.data.storageLocations}
-              onOpenChange={(open) => {
-                if (!open) setCreateKind(null)
-              }}
-              onSaved={async () => {
-                setCreateKind(null)
-                await refresh()
-              }}
-            />
-          ) : null}
+          {configuring && activeConfiguration === 'stage-durations' ? <StageDurations /> : null}
+          {configuring && activeConfiguration === 'holiday-calendar' ? <HolidayCalendar /> : null}
+          {configuring && activeConfiguration === 'tray-formats' ? <TrayFormatList /> : null}
+          {configuring && activeConfiguration === 'storage-locations' ? <StorageLocations enabled={apiEnabled} canCreate={Boolean(session?.capabilities.canOperateLabWork)} canEdit={Boolean(session?.capabilities.canSuperviseLabWork)} /> : null}
+          {dashboard.data && section === 'batches' ? <BatchList items={dashboard.data.batches} suppliers={dashboard.data.suppliers} canManage={Boolean(session?.capabilities.canOperateLabWork)} onCreate={() => setCreateKind('batch')} refresh={refresh} /> : null}
           <CreateRecordDialog
-            kind={createKind === 'material' || createKind === 'equipment' ? null : createKind}
+            kind={createKind}
             onClose={() => setCreateKind(null)}
             onSaved={async (record) => {
               setCreateKind(null)
               await refresh()
+              if (record.kind === 'batch') await navigate({ to: '/lab-operations/batches/$batchId', params: { batchId: record.id } })
               if (record.kind === 'protocol') {
                 await navigate({
                   to: '/lab-operations/protocols/$protocolId/versions/new',
@@ -162,15 +185,39 @@ export function LabOperationsPage({ section, onSectionChange }: { section: LabSe
   )
 }
 
-function WorkQueue({ items }: { items: Awaited<ReturnType<typeof getLabOperationsDashboard>>['workOrders'] }) {
-  return <Card><CardHeader><CardTitle>Authorized laboratory work</CardTitle><CardDescription>Open a work order for accession, lineage, execution, exceptions, and scientific review.</CardDescription></CardHeader><CardContent><div className="divide-y">{items.map((item) => <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 py-3"><div><Link to="/lab-operations/$workOrderId" params={{ workOrderId: item.id }} search={{ section: undefined }} className="font-medium text-primary hover:underline">{item.commercialOrderNumber ?? item.id}</Link><p className="mt-1 text-xs text-muted-foreground">{item.specimenCount} specimen(s) · {item.openExceptionCount} open exception(s) · updated {formatDate(item.updatedAt)}</p></div><Status value={item.status} /></div>)}</div>{items.length === 0 ? <Empty>No accepted Commercial order has authorized Lab work yet.</Empty> : null}</CardContent></Card>
+function ResultsWorkQueue({ items }: { items: Awaited<ReturnType<typeof getLabOperationsDashboard>>['workOrders'] }) {
+  return <Card className="gap-0 py-0">
+    <CardHeader className="border-b bg-muted/50 p-4">
+      <CardTitle>Results & scientific review</CardTitle>
+      <CardDescription>Open a job to inspect scientific approval and release readiness. Jobs remain visible while their required evidence is being completed.</CardDescription>
+    </CardHeader>
+    <CardContent className="space-y-3 p-4">
+      {items.map(item => <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/30 p-4 shadow-xs">
+        <div><Link to="/lab-operations/$workOrderId" params={{ workOrderId: item.id }} search={previous => ({ ...previous, section: 'results', tab: 'review' })} className="font-medium text-primary hover:underline">{labWorkOrderLabel(item)}</Link>
+          <p className="mt-1 text-xs text-muted-foreground">{item.specimenCount} specimen(s) · {item.openExceptionCount} open exception(s) · updated {formatDate(item.updatedAt)}</p>
+        </div><Status value={item.status} />
+      </div>)}
+      {items.length === 0 ? <Empty>No received laboratory jobs are available for results review.</Empty> : null}
+    </CardContent>
+  </Card>
 }
-
-export function ProtocolList({ protocols, canManage, onCreate, refresh }: { protocols: LabProtocol[]; canManage: boolean; onCreate: () => void; refresh: () => Promise<unknown> }) {
+export function ProtocolList({ protocols, canManage, canOverride = false, actorId, onCreate, refresh }: { protocols: LabProtocol[]; canManage: boolean; canOverride?: boolean; actorId?: string; onCreate: () => void; refresh: () => Promise<unknown> }) {
+  const [showRetired, setShowRetired] = useState(false)
+  const retiredFilterRef = useRef<HTMLButtonElement>(null)
+  const [retirementTarget, setRetirementTarget] = useState<LabProtocol | null>(null)
+  const retirement = useMutation({
+    mutationFn: ({ protocol, reason, impactToken, confirmImpact }: { protocol: LabProtocol; reason: string; impactToken: string; confirmImpact: boolean }) => retireLabProtocol(protocol.id, { reason, version: protocol.version, impactToken, confirmImpact }),
+    onSuccess: async () => {
+      setRetirementTarget(null)
+      await refresh()
+      retiredFilterRef.current?.focus()
+    },
+  })
   const [editTarget, setEditTarget] = useState<LabProtocol | null>(null)
   const [approvalTarget, setApprovalTarget] = useState<{
     protocol: LabProtocol
     version: LabProtocol['versions'][number]
+    override?: boolean
   } | null>(null)
   const [discardTarget, setDiscardTarget] = useState<{
     protocol: LabProtocol
@@ -182,13 +229,16 @@ export function ProtocolList({ protocols, canManage, onCreate, refresh }: { prot
       protocol,
       versionId,
       action,
+      approvalOverrideReason,
     }: {
       protocol: LabProtocol
       versionId: string
       action: string
+      approvalOverrideReason?: string
     }) => transitionLabProtocolVersion(versionId, {
       action,
       protocolVersion: protocol.version,
+      ...(approvalOverrideReason !== undefined ? { approvalOverrideReason } : {}),
     }),
     onSuccess: async () => {
       setApprovalTarget(null)
@@ -228,7 +278,7 @@ export function ProtocolList({ protocols, canManage, onCreate, refresh }: { prot
     transition.reset()
     transition.mutate({ protocol, versionId, action })
   }
-  const visibleProtocols = protocols.filter(isProtocolVisible)
+  const visibleProtocols = protocols.filter((protocol) => isProtocolVisible(protocol, showRetired))
 
   return (
     <>
@@ -246,6 +296,10 @@ export function ProtocolList({ protocols, canManage, onCreate, refresh }: { prot
                 <Plus data-icon="inline-start" /> New protocol
               </Button>
             ) : null}
+          </div>
+          <div className="mt-3 flex items-center gap-2">
+            <Checkbox ref={retiredFilterRef} id="show-retired-protocols" checked={showRetired} onCheckedChange={(checked) => setShowRetired(checked === true)} />
+            <Label htmlFor="show-retired-protocols" className="cursor-pointer">Show retired</Label>
           </div>
         </CardHeader>
         <CardContent className="p-4">
@@ -270,18 +324,18 @@ export function ProtocolList({ protocols, canManage, onCreate, refresh }: { prot
                 .at(-1)
               return (
                 <section key={protocol.id} className="rounded-lg border bg-background p-4 shadow-xs">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
+                  <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+                    <div className="min-w-0 wrap-anywhere">
                       <h3 className="font-medium">{protocol.name}</h3>
                       {protocol.description ? (
                         <p className="mt-1 text-sm text-muted-foreground">{protocol.description}</p>
                       ) : null}
                       <div className="mt-2 flex flex-wrap gap-2">
-                        <Status value={draft
+                        <Status value={protocol.retiredAtUtc ? 'Retired' : draft
                           ? `Draft v${draft.protocolVersion}`
                           : approvedVersion
                             ? `Approved v${approvedVersion.protocolVersion}`
-                            : 'Setup incomplete'} />
+                            : protocol.versions.at(-1)?.status ?? 'Setup incomplete'} />
                       </div>
                       {!hasDefinition ? (
                         <p className="mt-2 text-xs text-muted-foreground">
@@ -289,14 +343,14 @@ export function ProtocolList({ protocols, canManage, onCreate, refresh }: { prot
                         </p>
                       ) : null}
                     </div>
-                    {canManage ? (
+                    {canManage && !protocol.retiredAtUtc ? (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button type="button" size="sm" variant="outline">
                             Actions <ChevronDown data-icon="inline-end" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-60">
+                        <DropdownMenuContent align="end" className="w-80 max-w-[calc(100vw-2rem)]">
                           <DropdownMenuLabel>Protocol actions</DropdownMenuLabel>
                           {draft ? (
                             <DropdownMenuItem asChild>
@@ -320,6 +374,7 @@ export function ProtocolList({ protocols, canManage, onCreate, refresh }: { prot
                             </DropdownMenuItem>
                           )}
                           {draft ? (
+                            <>
                             <DropdownMenuItem
                               disabled={transition.isPending}
                               onSelect={() => {
@@ -329,6 +384,8 @@ export function ProtocolList({ protocols, canManage, onCreate, refresh }: { prot
                             >
                               <CheckCircle2 /> Review and approve
                             </DropdownMenuItem>
+                            {canOverride && actorId === draft.authoredByUserId ? <DropdownMenuItem onSelect={() => { transition.reset(); setApprovalTarget({ protocol, version: draft, override: true }) }}><ShieldCheck aria-hidden="true" /> Approve with administrator override</DropdownMenuItem> : null}
+                            </>
                           ) : null}
                           {!hasEverBeenApproved ? (
                             <DropdownMenuItem
@@ -340,16 +397,17 @@ export function ProtocolList({ protocols, canManage, onCreate, refresh }: { prot
                               <Pencil /> Edit name and description
                             </DropdownMenuItem>
                           ) : null}
-                          {draft ? (
+                          {draft && hasEverBeenApproved ? (
                             <DropdownMenuItem
                               onSelect={() => {
                                 transition.reset()
                                 setDiscardTarget({ protocol, version: draft })
                               }}
                             >
-                              Discard draft
+                              <FileX /> Discard draft
                             </DropdownMenuItem>
                           ) : null}
+                          {hasEverBeenApproved ? <DropdownMenuItem onSelect={() => { retirement.reset(); setRetirementTarget(protocol) }}><Archive /> Retire protocol</DropdownMenuItem> : null}
                           {!hasEverBeenApproved ? (
                             <>
                               <DropdownMenuSeparator />
@@ -368,6 +426,7 @@ export function ProtocolList({ protocols, canManage, onCreate, refresh }: { prot
                       </DropdownMenu>
                     ) : null}
                   </div>
+                  {protocol.retiredAtUtc ? <p className="mt-3 text-sm text-muted-foreground">Retired {formatDate(protocol.retiredAtUtc)} · {protocol.retirementReason}</p> : null}
                   {hasDefinition ? (
                     <div className="mt-3 divide-y rounded-md border bg-muted/30 px-3">
                       {[...protocol.versions].reverse().map((version) => (
@@ -376,6 +435,7 @@ export function ProtocolList({ protocols, canManage, onCreate, refresh }: { prot
                             <span className="font-medium">Version {version.protocolVersion}</span>
                             <Status value={protocolVersionStatusLabel(version.status)} />
                           </div>
+                          {version.approvalOverrideReason ? <p className="w-full text-sm"><strong>Administrator override</strong> · {version.approvalOverrideReason}</p> : null}
                           {version.approvedAtUtc ? (
                             <span className="text-xs text-muted-foreground">Approved {formatDate(version.approvedAtUtc)}</span>
                           ) : null}
@@ -387,7 +447,7 @@ export function ProtocolList({ protocols, canManage, onCreate, refresh }: { prot
               )
             })}
           </div>
-          {visibleProtocols.length === 0 ? <Empty>No current protocols have been authored.</Empty> : null}
+          {visibleProtocols.length === 0 ? <Empty>{protocols.length > 0 ? 'No protocols match the selected visibility filters.' : 'No protocols have been authored.'}</Empty> : null}
         </CardContent>
       </Card>
 
@@ -406,6 +466,7 @@ export function ProtocolList({ protocols, canManage, onCreate, refresh }: { prot
       />
 
       <ProtocolApprovalDialog
+        override={approvalTarget?.override ?? false}
         protocol={approvalTarget?.protocol ?? null}
         version={approvalTarget?.version ?? null}
         error={approvalTarget && transition.error
@@ -417,12 +478,18 @@ export function ProtocolList({ protocols, canManage, onCreate, refresh }: { prot
           setApprovalTarget(null)
           transition.reset()
         }}
-        onApprove={() => {
+        onApprove={(reason) => {
           if (!approvalTarget) return
-          applyTransition(approvalTarget.protocol, approvalTarget.version.id, 'approve')
+          transition.mutate({ protocol: approvalTarget.protocol, versionId: approvalTarget.version.id, action: 'approve', approvalOverrideReason: reason })
         }}
       />
 
+      {retirementTarget ? <ProtocolRetirementDialog
+        protocol={retirementTarget} pending={retirement.isPending}
+        error={retirement.error ? getLabOperationsError(retirement.error, 'Refresh the list and try again.') : undefined}
+        onClose={() => { setRetirementTarget(null); retirement.reset() }}
+        onRetire={(reason, impactToken, confirmImpact) => retirement.mutate({ protocol: retirementTarget, reason, impactToken, confirmImpact })}
+      /> : null}
       <Dialog
         open={discardTarget !== null}
         onOpenChange={(open) => {
@@ -505,7 +572,7 @@ export function ProtocolList({ protocols, canManage, onCreate, refresh }: { prot
   )
 }
 
-function MaterialList({ items, canManage, canApprove, onCreate, refresh }: { items: Awaited<ReturnType<typeof getLabOperationsDashboard>>['materialLots']; canManage: boolean; canApprove: boolean; onCreate: () => void; refresh: () => Promise<unknown> }) {
+export function MaterialList({ items, canManage, canApprove, onCreate, refresh }: { items: Awaited<ReturnType<typeof getLabOperationsDashboard>>['materialLots']; canManage: boolean; canApprove: boolean; onCreate: () => void; refresh: () => Promise<unknown> }) {
   const [qcLot, setQcLot] = useState<LabMaterialLot | null>(null)
   const [qcOutcome, setQcOutcome] = useState<'Passed' | 'Failed' | ''>('')
   const [qcPerformedOn, setQcPerformedOn] = useState(todayDateOnly())
@@ -586,41 +653,40 @@ function MaterialList({ items, canManage, canApprove, onCreate, refresh }: { ite
                 key={item.id}
                 id={`material-lot-${item.id}`}
                 tabIndex={-1}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-background p-4 shadow-xs focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+                className="flex items-start justify-between gap-3 rounded-lg border bg-background p-4 shadow-xs focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
               >
-                <div>
-                  <p className="font-medium">{item.name} · {item.lotNumber}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {item.materialKey} · {item.availableQuantity} {item.quantityUnit} · {item.storageLocation}
+                <div className="min-w-0 flex-1">
+                  <Link className="font-medium text-primary underline underline-offset-4 wrap-anywhere" to="/purchasing/materials/$materialLotId" params={{ materialLotId: item.id }}>{item.name} · {item.lotNumber}</Link>
+                  <p className="wrap-anywhere text-xs text-muted-foreground">
+                    {item.quantityHoldReason ? 'Quantity reconciliation required · ' : ''}{item.materialKey} · {item.availableQuantity} {item.quantityUnit} · {item.storageLocation}
                     {item.supplier ? ` · ${item.supplier}` : ''}
                     {item.expirationOrRetestDate ? ` · expiration/retest ${formatDateOnly(item.expirationOrRetestDate)}` : ''}
                     {item.qcPerformedOn ? ` · QC ${formatDateOnly(item.qcPerformedOn)}` : ''}
                   </p>
                   {item.qcDisposition === 'Failed' && item.qcFailureReason ? (
-                    <p className="mt-1 text-xs text-muted-foreground">
+                    <p className="mt-1 wrap-anywhere text-xs text-muted-foreground">
                       QC failure reason: {item.qcFailureReason}
                     </p>
                   ) : null}
                   {item.components.length > 0 ? (
-                    <p className="mt-1 text-xs text-muted-foreground">
+                    <p className="mt-1 wrap-anywhere text-xs text-muted-foreground">
                       Prepared from {item.components.map((component) => `${component.materialName} ${component.lotNumber}`).join(', ')}
                     </p>
                   ) : null}
+                  <div className="mt-2"><Status value={item.qcDisposition} prefix="QC" /></div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Status value={item.qcDisposition} prefix="QC" />
-                  {canApprove && item.qcDisposition === 'Pending' ? (
-                    <Button
-                      id={`material-qc-action-${item.id}`}
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => openQcDialog(item)}
-                    >
-                      Record QC
-                    </Button>
-                  ) : null}
-                </div>
+                {canApprove && item.qcDisposition === 'Pending' ? (
+                  <Button
+                    id={`material-qc-action-${item.id}`}
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="shrink-0"
+                    onClick={() => openQcDialog(item)}
+                  >
+                    Record QC
+                  </Button>
+                ) : null}
               </li>
             ))}
           </ul>
@@ -756,154 +822,76 @@ function MaterialList({ items, canManage, canApprove, onCreate, refresh }: { ite
   )
 }
 
-function EquipmentList({ items, canManage, onCreate }: { items: Awaited<ReturnType<typeof getLabOperationsDashboard>>['equipment']; canManage: boolean; onCreate: () => void }) {
-  return <Card><CardHeader><div className="flex items-start justify-between gap-3"><div><CardTitle>Equipment</CardTitle><CardDescription>Lightweight asset availability and calibration visibility for execution traceability.</CardDescription></div>{canManage ? <Button type="button" onClick={onCreate}><Plus data-icon="inline-start" /> New equipment</Button> : null}</div></CardHeader><CardContent><div className="divide-y">{items.map((item) => <div key={item.id} className="flex items-center justify-between gap-3 py-3"><div><p className="font-medium">{item.assetCode} · {item.name}</p><p className="text-xs text-muted-foreground">{item.equipmentType} · {item.location}{item.calibrationDueOn ? ` · calibration due ${formatDateOnly(item.calibrationDueOn)}` : ''}</p></div><Status value={item.status} /></div>)}</div></CardContent></Card>
-}
-
-function BatchList({ items, canManage, onCreate, refresh }: { items: Awaited<ReturnType<typeof getLabOperationsDashboard>>['batches']; canManage: boolean; onCreate: () => void; refresh: () => Promise<unknown> }) {
-  const [dialog, setDialog] = useState<{ batch: LabBatch; kind: 'sendout' | 'custody' } | null>(null)
-  const [transitionDialog, setTransitionDialog] = useState<{ batch: LabBatch; action: 'start' | 'complete' } | null>(null)
-  const [form, setForm] = useState<Record<string, string>>({})
-  const [statusFilter, setStatusFilter] = useState('All')
-  const [transitionAt, setTransitionAt] = useState('')
-  const transition = useMutation({ mutationFn: ({ id, version, action, occurredAtUtc }: { id: string; version: number; action: 'start' | 'complete'; occurredAtUtc: string }) => transitionLabBatch(id, { version, action, occurredAtUtc }), onSuccess: async () => { setTransitionDialog(null); setTransitionAt(''); await refresh() } })
-  const sendoutTransition = useMutation({ mutationFn: ({ item, status }: { item: LabBatch; status: string }) => transitionLabSendout(item.sendoutId!, { status, version: item.sendoutVersion }), onSuccess: refresh })
-  const save = useMutation({ mutationFn: async () => {
-    if (!dialog) throw new Error('Choose a batch action.')
-    if (dialog.kind === 'sendout') return createLabSendout(dialog.batch.id, { providerName: form.providerName, providerReference: form.providerReference || null, manifestJson: form.manifestJson || '{}', expectedCompletionAtUtc: form.expectedCompletionAtUtc ? new Date(form.expectedCompletionAtUtc).toISOString() : null })
-    return recordLabCustody(dialog.batch.sendoutId!, { labContainerId: null, eventCode: form.eventCode, locationOrParty: form.locationOrParty, detailsJson: form.detailsJson || '{}' })
-  }, onSuccess: async () => { setDialog(null); setForm({}); await refresh() } })
-  const nextStatus = (status: string | null) => status === 'Preparing' ? 'Shipped' : status === 'Shipped' ? 'ReceivedByProvider' : status === 'ReceivedByProvider' ? 'Sequencing' : status === 'Sequencing' ? 'Complete' : null
-  const set = (key: string) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm((current) => ({ ...current, [key]: event.target.value }))
-  const filteredItems = statusFilter === 'All' ? items : items.filter((item) => item.status === statusFilter)
-  const openTransition = (batch: LabBatch, action: 'start' | 'complete') => { transition.reset(); setTransitionDialog({ batch, action }); setTransitionAt(nowDateTimeLocal()) }
-  const saveTransition = () => {
-    if (!transitionDialog || !transitionAt) return
-    const occurredAtUtc = new Date(transitionAt)
-    if (Number.isNaN(occurredAtUtc.getTime())) return
-    transition.mutate({ id: transitionDialog.batch.id, version: transitionDialog.batch.version, action: transitionDialog.action, occurredAtUtc: occurredAtUtc.toISOString() })
-  }
-
+export function EquipmentList({ items, canManage, onCreate }: { items: Awaited<ReturnType<typeof getLabOperationsDashboard>>['equipment']; canManage: boolean; onCreate: () => void }) {
+  const queryClient = useQueryClient()
+  const [showRetired, setShowRetired] = useState(false)
+  const retiredFilterRef = useRef<HTMLButtonElement>(null)
+  const [retirementTarget, setRetirementTarget] = useState<(typeof items)[number] | null>(null)
+  const retirement = useMutation({
+    mutationFn: ({ equipment, reason }: { equipment: (typeof items)[number]; reason: string }) => retireLabEquipment(equipment.id, { reason, version: equipment.version }),
+    onSuccess: async () => {
+      setRetirementTarget(null)
+      await queryClient.invalidateQueries({ queryKey: ['lab-operations'] })
+      retiredFilterRef.current?.focus()
+    },
+  })
+  const visibleItems = items.filter((item) => showRetired || item.status !== 'Retired')
   return (
     <>
-      <div className="space-y-5">
-        {canManage ? <LabBatchBarcodeScanner batches={items} onAdded={refresh} /> : null}
-        <Card>
-          <CardHeader>
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <CardTitle>Operational and sequencing batches</CardTitle>
-                <CardDescription>Libraries may cross Commercial orders while retaining work-order and specimen lineage.</CardDescription>
-              </div>
-              <div className="flex flex-wrap items-end gap-3">
-                <div>
-                  <Label htmlFor="batch-status-filter">Status</Label>
-                  <select
-                    id="batch-status-filter"
-                    className="mt-2 h-9 min-w-44 rounded-lg border border-input bg-background px-3 text-sm"
-                    value={statusFilter}
-                    onChange={(event) => setStatusFilter(event.target.value)}
-                  >
-                    <option value="All">All statuses</option>
-                    <option value="Draft">Draft</option>
-                    <option value="InProgress">In progress</option>
-                    <option value="Complete">Complete</option>
-                  </select>
+    <Card className="gap-0 overflow-hidden py-0">
+      <CardHeader className="border-b bg-muted/50 p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <CardTitle>Equipment</CardTitle>
+            <CardDescription>Lightweight asset availability and calibration visibility for execution traceability.</CardDescription>
+          </div>
+          {canManage ? <Button type="button" onClick={onCreate}><Plus data-icon="inline-start" /> New equipment</Button> : null}
+        </div>
+        <div className="mt-3 flex items-center gap-2">
+          <Checkbox ref={retiredFilterRef} id="show-retired-equipment" checked={showRetired} onCheckedChange={(checked) => setShowRetired(checked === true)} />
+          <Label htmlFor="show-retired-equipment" className="cursor-pointer">Show retired</Label>
+        </div>
+      </CardHeader>
+      <CardContent className="p-4">
+        {visibleItems.length === 0 ? <Empty>{items.length > 0 ? 'No current equipment. Select Show retired to view retired assets.' : 'No equipment has been created.'}</Empty> : (
+          <ul aria-label="Equipment assets" className="space-y-3">
+            {visibleItems.map((item) => (
+              <li key={item.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-lg border bg-background p-4 shadow-xs">
+                <div className="min-w-0 wrap-anywhere">
+                  <h3 className="font-medium">{item.name} · {item.assetCode}</h3>
+                  <p className="text-xs text-muted-foreground">{item.equipmentType} · {item.location}{item.calibrationDueOn ? ` · calibration due ${formatDateOnly(item.calibrationDueOn)}` : ''}</p>
+                  {item.status === 'Retired' ? <p className="mt-2 text-xs text-muted-foreground">{item.retiredAtUtc ? `Retired ${new Date(item.retiredAtUtc).toLocaleDateString('en-US')} · ` : ''}{item.retirementReason ?? 'Retirement reason not recorded.'}</p> : null}
                 </div>
-                {canManage ? <Button type="button" onClick={onCreate}><Plus data-icon="inline-start" /> New batch</Button> : null}
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {filteredItems.length === 0 ? (
-              <p className="py-3 text-sm text-muted-foreground">No batches match this status.</p>
-            ) : (
-              <div className="divide-y">
-                {filteredItems.map((item) => {
-                  const next = nextStatus(item.sendoutStatus)
-                  return (
-                    <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
-                      <div>
-                        <p className="font-medium">{item.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {item.batchNumber} · {humanize(item.batchType)} · {item.memberCount} libraries
-                          {item.startedAtUtc ? ` · started ${formatDate(item.startedAtUtc)}` : ''}
-                          {item.completedAtUtc ? ` · completed ${formatDate(item.completedAtUtc)}` : ''}
-                          {item.sendoutStatus ? ` · sendout ${humanize(item.sendoutStatus)}` : ''}
-                        </p>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Status value={item.status} />
-                        {canManage && item.status === 'Draft' ? <Button type="button" size="sm" disabled={transition.isPending} onClick={() => openTransition(item, 'start')}>Start</Button> : null}
-                        {canManage && item.status === 'InProgress' && !item.sendoutId && item.memberCount > 0 ? <Button type="button" size="sm" onClick={() => setDialog({ batch: item, kind: 'sendout' })}>Create sendout</Button> : null}
-                        {canManage && item.sendoutId ? <Button type="button" size="sm" variant="outline" onClick={() => setDialog({ batch: item, kind: 'custody' })}>Custody event</Button> : null}
-                        {canManage && item.sendoutId && next ? <Button type="button" size="sm" disabled={sendoutTransition.isPending} onClick={() => sendoutTransition.mutate({ item, status: next })}>Mark {humanize(next)}</Button> : null}
-                        {canManage && item.status === 'InProgress' && (!item.sendoutId || item.sendoutStatus === 'Complete') ? <Button type="button" size="sm" disabled={transition.isPending} onClick={() => openTransition(item, 'complete')}>Complete batch</Button> : null}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-      <Dialog open={transitionDialog !== null} onOpenChange={(open) => !open && setTransitionDialog(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{transitionDialog?.action === 'start' ? 'Start batch' : 'Complete batch'}</DialogTitle>
-            <DialogDescription>Record when the laboratory work actually {transitionDialog?.action === 'start' ? 'started' : 'completed'}. The time is prefilled with now and saved as UTC.</DialogDescription>
-          </DialogHeader>
-          <div className="my-5 grid gap-4">
-            <div>
-              <Label htmlFor="batch-transition-at"><RequiredFieldName>{transitionDialog?.action === 'start' ? 'Started at' : 'Completed at'}</RequiredFieldName></Label>
-              <Input id="batch-transition-at" className="mt-2" type="datetime-local" value={transitionAt} onChange={(event) => setTransitionAt(event.target.value)} required />
-            </div>
-          </div>
-          {transition.error ? <Alert variant="destructive" className="mb-4"><AlertTitle>Batch transition failed</AlertTitle><AlertDescription>{getLabOperationsError(transition.error, 'Check the entered time and try again.')}</AlertDescription></Alert> : null}
-          <RequiredDialogFooter>
-            <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
-            <Button type="button" disabled={transition.isPending || !transitionAt} onClick={saveTransition}>{transitionDialog?.action === 'start' ? 'Start batch' : 'Complete batch'}</Button>
-          </RequiredDialogFooter>
-        </DialogContent>
-      </Dialog>
-      <Dialog open={dialog !== null} onOpenChange={(open) => !open && setDialog(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{dialog?.kind === 'sendout' ? 'Create sequencing sendout' : 'Record custody event'}</DialogTitle>
-            <DialogDescription>Provider-neutral metadata and custody evidence only; no sequencing files or pipeline orchestration are created.</DialogDescription>
-          </DialogHeader>
-          <div className="my-5 grid gap-4">
-            {dialog?.kind === 'sendout' ? (
-              <>
-                <Field label="Provider name" value={form.providerName} onChange={set('providerName')} required />
-                <Field label="Provider reference" value={form.providerReference} onChange={set('providerReference')} />
-                <Field label="Expected completion" type="datetime-local" value={form.expectedCompletionAtUtc} onChange={set('expectedCompletionAtUtc')} />
-                <TextField label="Manifest JSON" value={form.manifestJson || '{}'} onChange={set('manifestJson')} />
-              </>
-            ) : (
-              <>
-                <Field label="Event code" value={form.eventCode} onChange={set('eventCode')} required />
-                <Field label="Location or party" value={form.locationOrParty} onChange={set('locationOrParty')} required />
-                <TextField label="Details JSON" value={form.detailsJson || '{}'} onChange={set('detailsJson')} />
-              </>
-            )}
-          </div>
-          {save.error ? <Alert variant="destructive" className="mb-4"><AlertTitle>Batch action failed</AlertTitle><AlertDescription>{getLabOperationsError(save.error, 'Check the entered values.')}</AlertDescription></Alert> : null}
-          <RequiredDialogFooter>
-            <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
-            <Button type="button" disabled={save.isPending} onClick={() => save.mutate()}>Save</Button>
-          </RequiredDialogFooter>
-        </DialogContent>
-      </Dialog>
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  <Status value={item.status} />
+                  {canManage && item.status !== 'Retired' ? <DropdownMenu>
+                    <DropdownMenuTrigger asChild><Button type="button" size="sm" variant="outline" aria-label={`Actions for ${item.name}`}>Actions <ChevronDown data-icon="inline-end" /></Button></DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48"><DropdownMenuItem onSelect={() => { retirement.reset(); setRetirementTarget(item) }}>Retire equipment</DropdownMenuItem></DropdownMenuContent>
+                  </DropdownMenu> : null}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
+    {retirementTarget ? <EquipmentRetirementDialog
+      equipment={retirementTarget}
+      pending={retirement.isPending}
+      error={retirement.error ? getLabOperationsError(retirement.error, 'Refresh the equipment list and try again.') : undefined}
+      onClose={() => { if (!retirement.isPending) setRetirementTarget(null) }}
+      onRetire={(reason) => retirement.mutate({ equipment: retirementTarget, reason })}
+    /> : null}
     </>
   )
 }
+
 function CreateRecordDialog({ kind, onClose, onSaved }: { kind: SimpleCreateKind; onClose: () => void; onSaved: (record: { kind: 'protocol' | 'batch'; id: string }) => Promise<unknown> }) {
+  const invokingControl = useRef<HTMLElement | null>(null)
   const [form, setForm] = useState<Record<string, string>>({})
   const mutation = useMutation({ mutationFn: async () => {
     if (kind === 'protocol') return createLabProtocol({ name: form.name, description: form.description })
-    if (kind === 'batch') return createLabBatch({ name: form.name, notes: form.notes || null })
+    if (kind === 'batch') return createLabBatch({ name: form.name?.trim() || null, notes: form.notes || null })
     throw new Error('Choose a record type.')
   }, onSuccess: async (record) => {
     if (kind !== 'protocol' && kind !== 'batch') return
@@ -911,8 +899,19 @@ function CreateRecordDialog({ kind, onClose, onSaved }: { kind: SimpleCreateKind
     await onSaved({ kind, id: record.id })
   } })
   const set = (key: string) => (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setForm((current) => ({ ...current, [key]: event.target.value }))
-  function submit(event: FormEvent) { event.preventDefault(); mutation.mutate() }
-  return <Dialog open={kind !== null} onOpenChange={(open) => !open && onClose()}><DialogContent><form onSubmit={submit}><DialogHeader><DialogTitle>{kind ? `Create ${humanize(kind)}` : 'Create record'}</DialogTitle><DialogDescription>{kind === 'protocol' ? 'Name the controlled procedure. After this step, define its ordered instructions, captures, resources, and QC gates.' : kind === 'batch' ? 'Name the batch. POMS assigns its batch number and external sequencing type.' : 'Laboratory records remain internal to Phaeno.'}</DialogDescription></DialogHeader><div className="my-5 grid gap-4 sm:grid-cols-2">{kind === 'protocol' ? <><div className="sm:col-span-2"><Field label="Name" value={form.name} onChange={set('name')} required /></div><TextField label="Description" value={form.description} onChange={set('description')} /></> : null}{kind === 'batch' ? <><div className="sm:col-span-2"><Field label="Batch name" value={form.name} onChange={set('name')} required /></div><TextField label="Notes" value={form.notes} onChange={set('notes')} /></> : null}</div>{mutation.error ? <Alert variant="destructive" className="mb-4"><AlertTitle>Record was not created</AlertTitle><AlertDescription>{getLabOperationsError(mutation.error, 'Check the entered values.')}</AlertDescription></Alert> : null}<RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" disabled={mutation.isPending}>{mutation.isPending ? 'Creating…' : kind === 'protocol' ? 'Continue to definition' : kind ? createActionLabel(kind) : 'Create'}</Button></RequiredDialogFooter></form></DialogContent></Dialog>
+  function submit(event: FormEvent) { event.preventDefault(); if (!mutation.isPending) mutation.mutate() }
+  return <Dialog open={kind !== null} onOpenChange={(open) => !open && !mutation.isPending && onClose()}><DialogContent onOpenAutoFocus={() => { invokingControl.current = document.activeElement instanceof HTMLElement ? document.activeElement : null }} onCloseAutoFocus={event => { if (invokingControl.current?.isConnected) { event.preventDefault(); invokingControl.current.focus() } }}><form className="contents" onSubmit={submit}>
+    <DialogHeader><DialogTitle>{kind ? `Create ${humanize(kind)}` : 'Create record'}</DialogTitle><DialogDescription>{kind === 'protocol' ? 'Name the controlled procedure. After this step, define its ordered instructions, captures, resources, and QC gates.' : kind === 'batch' ? 'POMS assigns a unique batch identifier when you create the batch. A descriptive name is optional.' : 'Laboratory records remain internal to Phaeno.'}</DialogDescription></DialogHeader>
+    <div className="grid gap-4 sm:grid-cols-2">
+      {kind === 'protocol' ? <><div className="sm:col-span-2"><Field label="Name" value={form.name} onChange={set('name')} required /></div><TextField label="Description" value={form.description} onChange={set('description')} /></> : null}
+      {kind === 'batch' ? <>
+        <FormField className="sm:col-span-2"><Label htmlFor="lab-batch-name">Batch name (optional)</Label><Input id="lab-batch-name" value={form.name ?? ''} onChange={set('name')} maxLength={255} aria-describedby="lab-batch-name-help" /><FieldDescription id="lab-batch-name-help">Leave blank to use the automatic batch identifier. Names do not need to be unique.</FieldDescription></FormField>
+        <FormField className="sm:col-span-2"><Label htmlFor="lab-batch-notes">Notes (optional)</Label><textarea id="lab-batch-notes" className="min-h-20 w-full rounded-lg border bg-background px-3 py-2 text-sm" value={form.notes ?? ''} onChange={set('notes')} maxLength={4000} /></FormField>
+      </> : null}
+      {mutation.error ? <Alert variant="destructive" className="sm:col-span-2"><AlertTitle>Record was not created</AlertTitle><AlertDescription>{getLabOperationsError(mutation.error, 'Check the entered values.')}</AlertDescription></Alert> : null}
+    </div>
+    <RequiredDialogFooter showLegend={kind === 'protocol'}><DialogClose asChild><Button type="button" variant="outline" disabled={mutation.isPending}>Cancel</Button></DialogClose><Button type="submit" disabled={mutation.isPending}>{mutation.isPending ? 'Creating…' : kind === 'protocol' ? 'Continue to definition' : kind ? createActionLabel(kind) : 'Create'}</Button></RequiredDialogFooter>
+  </form></DialogContent></Dialog>
 }
 
 function Field({ label, value = '', onChange, required, type = 'text' }: { label: string; value?: string; onChange: React.ChangeEventHandler<HTMLInputElement>; required?: boolean; type?: string }) { const id = `lab-${label.toLowerCase().replaceAll(' ', '-')}`; return <div><Label htmlFor={id}>{required ? <RequiredFieldName>{label}</RequiredFieldName> : label}</Label><Input id={id} className="mt-2" type={type} value={value ?? ''} onChange={onChange} required={required} /></div> }
@@ -924,7 +923,6 @@ function AccessDenied() { return <main className="page-wrap px-4 py-8"><Alert va
 function humanize(value: string) { return value.replace(/([a-z])([A-Z])/g, '$1 $2').replaceAll('_', ' ').replace(/^./, (character) => character.toUpperCase()) }
 function createActionLabel(kind: Exclude<CreateKind, null>) { return `Create ${humanize(kind).toLowerCase()}` }
 function formatDate(value: string) { return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) }
-function nowDateTimeLocal() { const now = new Date(); const offset = now.getTimezoneOffset(); return new Date(now.getTime() - offset * 60_000).toISOString().slice(0, 16) }
 function formatDateOnly(value: string) { return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeZone: 'UTC' }).format(new Date(`${value}T00:00:00Z`)) }
 function todayDateOnly() {
   const now = new Date()

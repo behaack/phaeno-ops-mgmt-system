@@ -1,6 +1,7 @@
 namespace PSeq.Operations.Commercial.Crm.Domain;
 
 using PSeq.Operations.Commercial.Common.Persistence;
+using PSeq.Operations.Commercial.Accounts.Domain;
 using PSeq.Operations.Commercial.Relationships.Domain;
 
 public sealed class CrmHandoff : IAudit, IConcurrency
@@ -21,6 +22,14 @@ public sealed class CrmHandoff : IAudit, IConcurrency
     public long Version { get; private set; } = 1;
 
     private CrmHandoff() { }
+
+    public static OrganizationKind? ResolveRequestedRelationship(CrmHandoffType type, OrganizationKind? current, OrganizationKind? requested)
+    {
+        if (type != CrmHandoffType.RelationshipChange) return current ?? requested;
+        if (current != OrganizationKind.Prospect || requested is not (OrganizationKind.Customer or OrganizationKind.Partner))
+            throw new InvalidOperationException("An approved Prospect relationship can change to Customer or Partner. Enable online access first when no relationship exists.");
+        return requested;
+    }
 
     public CrmHandoff(Guid companyId, Guid? opportunityId, CrmHandoffType type, Guid relationshipRequestId, string idempotencyKey)
     {

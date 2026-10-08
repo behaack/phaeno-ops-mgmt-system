@@ -17,12 +17,33 @@ site, Vercel serves it, and the Portal backend owns the anonymous Website API.
 - **Anonymous API**: `../backend/app/Features/Website`
 - **Portal application**: `../frontend/`
 
+Site search distinguishes no matches from a temporary service failure. A failure keeps the search text and offers **Try again**; loading and recovery are announced for keyboard and screen-reader users.
+
 The Website does not connect directly to PostgreSQL or use authenticated Portal
 data. Search, contact, non-binding order, public-document, and reCAPTCHA flows
 consume the versioned anonymous Website API. The database-ping endpoint remains
 available for explicit deployment and operational smoke checks; visitor page
 loads do not call it. Changes to that contract must be planned and verified
 across both the Website and backend.
+
+Successful intake is saved together with durable email notification intent.
+Technical-brief confirmation says the message is queued; it does not claim inbox
+delivery. Failed intake preserves the visitor's entries, and duplicate-email
+feedback is shown only for the API's `email_already_in_use` code. Visitors may
+retry a failed request without re-entering their details; repeating an accepted
+signup does not resend a brief.
+
+Phaeno administrators use Portal Web Operations **Email delivery** to inspect
+attempts and queue eligible resends after review. **Mailing List** also supports
+queuing a technical brief for an active opted-in legacy contact whose delivery
+status is unknown. The API worker retries failures up to five attempts, records
+provider acceptance separately, and stops inactive intake. The Email delivery
+panel also shows queue counts and a Needs attention filter. Administrators can
+pause or resume processing with an audited reason; paused intake continues to
+queue messages, while attempts already in flight may finish. Queue monitoring
+continues while paused. Deployment requires the Website delivery and processing
+control migrations and configured Mailgun delivery; local verification uses fake
+senders. See `docs/operations-readiness.md` for monitoring and rollout boundaries.
 
 ## Project structure
 
@@ -80,6 +101,31 @@ controls. Demo actions use the orange accent and pill shape throughout the
 site. White-paper cards use compact thumbnails and numbered part labels when
 their slugs identify a series; the empty Blog page links to white papers and
 Phaeno updates.
+
+Homepage feature cards size to their content on phones with reduced padding;
+desktop retains the two-column layout. Performance highlights carry the
+existing preliminary-data and RUO qualifications beside the values, with a
+link to the comparison notes. Pending validation uses neutral text. Filled
+orange actions are reserved for demo requests; technology exploration and
+technical-brief links use secondary treatments.
+
+Each technology page has a compact, non-sticky **On this page** navigation to
+its existing sections. Phone headings use the shared typography tokens with
+clearer separation from supporting copy. The PSeq platform page links directly
+to its published platform-overview white paper, and Media navigation lists
+White Papers before Blog.
+
+The contact section **Phaeno updates and technical brief** explains the optional
+brief checkbox. Its button reads **Get updates** or **Get updates and technical
+brief** according to that selection. Demo links consistently read **Request a
+demo**. Fields, consent, validation, and intake behavior are unchanged.
+Form bands, long scientific text, comparison labels, and shared navigation
+reflow for enlarged phone text; anchor scrolling respects reduced motion.
+The Clear-Signal Architecture panel clips its decorative artwork without
+creating an internal scroll container, preserving its spacing when following
+either its section link or heading link.
+See `../docs/plans/WEBSITE-CLARITY-AND-POLISH-PLAN.md` for scope and local
+verification evidence.
 
 Searchable pages need meaningful titles, descriptions, `phaeno:document-type`
 metadata, and stable heading IDs. Route, metadata, heading, content, sitemap,

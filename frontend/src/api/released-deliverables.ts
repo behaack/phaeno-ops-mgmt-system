@@ -2,7 +2,7 @@ import { api } from './client'
 import type { ReleasedDeliverableRetention } from './order-management'
 
 type Envelope<T> = { data: T }
-export type RetainedRelease = { id: string; organizationId: string; organizationName: string; packageType: string; packageId: string; releasedAtUtc: string; downloadAccessClosedAtUtc: string | null; byteDeletedAtUtc: string | null; deletionOutcome: string | null; isQuarantined: boolean }
+export type RetainedRelease = { id: string; organizationId: string; organizationName: string; packageType: string; packageId: string; releasedAtUtc: string; downloadAccessClosedAtUtc: string | null; byteDeletedAtUtc: string | null; deletionOutcome: string | null; isQuarantined: boolean; workflowNumber?: string | null; sampleName?: string | null }
 export type ReleaseHold = { id: string; kind: 'Preservation' | 'Quarantine'; reason: string; placedAtUtc: string; releasedAtUtc: string | null; releaseReason: string | null; version: number }
 export type ReleaseReceipt = { release: RetainedRelease; retention: ReleasedDeliverableRetention; workflowId: string; workflowPath: string; version: number; canManage: boolean; canQuarantine: boolean; generatedAtUtc: string; deletionDueAtUtc: string; lineage: { scope: string; customerSampleIds: string[]; supplierTubeBarcodes: string[]; accessionId: string | null } | null;
   files: { id: string; name: string; sizeBytes: number; sha256: string; downloadedAtUtc: string | null }[];

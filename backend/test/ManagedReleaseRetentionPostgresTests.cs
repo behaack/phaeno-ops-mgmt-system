@@ -154,7 +154,7 @@ public sealed partial class ManagedReleaseRetentionPostgresTests
         private IExternalIdentityContext identity = null!;
         public IExternalIdentityContext IdentityContext => identity;
         public ReleasedDeliverablePackageType Type => Assembly ? ReleasedDeliverablePackageType.AssemblyOutput : ReleasedDeliverablePackageType.LabResult;
-        public static async Task<Fixture> Create(string connection, bool assembly, DateTime released, bool snapshot = true, bool held = false)
+        public static async Task<Fixture> Create(string connection, bool assembly, DateTime released, bool snapshot = true, bool held = false, int sampleCount = 1)
         {
             var db = ManagedReleaseRetentionPostgresTests.Db(connection);
             var services = new ServiceCollection().AddLogging().AddControllers().Services.BuildServiceProvider();
@@ -164,6 +164,9 @@ public sealed partial class ManagedReleaseRetentionPostgresTests
             fixture.Actor = new(external.Email, "Synthetic", "Recipient"); fixture.Actor.Activate(); fixture.Actor.LinkExternalIdentity(external.Provider, external.SubjectId);
             fixture.identity = new Identity(external);
             db.AddRange(fixture.Organization, fixture.Actor, new OrganizationMembership(fixture.Actor.Id, fixture.Organization.Id, true));
+            if (!await db.ReleasedDeliverablePolicyDefaults.AnyAsync(value => value.IsActive))
+                db.Add(new ReleasedDeliverablePolicyDefault(1, ReleasedDeliverablePolicyValues.Create(30, 5, 5), "Synthetic managed retention fixture"));
+            await db.SaveChangesAsync();
             var department = fixture.Organization.Departments.Single();
             Guid parent;
             AssemblyOutputRelease? output = null;
@@ -181,14 +184,16 @@ public sealed partial class ManagedReleaseRetentionPostgresTests
             }
             else
             {
-                lab = new(fixture.Organization.Id, department.Id, $"RET-{Guid.NewGuid():N}", "Synthetic", null, 1, false, "RNA", "Frozen", "Safe", "Synthetic");
+                lab = new(fixture.Organization.Id, department.Id, $"RET-{Guid.NewGuid():N}", "Synthetic", null, sampleCount, false, "RNA", "Frozen", "Safe", "Synthetic");
                 sample = new(lab.Id, "Sample", "RNA", "Synthetic", 1, "tube", "Frozen", "Safe", null, null, null, "[]");
                 fixture.WorkflowId = lab.Id; parent = sample.Id; db.AddRange(lab, sample);
             }
             fixture.Files = Enumerable.Range(1, 2).Select(index => new ManagedOperationalFile(fixture.Organization.Id,
                 assembly ? OrderWorkflowTypes.DataAssembly : OrderWorkflowTypes.LabService, fixture.WorkflowId, parent,
                 assembly ? OperationalFilePurpose.AssemblyOutput : OperationalFilePurpose.LabResult,
-                $"result-{index}.txt", "report", "text/plain", 16, new string('A', 64), $"synthetic/{Guid.NewGuid():N}")).ToArray();
+                $"result-{index}.txt", "report", "text/plain", 16,
+                Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes("synthetic-result"))),
+                $"synthetic/{Guid.NewGuid():N}")).ToArray();
             foreach (var file in fixture.Files) { file.RecordScan(OperationalFileScanStatus.Clean, null); if (held) file.HoldForPayment(); else file.Release(released); }
             db.AddRange(fixture.Files);
             LabResultRelease? release = null;
@@ -214,19 +219,20 @@ public sealed partial class ManagedReleaseRetentionPostgresTests
         public Task<List<OperationalFileDownload>> Attempts() => db.OperationalFileDownloads.AsNoTracking().Where(value => value.ReleasedPackageId == ReleaseId).ToListAsync();
         public async Task<ReleasedDeliverableDownloadProjection> Projection() => (await new ReleasedDeliverableDownloadProjectionService(db, Enabled)
             .ReadAsync(Organization.Id, Type, new Dictionary<Guid, IReadOnlyCollection<Guid>> { [ReleaseId] = Files.Select(value => value.Id).ToList() }, DateTime.UtcNow, default))[ReleaseId];
-        public Task<IActionResult> Download(bool archive, PSeqOperationsDbContext? serving = null, bool enforce = true)
+        public Task<IActionResult> Download(bool archive, PSeqOperationsDbContext? serving = null, bool enforce = true,
+            IExternalIdentityContext? downloadIdentity = null)
         {
             var target = serving ?? db;
             var options = Options.Create(new OrderManagementOptions { ReleasedDeliverableRetentionEnforcement = enforce });
             var attempts = new ReleasedDeliverableDownloadAttemptService(target, options, NullLogger<ReleasedDeliverableDownloadAttemptService>.Instance);
-            var context = new OrderRequestContext(target, identity);
+            var context = new OrderRequestContext(target, downloadIdentity ?? identity);
             if (Assembly)
             {
                 var controller = new DataAssemblyRequestsController(target, context, null!, Storage, null!, options, attempts, new(target, options),
                     NullLogger<CompletionTrackedFileStreamResult>.Instance, NullLogger<CompletionTrackedArchiveResult>.Instance) { ControllerContext = new() { HttpContext = Http } };
                 return archive ? controller.DownloadOutputRelease(WorkflowId, ReleaseId, default) : controller.DownloadOutput(WorkflowId, ReleaseId, Files[0].Id, default);
             }
-            var lab = new LabServiceOrdersController(target, context, null!, Storage, Options.Create(new PSeqOrderToCashOptions()), null!, attempts, new(target, options),
+            var lab = new LabServiceOrdersController(target, context, null!, null!, Storage, Options.Create(new PSeqOrderToCashOptions()), null!, attempts, new(target, options),
                 NullLogger<CompletionTrackedFileStreamResult>.Instance, NullLogger<CompletionTrackedArchiveResult>.Instance) { ControllerContext = new() { HttpContext = Http } };
             return archive ? lab.DownloadRelease(WorkflowId, ReleaseId, default) : lab.Download(WorkflowId, Files[0].Id, default);
         }
@@ -265,7 +271,7 @@ public sealed partial class ManagedReleaseRetentionPostgresTests
     private static async Task InDatabase(Func<string, Task> test)
     {
         var source = new NpgsqlConnectionStringBuilder(Environment.GetEnvironmentVariable("PSEQ_OPERATIONS_REFERENCE_CONNECTION")!);
-        if (source.Host is not ("localhost" or "127.0.0.1") || source.Database != "phaeno_ops") throw new InvalidOperationException("Local phaeno_ops source required.");
+        if (source.Host is not ("localhost" or "127.0.0.1") || (source.Database is not ("phaeno_ops" or "phaeno_ops_lab06_uat") && source.Database?.StartsWith("phaeno_release_verification_", StringComparison.Ordinal) != true)) throw new InvalidOperationException("A known local development or isolated UAT source is required.");
         var name = $"pseq_retention_test_{Guid.NewGuid():N}";
         await using var admin = new NpgsqlConnection(source.ConnectionString); await admin.OpenAsync();
         await using (var create = new NpgsqlCommand($"CREATE DATABASE {name}", admin)) await create.ExecuteNonQueryAsync();

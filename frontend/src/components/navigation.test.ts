@@ -3,10 +3,20 @@ import { describe, expect, it } from 'vitest'
 import {
   getVisibleMainMenuItems,
   isExternalOrganizationKind,
+  isMainMenuRouteActive,
 } from './navigation'
 import type { OrganizationKind, SessionResponse } from '#/api/session'
 
 describe('data navigation permissions', () => {
+  it('shows CRM for Commercial staff without giving them administration navigation', () => {
+    const session = createSession('Phaeno', { canAccessCrm: true, canAdministerCrm: false, canManageOrganizations: false, canManageAllUsers: false, canViewDatasetConfiguration: false })
+    session.isPlatformAdmin = false
+    session.memberships[0].isOrganizationAdmin = false
+    const labels = getVisibleMainMenuItems(session, { selectedOrganizationKind: 'Phaeno', selectedMembership: session.memberships[0] }).map(item => item.label)
+    expect(labels).toContain('CRM')
+    expect(labels).not.toContain('CRM settings')
+    expect(labels).not.toContain('Data provisioning')
+  })
   it('shows provisioning only in the Phaeno context', () => {
     const session = createSession('Phaeno', {
       canViewDatasetConfiguration: true,
@@ -23,7 +33,7 @@ describe('data navigation permissions', () => {
   })
 
   it.each<OrganizationKind>(['Prospect', 'Customer', 'Partner'])(
-    'shows the Data Library for an active %s organization context',
+    'shows the Data library for an active %s organization context',
     (kind) => {
       const session = createSession(kind, {
         canViewDatasetConfiguration: false,
@@ -43,19 +53,37 @@ describe('data navigation permissions', () => {
 })
 
 describe('order navigation permissions', () => {
-  it('shows laboratory services only in an authorized Customer context', () => {
-    const session = createSession('Customer', {
+  it('keeps one Order Ops entry for Trial staff and scopes moved destinations by role', () => {
+    const trialStaff = createSession('Phaeno', { canViewTrialProjects: true })
+    const context = { selectedOrganizationKind: 'Phaeno' as const, selectedMembership: trialStaff.memberships[0] }
+    expect(getVisibleMainMenuItems(trialStaff, context, 'workspace').map(item => item.label)).toEqual(['Dashboard', 'CRM', 'Order ops'])
+    expect(getVisibleMainMenuItems(trialStaff, context, 'more').some(item => ['Finance', 'Legacy integrations'].includes(item.label))).toBe(false)
+    const finance = createSession('Phaeno', { canViewAllOperationalOrders: true, canManagePSeqBilling: true })
+    expect(getVisibleMainMenuItems(finance, context, 'more')).toContainEqual(expect.objectContaining({ label: 'Finance', to: '/finance' }))
+    expect(getVisibleMainMenuItems(finance, context, 'workspace').some(item => item.label === 'Order ops')).toBe(false)
+    expect(isMainMenuRouteActive('/order-operations/lab-services/trials/trial-1', '/order-operations')).toBe(true)
+    expect(isMainMenuRouteActive('/dashboard/attention', '/')).toBe(true)
+    expect(isMainMenuRouteActive('/lab-operations/result-release', '/order-operations')).toBe(false)
+  })
+
+  it('retains Order settings navigation for Phaeno Trial staff without broader configuration access', () => {
+    const session = createSession('Phaeno', { canManageTrialProjects: true, canManageOrderConfiguration: false })
+    expect(getVisibleMainMenuItems(session, { selectedOrganizationKind: 'Phaeno', selectedMembership: session.memberships[0] }).map(item => item.label)).toContain('Order settings')
+    expect(getVisibleMainMenuItems(session, { selectedOrganizationKind: 'Prospect', selectedMembership: session.memberships[1] }).map(item => item.label)).not.toContain('Order settings')
+  })
+  it.each<OrganizationKind>(['Customer', 'Partner'])('shows laboratory services in an authorized %s context', (kind) => {
+    const session = createSession(kind, {
       canViewLabServiceOrders: true,
     })
 
     const labels = getVisibleMainMenuItems(session, {
-      selectedOrganizationKind: 'Customer',
+      selectedOrganizationKind: kind,
       selectedMembership: session.memberships[1],
     }).map((item) => item.label)
 
     expect(labels).toContain('Lab services')
-    expect(labels).not.toContain('Reagent orders')
-    expect(labels).not.toContain('Data assembly')
+    expect(labels).not.toContain('PSeq kit orders')
+    expect(labels).not.toContain('Assembly cases')
     expect(labels).not.toContain('Order ops')
   })
 
@@ -70,10 +98,10 @@ describe('order navigation permissions', () => {
       selectedMembership: session.memberships[1],
     }).map((item) => item.label)
 
-    expect(labels).toContain('Reagent orders')
-    expect(labels).toContain('Data assembly')
+    expect(labels).toContain('PSeq kit orders')
+    expect(labels).toContain('Assembly cases')
     expect(labels).not.toContain('Lab services')
-    expect(labels).not.toContain('Order configuration')
+    expect(labels).not.toContain('Order settings')
   })
 
   it('shows operations and configuration only in the authorized Phaeno context', () => {
@@ -91,26 +119,32 @@ describe('order navigation permissions', () => {
 
     expect(labels).toContain('Order ops')
     expect(labels).toContain('Lab ops')
-    expect(labels).toContain('Order configuration')
-    expect(labels).toContain('File management')
-    expect(labels).not.toContain('Lab services')
-    expect(labels).not.toContain('Reagent orders')
+    expect(labels).toContain('Order settings')
+    expect(labels).toContain('File retention policies')
+    expect(labels).not.toContain('PSeq kit orders')
   })
 })
 
 describe('documentation navigation permissions', () => {
   it.each<OrganizationKind>(['Prospect', 'Customer', 'Partner', 'Phaeno'])(
-    'shows Docs for an active %s organization context',
+    'places Documentation in user-menu resources for an active %s organization context',
     (kind) => {
       const session = createSession(kind, {})
 
-      const labels = getVisibleMainMenuItems(session, {
+      const context = {
         selectedOrganizationKind: kind,
         selectedMembership:
           kind === 'Phaeno' ? session.memberships[0] : session.memberships[1],
-      }).map((item) => item.label)
+      }
 
-      expect(labels).toContain('Docs')
+      expect(getVisibleMainMenuItems(session, context, 'resources')).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ label: 'Documentation', to: '/docs' }),
+        ]),
+      )
+      expect(getVisibleMainMenuItems(session, context, 'workspace').map(
+        (item) => item.to,
+      )).not.toContain('/docs')
     },
   )
 })
@@ -151,6 +185,63 @@ describe('sample-shipping navigation permissions', () => {
 })
 
 describe('navigation placement', () => {
+  it('offers Customer settings to Customer administrators without duplicating Departments', () => {
+    const customer = createSession('Customer', {})
+    const customerContext = { selectedOrganizationKind: 'Customer' as const, selectedMembership: customer.memberships[1] }
+    expect(getVisibleMainMenuItems(customer, customerContext, 'administration').map(item => item.label)).toEqual(['Customer settings'])
+
+    const partner = createSession('Partner', {})
+    expect(getVisibleMainMenuItems(partner, { selectedOrganizationKind: 'Partner', selectedMembership: partner.memberships[1] }, 'administration').map(item => item.label)).toEqual(['Departments'])
+
+    customer.memberships[1].isOrganizationAdmin = false
+    expect(getVisibleMainMenuItems(customer, customerContext, 'administration')).toEqual([])
+    customer.memberships[1].departments = [{ departmentId: 'oncology', departmentName: 'Oncology', departmentCode: 'ONC', isDefault: false, isDepartmentAdmin: true }]
+    expect(getVisibleMainMenuItems(customer, customerContext, 'administration').map(item => item.label)).toEqual(['Customer settings'])
+  })
+
+  it('keeps CRM settings permission-scoped and selected separately from CRM', () => {
+    const session = createSession('Phaeno', {})
+    expect(getVisibleMainMenuItems(session, { selectedOrganizationKind: 'Phaeno' }, 'administration')).toContainEqual(expect.objectContaining({ label: 'CRM settings', to: '/crm/administration' }))
+    expect(getVisibleMainMenuItems(session, { selectedOrganizationKind: 'Customer' }, 'administration').some(item => item.label === 'CRM settings')).toBe(false)
+    expect(isMainMenuRouteActive('/crm/administration', '/crm')).toBe(false)
+    expect(isMainMenuRouteActive('/crm/administration', '/crm/administration')).toBe(true)
+  })
+  it.each([
+    [true, false],
+    [false, true],
+    [true, true],
+    [false, false],
+  ])('separates settings access for order=%s and retention=%s', (orders, retention) => {
+    const session = createSession('Phaeno', {
+      canManageOrderConfiguration: orders,
+      canManageFileManagementConfiguration: retention,
+      canAdministerCrm: false,
+    })
+    const context = { selectedOrganizationKind: 'Phaeno' as const }
+    const items = getVisibleMainMenuItems(session, context, 'administration')
+    expect(items.map(item => item.label)).toEqual([
+      ...(orders ? ['Order settings', 'Samples & shipping settings'] : []),
+      ...(retention ? ['File retention policies'] : []),
+    ])
+    expect(getVisibleMainMenuItems(session, context, 'workspace').some(item => item.label === 'Order ops')).toBe(orders)
+    expect(getVisibleMainMenuItems(session, context, 'more').map(item => item.label)).toEqual(orders ? ['Purchasing', 'Legacy integrations'] : [])
+  })
+
+  it('keeps settings independent of operational workspaces', () => {
+    expect(isMainMenuRouteActive('/order-configuration', '/order-configuration')).toBe(true)
+    expect(isMainMenuRouteActive('/order-configuration', '/order-operations')).toBe(false)
+    expect(isMainMenuRouteActive('/order-configuration', '/lab-operations')).toBe(false)
+  })
+
+  it('shows Lab settings only with laboratory access in Phaeno', () => {
+    const session = createSession('Phaeno', { canManageLabOperations: true, canAdministerCrm: false })
+    expect(getVisibleMainMenuItems(session, { selectedOrganizationKind: 'Phaeno' }, 'administration').map(item => item.label)).toEqual(['Lab settings'])
+    expect(getVisibleMainMenuItems(session, { selectedOrganizationKind: 'Phaeno' }, 'more').map(item => item.label)).toEqual(['Purchasing', 'Equipment'])
+    expect(getVisibleMainMenuItems(session, { selectedOrganizationKind: 'Customer' }, 'administration')).toEqual([])
+    expect(getVisibleMainMenuItems(session, { selectedOrganizationKind: 'Customer' }, 'more')).toEqual([])
+    expect(isMainMenuRouteActive('/lab-configuration', '/lab-operations')).toBe(false)
+  })
+
   it('keeps frequent Phaeno work in the toolbar and moves secondary destinations to the menu', () => {
     const session = createSession('Phaeno', {
       canManageOrganizations: true,
@@ -169,17 +260,21 @@ describe('navigation placement', () => {
       getVisibleMainMenuItems(session, context, 'workspace').map(
         (item) => item.label,
       ),
-    ).toEqual(['Dashboard', 'CRM', 'Order ops', 'Lab ops', 'Docs'])
+    ).toEqual(['Dashboard', 'CRM', 'Order ops', 'Lab ops'])
     expect(
       getVisibleMainMenuItems(session, context, 'administration').map(
         (item) => item.label,
       ),
-    ).toEqual(['Order configuration', 'File management'])
+    ).toEqual(['Order settings', 'Lab settings', 'CRM settings', 'Samples & shipping settings', 'File retention policies'])
+    expect(getVisibleMainMenuItems(session, context, 'more').map(item => item.label)).toEqual(['Purchasing', 'Equipment', 'Data provisioning', 'Legacy integrations'])
+    for (const label of ['Purchasing', 'Equipment', 'Data provisioning', 'Legacy integrations']) {
+      expect(getVisibleMainMenuItems(session, context).filter(item => item.label === label)).toHaveLength(1)
+    }
     expect(
       getVisibleMainMenuItems(session, context, 'resources').map(
         (item) => item.label,
       ),
-    ).toEqual(['Data provisioning', 'Project', 'Query demo'])
+    ).toEqual(['Documentation'])
   })
 })
 
@@ -226,6 +321,8 @@ function createSession(
       isAvailable: true,
     },
     capabilities: {
+      canAccessCrm: true,
+      canAdministerCrm: true,
       canInviteUsers: true,
       canManageMembers: true,
       canChangeMemberRoles: true,

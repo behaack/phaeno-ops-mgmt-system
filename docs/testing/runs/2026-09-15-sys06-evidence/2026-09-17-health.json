@@ -1,0 +1,22 @@
+[
+  {
+    "url": "https://api.phaenobiotech.com/api/health",
+    "status": 200,
+    "checked_at_utc": "2026-09-17T11:25:21.4124652Z"
+  },
+  {
+    "url": "https://api.phaenobiotech.com/api/v1/web-ops/database-ping",
+    "status": 204,
+    "checked_at_utc": "2026-09-17T11:25:21.7036763Z"
+  },
+  {
+    "url": "https://portal.phaenobiotech.com/",
+    "status": 200,
+    "checked_at_utc": "2026-09-17T11:25:21.9088165Z"
+  },
+  {
+    "url": "https://www.phaenobiotech.com/",
+    "status": 200,
+    "checked_at_utc": "2026-09-17T11:25:21.9828309Z"
+  }
+]

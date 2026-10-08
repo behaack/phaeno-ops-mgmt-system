@@ -23,7 +23,7 @@ public sealed class CrmHandoffsController(PSeqOperationsDbContext dbContext, IEx
     [HttpGet("~/api/platform/crm/order-handoffs")]
     public async Task<IReadOnlyList<CrmOrderHandoffDto>> OrderHandoffs(CancellationToken cancellationToken)
     {
-        await RequireActor(cancellationToken);
+        await RequireCrmAccessAsync(HttpContext, dbContext, externalIdentityContext, cancellationToken);
         var values = await dbContext.CrmHandoffs.AsNoTracking()
             .Include(value => value.Company)
             .Include(value => value.Opportunity).ThenInclude(value => value!.Stage)
@@ -74,6 +74,8 @@ public sealed class CrmHandoffsController(PSeqOperationsDbContext dbContext, IEx
     public async Task<ActionResult<CrmHandoffDto>> CreateHandoff(Guid companyId, [FromBody] CreateCrmHandoffRequest request, CancellationToken cancellationToken)
     {
         var actor = await RequireActor(cancellationToken);
+        if (request.Type == CrmHandoffType.TrialProject)
+            throw new CrmException("crm_trial_direct_creation_required", "Business Development creates Trials directly in Trial projects; no Company request or Opportunity is required.");
         var company = await dbContext.CrmCompanies
             .Include(value => value.AccessOrganization)
             .FirstOrDefaultAsync(value => value.Id == companyId && value.IsActive, cancellationToken)
@@ -91,7 +93,7 @@ public sealed class CrmHandoffsController(PSeqOperationsDbContext dbContext, IEx
         if (request.Type == CrmHandoffType.TrialProject && (opportunity is not { IsActive: true } || request.RequestedServices.Count > 0))
             throw new CrmException("crm_trial_context_invalid", "Link an active Opportunity and keep scientific scope and service selection in the Trial workspace.");
         var organizationId = company.AccessOrganizationId;
-        var requestedKind = company.AccessOrganization?.Kind ?? request.RequestedOrganizationKind;
+        var requestedKind = Execute(() => CrmHandoff.ResolveRequestedRelationship(request.Type, company.AccessOrganization?.Kind, request.RequestedOrganizationKind));
         var (requestType, defaultKind) = RequestType(request.Type);
         requestedKind ??= defaultKind;
         if (request.Type is (
@@ -188,7 +190,7 @@ public sealed class CrmHandoffsController(PSeqOperationsDbContext dbContext, IEx
         if (!eligibility.OrderingAuthorized)
             return (false, "Enable a current Ready PSeq Lab Service entitlement for this Customer.");
         if (!eligibility.OfferingAvailable)
-            return (false, "Activate the canonical PSeq Lab Service specimen catalog item.");
+            return (false, "Activate at least one approved offering in the PSeq Lab Service family.");
         return (true, null);
     }
     private static CrmException Missing(string code, string message) => CrmAccess.NotFound(code, message);

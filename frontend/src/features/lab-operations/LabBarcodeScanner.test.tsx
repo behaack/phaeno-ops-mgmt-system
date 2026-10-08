@@ -22,14 +22,14 @@ describe('LabBatchBarcodeScanner', () => {
     api.scanLabContainer.mockReset()
   })
 
-  it('adds a scanned QC-passed library and keeps the scanner ready', async () => {
+  it.each(['QcPassed', 'Batched', 'Complete'])('submits a scanned %s library for server eligibility checks and keeps the scanner ready', async status => {
     api.scanLabContainer.mockResolvedValue({
       labWorkOrderId: 'work-1',
       commercialOrderNumber: 'LAB-1001',
       accessionNumber: 'ACC-1',
       parentBarcode: 'PH-S-23456789AB-C',
       labLibraryId: 'library-1',
-      libraryStatus: 'QcPassed',
+      libraryStatus: status,
       container: {
         id: 'container-1',
         labSpecimenId: 'specimen-1',
@@ -55,7 +55,7 @@ describe('LabBatchBarcodeScanner', () => {
           id: 'batch-1',
           batchNumber: 'BATCH-1',
           name: 'Reference sequencing batch',
-          batchType: 'ExternalSequencing',
+          libraryExceptionCount: 0, vendorOutcome: null, providerName: null, trackingReference: null, expectedCompletionAtUtc: null, resultsVersion: null, runNotPerformed: null, resultsReceivedAtUtc: null, batchType: 'ExternalSequencing',
           status: 'Draft',
           startedAtUtc: null,
           completedAtUtc: null,
@@ -86,11 +86,14 @@ describe('LabBatchBarcodeScanner', () => {
     expect(document.activeElement).toBe(scanner)
   })
 
-  it('does not add a scanned non-library container', async () => {
+  it.each([
+    [null, null, 'The scanned container is not a prepared library.'],
+    ['library-1', 'QcFailed', 'Only a QC-passed library can be added to a draft batch.'],
+  ])('rejects scanned library %s in state %s with specific feedback', async (labLibraryId, libraryStatus, message) => {
     api.scanLabContainer.mockResolvedValue({
       labWorkOrderId: 'work-1',
-      labLibraryId: null,
-      libraryStatus: null,
+      labLibraryId,
+      libraryStatus,
       container: { barcode: 'PH-S-23456789AB-C' },
     })
 
@@ -100,7 +103,7 @@ describe('LabBatchBarcodeScanner', () => {
           id: 'batch-1',
           batchNumber: 'BATCH-1',
           name: 'Reference sequencing batch',
-          batchType: 'ExternalSequencing',
+          libraryExceptionCount: 0, vendorOutcome: null, providerName: null, trackingReference: null, expectedCompletionAtUtc: null, resultsVersion: null, runNotPerformed: null, resultsReceivedAtUtc: null, batchType: 'ExternalSequencing',
           status: 'Draft',
           startedAtUtc: null,
           completedAtUtc: null,
@@ -122,8 +125,10 @@ describe('LabBatchBarcodeScanner', () => {
     fireEvent.change(scanner, { target: { value: 'PH-S-23456789AB-C' } })
     fireEvent.submit(scanner.closest('form')!)
 
-    expect(await screen.findByText('The scanned container is not a prepared library.')).toBeTruthy()
+    expect(await screen.findByText(message)).toBeTruthy()
     expect(api.addLabBatchMember).not.toHaveBeenCalled()
+    expect((scanner as HTMLInputElement).value).toBe('PH-S-23456789AB-C')
+    expect(document.activeElement).toBe(scanner)
   })
 })
 

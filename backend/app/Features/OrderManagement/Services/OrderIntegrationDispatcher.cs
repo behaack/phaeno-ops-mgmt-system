@@ -2,6 +2,8 @@ namespace PhaenoPortal.App.Features.OrderManagement.Services;
 
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using PhaenoPortal.App.Features.Accounts.Services;
 using PSeq.Operations.Commercial.OrderManagement.Application;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PhaenoPortal.App.Features.FileManagement.Services;
@@ -25,7 +27,8 @@ public sealed record PaymentRefreshOutboxPayload(
 
 public sealed class OrderIntegrationDispatcher(
     IServiceScopeFactory scopeFactory,
-    ILogger<OrderIntegrationDispatcher> logger) : BackgroundService
+    ILogger<OrderIntegrationDispatcher> logger,
+    IOptions<PSeqOrderToCashOptions>? pseqOptions = null) : BackgroundService
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -89,15 +92,18 @@ public sealed class OrderIntegrationDispatcher(
             logger.LogWarning(exception, "Order integration message {MessageId} failed on attempt {AttemptCount}.", message.Id, message.AttemptCount);
             dbContext.ChangeTracker.Clear();
             message = await dbContext.OrderOutboxMessages.FirstAsync(candidate => candidate.Id == messageId, cancellationToken);
-            var needsAttention = message.AttemptCount >= 5;
+            var unconfigured = exception is OrderManagementException { ErrorCode: "quickbooks_not_configured" };
+            var needsAttention = unconfigured || message.AttemptCount >= 5;
             var minutes = Math.Min(60, Math.Pow(2, Math.Max(0, message.AttemptCount - 1)));
-            message.Fail("The external commercial synchronization failed. Review integration details and retry.", DateTime.UtcNow.AddMinutes(minutes), needsAttention);
+            message.Fail(unconfigured
+                ? "QuickBooks is not configured. No external document or payment status was recorded. Review this historical integration before retrying."
+                : "The external commercial synchronization failed. Review integration details and retry.", DateTime.UtcNow.AddMinutes(minutes), needsAttention);
             await MarkDocumentFailedAsync(dbContext, message, cancellationToken);
             await dbContext.SaveChangesAsync(cancellationToken);
         }
     }
 
-    private static async Task DispatchAsync(
+    private async Task DispatchAsync(
         PSeqOperationsDbContext dbContext,
         IQuickBooksGateway gateway,
         ReleasedDeliverableRetentionSnapshotService retentionSnapshots,
@@ -141,7 +147,7 @@ public sealed class OrderIntegrationDispatcher(
         }
     }
 
-    private static async Task CreateDocumentAsync(
+    private async Task CreateDocumentAsync(
         PSeqOperationsDbContext dbContext,
         IQuickBooksGateway gateway,
         ReleasedDeliverableRetentionSnapshotService retentionSnapshots,
@@ -151,6 +157,8 @@ public sealed class OrderIntegrationDispatcher(
     {
         var payload = JsonSerializer.Deserialize<OrderDocumentOutboxPayload>(message.PayloadJson, JsonOptions)
             ?? throw new InvalidOperationException("The document outbox payload is invalid.");
+        if (isEstimate && message.WorkflowType == OrderWorkflowTypes.LabService)
+            await new OrderIdempotencyService(dbContext).AcquireOrderLockAsync($"lab-order:{message.WorkflowId}", cancellationToken);
         var link = await dbContext.CommercialDocumentLinks.FirstAsync(candidate => candidate.Id == payload.CommercialDocumentLinkId, cancellationToken);
         var request = new QuickBooksDocumentRequest(payload.CustomerExternalId, payload.ReferenceNumber, payload.PurchaseOrderNumber, payload.Currency, payload.Lines, payload.LinkedEstimateExternalId);
         var result = isEstimate
@@ -166,6 +174,9 @@ public sealed class OrderIntegrationDispatcher(
                 var order = await dbContext.LabServiceOrders.FirstAsync(candidate => candidate.Id == message.WorkflowId, cancellationToken);
                 quote.MarkIssued();
                 order.MarkQuoteIssued(quote.Id);
+                var pendingExtensions = await dbContext.LabServiceQuoteExtensionRequests
+                    .Where(item => item.LabServiceOrderId == order.Id && item.ResolvedAt == null).ToListAsync(cancellationToken);
+                foreach (var extension in pendingExtensions) extension.Resolve(quote.Id, DateTime.UtcNow);
             }
             else if (message.WorkflowType == OrderWorkflowTypes.DataAssembly && payload.QuoteId.HasValue)
             {
@@ -199,7 +210,7 @@ public sealed class OrderIntegrationDispatcher(
         }
     }
 
-    private static async Task RefreshPaymentAsync(
+    private async Task RefreshPaymentAsync(
         PSeqOperationsDbContext dbContext,
         IQuickBooksGateway gateway,
         ReleasedDeliverableRetentionSnapshotService retentionSnapshots,
@@ -258,13 +269,15 @@ public sealed class OrderIntegrationDispatcher(
         }
     }
 
-    private static async Task ReleaseLabPaymentHoldsAsync(
+    private async Task ReleaseLabPaymentHoldsAsync(
         PSeqOperationsDbContext dbContext,
         ReleasedDeliverableRetentionSnapshotService retentionSnapshots,
         Guid orderId,
         CancellationToken cancellationToken)
     {
         var releases = await dbContext.LabResultReleases.Where(release => release.LabServiceOrderId == orderId && release.ReleaseStatus == FileReleaseStatus.PaymentHold).ToListAsync(cancellationToken);
+        foreach (var release in releases)
+            await new LabOperations.Services.LabResultLineageService(dbContext).RequireReleaseAsync(release, cancellationToken, pseqOptions?.Value);
         var files = await dbContext.ManagedOperationalFiles.Where(file => file.WorkflowId == orderId && file.Purpose == OperationalFilePurpose.LabResult && file.ReleaseStatus == FileReleaseStatus.PaymentHold).ToListAsync(cancellationToken);
         var releasedAtUtc = DateTime.UtcNow;
         foreach (var release in releases)
@@ -276,6 +289,8 @@ public sealed class OrderIntegrationDispatcher(
                     cancellationToken);
         }
         foreach (var file in files) file.Release(releasedAtUtc);
+        await new LabOperations.Services.LabJobDeliveryRecorder(dbContext).RecordCommercialAsync(orderId,
+            releases.Select(r => new LabOperations.Services.LabJobRelease(r.LabSampleId, r.ReleasedAt)).ToList(), cancellationToken);
     }
 
     private static async Task MarkDocumentFailedAsync(PSeqOperationsDbContext dbContext, OrderOutboxMessage message, CancellationToken cancellationToken)
@@ -284,6 +299,6 @@ public sealed class OrderIntegrationDispatcher(
         var payload = JsonSerializer.Deserialize<OrderDocumentOutboxPayload>(message.PayloadJson, JsonOptions);
         if (payload == null) return;
         var link = await dbContext.CommercialDocumentLinks.FirstOrDefaultAsync(candidate => candidate.Id == payload.CommercialDocumentLinkId, cancellationToken);
-        link?.MarkFailed("External commercial synchronization failed. Retry from Order integrations.");
+        link?.MarkFailed(message.LastError ?? "External commercial synchronization needs administrator review.");
     }
 }

@@ -25,8 +25,8 @@ public sealed class GovernedDownloadCommitPostgresTests
     public async Task ActualCommitTimesPreserveGraceRecoverObservationAndRejectLateAdmissionBeforeStorage()
     {
         var source = new NpgsqlConnectionStringBuilder(Environment.GetEnvironmentVariable("PSEQ_OPERATIONS_REFERENCE_CONNECTION")!);
-        if (source.Host is not ("localhost" or "127.0.0.1") || source.Database != "phaeno_ops")
-            throw new InvalidOperationException("Commit verification requires the configured localhost/phaeno_ops source.");
+        if (source.Host is not ("localhost" or "127.0.0.1") || (source.Database is not ("phaeno_ops" or "phaeno_ops_lab06_uat") && source.Database?.StartsWith("phaeno_release_verification_", StringComparison.Ordinal) != true))
+            throw new InvalidOperationException("Commit verification requires a known local development or isolated UAT source.");
         var name = $"pseq_retention_test_{Guid.NewGuid():N}";
         await using var admin = new NpgsqlConnection(source.ConnectionString);
         await admin.OpenAsync();
@@ -128,9 +128,9 @@ public sealed class GovernedDownloadCommitPostgresTests
             await rollback.RollbackFixtureAsync();
             Assert.False(await observer.OperationalDownloadCommitEvidence.AnyAsync(value => value.Id == rolled.Id));
             var retainedCount = await observer.OperationalDownloadCommitEvidence.CountAsync();
-            var refused = await Assert.ThrowsAsync<PostgresException>(() => observer.Database.GetService<IMigrator>()
-                .MigrateAsync("20260905031439_AddGovernedRetentionCheckpoints"));
-            Assert.Equal("P0001", refused.SqlState);
+            var refused = await Assert.ThrowsAsync<InvalidOperationException>(() => observer.Database.GetService<IMigrator>()
+                .MigrateAsync("0"));
+            Assert.Contains("clean baseline cannot be rolled back", refused.Message);
             Assert.Equal(retainedCount, await observer.OperationalDownloadCommitEvidence.CountAsync());
         }
         finally

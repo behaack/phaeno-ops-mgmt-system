@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
-import { listPhaenoUsers } from "#/api/organization-management";
+import { listCrmOwners } from "#/api/crm";
 
 export function CrmOwnerSelect({
   id,
@@ -19,11 +19,11 @@ export function CrmOwnerSelect({
   const [value, setValue] = useState(currentOwnerId ?? "");
   useEffect(() => setValue(currentOwnerId ?? ""), [currentOwnerId]);
   const users = useQuery({
-    queryKey: ["phaeno-users", "crm-owner-choices"],
-    queryFn: listPhaenoUsers,
+    queryKey: ["crm-owner-choices"],
+    queryFn: listCrmOwners,
     enabled,
   });
-  const activeUsers = (users.data ?? []).filter((user) => user.isActive);
+  const activeUsers = users.data ?? [];
   const currentIsMissing = Boolean(
     currentOwnerId && !activeUsers.some((user) => user.id === currentOwnerId),
   );

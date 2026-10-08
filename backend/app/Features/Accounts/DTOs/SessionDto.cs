@@ -80,8 +80,11 @@ public sealed record SessionSelectedDepartmentDto
 
 public sealed record SessionCapabilitiesDto
 {
+    public bool CanAccessCrm { get; init; }
+    public bool CanAdministerCrm { get; init; }
     public bool CanViewTrialProjects { get; init; }
     public bool CanManageTrialProjects { get; init; }
+    public bool CanCreateTrialProjects { get; init; }
     public required bool CanInviteUsers { get; init; }
 
     public required bool CanManageMembers { get; init; }
@@ -107,6 +110,7 @@ public sealed record SessionCapabilitiesDto
     public required bool CanViewOrganizationDatasets { get; init; }
 
     public required bool CanViewLabServiceOrders { get; init; }
+    public required bool CanViewLabServiceInvoices { get; init; }
 
     public required bool CanCreateLabServiceRequests { get; init; }
 

@@ -38,7 +38,7 @@ internal static class LabBarcodeService
 
         var parts = candidate.Split('-', StringSplitOptions.None);
         if (parts is not ["PH", string { Length: 1 } kind, string { Length: TokenLength } token, string { Length: 1 } check]
-            || !"SARLO".Contains(kind, StringComparison.Ordinal)
+            || !"SARLOQ".Contains(kind, StringComparison.Ordinal)
             || token.Any(character => !SafeAlphabet.Contains(character))
             || !SafeAlphabet.Contains(check, StringComparison.Ordinal))
         {
@@ -65,7 +65,10 @@ internal static class LabBarcodeService
             var barcode = Create(kind);
             if (!await dbContext.LabContainers
                 .AsNoTracking()
-                .AnyAsync(item => item.Barcode == barcode, cancellationToken))
+                .AnyAsync(item => item.Barcode == barcode, cancellationToken)
+                && !await dbContext.RegisteredSampleTubes.AnyAsync(t => t.SupplierBarcode == barcode, cancellationToken)
+                && !await dbContext.SampleShippingStockTubes.AnyAsync(t => t.SupplierBarcode == barcode, cancellationToken)
+                && !await dbContext.LabPreparationBatches.AnyAsync(b => (b.TrayBarcode != null && b.TrayBarcode.ToUpper() == barcode) || b.Name.ToUpper() == barcode, cancellationToken))
             {
                 return barcode;
             }
@@ -80,6 +83,7 @@ internal static class LabBarcodeService
         LabContainerKind.Aliquot => 'A',
         LabContainerKind.PreparedReagent => 'R',
         LabContainerKind.Library => 'L',
+        LabContainerKind.Sequencing => 'Q',
         LabContainerKind.Other => 'O',
         _ => throw new ArgumentOutOfRangeException(nameof(kind))
     };

@@ -1,0 +1,31 @@
+import { useQuery } from '@tanstack/react-query'
+import { api } from './client'
+
+export type SupplierProductKind = 'Tube' | 'ShippingContainer' | 'Other'
+export const tubeProductTypeId = '90000000-0000-4000-8000-000000000001'
+export const shippingContainerProductTypeId = '90000000-0000-4000-8000-000000000002'
+export const reagentProductTypeId = '90000000-0000-4000-8000-000000000003'
+export const sequencingServiceProductTypeId = '90000000-0000-4000-8000-000000000004'
+export function isBuiltInProductType(id: string) { return [tubeProductTypeId, reagentProductTypeId, shippingContainerProductTypeId, sequencingServiceProductTypeId].includes(id) }
+export type SupplierProduct = { id: string; supplierId: string; productNumber: string; description: string; kind: SupplierProductKind; productTypeId: string; productTypeName: string; productTypeIsActive: boolean; canExpire?: boolean; defaultQuantityUnit?: string | null; tubeCapacity?: number | null; maximumSampleAmount?: number | null; sampleAmountUnit?: string | null; materialDefinitionId?: string | null; isActive: boolean; version: number }
+export type SupplierShipmentAddress = { id: string; supplierId: string; label: string; recipient: string | null; addressLine1: string; addressLine2: string | null; city: string; region: string | null; postalCode: string | null; countryCode: string; phone: string | null; instructions: string | null; isActive: boolean; version: number; destination: string }
+export type SupplierShipmentAddressWrite = Omit<SupplierShipmentAddress, 'id' | 'supplierId' | 'version' | 'destination'> & { version?: number }
+export type CatalogSupplier = { id: string; name: string; isActive: boolean; version: number; products: SupplierProduct[]; shipmentAddresses: SupplierShipmentAddress[]; isInternalProducer?: boolean }
+export type SupplierWrite = { name: string; isActive: boolean; version?: number }
+export type ProductWrite = { productNumber: string; description: string; productTypeId: string; canExpire?: boolean; defaultQuantityUnit?: string | null; tubeCapacity?: number | null; maximumSampleAmount?: number | null; sampleAmountUnit?: string | null; isActive: boolean; version?: number }
+type Envelope<T> = { data: T }
+const path = '/platform/lab-operations/suppliers'
+export const supplierCatalogKey = ['supplier-catalog'] as const
+export async function getSupplierCatalog() { return (await api.get<Envelope<CatalogSupplier[]>>(path)).data.data }
+export function useSupplierCatalog(enabled = true) { return useQuery({ queryKey: supplierCatalogKey, queryFn: getSupplierCatalog, enabled }) }
+export async function saveSupplier(input: SupplierWrite, id?: string) { return (id ? await api.put<Envelope<CatalogSupplier>>(`${path}/${id}`, input) : await api.post<Envelope<CatalogSupplier>>(path, input)).data.data }
+export async function saveSupplierProduct(supplierId: string, input: ProductWrite, id?: string) { return (id ? await api.put<Envelope<SupplierProduct>>(`${path}/${supplierId}/products/${id}`, input) : await api.post<Envelope<SupplierProduct>>(`${path}/${supplierId}/products`, input)).data.data }
+export async function saveSupplierShipmentAddress(supplierId: string, input: SupplierShipmentAddressWrite, id?: string) { return (id ? await api.put<Envelope<SupplierShipmentAddress>>(`${path}/${supplierId}/shipment-addresses/${id}`, input) : await api.post<Envelope<SupplierShipmentAddress>>(`${path}/${supplierId}/shipment-addresses`, input)).data.data }
+
+export type ProductType = { id: string; name: string; description: string; kitUse: SupplierProductKind; isActive: boolean; version: number; productCount: number }
+export type ProductTypeWrite = { name: string; description: string; kitUse: SupplierProductKind; isActive: boolean; version?: number }
+export const productTypesKey = ['supplier-product-types'] as const
+const typesPath = '/platform/lab-operations/product-types'
+export async function getProductTypes() { return (await api.get<Envelope<ProductType[]>>(typesPath)).data.data }
+export function useProductTypes(enabled = true) { return useQuery({ queryKey: productTypesKey, queryFn: getProductTypes, enabled }) }
+export async function saveProductType(input: ProductTypeWrite, id?: string) { return (id ? await api.put<Envelope<ProductType>>(`${typesPath}/${id}`, input) : await api.post<Envelope<ProductType>>(typesPath, input)).data.data }

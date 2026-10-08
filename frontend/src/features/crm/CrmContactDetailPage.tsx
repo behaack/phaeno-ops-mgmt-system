@@ -1,3 +1,4 @@
+import { useCrmPermissions } from './use-crm-permissions';
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Combine, Pencil, Plus, Power, PowerOff } from "lucide-react";
@@ -8,7 +9,6 @@ import {
   associateCompanyContact,
   getCrmContact,
   listContactCompanies,
-  listCrmContacts,
   mergeCrmContact,
   setCrmContactActive,
   updateCompanyContact,
@@ -39,20 +39,26 @@ import {
 } from "#/components/ui/dialog";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
+import { useOrderDraftGuard } from "#/features/orders/use-order-draft-guard";
 import { CrmAssociationRecordCombobox } from "./CrmAssociationRecordCombobox";
+import { CrmCollectionFeedback } from "./CrmCollectionFeedback";
 import { CrmCompanyContactEditDialog } from "./CrmCompanyContactEditDialog";
 import { CrmContactDialog } from "./CrmContactDialog";
+import { outreachBoundary, outreachLabel, outreachSourceLabel, suppressionLabel } from './crm-outreach';
 import { CrmCustomFields } from "./CrmCustomFields";
-import { CrmMergeDialog } from "./CrmMergeDialog";
+import { CrmMergeDialog, type CrmMergeSource } from "./CrmMergeDialog";
 import { CrmRecordWork } from "./CrmRecordWork";
 import { CrmRelationshipRoleSelect } from "./CrmRelationshipRoleSelect";
 
 export function CrmContactDetailPage({ contactId }: { contactId: string }) {
+  const { canAdminister } = useCrmPermissions();
   const client = useQueryClient();
   const navigate = useNavigate();
-  const [editOpen, setEditOpen] = useState(false);
-  const [mergeOpen, setMergeOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState<CrmContact | null>(null);
+  const editOpen = Boolean(editTarget);
+  const [mergeSource, setMergeSource] = useState<CrmMergeSource | null>(null);
   const [associateOpen, setAssociateOpen] = useState(false);
+  const [lifecycleTarget, setLifecycleTarget] = useState<CrmContact | null>(null);
   const [managingAssociation, setManagingAssociation] =
     useState<CrmCompanyContact | null>(null);
   const query = useQuery({
@@ -63,40 +69,37 @@ export function CrmContactDetailPage({ contactId }: { contactId: string }) {
     queryKey: ["crm-contact-companies", contactId],
     queryFn: () => listContactCompanies(contactId),
   });
-  const mergeCandidates = useQuery({
-    queryKey: ["crm-contacts", "merge-choices"],
-    queryFn: () => listCrmContacts({ pageSize: 100 }),
-    enabled: mergeOpen,
-  });
   const edit = useMutation({
-    mutationFn: (input: CrmContactInput) =>
-      updateCrmContact(contactId, {
+    mutationFn: ({ target, input }: { target: CrmContact; input: CrmContactInput }) =>
+      updateCrmContact(target.id, {
         ...input,
-        version: query.data?.version ?? 0,
+        version: target.version,
       }),
     onSuccess: async (contact) => {
-      client.setQueryData(["crm-contact", contactId], contact);
-      setEditOpen(false);
+      client.setQueryData(["crm-contact", contact.id], contact);
+      setEditTarget(null);
       await client.invalidateQueries({ queryKey: ["crm-contacts"] });
     },
   });
   const lifecycle = useMutation({
-    mutationFn: () =>
+    mutationFn: (target: CrmContact) =>
       setCrmContactActive(
-        contactId,
-        !query.data?.isActive,
-        query.data?.version ?? 0,
+        target.id,
+        !target.isActive,
+        target.version,
       ),
     onSuccess: async (contact) => {
       client.setQueryData(["crm-contact", contactId], contact);
+      setLifecycleTarget(null);
       await client.invalidateQueries({ queryKey: ["crm-contacts"] });
+      await client.invalidateQueries({ queryKey: ["crm-activities", contact.id] });
     },
   });
   const merge = useMutation({
-    mutationFn: ({ targetId, reason }: { targetId: string; reason: string }) =>
-      mergeCrmContact(contactId, targetId, reason, query.data?.version ?? 0),
+    mutationFn: ({ source, targetId, reason }: { source: CrmMergeSource; targetId: string; reason: string }) =>
+      mergeCrmContact(source.id, targetId, reason, source.version),
     onSuccess: async (target) => {
-      setMergeOpen(false);
+      setMergeSource(null);
       await client.invalidateQueries({ queryKey: ["crm-contacts"] });
       await navigate({
         to: "/crm/contacts/$contactId",
@@ -164,18 +167,15 @@ export function CrmContactDetailPage({ contactId }: { contactId: string }) {
   const contact = query.data;
   if (!contact)
     return (
-      <main className="page-wrap px-4 py-8">
-        <p role="status" className="text-sm text-muted-foreground">
-          {query.isLoading
-            ? "Loading contact…"
-            : "The contact could not be loaded."}
-        </p>
+      <main className="page-wrap space-y-6 px-4 py-8">
+        <Button asChild variant="ghost" size="sm"><Link to="/crm/contacts" search={previous => previous}><ArrowLeft data-icon="inline-start" />Back to contacts</Link></Button>
+        <CrmCollectionFeedback name="Contact" query={query} />
       </main>
     );
   return (
     <main className="page-wrap space-y-6 px-4 py-8">
       <Button asChild variant="ghost" size="sm">
-        <Link to="/crm/contacts">
+        <Link to="/crm/contacts" search={previous => previous}>
           <ArrowLeft data-icon="inline-start" />
           Back to contacts
         </Link>
@@ -193,19 +193,19 @@ export function CrmContactDetailPage({ contactId }: { contactId: string }) {
             {primaryPosition(contact)} · owned by {contact.ownerName}
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setEditOpen(true)}>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => setEditTarget(contact)}>
             <Pencil data-icon="inline-start" />
             Edit
           </Button>
-          <Button variant="outline" onClick={() => setMergeOpen(true)}>
+          {canAdminister ? <><Button variant="outline" onClick={() => { merge.reset(); setMergeSource({ id: contact.id, name: contact.displayName, version: contact.version }); }}>
             <Combine data-icon="inline-start" />
             Merge
           </Button>
           <Button
             variant={contact.isActive ? "destructive" : "outline"}
             disabled={lifecycle.isPending}
-            onClick={() => lifecycle.mutate()}
+            onClick={() => { lifecycle.reset(); setLifecycleTarget(contact); }}
           >
             {contact.isActive ? (
               <PowerOff data-icon="inline-start" />
@@ -213,10 +213,10 @@ export function CrmContactDetailPage({ contactId }: { contactId: string }) {
               <Power data-icon="inline-start" />
             )}
             {contact.isActive ? "Deactivate" : "Reactivate"}
-          </Button>
+          </Button></> : null}
         </div>
       </section>
-      {edit.error || lifecycle.error || merge.error ? (
+      {(edit.error && !editOpen) || (lifecycle.error && !lifecycleTarget) || (merge.error && !mergeSource) ? (
         <Alert variant="destructive">
           <AlertDescription>
             {apiErrorMessage(edit.error ?? lifecycle.error ?? merge.error)}
@@ -233,19 +233,25 @@ export function CrmContactDetailPage({ contactId }: { contactId: string }) {
               <Info label="Email" value={contact.email ?? "Not recorded"} />
               <Info label="Phone" value={contact.phone ?? "Not recorded"} />
               <Info
-                label="Communication preference"
-                value={spaced(contact.communicationPreference)}
+                label="Sales and marketing outreach"
+                value={outreachLabel(contact)}
               />
               <Info
-                label="Lawful basis"
-                value={contact.lawfulContactBasis ?? "Not recorded"}
+                label="Permission source"
+                value={outreachSourceLabel(contact.outreachPermissionSource)}
               />
               <Info
-                label="Communication notes"
+                label="Decision explanation and scope"
                 value={contact.communicationNotes ?? "No notes"}
                 wide
               />
+              <Info label="Evidence date" value={contact.outreachRecordedOn ?? 'Not recorded'} />
+              <Info label="Suppression reason" value={suppressionLabel(contact)} />
+              {contact.lawfulContactBasis ? <Info label="Legacy contact basis (retained)" value={contact.lawfulContactBasis} wide /> : null}
+              {contact.communicationPreference === 'Permitted' && !contact.outreachPermissionSource
+                ? <Info label="Legacy permission needs review" value="The earlier Permitted value is retained. Record current permission evidence before outreach is allowed." wide /> : null}
             </dl>
+            <p className="mt-4 text-sm text-muted-foreground">{outreachBoundary} Decision changes are retained in the Activity timeline with the recording staff member and time.</p>
           </CardContent>
         </Card>
         <Card>
@@ -259,6 +265,7 @@ export function CrmContactDetailPage({ contactId }: { contactId: string }) {
               <Button
                 size="sm"
                 variant="outline"
+                disabled={companies.isPending || companies.isError}
                 onClick={() => setAssociateOpen(true)}
               >
                 <Plus data-icon="inline-start" />
@@ -267,6 +274,7 @@ export function CrmContactDetailPage({ contactId }: { contactId: string }) {
             </CardAction>
           </CardHeader>
           <CardContent className="space-y-3">
+            <CrmCollectionFeedback name="Company relationships" query={companies} />
             {(companies.data ?? []).map((company) => (
               <div
                 key={company.id}
@@ -292,6 +300,7 @@ export function CrmContactDetailPage({ contactId }: { contactId: string }) {
                     size="icon"
                     variant="ghost"
                     aria-label={`Edit ${company.companyName} relationship`}
+                    disabled={companies.isError}
                     onClick={() => setManagingAssociation(company)}
                   >
                     <Pencil aria-hidden="true" />
@@ -299,7 +308,7 @@ export function CrmContactDetailPage({ contactId }: { contactId: string }) {
                 </div>
               </div>
             ))}
-            {!companies.isLoading && !(companies.data?.length ?? 0) ? (
+            {companies.isSuccess && companies.data.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 No Company association has been recorded.
               </p>
@@ -309,6 +318,7 @@ export function CrmContactDetailPage({ contactId }: { contactId: string }) {
       </div>
       <CrmCustomFields recordType="Contact" recordId={contactId} />
       <CrmRecordWork links={{ contactId }} />
+      {lifecycleTarget ? <Dialog open onOpenChange={open => { if (!open && !lifecycle.isPending) { setLifecycleTarget(null); lifecycle.reset(); } }}><DialogContent><DialogHeader><DialogTitle>{lifecycleTarget.isActive ? 'Deactivate' : 'Reactivate'} contact</DialogTitle><DialogDescription>{lifecycleTarget.isActive ? `Deactivate ${lifecycleTarget.displayName}? The Contact leaves active CRM choices, while relationships and history remain available.` : `Reactivate ${lifecycleTarget.displayName}? The Contact returns to active CRM choices.`}</DialogDescription></DialogHeader><p className="text-sm text-muted-foreground">This changes the CRM Contact only. Manage this person's Portal membership and invitations from Company People.</p>{lifecycle.error ? <Alert variant="destructive"><AlertDescription>{apiErrorMessage(lifecycle.error)}</AlertDescription></Alert> : null}<DialogFooter><Button type="button" variant="outline" disabled={lifecycle.isPending} onClick={() => { setLifecycleTarget(null); lifecycle.reset(); }}>Cancel</Button><Button type="button" variant={lifecycleTarget.isActive ? 'destructive' : 'default'} disabled={lifecycle.isPending} onClick={() => lifecycle.mutate(lifecycleTarget)}>{lifecycle.isPending ? 'Saving…' : lifecycleTarget.isActive ? 'Deactivate contact' : 'Reactivate contact'}</Button></DialogFooter></DialogContent></Dialog> : null}
       {associateOpen ? (
         <ContactCompanyAssociationDialog
           excludedCompanyIds={(companies.data ?? [])
@@ -344,26 +354,22 @@ export function CrmContactDetailPage({ contactId }: { contactId: string }) {
       ) : null}
       <CrmContactDialog
         open={editOpen}
-        contact={contact}
+        contact={editTarget}
         pending={edit.isPending}
         error={edit.error ? apiErrorMessage(edit.error) : undefined}
         onOpenChange={(open) => {
-          setEditOpen(open);
-          if (!open) edit.reset();
+          if (!open) { setEditTarget(null); edit.reset(); }
         }}
-        onSubmit={(input) => edit.mutate(input)}
+        onSubmit={(input) => { if (editTarget) edit.mutate({ target: editTarget, input }); }}
       />
-      <CrmMergeDialog
-        open={mergeOpen}
+      {mergeSource ? <CrmMergeDialog
         recordLabel="Contact"
-        candidates={(mergeCandidates.data?.items ?? [])
-          .filter((value) => value.id !== contactId && value.isActive)
-          .map((value) => ({ id: value.id, name: value.displayName }))}
+        source={mergeSource}
         pending={merge.isPending}
         error={merge.error ? apiErrorMessage(merge.error) : undefined}
-        onOpenChange={setMergeOpen}
-        onSubmit={(targetId, reason) => merge.mutate({ targetId, reason })}
-      />
+        onClose={() => { setMergeSource(null); merge.reset(); }}
+        onSubmit={(targetId, reason) => merge.mutate({ source: mergeSource, targetId, reason })}
+      /> : null}
     </main>
   );
 }
@@ -387,12 +393,17 @@ function ContactCompanyAssociationDialog({
   }) => void;
 }) {
   const [primary, setPrimary] = useState(false);
+  const [dirty, setDirty] = useState(false);
+  useOrderDraftGuard(dirty, pending);
+  function close() { if (!pending && (!dirty || window.confirm("Discard unsaved Company association changes?"))) onOpenChange(false); }
   return (
-    <Dialog open onOpenChange={onOpenChange}>
+    <Dialog open onOpenChange={open => { if (!open) close(); }}>
       <DialogContent>
         <form
+          onChange={() => setDirty(true)}
           onSubmit={(event) => {
             event.preventDefault();
+            if (pending) return;
             const data = new FormData(event.currentTarget);
             onSubmit({
               companyId: String(data.get("companyId")),
@@ -415,7 +426,7 @@ function ContactCompanyAssociationDialog({
               <AlertDescription>{apiErrorMessage(error)}</AlertDescription>
             </Alert>
           ) : null}
-          <div className="grid gap-4">
+          <fieldset disabled={pending} className="grid gap-4">
             <div className="grid gap-1.5">
               <Label htmlFor="contact-company-association-company">
                 Company *
@@ -426,6 +437,7 @@ function ContactCompanyAssociationDialog({
                 kind="company"
                 excludedIds={excludedCompanyIds}
                 required
+                onValueChange={() => setDirty(true)}
               />
             </div>
             <div className="grid gap-1.5">
@@ -460,7 +472,7 @@ function ContactCompanyAssociationDialog({
               <Checkbox
                 id="contact-company-association-primary"
                 checked={primary}
-                onCheckedChange={(checked) => setPrimary(checked === true)}
+                onCheckedChange={(checked) => { setPrimary(checked === true); setDirty(true); }}
               />
               <Label
                 htmlFor="contact-company-association-primary"
@@ -469,7 +481,7 @@ function ContactCompanyAssociationDialog({
                 Primary Company for this Contact
               </Label>
             </div>
-          </div>
+          </fieldset>
           <DialogFooter>
             <span className="mr-auto text-xs text-muted-foreground">
               * Required
@@ -477,7 +489,8 @@ function ContactCompanyAssociationDialog({
             <Button
               type="button"
               variant="outline"
-              onClick={() => onOpenChange(false)}
+              disabled={pending}
+              onClick={close}
             >
               Cancel
             </Button>
@@ -508,9 +521,6 @@ function Info({
       <dd className="mt-1 whitespace-pre-wrap text-sm font-medium">{value}</dd>
     </div>
   );
-}
-function spaced(value: string) {
-  return value.replace(/([a-z])([A-Z])/g, "$1 $2");
 }
 function primaryPosition(contact: CrmContact) {
   if (!contact.primaryCompanyName) return "No primary Company";

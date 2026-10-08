@@ -1023,6 +1023,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("character varying(150)")
                         .HasColumnName("region");
 
+                    b.Property<Guid?>("SetupOrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("setup_organization_id");
+
                     b.Property<string>("Source")
                         .HasMaxLength(150)
                         .HasColumnType("character varying(150)")
@@ -1067,6 +1071,9 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasIndex("Name");
 
                     b.HasIndex("OwnerUserId");
+
+                    b.HasIndex("SetupOrganizationId")
+                        .IsUnique();
 
                     b.HasIndex("IsActive", "Name");
 
@@ -1207,11 +1214,6 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("character varying(255)")
                         .HasColumnName("lawful_contact_basis");
 
-                    b.Property<string>("LegacyJobTitle")
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)")
-                        .HasColumnName("legacy_job_title");
-
                     b.Property<Guid?>("MergedIntoContactId")
                         .HasColumnType("uuid")
                         .HasColumnName("merged_into_contact_id");
@@ -1220,6 +1222,20 @@ namespace PSeq.Operations.Api.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)")
                         .HasColumnName("normalized_email");
+
+                    b.Property<string>("OutreachPermissionSource")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("outreach_permission_source");
+
+                    b.Property<DateOnly?>("OutreachRecordedOn")
+                        .HasColumnType("date")
+                        .HasColumnName("outreach_recorded_on");
+
+                    b.Property<string>("OutreachSuppressionReason")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("outreach_suppression_reason");
 
                     b.Property<Guid>("OwnerUserId")
                         .HasColumnType("uuid")
@@ -1864,6 +1880,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("character varying(3)")
                         .HasColumnName("currency");
 
+                    b.Property<Guid?>("DepartmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("department_id");
+
                     b.Property<string>("Description")
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)")
@@ -1941,6 +1961,8 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnName("version");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("DepartmentId");
 
                     b.HasIndex("ExpectedCloseDate");
 
@@ -4547,6 +4569,254 @@ namespace PSeq.Operations.Api.Migrations
                     b.ToTable("commercial_document_links", "commercial_ops");
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.CommercialSaleSummary", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("AttemptCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("attempt_count");
+
+                    b.Property<Guid>("CommitmentActorUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("commitment_actor_user_id");
+
+                    b.Property<DateTime>("CommittedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("committed_at_utc");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)")
+                        .HasColumnName("currency");
+
+                    b.Property<DateTime?>("ExpectedCompletionAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expected_completion_at_utc");
+
+                    b.Property<string>("FailureCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("failure_code");
+
+                    b.Property<DateTime>("NextAttemptAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("next_attempt_at_utc");
+
+                    b.Property<Guid?>("OpportunityId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("opportunity_id");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("order_id");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
+
+                    b.Property<string>("ProductSummary")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("product_summary");
+
+                    b.Property<Guid?>("ProjectedActivityId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("projected_activity_id");
+
+                    b.Property<int>("ProjectedRevision")
+                        .HasColumnType("integer")
+                        .HasColumnName("projected_revision");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("quantity");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("integer")
+                        .HasColumnName("revision");
+
+                    b.Property<string>("ScheduleHealth")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("schedule_health");
+
+                    b.Property<decimal>("Total")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("total");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.Property<string>("WorkflowType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("workflow_type");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CommitmentActorUserId");
+
+                    b.HasIndex("OpportunityId");
+
+                    b.HasIndex("OrganizationId");
+
+                    b.HasIndex("ProjectedActivityId");
+
+                    b.HasIndex("ProjectedRevision", "NextAttemptAtUtc");
+
+                    b.HasIndex("WorkflowType", "OrderId")
+                        .IsUnique();
+
+                    b.ToTable("commercial_sale_summaries", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.CustomerDeliveryLocation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("City")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("city");
+
+                    b.Property<string>("CountryCode")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)")
+                        .HasColumnName("country_code");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("DeliveryInstructions")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("delivery_instructions");
+
+                    b.Property<Guid>("DepartmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("department_id");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_default");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("label");
+
+                    b.Property<string>("Line1")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("line1");
+
+                    b.Property<string>("Line2")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("line2");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("phone");
+
+                    b.Property<string>("PostalCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("postal_code");
+
+                    b.Property<string>("Recipient")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("recipient");
+
+                    b.Property<string>("Region")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("region");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("UpdatedByUserId");
+
+                    b.HasIndex("OrganizationId", "DepartmentId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_customer_delivery_location_default")
+                        .HasFilter("is_active = TRUE AND is_default = TRUE");
+
+                    b.HasIndex("OrganizationId", "DepartmentId", "IsActive");
+
+                    b.ToTable("customer_delivery_locations", "commercial_ops");
+                });
+
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.DataAssemblyQuote", b =>
                 {
                     b.Property<Guid>("Id")
@@ -4801,14 +5071,12 @@ namespace PSeq.Operations.Api.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AcceptedQuoteId")
-                        .IsUnique();
+                    b.HasIndex("AcceptedQuoteId");
 
                     b.HasIndex("InvoiceNumber")
                         .IsUnique();
 
-                    b.HasIndex("LabServiceOrderId")
-                        .IsUnique();
+                    b.HasIndex("LabServiceOrderId");
 
                     b.HasIndex("OrganizationId", "Status", "DueOn");
 
@@ -4942,12 +5210,192 @@ namespace PSeq.Operations.Api.Migrations
                     b.ToTable("invoice_lines", "commercial_ops");
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.LabServiceNegotiatedPrice", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CatalogItemId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("catalog_item_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid?>("DepartmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("department_id");
+
+                    b.Property<DateTime>("EffectiveFrom")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("effective_from");
+
+                    b.Property<DateTime?>("EffectiveTo")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("effective_to");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("unit_price");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CatalogItemId");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("OrganizationId", "CatalogItemId", "DepartmentId", "EffectiveFrom")
+                        .HasDatabaseName("ix_lab_service_negotiated_prices_scope");
+
+                    b.ToTable("lab_service_negotiated_prices", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.LabServiceOffering", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AllowedBiologicalSourcesJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("allowed_biological_sources_json");
+
+                    b.Property<string>("AllowedMaterialTypesJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("allowed_material_types_json");
+
+                    b.Property<string>("AnalysisIdsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("analysis_ids_json");
+
+                    b.Property<Guid>("CatalogItemId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("catalog_item_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("description");
+
+                    b.Property<DateTime>("EffectiveFrom")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("effective_from");
+
+                    b.Property<DateTime?>("EffectiveTo")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("effective_to");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("family_id");
+
+                    b.Property<string>("IncludedOutputContract")
+                        .IsRequired()
+                        .HasMaxLength(8000)
+                        .HasColumnType("character varying(8000)")
+                        .HasColumnName("included_output_contract");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsSynthetic")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_synthetic");
+
+                    b.Property<int>("MaximumTurnaroundDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("maximum_turnaround_days");
+
+                    b.Property<int>("MinimumTurnaroundDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("minimum_turnaround_days");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("name");
+
+                    b.Property<int>("OfferingVersion")
+                        .HasColumnType("integer")
+                        .HasColumnName("offering_version");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FamilyId", "OfferingVersion")
+                        .IsUnique();
+
+                    b.HasIndex("CatalogItemId", "IsActive", "EffectiveFrom");
+
+                    b.ToTable("lab_service_offerings", "commercial_ops");
+                });
+
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.LabServiceQuote", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
+
+                    b.Property<string>("AcceptedAmendmentSnapshotJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("accepted_amendment_snapshot_json");
 
                     b.Property<DateTime?>("AcceptedAt")
                         .HasColumnType("timestamp with time zone")
@@ -4964,6 +5412,14 @@ namespace PSeq.Operations.Api.Migrations
                     b.Property<string>("BillingContactSnapshotJson")
                         .HasColumnType("jsonb")
                         .HasColumnName("billing_contact_snapshot_json");
+
+                    b.Property<DateTime?>("ChangeRosterFinalizedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("change_roster_finalized_at");
+
+                    b.Property<string>("ChangeScopeSnapshotJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("change_scope_snapshot_json");
 
                     b.Property<int?>("CommercialConfigurationVersion")
                         .HasColumnType("integer")
@@ -4982,6 +5438,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasMaxLength(3)
                         .HasColumnType("character varying(3)")
                         .HasColumnName("currency");
+
+                    b.Property<int?>("DeliveryTargetBusinessDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("delivery_target_business_days");
 
                     b.Property<DateTime>("ExpiresAt")
                         .HasColumnType("timestamp with time zone")
@@ -5003,6 +5463,10 @@ namespace PSeq.Operations.Api.Migrations
                     b.Property<int?>("PaymentTermsDaysSnapshot")
                         .HasColumnType("integer")
                         .HasColumnName("payment_terms_days_snapshot");
+
+                    b.Property<string>("PhasePlanSnapshotJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("phase_plan_snapshot_json");
 
                     b.Property<DateTime?>("PricingDecidedAt")
                         .HasColumnType("timestamp with time zone")
@@ -5095,6 +5559,77 @@ namespace PSeq.Operations.Api.Migrations
                     b.ToTable("lab_service_quotes", "commercial_ops");
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.LabServiceQuoteExtensionRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid>("LabServiceOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_service_order_id");
+
+                    b.Property<Guid>("QuoteId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("quote_id");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("reason");
+
+                    b.Property<Guid?>("ReplacementQuoteId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("replacement_quote_id");
+
+                    b.Property<DateTime>("RequestedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("requested_at");
+
+                    b.Property<Guid>("RequestedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("requested_by_user_id");
+
+                    b.Property<DateTime?>("ResolvedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("resolved_at");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QuoteId")
+                        .IsUnique();
+
+                    b.HasIndex("ReplacementQuoteId");
+
+                    b.HasIndex("RequestedByUserId");
+
+                    b.HasIndex("LabServiceOrderId", "ResolvedAt");
+
+                    b.ToTable("lab_service_quote_extension_requests", "commercial_ops");
+                });
+
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.LabServiceRequestRevision", b =>
                 {
                     b.Property<Guid>("Id")
@@ -5142,6 +5677,31 @@ namespace PSeq.Operations.Api.Migrations
                         .IsUnique();
 
                     b.ToTable("lab_service_request_revisions", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.LabServiceSampleType", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("LabServiceOfferingId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_service_offering_id");
+
+                    b.Property<Guid>("SampleTypeDefinitionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("sample_type_definition_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SampleTypeDefinitionId");
+
+                    b.HasIndex("LabServiceOfferingId", "SampleTypeDefinitionId")
+                        .IsUnique();
+
+                    b.ToTable("lab_service_sample_types", "commercial_ops");
                 });
 
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.OperationalAttentionItem", b =>
@@ -5827,6 +6387,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("created_by_user_id");
 
+                    b.Property<Guid?>("DefaultShippingDestinationDefinitionKey")
+                        .HasColumnType("uuid")
+                        .HasColumnName("default_shipping_destination_definition_key");
+
                     b.Property<int>("QuoteValidityDays")
                         .HasColumnType("integer")
                         .HasColumnName("quote_validity_days");
@@ -6014,6 +6578,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("effective_to");
 
+                    b.Property<Guid?>("IncludedAssemblyProfileId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("included_assembly_profile_id");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean")
                         .HasColumnName("is_active");
@@ -6072,6 +6640,8 @@ namespace PSeq.Operations.Api.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("IncludedAssemblyProfileId");
+
                     b.HasIndex("QboCatalogItemId");
 
                     b.HasIndex("PartnerOrganizationId", "IsActive");
@@ -6124,6 +6694,10 @@ namespace PSeq.Operations.Api.Migrations
                     b.Property<bool>("IsDiscarded")
                         .HasColumnType("boolean")
                         .HasColumnName("is_discarded");
+
+                    b.Property<bool>("IsKitBundle")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_kit_bundle");
 
                     b.Property<string>("OrderNumber")
                         .IsRequired()
@@ -6254,6 +6828,22 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("character varying(255)")
                         .HasColumnName("external_item_id");
 
+                    b.Property<Guid?>("IncludedAssemblyProfileId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("included_assembly_profile_id");
+
+                    b.Property<string>("IncludedAssemblyProfileSnapshotJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("included_assembly_profile_snapshot_json");
+
+                    b.Property<int?>("IncludedAssemblyProfileVersion")
+                        .HasColumnType("integer")
+                        .HasColumnName("included_assembly_profile_version");
+
+                    b.Property<long?>("IncludedOfferingVersion")
+                        .HasColumnType("bigint")
+                        .HasColumnName("included_offering_version");
+
                     b.Property<decimal>("LineTotal")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)")
@@ -6311,6 +6901,8 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnName("version");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("IncludedAssemblyProfileId");
 
                     b.HasIndex("OfferingId");
 
@@ -6834,6 +7426,14 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("last_synced_at");
 
+                    b.Property<int?>("MaximumCustomerSamples")
+                        .HasColumnType("integer")
+                        .HasColumnName("maximum_customer_samples");
+
+                    b.Property<decimal?>("MinimumSequencingVolumeUl")
+                        .HasColumnType("numeric")
+                        .HasColumnName("minimum_sequencing_volume_ul");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -6845,6 +7445,12 @@ namespace PSeq.Operations.Api.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
                         .HasColumnName("sales_unit");
+
+                    b.Property<string>("ServiceFamily")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("service_family");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -7118,6 +7724,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("numeric(18,2)")
                         .HasColumnName("difference");
 
+                    b.Property<string>("DraftChangesJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("draft_changes_json");
+
                     b.Property<decimal>("LedgerReceiptTotal")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)")
@@ -7217,6 +7827,12 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("assigned_at");
 
+                    b.Property<string>("BarcodeNamespace")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("barcode_namespace");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -7225,9 +7841,35 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("created_by_user_id");
 
+                    b.Property<DateTime?>("CustomerDeclaredAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("customer_declared_at");
+
+                    b.Property<Guid?>("CustomerDeclaredByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("customer_declared_by_user_id");
+
+                    b.Property<decimal?>("CustomerDeclaredQuantity")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)")
+                        .HasColumnName("customer_declared_quantity");
+
+                    b.Property<string>("CustomerDeclaredQuantityUnit")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("customer_declared_quantity_unit");
+
+                    b.Property<DateTime?>("ReceivedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("received_at");
+
                     b.Property<Guid>("SampleReturnKitId")
                         .HasColumnType("uuid")
                         .HasColumnName("sample_return_kit_id");
+
+                    b.Property<Guid?>("SourceStockTubeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_stock_tube_id");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -7256,7 +7898,14 @@ namespace PSeq.Operations.Api.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("SupplierBarcode")
+                    b.HasIndex("CustomerDeclaredByUserId");
+
+                    b.HasIndex("SourceStockTubeId")
+                        .IsUnique();
+
+                    b.HasIndex("SupplierBarcode");
+
+                    b.HasIndex("BarcodeNamespace", "SupplierBarcode")
                         .IsUnique();
 
                     b.HasIndex("SampleReturnKitId", "Status");
@@ -7306,6 +7955,11 @@ namespace PSeq.Operations.Api.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)")
                         .HasColumnName("object_storage_key");
+
+                    b.Property<string>("ResultLocator")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("result_locator");
 
                     b.Property<Guid>("ResultOutputPackageId")
                         .HasColumnType("uuid")
@@ -7442,6 +8096,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("character varying(255)")
                         .HasColumnName("idempotency_key");
 
+                    b.Property<Guid?>("LabAnalysisRunId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_analysis_run_id");
+
                     b.Property<Guid?>("LabSampleId")
                         .HasColumnType("uuid")
                         .HasColumnName("lab_sample_id");
@@ -7511,6 +8169,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("state");
 
+                    b.Property<bool>("TraceabilityRequired")
+                        .HasColumnType("boolean")
+                        .HasColumnName("traceability_required");
+
                     b.Property<Guid?>("TrialProjectId")
                         .HasColumnType("uuid")
                         .HasColumnName("trial_project_id");
@@ -7552,6 +8214,8 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasIndex("IdempotencyKey")
                         .IsUnique();
 
+                    b.HasIndex("LabAnalysisRunId");
+
                     b.HasIndex("LabServiceOrderId");
 
                     b.HasIndex("TrialProjectId");
@@ -7570,6 +8234,8 @@ namespace PSeq.Operations.Api.Migrations
                     b.ToTable("result_output_packages", "commercial_ops", t =>
                         {
                             t.HasCheckConstraint("ck_result_output_package_parent", "(lab_service_order_id IS NOT NULL AND lab_sample_id IS NOT NULL AND trial_project_id IS NULL AND trial_sample_id IS NULL) OR (lab_service_order_id IS NULL AND lab_sample_id IS NULL AND trial_project_id IS NOT NULL AND trial_sample_id IS NOT NULL)");
+
+                            t.HasCheckConstraint("ck_result_package_required_lineage", "NOT traceability_required OR lab_analysis_run_id IS NOT NULL");
                         });
                 });
 
@@ -7697,6 +8363,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("character varying(255)")
                         .HasColumnName("outbound_tracking_number");
 
+                    b.Property<string>("ProductExpirySnapshotJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("product_expiry_snapshot_json");
+
                     b.Property<int>("RequiredTubeCount")
                         .HasColumnType("integer")
                         .HasColumnName("required_tube_count");
@@ -7722,6 +8392,12 @@ namespace PSeq.Operations.Api.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
                         .HasColumnName("status");
+
+                    b.Property<string>("TubeBarcodeNamespace")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("tube_barcode_namespace");
 
                     b.Property<string>("TubeLotNumber")
                         .HasMaxLength(100)
@@ -7802,6 +8478,14 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("character varying(255)")
                         .HasColumnName("carrier");
 
+                    b.Property<Guid?>("ContainerDefinitionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("container_definition_id");
+
+                    b.Property<string>("ContainerSnapshotJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("container_snapshot_json");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -7818,9 +8502,19 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("department_id");
 
+                    b.Property<Guid?>("DepartureDeliveryLocationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("departure_delivery_location_id");
+
                     b.Property<Guid>("DestinationId")
                         .HasColumnType("uuid")
                         .HasColumnName("destination_id");
+
+                    b.Property<bool>("IsPackingPool")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_packing_pool");
 
                     b.Property<Guid>("LabWorkOrderId")
                         .HasColumnType("uuid")
@@ -7870,7 +8564,11 @@ namespace PSeq.Operations.Api.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ContainerDefinitionId");
+
                     b.HasIndex("DepartmentId");
+
+                    b.HasIndex("DepartureDeliveryLocationId");
 
                     b.HasIndex("DestinationId");
 
@@ -7918,10 +8616,6 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("quantity_unit");
 
-                    b.Property<Guid?>("RegisteredSampleTubeId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("registered_sample_tube_id");
-
                     b.Property<string>("SampleName")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -7940,10 +8634,6 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("submitted_specimen_id");
 
-                    b.Property<DateTime?>("TubeAssignedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("tube_assigned_at");
-
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
@@ -7958,9 +8648,6 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnName("version");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("RegisteredSampleTubeId")
-                        .IsUnique();
 
                     b.HasIndex("SampleTypeDefinitionId");
 
@@ -8026,6 +8713,192 @@ namespace PSeq.Operations.Api.Migrations
                         .IsUnique();
 
                     b.ToTable("sample_shipment_tube_slots", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingContainerDefinition", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("AssemblyWorkflowId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("assembly_workflow_id");
+
+                    b.Property<string>("CommonName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("common_name");
+
+                    b.Property<Guid>("ContainerTypeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("container_type_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<DateTime?>("DeactivatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deactivated_at");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("integer")
+                        .HasColumnName("display_order");
+
+                    b.Property<decimal?>("DryIceQuantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("numeric(18,3)")
+                        .HasColumnName("dry_ice_quantity");
+
+                    b.Property<string>("DryIceUnit")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("dry_ice_unit");
+
+                    b.Property<DateTime>("EffectiveFrom")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("effective_from");
+
+                    b.Property<DateTime?>("EffectiveTo")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("effective_to");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Lifecycle")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)")
+                        .HasColumnName("lifecycle");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("integer")
+                        .HasColumnName("revision");
+
+                    b.Property<Guid?>("SampleTypeAnchorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("sample_type_anchor_id");
+
+                    b.Property<Guid?>("ShippingContainerProductId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("shipping_container_product_id");
+
+                    b.Property<Guid?>("SupersedesDefinitionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("supersedes_definition_id");
+
+                    b.Property<string>("TemperatureControlInstructions")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("temperature_control_instructions");
+
+                    b.Property<int>("TubeCapacity")
+                        .HasColumnType("integer")
+                        .HasColumnName("tube_capacity");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssemblyWorkflowId");
+
+                    b.HasIndex("ContainerTypeId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_shipping_spec_one_draft")
+                        .HasFilter("lifecycle = 'Draft'");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("SampleTypeAnchorId");
+
+                    b.HasIndex("ShippingContainerProductId");
+
+                    b.HasIndex("SupersedesDefinitionId")
+                        .IsUnique();
+
+                    b.HasIndex("UpdatedByUserId");
+
+                    b.HasIndex("ContainerTypeId", "Revision")
+                        .IsUnique();
+
+                    b.HasIndex("IsActive", "EffectiveFrom", "EffectiveTo");
+
+                    b.ToTable("sample_shipping_container_definitions", "commercial_ops", t =>
+                        {
+                            t.HasCheckConstraint("ck_transportation_kit_dry_ice_pair", "(dry_ice_quantity IS NULL AND dry_ice_unit IS NULL) OR (dry_ice_quantity > 0 AND dry_ice_unit IS NOT NULL AND length(btrim(dry_ice_unit)) > 0)");
+                        });
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingContainerType", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("NormalizedSku")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("normalized_sku");
+
+                    b.Property<string>("Sku")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("sku");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("NormalizedSku")
+                        .IsUnique();
+
+                    b.HasIndex("UpdatedByUserId");
+
+                    b.ToTable("sample_shipping_container_types", "commercial_ops");
                 });
 
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingDestination", b =>
@@ -8108,6 +8981,12 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("is_active");
 
+                    b.Property<string>("Lifecycle")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)")
+                        .HasColumnName("lifecycle");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -8183,6 +9062,11 @@ namespace PSeq.Operations.Api.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("DefinitionKey")
+                        .IsUnique()
+                        .HasDatabaseName("ux_shipping_destination_one_draft")
+                        .HasFilter("lifecycle = 'Draft'");
+
                     b.HasIndex("SupersedesDestinationId");
 
                     b.HasIndex("Code", "Revision")
@@ -8194,139 +9078,6 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasIndex("IsActive", "EffectiveFrom", "EffectiveTo");
 
                     b.ToTable("sample_shipping_destinations", "commercial_ops");
-                });
-
-            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingInstructionRule", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<string>("CarrierInstructions")
-                        .IsRequired()
-                        .HasMaxLength(4000)
-                        .HasColumnType("character varying(4000)")
-                        .HasColumnName("carrier_instructions");
-
-                    b.Property<string>("CompatibilityGroup")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("compatibility_group");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<Guid?>("CreatedByUserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("created_by_user_id");
-
-                    b.Property<Guid>("DefinitionKey")
-                        .HasColumnType("uuid")
-                        .HasColumnName("definition_key");
-
-                    b.Property<string>("DeliveryInstructions")
-                        .IsRequired()
-                        .HasMaxLength(4000)
-                        .HasColumnType("character varying(4000)")
-                        .HasColumnName("delivery_instructions");
-
-                    b.Property<Guid>("DestinationId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("destination_id");
-
-                    b.Property<string>("DispatchInstructions")
-                        .IsRequired()
-                        .HasMaxLength(4000)
-                        .HasColumnType("character varying(4000)")
-                        .HasColumnName("dispatch_instructions");
-
-                    b.Property<DateTime>("EffectiveFrom")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("effective_from");
-
-                    b.Property<DateTime?>("EffectiveTo")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("effective_to");
-
-                    b.Property<string>("ExceptionInstructions")
-                        .IsRequired()
-                        .HasMaxLength(4000)
-                        .HasColumnType("character varying(4000)")
-                        .HasColumnName("exception_instructions");
-
-                    b.Property<string>("InternationalCustomsInstructions")
-                        .HasMaxLength(4000)
-                        .HasColumnType("character varying(4000)")
-                        .HasColumnName("international_customs_instructions");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_active");
-
-                    b.Property<string>("PackingInstructions")
-                        .IsRequired()
-                        .HasMaxLength(4000)
-                        .HasColumnType("character varying(4000)")
-                        .HasColumnName("packing_instructions");
-
-                    b.Property<string>("RequiredDocuments")
-                        .IsRequired()
-                        .HasMaxLength(4000)
-                        .HasColumnType("character varying(4000)")
-                        .HasColumnName("required_documents");
-
-                    b.Property<bool>("RequiresSeparateShipment")
-                        .HasColumnType("boolean")
-                        .HasColumnName("requires_separate_shipment");
-
-                    b.Property<int>("Revision")
-                        .HasColumnType("integer")
-                        .HasColumnName("revision");
-
-                    b.Property<Guid>("SampleTypeDefinitionId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("sample_type_definition_id");
-
-                    b.Property<Guid?>("SupersedesInstructionRuleId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("supersedes_instruction_rule_id");
-
-                    b.Property<string>("TemperatureInstructions")
-                        .IsRequired()
-                        .HasMaxLength(4000)
-                        .HasColumnType("character varying(4000)")
-                        .HasColumnName("temperature_instructions");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at");
-
-                    b.Property<Guid?>("UpdatedByUserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("updated_by_user_id");
-
-                    b.Property<long>("Version")
-                        .IsConcurrencyToken()
-                        .HasColumnType("bigint")
-                        .HasColumnName("version");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SampleTypeDefinitionId");
-
-                    b.HasIndex("SupersedesInstructionRuleId");
-
-                    b.HasIndex("DefinitionKey", "Revision")
-                        .IsUnique();
-
-                    b.HasIndex("DestinationId", "SampleTypeDefinitionId", "EffectiveFrom");
-
-                    b.HasIndex("IsActive", "EffectiveFrom", "EffectiveTo");
-
-                    b.ToTable("sample_shipping_instruction_rules", "commercial_ops");
                 });
 
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingPacketRevision", b =>
@@ -8425,6 +9176,458 @@ namespace PSeq.Operations.Api.Migrations
                     b.ToTable("sample_shipping_packet_revisions", "commercial_ops");
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingProcedure", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("CarrierInstructions")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("carrier_instructions");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid>("DefinitionKey")
+                        .HasColumnType("uuid")
+                        .HasColumnName("definition_key");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("description");
+
+                    b.Property<string>("DispatchInstructions")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("dispatch_instructions");
+
+                    b.Property<string>("ExceptionInstructions")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("exception_instructions");
+
+                    b.Property<string>("InternationalCustomsInstructions")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("international_customs_instructions");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Lifecycle")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)")
+                        .HasColumnName("lifecycle");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("PackingInstructions")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("packing_instructions");
+
+                    b.Property<string>("RequiredDocuments")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("required_documents");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("integer")
+                        .HasColumnName("revision");
+
+                    b.Property<Guid?>("SupersedesProcedureId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("supersedes_procedure_id");
+
+                    b.Property<string>("TemperatureInstructions")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("temperature_instructions");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DefinitionKey")
+                        .IsUnique()
+                        .HasDatabaseName("ux_shipping_procedure_one_draft")
+                        .HasFilter("lifecycle = 'Draft'");
+
+                    b.HasIndex("SupersedesProcedureId")
+                        .IsUnique();
+
+                    b.HasIndex("DefinitionKey", "Revision")
+                        .IsUnique();
+
+                    b.ToTable("sample_shipping_procedures", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingStockKit", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime?>("AssemblyCompletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("assembly_completed_at");
+
+                    b.Property<Guid?>("AssemblyWorkflowRevisionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("assembly_workflow_revision_id");
+
+                    b.Property<string>("AuthorizationSource")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("authorization_source");
+
+                    b.Property<Guid?>("AuthorizationSourceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("authorization_source_id");
+
+                    b.Property<Guid?>("BoundSampleShipmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("bound_sample_shipment_id");
+
+                    b.Property<Guid>("ContainerDefinitionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("container_definition_id");
+
+                    b.Property<string>("ContainerSnapshotJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("container_snapshot_json");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid?>("CustomerDeliveryLocationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("customer_delivery_location_id");
+
+                    b.Property<DateTime?>("CustomerReceivedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("customer_received_at");
+
+                    b.Property<Guid?>("CustomerReceivedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("customer_received_by_user_id");
+
+                    b.Property<Guid?>("DepartmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("department_id");
+
+                    b.Property<DateTime?>("FulfilledAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("fulfilled_at");
+
+                    b.Property<string>("KitNumber")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("kit_number");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
+
+                    b.Property<string>("OutboundCarrier")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("outbound_carrier");
+
+                    b.Property<string>("OutboundTrackingNumber")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("outbound_tracking_number");
+
+                    b.Property<string>("ProductExpirySnapshotJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("product_expiry_snapshot_json");
+
+                    b.Property<DateTime?>("ReservedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("reserved_at");
+
+                    b.Property<Guid?>("ReservedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("reserved_by_user_id");
+
+                    b.Property<Guid?>("ReservedSampleShipmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("reserved_sample_shipment_id");
+
+                    b.Property<string>("ShipperProductDescription")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("shipper_product_description");
+
+                    b.Property<string>("ShipperProductNumber")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("shipper_product_number");
+
+                    b.Property<string>("ShipperSupplierName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("shipper_supplier_name");
+
+                    b.Property<Guid?>("ShipperSupplierProductId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("shipper_supplier_product_id");
+
+                    b.Property<Guid?>("TransportationKitRequestLineId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("transportation_kit_request_line_id");
+
+                    b.Property<string>("TubeBarcodeNamespace")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("tube_barcode_namespace");
+
+                    b.Property<int>("TubeCapacity")
+                        .HasColumnType("integer")
+                        .HasColumnName("tube_capacity");
+
+                    b.Property<string>("TubeLotNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("tube_lot_number");
+
+                    b.Property<string>("TubeProductDescription")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("tube_product_description");
+
+                    b.Property<string>("TubeProductNumber")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("tube_product_number");
+
+                    b.Property<string>("TubeSupplierName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("tube_supplier_name");
+
+                    b.Property<Guid?>("TubeSupplierProductId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tube_supplier_product_id");
+
+                    b.Property<DateTime?>("TubesVerifiedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("tubes_verified_at");
+
+                    b.Property<Guid?>("TubesVerifiedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tubes_verified_by_user_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.Property<string>("WithdrawalReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("withdrawal_reason");
+
+                    b.Property<DateTime?>("WithdrawnAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("withdrawn_at");
+
+                    b.Property<Guid?>("WithdrawnByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("withdrawn_by_user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssemblyWorkflowRevisionId");
+
+                    b.HasIndex("BoundSampleShipmentId")
+                        .IsUnique();
+
+                    b.HasIndex("ContainerDefinitionId");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("CustomerDeliveryLocationId");
+
+                    b.HasIndex("CustomerReceivedByUserId");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("KitNumber")
+                        .IsUnique();
+
+                    b.HasIndex("ReservedByUserId");
+
+                    b.HasIndex("ReservedSampleShipmentId")
+                        .IsUnique();
+
+                    b.HasIndex("ShipperSupplierProductId");
+
+                    b.HasIndex("TransportationKitRequestLineId");
+
+                    b.HasIndex("TubeSupplierProductId");
+
+                    b.HasIndex("TubesVerifiedByUserId");
+
+                    b.HasIndex("UpdatedByUserId");
+
+                    b.HasIndex("WithdrawnByUserId");
+
+                    b.HasIndex("OrganizationId", "DepartmentId", "CustomerDeliveryLocationId");
+
+                    b.HasIndex("OrganizationId", "DepartmentId", "AuthorizationSource", "AuthorizationSourceId");
+
+                    b.ToTable("sample_shipping_stock_kits", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingStockTube", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("BarcodeNamespace")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("barcode_namespace");
+
+                    b.Property<Guid>("SampleShippingStockKitId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("sample_shipping_stock_kit_id");
+
+                    b.Property<string>("SupplierBarcode")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("supplier_barcode");
+
+                    b.Property<Guid?>("TubeSupplierProductId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tube_supplier_product_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SampleShippingStockKitId");
+
+                    b.HasIndex("SupplierBarcode");
+
+                    b.HasIndex("TubeSupplierProductId");
+
+                    b.HasIndex("BarcodeNamespace", "SupplierBarcode")
+                        .IsUnique();
+
+                    b.ToTable("sample_shipping_stock_tubes", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingStockTubeCorrection", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("BarcodeNamespace")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("barcode_namespace");
+
+                    b.Property<DateTime>("CorrectedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("corrected_at");
+
+                    b.Property<Guid>("CorrectedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("corrected_by_user_id");
+
+                    b.Property<string>("PreviousBarcode")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("previous_barcode");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("reason");
+
+                    b.Property<string>("ReplacementBarcode")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("replacement_barcode");
+
+                    b.Property<Guid>("SampleShippingStockKitId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("sample_shipping_stock_kit_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CorrectedByUserId");
+
+                    b.HasIndex("SampleShippingStockKitId", "CorrectedAt");
+
+                    b.ToTable("sample_shipping_stock_tube_corrections", "commercial_ops");
+                });
+
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleTubeAssignmentEvent", b =>
                 {
                     b.Property<Guid>("Id")
@@ -8441,6 +9644,16 @@ namespace PSeq.Operations.Api.Migrations
                     b.Property<Guid>("ActorUserId")
                         .HasColumnType("uuid")
                         .HasColumnName("actor_user_id");
+
+                    b.Property<decimal?>("CustomerDeclaredQuantity")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)")
+                        .HasColumnName("customer_declared_quantity");
+
+                    b.Property<string>("CustomerDeclaredQuantityUnit")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("customer_declared_quantity_unit");
 
                     b.Property<string>("CustomerSampleId")
                         .IsRequired()
@@ -8546,6 +9759,12 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("character varying(4000)")
                         .HasColumnName("labeling_instructions");
 
+                    b.Property<string>("Lifecycle")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)")
+                        .HasColumnName("lifecycle");
+
                     b.Property<string>("MaterialClass")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -8565,6 +9784,11 @@ namespace PSeq.Operations.Api.Migrations
                         .HasPrecision(18, 6)
                         .HasColumnType("numeric(18,6)")
                         .HasColumnName("minimum_quantity");
+
+                    b.Property<decimal?>("MinimumSampleAmount")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)")
+                        .HasColumnName("minimum_sample_amount");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -8606,6 +9830,15 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("character varying(2000)")
                         .HasColumnName("safety_requirements");
 
+                    b.Property<string>("SampleAmountUnit")
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)")
+                        .HasColumnName("sample_amount_unit");
+
+                    b.Property<Guid?>("ShippingProcedureId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("shipping_procedure_id");
+
                     b.Property<string>("StabilizerRequirements")
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)")
@@ -8636,6 +9869,13 @@ namespace PSeq.Operations.Api.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("DefinitionKey")
+                        .IsUnique()
+                        .HasDatabaseName("ux_sample_type_one_draft")
+                        .HasFilter("lifecycle = 'Draft'");
+
+                    b.HasIndex("ShippingProcedureId");
+
                     b.HasIndex("SupersedesSampleTypeId");
 
                     b.HasIndex("Code", "Revision")
@@ -8647,6 +9887,277 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasIndex("IsActive", "EffectiveFrom", "EffectiveTo");
 
                     b.ToTable("sample_type_definitions", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleTypeProcedureLink", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("ChangedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("changed_at");
+
+                    b.Property<Guid>("ChangedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("changed_by_user_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid>("ProcedureAnchorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("procedure_anchor_id");
+
+                    b.Property<Guid>("SampleTypeAnchorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("sample_type_anchor_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChangedByUserId");
+
+                    b.HasIndex("ProcedureAnchorId");
+
+                    b.HasIndex("SampleTypeAnchorId")
+                        .IsUnique();
+
+                    b.ToTable("sample_type_procedure_links", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.ShippingKitContent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ContainerDefinitionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("container_definition_id");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("kind");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("integer")
+                        .HasColumnName("position");
+
+                    b.Property<string>("ProductDescription")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("product_description");
+
+                    b.Property<string>("ProductNumber")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("product_number");
+
+                    b.Property<string>("ProductTypeName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("product_type_name");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer")
+                        .HasColumnName("quantity");
+
+                    b.Property<Guid>("SupplierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("supplier_id");
+
+                    b.Property<string>("SupplierName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("supplier_name");
+
+                    b.Property<Guid>("SupplierProductId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("supplier_product_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SupplierId");
+
+                    b.HasIndex("SupplierProductId");
+
+                    b.HasIndex("ContainerDefinitionId", "Position")
+                        .IsUnique();
+
+                    b.HasIndex("ContainerDefinitionId", "SupplierProductId")
+                        .IsUnique();
+
+                    b.ToTable("shipping_kit_contents", "commercial_ops", t =>
+                        {
+                            t.HasCheckConstraint("ck_shipping_kit_content_quantity", "quantity > 0");
+                        });
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.TransportationKitRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("CancellationReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("cancellation_reason");
+
+                    b.Property<DateTime?>("ClosedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("closed_at");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("DeliveryAddressSnapshotJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("delivery_address_snapshot_json");
+
+                    b.Property<Guid>("DeliveryLocationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("delivery_location_id");
+
+                    b.Property<Guid>("DepartmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("department_id");
+
+                    b.Property<Guid?>("LabJobPhaseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_job_phase_id");
+
+                    b.Property<Guid>("LabServiceOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_service_order_id");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
+
+                    b.Property<int?>("PhaseSampleCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("phase_sample_count");
+
+                    b.Property<DateTime>("RequestedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("requested_at");
+
+                    b.Property<Guid>("RequestedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("requested_by_user_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("DeliveryLocationId");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("LabJobPhaseId")
+                        .HasDatabaseName("ix_transportation_kit_request_phase");
+
+                    b.HasIndex("RequestedByUserId");
+
+                    b.HasIndex("UpdatedByUserId");
+
+                    b.HasIndex("LabServiceOrderId", "LabJobPhaseId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_transportation_kit_request_open_phase")
+                        .HasFilter("closed_at IS NULL AND lab_job_phase_id IS NOT NULL");
+
+                    b.HasIndex("OrganizationId", "DepartmentId", "RequestedAt");
+
+                    b.ToTable("transportation_kit_requests", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.TransportationKitRequestLine", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ContainerDefinitionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("container_definition_id");
+
+                    b.Property<string>("ContainerSnapshotJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("container_snapshot_json");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer")
+                        .HasColumnName("quantity");
+
+                    b.Property<Guid>("TransportationKitRequestId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("transportation_kit_request_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContainerDefinitionId");
+
+                    b.HasIndex("TransportationKitRequestId", "ContainerDefinitionId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_transportation_kit_request_line_size");
+
+                    b.ToTable("transportation_kit_request_lines", "commercial_ops");
                 });
 
             modelBuilder.Entity("PSeq.Operations.Commercial.Relationships.Domain.OrganizationServiceEntitlement", b =>
@@ -8995,7 +10506,7 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("as_delegate");
 
-                    b.Property<Guid>("AuthorityId")
+                    b.Property<Guid?>("AuthorityId")
                         .HasColumnType("uuid")
                         .HasColumnName("authority_id");
 
@@ -9256,7 +10767,7 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("created_by_user_id");
 
-                    b.Property<Guid>("CrmHandoffId")
+                    b.Property<Guid?>("CrmHandoffId")
                         .HasColumnType("uuid")
                         .HasColumnName("crm_handoff_id");
 
@@ -9267,6 +10778,18 @@ namespace PSeq.Operations.Api.Migrations
                     b.Property<Guid?>("DepartmentId")
                         .HasColumnType("uuid")
                         .HasColumnName("department_id");
+
+                    b.Property<DateTime?>("DraftSavedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("draft_saved_at_utc");
+
+                    b.Property<Guid?>("DraftSavedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("draft_saved_by_user_id");
+
+                    b.Property<string>("DraftScopeJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("draft_scope_json");
 
                     b.Property<DateTime?>("FollowUpAtUtc")
                         .HasColumnType("timestamp with time zone")
@@ -9299,7 +10822,7 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("character varying(4000)")
                         .HasColumnName("number");
 
-                    b.Property<Guid>("OpportunityId")
+                    b.Property<Guid?>("OpportunityId")
                         .HasColumnType("uuid")
                         .HasColumnName("opportunity_id");
 
@@ -9353,6 +10876,8 @@ namespace PSeq.Operations.Api.Migrations
                         .IsUnique();
 
                     b.HasIndex("DepartmentId");
+
+                    b.HasIndex("DraftSavedByUserId");
 
                     b.HasIndex("FollowUpOwnerUserId");
 
@@ -9793,6 +11318,539 @@ namespace PSeq.Operations.Api.Migrations
                     b.ToTable("trial_scopes", "commercial_ops");
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabAnalysisInput", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("LabAnalysisRunId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_analysis_run_id");
+
+                    b.Property<Guid>("LabSequencingOutputId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_sequencing_output_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabSequencingOutputId");
+
+                    b.HasIndex("LabAnalysisRunId", "LabSequencingOutputId")
+                        .IsUnique();
+
+                    b.ToTable("lab_analysis_inputs", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabAnalysisRun", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("LabSpecimenAttemptId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_specimen_attempt_id");
+
+                    b.Property<Guid>("LabSpecimenId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_specimen_id");
+
+                    b.Property<Guid>("LabWorkOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_work_order_id");
+
+                    b.Property<Guid?>("PreviousAnalysisRunId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("previous_analysis_run_id");
+
+                    b.Property<string>("ProviderKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("provider_key");
+
+                    b.Property<string>("ReanalysisReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("reanalysis_reason");
+
+                    b.Property<DateTime>("RecordedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("recorded_at_utc");
+
+                    b.Property<string>("RecordedBySource")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("recorded_by_source");
+
+                    b.Property<Guid?>("RecordedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("recorded_by_user_id");
+
+                    b.Property<string>("RequestSha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("request_sha256");
+
+                    b.Property<string>("RequirementsSnapshotJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("requirements_snapshot_json");
+
+                    b.Property<string>("RunReference")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("run_reference");
+
+                    b.Property<string>("ScientificEvidenceJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("scientific_evidence_json");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabSpecimenAttemptId");
+
+                    b.HasIndex("LabSpecimenId");
+
+                    b.HasIndex("PreviousAnalysisRunId");
+
+                    b.HasIndex("LabWorkOrderId", "LabSpecimenId", "RecordedAtUtc");
+
+                    b.HasIndex("ProviderKey", "RunReference", "LabSpecimenId")
+                        .IsUnique();
+
+                    b.ToTable("lab_analysis_runs", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabAssemblyCommand", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("AttemptCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("attempt_count");
+
+                    b.Property<DateTime?>("ConfirmedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("confirmed_at_utc");
+
+                    b.Property<DateTime?>("EscalatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("escalated_at_utc");
+
+                    b.Property<DateTime?>("FirstAttemptAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("first_attempt_at_utc");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("kind");
+
+                    b.Property<Guid>("LabAssemblyJobId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_assembly_job_id");
+
+                    b.Property<DateTime?>("LastAttemptAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_attempt_at_utc");
+
+                    b.Property<DateTime?>("NextAttemptAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("next_attempt_at_utc");
+
+                    b.Property<DateTime?>("ReceivedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("received_at_utc");
+
+                    b.Property<DateTime>("RequestedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("requested_at_utc");
+
+                    b.Property<bool>("Suppressed")
+                        .HasColumnType("boolean")
+                        .HasColumnName("suppressed");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ConfirmedAtUtc", "NextAttemptAtUtc");
+
+                    b.HasIndex("LabAssemblyJobId", "Kind")
+                        .IsUnique();
+
+                    b.ToTable("lab_assembly_commands", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabAssemblyEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("ActorUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_user_id");
+
+                    b.Property<string>("EvidenceJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("evidence_json");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("kind");
+
+                    b.Property<Guid>("LabAssemblyJobId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_assembly_job_id");
+
+                    b.Property<DateTime>("RecordedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("recorded_at_utc");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabAssemblyJobId", "RecordedAtUtc");
+
+                    b.ToTable("lab_assembly_events", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabAssemblyJob", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AttentionReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("attention_reason");
+
+                    b.Property<string>("CancellationReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("cancellation_reason");
+
+                    b.Property<DateTime?>("CancellationRequestedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("cancellation_requested_at_utc");
+
+                    b.Property<Guid?>("CancellationRequestedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("cancellation_requested_by_user_id");
+
+                    b.Property<DateTime?>("DispatchRequestedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("dispatch_requested_at_utc");
+
+                    b.Property<DateTime?>("DispositionAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("disposition_at_utc");
+
+                    b.Property<string>("DispositionReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("disposition_reason");
+
+                    b.Property<string>("InputsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("inputs_json");
+
+                    b.Property<Guid?>("LabAnalysisRunId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_analysis_run_id");
+
+                    b.Property<Guid>("LabSpecimenId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_specimen_id");
+
+                    b.Property<Guid>("LabWorkOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_work_order_id");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
+
+                    b.Property<string>("OutputManifestJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("output_manifest_json");
+
+                    b.Property<Guid?>("PreviousJobId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("previous_job_id");
+
+                    b.Property<string>("ProviderJobId")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("provider_job_id");
+
+                    b.Property<string>("ProviderKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("provider_key");
+
+                    b.Property<string>("RecipeJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("recipe_json");
+
+                    b.Property<string>("RequestSha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("request_sha256");
+
+                    b.Property<DateTime>("RequestedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("requested_at_utc");
+
+                    b.Property<Guid>("RequestedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("requested_by_user_id");
+
+                    b.Property<string>("RetryReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("retry_reason");
+
+                    b.Property<int>("SequencingRunNumber")
+                        .HasColumnType("integer")
+                        .HasColumnName("sequencing_run_number");
+
+                    b.Property<DateTime?>("StartedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at_utc");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("state");
+
+                    b.Property<DateTime?>("StoppedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("stopped_at_utc");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabAnalysisRunId")
+                        .IsUnique()
+                        .HasFilter("lab_analysis_run_id IS NOT NULL");
+
+                    b.HasIndex("LabWorkOrderId");
+
+                    b.HasIndex("PreviousJobId");
+
+                    b.HasIndex("LabSpecimenId", "SequencingRunNumber")
+                        .IsUnique()
+                        .HasFilter("state NOT IN ('Succeeded', 'Failed', 'Terminated', 'CancelledBeforeStart')");
+
+                    b.HasIndex("ProviderKey", "ProviderJobId")
+                        .IsUnique()
+                        .HasFilter("provider_job_id IS NOT NULL");
+
+                    b.HasIndex("State", "RequestedAtUtc");
+
+                    b.ToTable("lab_assembly_jobs", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabAssemblyQc", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Decision")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)")
+                        .HasColumnName("decision");
+
+                    b.Property<string>("InputCoverageJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("input_coverage_json");
+
+                    b.Property<Guid>("LabAnalysisRunId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_analysis_run_id");
+
+                    b.Property<Guid>("LabAssemblyJobId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_assembly_job_id");
+
+                    b.Property<Guid>("LabScientificFileId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_scientific_file_id");
+
+                    b.Property<string>("MeasurementsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("measurements_json");
+
+                    b.Property<string>("Note")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("note");
+
+                    b.Property<DateTime>("RecordedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("recorded_at_utc");
+
+                    b.Property<Guid>("RecordedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("recorded_by_user_id");
+
+                    b.Property<Guid>("ResultOutputPackageId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("result_output_package_id");
+
+                    b.Property<int>("ReviewVersion")
+                        .HasColumnType("integer")
+                        .HasColumnName("review_version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabAnalysisRunId");
+
+                    b.HasIndex("LabAssemblyJobId");
+
+                    b.HasIndex("LabScientificFileId");
+
+                    b.HasIndex("RecordedByUserId");
+
+                    b.HasIndex("ResultOutputPackageId", "ReviewVersion")
+                        .IsUnique();
+
+                    b.ToTable("lab_assembly_qc", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabAssemblyReceipt", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime?>("ConflictRecordedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("conflict_recorded_at_utc");
+
+                    b.Property<string>("ConflictSha256")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("conflict_sha256");
+
+                    b.Property<Guid>("LabAssemblyJobId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_assembly_job_id");
+
+                    b.Property<DateTime>("OccurredAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("occurred_at_utc");
+
+                    b.Property<string>("Outcome")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("outcome");
+
+                    b.Property<string>("PayloadJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("payload_json");
+
+                    b.Property<string>("PayloadSha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("payload_sha256");
+
+                    b.Property<string>("ProviderEventId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("provider_event_id");
+
+                    b.Property<string>("ProviderKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("provider_key");
+
+                    b.Property<DateTime>("ReceivedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("received_at_utc");
+
+                    b.Property<long>("Sequence")
+                        .HasColumnType("bigint")
+                        .HasColumnName("sequence");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabAssemblyJobId", "Sequence");
+
+                    b.HasIndex("ProviderKey", "ProviderEventId")
+                        .IsUnique();
+
+                    b.ToTable("lab_assembly_receipts", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabAttemptCommandReceipt", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ActorUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_user_id");
+
+                    b.Property<DateTime>("AppliedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("applied_at_utc");
+
+                    b.Property<Guid>("LabWorkOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_work_order_id");
+
+                    b.Property<string>("RequestHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("request_hash");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabWorkOrderId");
+
+                    b.ToTable("lab_attempt_command_receipts", "lab_ops");
+                });
+
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabBatchMember", b =>
                 {
                     b.Property<Guid>("Id")
@@ -9816,16 +11874,227 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("lab_work_order_id");
 
+                    b.Property<Guid?>("MaterialTransferId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("material_transfer_id");
+
+                    b.Property<decimal?>("MinimumSequencingVolumeUl")
+                        .HasColumnType("numeric")
+                        .HasColumnName("minimum_sequencing_volume_ul");
+
+                    b.Property<Guid?>("SequencingCatalogItemId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("sequencing_catalog_item_id");
+
+                    b.Property<string>("SequencingCatalogName")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("sequencing_catalog_name");
+
+                    b.Property<long?>("SequencingCatalogVersion")
+                        .HasColumnType("bigint")
+                        .HasColumnName("sequencing_catalog_version");
+
+                    b.Property<Guid?>("SequencingContainerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("sequencing_container_id");
+
                     b.HasKey("Id");
 
                     b.HasIndex("LabLibraryId");
 
                     b.HasIndex("LabWorkOrderId");
 
+                    b.HasIndex("MaterialTransferId");
+
+                    b.HasIndex("SequencingCatalogItemId")
+                        .HasDatabaseName("ix_lab_batch_members_sequencing_catalog_item_id");
+
+                    b.HasIndex("SequencingContainerId");
+
                     b.HasIndex("LabOperationalBatchId", "LabLibraryId")
                         .IsUnique();
 
                     b.ToTable("lab_batch_members", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabBiologicalMaterialTransfer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<decimal?>("BalanceAdjustmentQuantity")
+                        .HasColumnType("numeric")
+                        .HasColumnName("balance_adjustment_quantity");
+
+                    b.Property<Guid>("DestinationContainerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("destination_container_id");
+
+                    b.Property<bool>("ExhaustedOverride")
+                        .HasColumnType("boolean")
+                        .HasColumnName("exhausted_override");
+
+                    b.Property<string>("ExhaustionReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("exhaustion_reason");
+
+                    b.Property<Guid>("LabSpecimenAttemptId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_specimen_attempt_id");
+
+                    b.Property<Guid>("LabSpecimenId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_specimen_id");
+
+                    b.Property<Guid>("LabWorkOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_work_order_id");
+
+                    b.Property<DateTime>("PerformedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("performed_at_utc");
+
+                    b.Property<Guid>("PerformedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("performed_by_user_id");
+
+                    b.Property<Guid?>("PreparationMemberId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("preparation_member_id");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("numeric")
+                        .HasColumnName("quantity");
+
+                    b.Property<string>("QuantityUnit")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("quantity_unit");
+
+                    b.Property<DateTime>("RecordedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("recorded_at_utc");
+
+                    b.Property<Guid>("RecordedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("recorded_by_user_id");
+
+                    b.Property<string>("RequestHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("request_hash");
+
+                    b.Property<Guid>("RequestId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("request_id");
+
+                    b.Property<Guid?>("SequencingBatchMemberId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("sequencing_batch_member_id");
+
+                    b.Property<Guid>("SourceContainerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_container_id");
+
+                    b.Property<decimal?>("SourceQuantityAfter")
+                        .HasColumnType("numeric")
+                        .HasColumnName("source_quantity_after");
+
+                    b.Property<string>("SourceQuantityBasis")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("source_quantity_basis");
+
+                    b.Property<decimal?>("SourceQuantityBefore")
+                        .HasColumnType("numeric")
+                        .HasColumnName("source_quantity_before");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DestinationContainerId");
+
+                    b.HasIndex("LabSpecimenAttemptId");
+
+                    b.HasIndex("LabWorkOrderId");
+
+                    b.HasIndex("PreparationMemberId");
+
+                    b.HasIndex("SequencingBatchMemberId");
+
+                    b.HasIndex("SourceContainerId");
+
+                    b.HasIndex("LabSpecimenId", "RecordedAtUtc");
+
+                    b.HasIndex("RequestId", "SourceContainerId", "DestinationContainerId")
+                        .IsUnique();
+
+                    b.ToTable("lab_biological_material_transfers", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabBusinessCalendar", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateOnly>("CoverageFrom")
+                        .HasColumnType("date")
+                        .HasColumnName("coverage_from");
+
+                    b.Property<DateOnly>("CoverageTo")
+                        .HasColumnType("date")
+                        .HasColumnName("coverage_to");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("reason");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("integer")
+                        .HasColumnName("revision");
+
+                    b.Property<string>("TimeZoneId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("time_zone_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Revision")
+                        .IsUnique();
+
+                    b.ToTable("lab_business_calendars", "lab_ops");
                 });
 
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabContainer", b =>
@@ -9840,6 +12109,12 @@ namespace PSeq.Operations.Api.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
                         .HasColumnName("barcode");
+
+                    b.Property<string>("BarcodeNamespace")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("barcode_namespace");
 
                     b.Property<string>("BarcodeSource")
                         .IsRequired()
@@ -9864,11 +12139,47 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("external_barcode_reference_id");
 
+                    b.Property<decimal?>("InitialQuantity")
+                        .HasColumnType("numeric")
+                        .HasColumnName("initial_quantity");
+
+                    b.Property<string>("InitialQuantityUnit")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("initial_quantity_unit");
+
+                    b.Property<string>("IntakeDisposition")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("intake_disposition");
+
+                    b.Property<string>("IntakeNotes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("intake_notes");
+
+                    b.Property<string>("IntakeReasonCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("intake_reason_code");
+
+                    b.Property<DateTime?>("IntakeReviewedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("intake_reviewed_at_utc");
+
+                    b.Property<Guid?>("IntakeReviewedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("intake_reviewed_by_user_id");
+
                     b.Property<string>("Kind")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)")
                         .HasColumnName("kind");
+
+                    b.Property<Guid?>("LabSpecimenAttemptId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_specimen_attempt_id");
 
                     b.Property<Guid?>("LabSpecimenId")
                         .HasColumnType("uuid")
@@ -9897,7 +12208,6 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnName("last_label_printed_by_user_id");
 
                     b.Property<string>("Location")
-                        .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)")
                         .HasColumnName("location");
@@ -9909,6 +12219,18 @@ namespace PSeq.Operations.Api.Migrations
                     b.Property<decimal?>("Quantity")
                         .HasColumnType("numeric")
                         .HasColumnName("quantity");
+
+                    b.Property<string>("QuantityBasis")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("quantity_basis");
+
+                    b.Property<string>("QuantityHistoryJson")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasDefaultValue("[]")
+                        .HasColumnName("quantity_history_json");
 
                     b.Property<string>("QuantityUnit")
                         .HasMaxLength(50)
@@ -9940,19 +12262,74 @@ namespace PSeq.Operations.Api.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Barcode")
-                        .IsUnique();
+                    b.HasIndex("Barcode");
 
                     b.HasIndex("ExternalBarcodeReferenceId")
                         .IsUnique();
+
+                    b.HasIndex("LabSpecimenAttemptId");
 
                     b.HasIndex("LabSpecimenId");
 
                     b.HasIndex("ParentContainerId");
 
+                    b.HasIndex("BarcodeNamespace", "Barcode")
+                        .IsUnique();
+
                     b.HasIndex("LabWorkOrderId", "LabSpecimenId");
 
                     b.ToTable("lab_containers", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabContainerBarcode", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("IsPrimary")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_primary");
+
+                    b.Property<Guid>("LabContainerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_container_id");
+
+                    b.Property<string>("Namespace")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("namespace");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("source");
+
+                    b.Property<string>("Symbology")
+                        .IsRequired()
+                        .HasMaxLength(25)
+                        .HasColumnType("character varying(25)")
+                        .HasColumnName("symbology");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("value");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabContainerId")
+                        .IsUnique()
+                        .HasFilter("is_primary");
+
+                    b.HasIndex("Namespace", "Value")
+                        .IsUnique();
+
+                    b.ToTable("lab_container_barcodes", "lab_ops");
                 });
 
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabCustodyEvent", b =>
@@ -10004,6 +12381,74 @@ namespace PSeq.Operations.Api.Migrations
                     b.ToTable("lab_custody_events", "lab_ops");
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabCustomerHold", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("LabSpecimenId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_specimen_id");
+
+                    b.Property<Guid>("LabWorkOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_work_order_id");
+
+                    b.Property<DateTime?>("PausedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("paused_at_utc");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("reason");
+
+                    b.Property<DateTime>("RequestedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("requested_at_utc");
+
+                    b.Property<Guid>("RequestedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("requested_by_user_id");
+
+                    b.Property<DateTime?>("RespondedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("responded_at_utc");
+
+                    b.Property<Guid?>("RespondedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("responded_by_user_id");
+
+                    b.Property<string>("Response")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("response");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("state");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabSpecimenId")
+                        .IsUnique()
+                        .HasFilter("state <> 'Released'");
+
+                    b.HasIndex("LabWorkOrderId", "RequestedAtUtc");
+
+                    b.ToTable("lab_customer_holds", "lab_ops");
+                });
+
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabEquipment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -10051,6 +12496,19 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("character varying(255)")
                         .HasColumnName("name");
 
+                    b.Property<DateTime?>("RetiredAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("retired_at_utc");
+
+                    b.Property<Guid?>("RetiredByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("retired_by_user_id");
+
+                    b.Property<string>("RetirementReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("retirement_reason");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -10091,9 +12549,17 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("lab_equipment_id");
 
+                    b.Property<Guid?>("LabPreparationRecordId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_preparation_record_id");
+
                     b.Property<Guid>("LabProtocolExecutionId")
                         .HasColumnType("uuid")
                         .HasColumnName("lab_protocol_execution_id");
+
+                    b.Property<string>("ResourceSnapshotJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("resource_snapshot_json");
 
                     b.Property<string>("RunReference")
                         .HasMaxLength(255)
@@ -10111,6 +12577,8 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("LabEquipmentId");
+
+                    b.HasIndex("LabPreparationRecordId");
 
                     b.HasIndex("LabProtocolExecutionId");
 
@@ -10226,6 +12694,835 @@ namespace PSeq.Operations.Api.Migrations
                     b.ToTable("lab_exceptions", "lab_ops");
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabFastqArchive", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("ChunkManifestSha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("chunk_manifest_sha256");
+
+                    b.Property<string>("ChunksJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("chunks_json");
+
+                    b.Property<DateTime>("ExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at_utc");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("file_name");
+
+                    b.Property<Guid>("LabVendorResultsDraftId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_vendor_results_draft_id");
+
+                    b.Property<string>("ManifestJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("manifest_json");
+
+                    b.Property<string>("Sha256")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("sha256");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint")
+                        .HasColumnName("size_bytes");
+
+                    b.Property<string>("StorageKey")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("storage_key");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("LabVendorResultsDraftId", "ExpiresAtUtc");
+
+                    b.ToTable("lab_fastq_archives", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabFastqSet", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<Guid>("LabBatchMemberId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_batch_member_id");
+
+                    b.Property<Guid>("LabLibraryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_library_id");
+
+                    b.Property<Guid>("LabSpecimenId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_specimen_id");
+
+                    b.Property<Guid>("LabVendorResultsDraftId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_vendor_results_draft_id");
+
+                    b.Property<Guid?>("LabVendorResultsVersionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_vendor_results_version_id");
+
+                    b.Property<Guid>("LabWorkOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_work_order_id");
+
+                    b.Property<string>("LibraryPreparationChoice")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("library_preparation_choice");
+
+                    b.Property<string>("PolicyJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("policy_json");
+
+                    b.Property<string>("ReadLayout")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("read_layout");
+
+                    b.Property<Guid>("RecordedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("recorded_by_user_id");
+
+                    b.Property<int>("SequencingRunNumber")
+                        .HasColumnType("integer")
+                        .HasColumnName("sequencing_run_number");
+
+                    b.Property<int>("SetVersion")
+                        .HasColumnType("integer")
+                        .HasColumnName("set_version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabLibraryId");
+
+                    b.HasIndex("LabSpecimenId");
+
+                    b.HasIndex("LabVendorResultsDraftId");
+
+                    b.HasIndex("LabVendorResultsVersionId");
+
+                    b.HasIndex("LabWorkOrderId");
+
+                    b.HasIndex("RecordedByUserId");
+
+                    b.HasIndex("LabBatchMemberId", "SetVersion")
+                        .IsUnique();
+
+                    b.ToTable("lab_fastq_sets", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabFastqUpload", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int?>("ArchiveEntryIndex")
+                        .HasColumnType("integer")
+                        .HasColumnName("archive_entry_index");
+
+                    b.Property<string>("ChunkManifestSha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("chunk_manifest_sha256");
+
+                    b.Property<string>("ChunksJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("chunks_json");
+
+                    b.Property<DateTime>("ExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at_utc");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("file_name");
+
+                    b.Property<string>("GroupDescription")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("group_description");
+
+                    b.Property<int>("GroupNumber")
+                        .HasColumnType("integer")
+                        .HasColumnName("group_number");
+
+                    b.Property<Guid?>("LabFastqArchiveId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_fastq_archive_id");
+
+                    b.Property<Guid>("LabFastqSetId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_fastq_set_id");
+
+                    b.Property<Guid?>("LabScientificFileId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_scientific_file_id");
+
+                    b.Property<string>("OriginalFileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("original_file_name");
+
+                    b.Property<int>("PartNumber")
+                        .HasColumnType("integer")
+                        .HasColumnName("part_number");
+
+                    b.Property<long?>("ReadCount")
+                        .HasColumnType("bigint")
+                        .HasColumnName("read_count");
+
+                    b.Property<string>("ReadIdentifiersSha256")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("read_identifiers_sha256");
+
+                    b.Property<int>("ReadNumber")
+                        .HasColumnType("integer")
+                        .HasColumnName("read_number");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint")
+                        .HasColumnName("size_bytes");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabFastqArchiveId");
+
+                    b.HasIndex("LabScientificFileId");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("LabFastqSetId", "GroupNumber", "ReadNumber", "PartNumber")
+                        .IsUnique();
+
+                    b.ToTable("lab_fastq_uploads", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabForecastSnapshot", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("DetailsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("details_json");
+
+                    b.Property<DateTime>("EvaluatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("evaluated_at_utc");
+
+                    b.Property<Guid>("LabWorkOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_work_order_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabWorkOrderId", "EvaluatedAtUtc");
+
+                    b.ToTable("lab_forecast_snapshots", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabForecastTransition", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("ActorUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_user_id");
+
+                    b.Property<DateTime>("EnteredAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("entered_at_utc");
+
+                    b.Property<Guid>("LabWorkOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_work_order_id");
+
+                    b.Property<string>("PreviousState")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("previous_state");
+
+                    b.Property<DateTime>("RecordedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("recorded_at_utc");
+
+                    b.Property<Guid>("SourceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_id");
+
+                    b.Property<string>("SourceKind")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("source_kind");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("state");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabWorkOrderId", "SourceKind", "SourceId", "EnteredAtUtc");
+
+                    b.ToTable("lab_forecast_transitions", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabHoliday", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date")
+                        .HasColumnName("date");
+
+                    b.Property<Guid>("LabBusinessCalendarId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_business_calendar_id");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("name");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabBusinessCalendarId", "Date")
+                        .IsUnique();
+
+                    b.ToTable("lab_holidays", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabInvestigationReport", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("BodyJson")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("body_json");
+
+                    b.Property<int>("FormatVersion")
+                        .HasColumnType("integer")
+                        .HasColumnName("format_version");
+
+                    b.Property<DateTime>("GeneratedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("generated_at_utc");
+
+                    b.Property<Guid>("GeneratedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("generated_by_user_id");
+
+                    b.Property<Guid>("LabSpecimenId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_specimen_id");
+
+                    b.Property<Guid>("LabWorkOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_work_order_id");
+
+                    b.Property<string>("Sha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("sha256");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabSpecimenId");
+
+                    b.HasIndex("LabWorkOrderId", "LabSpecimenId", "GeneratedAtUtc");
+
+                    b.ToTable("lab_investigation_reports", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabJobDeadlineChange", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ActorUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_user_id");
+
+                    b.Property<DateTime>("DueAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("due_at_utc");
+
+                    b.Property<Guid?>("LabJobPhaseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_job_phase_id");
+
+                    b.Property<Guid>("LabWorkOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_work_order_id");
+
+                    b.Property<DateTime>("OccurredAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("occurred_at_utc");
+
+                    b.Property<DateTime?>("PreviousDueAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("previous_due_at_utc");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("reason");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabJobPhaseId");
+
+                    b.HasIndex("LabWorkOrderId", "OccurredAtUtc");
+
+                    b.ToTable("lab_job_deadline_changes", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabJobTimingPolicy", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid>("LabTimingPolicyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_timing_policy_id");
+
+                    b.Property<Guid>("LabWorkOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_work_order_id");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("reason");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("integer")
+                        .HasColumnName("revision");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabTimingPolicyId");
+
+                    b.HasIndex("LabWorkOrderId", "Revision")
+                        .IsUnique();
+
+                    b.ToTable("lab_job_timing_policies", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabKitAssemblyRun", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AbandonmentReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("abandonment_reason");
+
+                    b.Property<DateTime?>("ContainerBarcodeVerifiedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("container_barcode_verified_at_utc");
+
+                    b.Property<Guid?>("ContainerBarcodeVerifiedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("container_barcode_verified_by_user_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("DraftNotes")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("draft_notes");
+
+                    b.Property<string>("DraftVerificationJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("draft_verification_json");
+
+                    b.Property<DateTime?>("FinishedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("finished_at_utc");
+
+                    b.Property<Guid?>("FinishedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("finished_by_user_id");
+
+                    b.Property<DateTime?>("LabelPrintRequestedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("label_print_requested_at_utc");
+
+                    b.Property<Guid?>("LabelPrintRequestedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("label_print_requested_by_user_id");
+
+                    b.Property<int>("RecordedStepCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("recorded_step_count");
+
+                    b.Property<DateTime>("StartedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at_utc");
+
+                    b.Property<Guid>("StartedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("started_by_user_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("StepsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("steps_json");
+
+                    b.Property<Guid>("StockKitId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("stock_kit_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.Property<Guid>("WorkflowRevisionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("workflow_revision_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContainerBarcodeVerifiedByUserId");
+
+                    b.HasIndex("FinishedByUserId");
+
+                    b.HasIndex("LabelPrintRequestedByUserId");
+
+                    b.HasIndex("StartedByUserId");
+
+                    b.HasIndex("StockKitId")
+                        .IsUnique();
+
+                    b.HasIndex("WorkflowRevisionId");
+
+                    b.ToTable("lab_kit_assembly_runs", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabKitAssemblyStepRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("LabStepVersionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_step_version_id");
+
+                    b.Property<string>("Notes")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("notes");
+
+                    b.Property<DateTime>("PerformedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("performed_at_utc");
+
+                    b.Property<Guid>("PerformedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("performed_by_user_id");
+
+                    b.Property<Guid>("RunId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("run_id");
+
+                    b.Property<int>("Sequence")
+                        .HasColumnType("integer")
+                        .HasColumnName("sequence");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabStepVersionId");
+
+                    b.HasIndex("PerformedByUserId");
+
+                    b.HasIndex("RunId", "Sequence")
+                        .IsUnique();
+
+                    b.ToTable("lab_kit_assembly_step_records", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabKitAssemblyUse", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)")
+                        .HasColumnName("quantity");
+
+                    b.Property<string>("QuantityUnit")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("quantity_unit");
+
+                    b.Property<DateTime>("RecordedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("recorded_at_utc");
+
+                    b.Property<Guid>("RecordedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("recorded_by_user_id");
+
+                    b.Property<Guid>("RunId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("run_id");
+
+                    b.Property<Guid?>("SourceMaterialLotId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_material_lot_id");
+
+                    b.Property<Guid>("SupplierProductId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("supplier_product_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RecordedByUserId");
+
+                    b.HasIndex("SourceMaterialLotId");
+
+                    b.HasIndex("SupplierProductId");
+
+                    b.HasIndex("RunId", "SupplierProductId");
+
+                    b.ToTable("lab_kit_assembly_uses", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabKitAssemblyWorkflow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<int>("LatestRevision")
+                        .HasColumnType("integer")
+                        .HasColumnName("latest_revision");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)")
+                        .HasColumnName("name");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("UpdatedByUserId");
+
+                    b.ToTable("lab_kit_assembly_workflows", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabKitAssemblyWorkflowRevision", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("ApprovalOverrideReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("approval_override_reason");
+
+                    b.Property<DateTime?>("ApprovedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("approved_at_utc");
+
+                    b.Property<Guid?>("ApprovedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("approved_by_user_id");
+
+                    b.Property<DateTime>("AuthoredAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("authored_at_utc");
+
+                    b.Property<Guid>("AuthoredByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("authored_by_user_id");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("integer")
+                        .HasColumnName("revision");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("StepsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("steps_json");
+
+                    b.Property<Guid>("WorkflowId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("workflow_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApprovedByUserId");
+
+                    b.HasIndex("AuthoredByUserId");
+
+                    b.HasIndex("WorkflowId", "Revision")
+                        .IsUnique();
+
+                    b.ToTable("lab_kit_assembly_workflow_revisions", "lab_ops");
+                });
+
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabLibrary", b =>
                 {
                     b.Property<Guid>("Id")
@@ -10308,6 +13605,474 @@ namespace PSeq.Operations.Api.Migrations
                     b.ToTable("lab_libraries", "lab_ops");
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabMasterMixCorrection", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("action");
+
+                    b.Property<Guid>("PreparationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("preparation_id");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("reason");
+
+                    b.Property<DateTime>("RecordedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("recorded_at_utc");
+
+                    b.Property<Guid>("RecordedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("recorded_by_user_id");
+
+                    b.Property<Guid>("TargetEntryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("target_entry_id");
+
+                    b.Property<string>("TargetKind")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("target_kind");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PreparationId", "RecordedAtUtc");
+
+                    b.HasIndex("PreparationId", "TargetEntryId")
+                        .IsUnique();
+
+                    b.ToTable("lab_master_mix_corrections", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabMasterMixIngredientUse", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("FieldKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("field_key");
+
+                    b.Property<bool>("MaterialExhausted")
+                        .HasColumnType("boolean")
+                        .HasColumnName("material_exhausted");
+
+                    b.Property<Guid>("PreparationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("preparation_id");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(28, 12)
+                        .HasColumnType("numeric(28,12)")
+                        .HasColumnName("quantity");
+
+                    b.Property<string>("QuantityUnit")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("quantity_unit");
+
+                    b.Property<DateTime>("RecordedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("recorded_at_utc");
+
+                    b.Property<Guid>("RecordedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("recorded_by_user_id");
+
+                    b.Property<Guid>("SourceMaterialLotId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_material_lot_id");
+
+                    b.Property<int>("StepSequence")
+                        .HasColumnType("integer")
+                        .HasColumnName("step_sequence");
+
+                    b.Property<DateTime?>("VoidedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("voided_at_utc");
+
+                    b.Property<Guid?>("VoidedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("voided_by_user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PreparationId");
+
+                    b.HasIndex("SourceMaterialLotId");
+
+                    b.ToTable("lab_master_mix_ingredients", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabMasterMixPreparation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("DiscardReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("discard_reason");
+
+                    b.Property<DateTime?>("DiscardedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("discarded_at_utc");
+
+                    b.Property<Guid?>("DiscardedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("discarded_by_user_id");
+
+                    b.Property<string>("EvidenceJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("evidence_json");
+
+                    b.Property<int>("IngredientUseCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("ingredient_use_count");
+
+                    b.Property<string>("IngredientsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("ingredients_json");
+
+                    b.Property<decimal?>("MeasuredDiscardQuantity")
+                        .HasPrecision(28, 12)
+                        .HasColumnType("numeric(28,12)")
+                        .HasColumnName("measured_discard_quantity");
+
+                    b.Property<DateTime?>("PreparedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("prepared_at_utc");
+
+                    b.Property<Guid?>("PreparedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("prepared_by_user_id");
+
+                    b.Property<decimal?>("PreparedQuantity")
+                        .HasPrecision(28, 12)
+                        .HasColumnType("numeric(28,12)")
+                        .HasColumnName("prepared_quantity");
+
+                    b.Property<string>("QuantityUnit")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("quantity_unit");
+
+                    b.Property<DateTime?>("RecipeDeviationApprovedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("recipe_deviation_approved_at_utc");
+
+                    b.Property<Guid?>("RecipeDeviationApprovedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("recipe_deviation_approved_by_user_id");
+
+                    b.Property<int?>("RecipeDeviationApprovedIngredientCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("recipe_deviation_approved_ingredient_count");
+
+                    b.Property<string>("RecipeDeviationReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("recipe_deviation_reason");
+
+                    b.Property<int>("RecordedStepCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("recorded_step_count");
+
+                    b.Property<DateTime>("StartedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at_utc");
+
+                    b.Property<Guid>("StartedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("started_by_user_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("StepsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("steps_json");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<DateTime>("UseByUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("use_by_utc");
+
+                    b.Property<decimal>("UsedQuantity")
+                        .HasPrecision(28, 12)
+                        .HasColumnType("numeric(28,12)")
+                        .HasColumnName("used_quantity");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.Property<Guid>("WorkflowId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("workflow_id");
+
+                    b.Property<string>("WorkflowName")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)")
+                        .HasColumnName("workflow_name");
+
+                    b.Property<int>("WorkflowRevision")
+                        .HasColumnType("integer")
+                        .HasColumnName("workflow_revision");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WorkflowId");
+
+                    b.HasIndex("Status", "StartedAtUtc");
+
+                    b.ToTable("lab_master_mix_preparations", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabMasterMixStepRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("EvidenceJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("evidence_json");
+
+                    b.Property<string>("InputJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("input_json");
+
+                    b.Property<string>("Notes")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("notes");
+
+                    b.Property<DateTime>("PerformedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("performed_at_utc");
+
+                    b.Property<Guid>("PerformedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("performed_by_user_id");
+
+                    b.Property<Guid>("PreparationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("preparation_id");
+
+                    b.Property<int>("Sequence")
+                        .HasColumnType("integer")
+                        .HasColumnName("sequence");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PreparationId", "Sequence");
+
+                    b.ToTable("lab_master_mix_steps", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabMasterMixTrayUse", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("FieldKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("field_key");
+
+                    b.Property<Guid>("LabPreparationBatchId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_preparation_batch_id");
+
+                    b.Property<Guid>("LabPreparationRecordId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_preparation_record_id");
+
+                    b.Property<Guid>("PreparationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("preparation_id");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(28, 12)
+                        .HasColumnType("numeric(28,12)")
+                        .HasColumnName("quantity");
+
+                    b.Property<string>("QuantityUnit")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("quantity_unit");
+
+                    b.Property<DateTime>("RecordedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("recorded_at_utc");
+
+                    b.Property<Guid>("RecordedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("recorded_by_user_id");
+
+                    b.Property<DateTime?>("VoidedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("voided_at_utc");
+
+                    b.Property<Guid?>("VoidedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("voided_by_user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabPreparationBatchId");
+
+                    b.HasIndex("LabPreparationRecordId", "FieldKey")
+                        .IsUnique();
+
+                    b.HasIndex("PreparationId", "LabPreparationBatchId");
+
+                    b.ToTable("lab_master_mix_tray_uses", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabMasterMixWorkflow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("ApprovalOverrideReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("approval_override_reason");
+
+                    b.Property<DateTime?>("ApprovedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("approved_at_utc");
+
+                    b.Property<Guid?>("ApprovedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("approved_by_user_id");
+
+                    b.Property<Guid>("AuthoredByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("authored_by_user_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("IngredientsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("ingredients_json");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("QuantityUnit")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("quantity_unit");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("integer")
+                        .HasColumnName("revision");
+
+                    b.Property<string>("RevisionHistoryJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("revision_history_json");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("StepsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("steps_json");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique()
+                        .HasFilter("status <> 'Retired'");
+
+                    b.ToTable("lab_master_mix_workflows", "lab_ops");
+                });
+
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabMaterialConsumption", b =>
                 {
                     b.Property<Guid>("Id")
@@ -10318,6 +14083,10 @@ namespace PSeq.Operations.Api.Migrations
                     b.Property<Guid>("LabMaterialLotId")
                         .HasColumnType("uuid")
                         .HasColumnName("lab_material_lot_id");
+
+                    b.Property<Guid?>("LabPreparationRecordId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_preparation_record_id");
 
                     b.Property<Guid>("LabProtocolExecutionId")
                         .HasColumnType("uuid")
@@ -10345,9 +14114,15 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("recorded_by_user_id");
 
+                    b.Property<string>("ResourceSnapshotJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("resource_snapshot_json");
+
                     b.HasKey("Id");
 
                     b.HasIndex("LabMaterialLotId");
+
+                    b.HasIndex("LabPreparationRecordId");
 
                     b.HasIndex("LabProtocolExecutionId");
 
@@ -10370,6 +14145,11 @@ namespace PSeq.Operations.Api.Migrations
                     b.Property<Guid?>("CreatedByUserId")
                         .HasColumnType("uuid")
                         .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("DefaultQuantityUnit")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("default_quantity_unit");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean")
@@ -10445,10 +14225,6 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("character varying(50)")
                         .HasColumnName("kind");
 
-                    b.Property<string>("LegacyComponentsJson")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("legacy_components_json");
-
                     b.Property<string>("LotNumber")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -10486,6 +14262,18 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("jsonb")
                         .HasColumnName("qc_results_json");
 
+                    b.Property<string>("QuantityHistoryJson")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasDefaultValue("[]")
+                        .HasColumnName("quantity_history_json");
+
+                    b.Property<string>("QuantityHoldReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("quantity_hold_reason");
+
                     b.Property<string>("QuantityUnit")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -10499,6 +14287,10 @@ namespace PSeq.Operations.Api.Migrations
                     b.Property<Guid?>("SupplierId")
                         .HasColumnType("uuid")
                         .HasColumnName("supplier_id");
+
+                    b.Property<Guid?>("SupplierProductId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("supplier_product_id");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -10519,6 +14311,8 @@ namespace PSeq.Operations.Api.Migrations
 
                     b.HasIndex("SupplierId");
 
+                    b.HasIndex("SupplierProductId");
+
                     b.HasIndex("MaterialDefinitionId", "LotNumber")
                         .IsUnique();
 
@@ -10534,6 +14328,11 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<string>("Carrier")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("carrier");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -10541,6 +14340,11 @@ namespace PSeq.Operations.Api.Migrations
                     b.Property<Guid?>("CreatedByUserId")
                         .HasColumnType("uuid")
                         .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("Destination")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("destination");
 
                     b.Property<DateTime?>("ExpectedCompletionAtUtc")
                         .HasColumnType("timestamp with time zone")
@@ -10554,6 +14358,20 @@ namespace PSeq.Operations.Api.Migrations
                         .IsRequired()
                         .HasColumnType("jsonb")
                         .HasColumnName("manifest_json");
+
+                    b.Property<string>("Outcome")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("outcome");
+
+                    b.Property<DateTime?>("OutcomeAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("outcome_at_utc");
+
+                    b.Property<string>("OutcomeNote")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("outcome_note");
 
                     b.Property<string>("ProviderName")
                         .IsRequired()
@@ -10570,6 +14388,22 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("character varying(255)")
                         .HasColumnName("provider_reference");
 
+                    b.Property<DateTime?>("ResultsReceivedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("results_received_at_utc");
+
+                    b.Property<bool?>("RunNotPerformed")
+                        .HasColumnType("boolean")
+                        .HasColumnName("run_not_performed");
+
+                    b.Property<DateTime?>("SequencingCompletedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("sequencing_completed_at_utc");
+
+                    b.Property<DateTime?>("SequencingStartedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("sequencing_started_at_utc");
+
                     b.Property<DateTime?>("ShippedAtUtc")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("shipped_at_utc");
@@ -10580,6 +14414,11 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("character varying(50)")
                         .HasColumnName("status");
 
+                    b.Property<string>("TrackingReference")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("tracking_reference");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
@@ -10587,6 +14426,32 @@ namespace PSeq.Operations.Api.Migrations
                     b.Property<Guid?>("UpdatedByUserId")
                         .HasColumnType("uuid")
                         .HasColumnName("updated_by_user_id");
+
+                    b.Property<Guid?>("VendorProductId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("vendor_product_id");
+
+                    b.Property<string>("VendorProductName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("vendor_product_name");
+
+                    b.Property<Guid?>("VendorShipmentAddressId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("vendor_shipment_address_id");
+
+                    b.Property<string>("VendorShipmentAddressLabel")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("vendor_shipment_address_label");
+
+                    b.Property<long?>("VendorShipmentAddressVersion")
+                        .HasColumnType("bigint")
+                        .HasColumnName("vendor_shipment_address_version");
+
+                    b.Property<Guid?>("VendorSupplierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("vendor_supplier_id");
 
                     b.Property<long>("Version")
                         .IsConcurrencyToken()
@@ -10599,6 +14464,12 @@ namespace PSeq.Operations.Api.Migrations
                         .IsUnique();
 
                     b.HasIndex("ProviderReference");
+
+                    b.HasIndex("VendorProductId");
+
+                    b.HasIndex("VendorShipmentAddressId");
+
+                    b.HasIndex("VendorSupplierId");
 
                     b.ToTable("lab_ngs_sendouts", "lab_ops");
                 });
@@ -10739,6 +14610,299 @@ namespace PSeq.Operations.Api.Migrations
                     b.ToTable("lab_operations_outbox_events", "lab_ops");
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabPerformanceDecision", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("Approved")
+                        .HasColumnType("boolean")
+                        .HasColumnName("approved");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("reason");
+
+                    b.Property<DateTime>("ReviewedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("reviewed_at_utc");
+
+                    b.Property<Guid>("ReviewedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("reviewed_by_user_id");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("lab_performance_decisions", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabPerformanceProposal", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("BasedOnProposalId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("based_on_proposal_id");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("kind");
+
+                    b.Property<Guid>("LabProtocolExecutionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_protocol_execution_id");
+
+                    b.Property<Guid>("LabSpecimenId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_specimen_id");
+
+                    b.Property<Guid>("LabWorkOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_work_order_id");
+
+                    b.Property<string>("OriginalPerformanceJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("original_performance_json");
+
+                    b.Property<string>("PerformanceJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("performance_json");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("reason");
+
+                    b.Property<DateTime>("RequestedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("requested_at_utc");
+
+                    b.Property<Guid>("RequestedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("requested_by_user_id");
+
+                    b.Property<Guid>("StepRecordId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("step_record_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BasedOnProposalId");
+
+                    b.HasIndex("LabSpecimenId");
+
+                    b.HasIndex("LabWorkOrderId");
+
+                    b.HasIndex("LabProtocolExecutionId", "StepRecordId", "RequestedAtUtc");
+
+                    b.ToTable("lab_performance_proposals", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabPreparationBatch", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime?>("CompletedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("completed_at_utc");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid>("LabServiceWorkflowVersionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_service_workflow_version_id");
+
+                    b.Property<Guid>("LabTrayFormatId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_tray_format_id");
+
+                    b.Property<string>("LayoutJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("layout_json");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)")
+                        .HasColumnName("name");
+
+                    b.Property<DateTime?>("StartedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at_utc");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("TrayBarcode")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("tray_barcode");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabServiceWorkflowVersionId");
+
+                    b.HasIndex("LabTrayFormatId");
+
+                    b.HasIndex("TrayBarcode")
+                        .IsUnique()
+                        .HasFilter("tray_barcode IS NOT NULL AND status IN ('Draft', 'InProgress')");
+
+                    b.ToTable("lab_preparation_batches", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabPreparationMember", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("ConfirmedBarcode")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("confirmed_barcode");
+
+                    b.Property<Guid?>("LabLibraryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_library_id");
+
+                    b.Property<Guid>("LabPreparationBatchId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_preparation_batch_id");
+
+                    b.Property<Guid>("LabSpecimenAttemptId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_specimen_attempt_id");
+
+                    b.Property<Guid?>("LibraryTubeContainerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("library_tube_container_id");
+
+                    b.Property<Guid?>("MaterialTransferId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("material_transfer_id");
+
+                    b.Property<bool>("OutputConfirmed")
+                        .HasColumnType("boolean")
+                        .HasColumnName("output_confirmed");
+
+                    b.Property<Guid?>("OutputContainerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("output_container_id");
+
+                    b.Property<string>("Position")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("position");
+
+                    b.Property<bool>("Removed")
+                        .HasColumnType("boolean")
+                        .HasColumnName("removed");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabLibraryId");
+
+                    b.HasIndex("LabSpecimenAttemptId")
+                        .IsUnique()
+                        .HasFilter("NOT removed");
+
+                    b.HasIndex("LibraryTubeContainerId");
+
+                    b.HasIndex("MaterialTransferId");
+
+                    b.HasIndex("OutputContainerId");
+
+                    b.HasIndex("LabPreparationBatchId", "Position")
+                        .IsUnique()
+                        .HasFilter("NOT removed");
+
+                    b.ToTable("lab_preparation_members", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabPreparationRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("action");
+
+                    b.Property<Guid>("ActorUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_user_id");
+
+                    b.Property<string>("DetailsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("details_json");
+
+                    b.Property<Guid>("LabPreparationBatchId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_preparation_batch_id");
+
+                    b.Property<DateTime>("RecordedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("recorded_at_utc");
+
+                    b.Property<string>("RequestHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("request_hash");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabPreparationBatchId", "RecordedAtUtc");
+
+                    b.ToTable("lab_preparation_records", "lab_ops");
+                });
+
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabPreparedReagentComponent", b =>
                 {
                     b.Property<Guid>("Id")
@@ -10772,6 +14936,120 @@ namespace PSeq.Operations.Api.Migrations
                         .IsUnique();
 
                     b.ToTable("lab_prepared_reagent_components", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabProductType", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("description");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("KitUse")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("kit_use");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("NormalizedName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("normalized_name");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedName")
+                        .IsUnique();
+
+                    b.ToTable("lab_product_types", "lab_ops");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("90000000-0000-4000-8000-000000000001"),
+                            CreatedAt = new DateTime(2026, 9, 28, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Individual sample tubes.",
+                            IsActive = true,
+                            KitUse = "Tube",
+                            Name = "Tube",
+                            NormalizedName = "TUBE",
+                            UpdatedAt = new DateTime(2026, 9, 28, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Version = 1L
+                        },
+                        new
+                        {
+                            Id = new Guid("90000000-0000-4000-8000-000000000002"),
+                            CreatedAt = new DateTime(2026, 9, 28, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Outer shipping containers with a configured tube capacity.",
+                            IsActive = true,
+                            KitUse = "ShippingContainer",
+                            Name = "Shipping Container",
+                            NormalizedName = "SHIPPING CONTAINER",
+                            UpdatedAt = new DateTime(2026, 9, 28, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Version = 1L
+                        },
+                        new
+                        {
+                            Id = new Guid("90000000-0000-4000-8000-000000000003"),
+                            CreatedAt = new DateTime(2026, 9, 28, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Purchased and Phaeno-manufactured reagents.",
+                            IsActive = true,
+                            KitUse = "Other",
+                            Name = "Reagent",
+                            NormalizedName = "REAGENT",
+                            UpdatedAt = new DateTime(2026, 9, 28, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Version = 1L
+                        },
+                        new
+                        {
+                            Id = new Guid("90000000-0000-4000-8000-000000000004"),
+                            CreatedAt = new DateTime(2026, 10, 5, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "External sequencing services supplied by a vendor.",
+                            IsActive = true,
+                            KitUse = "Other",
+                            Name = "Sequencing service",
+                            NormalizedName = "SEQUENCING SERVICE",
+                            UpdatedAt = new DateTime(2026, 10, 5, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Version = 1L
+                        });
                 });
 
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabProtocol", b =>
@@ -10809,6 +15087,19 @@ namespace PSeq.Operations.Api.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)")
                         .HasColumnName("name");
+
+                    b.Property<DateTime?>("RetiredAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("retired_at_utc");
+
+                    b.Property<Guid?>("RetiredByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("retired_by_user_id");
+
+                    b.Property<string>("RetirementReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("retirement_reason");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -10872,6 +15163,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("lab_service_workflow_stage_id");
 
+                    b.Property<Guid?>("LabSpecimenAttemptId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_specimen_attempt_id");
+
                     b.Property<Guid?>("LabSpecimenId")
                         .HasColumnType("uuid")
                         .HasColumnName("lab_specimen_id");
@@ -10911,6 +15206,10 @@ namespace PSeq.Operations.Api.Migrations
 
                     b.HasIndex("LabSpecimenId");
 
+                    b.HasIndex("LabSpecimenAttemptId", "LabServiceWorkflowStageId")
+                        .IsUnique()
+                        .HasFilter("lab_specimen_attempt_id IS NOT NULL");
+
                     b.HasIndex("LabWorkOrderId", "Status");
 
                     b.ToTable("lab_protocol_executions", "lab_ops");
@@ -10922,6 +15221,11 @@ namespace PSeq.Operations.Api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
+
+                    b.Property<string>("ApprovalOverrideReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("approval_override_reason");
 
                     b.Property<DateTime?>("ApprovedAtUtc")
                         .HasColumnType("timestamp with time zone")
@@ -11035,6 +15339,279 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasIndex("AuthorizationId", "AcknowledgedAtUtc");
 
                     b.ToTable("lab_provider_command_receipts", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabReagentManufacturingRun", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AbandonmentReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("abandonment_reason");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<DateTime?>("FinishedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("finished_at_utc");
+
+                    b.Property<Guid?>("FinishedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("finished_by_user_id");
+
+                    b.Property<Guid>("MaterialLotId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("material_lot_id");
+
+                    b.Property<int>("MaterialUseCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("material_use_count");
+
+                    b.Property<int>("RecordedStepCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("recorded_step_count");
+
+                    b.Property<DateTime>("StartedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at_utc");
+
+                    b.Property<Guid>("StartedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("started_by_user_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("StepsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("steps_json");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.Property<Guid>("WorkflowId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("workflow_id");
+
+                    b.Property<string>("WorkflowName")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)")
+                        .HasColumnName("workflow_name");
+
+                    b.Property<int>("WorkflowRevision")
+                        .HasColumnType("integer")
+                        .HasColumnName("workflow_revision");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MaterialLotId")
+                        .IsUnique();
+
+                    b.HasIndex("WorkflowId");
+
+                    b.HasIndex("Status", "StartedAtUtc");
+
+                    b.ToTable("lab_reagent_manufacturing_runs", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabReagentMaterialUse", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("MaterialExhausted")
+                        .HasColumnType("boolean")
+                        .HasColumnName("material_exhausted");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("numeric")
+                        .HasColumnName("quantity");
+
+                    b.Property<string>("QuantityUnit")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("quantity_unit");
+
+                    b.Property<DateTime>("RecordedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("recorded_at_utc");
+
+                    b.Property<Guid>("RecordedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("recorded_by_user_id");
+
+                    b.Property<Guid>("RunId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("run_id");
+
+                    b.Property<Guid>("SourceMaterialLotId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_material_lot_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SourceMaterialLotId");
+
+                    b.HasIndex("RunId", "RecordedAtUtc");
+
+                    b.ToTable("lab_reagent_material_uses", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabReagentRunStep", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Notes")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("notes");
+
+                    b.Property<DateTime>("PerformedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("performed_at_utc");
+
+                    b.Property<Guid>("PerformedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("performed_by_user_id");
+
+                    b.Property<Guid>("RunId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("run_id");
+
+                    b.Property<int>("Sequence")
+                        .HasColumnType("integer")
+                        .HasColumnName("sequence");
+
+                    b.Property<string>("StepKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("step_key");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RunId", "Sequence")
+                        .IsUnique();
+
+                    b.ToTable("lab_reagent_run_steps", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabReagentWorkflow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("ApprovalOverrideReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("approval_override_reason");
+
+                    b.Property<DateTime?>("ApprovedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("approved_at_utc");
+
+                    b.Property<Guid?>("ApprovedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("approved_by_user_id");
+
+                    b.Property<Guid>("AuthoredByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("authored_by_user_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid>("MaterialDefinitionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("material_definition_id");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)")
+                        .HasColumnName("name");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("integer")
+                        .HasColumnName("revision");
+
+                    b.Property<string>("RevisionHistoryJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("revision_history_json");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("StepsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("steps_json");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MaterialDefinitionId")
+                        .IsUnique();
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("lab_reagent_workflows", "lab_ops");
                 });
 
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabRoleAssignment", b =>
@@ -11193,6 +15770,269 @@ namespace PSeq.Operations.Api.Migrations
                     b.ToTable("lab_scientific_approvals", "lab_ops");
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabScientificFile", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("file_name");
+
+                    b.Property<Guid>("LabSpecimenId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_specimen_id");
+
+                    b.Property<Guid>("LabWorkOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_work_order_id");
+
+                    b.Property<DateTime>("RecordedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("recorded_at_utc");
+
+                    b.Property<Guid>("RecordedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("recorded_by_user_id");
+
+                    b.Property<string>("Sha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("sha256");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint")
+                        .HasColumnName("size_bytes");
+
+                    b.Property<string>("StorageKey")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("storage_key");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabSpecimenId");
+
+                    b.HasIndex("StorageKey")
+                        .IsUnique();
+
+                    b.HasIndex("LabWorkOrderId", "LabSpecimenId", "RecordedAtUtc");
+
+                    b.ToTable("lab_scientific_files", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabScientificUpload", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("ChunksJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("chunks_json");
+
+                    b.Property<Guid?>("CompletedFileId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("completed_file_id");
+
+                    b.Property<DateTime>("ExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at_utc");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("file_name");
+
+                    b.Property<Guid>("LabSpecimenId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_specimen_id");
+
+                    b.Property<Guid>("LabWorkOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_work_order_id");
+
+                    b.Property<string>("Sha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("sha256");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint")
+                        .HasColumnName("size_bytes");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompletedFileId");
+
+                    b.HasIndex("ExpiresAtUtc");
+
+                    b.HasIndex("LabSpecimenId");
+
+                    b.HasIndex("LabWorkOrderId");
+
+                    b.ToTable("lab_scientific_uploads", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabSequencingOutput", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("CorrectionReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("correction_reason");
+
+                    b.Property<Guid?>("CorrectsOutputId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("corrects_output_id");
+
+                    b.Property<string>("ExternalFileReference")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("external_file_reference");
+
+                    b.Property<string>("ExternalIdentitySha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("external_identity_sha256");
+
+                    b.Property<Guid>("LabLibraryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_library_id");
+
+                    b.Property<Guid>("LabNgsSendoutId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_ngs_sendout_id");
+
+                    b.Property<Guid>("LabSpecimenAttemptId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_specimen_attempt_id");
+
+                    b.Property<Guid>("LabSpecimenId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_specimen_id");
+
+                    b.Property<Guid>("LabWorkOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_work_order_id");
+
+                    b.Property<string>("LibraryPreparationChoice")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("library_preparation_choice");
+
+                    b.Property<string>("LineageSnapshotJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("lineage_snapshot_json");
+
+                    b.Property<string>("ProviderKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("provider_key");
+
+                    b.Property<string>("ProviderRunReference")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("provider_run_reference");
+
+                    b.Property<DateTime>("RecordedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("recorded_at_utc");
+
+                    b.Property<string>("RecordedBySource")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("recorded_by_source");
+
+                    b.Property<Guid?>("RecordedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("recorded_by_user_id");
+
+                    b.Property<string>("RequestSha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("request_sha256");
+
+                    b.Property<string>("SampleMappingReference")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("sample_mapping_reference");
+
+                    b.Property<string>("ScientificEvidenceJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("scientific_evidence_json");
+
+                    b.Property<int?>("SequencingRunNumber")
+                        .HasColumnType("integer")
+                        .HasColumnName("sequencing_run_number");
+
+                    b.Property<string>("Sha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("sha256");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint")
+                        .HasColumnName("size_bytes");
+
+                    b.Property<Guid>("SourceContainerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_container_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CorrectsOutputId");
+
+                    b.HasIndex("ExternalIdentitySha256")
+                        .IsUnique();
+
+                    b.HasIndex("LabLibraryId");
+
+                    b.HasIndex("LabNgsSendoutId");
+
+                    b.HasIndex("LabSpecimenAttemptId");
+
+                    b.HasIndex("SourceContainerId");
+
+                    b.HasIndex("LabSpecimenId", "SequencingRunNumber");
+
+                    b.HasIndex("LabWorkOrderId", "LabSpecimenId", "RecordedAtUtc");
+
+                    b.ToTable("lab_sequencing_outputs", "lab_ops");
+                });
+
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabServiceWorkflow", b =>
                 {
                     b.Property<Guid>("Id")
@@ -11308,6 +16148,11 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<string>("ApprovalOverrideReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("approval_override_reason");
+
                     b.Property<DateTime?>("ApprovedAtUtc")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("approved_at_utc");
@@ -11331,6 +16176,15 @@ namespace PSeq.Operations.Api.Migrations
                     b.Property<Guid?>("CreatedByUserId")
                         .HasColumnType("uuid")
                         .HasColumnName("created_by_user_id");
+
+                    b.Property<DateTime?>("InvalidatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("invalidated_at_utc");
+
+                    b.Property<string>("InvalidationReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("invalidation_reason");
 
                     b.Property<Guid>("LabServiceWorkflowId")
                         .HasColumnType("uuid")
@@ -11382,10 +16236,18 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<DateTime?>("AcceptedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("accepted_at_utc");
+
                     b.Property<string>("AccessionNumber")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
                         .HasColumnName("accession_number");
+
+                    b.Property<DateTime?>("CompletedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("completed_at_utc");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -11414,6 +16276,38 @@ namespace PSeq.Operations.Api.Migrations
                     b.Property<Guid>("LabWorkOrderId")
                         .HasColumnType("uuid")
                         .HasColumnName("lab_work_order_id");
+
+                    b.Property<DateTime?>("OriginalTargetAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("original_target_at_utc");
+
+                    b.Property<string>("ProcessingNextAction")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("processing_next_action");
+
+                    b.Property<string>("ProcessingNote")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("processing_note");
+
+                    b.Property<Guid?>("ProcessingOwnerUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("processing_owner_user_id");
+
+                    b.Property<string>("ProcessingReasonCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("processing_reason_code");
+
+                    b.Property<string>("ProcessingState")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("processing_state");
+
+                    b.Property<DateTime?>("ProcessingUpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("processing_updated_at_utc");
 
                     b.Property<string>("ReceiptCondition")
                         .HasMaxLength(1000)
@@ -11453,6 +16347,303 @@ namespace PSeq.Operations.Api.Migrations
                         .IsUnique();
 
                     b.ToTable("lab_specimens", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabSpecimenAttempt", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime?>("ClosedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("closed_at_utc");
+
+                    b.Property<Guid?>("ClosedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("closed_by_user_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid?>("FailedExecutionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("failed_execution_id");
+
+                    b.Property<string>("FailureEvidence")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("failure_evidence");
+
+                    b.Property<string>("FailureReasonCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("failure_reason_code");
+
+                    b.Property<string>("HoldNextAction")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("hold_next_action");
+
+                    b.Property<Guid?>("HoldOwnerUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("hold_owner_user_id");
+
+                    b.Property<string>("HoldReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("hold_reason");
+
+                    b.Property<Guid>("LabServiceWorkflowVersionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_service_workflow_version_id");
+
+                    b.Property<Guid>("LabSpecimenId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_specimen_id");
+
+                    b.Property<Guid>("LabWorkOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_work_order_id");
+
+                    b.Property<Guid?>("PreviousAttemptId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("previous_attempt_id");
+
+                    b.Property<int>("Sequence")
+                        .HasColumnType("integer")
+                        .HasColumnName("sequence");
+
+                    b.Property<Guid>("SourceContainerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_container_id");
+
+                    b.Property<string>("StageSkipsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("stage_skips_json");
+
+                    b.Property<DateTime?>("StartedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at_utc");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("state");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FailedExecutionId");
+
+                    b.HasIndex("LabServiceWorkflowVersionId");
+
+                    b.HasIndex("LabSpecimenId")
+                        .IsUnique()
+                        .HasFilter("state IN ('Planned', 'InProgress', 'OnHold')");
+
+                    b.HasIndex("LabWorkOrderId");
+
+                    b.HasIndex("PreviousAttemptId");
+
+                    b.HasIndex("SourceContainerId")
+                        .IsUnique()
+                        .HasFilter("state IN ('Planned', 'InProgress', 'OnHold')");
+
+                    b.HasIndex("LabSpecimenId", "Sequence")
+                        .IsUnique();
+
+                    b.ToTable("lab_specimen_attempts", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabStageDuration", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("DayBasis")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("day_basis");
+
+                    b.Property<decimal>("Days")
+                        .HasPrecision(7, 2)
+                        .HasColumnType("numeric(7,2)")
+                        .HasColumnName("days");
+
+                    b.Property<Guid>("LabTimingPolicyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_timing_policy_id");
+
+                    b.Property<string>("StageKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("stage_key");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabTimingPolicyId", "StageKey")
+                        .IsUnique();
+
+                    b.ToTable("lab_stage_durations", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabStep", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("description");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("key");
+
+                    b.Property<int>("LatestVersion")
+                        .HasColumnType("integer")
+                        .HasColumnName("latest_version");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("NormalizedName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("normalized_name");
+
+                    b.Property<DateTime?>("RetiredAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("retired_at_utc");
+
+                    b.Property<Guid?>("RetiredByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("retired_by_user_id");
+
+                    b.Property<string>("RetirementReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("retirement_reason");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Key")
+                        .IsUnique();
+
+                    b.HasIndex("NormalizedName")
+                        .IsUnique();
+
+                    b.ToTable("lab_steps", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabStepVersion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("ApprovalOverrideReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("approval_override_reason");
+
+                    b.Property<DateTime?>("ApprovedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("approved_at_utc");
+
+                    b.Property<Guid?>("ApprovedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("approved_by_user_id");
+
+                    b.Property<DateTime>("AuthoredAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("authored_at_utc");
+
+                    b.Property<Guid>("AuthoredByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("authored_by_user_id");
+
+                    b.Property<string>("DefinitionJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("definition_json");
+
+                    b.Property<Guid>("LabStepId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_step_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("status");
+
+                    b.Property<int>("StepVersion")
+                        .HasColumnType("integer")
+                        .HasColumnName("step_version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabStepId", "StepVersion")
+                        .IsUnique();
+
+                    b.ToTable("lab_step_versions", "lab_ops");
                 });
 
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabStorageLocation", b =>
@@ -11528,6 +16719,12 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("is_active");
 
+                    b.Property<bool>("IsInternalProducer")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_internal_producer");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -11555,12 +16752,527 @@ namespace PSeq.Operations.Api.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("IsInternalProducer")
+                        .IsUnique()
+                        .HasFilter("is_internal_producer = true");
+
                     b.HasIndex("NormalizedName")
                         .IsUnique();
 
                     b.HasIndex("IsActive", "Name");
 
                     b.ToTable("lab_suppliers", "lab_ops");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("1e739efa-20d6-462d-a954-b12721fcfb20"),
+                            CreatedAt = new DateTime(2026, 9, 28, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            IsInternalProducer = true,
+                            Name = "Phaeno",
+                            NormalizedName = "PHAENO",
+                            UpdatedAt = new DateTime(2026, 9, 28, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Version = 1L
+                        });
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabSupplierProduct", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("CanExpire")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("can_expire");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("DefaultQuantityUnit")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("default_quantity_unit");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("description");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<Guid?>("MaterialDefinitionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("material_definition_id");
+
+                    b.Property<decimal?>("MaximumSampleAmount")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)")
+                        .HasColumnName("maximum_sample_amount");
+
+                    b.Property<string>("NormalizedProductNumber")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("normalized_product_number");
+
+                    b.Property<string>("ProductNumber")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("product_number");
+
+                    b.Property<Guid>("ProductTypeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("product_type_id");
+
+                    b.Property<string>("SampleAmountUnit")
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)")
+                        .HasColumnName("sample_amount_unit");
+
+                    b.Property<Guid>("SupplierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("supplier_id");
+
+                    b.Property<int?>("TubeCapacity")
+                        .HasColumnType("integer")
+                        .HasColumnName("tube_capacity");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MaterialDefinitionId")
+                        .IsUnique()
+                        .HasFilter("material_definition_id IS NOT NULL");
+
+                    b.HasIndex("ProductTypeId");
+
+                    b.HasIndex("SupplierId", "NormalizedProductNumber")
+                        .IsUnique();
+
+                    b.ToTable("lab_supplier_products", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabSupplierShipmentAddress", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AddressLine1")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("address_line1");
+
+                    b.Property<string>("AddressLine2")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("address_line2");
+
+                    b.Property<string>("City")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("city");
+
+                    b.Property<string>("CountryCode")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)")
+                        .HasColumnName("country_code");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("Instructions")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("instructions");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("label");
+
+                    b.Property<string>("NormalizedLabel")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("normalized_label");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("phone");
+
+                    b.Property<string>("PostalCode")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("postal_code");
+
+                    b.Property<string>("Recipient")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("recipient");
+
+                    b.Property<string>("Region")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("region");
+
+                    b.Property<Guid>("SupplierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("supplier_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SupplierId", "NormalizedLabel")
+                        .IsUnique();
+
+                    b.ToTable("lab_supplier_shipment_addresses", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabTimingPolicy", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid>("LabBusinessCalendarId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_business_calendar_id");
+
+                    b.Property<Guid>("LabServiceWorkflowVersionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_service_workflow_version_id");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("reason");
+
+                    b.Property<bool>("RequiresSequencing")
+                        .HasColumnType("boolean")
+                        .HasColumnName("requires_sequencing");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("integer")
+                        .HasColumnName("revision");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabBusinessCalendarId");
+
+                    b.HasIndex("LabServiceWorkflowVersionId", "Revision")
+                        .IsUnique();
+
+                    b.ToTable("lab_timing_policies", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabTrayFormat", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("LayoutJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("layout_json");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("lab_tray_formats", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabVendorLibraryException", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("LabBatchMemberId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_batch_member_id");
+
+                    b.Property<Guid>("LabNgsSendoutId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_ngs_sendout_id");
+
+                    b.Property<Guid>("LabVendorResultsVersionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_vendor_results_version_id");
+
+                    b.Property<string>("Outcome")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("outcome");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("reason");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabBatchMemberId");
+
+                    b.HasIndex("LabNgsSendoutId");
+
+                    b.HasIndex("LabVendorResultsVersionId", "LabBatchMemberId")
+                        .IsUnique();
+
+                    b.ToTable("lab_vendor_library_exceptions", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabVendorResultReference", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("LabBatchMemberId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_batch_member_id");
+
+                    b.Property<Guid>("LabNgsSendoutId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_ngs_sendout_id");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("label");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("notes");
+
+                    b.Property<DateTime>("RecordedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("recorded_at_utc");
+
+                    b.Property<Guid>("RecordedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("recorded_by_user_id");
+
+                    b.Property<string>("StorageReference")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("storage_reference");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabBatchMemberId");
+
+                    b.HasIndex("LabNgsSendoutId");
+
+                    b.ToTable("lab_vendor_result_references", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabVendorResultsDraft", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<DateTime>("ExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at_utc");
+
+                    b.Property<Guid>("LabNgsSendoutId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_ngs_sendout_id");
+
+                    b.Property<string>("PayloadJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("payload_json");
+
+                    b.Property<DateTime?>("SavedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("saved_at_utc");
+
+                    b.Property<long>("SendoutVersion")
+                        .HasColumnType("bigint")
+                        .HasColumnName("sendout_version");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("LabNgsSendoutId", "UserId", "CreatedAtUtc");
+
+                    b.ToTable("lab_vendor_results_drafts", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabVendorResultsVersion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("LabNgsSendoutId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_ngs_sendout_id");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("note");
+
+                    b.Property<DateTime>("RecordedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("recorded_at_utc");
+
+                    b.Property<string>("RecordedByName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("recorded_by_name");
+
+                    b.Property<Guid>("RecordedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("recorded_by_user_id");
+
+                    b.Property<int>("ResultVersion")
+                        .HasColumnType("integer")
+                        .HasColumnName("result_version");
+
+                    b.Property<string>("SnapshotJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("snapshot_json");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RecordedByUserId");
+
+                    b.HasIndex("LabNgsSendoutId", "ResultVersion")
+                        .IsUnique();
+
+                    b.ToTable("lab_vendor_results_versions", "lab_ops");
                 });
 
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabWorkAuthorizationVersion", b =>
@@ -11666,6 +17378,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<DateTime?>("AdjustedDeliveryDueAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("adjusted_delivery_due_at_utc");
+
                     b.Property<Guid>("AuthorizationId")
                         .HasColumnType("uuid")
                         .HasColumnName("authorization_id");
@@ -11680,6 +17396,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("authorization_source_id");
 
+                    b.Property<DateTime?>("CompletedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("completed_at_utc");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -11692,14 +17412,48 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("current_authorization_version");
 
+                    b.Property<DateTime?>("DeliveryDueAtFirstDeliveryUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("delivery_due_at_first_delivery_utc");
+
+                    b.Property<DateTime?>("ExpectedCompletionAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expected_completion_at_utc");
+
+                    b.Property<DateTime?>("FirstDeliveredAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("first_delivered_at_utc");
+
+                    b.Property<bool>("HasTimingOverride")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("has_timing_override");
+
                     b.Property<Guid?>("LabServiceWorkflowVersionId")
                         .HasColumnType("uuid")
                         .HasColumnName("lab_service_workflow_version_id");
+
+                    b.Property<int?>("MaximumTurnaroundDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("maximum_turnaround_days");
+
+                    b.Property<int?>("MinimumTurnaroundDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("minimum_turnaround_days");
 
                     b.Property<string>("OpaqueSubmitterReference")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)")
                         .HasColumnName("opaque_submitter_reference");
+
+                    b.Property<DateTime?>("OriginalDeliveryDueAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("original_delivery_due_at_utc");
+
+                    b.Property<DateTime?>("OriginalTargetAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("original_target_at_utc");
 
                     b.Property<long>("ProjectionVersion")
                         .HasColumnType("bigint")
@@ -11724,6 +17478,19 @@ namespace PSeq.Operations.Api.Migrations
                     b.Property<Guid>("SubmittingOrganizationId")
                         .HasColumnType("uuid")
                         .HasColumnName("submitting_organization_id");
+
+                    b.Property<int?>("TubeUsePolicyAuthorizationVersion")
+                        .HasColumnType("integer")
+                        .HasColumnName("tube_use_policy_authorization_version");
+
+                    b.Property<string>("TubeUsePolicyKey")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("tube_use_policy_key");
+
+                    b.Property<int?>("TubeUsePolicyVersion")
+                        .HasColumnType("integer")
+                        .HasColumnName("tube_use_policy_version");
 
                     b.Property<string>("TurnaroundPolicyKey")
                         .IsRequired()
@@ -11772,6 +17539,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("data_assembly_request_id");
 
+                    b.Property<Guid?>("KitUnitId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("kit_unit_id");
+
                     b.Property<string>("ManifestJson")
                         .IsRequired()
                         .HasColumnType("jsonb")
@@ -11799,6 +17570,8 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnName("validation_summary_json");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("KitUnitId");
 
                     b.HasIndex("PreviousRevisionId");
 
@@ -12059,6 +17832,14 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("is_discarded");
 
+                    b.Property<Guid?>("KitAssemblyCaseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("kit_assembly_case_id");
+
+                    b.Property<string>("KitProfileSnapshotJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("kit_profile_snapshot_json");
+
                     b.Property<string>("MetadataJson")
                         .IsRequired()
                         .HasColumnType("jsonb")
@@ -12155,6 +17936,9 @@ namespace PSeq.Operations.Api.Migrations
 
                     b.HasIndex("DepartmentId");
 
+                    b.HasIndex("KitAssemblyCaseId")
+                        .IsUnique();
+
                     b.HasIndex("RequestNumber")
                         .IsUnique();
 
@@ -12165,6 +17949,627 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasIndex("OrganizationId", "DepartmentId", "Status", "CreatedAt");
 
                     b.ToTable("data_assembly_requests", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.KitAssemblyCase", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AssemblyProfileId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("assembly_profile_id");
+
+                    b.Property<Guid?>("AssemblyRequestId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("assembly_request_id");
+
+                    b.Property<Guid?>("BillingDocumentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("billing_document_id");
+
+                    b.Property<Guid?>("BillingShipmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("billing_shipment_id");
+
+                    b.Property<string>("CaseNumber")
+                        .IsRequired()
+                        .HasMaxLength(105)
+                        .HasColumnType("character varying(105)")
+                        .HasColumnName("case_number");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid>("CurrentKitUnitId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("current_kit_unit_id");
+
+                    b.Property<string>("DeadlineBasis")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("deadline_basis");
+
+                    b.Property<Guid>("DepartmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("department_id");
+
+                    b.Property<DateTime?>("FirstSubmittedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("first_submitted_at");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
+
+                    b.Property<Guid>("OriginalKitUnitId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("original_kit_unit_id");
+
+                    b.Property<Guid>("PartnerReagentOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("partner_reagent_order_id");
+
+                    b.Property<string>("ProfileSnapshotJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("profile_snapshot_json");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTime?>("SubmissionDeadlineAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("submission_deadline_at");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssemblyProfileId");
+
+                    b.HasIndex("AssemblyRequestId")
+                        .IsUnique();
+
+                    b.HasIndex("BillingDocumentId");
+
+                    b.HasIndex("BillingShipmentId");
+
+                    b.HasIndex("CaseNumber")
+                        .IsUnique();
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("CurrentKitUnitId")
+                        .IsUnique();
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("OriginalKitUnitId")
+                        .IsUnique();
+
+                    b.HasIndex("PartnerReagentOrderId");
+
+                    b.HasIndex("UpdatedByUserId");
+
+                    b.HasIndex("Status", "SubmissionDeadlineAt");
+
+                    b.HasIndex("OrganizationId", "DepartmentId", "PartnerReagentOrderId");
+
+                    b.ToTable("kit_assembly_cases", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.KitCaseEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("ActorUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_user_id");
+
+                    b.Property<DateTime>("At")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("at");
+
+                    b.Property<DateTime?>("CurrentDeadlineAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("current_deadline_at");
+
+                    b.Property<Guid?>("CurrentKitUnitId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("current_kit_unit_id");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("event_type");
+
+                    b.Property<Guid>("KitAssemblyCaseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("kit_assembly_case_id");
+
+                    b.Property<DateTime?>("PreviousDeadlineAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("previous_deadline_at");
+
+                    b.Property<Guid?>("PreviousKitUnitId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("previous_kit_unit_id");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("reason");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorUserId");
+
+                    b.HasIndex("CurrentKitUnitId");
+
+                    b.HasIndex("PreviousKitUnitId");
+
+                    b.HasIndex("KitAssemblyCaseId", "At");
+
+                    b.ToTable("kit_case_events", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.LabJobPhase", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("AcceptedSubtotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("accepted_subtotal");
+
+                    b.Property<DateTime?>("AdjustedDueAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("adjusted_due_at_utc");
+
+                    b.Property<Guid?>("CalendarId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("calendar_id");
+
+                    b.Property<int?>("CalendarRevision")
+                        .HasColumnType("integer")
+                        .HasColumnName("calendar_revision");
+
+                    b.Property<string>("CancellationReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("cancellation_reason");
+
+                    b.Property<DateTime?>("CancelledAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("cancelled_at_utc");
+
+                    b.Property<Guid?>("CancelledByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("cancelled_by_user_id");
+
+                    b.Property<decimal>("CarriedInvoicedSubtotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("carried_invoiced_subtotal");
+
+                    b.Property<DateTime?>("CompleteReceiptAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("complete_receipt_at_utc");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<DateTime?>("FirstDeliveredAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("first_delivered_at_utc");
+
+                    b.Property<DateTime?>("FirstReceiptAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("first_receipt_at_utc");
+
+                    b.Property<Guid>("LabServiceOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_service_order_id");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("name");
+
+                    b.Property<DateTime?>("OriginalDueAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("original_due_at_utc");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("integer")
+                        .HasColumnName("position");
+
+                    b.Property<DateTime?>("PreparationCompletedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("preparation_completed_at_utc");
+
+                    b.Property<string>("PriceLinesJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("price_lines_json");
+
+                    b.Property<string>("PriceProposalNote")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("price_proposal_note");
+
+                    b.Property<DateTime?>("PriceProposedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("price_proposed_at_utc");
+
+                    b.Property<Guid?>("PriceProposedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("price_proposed_by_user_id");
+
+                    b.Property<decimal?>("ProposedAdditionalRunPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("proposed_additional_run_price");
+
+                    b.Property<decimal?>("ProposedUnitPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("proposed_unit_price");
+
+                    b.Property<int>("SampleCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("sample_count");
+
+                    b.Property<string>("ScopeJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("scope_json");
+
+                    b.Property<DateTime?>("StartedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at_utc");
+
+                    b.Property<DateTime?>("SupersededAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("superseded_at_utc");
+
+                    b.Property<int?>("TurnaroundBusinessDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("turnaround_business_days");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabServiceOrderId", "Position")
+                        .HasFilter("superseded_at_utc IS NULL");
+
+                    b.ToTable("lab_job_phases", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.LabPhaseBillingAssignment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid>("LabJobPhaseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_job_phase_id");
+
+                    b.Property<Guid>("LabPhaseInvoiceAllocationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_phase_invoice_allocation_id");
+
+                    b.Property<decimal>("Subtotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("subtotal");
+
+                    b.Property<DateTime?>("SupersededAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("superseded_at_utc");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabPhaseInvoiceAllocationId");
+
+                    b.HasIndex("LabJobPhaseId", "LabPhaseInvoiceAllocationId");
+
+                    b.ToTable("lab_phase_billing_assignments", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.LabPhaseCancellationRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<DateTime?>("DecidedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("decided_at_utc");
+
+                    b.Property<Guid?>("DecidedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("decided_by_user_id");
+
+                    b.Property<string>("DecisionReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("decision_reason");
+
+                    b.Property<Guid>("LabJobPhaseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_job_phase_id");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("reason");
+
+                    b.Property<DateTime>("RequestedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("requested_at_utc");
+
+                    b.Property<Guid>("RequestedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("requested_by_user_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabJobPhaseId")
+                        .IsUnique()
+                        .HasFilter("status = 'Pending'");
+
+                    b.ToTable("lab_phase_cancellation_requests", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.LabPhaseInvoiceAllocation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid>("InvoiceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("invoice_id");
+
+                    b.Property<Guid>("LabJobPhaseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_job_phase_id");
+
+                    b.Property<string>("PhaseNameSnapshot")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("phase_name_snapshot");
+
+                    b.Property<string>("PriceLinesSnapshotJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("price_lines_snapshot_json");
+
+                    b.Property<decimal>("Subtotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("subtotal");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabJobPhaseId");
+
+                    b.HasIndex("InvoiceId", "LabJobPhaseId")
+                        .IsUnique();
+
+                    b.ToTable("lab_phase_invoice_allocations", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.LabPhasePlanProposal", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AfterJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("after_json");
+
+                    b.Property<string>("BeforeJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("before_json");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<DateTime?>("DecidedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("decided_at_utc");
+
+                    b.Property<Guid?>("DecidedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("decided_by_user_id");
+
+                    b.Property<string>("DecisionReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("decision_reason");
+
+                    b.Property<Guid>("LabServiceOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_service_order_id");
+
+                    b.Property<long>("OrderVersion")
+                        .HasColumnType("bigint")
+                        .HasColumnName("order_version");
+
+                    b.Property<DateTime>("ProposedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("proposed_at_utc");
+
+                    b.Property<Guid>("ProposedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("proposed_by_user_id");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("reason");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabServiceOrderId")
+                        .IsUnique()
+                        .HasFilter("status = 'Pending'");
+
+                    b.ToTable("lab_phase_plan_proposals", "commercial_ops");
                 });
 
             modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.LabResultRelease", b =>
@@ -12191,6 +18596,10 @@ namespace PSeq.Operations.Api.Migrations
                     b.Property<DateTime>("GeneratedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("generated_at");
+
+                    b.Property<Guid?>("LabAnalysisRunId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_analysis_run_id");
 
                     b.Property<Guid>("LabSampleId")
                         .HasColumnType("uuid")
@@ -12241,6 +18650,15 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("released_at");
 
+                    b.Property<string>("ResultLocator")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("result_locator");
+
+                    b.Property<bool>("TraceabilityRequired")
+                        .HasColumnType("boolean")
+                        .HasColumnName("traceability_required");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
@@ -12256,6 +18674,8 @@ namespace PSeq.Operations.Api.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("LabAnalysisRunId");
+
                     b.HasIndex("LabServiceOrderId");
 
                     b.HasIndex("LabSampleId", "ReleaseVersion")
@@ -12263,7 +18683,10 @@ namespace PSeq.Operations.Api.Migrations
 
                     b.HasIndex("OrganizationId", "ReleaseStatus");
 
-                    b.ToTable("lab_result_releases", "commercial_ops");
+                    b.ToTable("lab_result_releases", "commercial_ops", t =>
+                        {
+                            t.HasCheckConstraint("ck_lab_release_required_lineage", "NOT traceability_required OR (lab_analysis_run_id IS NOT NULL AND result_locator IS NOT NULL AND length(btrim(result_locator)) > 0)");
+                        });
                 });
 
             modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.LabSample", b =>
@@ -12326,6 +18749,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("character varying(4000)")
                         .HasColumnName("internal_note");
 
+                    b.Property<Guid>("LabJobPhaseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_job_phase_id");
+
                     b.Property<Guid>("LabServiceOrderId")
                         .HasColumnType("uuid")
                         .HasColumnName("lab_service_order_id");
@@ -12376,6 +18803,12 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("character varying(2000)")
                         .HasColumnName("safety_declaration");
 
+                    b.Property<int>("SequencingRunCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1)
+                        .HasColumnName("sequencing_run_count");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -12418,6 +18851,8 @@ namespace PSeq.Operations.Api.Migrations
                         .HasFilter("\"accession_id\" IS NOT NULL");
 
                     b.HasIndex("ReplacementForSampleId");
+
+                    b.HasIndex("LabJobPhaseId", "Status");
 
                     b.HasIndex("LabServiceOrderId", "CustomerSampleId")
                         .IsUnique();
@@ -12512,6 +18947,179 @@ namespace PSeq.Operations.Api.Migrations
                     b.ToTable("lab_sample_import_previews", "commercial_ops");
                 });
 
+            modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.LabSampleTubeKitSelection", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid>("DepartmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("department_id");
+
+                    b.Property<DateTime?>("FinishedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("finished_at");
+
+                    b.Property<Guid?>("FinishedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("finished_by_user_id");
+
+                    b.Property<Guid?>("LabJobPhaseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_job_phase_id");
+
+                    b.Property<Guid>("LabServiceOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_service_order_id");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
+
+                    b.Property<Guid>("StockKitId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("stock_kit_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabJobPhaseId")
+                        .HasDatabaseName("ix_lab_sample_tube_kit_selection_phase");
+
+                    b.HasIndex("StockKitId")
+                        .IsUnique();
+
+                    b.HasIndex("LabServiceOrderId", "StockKitId")
+                        .IsUnique();
+
+                    b.ToTable("lab_sample_tube_kit_selections", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.LabSampleTubePair", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("BiologicalSource")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("biological_source");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("CustomerSampleId")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("customer_sample_id");
+
+                    b.Property<decimal>("DeclaredQuantity")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)")
+                        .HasColumnName("declared_quantity");
+
+                    b.Property<string>("DeclaredQuantityUnit")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("declared_quantity_unit");
+
+                    b.Property<Guid>("DepartmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("department_id");
+
+                    b.Property<Guid>("LabJobPhaseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_job_phase_id");
+
+                    b.Property<Guid>("LabServiceOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_service_order_id");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
+
+                    b.Property<int>("SequencingRunCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("sequencing_run_count");
+
+                    b.Property<Guid>("StockKitId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("stock_kit_id");
+
+                    b.Property<Guid>("StockTubeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("stock_tube_id");
+
+                    b.Property<string>("SupplierTubeBarcode")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("supplier_tube_barcode");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabJobPhaseId");
+
+                    b.HasIndex("StockKitId");
+
+                    b.HasIndex("StockTubeId")
+                        .IsUnique();
+
+                    b.HasIndex("LabServiceOrderId", "CustomerSampleId")
+                        .IsUnique();
+
+                    b.HasIndex("LabServiceOrderId", "StockTubeId")
+                        .IsUnique();
+
+                    b.ToTable("lab_sample_tube_pairs", "commercial_ops");
+                });
+
             modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.LabServiceOrder", b =>
                 {
                     b.Property<Guid>("Id")
@@ -12527,9 +19135,17 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("assigned_to_user_id");
 
+                    b.Property<string>("CommercialDraftJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("commercial_draft_json");
+
                     b.Property<DateTime?>("CompletedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("completed_at");
+
+                    b.Property<string>("ConfiguredCommercialSnapshotJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("configured_commercial_snapshot_json");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -12542,6 +19158,10 @@ namespace PSeq.Operations.Api.Migrations
                     b.Property<Guid?>("CurrentQuoteId")
                         .HasColumnType("uuid")
                         .HasColumnName("current_quote_id");
+
+                    b.Property<string>("CustomerDraftJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("customer_draft_json");
 
                     b.Property<string>("CustomerReference")
                         .IsRequired()
@@ -12562,6 +19182,14 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("due_at");
 
+                    b.Property<string>("EntryMode")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasDefaultValue("ManualQuote")
+                        .HasColumnName("entry_mode");
+
                     b.Property<bool>("HasMixedBiologicalSources")
                         .HasColumnType("boolean")
                         .HasColumnName("has_mixed_biological_sources");
@@ -12574,6 +19202,10 @@ namespace PSeq.Operations.Api.Migrations
                     b.Property<bool>("IsDiscarded")
                         .HasColumnType("boolean")
                         .HasColumnName("is_discarded");
+
+                    b.Property<Guid?>("LabServiceOfferingId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_service_offering_id");
 
                     b.Property<string>("NormalizedJobName")
                         .IsRequired()
@@ -12590,6 +19222,10 @@ namespace PSeq.Operations.Api.Migrations
                     b.Property<Guid>("OrganizationId")
                         .HasColumnType("uuid")
                         .HasColumnName("organization_id");
+
+                    b.Property<int>("PhasePlanRevision")
+                        .HasColumnType("integer")
+                        .HasColumnName("phase_plan_revision");
 
                     b.Property<DateTime?>("PlacedAt")
                         .HasColumnType("timestamp with time zone")
@@ -12621,6 +19257,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("request_revision");
 
+                    b.Property<Guid?>("RequestedCatalogItemId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("requested_catalog_item_id");
+
                     b.Property<int>("RequestedSpecimenCount")
                         .HasColumnType("integer")
                         .HasColumnName("requested_specimen_count");
@@ -12644,10 +19284,56 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("sample_roster_finalized_by_user_id");
 
+                    b.Property<Guid?>("SampleTypeDefinitionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("sample_type_definition_id");
+
+                    b.Property<string>("SampleTypeMaterialClassSnapshot")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("sample_type_material_class_snapshot");
+
+                    b.Property<int?>("SequencingRunCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("sequencing_run_count");
+
                     b.Property<string>("SharedBiologicalSource")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)")
                         .HasColumnName("shared_biological_source");
+
+                    b.Property<DateTime?>("ShippingDestinationAssignedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("shipping_destination_assigned_at");
+
+                    b.Property<Guid?>("ShippingDestinationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("shipping_destination_id");
+
+                    b.Property<Guid?>("ShippingProcedureRevisionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("shipping_procedure_revision_id");
+
+                    b.Property<DateTime?>("ShippingSafetyHeldAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("shipping_safety_held_at");
+
+                    b.Property<Guid?>("ShippingSafetyHeldByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("shipping_safety_held_by_user_id");
+
+                    b.Property<string>("ShippingSafetyHoldReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("shipping_safety_hold_reason");
+
+                    b.Property<DateTime?>("ShippingSafetyHoldResolvedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("shipping_safety_hold_resolved_at");
+
+                    b.Property<Guid?>("ShippingSafetyHoldResolvedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("shipping_safety_hold_resolved_by_user_id");
 
                     b.Property<Guid?>("SourceRequestId")
                         .HasColumnType("uuid")
@@ -12684,6 +19370,15 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("character varying(2000)")
                         .HasColumnName("tenant_safe_reason");
 
+                    b.Property<string>("TubeUsePolicyKey")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("tube_use_policy_key");
+
+                    b.Property<int?>("TubeUsePolicyVersion")
+                        .HasColumnType("integer")
+                        .HasColumnName("tube_use_policy_version");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
@@ -12691,6 +19386,10 @@ namespace PSeq.Operations.Api.Migrations
                     b.Property<Guid?>("UpdatedByUserId")
                         .HasColumnType("uuid")
                         .HasColumnName("updated_by_user_id");
+
+                    b.Property<bool>("UsesPairedPreparation")
+                        .HasColumnType("boolean")
+                        .HasColumnName("uses_paired_preparation");
 
                     b.Property<long>("Version")
                         .IsConcurrencyToken()
@@ -12703,12 +19402,26 @@ namespace PSeq.Operations.Api.Migrations
 
                     b.HasIndex("DepartmentId");
 
+                    b.HasIndex("LabServiceOfferingId");
+
                     b.HasIndex("OrderNumber")
                         .IsUnique();
 
                     b.HasIndex("PriceProposedByUserId");
 
+                    b.HasIndex("RequestedCatalogItemId");
+
                     b.HasIndex("SampleRosterFinalizedByUserId");
+
+                    b.HasIndex("SampleTypeDefinitionId");
+
+                    b.HasIndex("ShippingDestinationId");
+
+                    b.HasIndex("ShippingProcedureRevisionId");
+
+                    b.HasIndex("ShippingSafetyHeldByUserId");
+
+                    b.HasIndex("ShippingSafetyHoldResolvedByUserId");
 
                     b.HasIndex("SourceRequestId")
                         .IsUnique();
@@ -12777,6 +19490,64 @@ namespace PSeq.Operations.Api.Migrations
                         .IsUnique();
 
                     b.ToTable("lab_service_source_groups", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.LabWorkTimingChange", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("CustomerSafeNote")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("customer_safe_note");
+
+                    b.Property<DateTime>("ExpectedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expected_at_utc");
+
+                    b.Property<string>("InternalNote")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("internal_note");
+
+                    b.Property<Guid>("LabWorkOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_work_order_id");
+
+                    b.Property<Guid?>("NotificationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("notification_id");
+
+                    b.Property<DateTime>("OccurredAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("occurred_at_utc");
+
+                    b.Property<DateTime>("PreviousExpectedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("previous_expected_at_utc");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("reason");
+
+                    b.Property<Guid>("TimingChangedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("timing_changed_by_user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NotificationId");
+
+                    b.HasIndex("TimingChangedByUserId");
+
+                    b.HasIndex("LabWorkOrderId", "OccurredAtUtc");
+
+                    b.ToTable("lab_work_timing_changes", "lab_ops");
                 });
 
             modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.ManagedOperationalFile", b =>
@@ -12898,6 +19669,124 @@ namespace PSeq.Operations.Api.Migrations
                     b.ToTable("managed_operational_files", "commercial_ops");
                 });
 
+            modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.PartnerKitUnit", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Carrier")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("carrier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid>("DepartmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("department_id");
+
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("label");
+
+                    b.Property<string>("LotBatchNumber")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("lot_batch_number");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
+
+                    b.Property<Guid>("PartnerReagentOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("partner_reagent_order_id");
+
+                    b.Property<Guid>("PartnerReagentOrderLineId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("partner_reagent_order_line_id");
+
+                    b.Property<Guid?>("ReagentShipmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("reagent_shipment_id");
+
+                    b.Property<Guid?>("ReplacedByKitUnitId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("replaced_by_kit_unit_id");
+
+                    b.Property<Guid?>("ReplacesKitUnitId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("replaces_kit_unit_id");
+
+                    b.Property<DateTime?>("ShippedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("shipped_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("TrackingNumber")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("tracking_number");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("Label")
+                        .IsUnique();
+
+                    b.HasIndex("OrganizationId");
+
+                    b.HasIndex("PartnerReagentOrderLineId");
+
+                    b.HasIndex("ReagentShipmentId");
+
+                    b.HasIndex("ReplacedByKitUnitId");
+
+                    b.HasIndex("ReplacesKitUnitId")
+                        .IsUnique();
+
+                    b.HasIndex("UpdatedByUserId");
+
+                    b.HasIndex("PartnerReagentOrderId", "PartnerReagentOrderLineId", "Status");
+
+                    b.ToTable("partner_kit_units", "commercial_ops");
+                });
+
             modelBuilder.Entity("PhaenoPortal.App.Features.Website.Entities.WebContact", b =>
                 {
                     b.Property<Guid>("Id")
@@ -12922,6 +19811,14 @@ namespace PSeq.Operations.Api.Migrations
                         .HasMaxLength(60)
                         .HasColumnType("character varying(60)")
                         .HasColumnName("first_name");
+
+                    b.Property<string>("Language")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(35)
+                        .HasColumnType("character varying(35)")
+                        .HasDefaultValue("en-US")
+                        .HasColumnName("language");
 
                     b.Property<string>("LastName")
                         .IsRequired()
@@ -12961,6 +19858,192 @@ namespace PSeq.Operations.Api.Migrations
                     b.ToTable("web_contacts", "website");
                 });
 
+            modelBuilder.Entity("PhaenoPortal.App.Features.Website.Entities.WebNotificationAttempt", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("AttemptNumber")
+                        .HasColumnType("integer")
+                        .HasColumnName("attempt_number");
+
+                    b.Property<string>("Error")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("error");
+
+                    b.Property<DateTimeOffset?>("FinishedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("finished_at_utc");
+
+                    b.Property<string>("Outcome")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("outcome");
+
+                    b.Property<Guid?>("RecoveryByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("recovery_by_user_id");
+
+                    b.Property<DateTimeOffset>("StartedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at_utc");
+
+                    b.Property<Guid>("WebNotificationDeliveryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("web_notification_delivery_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WebNotificationDeliveryId", "AttemptNumber")
+                        .IsUnique();
+
+                    b.ToTable("web_notification_attempts", "website");
+                });
+
+            modelBuilder.Entity("PhaenoPortal.App.Features.Website.Entities.WebNotificationDelivery", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset?>("AcceptedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("accepted_at_utc");
+
+                    b.Property<int>("AttemptCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("attempt_count");
+
+                    b.Property<int>("AttemptsSinceRecovery")
+                        .HasColumnType("integer")
+                        .HasColumnName("attempts_since_recovery");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("kind");
+
+                    b.Property<DateTimeOffset?>("LastAttemptAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_attempt_at_utc");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("last_error");
+
+                    b.Property<DateTimeOffset?>("LastRecoveryAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_recovery_at_utc");
+
+                    b.Property<Guid?>("LastRecoveryByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("last_recovery_by_user_id");
+
+                    b.Property<DateTimeOffset?>("LeaseExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("lease_expires_at_utc");
+
+                    b.Property<Guid?>("LeaseToken")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lease_token");
+
+                    b.Property<DateTimeOffset>("NextAttemptAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("next_attempt_at_utc");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("state");
+
+                    b.Property<Guid>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid")
+                        .HasColumnName("version");
+
+                    b.Property<Guid?>("WebContactId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("web_contact_id");
+
+                    b.Property<Guid?>("WebOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("web_order_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("State", "NextAttemptAtUtc");
+
+                    b.HasIndex("WebContactId", "Kind")
+                        .IsUnique();
+
+                    b.HasIndex("WebOrderId", "Kind")
+                        .IsUnique();
+
+                    b.ToTable("web_notification_deliveries", "website", t =>
+                        {
+                            t.HasCheckConstraint("ck_web_notification_target", "(web_contact_id IS NOT NULL AND web_order_id IS NULL AND kind IN ('MailingListAlert', 'TechnicalBrief')) OR (web_order_id IS NOT NULL AND web_contact_id IS NULL AND kind = 'DemoRequestAlert')");
+                        });
+                });
+
+            modelBuilder.Entity("PhaenoPortal.App.Features.Website.Entities.WebNotificationProcessingControl", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("IsPaused")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_paused");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("reason");
+
+                    b.Property<DateTimeOffset?>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<Guid>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UpdatedByUserId");
+
+                    b.ToTable("web_notification_processing_controls", "website", t =>
+                        {
+                            t.HasCheckConstraint("ck_web_notification_processing_singleton", "id = '526a3498-feb3-4a94-a5f2-9277c2bc9c97'::uuid");
+                        });
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("526a3498-feb3-4a94-a5f2-9277c2bc9c97"),
+                            IsPaused = false,
+                            Version = new Guid("a6d4f4cc-c523-4a08-86f7-5d2bb44a1099")
+                        });
+                });
+
             modelBuilder.Entity("PhaenoPortal.App.Features.Website.Entities.WebOrder", b =>
                 {
                     b.Property<Guid>("Id")
@@ -12992,6 +20075,14 @@ namespace PSeq.Operations.Api.Migrations
                         .HasMaxLength(60)
                         .HasColumnType("character varying(60)")
                         .HasColumnName("first_name");
+
+                    b.Property<string>("Language")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(35)
+                        .HasColumnType("character varying(35)")
+                        .HasDefaultValue("en-US")
+                        .HasColumnName("language");
 
                     b.Property<string>("LastName")
                         .IsRequired()
@@ -13247,11 +20338,18 @@ namespace PSeq.Operations.Api.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.Organization", "SetupOrganization")
+                        .WithOne()
+                        .HasForeignKey("PSeq.Operations.Commercial.Crm.Domain.CrmCompany", "SetupOrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("AccessOrganization");
 
                     b.Navigation("MergedIntoCompany");
 
                     b.Navigation("Owner");
+
+                    b.Navigation("SetupOrganization");
                 });
 
             modelBuilder.Entity("PSeq.Operations.Commercial.Crm.Domain.CrmCompanyContact", b =>
@@ -13388,6 +20486,11 @@ namespace PSeq.Operations.Api.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.OrganizationDepartment", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", "Owner")
                         .WithMany()
                         .HasForeignKey("OwnerUserId")
@@ -13407,6 +20510,8 @@ namespace PSeq.Operations.Api.Migrations
                         .IsRequired();
 
                     b.Navigation("Company");
+
+                    b.Navigation("Department");
 
                     b.Navigation("Owner");
 
@@ -13910,6 +21015,60 @@ namespace PSeq.Operations.Api.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.CommercialSaleSummary", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("CommitmentActorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Crm.Domain.CrmOpportunity", null)
+                        .WithMany()
+                        .HasForeignKey("OpportunityId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Crm.Domain.CrmActivity", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectedActivityId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.CustomerDeliveryLocation", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_customer_delivery_location_created_by");
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.OrganizationDepartment", null)
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_customer_delivery_location_department");
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_customer_delivery_location_organization");
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_customer_delivery_location_updated_by");
+                });
+
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.DataAssemblyQuote", b =>
                 {
                     b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.DataAssemblyRequest", null)
@@ -13963,6 +21122,38 @@ namespace PSeq.Operations.Api.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.LabServiceNegotiatedPrice", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.QboCatalogItem", null)
+                        .WithMany()
+                        .HasForeignKey("CatalogItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_lab_service_negotiated_prices_catalog");
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.OrganizationDepartment", null)
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_lab_service_negotiated_prices_department");
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_lab_service_negotiated_prices_organization");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.LabServiceOffering", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.QboCatalogItem", null)
+                        .WithMany()
+                        .HasForeignKey("CatalogItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.LabServiceQuote", b =>
                 {
                     b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.LabServiceOrder", null)
@@ -13982,6 +21173,32 @@ namespace PSeq.Operations.Api.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.LabServiceQuoteExtensionRequest", b =>
+                {
+                    b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.LabServiceOrder", null)
+                        .WithMany()
+                        .HasForeignKey("LabServiceOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.LabServiceQuote", null)
+                        .WithMany()
+                        .HasForeignKey("QuoteId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.LabServiceQuote", null)
+                        .WithMany()
+                        .HasForeignKey("ReplacementQuoteId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("RequestedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.LabServiceRequestRevision", b =>
                 {
                     b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.LabServiceOrder", null)
@@ -13998,6 +21215,21 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
                         .WithMany()
                         .HasForeignKey("SubmittedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.LabServiceSampleType", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.LabServiceOffering", null)
+                        .WithMany("SupportedSampleTypes")
+                        .HasForeignKey("LabServiceOfferingId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleTypeDefinition", null)
+                        .WithMany()
+                        .HasForeignKey("SampleTypeDefinitionId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
@@ -14118,6 +21350,11 @@ namespace PSeq.Operations.Api.Migrations
 
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.PartnerReagentOffering", b =>
                 {
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.AssemblyProfile", null)
+                        .WithMany()
+                        .HasForeignKey("IncludedAssemblyProfileId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.Organization", null)
                         .WithMany()
                         .HasForeignKey("PartnerOrganizationId")
@@ -14158,6 +21395,11 @@ namespace PSeq.Operations.Api.Migrations
 
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.PartnerReagentOrderLine", b =>
                 {
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.AssemblyProfile", null)
+                        .WithMany()
+                        .HasForeignKey("IncludedAssemblyProfileId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.PartnerReagentOffering", null)
                         .WithMany()
                         .HasForeignKey("OfferingId")
@@ -14272,11 +21514,22 @@ namespace PSeq.Operations.Api.Migrations
 
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.RegisteredSampleTube", b =>
                 {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("CustomerDeclaredByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleReturnKit", null)
                         .WithMany("Tubes")
                         .HasForeignKey("SampleReturnKitId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingStockTube", null)
+                        .WithMany()
+                        .HasForeignKey("SourceStockTubeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_registered_tube_source_stock_tube");
                 });
 
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.ResultArtifact", b =>
@@ -14307,6 +21560,11 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.ResultOutputPackage", null)
                         .WithMany()
                         .HasForeignKey("CorrectsPackageId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabAnalysisRun", null)
+                        .WithMany()
+                        .HasForeignKey("LabAnalysisRunId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.LabSample", null)
@@ -14367,11 +21625,23 @@ namespace PSeq.Operations.Api.Migrations
 
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShipment", b =>
                 {
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingContainerDefinition", null)
+                        .WithMany()
+                        .HasForeignKey("ContainerDefinitionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_sample_shipment_container_revision");
+
                     b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.OrganizationDepartment", null)
                         .WithMany()
                         .HasForeignKey("DepartmentId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.CustomerDeliveryLocation", null)
+                        .WithMany()
+                        .HasForeignKey("DepartureDeliveryLocationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_sample_shipment_departure_location");
 
                     b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingDestination", null)
                         .WithMany()
@@ -14388,11 +21658,6 @@ namespace PSeq.Operations.Api.Migrations
 
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShipmentItem", b =>
                 {
-                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.RegisteredSampleTube", null)
-                        .WithMany()
-                        .HasForeignKey("RegisteredSampleTubeId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShipment", null)
                         .WithMany("Items")
                         .HasForeignKey("SampleShipmentId")
@@ -14420,31 +21685,74 @@ namespace PSeq.Operations.Api.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingContainerDefinition", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabKitAssemblyWorkflow", null)
+                        .WithMany()
+                        .HasForeignKey("AssemblyWorkflowId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_shipping_spec_assembly_method");
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingContainerType", "ContainerType")
+                        .WithMany("Definitions")
+                        .HasForeignKey("ContainerTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_shipping_container_revision_type");
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_shipping_container_revision_created_by");
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleTypeDefinition", null)
+                        .WithMany()
+                        .HasForeignKey("SampleTypeAnchorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_shipping_spec_sample_type_anchor");
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSupplierProduct", null)
+                        .WithMany()
+                        .HasForeignKey("ShippingContainerProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_shipping_spec_container_product");
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingContainerDefinition", null)
+                        .WithMany()
+                        .HasForeignKey("SupersedesDefinitionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_shipping_container_revision_predecessor");
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_shipping_container_revision_updated_by");
+
+                    b.Navigation("ContainerType");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingContainerType", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_shipping_container_type_created_by");
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_shipping_container_type_updated_by");
+                });
+
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingDestination", b =>
                 {
                     b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingDestination", null)
                         .WithMany()
                         .HasForeignKey("SupersedesDestinationId")
-                        .OnDelete(DeleteBehavior.Restrict);
-                });
-
-            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingInstructionRule", b =>
-                {
-                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingDestination", null)
-                        .WithMany()
-                        .HasForeignKey("DestinationId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleTypeDefinition", null)
-                        .WithMany()
-                        .HasForeignKey("SampleTypeDefinitionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingInstructionRule", null)
-                        .WithMany()
-                        .HasForeignKey("SupersedesInstructionRuleId")
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
@@ -14458,6 +21766,143 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShipment", null)
                         .WithMany("PacketRevisions")
                         .HasForeignKey("SampleShipmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingProcedure", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingProcedure", null)
+                        .WithMany()
+                        .HasForeignKey("SupersedesProcedureId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingStockKit", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabKitAssemblyWorkflowRevision", null)
+                        .WithMany()
+                        .HasForeignKey("AssemblyWorkflowRevisionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_shipping_stock_kit_assembly_workflow_revision");
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShipment", null)
+                        .WithMany()
+                        .HasForeignKey("BoundSampleShipmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_shipping_stock_kit_bound_shipment");
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingContainerDefinition", null)
+                        .WithMany()
+                        .HasForeignKey("ContainerDefinitionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_shipping_stock_kit_container_revision");
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_shipping_stock_kit_created_by");
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.CustomerDeliveryLocation", null)
+                        .WithMany()
+                        .HasForeignKey("CustomerDeliveryLocationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_shipping_stock_kit_delivery_location");
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("CustomerReceivedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_shipping_stock_kit_received_by");
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.OrganizationDepartment", null)
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_shipping_stock_kit_department");
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_shipping_stock_kit_organization");
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("ReservedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_shipping_stock_reserved_by");
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShipment", null)
+                        .WithMany()
+                        .HasForeignKey("ReservedSampleShipmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_shipping_stock_reserved_shipment");
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSupplierProduct", null)
+                        .WithMany()
+                        .HasForeignKey("ShipperSupplierProductId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.TransportationKitRequestLine", null)
+                        .WithMany()
+                        .HasForeignKey("TransportationKitRequestLineId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_shipping_stock_kit_transport_request_line");
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSupplierProduct", null)
+                        .WithMany()
+                        .HasForeignKey("TubeSupplierProductId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("TubesVerifiedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_shipping_stock_kit_tubes_verified_by");
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_shipping_stock_kit_updated_by");
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("WithdrawnByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_stock_kit_withdraw_actor");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingStockTube", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingStockKit", null)
+                        .WithMany("Tubes")
+                        .HasForeignKey("SampleShippingStockKitId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_shipping_stock_tube_kit");
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSupplierProduct", null)
+                        .WithMany()
+                        .HasForeignKey("TubeSupplierProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_shipping_stock_tube_product");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingStockTubeCorrection", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("CorrectedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingStockKit", null)
+                        .WithMany()
+                        .HasForeignKey("SampleShippingStockKitId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
@@ -14490,10 +21935,131 @@ namespace PSeq.Operations.Api.Migrations
 
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleTypeDefinition", b =>
                 {
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingProcedure", null)
+                        .WithMany()
+                        .HasForeignKey("ShippingProcedureId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_sample_type_shipping_procedure");
+
                     b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleTypeDefinition", null)
                         .WithMany()
                         .HasForeignKey("SupersedesSampleTypeId")
                         .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleTypeProcedureLink", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("ChangedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_sample_type_procedure_link_actor");
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingProcedure", null)
+                        .WithMany()
+                        .HasForeignKey("ProcedureAnchorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_sample_type_procedure_link_procedure_anchor");
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleTypeDefinition", null)
+                        .WithMany()
+                        .HasForeignKey("SampleTypeAnchorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_sample_type_procedure_link_sample_anchor");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.ShippingKitContent", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingContainerDefinition", null)
+                        .WithMany("KitContents")
+                        .HasForeignKey("ContainerDefinitionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSupplier", null)
+                        .WithMany()
+                        .HasForeignKey("SupplierId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSupplierProduct", null)
+                        .WithMany()
+                        .HasForeignKey("SupplierProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.TransportationKitRequest", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_transportation_kit_request_created_by");
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.CustomerDeliveryLocation", null)
+                        .WithMany()
+                        .HasForeignKey("DeliveryLocationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_transportation_kit_request_location");
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.OrganizationDepartment", null)
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.LabJobPhase", null)
+                        .WithMany()
+                        .HasForeignKey("LabJobPhaseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_transportation_kit_request_phase");
+
+                    b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.LabServiceOrder", null)
+                        .WithMany()
+                        .HasForeignKey("LabServiceOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("RequestedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_transportation_kit_request_requester");
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_transportation_kit_request_updated_by");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.TransportationKitRequestLine", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingContainerDefinition", null)
+                        .WithMany()
+                        .HasForeignKey("ContainerDefinitionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_transportation_kit_line_container");
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.TransportationKitRequest", null)
+                        .WithMany("Lines")
+                        .HasForeignKey("TransportationKitRequestId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_transportation_kit_line_request");
                 });
 
             modelBuilder.Entity("PSeq.Operations.Commercial.Relationships.Domain.OrganizationServiceEntitlement", b =>
@@ -14578,8 +22144,7 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasOne("PSeq.Operations.Commercial.Trials.Domain.TrialApprovalAuthority", null)
                         .WithMany()
                         .HasForeignKey("AuthorityId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PSeq.Operations.Commercial.Trials.Domain.TrialScope", null)
                         .WithMany("Decisions")
@@ -14642,12 +22207,16 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasOne("PSeq.Operations.Commercial.Crm.Domain.CrmHandoff", null)
                         .WithMany()
                         .HasForeignKey("CrmHandoffId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.OrganizationDepartment", null)
                         .WithMany()
                         .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("DraftSavedByUserId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
@@ -14663,8 +22232,7 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasOne("PSeq.Operations.Commercial.Crm.Domain.CrmOpportunity", null)
                         .WithMany()
                         .HasForeignKey("OpportunityId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.Organization", null)
                         .WithMany()
@@ -14853,6 +22421,141 @@ namespace PSeq.Operations.Api.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabAnalysisInput", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabAnalysisRun", null)
+                        .WithMany()
+                        .HasForeignKey("LabAnalysisRunId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSequencingOutput", null)
+                        .WithMany()
+                        .HasForeignKey("LabSequencingOutputId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabAnalysisRun", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSpecimenAttempt", null)
+                        .WithMany()
+                        .HasForeignKey("LabSpecimenAttemptId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSpecimen", null)
+                        .WithMany()
+                        .HasForeignKey("LabSpecimenId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabWorkOrder", null)
+                        .WithMany()
+                        .HasForeignKey("LabWorkOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabAnalysisRun", null)
+                        .WithMany()
+                        .HasForeignKey("PreviousAnalysisRunId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabAssemblyCommand", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabAssemblyJob", null)
+                        .WithMany()
+                        .HasForeignKey("LabAssemblyJobId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabAssemblyEvent", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabAssemblyJob", null)
+                        .WithMany()
+                        .HasForeignKey("LabAssemblyJobId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabAssemblyJob", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabAnalysisRun", null)
+                        .WithMany()
+                        .HasForeignKey("LabAnalysisRunId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSpecimen", null)
+                        .WithMany()
+                        .HasForeignKey("LabSpecimenId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabWorkOrder", null)
+                        .WithMany()
+                        .HasForeignKey("LabWorkOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabAssemblyJob", null)
+                        .WithMany()
+                        .HasForeignKey("PreviousJobId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabAssemblyQc", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabAnalysisRun", null)
+                        .WithMany()
+                        .HasForeignKey("LabAnalysisRunId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabAssemblyJob", null)
+                        .WithMany()
+                        .HasForeignKey("LabAssemblyJobId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabScientificFile", null)
+                        .WithMany()
+                        .HasForeignKey("LabScientificFileId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("RecordedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.ResultOutputPackage", null)
+                        .WithMany()
+                        .HasForeignKey("ResultOutputPackageId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabAssemblyReceipt", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabAssemblyJob", null)
+                        .WithMany()
+                        .HasForeignKey("LabAssemblyJobId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabAttemptCommandReceipt", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabWorkOrder", null)
+                        .WithMany()
+                        .HasForeignKey("LabWorkOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabBatchMember", b =>
                 {
                     b.HasOne("PSeq.Operations.Laboratory.Domain.LabLibrary", null)
@@ -14872,10 +22575,74 @@ namespace PSeq.Operations.Api.Migrations
                         .HasForeignKey("LabWorkOrderId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabBiologicalMaterialTransfer", null)
+                        .WithMany()
+                        .HasForeignKey("MaterialTransferId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.QboCatalogItem", null)
+                        .WithMany()
+                        .HasForeignKey("SequencingCatalogItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_lab_batch_members_sequencing_catalog");
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabContainer", null)
+                        .WithMany()
+                        .HasForeignKey("SequencingContainerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabBiologicalMaterialTransfer", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabContainer", null)
+                        .WithMany()
+                        .HasForeignKey("DestinationContainerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSpecimenAttempt", null)
+                        .WithMany()
+                        .HasForeignKey("LabSpecimenAttemptId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSpecimen", null)
+                        .WithMany()
+                        .HasForeignKey("LabSpecimenId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabWorkOrder", null)
+                        .WithMany()
+                        .HasForeignKey("LabWorkOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabPreparationMember", null)
+                        .WithMany()
+                        .HasForeignKey("PreparationMemberId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabBatchMember", null)
+                        .WithMany()
+                        .HasForeignKey("SequencingBatchMemberId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabContainer", null)
+                        .WithMany()
+                        .HasForeignKey("SourceContainerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabContainer", b =>
                 {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSpecimenAttempt", null)
+                        .WithMany()
+                        .HasForeignKey("LabSpecimenAttemptId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("PSeq.Operations.Laboratory.Domain.LabSpecimen", null)
                         .WithMany()
                         .HasForeignKey("LabSpecimenId")
@@ -14893,6 +22660,15 @@ namespace PSeq.Operations.Api.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabContainerBarcode", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabContainer", null)
+                        .WithMany("Barcodes")
+                        .HasForeignKey("LabContainerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabCustodyEvent", b =>
                 {
                     b.HasOne("PSeq.Operations.Laboratory.Domain.LabContainer", null)
@@ -14907,6 +22683,21 @@ namespace PSeq.Operations.Api.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabCustomerHold", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSpecimen", null)
+                        .WithMany()
+                        .HasForeignKey("LabSpecimenId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabWorkOrder", null)
+                        .WithMany()
+                        .HasForeignKey("LabWorkOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabEquipmentUsage", b =>
                 {
                     b.HasOne("PSeq.Operations.Laboratory.Domain.LabEquipment", null)
@@ -14914,6 +22705,11 @@ namespace PSeq.Operations.Api.Migrations
                         .HasForeignKey("LabEquipmentId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabPreparationRecord", null)
+                        .WithMany()
+                        .HasForeignKey("LabPreparationRecordId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PSeq.Operations.Laboratory.Domain.LabProtocolExecution", null)
                         .WithMany()
@@ -14937,6 +22733,277 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasOne("PSeq.Operations.Laboratory.Domain.LabWorkOrder", null)
                         .WithMany()
                         .HasForeignKey("LabWorkOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabFastqArchive", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabVendorResultsDraft", null)
+                        .WithMany()
+                        .HasForeignKey("LabVendorResultsDraftId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabFastqSet", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabBatchMember", null)
+                        .WithMany()
+                        .HasForeignKey("LabBatchMemberId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabLibrary", null)
+                        .WithMany()
+                        .HasForeignKey("LabLibraryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSpecimen", null)
+                        .WithMany()
+                        .HasForeignKey("LabSpecimenId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabVendorResultsDraft", null)
+                        .WithMany()
+                        .HasForeignKey("LabVendorResultsDraftId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabVendorResultsVersion", null)
+                        .WithMany()
+                        .HasForeignKey("LabVendorResultsVersionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabWorkOrder", null)
+                        .WithMany()
+                        .HasForeignKey("LabWorkOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("RecordedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabFastqUpload", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabFastqArchive", null)
+                        .WithMany()
+                        .HasForeignKey("LabFastqArchiveId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabFastqSet", null)
+                        .WithMany()
+                        .HasForeignKey("LabFastqSetId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabScientificFile", null)
+                        .WithMany()
+                        .HasForeignKey("LabScientificFileId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabForecastSnapshot", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabWorkOrder", null)
+                        .WithMany()
+                        .HasForeignKey("LabWorkOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabForecastTransition", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabWorkOrder", null)
+                        .WithMany()
+                        .HasForeignKey("LabWorkOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabHoliday", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabBusinessCalendar", null)
+                        .WithMany("Holidays")
+                        .HasForeignKey("LabBusinessCalendarId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabInvestigationReport", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSpecimen", null)
+                        .WithMany()
+                        .HasForeignKey("LabSpecimenId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabWorkOrder", null)
+                        .WithMany()
+                        .HasForeignKey("LabWorkOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabJobDeadlineChange", b =>
+                {
+                    b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.LabJobPhase", null)
+                        .WithMany()
+                        .HasForeignKey("LabJobPhaseId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabWorkOrder", null)
+                        .WithMany()
+                        .HasForeignKey("LabWorkOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabJobTimingPolicy", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabTimingPolicy", null)
+                        .WithMany()
+                        .HasForeignKey("LabTimingPolicyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabWorkOrder", null)
+                        .WithMany()
+                        .HasForeignKey("LabWorkOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabKitAssemblyRun", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("ContainerBarcodeVerifiedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("FinishedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("LabelPrintRequestedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("StartedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingStockKit", null)
+                        .WithMany()
+                        .HasForeignKey("StockKitId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabKitAssemblyWorkflowRevision", null)
+                        .WithMany()
+                        .HasForeignKey("WorkflowRevisionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabKitAssemblyStepRecord", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabStepVersion", null)
+                        .WithMany()
+                        .HasForeignKey("LabStepVersionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("PerformedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabKitAssemblyRun", null)
+                        .WithMany()
+                        .HasForeignKey("RunId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabKitAssemblyUse", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("RecordedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabKitAssemblyRun", null)
+                        .WithMany()
+                        .HasForeignKey("RunId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabMaterialLot", null)
+                        .WithMany()
+                        .HasForeignKey("SourceMaterialLotId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSupplierProduct", null)
+                        .WithMany()
+                        .HasForeignKey("SupplierProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabKitAssemblyWorkflow", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabKitAssemblyWorkflowRevision", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("ApprovedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("AuthoredByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabKitAssemblyWorkflow", null)
+                        .WithMany()
+                        .HasForeignKey("WorkflowId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
@@ -14974,6 +23041,69 @@ namespace PSeq.Operations.Api.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabMasterMixCorrection", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabMasterMixPreparation", null)
+                        .WithMany()
+                        .HasForeignKey("PreparationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabMasterMixIngredientUse", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabMasterMixPreparation", null)
+                        .WithMany()
+                        .HasForeignKey("PreparationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabMaterialLot", null)
+                        .WithMany()
+                        .HasForeignKey("SourceMaterialLotId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabMasterMixPreparation", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabMasterMixWorkflow", null)
+                        .WithMany()
+                        .HasForeignKey("WorkflowId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabMasterMixStepRecord", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabMasterMixPreparation", null)
+                        .WithMany()
+                        .HasForeignKey("PreparationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabMasterMixTrayUse", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabPreparationBatch", null)
+                        .WithMany()
+                        .HasForeignKey("LabPreparationBatchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabPreparationRecord", null)
+                        .WithMany()
+                        .HasForeignKey("LabPreparationRecordId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabMasterMixPreparation", null)
+                        .WithMany()
+                        .HasForeignKey("PreparationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabMaterialConsumption", b =>
                 {
                     b.HasOne("PSeq.Operations.Laboratory.Domain.LabMaterialLot", null)
@@ -14981,6 +23111,11 @@ namespace PSeq.Operations.Api.Migrations
                         .HasForeignKey("LabMaterialLotId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabPreparationRecord", null)
+                        .WithMany()
+                        .HasForeignKey("LabPreparationRecordId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PSeq.Operations.Laboratory.Domain.LabProtocolExecution", null)
                         .WithMany()
@@ -15012,6 +23147,11 @@ namespace PSeq.Operations.Api.Migrations
                         .WithMany()
                         .HasForeignKey("SupplierId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSupplierProduct", null)
+                        .WithMany()
+                        .HasForeignKey("SupplierProductId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabNgsSendout", b =>
@@ -15021,6 +23161,21 @@ namespace PSeq.Operations.Api.Migrations
                         .HasForeignKey("LabOperationalBatchId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSupplierProduct", null)
+                        .WithMany()
+                        .HasForeignKey("VendorProductId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSupplierShipmentAddress", null)
+                        .WithMany()
+                        .HasForeignKey("VendorShipmentAddressId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSupplier", null)
+                        .WithMany()
+                        .HasForeignKey("VendorSupplierId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabOperationsOutboxEvent", b =>
@@ -15028,6 +23183,100 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasOne("PSeq.Operations.Laboratory.Domain.LabWorkOrder", null)
                         .WithMany()
                         .HasForeignKey("LabWorkOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabPerformanceDecision", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabPerformanceProposal", null)
+                        .WithOne()
+                        .HasForeignKey("PSeq.Operations.Laboratory.Domain.LabPerformanceDecision", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabPerformanceProposal", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabPerformanceProposal", null)
+                        .WithMany()
+                        .HasForeignKey("BasedOnProposalId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabProtocolExecution", null)
+                        .WithMany()
+                        .HasForeignKey("LabProtocolExecutionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSpecimen", null)
+                        .WithMany()
+                        .HasForeignKey("LabSpecimenId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabWorkOrder", null)
+                        .WithMany()
+                        .HasForeignKey("LabWorkOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabPreparationBatch", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabServiceWorkflowVersion", null)
+                        .WithMany()
+                        .HasForeignKey("LabServiceWorkflowVersionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabTrayFormat", null)
+                        .WithMany()
+                        .HasForeignKey("LabTrayFormatId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabPreparationMember", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabLibrary", null)
+                        .WithMany()
+                        .HasForeignKey("LabLibraryId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabPreparationBatch", null)
+                        .WithMany()
+                        .HasForeignKey("LabPreparationBatchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSpecimenAttempt", null)
+                        .WithMany()
+                        .HasForeignKey("LabSpecimenAttemptId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabContainer", null)
+                        .WithMany()
+                        .HasForeignKey("LibraryTubeContainerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabBiologicalMaterialTransfer", null)
+                        .WithMany()
+                        .HasForeignKey("MaterialTransferId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabContainer", null)
+                        .WithMany()
+                        .HasForeignKey("OutputContainerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabPreparationRecord", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabPreparationBatch", null)
+                        .WithMany()
+                        .HasForeignKey("LabPreparationBatchId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
@@ -15060,6 +23309,11 @@ namespace PSeq.Operations.Api.Migrations
                         .HasForeignKey("LabServiceWorkflowStageId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSpecimenAttempt", null)
+                        .WithMany()
+                        .HasForeignKey("LabSpecimenAttemptId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("PSeq.Operations.Laboratory.Domain.LabSpecimen", null)
                         .WithMany()
                         .HasForeignKey("LabSpecimenId")
@@ -15089,11 +23343,138 @@ namespace PSeq.Operations.Api.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabReagentManufacturingRun", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabMaterialLot", null)
+                        .WithMany()
+                        .HasForeignKey("MaterialLotId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabReagentWorkflow", null)
+                        .WithMany()
+                        .HasForeignKey("WorkflowId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabReagentMaterialUse", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabReagentManufacturingRun", null)
+                        .WithMany()
+                        .HasForeignKey("RunId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabMaterialLot", null)
+                        .WithMany()
+                        .HasForeignKey("SourceMaterialLotId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabReagentRunStep", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabReagentManufacturingRun", null)
+                        .WithMany()
+                        .HasForeignKey("RunId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabReagentWorkflow", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabMaterialDefinition", null)
+                        .WithMany()
+                        .HasForeignKey("MaterialDefinitionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabScientificApproval", b =>
                 {
                     b.HasOne("PSeq.Operations.Laboratory.Domain.LabWorkOrder", null)
                         .WithMany("ScientificApprovals")
                         .HasForeignKey("LabWorkOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabScientificFile", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSpecimen", null)
+                        .WithMany()
+                        .HasForeignKey("LabSpecimenId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabWorkOrder", null)
+                        .WithMany()
+                        .HasForeignKey("LabWorkOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabScientificUpload", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabScientificFile", null)
+                        .WithMany()
+                        .HasForeignKey("CompletedFileId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSpecimen", null)
+                        .WithMany()
+                        .HasForeignKey("LabSpecimenId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabWorkOrder", null)
+                        .WithMany()
+                        .HasForeignKey("LabWorkOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabSequencingOutput", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSequencingOutput", null)
+                        .WithMany()
+                        .HasForeignKey("CorrectsOutputId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabLibrary", null)
+                        .WithMany()
+                        .HasForeignKey("LabLibraryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabNgsSendout", null)
+                        .WithMany()
+                        .HasForeignKey("LabNgsSendoutId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSpecimenAttempt", null)
+                        .WithMany()
+                        .HasForeignKey("LabSpecimenAttemptId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSpecimen", null)
+                        .WithMany()
+                        .HasForeignKey("LabSpecimenId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabWorkOrder", null)
+                        .WithMany()
+                        .HasForeignKey("LabWorkOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabContainer", null)
+                        .WithMany()
+                        .HasForeignKey("SourceContainerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
@@ -15127,6 +23508,170 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasOne("PSeq.Operations.Laboratory.Domain.LabWorkOrder", null)
                         .WithMany("Specimens")
                         .HasForeignKey("LabWorkOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabSpecimenAttempt", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabProtocolExecution", null)
+                        .WithMany()
+                        .HasForeignKey("FailedExecutionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabServiceWorkflowVersion", null)
+                        .WithMany()
+                        .HasForeignKey("LabServiceWorkflowVersionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSpecimen", null)
+                        .WithMany()
+                        .HasForeignKey("LabSpecimenId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabWorkOrder", null)
+                        .WithMany()
+                        .HasForeignKey("LabWorkOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSpecimenAttempt", null)
+                        .WithMany()
+                        .HasForeignKey("PreviousAttemptId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabContainer", null)
+                        .WithMany()
+                        .HasForeignKey("SourceContainerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabStageDuration", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabTimingPolicy", null)
+                        .WithMany("Durations")
+                        .HasForeignKey("LabTimingPolicyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabStepVersion", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabStep", null)
+                        .WithMany()
+                        .HasForeignKey("LabStepId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabSupplierProduct", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabMaterialDefinition", null)
+                        .WithMany()
+                        .HasForeignKey("MaterialDefinitionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabProductType", null)
+                        .WithMany()
+                        .HasForeignKey("ProductTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSupplier", null)
+                        .WithMany()
+                        .HasForeignKey("SupplierId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabSupplierShipmentAddress", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSupplier", null)
+                        .WithMany()
+                        .HasForeignKey("SupplierId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabTimingPolicy", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabBusinessCalendar", null)
+                        .WithMany()
+                        .HasForeignKey("LabBusinessCalendarId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabServiceWorkflowVersion", null)
+                        .WithMany()
+                        .HasForeignKey("LabServiceWorkflowVersionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabVendorLibraryException", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabBatchMember", null)
+                        .WithMany()
+                        .HasForeignKey("LabBatchMemberId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabNgsSendout", null)
+                        .WithMany()
+                        .HasForeignKey("LabNgsSendoutId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabVendorResultsVersion", null)
+                        .WithMany()
+                        .HasForeignKey("LabVendorResultsVersionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabVendorResultReference", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabBatchMember", null)
+                        .WithMany()
+                        .HasForeignKey("LabBatchMemberId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabNgsSendout", null)
+                        .WithMany()
+                        .HasForeignKey("LabNgsSendoutId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabVendorResultsDraft", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabNgsSendout", null)
+                        .WithMany()
+                        .HasForeignKey("LabNgsSendoutId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabVendorResultsVersion", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabNgsSendout", null)
+                        .WithMany()
+                        .HasForeignKey("LabNgsSendoutId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("RecordedByUserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
@@ -15169,6 +23714,11 @@ namespace PSeq.Operations.Api.Migrations
                         .HasForeignKey("DataAssemblyRequestId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.PartnerKitUnit", null)
+                        .WithMany()
+                        .HasForeignKey("KitUnitId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.AssemblyInputRevision", null)
                         .WithMany()
@@ -15243,6 +23793,11 @@ namespace PSeq.Operations.Api.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.KitAssemblyCase", null)
+                        .WithMany()
+                        .HasForeignKey("KitAssemblyCaseId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.Organization", null)
                         .WithMany()
                         .HasForeignKey("OrganizationId")
@@ -15250,8 +23805,158 @@ namespace PSeq.Operations.Api.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.KitAssemblyCase", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.AssemblyProfile", null)
+                        .WithMany()
+                        .HasForeignKey("AssemblyProfileId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.DataAssemblyRequest", null)
+                        .WithMany()
+                        .HasForeignKey("AssemblyRequestId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.CommercialDocumentLink", null)
+                        .WithMany()
+                        .HasForeignKey("BillingDocumentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.ReagentShipment", null)
+                        .WithMany()
+                        .HasForeignKey("BillingShipmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.PartnerKitUnit", null)
+                        .WithMany()
+                        .HasForeignKey("CurrentKitUnitId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.OrganizationDepartment", null)
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.PartnerKitUnit", null)
+                        .WithMany()
+                        .HasForeignKey("OriginalKitUnitId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.PartnerReagentOrder", null)
+                        .WithMany()
+                        .HasForeignKey("PartnerReagentOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.KitCaseEvent", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("ActorUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.PartnerKitUnit", null)
+                        .WithMany()
+                        .HasForeignKey("CurrentKitUnitId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.KitAssemblyCase", null)
+                        .WithMany("History")
+                        .HasForeignKey("KitAssemblyCaseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.PartnerKitUnit", null)
+                        .WithMany()
+                        .HasForeignKey("PreviousKitUnitId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.LabJobPhase", b =>
+                {
+                    b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.LabServiceOrder", null)
+                        .WithMany("Phases")
+                        .HasForeignKey("LabServiceOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.LabPhaseBillingAssignment", b =>
+                {
+                    b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.LabJobPhase", null)
+                        .WithMany()
+                        .HasForeignKey("LabJobPhaseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.LabPhaseInvoiceAllocation", null)
+                        .WithMany()
+                        .HasForeignKey("LabPhaseInvoiceAllocationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.LabPhaseCancellationRequest", b =>
+                {
+                    b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.LabJobPhase", null)
+                        .WithMany()
+                        .HasForeignKey("LabJobPhaseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.LabPhaseInvoiceAllocation", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.Invoice", null)
+                        .WithMany()
+                        .HasForeignKey("InvoiceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.LabJobPhase", null)
+                        .WithMany()
+                        .HasForeignKey("LabJobPhaseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.LabPhasePlanProposal", b =>
+                {
+                    b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.LabServiceOrder", null)
+                        .WithMany()
+                        .HasForeignKey("LabServiceOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.LabResultRelease", b =>
                 {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabAnalysisRun", null)
+                        .WithMany()
+                        .HasForeignKey("LabAnalysisRunId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.LabSample", null)
                         .WithMany()
                         .HasForeignKey("LabSampleId")
@@ -15273,6 +23978,12 @@ namespace PSeq.Operations.Api.Migrations
 
             modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.LabSample", b =>
                 {
+                    b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.LabJobPhase", null)
+                        .WithMany()
+                        .HasForeignKey("LabJobPhaseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.LabServiceOrder", null)
                         .WithMany("Samples")
                         .HasForeignKey("LabServiceOrderId")
@@ -15306,6 +24017,54 @@ namespace PSeq.Operations.Api.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.LabSampleTubeKitSelection", b =>
+                {
+                    b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.LabJobPhase", null)
+                        .WithMany()
+                        .HasForeignKey("LabJobPhaseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_lab_sample_tube_kit_selection_phase");
+
+                    b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.LabServiceOrder", null)
+                        .WithMany()
+                        .HasForeignKey("LabServiceOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingStockKit", null)
+                        .WithMany()
+                        .HasForeignKey("StockKitId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.LabSampleTubePair", b =>
+                {
+                    b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.LabJobPhase", null)
+                        .WithMany()
+                        .HasForeignKey("LabJobPhaseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.LabServiceOrder", null)
+                        .WithMany()
+                        .HasForeignKey("LabServiceOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingStockKit", null)
+                        .WithMany()
+                        .HasForeignKey("StockKitId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingStockTube", null)
+                        .WithMany()
+                        .HasForeignKey("StockTubeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.LabServiceOrder", b =>
                 {
                     b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
@@ -15319,6 +24078,11 @@ namespace PSeq.Operations.Api.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.LabServiceOffering", null)
+                        .WithMany()
+                        .HasForeignKey("LabServiceOfferingId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.Organization", null)
                         .WithMany()
                         .HasForeignKey("OrganizationId")
@@ -15330,10 +24094,44 @@ namespace PSeq.Operations.Api.Migrations
                         .HasForeignKey("PriceProposedByUserId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.QboCatalogItem", null)
+                        .WithMany()
+                        .HasForeignKey("RequestedCatalogItemId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
                         .WithMany()
                         .HasForeignKey("SampleRosterFinalizedByUserId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleTypeDefinition", null)
+                        .WithMany()
+                        .HasForeignKey("SampleTypeDefinitionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingDestination", null)
+                        .WithMany()
+                        .HasForeignKey("ShippingDestinationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_lab_service_order_ship_to_revision");
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingProcedure", null)
+                        .WithMany()
+                        .HasForeignKey("ShippingProcedureRevisionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_lab_service_order_shipping_procedure_revision");
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("ShippingSafetyHeldByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_lab_service_order_shipping_hold_actor");
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("ShippingSafetyHoldResolvedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_lab_service_order_shipping_hold_resolver");
 
                     b.HasOne("PSeq.Operations.Commercial.Relationships.Domain.PortalIntegrationRequest", "SourceRequest")
                         .WithMany()
@@ -15352,6 +24150,26 @@ namespace PSeq.Operations.Api.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.LabWorkTimingChange", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabWorkOrder", null)
+                        .WithMany()
+                        .HasForeignKey("LabWorkOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.OrderNotification", null)
+                        .WithMany()
+                        .HasForeignKey("NotificationId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("TimingChangedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.ManagedOperationalFile", b =>
                 {
                     b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.Organization", null)
@@ -15359,6 +24177,88 @@ namespace PSeq.Operations.Api.Migrations
                         .HasForeignKey("OrganizationId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.PartnerKitUnit", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.OrganizationDepartment", null)
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.PartnerReagentOrder", null)
+                        .WithMany()
+                        .HasForeignKey("PartnerReagentOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.PartnerReagentOrderLine", null)
+                        .WithMany()
+                        .HasForeignKey("PartnerReagentOrderLineId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.ReagentShipment", null)
+                        .WithMany()
+                        .HasForeignKey("ReagentShipmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.PartnerKitUnit", null)
+                        .WithMany()
+                        .HasForeignKey("ReplacedByKitUnitId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.PartnerKitUnit", null)
+                        .WithMany()
+                        .HasForeignKey("ReplacesKitUnitId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("PhaenoPortal.App.Features.Website.Entities.WebNotificationAttempt", b =>
+                {
+                    b.HasOne("PhaenoPortal.App.Features.Website.Entities.WebNotificationDelivery", null)
+                        .WithMany()
+                        .HasForeignKey("WebNotificationDeliveryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PhaenoPortal.App.Features.Website.Entities.WebNotificationDelivery", b =>
+                {
+                    b.HasOne("PhaenoPortal.App.Features.Website.Entities.WebContact", null)
+                        .WithMany()
+                        .HasForeignKey("WebContactId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PhaenoPortal.App.Features.Website.Entities.WebOrder", null)
+                        .WithMany()
+                        .HasForeignKey("WebOrderId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("PhaenoPortal.App.Features.Website.Entities.WebNotificationProcessingControl", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("PSeq.Operations.Commercial.Accounts.Domain.Organization", b =>
@@ -15412,6 +24312,11 @@ namespace PSeq.Operations.Api.Migrations
                     b.Navigation("Files");
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.LabServiceOffering", b =>
+                {
+                    b.Navigation("SupportedSampleTypes");
+                });
+
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.PartnerReagentOrder", b =>
                 {
                     b.Navigation("Lines");
@@ -15443,6 +24348,26 @@ namespace PSeq.Operations.Api.Migrations
                     b.Navigation("TubeSlots");
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingContainerDefinition", b =>
+                {
+                    b.Navigation("KitContents");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingContainerType", b =>
+                {
+                    b.Navigation("Definitions");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingStockKit", b =>
+                {
+                    b.Navigation("Tubes");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.TransportationKitRequest", b =>
+                {
+                    b.Navigation("Lines");
+                });
+
             modelBuilder.Entity("PSeq.Operations.Commercial.Relationships.Domain.PortalIntegrationRequest", b =>
                 {
                     b.Navigation("RequestedServices");
@@ -15458,6 +24383,21 @@ namespace PSeq.Operations.Api.Migrations
             modelBuilder.Entity("PSeq.Operations.Commercial.Trials.Domain.TrialScope", b =>
                 {
                     b.Navigation("Decisions");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabBusinessCalendar", b =>
+                {
+                    b.Navigation("Holidays");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabContainer", b =>
+                {
+                    b.Navigation("Barcodes");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabTimingPolicy", b =>
+                {
+                    b.Navigation("Durations");
                 });
 
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabWorkOrder", b =>
@@ -15482,8 +24422,15 @@ namespace PSeq.Operations.Api.Migrations
                     b.Navigation("Quotes");
                 });
 
+            modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.KitAssemblyCase", b =>
+                {
+                    b.Navigation("History");
+                });
+
             modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.LabServiceOrder", b =>
                 {
+                    b.Navigation("Phases");
+
                     b.Navigation("Quotes");
 
                     b.Navigation("Revisions");

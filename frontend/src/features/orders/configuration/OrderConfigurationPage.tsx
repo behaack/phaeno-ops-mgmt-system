@@ -6,29 +6,35 @@ import {
   RefreshCw,
   Settings,
   Workflow,
+  BookOpen,
+  FlaskConical,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useNavigate, useSearch } from '@tanstack/react-router'
 
 import { getOrderConfiguration, getOrderErrorMessage, syncQuickBooksCatalog } from '#/api/order-management'
 import { WorkspaceSidebar, type WorkspaceSidebarItem } from '#/components/WorkspaceSidebar'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
 import { usePhaenoSession } from '#/features/auth/session-context'
+import { TrialConfigurationPanel } from '#/features/trials/TrialConfigurationPage'
 import { AnalysisConfigurationPanel } from './AnalysisConfigurationPanel'
 import { AssemblyConfigurationPanel } from './AssemblyConfigurationPanel'
 import { CommercialConfigurationPanel } from './CommercialConfigurationPanel'
 import { ReagentConfigurationPanel } from './ReagentConfigurationPanel'
+import { CatalogConfigurationPanel } from './CatalogConfigurationPanel'
 import { SystemConfigurationPanel } from './SystemConfigurationPanel'
 
-type ConfigurationSection = 'system' | 'analyses' | 'reagents' | 'assembly' | 'commercial'
+export type ConfigurationSection = 'system' | 'catalog' | 'analyses' | 'reagents' | 'assembly' | 'trials' | 'commercial'
+export function parseConfigurationSection(value: unknown): ConfigurationSection { return ['system', 'catalog', 'analyses', 'reagents', 'assembly', 'trials', 'commercial'].includes(String(value)) ? value as ConfigurationSection : 'system' }
 
 const configurationSections: ReadonlyArray<WorkspaceSidebarItem<ConfigurationSection>> = [
   {
     value: 'system',
-    label: 'Defaults',
-    description: 'Quote validity, submission, and shipping rules',
+    label: 'Quote & workflow',
+    description: 'Quote validity, sample roster, and result delivery',
     icon: Settings,
   },
+  { value: 'catalog', label: 'Service catalog', description: 'Active offerings and sales units', icon: BookOpen },
   {
     value: 'analyses',
     label: 'Analyses',
@@ -44,54 +50,58 @@ const configurationSections: ReadonlyArray<WorkspaceSidebarItem<ConfigurationSec
   {
     value: 'assembly',
     label: 'Assembly',
-    description: 'Versioned profiles, outputs, and pricing',
+    description: 'Included input profiles and outputs',
     icon: Workflow,
+  },
+  {
+    value: 'trials',
+    label: 'Trial configuration',
+    description: 'Scientific responsibilities and Trial deliverables',
+    icon: FlaskConical,
   },
   {
     value: 'commercial',
     label: 'Legacy links',
-    description: 'Historical credit and QuickBooks mappings',
+    description: 'Historical credit and connector recovery',
     icon: Landmark,
   },
 ]
 
-export function OrderConfigurationPage() {
+export function OrderConfigurationPage({ catalogItemId }: { catalogItemId?: string } = {}) {
   const { authProvider, session } = usePhaenoSession()
   const queryClient = useQueryClient()
-  const [section, setSection] = useState<ConfigurationSection>('system')
+  const navigate = useNavigate()
+  const search = useSearch({ strict: false })
   const canManage = Boolean(session?.capabilities.canManageOrderConfiguration)
-  const apiEnabled = canManage && authProvider !== 'mock'
+  const canManageTrials = Boolean(session?.capabilities.canManageTrialProjects)
+  const sections = configurationSections.filter(item => item.value === 'trials' ? canManageTrials || canManage : canManage)
+  const requestedSection = catalogItemId ? 'catalog' : parseConfigurationSection(search.configurationSection)
+  const section = sections.find(item => item.value === requestedSection)?.value ?? sections[0]?.value
+  const showingOrders = Boolean(section && section !== 'trials')
+  const setSection = (value: ConfigurationSection) => { void navigate({ to: '/order-configuration', search: { configurationSection: value } }) }
+  const apiEnabled = canManage && showingOrders && authProvider !== 'mock'
   const configuration = useQuery({ queryKey: ['order-configuration'], queryFn: getOrderConfiguration, enabled: apiEnabled })
   const sync = useMutation({ mutationFn: syncQuickBooksCatalog, onSuccess: async () => queryClient.invalidateQueries({ queryKey: ['order-configuration'] }) })
 
-  if (!canManage) return <main className="page-wrap px-4 py-8"><Alert variant="destructive"><AlertTitle>Order configuration unavailable</AlertTitle><AlertDescription>A Phaeno platform administrator is required.</AlertDescription></Alert></main>
+  if (!sections.length) return <main className="page-wrap px-4 py-8"><Alert variant="destructive"><AlertTitle>Order Settings unavailable</AlertTitle><AlertDescription>A Phaeno platform administrator or Trial staff access is required.</AlertDescription></Alert></main>
   return (
     <main className="py-8">
       <WorkspaceSidebar
-        workspaceLabel="Order configuration"
-        items={configurationSections}
-        value={section}
+        workspaceLabel="Order Settings"
+        items={sections}
+        value={section!}
         onValueChange={setSection}
       >
-        <div className="page-wrap px-4">
+        <div className="page-wrap px-4 pt-6 lg:pt-0">
           <section className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h1 className="text-3xl font-semibold">Order configuration</h1>
+              <h1 className="text-3xl font-semibold">Order Settings</h1>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
-                Maintain PSeq readiness defaults, scientific service definitions,
-                Partner-negotiated reagent prices, assembly profiles, and legacy
+                Maintain quote validity, order workflows, scientific service definitions,
+                Partner-negotiated reagent prices, assembly profiles, Trial configuration, and legacy
                 accounting links. Customer billing and tax approval live in Finance.
               </p>
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={!apiEnabled || sync.isPending}
-              onClick={() => sync.mutate()}
-            >
-              <RefreshCw data-icon="inline-start" />
-              {sync.isPending ? 'Queueing sync…' : 'Sync QuickBooks catalog'}
-            </Button>
           </section>
           {authProvider === 'mock' ? (
             <Alert className="mb-5">
@@ -101,7 +111,8 @@ export function OrderConfigurationPage() {
               </AlertDescription>
             </Alert>
           ) : null}
-          {configuration.error ? (
+          {section === 'trials' && authProvider !== 'mock' ? <TrialConfigurationPanel /> : null}
+          {showingOrders && configuration.error ? (
             <Alert variant="destructive" className="mb-5">
               <AlertTitle>Configuration could not be loaded</AlertTitle>
               <AlertDescription>
@@ -109,7 +120,9 @@ export function OrderConfigurationPage() {
               </AlertDescription>
             </Alert>
           ) : null}
-          {configuration.isLoading ? <p role="status">Loading order configuration…</p> : null}
+          {showingOrders && configuration.isLoading ? <p role="status">Loading order configuration…</p> : null}
+          {section === 'commercial' ? <div className="mb-5 space-y-3 rounded-lg border p-4"><p className="text-sm text-muted-foreground">Historical accounting mappings and connector recovery. The service catalog is maintained in Service catalog.</p><Button variant="outline" disabled={!apiEnabled || sync.isPending} onClick={() => sync.mutate()}><RefreshCw data-icon="inline-start" />{sync.isPending ? 'Queueing…' : 'Queue QuickBooks catalog recovery'}</Button>{sync.error ? <p role="alert">{getOrderErrorMessage(sync.error, 'Connector recovery is unavailable.')}</p> : null}{sync.isSuccess ? <p role="status">Catalog recovery queued.</p> : null}</div> : null}
+          {configuration.data && section === 'catalog' ? <CatalogConfigurationPanel configuration={configuration.data} catalogItemId={catalogItemId} apiEnabled={apiEnabled} /> : null}
           {configuration.data && section === 'system' ? <SystemConfigurationPanel configuration={configuration.data} /> : null}
           {configuration.data && section === 'analyses' ? <AnalysisConfigurationPanel configuration={configuration.data} /> : null}
           {configuration.data && section === 'reagents' ? <ReagentConfigurationPanel configuration={configuration.data} /> : null}

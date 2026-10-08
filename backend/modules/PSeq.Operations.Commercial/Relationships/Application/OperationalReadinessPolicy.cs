@@ -23,7 +23,8 @@ public enum OperationalReadinessBlockerCode
     BillingAddressIncomplete,
     PaymentTermsIncomplete,
     TaxDecisionIncomplete,
-    FinanceTaxApprovalRequired
+    FinanceTaxApprovalRequired,
+    ActiveCustomerDepartmentUserRequired
 }
 
 public sealed record OperationalReadinessInput(
@@ -53,11 +54,16 @@ public sealed record OperationalReadinessEvaluation(
     OperationalReadiness State,
     IReadOnlyList<OperationalReadinessBlocker> Blockers)
 {
-    public bool CanStageOrder => Blockers.All(blocker => blocker.Code is not (
+    public IReadOnlyList<OperationalReadinessBlocker> StageBlockers => Blockers.Where(blocker => blocker.Code is (
         OperationalReadinessBlockerCode.ActiveCustomerRelationshipRequired
         or OperationalReadinessBlockerCode.ManualBlock
         or OperationalReadinessBlockerCode.PSeqServiceEntitlementNotReady
-        or OperationalReadinessBlockerCode.ActivePSeqOfferingRequired));
+        or OperationalReadinessBlockerCode.ActivePSeqOfferingRequired)).ToArray();
+
+    public bool CanStageOrder => StageBlockers.Count == 0;
+
+    public IReadOnlyList<OperationalReadinessBlocker> InvoiceBlockers => Blockers
+        .Where(blocker => IsPostAcceptanceBillingBlocker(blocker.Code)).ToArray();
 
     public IReadOnlyList<OperationalReadinessBlocker> QuoteBlockers => Blockers
         .Where(blocker => !IsPostAcceptanceBillingBlocker(blocker.Code))
@@ -85,7 +91,7 @@ public static class OperationalReadinessPolicy
         AddIfMissing(input.HasActiveCustomerAdministrator,
             OperationalReadinessBlockerCode.ActiveCustomerAdministratorRequired,
             "Active Customer administrator",
-            "Deliver and accept an administrator invitation.", blockers);
+            "Invite an organization administrator or an administrator for the relevant department and have them accept access.", blockers);
         AddIfMissing(input.HasReadyPSeqEntitlement,
             OperationalReadinessBlockerCode.PSeqServiceEntitlementNotReady,
             "PSeq service entitlement",
@@ -93,7 +99,7 @@ public static class OperationalReadinessPolicy
         AddIfMissing(input.HasActivePSeqOffering,
             OperationalReadinessBlockerCode.ActivePSeqOfferingRequired,
             "Active PSeq offering",
-            "Activate an approved PSeq Lab Service offering.", blockers);
+            "Activate at least one approved offering in the PSeq Lab Service family. Other offerings may remain inactive.", blockers);
         AddIfMissing(input.HasCompleteOrderConfiguration,
             OperationalReadinessBlockerCode.OrderConfigurationIncomplete,
             "Order configuration",

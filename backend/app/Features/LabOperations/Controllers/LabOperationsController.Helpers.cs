@@ -4,6 +4,7 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using PSeq.Operations.Commercial.LabOperations.Application;
 using PSeq.Operations.Commercial.LabOperations.Domain;
+using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Features.LabOperations.DTOs;
 using PhaenoPortal.App.Features.LabOperations.Services;
@@ -12,8 +13,16 @@ using PhaenoPortal.App.Features.OrderManagement.Services;
 
 public sealed partial class LabOperationsController
 {
+    private static void RequireApprovalOverrideAdministrator(LabOperationsActor actor)
+    {
+        if (!actor.IsPlatformAdmin)
+            throw new OrderManagementException("approval_override_forbidden",
+                "Only a platform administrator with protocol-management access can override independent approval.",
+                StatusCodes.Status403Forbidden);
+    }
+
     private async Task<LabWorkOrder> RequireWorkOrderAsync(Guid workOrderId, CancellationToken cancellationToken) =>
-        await dbContext.LabWorkOrders.SingleOrDefaultAsync(item => item.Id == workOrderId, cancellationToken) ?? throw Missing();
+        await dbContext.LabWorkOrders.Include(value => value.Specimens).SingleOrDefaultAsync(item => item.Id == workOrderId, cancellationToken) ?? throw Missing();
 
     private async Task<LabSpecimen> RequireSpecimenAsync(Guid workOrderId, Guid specimenId, CancellationToken cancellationToken) =>
         await dbContext.LabSpecimens.SingleOrDefaultAsync(item => item.Id == specimenId
@@ -58,7 +67,7 @@ public sealed partial class LabOperationsController
         if (existingId.HasValue)
         {
             return await dbContext.LabSuppliers.SingleOrDefaultAsync(
-                item => item.Id == existingId.Value && item.IsActive, cancellationToken)
+                item => item.Id == existingId.Value && item.IsActive && !item.IsInternalProducer, cancellationToken)
                 ?? throw Invalid("material_supplier_invalid", "The selected supplier is not active.");
         }
 
@@ -67,6 +76,8 @@ public sealed partial class LabOperationsController
             item => item.NormalizedName == candidate.NormalizedName, cancellationToken);
         if (existing is not null)
         {
+            if (existing.IsInternalProducer)
+                throw Invalid("material_supplier_invalid", "Phaeno-produced reagents use the prepared-reagent workflow.");
             if (!existing.IsActive)
                 throw Conflict("material_supplier_inactive",
                     "This supplier is retired and must be reactivated before use.");
@@ -124,27 +135,113 @@ public sealed partial class LabOperationsController
         var scheduleHealth = work.Status is LabWorkOrderStatus.ReadyForRelease or LabWorkOrderStatus.Cancelled
             ? LabScheduleHealth.Complete
             : hasBlockingException ? LabScheduleHealth.Delayed
-            : work.Status == LabWorkOrderStatus.OnHold ? LabScheduleHealth.AtRisk
-            : LabScheduleHealth.OnTrack;
+            : Enum.Parse<LabScheduleHealth>(work.ScheduleHealth(DateTime.UtcNow));
         var customerSummary = customerActions.OrderBy(item => item.CreatedAt)
             .Select(item => item.CustomerSafeSummary).FirstOrDefault();
+        var intake = await LabIntakeProgress.ReadAsync(dbContext, work, cancellationToken);
         var payload = JsonSerializer.Serialize(new
         {
             authorizationVersion = work.CurrentAuthorizationVersion,
             milestone = milestone.ToString(),
             scheduleHealth = scheduleHealth.ToString(),
-            currentExpectedCompletionAtUtc = expectedCompletionAtUtc,
+            currentExpectedCompletionAtUtc = expectedCompletionAtUtc ?? work.ExpectedCompletionAtUtc,
             activeCustomerActionCount = customerActions.Count,
             customerSafeSummary = customerSummary,
             permittedQcProjectionJson,
             scientificApprovalId,
-            resultOutputPackageId
+            resultOutputPackageId,
+            actorUserId,
+            intake
         }, JsonOptions);
         dbContext.LabOperationsOutboxEvents.Add(new LabOperationsOutboxEvent(
             Guid.NewGuid(), work.AuthorizationId, work.Id, work.ProjectionVersion,
             eventType, payload, DateTime.UtcNow));
         dbContext.LabWorkEvents.Add(new LabWorkEvent(work.Id, null, eventType,
             DateTime.UtcNow, actorUserId, payload));
+        if (work.AuthorizationSource == LabAuthorizationSource.CommercialOrder)
+        {
+            var summary = await dbContext.Set<CommercialSaleSummary>().SingleOrDefaultAsync(value =>
+                value.WorkflowType == OrderWorkflowTypes.LabService && value.OrderId == work.AuthorizationSourceId
+                && value.OrganizationId == work.SubmittingOrganizationId, cancellationToken);
+            summary?.SetSchedule(expectedCompletionAtUtc ?? work.ExpectedCompletionAtUtc, scheduleHealth.ToString(), DateTime.UtcNow);
+        }
+    }
+
+    private async Task PublishIntakeProgressAsync(LabWorkOrder work, Guid actorUserId,
+        CancellationToken cancellationToken)
+    {
+        if (work.Status is LabWorkOrderStatus.Cancelled or LabWorkOrderStatus.ReadyForRelease) return;
+        await EstablishFullReceiptDeadlineAsync(work, actorUserId, cancellationToken);
+        if (work.Status == LabWorkOrderStatus.AwaitingSpecimens)
+            work.RecordMilestone(LabWorkOrderStatus.Received);
+        else work.AdvanceProjectionVersion();
+        await EmitProjectionAsync(work, actorUserId, "IntakeProgressUpdated", cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task EstablishFullReceiptDeadlineAsync(LabWorkOrder work, Guid actorUserId,
+        CancellationToken cancellationToken)
+    {
+        if (work.TurnaroundPolicyKey != LabWorkOrder.FullReceiptBusinessDayPolicy
+            || work.OriginalDeliveryDueAtUtc.HasValue || !work.MaximumTurnaroundDays.HasValue
+            || work.Specimens.Count == 0) return;
+
+        var specimenIds = work.Specimens.Select(item => item.SubmittedSpecimenId).ToHashSet();
+        var shipmentIds = await dbContext.SampleShipments
+            .Where(item => item.LabWorkOrderId == work.Id && item.Status != SampleShipmentStatus.Cancelled)
+            .Select(item => item.Id).ToArrayAsync(cancellationToken);
+        var items = await dbContext.SampleShipmentItems.Include(item => item.TubeSlots)
+            .Where(item => shipmentIds.Contains(item.SampleShipmentId)
+                && specimenIds.Contains(item.SubmittedSpecimenId))
+            .ToListAsync(cancellationToken);
+        if (specimenIds.Any(id => !items.Any(item => item.SubmittedSpecimenId == id))
+            || items.Any(item => item.TubeSlots.Count == 0
+                || item.TubeSlots.Any(slot => !slot.RegisteredSampleTubeId.HasValue))) return;
+        var tubeIds = items.SelectMany(item => item.TubeSlots)
+            .Select(slot => slot.RegisteredSampleTubeId!.Value).Distinct().ToArray();
+        var tubes = await dbContext.RegisteredSampleTubes
+            .Where(item => tubeIds.Contains(item.Id)).ToListAsync(cancellationToken);
+        if (tubes.Count != tubeIds.Length || tubes.Any(item => !item.ReceivedAt.HasValue)) return;
+        var lastReceivedAt = tubes.Max(item => item.ReceivedAt!.Value);
+        var calendar = await dbContext.Set<LabBusinessCalendar>().Include(item => item.Holidays)
+            .OrderByDescending(item => item.Revision).FirstOrDefaultAsync(cancellationToken);
+        if (calendar is null)
+        {
+            await RecordCalendarPendingAsync();
+            return;
+        }
+        DateTime dueAt;
+        try
+        {
+            dueAt = LabForecastClock.AddDays(lastReceivedAt,
+                work.MaximumTurnaroundDays.Value, LabDayBasis.Business, calendar);
+        }
+        catch (LabForecastCalendarException)
+        {
+            // Physical receipt is retained even when the holiday calendar needs extension.
+            await RecordCalendarPendingAsync();
+            return;
+        }
+        work.RecordFullReceiptDeadline(lastReceivedAt, dueAt);
+        dbContext.LabWorkEvents.Add(new LabWorkEvent(work.Id, null, "DeliveryDeadlineEstablished",
+            DateTime.UtcNow, actorUserId, JsonSerializer.Serialize(new
+            {
+                lastRequiredTubeReceivedAtUtc = lastReceivedAt, dueAtUtc = dueAt,
+                businessDays = work.MaximumTurnaroundDays, calendarId = calendar.Id,
+                calendarRevision = calendar.Revision
+            }, JsonOptions)));
+
+        async Task RecordCalendarPendingAsync()
+        {
+            if (await dbContext.LabWorkEvents.AnyAsync(item => item.LabWorkOrderId == work.Id
+                && item.EventCode == "DeliveryDeadlinePendingCalendar", cancellationToken)) return;
+            dbContext.LabWorkEvents.Add(new LabWorkEvent(work.Id, null, "DeliveryDeadlinePendingCalendar",
+                DateTime.UtcNow, actorUserId, JsonSerializer.Serialize(new
+                {
+                    lastRequiredTubeReceivedAtUtc = lastReceivedAt,
+                    businessDays = work.MaximumTurnaroundDays
+                }, JsonOptions)));
+        }
     }
 
     private async Task<List<LabProtocolDto>> ReadProtocolsAsync(CancellationToken cancellationToken)
@@ -190,7 +287,7 @@ public sealed partial class LabOperationsController
                     version.Status.ToString(), version.AuthoredByUserId, version.AuthoredAtUtc,
                     version.ApprovedByUserId, version.ApprovedAtUtc, version.ProductionByUserId,
                     version.ProductionAtUtc, stagesByVersion.GetValueOrDefault(version.Id) ?? [],
-                    version.Version)).ToList());
+                    version.Version, version.InvalidatedAtUtc, version.InvalidationReason, version.ApprovalOverrideReason)).ToList());
         return workflows.Select(workflow => new LabServiceWorkflowDto(workflow.Id,
             workflow.ServiceKey, workflow.Name, workflow.Description, workflow.LatestVersion,
             versionsByWorkflow.GetValueOrDefault(workflow.Id) ?? [], workflow.Version)).ToList();
@@ -205,10 +302,18 @@ public sealed partial class LabOperationsController
             .ToDictionaryAsync(item => item.Id, item => item.Count, cancellationToken);
         var sendouts = await dbContext.LabNgsSendouts.AsNoTracking()
             .ToDictionaryAsync(item => item.LabOperationalBatchId, cancellationToken);
+        var exceptions = await dbContext.LabVendorLibraryExceptions.AsNoTracking().Where(e => dbContext.LabVendorResultsVersions.Any(v => v.Id == e.LabVendorResultsVersionId
+            && !dbContext.LabVendorResultsVersions.Any(newer => newer.LabNgsSendoutId == v.LabNgsSendoutId && newer.ResultVersion > v.ResultVersion))).GroupBy(e => e.LabNgsSendoutId)
+            .Select(group => new { Id = group.Key, Count = group.Count() }).ToDictionaryAsync(e => e.Id, e => e.Count, cancellationToken);
+        var resultVersions = await dbContext.LabVendorResultsVersions.AsNoTracking().GroupBy(version => version.LabNgsSendoutId)
+            .Select(group => new { Id = group.Key, Version = group.Max(version => version.ResultVersion) })
+            .ToDictionaryAsync(version => version.Id, version => version.Version, cancellationToken);
         return batches.Select(batch =>
         {
             sendouts.TryGetValue(batch.Id, out var sendout);
-            return MapBatch(batch, counts.GetValueOrDefault(batch.Id), sendout?.Status.ToString(), sendout?.Id, sendout?.Version);
+            return MapBatch(batch, counts.GetValueOrDefault(batch.Id), sendout?.Status.ToString(), sendout?.Id, sendout?.Version, sendout,
+                sendout is null ? 0 : exceptions.GetValueOrDefault(sendout.Id),
+                sendout is not null && resultVersions.TryGetValue(sendout.Id, out var resultVersion) ? resultVersion : null);
         }).ToList();
     }
 
@@ -216,6 +321,7 @@ public sealed partial class LabOperationsController
         CancellationToken cancellationToken)
     {
         var lots = await dbContext.LabMaterialLots.AsNoTracking().ToListAsync(cancellationToken);
+        var products = await dbContext.LabSupplierProducts.AsNoTracking().ToDictionaryAsync(p => p.Id, cancellationToken);
         var definitions = await dbContext.LabMaterialDefinitions.AsNoTracking()
             .ToDictionaryAsync(item => item.Id, cancellationToken);
         var suppliers = await dbContext.LabSuppliers.AsNoTracking()
@@ -252,7 +358,7 @@ public sealed partial class LabOperationsController
                 lot.LotNumber, supplier?.Id, supplier?.Name, lot.ExpirationOrRetestDate,
                 storageLocation.Id, storageLocation.Name, lot.AvailableQuantity,
                 lot.QuantityUnit, lot.QcDisposition.ToString(), lot.QcPerformedOn,
-                lot.QcFailureReason, componentDtos, lot.Version);
+                lot.QcFailureReason, componentDtos, lot.Version, lot.SupplierProductId, products.GetValueOrDefault(lot.SupplierProductId ?? Guid.Empty)?.ProductNumber, lot.QuantityHoldReason, lot.QuantityHistoryJson);
         })
         .OrderBy(item => item.Name)
         .ThenBy(item => item.LotNumber)
@@ -289,32 +395,42 @@ public sealed partial class LabOperationsController
             authorization?.CommercialOrderId, commercialOrder?.OrderNumber,
             work.SubmittingOrganizationId, work.ServiceKey, work.Status.ToString(),
             specimenCount, openExceptionCount, work.UpdatedAt, work.Version,
-            work.LabServiceWorkflowVersionId);
+            work.LabServiceWorkflowVersionId,
+            !string.IsNullOrWhiteSpace(commercialOrder?.OrderNumber) ? commercialOrder.OrderNumber
+                : !string.IsNullOrWhiteSpace(work.OpaqueSubmitterReference) ? work.OpaqueSubmitterReference
+                : $"WO-{work.Id}", work.ServiceVersion);
     }
 
     private static LabProtocolDto MapProtocol(LabProtocol protocol, IReadOnlyList<LabProtocolVersionDto> versions) =>
         new(protocol.Id, protocol.Key, protocol.Name, protocol.Description,
-            protocol.LatestVersion, versions, protocol.Version);
+            protocol.LatestVersion, versions, protocol.Version,
+            protocol.RetiredAtUtc, protocol.RetiredByUserId, protocol.RetirementReason);
 
     private static LabProtocolVersionDto MapProtocolVersion(LabProtocolVersion version) =>
         new(version.Id, version.ProtocolVersion, version.Status.ToString(), version.DefinitionJson,
-            version.AuthoredByUserId, version.AuthoredAtUtc, version.ApprovedByUserId, version.ApprovedAtUtc);
+            version.AuthoredByUserId, version.AuthoredAtUtc, version.ApprovedByUserId, version.ApprovedAtUtc, version.ApprovalOverrideReason);
 
     private static LabEquipmentDto MapEquipment(LabEquipment item) =>
         new(item.Id, item.AssetCode, item.Name, item.EquipmentType, item.Location,
-            item.Status.ToString(), item.LastCalibrationOn, item.CalibrationDueOn, item.Version);
+            item.Status.ToString(), item.LastCalibrationOn, item.CalibrationDueOn, item.Version,
+            item.RetirementReason, item.RetiredAtUtc, item.RetiredByUserId);
 
     private static LabBatchDto MapBatch(LabOperationalBatch item, int memberCount, string? sendoutStatus,
-        Guid? sendoutId = null, long? sendoutVersion = null) =>
+        Guid? sendoutId = null, long? sendoutVersion = null, LabNgsSendout? sendout = null, int exceptionCount = 0, int? resultsVersion = null) =>
         new(item.Id, item.BatchNumber, item.Name, item.BatchType, item.Status.ToString(),
             item.StartedAtUtc, item.CompletedAtUtc, item.Notes,
-            memberCount, sendoutId, sendoutStatus, sendoutVersion, item.Version);
+            memberCount, sendoutId, sendoutStatus, sendoutVersion, item.Version,
+            sendout?.Outcome?.ToString(), sendout?.ProviderName, sendout?.TrackingReference, sendout?.ExpectedCompletionAtUtc, exceptionCount,
+            sendout?.ResultsReceivedAtUtc, sendout?.RunNotPerformed, resultsVersion);
 
     private static LabContainerDto MapContainer(LabContainer item) =>
         new(item.Id, item.LabSpecimenId, item.ParentContainerId, item.Kind.ToString(), item.Barcode,
             item.BarcodeSource.ToString(), item.ExternalBarcodeReferenceId,
             item.Label, item.LabelPrintCount, item.Location, item.Quantity, item.QuantityUnit,
-            item.Status.ToString(), item.RetainUntilUtc, item.Version);
+            item.Status.ToString(), item.RetainUntilUtc, item.Version, item.BarcodeNamespace,
+            item.IntakeDisposition?.ToString(), item.IntakeReasonCode, item.IntakeNotes,
+            item.IntakeReviewedAtUtc, item.IntakeReviewedByUserId,
+            item.InitialQuantity, item.InitialQuantityUnit, item.QuantityBasis, item.QuantityHistoryJson);
 
     private static LabExecutionDto MapExecution(LabProtocolExecution item) =>
         new(item.Id, item.LabSpecimenId, item.LabProtocolVersionId, item.AssignedToUserId,

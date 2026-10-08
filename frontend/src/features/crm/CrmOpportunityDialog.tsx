@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { listCrmOpportunityDepartments } from "#/api/crm";
 import type {
   CrmCompany,
   CrmOpportunity,
@@ -18,13 +20,18 @@ import {
 } from "#/components/ui/dialog";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
+import { Field as FormField, FieldDescription } from "#/components/ui/field";
+import { NativeSelect } from "#/components/ui/native-select";
 import { Textarea } from "#/components/ui/textarea";
 import { CrmOwnerSelect } from "./CrmOwnerSelect";
+import { CrmAssociationRecordCombobox } from "./CrmAssociationRecordCombobox";
+import { CrmCollectionFeedback } from "./CrmCollectionFeedback";
 
 export function CrmOpportunityDialog({
   open,
   opportunity,
-  companies,
+  companies = [],
+  companyId,
   pipelines,
   pending,
   error,
@@ -33,7 +40,8 @@ export function CrmOpportunityDialog({
 }: {
   open: boolean;
   opportunity?: CrmOpportunity | null;
-  companies: CrmCompany[];
+  companies?: CrmCompany[];
+  companyId?: string;
   pipelines: CrmPipeline[];
   pending: boolean;
   error?: string;
@@ -41,6 +49,25 @@ export function CrmOpportunityDialog({
   onSubmit: (input: CrmOpportunityInput) => void;
 }) {
   const [pipelineId, setPipelineId] = useState("");
+  const initialCompanyId = opportunity?.companyId ?? companyId ?? "";
+  const [selectedCompanyId, setSelectedCompanyId] = useState(initialCompanyId);
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState(opportunity?.departmentId ?? "");
+  const companyName = opportunity?.companyName ?? companies.find(value => value.id === companyId)?.name;
+  const departments = useQuery({
+    queryKey: ["crm-opportunity-departments", selectedCompanyId],
+    queryFn: () => listCrmOpportunityDepartments(selectedCompanyId),
+    enabled: open && Boolean(selectedCompanyId),
+  });
+  const choices = departments.data ?? [];
+  const departmentId = choices.length === 1 ? choices[0].id : selectedDepartmentId;
+  const departmentsUnavailable = Boolean(selectedCompanyId) && (departments.isPending || departments.isError || departments.isFetching);
+  const departmentRequired = choices.length > 1;
+  useEffect(() => {
+    if (open) {
+      setSelectedCompanyId(initialCompanyId);
+      setSelectedDepartmentId(opportunity?.departmentId ?? "");
+    }
+  }, [open, initialCompanyId, opportunity?.departmentId]);
   useEffect(() => {
     if (open)
       setPipelineId(
@@ -56,11 +83,13 @@ export function CrmOpportunityDialog({
         <form
           onSubmit={(event) => {
             event.preventDefault();
+            if (pending || departmentsUnavailable) return;
             const data = new FormData(event.currentTarget);
             const amount = nullable(data, "amount");
             onSubmit({
               name: String(data.get("name") ?? "").trim(),
               companyId: String(data.get("companyId") ?? ""),
+              departmentId: departmentId || null,
               pipelineId,
               stageId: opportunity?.stageId ?? null,
               ownerUserId: nullable(data, "ownerUserId"),
@@ -104,31 +133,23 @@ export function CrmOpportunityDialog({
             </Field>
             <div className="grid min-w-0 gap-4 sm:grid-cols-2">
               <Field label="Company *" id="opportunity-company">
-                <select
+                <CrmAssociationRecordCombobox
+                  key={`${initialCompanyId}:${companyName}:${open}`}
                   id="opportunity-company"
                   name="companyId"
+                  kind="company"
                   required
-                  defaultValue={opportunity?.companyId ?? ""}
-                  className="h-9 rounded-md border bg-background px-3 text-sm"
-                >
-                  <option value="" disabled>
-                    Select a Company
-                  </option>
-                  {companies.map((company) => (
-                    <option key={company.id} value={company.id}>
-                      {company.name}
-                    </option>
-                  ))}
-                </select>
+                  initialValue={initialCompanyId && companyName ? { id: initialCompanyId, label: companyName } : undefined}
+                  onValueChange={value => { setSelectedCompanyId(value); setSelectedDepartmentId(""); }}
+                />
               </Field>
               <Field label="Pipeline *" id="opportunity-pipeline">
-                <select
+                <NativeSelect
                   id="opportunity-pipeline"
                   value={pipelineId}
                   onChange={(event) => setPipelineId(event.target.value)}
                   required
                   disabled={Boolean(opportunity)}
-                  className="h-9 rounded-md border bg-background px-3 text-sm"
                 >
                   {pipelines
                     .filter((value) => value.isActive)
@@ -137,9 +158,21 @@ export function CrmOpportunityDialog({
                         {pipeline.name}
                       </option>
                     ))}
-                </select>
+                </NativeSelect>
               </Field>
             </div>
+            {selectedCompanyId ? <>
+              <CrmCollectionFeedback name="Company departments" query={departments} />
+              {departments.isSuccess && choices.length > 0 ? <Field label={departmentRequired ? "Department *" : "Department"} id="opportunity-department">
+                <FieldDescription>{departmentRequired ? "Choose the Department this Opportunity belongs to." : "This Company's only active Department is selected automatically."}</FieldDescription>
+                <NativeSelect id="opportunity-department" value={departmentId} required={departmentRequired}
+                  disabled={departmentsUnavailable || choices.length === 1} onChange={event => setSelectedDepartmentId(event.target.value)}>
+                  {departmentRequired ? <option value="">Select a Department</option> : null}
+                  {choices.map(value => <option key={value.id} value={value.id}>{value.name}</option>)}
+                </NativeSelect>
+              </Field> : null}
+              {departments.isSuccess && choices.length === 0 ? <p className="text-sm text-muted-foreground">No active departments. This Opportunity belongs to the Company.</p> : null}
+            </> : null}
             <div className="grid min-w-0 gap-4 sm:grid-cols-3">
               <Field label="Amount" id="opportunity-amount">
                 <Input
@@ -172,23 +205,15 @@ export function CrmOpportunityDialog({
             </div>
             <div className="grid min-w-0 gap-4 sm:grid-cols-2">
               <Field label="Product interest" id="opportunity-product">
-                <select
+                <NativeSelect
                   id="opportunity-product"
                   name="productInterest"
                   defaultValue={opportunity?.productInterest ?? ""}
-                  className="h-9 w-full min-w-0 rounded-md border bg-background px-3 text-sm"
                 >
                   <option value="">Not specified</option>
                   <option value="PSeqLabService">PSeq Lab Service</option>
                   <option value="PSeqKit">PSeq Kit</option>
-                  {opportunity?.productInterest &&
-                  opportunity.productInterest !== "PSeqLabService" &&
-                  opportunity.productInterest !== "PSeqKit" ? (
-                    <option value={opportunity.productInterest}>
-                      {opportunity.productInterest} · legacy value
-                    </option>
-                  ) : null}
-                </select>
+                </NativeSelect>
               </Field>
               <Field label="Owner" id="opportunity-owner">
                 <CrmOwnerSelect
@@ -244,7 +269,7 @@ export function CrmOpportunityDialog({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={pending || !pipelineId}>
+            <Button type="submit" disabled={pending || !pipelineId || departmentsUnavailable}>
               {pending
                 ? "Saving…"
                 : opportunity
@@ -267,10 +292,10 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <div className="grid min-w-0 gap-1.5">
+    <FormField className="min-w-0">
       <Label htmlFor={id}>{label}</Label>
       {children}
-    </div>
+    </FormField>
   );
 }
 function nullable(data: FormData, key: string) {

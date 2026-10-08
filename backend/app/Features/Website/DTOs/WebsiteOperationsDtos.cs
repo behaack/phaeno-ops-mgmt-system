@@ -19,7 +19,7 @@ public sealed record WebOpsMailingListContactDto(
     string OrganizationName,
     string Email,
     bool TechnicalBriefRequested,
-    DateTimeOffset CreatedAtUtc);
+    DateTimeOffset CreatedAtUtc, bool TechnicalBriefDeliveryRecorded = false);
 
 public sealed record WebOpsDemoRequestDto(
     Guid Id,

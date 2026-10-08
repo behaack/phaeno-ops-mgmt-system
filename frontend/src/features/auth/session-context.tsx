@@ -26,7 +26,7 @@ import {
   type SessionResponse,
 } from '#/api/session'
 import { Button } from '#/components/ui/button'
-import { readStoredInviteToken } from '#/features/auth/invitation-storage'
+import { getInvitationReturnPath, readStoredInviteToken } from '#/features/auth/invitation-storage'
 
 const SELECTED_ORGANIZATION_STORAGE_KEY = 'phaeno.selectedOrganizationId'
 const SELECTED_DEPARTMENT_STORAGE_KEY = 'phaeno.selectedDepartmentId'
@@ -48,7 +48,9 @@ export type PhaenoSessionContextValue = {
 export const PhaenoSessionContext =
   createContext<PhaenoSessionContextValue | null>(null)
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+type SessionProviderProps = { children: ReactNode; isPreSessionRoute?: boolean }
+
+export function AuthProvider({ children, isPreSessionRoute = false }: SessionProviderProps) {
   const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as
     | string
     | undefined
@@ -116,12 +118,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
       }}
     >
-      <PhaenoSessionProvider>{children}</PhaenoSessionProvider>
+      <PhaenoSessionProvider isPreSessionRoute={isPreSessionRoute}>{children}</PhaenoSessionProvider>
     </ClerkProvider>
   )
 }
 
-export function PhaenoSessionProvider({ children }: { children: ReactNode }) {
+export function PhaenoSessionProvider({ children, isPreSessionRoute = false }: SessionProviderProps) {
   const { isLoaded, isSignedIn, getToken, userId } = useAuth()
   const queryClient = useQueryClient()
   const [selectedOrganizationId, setSelectedOrganizationIdState] = useState<
@@ -198,7 +200,8 @@ export function PhaenoSessionProvider({ children }: { children: ReactNode }) {
   })
 
   useEffect(() => {
-    if (!isLoaded || !isSignedIn) {
+    if (!isLoaded) return
+    if (!isSignedIn) {
       setSelectedOrganizationId(null)
       setSelectedDepartmentId(null)
       return
@@ -269,7 +272,9 @@ export function PhaenoSessionProvider({ children }: { children: ReactNode }) {
 
   return (
     <PhaenoSessionContext.Provider value={contextValue}>
-      <Fragment key={`${userId ?? ''}:${selectedOrganizationId ?? ''}:${selectedDepartmentId ?? ''}`}>
+      {/* Invitation completion must survive the first organization/department selection.
+          Workspace drafts still reset on tenant changes, and every route resets on identity changes. */}
+      <Fragment key={isPreSessionRoute ? userId ?? '' : `${userId ?? ''}:${selectedOrganizationId ?? ''}:${selectedDepartmentId ?? ''}`}>
         {children}
       </Fragment>
     </PhaenoSessionContext.Provider>
@@ -457,7 +462,7 @@ export function MfaSetupAccessState() {
       description="Connect an authenticator app, then save your one-time backup codes somewhere safe."
     >
       <div className="phaeno-mfa-setup flex w-full justify-center">
-        <TaskSetupMFA redirectUrlComplete="/" />
+        <TaskSetupMFA redirectUrlComplete={getInvitationReturnPath()} />
       </div>
     </AuthenticationPanel>
   )
@@ -636,6 +641,8 @@ const mockSession: SessionResponse = {
     canChangeMemberRoles: true,
     canLeaveOrganization: false,
     canManageOrganizations: true,
+    canAccessCrm: true,
+    canAdministerCrm: true,
     canManageAllUsers: true,
     canDisableUsers: true,
     canViewDatasetConfiguration: true,
@@ -644,6 +651,7 @@ const mockSession: SessionResponse = {
     canProvisionOrganizationData: true,
     canViewOrganizationDatasets: false,
     canViewLabServiceOrders: false,
+    canViewLabServiceInvoices: false,
     canCreateLabServiceRequests: false,
     canSubmitLabServiceRequests: false,
     canAcceptLabServiceQuotes: false,
@@ -777,20 +785,21 @@ function MockSessionProvider({ children }: { children: ReactNode }) {
       capabilities: {
         ...mockSession.capabilities,
         canViewOrganizationDatasets: selectedIsExternal,
-        canViewLabServiceOrders: selectedMembership?.organizationKind === 'Customer',
+        canViewLabServiceOrders: (selectedMembership?.organizationKind === 'Customer' || selectedMembership?.organizationKind === 'Partner'),
+        canViewLabServiceInvoices: selectedMembership?.organizationKind === 'Customer',
         canCreateLabServiceRequests:
-          selectedMembership?.organizationKind === 'Customer' && selectedMembership.isOrganizationAdmin,
+          (selectedMembership?.organizationKind === 'Customer' || selectedMembership?.organizationKind === 'Partner') && selectedMembership.isOrganizationAdmin,
         canSubmitLabServiceRequests:
-          selectedMembership?.organizationKind === 'Customer' && selectedMembership.isOrganizationAdmin,
+          (selectedMembership?.organizationKind === 'Customer' || selectedMembership?.organizationKind === 'Partner') && selectedMembership.isOrganizationAdmin,
         canAcceptLabServiceQuotes:
-          selectedMembership?.organizationKind === 'Customer' && selectedMembership.isOrganizationAdmin,
+          (selectedMembership?.organizationKind === 'Customer' || selectedMembership?.organizationKind === 'Partner') && selectedMembership.isOrganizationAdmin,
         canRequestLabServiceCancellation:
-          selectedMembership?.organizationKind === 'Customer' && selectedMembership.isOrganizationAdmin,
-        canViewSampleProgress: selectedMembership?.organizationKind === 'Customer',
+          (selectedMembership?.organizationKind === 'Customer' || selectedMembership?.organizationKind === 'Partner') && selectedMembership.isOrganizationAdmin,
+        canViewSampleProgress: (selectedMembership?.organizationKind === 'Customer' || selectedMembership?.organizationKind === 'Partner'),
         canViewSampleShipping:
           selectedMembership?.organizationKind === 'Prospect' ||
-          selectedMembership?.organizationKind === 'Customer',
-        canDownloadLabResults: selectedMembership?.organizationKind === 'Customer',
+          (selectedMembership?.organizationKind === 'Customer' || selectedMembership?.organizationKind === 'Partner'),
+        canDownloadLabResults: (selectedMembership?.organizationKind === 'Customer' || selectedMembership?.organizationKind === 'Partner'),
         canViewReagentOrders: selectedMembership?.organizationKind === 'Partner',
         canCreateReagentOrders:
           selectedMembership?.organizationKind === 'Partner' && selectedMembership.isOrganizationAdmin,

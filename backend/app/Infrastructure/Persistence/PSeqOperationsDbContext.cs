@@ -26,7 +26,7 @@ using PhaenoPortal.App.Features.Trials;
 
 namespace PhaenoPortal.App.Infrastructure.Persistence;
 
-public sealed class PSeqOperationsDbContext(
+public sealed partial class PSeqOperationsDbContext(
     DbContextOptions<PSeqOperationsDbContext> options,
     IOptions<PersistenceOptions> persistenceOptions) : DbContext(options)
 {
@@ -35,6 +35,10 @@ public sealed class PSeqOperationsDbContext(
     /// <summary>
     /// Organizations in the system.
     /// </summary>
+    public DbSet<LabCustomerHold> LabCustomerHolds { get; set; }
+
+    public DbSet<LabScientificUpload> LabScientificUploads { get; set; }
+
     public DbSet<Organization> Organizations { get; set; }
 
     /// <summary>
@@ -123,8 +127,17 @@ public sealed class PSeqOperationsDbContext(
     public DbSet<OrganizationCommercialProfile> OrganizationCommercialProfiles { get; set; }
     public DbSet<OrderSystemConfiguration> OrderSystemConfigurations { get; set; }
     public DbSet<SampleShippingDestination> SampleShippingDestinations { get; set; }
+    public DbSet<SampleShippingContainerType> SampleShippingContainerTypes { get; set; }
+    public DbSet<SampleShippingContainerDefinition> SampleShippingContainerDefinitions { get; set; }
+    public DbSet<SampleShippingStockKit> SampleShippingStockKits { get; set; }
+    public DbSet<SampleShippingStockTube> SampleShippingStockTubes { get; set; }
+    public DbSet<SampleShippingStockTubeCorrection> SampleShippingStockTubeCorrections { get; set; }
+    public DbSet<CustomerDeliveryLocation> CustomerDeliveryLocations { get; set; }
+    public DbSet<TransportationKitRequest> TransportationKitRequests { get; set; }
+    public DbSet<TransportationKitRequestLine> TransportationKitRequestLines { get; set; }
     public DbSet<SampleTypeDefinition> SampleTypeDefinitions { get; set; }
-    public DbSet<SampleShippingInstructionRule> SampleShippingInstructionRules { get; set; }
+    public DbSet<SampleTypeProcedureLink> SampleTypeProcedureLinks { get; set; }
+    public DbSet<SampleShippingProcedure> SampleShippingProcedures { get; set; }
     public DbSet<SampleShipment> SampleShipments { get; set; }
     public DbSet<SampleShipmentItem> SampleShipmentItems { get; set; }
     public DbSet<SampleShipmentTubeSlot> SampleShipmentTubeSlots { get; set; }
@@ -146,7 +159,10 @@ public sealed class PSeqOperationsDbContext(
     public DbSet<LabSampleImportPreview> LabSampleImportPreviews { get; set; }
     public DbSet<LabServiceRequestRevision> LabServiceRequestRevisions { get; set; }
     public DbSet<LabSample> LabSamples { get; set; }
+    public DbSet<LabSampleTubePair> LabSampleTubePairs { get; set; }
+    public DbSet<LabSampleTubeKitSelection> LabSampleTubeKitSelections { get; set; }
     public DbSet<LabServiceQuote> LabServiceQuotes { get; set; }
+    public DbSet<LabServiceQuoteExtensionRequest> LabServiceQuoteExtensionRequests { get; set; }
     public DbSet<LabResultRelease> LabResultReleases { get; set; }
     public DbSet<ResultOutputPackage> ResultOutputPackages { get; set; }
     public DbSet<ResultArtifact> ResultArtifacts { get; set; }
@@ -164,6 +180,12 @@ public sealed class PSeqOperationsDbContext(
     public DbSet<OperationalAttentionItem> OperationalAttentionItems { get; set; }
     public DbSet<PartnerShippingAddress> PartnerShippingAddresses { get; set; }
     public DbSet<PartnerReagentOrder> PartnerReagentOrders { get; set; }
+    public DbSet<PartnerKitUnit> PartnerKitUnits { get; set; }
+    public DbSet<KitAssemblyCase> KitAssemblyCases { get; set; }
+    public DbSet<KitCaseEvent> KitCaseEvents { get; set; }
+    public DbSet<LabServiceOffering> LabServiceOfferings { get; set; }
+    public DbSet<CommercialSaleSummary> CommercialSaleSummaries { get; set; }
+    public DbSet<LabWorkTimingChange> LabWorkTimingChanges { get; set; }
     public DbSet<PartnerReagentOrderLine> PartnerReagentOrderLines { get; set; }
     public DbSet<ReagentShipment> ReagentShipments { get; set; }
     public DbSet<ReagentShipmentLine> ReagentShipmentLines { get; set; }
@@ -204,24 +226,62 @@ public sealed class PSeqOperationsDbContext(
     public DbSet<LabRoleAssignment> LabRoleAssignments { get; set; }
     public DbSet<LabRoleInvitationIntent> LabRoleInvitationIntents { get; set; }
     public DbSet<LabContainer> LabContainers { get; set; }
+    public DbSet<LabContainerBarcode> LabContainerBarcodes { get; set; }
+    public DbSet<LabBiologicalMaterialTransfer> LabBiologicalMaterialTransfers { get; set; }
+    public DbSet<LabStep> LabSteps { get; set; }
+    public DbSet<LabStepVersion> LabStepVersions { get; set; }
     public DbSet<LabProtocol> LabProtocols { get; set; }
     public DbSet<LabProtocolVersion> LabProtocolVersions { get; set; }
     public DbSet<LabServiceWorkflow> LabServiceWorkflows { get; set; }
     public DbSet<LabServiceWorkflowVersion> LabServiceWorkflowVersions { get; set; }
     public DbSet<LabServiceWorkflowStage> LabServiceWorkflowStages { get; set; }
     public DbSet<LabProtocolExecution> LabProtocolExecutions { get; set; }
+    public DbSet<LabSpecimenAttempt> LabSpecimenAttempts { get; set; }
+    public DbSet<LabTrayFormat> LabTrayFormats { get; set; }
+    public DbSet<LabPreparationBatch> LabPreparationBatches { get; set; }
+    public DbSet<LabPreparationMember> LabPreparationMembers { get; set; }
+    public DbSet<LabPreparationRecord> LabPreparationRecords { get; set; }
+    public DbSet<LabMasterMixWorkflow> LabMasterMixWorkflows { get; set; }
+    public DbSet<LabMasterMixPreparation> LabMasterMixPreparations { get; set; }
+    public DbSet<LabMasterMixStepRecord> LabMasterMixStepRecords { get; set; }
+    public DbSet<LabMasterMixIngredientUse> LabMasterMixIngredientUses { get; set; }
+    public DbSet<LabMasterMixTrayUse> LabMasterMixTrayUses { get; set; }
+    public DbSet<LabMasterMixCorrection> LabMasterMixCorrections { get; set; }
+    public DbSet<LabAttemptCommandReceipt> LabAttemptCommandReceipts { get; set; }
     public DbSet<LabMaterialDefinition> LabMaterialDefinitions { get; set; }
+    public DbSet<LabProductType> LabProductTypes { get; set; }
+    public DbSet<LabSupplierProduct> LabSupplierProducts { get; set; }
     public DbSet<LabSupplier> LabSuppliers { get; set; }
+    public DbSet<LabSupplierShipmentAddress> LabSupplierShipmentAddresses { get; set; }
     public DbSet<LabStorageLocation> LabStorageLocations { get; set; }
     public DbSet<LabMaterialLot> LabMaterialLots { get; set; }
     public DbSet<LabPreparedReagentComponent> LabPreparedReagentComponents { get; set; }
+    public DbSet<LabReagentWorkflow> LabReagentWorkflows { get; set; }
+    public DbSet<LabReagentManufacturingRun> LabReagentManufacturingRuns { get; set; }
+    public DbSet<LabReagentRunStep> LabReagentRunSteps { get; set; }
+    public DbSet<LabReagentMaterialUse> LabReagentMaterialUses { get; set; }
+    public DbSet<LabKitAssemblyWorkflow> LabKitAssemblyWorkflows { get; set; }
+    public DbSet<LabKitAssemblyWorkflowRevision> LabKitAssemblyWorkflowRevisions { get; set; }
+    public DbSet<LabKitAssemblyRun> LabKitAssemblyRuns { get; set; }
+    public DbSet<LabKitAssemblyStepRecord> LabKitAssemblyStepRecords { get; set; }
+    public DbSet<LabKitAssemblyUse> LabKitAssemblyUses { get; set; }
     public DbSet<LabMaterialConsumption> LabMaterialConsumptions { get; set; }
     public DbSet<LabEquipment> LabEquipment { get; set; }
     public DbSet<LabEquipmentUsage> LabEquipmentUsages { get; set; }
+    public DbSet<LabScientificFile> LabScientificFiles { get; set; }
+    public DbSet<LabSequencingOutput> LabSequencingOutputs { get; set; }
+    public DbSet<LabAnalysisRun> LabAnalysisRuns { get; set; }
+    public DbSet<LabAnalysisInput> LabAnalysisInputs { get; set; }
+    public DbSet<LabInvestigationReport> LabInvestigationReports { get; set; }
+    public DbSet<LabPerformanceProposal> LabPerformanceProposals { get; set; }
+    public DbSet<LabPerformanceDecision> LabPerformanceDecisions { get; set; }
     public DbSet<LabLibrary> LabLibraries { get; set; }
     public DbSet<LabOperationalBatch> LabOperationalBatches { get; set; }
     public DbSet<LabBatchMember> LabBatchMembers { get; set; }
     public DbSet<LabNgsSendout> LabNgsSendouts { get; set; }
+    public DbSet<LabVendorLibraryException> LabVendorLibraryExceptions { get; set; }
+    public DbSet<LabVendorResultReference> LabVendorResultReferences { get; set; }
+    public DbSet<LabVendorResultsVersion> LabVendorResultsVersions { get; set; }
     public DbSet<LabCustodyEvent> LabCustodyEvents { get; set; }
     public DbSet<LabException> LabExceptions { get; set; }
     public DbSet<LabOperationsOutboxEvent> LabOperationsOutboxEvents { get; set; }
@@ -518,11 +578,21 @@ public sealed class PSeqOperationsDbContext(
         DataProvisioningModelConfiguration.Configure(modelBuilder);
         FileManagementModelConfiguration.Configure(modelBuilder);
         OrderManagementModelConfiguration.Configure(modelBuilder, this.persistenceOptions.CommercialSchema);
+        SampleShippingContainerModelConfiguration.Configure(modelBuilder, this.persistenceOptions.CommercialSchema);
+        CustomerDeliveryLocationModelConfiguration.Configure(modelBuilder, this.persistenceOptions.CommercialSchema);
+        TransportationKitRequestModelConfiguration.Configure(modelBuilder, this.persistenceOptions.CommercialSchema);
+        KitBundleModelConfiguration.Configure(modelBuilder, this.persistenceOptions.CommercialSchema);
+        LabServiceBundleModelConfiguration.Configure(modelBuilder, this.persistenceOptions.CommercialSchema, this.persistenceOptions.LaboratorySchema);
         CommercialLabOperationsModelConfiguration.Configure(modelBuilder, this.persistenceOptions.CommercialSchema);
         CrmModelConfiguration.Configure(modelBuilder);
         TrialModelConfiguration.Configure(modelBuilder);
         RelationshipManagementModelConfiguration.Configure(modelBuilder);
         LabOperationsModelConfiguration.Configure(modelBuilder, this.persistenceOptions.LaboratorySchema);
+        LabKitAssemblyModelConfiguration.Configure(modelBuilder, this.persistenceOptions.LaboratorySchema);
+        LabAssemblyModelConfiguration.Configure(modelBuilder, this.persistenceOptions.LaboratorySchema);
+        LabFastqModelConfiguration.Configure(modelBuilder, this.persistenceOptions.LaboratorySchema);
+        LabPreparationModelConfiguration.Configure(modelBuilder, this.persistenceOptions.LaboratorySchema);
+        LabMasterMixModelConfiguration.Configure(modelBuilder, this.persistenceOptions.LaboratorySchema);
         WebsiteModelConfiguration.Configure(modelBuilder, this.persistenceOptions.WebsiteSchema);
 
         ApplySchemaOwnership(modelBuilder);

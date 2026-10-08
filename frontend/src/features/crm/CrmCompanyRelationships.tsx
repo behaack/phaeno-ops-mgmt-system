@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, Pencil, Plus } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   apiErrorMessage,
   associateCompanyContact,
@@ -25,10 +25,12 @@ import {
   CardTitle,
 } from "#/components/ui/card";
 import { Checkbox } from "#/components/ui/checkbox";
+import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "#/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFeedback,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -40,13 +42,16 @@ import { Textarea } from "#/components/ui/textarea";
 import { CrmAssociationRecordCombobox } from "./CrmAssociationRecordCombobox";
 import { CrmCompanyContactEditDialog } from "./CrmCompanyContactEditDialog";
 import { CrmRelationshipRoleSelect } from "./CrmRelationshipRoleSelect";
+import { CrmCollectionFeedback as CollectionFeedback, type CrmCollectionQueryState as CollectionQueryState } from "./CrmCollectionFeedback";
 
 export function CrmCompanyRelationships({
   companyId,
   view,
+  currentRelationship,
 }: {
   companyId: string;
   view: "relationships" | "requests";
+  currentRelationship?: "Prospect" | "Customer" | "Partner" | null;
 }) {
   const client = useQueryClient();
   const [associateOpen, setAssociateOpen] = useState(false);
@@ -134,6 +139,7 @@ export function CrmCompanyRelationships({
                   <Button
                     size="sm"
                     variant="outline"
+                    disabled={contacts.isPending || contacts.isError}
                     onClick={() => setAssociateOpen(true)}
                   >
                     <Plus data-icon="inline-start" />
@@ -142,6 +148,7 @@ export function CrmCompanyRelationships({
                 </CardAction>
               </CardHeader>
               <CardContent className="space-y-2">
+                <CollectionFeedback name="contacts" query={contacts} />
                 {(contacts.data ?? []).map((contact) => (
                   <div
                     key={contact.id}
@@ -172,7 +179,7 @@ export function CrmCompanyRelationships({
                     </div>
                   </div>
                 ))}
-                {!contacts.isLoading && !(contacts.data?.length ?? 0) ? (
+                {contacts.isSuccess && contacts.data.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
                     No contacts associated.
                   </p>
@@ -185,6 +192,7 @@ export function CrmCompanyRelationships({
                 <CardDescription>Commercial work tied to this Company.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-2">
+                <CollectionFeedback name="opportunities" query={opportunities} />
                 {(opportunities.data?.items ?? []).map((value) => (
                   <Link
                     key={value.id}
@@ -196,8 +204,7 @@ export function CrmCompanyRelationships({
                     <Badge variant="outline">{value.stageName}</Badge>
                   </Link>
                 ))}
-                {!opportunities.isLoading &&
-                !(opportunities.data?.items.length ?? 0) ? (
+                {opportunities.isSuccess && opportunities.data.items.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
                     No opportunities recorded.
                   </p>
@@ -212,6 +219,7 @@ export function CrmCompanyRelationships({
               .map((contact) => contact.contactId)}
             pending={associate.isPending}
             error={associate.error}
+            contactsQuery={contacts}
             onOpenChange={setAssociateOpen}
             onSubmit={(input) => associate.mutate(input)}
           />
@@ -237,8 +245,8 @@ export function CrmCompanyRelationships({
         </>
       ) : (
         <>
-          <Card>
-            <CardHeader>
+          <Card className="gap-0 py-0">
+            <CardHeader className="border-b bg-muted/50 p-4">
               <CardTitle>Company requests</CardTitle>
               <CardDescription>
                 Request online access, product or service changes, relationship
@@ -246,13 +254,14 @@ export function CrmCompanyRelationships({
                 decisions.
               </CardDescription>
               <CardAction>
-                <Button size="sm" onClick={() => setHandoffOpen(true)}>
+                <Button size="sm" disabled={handoffs.isPending || handoffs.isError} onClick={() => setHandoffOpen(true)}>
                   <ArrowRight data-icon="inline-start" />
                   Create request
                 </Button>
               </CardAction>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 p-4">
+              <CollectionFeedback name="Company requests" query={handoffs} />
               {(handoffs.data ?? []).map((value) => (
                 <div key={value.id} className="rounded-lg border p-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">
@@ -264,20 +273,37 @@ export function CrmCompanyRelationships({
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge variant="outline">{spaced(value.status)}</Badge>
-                      {value.type === "TrialProject" ? <Button asChild size="sm" variant="outline">{value.trialProjectId ? <Link to="/trial-projects/$trialId" params={{ trialId: value.trialProjectId }}>Open Trial</Link> : <Link to="/trial-projects">Start Trial</Link>}</Button> : null}
-                      {value.status === "PendingReview" ? (
-                        <Button asChild size="sm" variant="outline">
-                          <Link to="/customers">
-                            Review in Requests
-                            <ArrowRight data-icon="inline-end" />
-                          </Link>
-                        </Button>
-                      ) : null}
+                      <ActionMenu modal={false}>
+                        <DropdownMenuTrigger asChild>
+                          <Button size="sm" variant="outline" aria-label={`Actions for ${value.requestNumber}`}>
+                            Actions
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-max min-w-40 max-w-[calc(100vw-2rem)]">
+                          {value.type === "TrialProject" ? (
+                            <DropdownMenuItem asChild>
+                              {value.trialProjectId ? (
+                                <Link to="/order-operations/lab-services/trials/$trialId" params={{ trialId: value.trialProjectId }} search={{ fromCompanyId: companyId }}>Open Trial</Link>
+                              ) : (
+                                <Link to="/order-operations/lab-services/trials" search={{ fromCompanyId: companyId }}>Trial projects</Link>
+                              )}
+                            </DropdownMenuItem>
+                          ) : null}
+                          {value.status === "PendingReview" || value.status === "Approved" ? (
+                            <DropdownMenuItem asChild>
+                              <Link to="/crm/requests" search={previous => ({ ...previous, section: value.status === "Approved" ? "work" : "decision", requestId: value.relationshipRequestId })}>
+                                Open in Requests
+                                <ArrowRight aria-hidden="true" />
+                              </Link>
+                            </DropdownMenuItem>
+                          ) : null}
+                        </DropdownMenuContent>
+                      </ActionMenu>
                     </div>
                   </div>
                 </div>
               ))}
-              {!handoffs.isLoading && !(handoffs.data?.length ?? 0) ? (
+              {handoffs.isSuccess && handoffs.data.length === 0 ? (
                 <Alert>
                   <AlertTitle>No Company requests</AlertTitle>
                   <AlertDescription>
@@ -289,9 +315,10 @@ export function CrmCompanyRelationships({
               ) : null}
             </CardContent>
           </Card>
-          <HandoffDialog
+          <HandoffDialog currentRelationship={currentRelationship}
             open={handoffOpen}
             opportunities={opportunities.data?.items ?? []}
+            opportunitiesQuery={opportunities}
             pending={handoff.isPending}
             error={handoff.error}
             onOpenChange={setHandoffOpen}
@@ -302,11 +329,13 @@ export function CrmCompanyRelationships({
     </>
   );
 }
+
 function AssociateDialog({
   open,
   excludedContactIds,
   pending,
   error,
+  contactsQuery,
   onOpenChange,
   onSubmit,
 }: {
@@ -314,6 +343,7 @@ function AssociateDialog({
   excludedContactIds: string[];
   pending: boolean;
   error: unknown;
+  contactsQuery: CollectionQueryState;
   onOpenChange: (open: boolean) => void;
   onSubmit: (value: {
     contactId: string;
@@ -330,6 +360,7 @@ function AssociateDialog({
         <form
           onSubmit={(event) => {
             event.preventDefault();
+            if (pending || contactsQuery.isPending || contactsQuery.isError) return;
             const data = new FormData(event.currentTarget);
             onSubmit({
               contactId: String(data.get("contactId")),
@@ -347,6 +378,7 @@ function AssociateDialog({
               the Contact.
             </DialogDescription>
           </DialogHeader>
+          {contactsQuery.isPending || contactsQuery.isError ? <DialogFeedback><CollectionFeedback name="contacts" query={contactsQuery} /></DialogFeedback> : null}
           {error ? (
             <Alert variant="destructive">
               <AlertDescription>{apiErrorMessage(error)}</AlertDescription>
@@ -403,7 +435,7 @@ function AssociateDialog({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={pending}>
+            <Button type="submit" disabled={pending || contactsQuery.isPending || contactsQuery.isError}>
               Associate contact
             </Button>
           </DialogFooter>
@@ -436,7 +468,7 @@ const companyRequestCategories: ReadonlyArray<{
   {
     value: "Work",
     label: "Start reviewed work",
-    requestTypes: ["TrialProject", "CustomWork"],
+    requestTypes: ["CustomWork"],
   },
   {
     value: "Relationship",
@@ -508,14 +540,18 @@ const companyRequestTypeConfig: Record<
 
 export function HandoffDialog({
   open,
+  currentRelationship,
   opportunities,
+  opportunitiesQuery,
   pending,
   error,
   onOpenChange,
   onSubmit,
 }: {
   open: boolean;
+  currentRelationship?: "Prospect" | "Customer" | "Partner" | null;
   opportunities: Array<{ id: string; name: string }>;
+  opportunitiesQuery?: CollectionQueryState;
   pending: boolean;
   error: unknown;
   onOpenChange: (open: boolean) => void;
@@ -530,8 +566,11 @@ export function HandoffDialog({
   }) => void;
 }) {
   const [type, setType] = useState<CrmHandoffType>("PortalOnboarding");
+  const operationKey = useRef(crypto.randomUUID());
+  useEffect(() => { if (open) operationKey.current = crypto.randomUUID(); }, [open]);
   const [requestedServices, setRequestedServices] = useState<string[]>([]);
   const config = companyRequestTypeConfig[type];
+  const opportunitiesUnavailable = config.showOpportunity && Boolean(opportunitiesQuery?.isPending || opportunitiesQuery?.isError);
   const category = companyRequestCategories.find(
     (value) => value.value === config.category,
   )!;
@@ -549,15 +588,16 @@ export function HandoffDialog({
         <form
           onSubmit={(event) => {
             event.preventDefault();
+            if (pending || opportunitiesUnavailable) return;
             const data = new FormData(event.currentTarget);
             onSubmit({
               type,
               opportunityId: config.showOpportunity
                 ? nullable(data, "opportunityId")
                 : null,
-              idempotencyKey: crypto.randomUUID(),
+              idempotencyKey: operationKey.current,
               requestedOrganizationKind: config.showRelationship
-                ? nullable(data, "kind")
+                ? (currentRelationship && type !== 'RelationshipChange' ? currentRelationship : nullable(data, "kind"))
                 : null,
               requestedServices: config.showServices ? requestedServices : [],
               summary:
@@ -574,6 +614,7 @@ export function HandoffDialog({
               changed, or started until the responsible workflow approves it.
             </DialogDescription>
           </DialogHeader>
+          {config.showOpportunity && opportunitiesQuery && (opportunitiesQuery.isPending || opportunitiesQuery.isError) ? <DialogFeedback><CollectionFeedback name="opportunities" query={opportunitiesQuery} /></DialogFeedback> : null}
           {error ? (
             <Alert variant="destructive">
               <AlertDescription>{apiErrorMessage(error)}</AlertDescription>
@@ -605,7 +646,7 @@ export function HandoffDialog({
                   }}
                   className="h-9 rounded-md border bg-background px-3 text-sm"
                 >
-                  {companyRequestCategories.map((value) => (
+                  {companyRequestCategories.filter(value => value.value !== "Relationship" || currentRelationship === "Prospect").map((value) => (
                     <option key={value.value} value={value.value}>
                       {value.label}
                     </option>
@@ -632,16 +673,18 @@ export function HandoffDialog({
                 </Field>
               ) : null}
             </div>
+            {type === 'RelationshipChange' ? <p className="text-sm">Current relationship: {currentRelationship}. Approval records the decision; applying the approved request converts the relationship.</p> : null}
             {config.showRelationship ? (
               <Field label="Requested relationship *" id="handoff-kind">
                 <select
                   id="handoff-kind"
                   name="kind"
                   required
-                  defaultValue="Customer"
+                  defaultValue={type === 'RelationshipChange' ? 'Customer' : currentRelationship ?? 'Customer'}
+                  disabled={Boolean(currentRelationship && type !== 'RelationshipChange')}
                   className="h-9 rounded-md border bg-background px-3 text-sm"
                 >
-                  <option>Prospect</option>
+                  {type !== 'RelationshipChange' ? <option>Prospect</option> : null}
                   <option>Customer</option>
                   <option>Partner</option>
                 </select>
@@ -656,9 +699,10 @@ export function HandoffDialog({
                 <select
                   id="handoff-opportunity"
                   name="opportunityId"
+                  disabled={opportunitiesUnavailable}
                   className="h-9 rounded-md border bg-background px-3 text-sm"
                 >
-                  <option value="">No specific opportunity</option>
+                  <option value="">{opportunitiesUnavailable ? "Load opportunities to continue" : "No specific opportunity"}</option>
                   {opportunities.map((value) => (
                     <option key={value.id} value={value.id}>
                       {value.name}
@@ -702,7 +746,7 @@ export function HandoffDialog({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={pending}>
+            <Button type="submit" disabled={pending || opportunitiesUnavailable}>
               {pending ? "Creating…" : "Create pending request"}
             </Button>
           </DialogFooter>

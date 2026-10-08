@@ -1,8 +1,28 @@
 import { expect, test } from '@playwright/test'
 
+test('keeps Documentation navigation below the external organization header after resizing', async ({ page }) => {
+  await selectOrganization(page, 'northline-labs')
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.goto('/docs')
+  await expect(page.getByRole('heading', { name: 'Customer documentation' })).toBeVisible()
+  for (const width of [390, 320, 768]) {
+    await page.setViewportSize({ width, height: 844 })
+    const trigger = page.getByRole('button', { name: /^Open Documentation navigation/ })
+    const header = page.locator('[data-portal-header]')
+    await expect.poll(async () => (await trigger.boundingBox())!.y - (await header.boundingBox())!.height).toBeGreaterThanOrEqual(0)
+    await trigger.click()
+    const sidebar = page.getByRole('complementary', { name: 'Documentation sidebar' })
+    await expect(sidebar).toBeVisible()
+    expect((await sidebar.boundingBox())!.y).toBeGreaterThanOrEqual((await header.boundingBox())!.height)
+    await page.keyboard.press('Escape')
+    await expect(trigger).toBeFocused()
+  }
+})
+
 test('shows Customer guide navigation and denies a cross-audience route', async ({ page }) => {
   await selectOrganization(page, 'northline-labs')
-  await page.goto('/docs')
+  await openDocumentationFromUserMenu(page)
 
   await expect(
     page.getByRole('heading', { name: 'Customer documentation' }),
@@ -22,23 +42,23 @@ test('shows Customer guide navigation and denies a cross-audience route', async 
 
 test('shows Partner guides and renders MDX content', async ({ page }) => {
   await selectOrganization(page, 'genome-partner')
-  await page.goto('/docs')
+  await openDocumentationFromUserMenu(page)
 
   await expect(
     page.getByRole('heading', { name: 'Partner documentation' }),
   ).toBeVisible()
   await page.getByRole('region', { name: 'Guides' }).getByRole('link', {
-    name: 'Request data assembly',
+    name: 'Prepare included Assembly',
   }).click()
   await expect(
-    page.getByRole('heading', { name: 'Request data assembly', level: 1 }),
+    page.getByRole('heading', { name: 'Included assembly inputs and outputs', level: 1 }),
   ).toBeVisible()
-  await expect(page.getByText('Accept the job quote')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Prepare an included case' })).toBeVisible()
 })
 
 test('shows only Phaeno guides in expandable topic groups', async ({ page }) => {
   await selectOrganization(page, 'phaeno')
-  await page.goto('/docs')
+  await openDocumentationFromUserMenu(page)
 
   await expect(
     page.getByRole('heading', { name: 'Phaeno documentation' }),
@@ -131,7 +151,7 @@ test('shows only Phaeno guides in expandable topic groups', async ({ page }) => 
 
 test('shows Prospect guides and denies a cross-audience route', async ({ page }) => {
   await selectOrganization(page, '7dbd474b-c73f-4df4-a9c9-9f1a72b5341b')
-  await page.goto('/docs')
+  await openDocumentationFromUserMenu(page)
 
   await expect(
     page.getByRole('heading', { name: 'Prospect documentation' }),
@@ -148,6 +168,32 @@ test('shows Prospect guides and denies a cross-audience route', async ({ page })
     page.getByRole('heading', { name: 'Documentation unavailable' }),
   ).toBeVisible()
 })
+
+async function openDocumentationFromUserMenu(page: import('@playwright/test').Page) {
+  if (test.info().project.name === 'mobile-chrome') {
+    await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' })
+  }
+  await page.goto('/')
+  await page.waitForLoadState('networkidle')
+  await expect(page.locator('header').getByRole('link', {
+    name: /^(Docs|Documentation)$/,
+  })).toHaveCount(0)
+  const trigger = page.getByRole('button', { name: 'Open user menu' })
+  await trigger.focus()
+  await trigger.press('Enter')
+  const mobile = test.info().project.name === 'mobile-chrome'
+  const navigationSurface = mobile ? page.getByRole('dialog', { name: 'Menu', exact: true }) : page.getByRole('menu')
+  await expect(navigationSurface).toBeVisible()
+  const documentation = page.getByRole(mobile ? 'link' : 'menuitem', {
+    name: 'Documentation', exact: true,
+  })
+  await expect(documentation).toHaveCount(1)
+  await expect(documentation).toBeVisible()
+  await page.screenshot({ path: test.info().outputPath('documentation-menu.png') })
+  await documentation.focus()
+  await documentation.press('Enter')
+  await expect(navigationSurface).toHaveCount(0)
+}
 
 async function selectOrganization(
   page: import('@playwright/test').Page,

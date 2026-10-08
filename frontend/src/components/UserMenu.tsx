@@ -8,10 +8,13 @@ import {
   Sun,
   UsersRound,
 } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
+import { MobileUserMenu } from './MobileUserMenu'
 import {
   canManageUserScope,
   getVisibleMainMenuItems,
+  isMainMenuRouteActive,
 } from './navigation'
 import { type ThemeMode, useThemeMode } from './theme-mode'
 import { Avatar, AvatarFallback } from '#/components/ui/avatar'
@@ -42,6 +45,7 @@ const displayModes: readonly {
 ]
 
 export function UserMenu() {
+  const [open, setOpen] = useState(false)
   const { mode, setMode } = useThemeMode()
   const currentPath = useRouterState({
     select: (state) => state.location.pathname,
@@ -69,6 +73,7 @@ export function UserMenu() {
     navigationContext,
     'workspace',
   )
+  const moreMenuItems = getVisibleMainMenuItems(session, navigationContext, 'more')
   const administrationMenuItems = getVisibleMainMenuItems(
     session,
     navigationContext,
@@ -83,203 +88,208 @@ export function UserMenu() {
     session,
     selectedMembership,
     selectedOrganizationKind,
-  )
+  ) && !(selectedOrganizationKind === 'Customer'
+    && selectedMembership?.isOrganizationAdmin
+    && session?.capabilities.canManageMembers)
+  useEffect(() => {
+    const viewport = window.matchMedia('(min-width: 1024px)')
+    const closeOnLayoutChange = () => {
+      setOpen(false)
+    }
+    viewport.addEventListener('change', closeOnLayoutChange)
+    return () => viewport.removeEventListener('change', closeOnLayoutChange)
+  }, [])
+
   if (!signedIn) {
     return null
   }
 
   return (
-    <DropdownMenu modal>
-      <DropdownMenuTrigger
-        className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-border bg-background text-foreground transition-all outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50"
-        aria-label="Open user menu"
-      >
-        <Menu aria-hidden="true" className="size-5" />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="end"
-        className="w-80"
-      >
-        <DropdownMenuLabel>
-          <span className="flex min-w-0 items-center gap-2">
-            <Avatar size="sm">
-              <AvatarFallback>
-                {getInitials(user?.firstName, user?.lastName)}
-              </AvatarFallback>
-            </Avatar>
-            <span className="min-w-0">
-              <span className="block truncate text-sm font-medium text-foreground">
-                {user ? `${user.firstName} ${user.lastName}` : 'Signed in'}
-              </span>
-              <span className="block truncate text-xs">{user?.email}</span>
-            </span>
-          </span>
-        </DropdownMenuLabel>
-
-        <DropdownMenuSeparator />
-        <DropdownMenuLabel>Display</DropdownMenuLabel>
-        <DropdownMenuRadioGroup
-          value={mode}
-          onValueChange={(value) => setMode(value as ThemeMode)}
-          className="grid grid-cols-3 gap-1"
+    <>
+      <div className="hidden lg:block">
+        <DropdownMenu
+          modal
+          open={open}
+          onOpenChange={setOpen}
         >
-          {displayModes.map((displayMode) => (
-            <DropdownMenuRadioItem
-              key={displayMode.value}
-              value={displayMode.value}
-              aria-label={`Use ${displayMode.label.toLowerCase()} theme`}
-              className="justify-center gap-1 px-2 py-2 pr-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset data-[state=checked]:bg-accent data-[state=checked]:text-accent-foreground data-[state=checked]:ring-1 data-[state=checked]:ring-accent-foreground/25 data-[state=checked]:focus-visible:ring-2 data-[state=checked]:focus-visible:ring-ring [&_[data-slot=dropdown-menu-radio-item-indicator]]:hidden"
-            >
-              <displayMode.icon />
-              <span>{displayMode.label}</span>
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
-
-        {(selectedMembership?.departments?.length ?? 0) > 1 ? (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel>Department</DropdownMenuLabel>
-            <DropdownMenuRadioGroup
-              value={selectedDepartmentId ?? ''}
-              onValueChange={(value) => setSelectedDepartmentId?.(value)}
-            >
-              {selectedMembership?.departments?.map((department) => (
-                <DropdownMenuRadioItem
-                  key={department.departmentId}
-                  value={department.departmentId}
-                >
-                  <span className="min-w-0 flex-1 truncate">
-                    {department.departmentName}
+          <DropdownMenuTrigger
+            className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border bg-background text-foreground transition-all outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50"
+            aria-label="Open user menu"
+          >
+            <Menu aria-hidden="true" className="size-5" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="end"
+            sideOffset={8}
+            collisionPadding={8}
+            className="w-80 max-w-[calc(100vw-1rem)] rounded-xl p-2 shadow-lg [&_[data-slot=dropdown-menu-item]]:min-h-10 [&_[data-slot=dropdown-menu-item]]:gap-2.5 [&_[data-slot=dropdown-menu-item]]:px-3"
+          >
+            <DropdownMenuLabel className="px-3 py-3 font-normal">
+              <span className="flex min-w-0 items-center gap-3">
+                <Avatar size="lg" aria-hidden="true">
+                  <AvatarFallback className="bg-secondary font-semibold text-foreground">
+                    {getInitials(user?.firstName, user?.lastName)}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="min-w-0">
+                  <span className="block text-base leading-6 font-semibold break-words text-foreground">
+                    {user ? `${user.firstName} ${user.lastName}` : 'Signed in'}
                   </span>
-                  {department.isDepartmentAdmin ? (
-                    <span className="text-xs text-muted-foreground">Admin</span>
-                  ) : null}
+                  <span className="mt-0.5 block text-sm leading-5 break-all text-muted-foreground">{user?.email}</span>
+                </span>
+              </span>
+            </DropdownMenuLabel>
+
+            <DropdownMenuSeparator className="mx-1 my-2" />
+            <DropdownMenuRadioGroup
+              value={mode}
+              onValueChange={(value) => setMode(value as ThemeMode)}
+              aria-label="Display theme"
+              className="mx-2 mb-2 grid grid-cols-3 gap-1 rounded-lg bg-muted/70 p-1"
+            >
+              {displayModes.map((displayMode) => (
+                <DropdownMenuRadioItem
+                  key={displayMode.value}
+                  value={displayMode.value}
+                  aria-label={`Use ${displayMode.label.toLowerCase()} theme`}
+                  className="min-h-8 justify-center gap-1.5 px-2 py-1 pr-2 text-xs focus:bg-background focus:text-foreground focus:**:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset data-[state=checked]:bg-background data-[state=checked]:font-semibold data-[state=checked]:text-foreground data-[state=checked]:shadow-sm data-[state=checked]:ring-1 data-[state=checked]:ring-border data-[state=checked]:focus-visible:ring-2 data-[state=checked]:focus-visible:ring-ring [&_[data-slot=dropdown-menu-radio-item-indicator]]:hidden"
+                >
+                  <displayMode.icon aria-hidden="true" />
+                  <span>{displayMode.label}</span>
                 </DropdownMenuRadioItem>
               ))}
             </DropdownMenuRadioGroup>
-          </>
-        ) : null}
 
-        <div className="md:hidden">
-          <DropdownMenuSeparator />
-          <DropdownMenuGroup>
-            <DropdownMenuLabel>Workspace</DropdownMenuLabel>
-            {workspaceMenuItems.map((item) => (
-              <DropdownMenuItem
-                key={item.to}
-                asChild
-                className={
-                  isRouteActive(currentPath, item.to, item.exact)
-                    ? activeDropdownItemClass
-                    : undefined
-                }
-              >
-                <Link to={item.to}>
-                  <item.icon />
-                  {item.label}
-                </Link>
+            {(selectedMembership?.departments?.length ?? 0) > 1 ? (
+              <>
+                <DropdownMenuSeparator className="mx-1 my-2" />
+                <DropdownMenuLabel className="px-3 pb-2">Department</DropdownMenuLabel>
+                <DropdownMenuRadioGroup
+                  value={selectedDepartmentId ?? ''}
+                  onValueChange={(value) => setSelectedDepartmentId?.(value)}
+                >
+                  {selectedMembership?.departments?.map((department) => (
+                    <DropdownMenuRadioItem
+                      key={department.departmentId}
+                      value={department.departmentId}
+                      className="min-h-10 px-3 pr-8"
+                    >
+                      <span className="min-w-0 flex-1 truncate">
+                        {department.departmentName}
+                      </span>
+                      {department.isDepartmentAdmin ? (
+                        <span className="text-xs text-muted-foreground">Admin</span>
+                      ) : null}
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+              </>
+            ) : null}
+
+            {administrationMenuItems.length > 0 ? (
+              <div className="hidden lg:block">
+                <DropdownMenuSeparator className="mx-1 my-2" />
+                <DropdownMenuGroup>
+                  <UserMenuLinks items={administrationMenuItems} currentPath={currentPath} />
+                </DropdownMenuGroup>
+              </div>
+            ) : null}
+
+            {resourceMenuItems.length > 0 || showUserManagement ? (
+              <>
+                <DropdownMenuSeparator className="mx-1 my-2" />
+                <DropdownMenuGroup>
+                  {resourceMenuItems.map((item) => (
+                    <DropdownMenuItem
+                      key={item.to}
+                      asChild
+                      className={
+                        isMainMenuRouteActive(currentPath, item.to, item.exact)
+                          ? activeDropdownItemClass
+                          : undefined
+                      }
+                    >
+                      <Link to={item.to}>
+                        <item.icon />
+                        {item.label}
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                  {showUserManagement ? (
+                    <DropdownMenuItem
+                      asChild
+                      className={
+                        isMainMenuRouteActive(currentPath, '/phaeno-users', true)
+                          ? activeDropdownItemClass
+                          : undefined
+                      }
+                    >
+                      <Link to="/phaeno-users">
+                        <UsersRound />
+                        User management
+                      </Link>
+                    </DropdownMenuItem>
+                  ) : null}
+                </DropdownMenuGroup>
+              </>
+            ) : null}
+
+            <DropdownMenuSeparator className="mx-1 my-2" />
+            {authProvider === 'clerk' ? (
+              <SignOutButton redirectUrl="/">
+                <DropdownMenuItem>
+                  <LogOut />
+                  Sign out
+                </DropdownMenuItem>
+              </SignOutButton>
+            ) : (
+              <DropdownMenuItem>
+                <LogOut />
+                End mock session
               </DropdownMenuItem>
-            ))}
-          </DropdownMenuGroup>
-        </div>
-
-        {administrationMenuItems.length > 0 || showUserManagement ? (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuLabel>Administration</DropdownMenuLabel>
-              {administrationMenuItems.map((item) => (
-                <DropdownMenuItem
-                  key={item.to}
-                  asChild
-                  className={
-                    isRouteActive(currentPath, item.to, item.exact)
-                      ? activeDropdownItemClass
-                      : undefined
-                  }
-                >
-                  <Link to={item.to}>
-                    <item.icon />
-                    {item.label}
-                  </Link>
-                </DropdownMenuItem>
-              ))}
-              {showUserManagement ? (
-                <DropdownMenuItem
-                  asChild
-                  className={
-                    isRouteActive(currentPath, '/phaeno-users', true)
-                      ? activeDropdownItemClass
-                      : undefined
-                  }
-                >
-                  <Link to="/phaeno-users">
-                    <UsersRound />
-                    User management
-                  </Link>
-                </DropdownMenuItem>
-              ) : null}
-            </DropdownMenuGroup>
-          </>
-        ) : null}
-
-        {resourceMenuItems.length > 0 ? (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuLabel>Resources</DropdownMenuLabel>
-              {resourceMenuItems.map((item) => (
-                <DropdownMenuItem
-                  key={item.to}
-                  asChild
-                  className={
-                    isRouteActive(currentPath, item.to, item.exact)
-                      ? activeDropdownItemClass
-                      : undefined
-                  }
-                >
-                  <Link to={item.to}>
-                    <item.icon />
-                    {item.label}
-                  </Link>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuGroup>
-          </>
-        ) : null}
-
-        <DropdownMenuSeparator />
-        {authProvider === 'clerk' ? (
-          <SignOutButton redirectUrl="/">
-            <DropdownMenuItem variant="destructive">
-              <LogOut />
-              Sign out
-            </DropdownMenuItem>
-          </SignOutButton>
-        ) : (
-          <DropdownMenuItem variant="destructive">
-            <LogOut />
-            End mock session
-          </DropdownMenuItem>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+      <MobileUserMenu
+        user={user}
+        authProvider={authProvider}
+        mode={mode}
+        onModeChange={setMode}
+        currentPath={currentPath}
+        workspaceItems={workspaceMenuItems}
+        moreItems={moreMenuItems}
+        settingsItems={administrationMenuItems}
+        resourceItems={resourceMenuItems}
+        showUserManagement={showUserManagement}
+        departments={selectedMembership?.departments}
+        selectedDepartmentId={selectedDepartmentId}
+        onDepartmentChange={setSelectedDepartmentId}
+      />
+    </>
   )
 }
 
 const activeDropdownItemClass = 'bg-secondary text-foreground [&_svg]:text-foreground'
 
+type NavigationItems = ReturnType<typeof getVisibleMainMenuItems>
+
+function UserMenuLinks({ items, currentPath }: { items: NavigationItems; currentPath: string }) {
+  return items.map(item => {
+    const active = isMainMenuRouteActive(currentPath, item.to, item.exact)
+    return (
+      <DropdownMenuItem key={item.to} asChild className={active ? activeDropdownItemClass : undefined}>
+        <Link to={item.to} aria-current={active ? 'page' : undefined}>
+          <item.icon aria-hidden="true" />
+          {item.label}
+        </Link>
+      </DropdownMenuItem>
+    )
+  })
+}
+
 function getInitials(firstName?: string, lastName?: string) {
   const first = firstName?.trim().charAt(0) ?? ''
   const last = lastName?.trim().charAt(0) ?? ''
   return `${first}${last}`.toUpperCase() || 'U'
-}
-
-function isRouteActive(pathname: string, to: string, exact?: boolean) {
-  if (exact) {
-    return pathname === to
-  }
-
-  return pathname === to || pathname.startsWith(`${to}/`)
 }

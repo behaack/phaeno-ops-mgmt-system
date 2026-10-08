@@ -35,8 +35,7 @@ public sealed class PSeqResultDownloadsController(
     public async Task<IReadOnlyList<CustomerResultPackageDto>> List(
         Guid orderId, CancellationToken cancellationToken)
     {
-        var tenant = await requestContext.RequireTenantAsync(HttpContext,
-            OrganizationKind.Customer, false, cancellationToken);
+        var tenant = await requestContext.RequireLabServiceTenantAsync(HttpContext, false, cancellationToken);
         await RequireDepartmentOrderAsync(orderId, tenant, cancellationToken);
         var packages = await dbContext.ResultOutputPackages.AsNoTracking()
             .Where(item => item.OrganizationId == tenant.Organization.Id
@@ -69,8 +68,7 @@ public sealed class PSeqResultDownloadsController(
     public async Task<IActionResult> Download(Guid orderId, Guid sampleId, Guid packageId,
         Guid artifactId, CancellationToken cancellationToken)
     {
-        var tenant = await requestContext.RequireTenantAsync(HttpContext,
-            OrganizationKind.Customer, false, cancellationToken);
+        var tenant = await requestContext.RequireLabServiceTenantAsync(HttpContext, false, cancellationToken);
         await RequireDepartmentOrderAsync(orderId, tenant, cancellationToken);
         var package = await dbContext.ResultOutputPackages.AsNoTracking().SingleOrDefaultAsync(item =>
             item.Id == packageId && item.OrganizationId == tenant.Organization.Id

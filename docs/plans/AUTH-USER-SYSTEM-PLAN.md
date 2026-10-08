@@ -1,5 +1,170 @@
 # Auth and User System Plan
 
+## October 2, 2026 - Trial business roles
+
+Owner-approved additive roles: Business Development creates Trials and submits
+scope for leadership review. Commercial leadership and Platform administrators
+can create Trials and approve complete scope when they submit it, without a
+separate decision. Both business roles receive CRM and Trial visibility with
+active Phaeno membership. No automatic role grant is added. Invitations/edits retain audited role assignment;
+revocation prevents subsequent actions. Pricing, finance, laboratory and result
+release remain separate. See PROSPECT-TRIAL-PROJECT-PLAN.md.
+
+
+## September 22, 2026 - Customer dashboard label
+
+The Customer home-page badge now reads **Customer dashboard**. This is a display
+label change only. Reviewed Customer getting-started help, which already calls
+this page Dashboard; no guide update or new tests are needed.
+
+## September 22, 2026 - Invitation setup completes at home
+
+The owner reported that completing email/account setup and required 2FA returns
+recipients to the initial invitation instead of home. The September 21 change
+intentionally returned to review; this follow-up replaces that extra acceptance
+and Open Portal sequence. Recipients review the offered access and choose
+**Accept invitation and continue** before authentication. Keep that explicit
+choice in the current tab, bound to the private invitation token and reviewed
+version. After verification and required MFA, revalidate the invitation and
+complete acceptance once for the matching verified email, then refresh access
+and open home in the invited organization. Changed access requires fresh explicit
+review; missing consent, incomplete names, mismatched identities and failures
+must retain a recoverable review instead of accepting automatically.
+
+Scope is frontend invitation continuation and audience-specific help. The
+existing authenticated acceptance endpoint remains authoritative for verified
+email, lifecycle, concurrency, membership and Department intent. No provider
+settings, authentication requirements, backend contracts or database changes.
+Regression sources cover continuation and its failure boundaries; execution
+remains request-only. Commit, push and deployment are outside this follow-up.
+
+Implementation checkpoint: TypeScript, scoped lint and documentation checks
+passed. An isolated browser preview confirmed automatic home entry with one
+acceptance request, changed-access review, recovery after failure and rejection
+of an unverified email. Desktop light and narrow dark layouts passed visual
+inspection. Provider/API state was synthetic; live email, MFA enrollment and
+membership persistence remain unverified.
+
+## September 21, 2026 - First-time setup return path
+
+The owner approved the focused authentication return-path correction and its
+regression checks, then authorized commit, push and deployment. Both the Clerk
+MFA task and its route now use the same saved invitation destination:
+`/accept-invite` when a token is saved, otherwise `/`. Previously, the route
+redirected to `/` as soon as `currentTask` cleared, even though the task component
+was configured to return to the invitation. This could unmount the task component
+and reach the access gate before explicit acceptance.
+
+Loading and required MFA guards remain intact. Returning to the invitation
+retains revalidation, verified-email matching and explicit acceptance; it does
+not consume the saved token or grant access. No provider settings, backend
+contracts, access grants or database records changed.
+
+`SetupMfaRoute.test.tsx` reproduced three wrong-destination failures before the
+fix. All six route checks now pass: loading, required MFA, task completion with
+and without an invitation, reopening completed setup, and missing provider
+sessions. The focused five-file account/invitation batch passed 35/35, including
+review, identity matching, acceptance and Welcome/session continuity. TypeScript
+and scoped ESLint passed. Audience-specific account and Phaeno administration
+help clarify the return to invitation review after setup.
+
+Live recipient acceptance must still verify password/MFA setup, direct return
+to review, **Accept invitation**, **Welcome to Portal**, and **Open Portal** in
+the approved organization. The affected account and exact provider/browser
+event sequence have not been inspected; simulated regressions do not prove
+live recipient acceptance. Release evidence follows deployment.
+
+## September 16, 2026 � Production invitation onboarding repair
+
+Read-only production investigation confirmed a pending Portal invitation for a first-time recipient, while Clerk Production had neither that identity nor an application invitation. Production is Invite-only. The previous `signUpIfMissing: import.meta.env.DEV` flow attempted existing-account sign-in only in production. Portal email delivery succeeded, but the account setup bridge was missing.
+
+The owner approved the authentication repair and deployment. A rate-limited, no-store POST handoff validates the private Portal token, pending status, expiry and active organization before looking up the exact identity. Existing identities retain normal sign-in. New recipients receive a silent Clerk application invitation (`notify: false`), scoped to the exact Portal invitation revision, with a return to `/accept-invite`. A repeat attempt reuses a matching pending provider invitation where available. The Portal lifecycle is rechecked after the provider call. No additional email, provider setting change, schema change or automatic Portal membership is involved.
+
+The frontend preserves the original Portal token in session storage, captures and removes the provider ticket from the URL, and revalidates the Portal invitation before consuming that ticket with the fixed recipient identity. Required password and MFA setup precede explicit Portal acceptance. Failed setup can be restarted with the same valid Portal invitation. Public signup remains disabled. This supersedes the September 8 development-only signup implementation; production and development now use the same invitation-authorized setup path.
+
+Verification covers first-time setup in both environment modes, existing-user challenges, identity mismatch, secret-link cleanup, provider failure/reuse, and invalid lifecycle rejection before provider calls. PostgreSQL checks use isolated disposable databases; no shared or production data is changed. Actual recipient password/MFA enrollment and acceptance remain a recipient-performed production acceptance gate. Deployment evidence is recorded after release.
+
+## September 15, 2026 — Live MFA and role acceptance
+
+ACC-06 is closed for the isolated software scope. The owner privately completed required authenticator enrollment and later signed in with the current authenticator code. The reserved email test code is not valid for the authenticator prompt. Actual local User management and fresh authenticated reads verified pending role intent, acceptance and the approved Operator-to-ScientificReviewer change while retaining ProtocolAdministrator. Session revocation removed the unsaved form; an expired save returned 401 and persisted nothing. The recovered controlled session was signed out after verification. Invitation transport was simulated; no provider settings or authentication rules changed. [Evidence and full step crosswalk](../testing/runs/2026-09-15-final-three-acceptance.md).
+
+## September 15, 2026 — Simulated invitation acceptance and bounce recovery
+
+Continuing approved software acceptance for ACC-01/02, disposable-database tests exercise Contact association, durable invitation delivery through the actual template/dispatcher with a simulated provider, verified-email acceptance, exact Research access, replay, resend/cooldown, revoked/expired/declined links, invalid Department intent and signed hard-bounce/reissue. Company People now disables resend for a hard-bounced invitation and explains reviewed revoke, Contact correction and reissue, matching existing User management behavior. No authentication rules, role definitions, provider settings or shared schema changed. Real recipient delivery, identity-provider enrollment/MFA and final operational acceptance remain separate gates.
+
+## September 14, 2026 — Intake access continuation
+
+Owner-approved Commercial intake correction: see [Order Management plan](ORDER-MANAGEMENT-PLAN.md#commercial-intake-role-correction--september-14-2026). Existing CommercialOperator plus active Phaeno membership governs pricing and scoped intake reads; administrator read and flag fallback remain distinct. No role grants or identity-provider change.
+
+
+## 2026-09-08 signed-in menu and dashboard polish
+
+The owner completed dashboard entry as the invited Customer member. The header
+confirmed Johns Hopkins University and General; the menu showed the invited
+name/email and omitted administration actions. The owner then requested visual
+polish during the walkthrough: readable account identity, consistent menu
+spacing, grouped display choices with distinct selection/focus, neutral sign-out
+styling, and external dashboard cards that use the available row width with
+less vertical whitespace. Use the existing semantic border for the complete
+card outline, including the footer. Preserve all role filtering, destinations,
+department selection, theme settings, and Radix menu keyboard behavior. Guide
+steps do not change for this presentation work. The mobile header places the
+organization and department in a left-aligned row beneath the toolbar, with
+wrapping names and the label **Organization**. The former **Acting as** label
+implied impersonation even for the member's own account. Related Customer,
+Partner and Prospect guides now correctly direct users to the header to check
+their active organization.
+
+## 2026-09-08 invitation acceptance experience
+
+Approved scope: an invited recipient sees their name, organization, and email
+before authentication, continues directly with the fixed invited email, then
+explicitly accepts access. Replace the modal with branded, invitation-bound Clerk
+authentication. The email is read-only; there is no email-entry or edit step. Show a clear account mismatch and Switch account recovery.
+
+Implementation: add a rate-limited anonymous POST preview that requires the
+secret invitation token, returns only recipient/organization/expiry display
+fields for pending, unexpired invitations to active organizations, and sets
+Cache-Control: no-store. Invalid links return a generic recovery message.
+Preview creates no identity or membership and does not consume the invitation.
+Keep tokens out of the visible URL and query-cache keys. Acceptance/decline
+retain server-side verified-email and membership checks. Preserve the existing
+environment-specific Clerk signup policy and provider configuration; no new
+dependencies, database changes, or production configuration changes.
+
+The owner further clarified that prefilled editable email is unacceptable.
+The invitation now uses Clerk's current headless API: Continue binds the
+identifier from the preview and starts the configured email-code/password
+challenge directly. Development uses `signUpIfMissing` and transfers to
+first-time setup only after successful email verification. Existing password,
+TOTP, backup-code, device-trust and required MFA setup remain enforced.
+MFA setup returns to the saved invitation. No provider settings were changed.
+The local Clerk settings were read to confirm email-code first factor and
+required password/MFA setup for new accounts. Production continues to disable
+new-account transfer, preserving the existing signup policy.
+
+The owner explicitly chose to keep the password requirement. First-time setup
+says **Create your password** and labels its field **Password**; **New password**
+is reserved for an actual reset. No Clerk settings are to be changed.
+Use one password field with **Show password** / **Hide password** so the recipient
+can check their entry; do not add a confirmation field. Keep the entry hidden
+initially and preserve password-manager support.
+
+Acceptance checks: known details require no re-entry; valid verified secondary
+emails also qualify; another account cannot accept; sign-in returns to the
+same invitation; expired/revoked/missing links have useful recovery; mobile,
+keyboard and light/dark presentation remain usable. Focused tests and local
+browser verification precede returning to the user's invitation step.
+
+The owner's Firefox walkthrough confirmed acceptance and active General access,
+but exposed a lost confirmation: the initial organization/department selection
+remounted the invitation page after its token was cleared. Keep pre-session
+pages mounted across tenant selection while still resetting them when the
+signed-in identity changes; ordinary workspaces retain their tenant reset.
+Record the successful response before refreshing access, stop previewing the
+consumed invitation, and preserve **Welcome to Portal** with **Open Portal**.
+The earlier post-sign-in access-gate detour remains a separate observed issue.
+
 ## 2026-08-29 PSeq order-to-cash implementation update
 
 `PSEQ-ORDER-TO-CASH-GAP-CLOSURE-PLAN.md` is now authoritative for PSeq
@@ -625,3 +790,14 @@ system/commercial fallback. Saved shipping and accepted-quote snapshots retain
 their values. This does not grant services, select a storage destination, or
 change Clerk authentication. See `PEOPLE-DEPARTMENTS-ACCESS-PLAN.md`
 for local evidence and remaining signed-in/shared-environment gates.
+
+## September 12 invitation menu width
+
+Pending-invitation menus in Phaeno and organization user management use content-sized width with a 12rem minimum and viewport cap. Resend invitation and Revoke invitation fit without unnecessary wrapping. Right alignment and existing actions are unchanged; user guide steps need no change.
+
+Verified the live Phaeno invitation menu at 192 px wide with both action rows 28 px high (single-line labels). Scoped lint and whitespace checks passed. No invitation was resent or revoked.
+## September 14 UAT correction: Department survives refresh
+
+Connected UAT found that an administrator choosing Research returned to General after a full page load. Authentication initialization was clearing remembered scope before Clerk had established whether the user was signed in. Preserve the remembered organization/Department while authentication loads, then validate it against the current session as before. Confirmed sign-out still clears scope; revoked Department access still falls back to a permitted Department. No membership, role, authentication-provider or API contract changes. This bounded correction is included in the owner's authorized ten-case UAT gap fixes.
+
+Regression: `SessionDepartmentPersistence.test.tsx` reproduces the refresh loss before the correction and covers loading, signed-out cleanup and revoked-scope fallback. Existing invitation/session continuity checks remain applicable. Actual Customer, Partner and Prospect reload checks are recorded in the ten-case execution run.

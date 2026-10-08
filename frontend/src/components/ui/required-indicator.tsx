@@ -10,10 +10,11 @@ function RequiredFieldName({
   return (
     <span
       data-slot="required-field-name"
-      className={cn('inline-flex items-center gap-0.5', className)}
+      className={cn('min-w-0', className)}
       {...props}
     >
       <span>{children}</span>
+      {'\u00a0'}
       <RequiredMark />
     </span>
   )

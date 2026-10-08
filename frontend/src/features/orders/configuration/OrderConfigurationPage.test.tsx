@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { createMemoryHistory, createRootRoute, createRoute, createRouter, RouterProvider } from '@tanstack/react-router'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
@@ -10,37 +11,61 @@ import { noSessionCapabilities } from '#/test-helpers/session'
 import { OrderConfigurationPage } from './OrderConfigurationPage'
 
 describe('OrderConfigurationPage', () => {
-  it('moves all configuration subjects into the shared workspace sidebar', () => {
+  it('moves all configuration subjects into the shared workspace sidebar', async () => {
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     })
+    const root = createRootRoute()
+    const route = createRoute({ getParentRoute: () => root, path: '/order-configuration', component: OrderConfigurationPage })
+    const router = createRouter({ routeTree: root.addChildren([route]), history: createMemoryHistory({ initialEntries: ['/order-configuration'] }) })
 
     render(
       <QueryClientProvider client={queryClient}>
         <PhaenoSessionContext.Provider value={createPlatformContext()}>
-          <OrderConfigurationPage />
+          <RouterProvider router={router} />
         </PhaenoSessionContext.Provider>
       </QueryClientProvider>,
     )
 
-    expect(screen.getByRole('heading', { name: 'Order configuration' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'Order Settings' })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', {
-      name: 'Open Order configuration navigation; current selection: Defaults',
+      name: 'Open Order Settings navigation; current selection: Quote & workflow',
     }))
 
     expect(screen.getByRole('navigation', {
-      name: 'Order configuration sections',
+      name: 'Order Settings sections',
     })).toBeTruthy()
-    expect(screen.getByRole('button', { name: /^Defaults/ }).getAttribute('aria-current')).toBe('page')
+    expect(screen.getByRole('button', { name: /^Quote & workflow/ }).getAttribute('aria-current')).toBe('page')
     expect(screen.getByRole('button', { name: /^Analyses/ })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /^Sample types/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Lab Service offerings/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Sample shipping/ })).toBeNull()
     expect(screen.getByRole('button', { name: /^PSeq kits/ })).toBeTruthy()
     expect(screen.getByRole('button', { name: /^Assembly/ })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /^Trial configuration/ })).toBeTruthy()
     expect(screen.getByRole('button', { name: /^Legacy links/ })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /^File retention/ })).toBeNull()
 
     fireEvent.click(screen.getByRole('button', { name: /^PSeq kits/ }))
-    expect(screen.getByRole('button', {
-      name: 'Open Order configuration navigation; current selection: PSeq kits',
+    expect(await screen.findByRole('button', {
+      name: 'Open Order Settings navigation; current selection: PSeq kits',
     })).toBeTruthy()
+  })
+
+  it('preserves Trial staff access without exposing other Order settings', async () => {
+    const context = createPlatformContext()
+    context.session!.isPlatformAdmin = false
+    context.session!.capabilities.canManageOrderConfiguration = false
+    context.session!.capabilities.canManageTrialProjects = true
+    const root = createRootRoute()
+    const route = createRoute({ getParentRoute: () => root, path: '/order-configuration', component: OrderConfigurationPage })
+    const router = createRouter({ routeTree: root.addChildren([route]), history: createMemoryHistory({ initialEntries: ['/order-configuration?configurationSection=catalog'] }) })
+    render(<QueryClientProvider client={new QueryClient()}><PhaenoSessionContext.Provider value={context}><RouterProvider router={router} /></PhaenoSessionContext.Provider></QueryClientProvider>)
+    const navigation = await screen.findByRole('button', { name: 'Open Order Settings navigation; current selection: Trial configuration' })
+    fireEvent.click(navigation)
+    expect(screen.getByRole('button', { name: /^Trial configuration/ }).getAttribute('aria-current')).toBe('page')
+    expect(screen.queryByRole('button', { name: /^Service catalog/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Quote & workflow/ })).toBeNull()
   })
 })
 
@@ -75,6 +100,7 @@ function createPlatformContext(): PhaenoSessionContextValue {
       capabilities: {
         ...noSessionCapabilities,
         canManageOrderConfiguration: true,
+        canManageFileManagementConfiguration: true,
       },
     },
     isLoading: false,

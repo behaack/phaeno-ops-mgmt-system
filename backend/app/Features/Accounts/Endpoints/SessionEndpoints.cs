@@ -9,6 +9,7 @@ using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Features.Accounts.DTOs;
 using PhaenoPortal.App.Features.Accounts.Services;
 using PhaenoPortal.App.Features.LabOperations.Services;
+using PhaenoPortal.App.Features.OrderManagement.Services;
 using PhaenoPortal.App.Infrastructure.Persistence;
 using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 
@@ -147,7 +148,7 @@ public static class SessionEndpoints
         }
 
         var trialStaff = selectedMembership?.Organization?.Kind == OrganizationKind.Phaeno && (IsPlatformAdmin(user)
-            || businessRoles.Any(role => role is BusinessRole.CommercialOperator or BusinessRole.ResultReleaseManager)
+            || businessRoles.Any(role => role is BusinessRole.CommercialOperator or BusinessRole.ResultReleaseManager or BusinessRole.BusinessDevelopment or BusinessRole.CommercialLeadership)
             || labRoles.Any(role => role is LabRole.Operator or LabRole.Supervisor or LabRole.ScientificReviewer)
             || await dbContext.TrialApprovalAuthorities.AnyAsync(value => value.UserId == user.Id && value.RevokedAtUtc == null, cancellationToken));
         var trialViewer = selectedMembership?.Organization?.Kind == OrganizationKind.Prospect || (selectedMembership is not null && selectedDepartment is not null
@@ -160,8 +161,12 @@ public static class SessionEndpoints
             businessRoles,
             orderToCashOptions.Value.BusinessRoles,
             orderToCashOptions.Value.DualControlEnforced,
-            selectedDepartment);
-        return TypedResults.Ok(readySession with { Capabilities = readySession.Capabilities with { CanViewTrialProjects = trialStaff || trialViewer, CanManageTrialProjects = trialStaff } });
+            selectedDepartment,
+            partnerLabAccess: selectedMembership?.Organization?.Kind == OrganizationKind.Partner && selectedDepartment is not null
+                && await LabServiceOrderingEligibility.HasPartnerAccessAsync(dbContext, selectedMembership.OrganizationId, selectedDepartment.Id, cancellationToken));
+        return TypedResults.Ok(readySession with { Capabilities = readySession.Capabilities with { CanViewTrialProjects = trialStaff || trialViewer, CanManageTrialProjects = trialStaff,
+            CanCreateTrialProjects = trialStaff && (IsPlatformAdmin(user)
+                || businessRoles.Any(role => role is BusinessRole.BusinessDevelopment or BusinessRole.CommercialLeadership)) } });
     }
 
     public static void MapSessionEndpoints(this WebApplication app)
@@ -214,7 +219,8 @@ public static class SessionEndpoints
         IReadOnlyCollection<BusinessRole>? businessRoles = null,
         bool businessRolesEnabled = false,
         bool labRolesEnforced = false,
-        OrganizationDepartment? selectedDepartment = null)
+        OrganizationDepartment? selectedDepartment = null,
+        bool partnerLabAccess = false)
     {
         var memberships = GetActiveMemberships(user);
         var isPlatformAdmin = IsPlatformAdmin(user);
@@ -230,18 +236,20 @@ public static class SessionEndpoints
             IsActive: true
         } selectedOrganization && selectedOrganization.IsExternalOrganization();
         var selectedKind = selectedMembership?.Organization?.Kind;
-        var canViewLabOrders = selectedKind == OrganizationKind.Customer;
+        var canViewLabOrders = selectedKind == OrganizationKind.Customer || selectedKind == OrganizationKind.Partner && partnerLabAccess;
         var canManageLabOrders = canViewLabOrders && isSelectedDepartmentAdmin;
-        var canViewSampleShipping = selectedKind is OrganizationKind.Prospect or OrganizationKind.Customer;
+        var canViewSampleShipping = selectedKind is OrganizationKind.Prospect or OrganizationKind.Customer
+            || selectedKind == OrganizationKind.Partner && partnerLabAccess;
         var canManageSampleShipping = canViewSampleShipping && isSelectedDepartmentAdmin;
         var canViewPartnerOrders = selectedKind == OrganizationKind.Partner;
         var canManagePartnerOrders = canViewPartnerOrders && isSelectedDepartmentAdmin;
         var labCapabilities = LabOperationsAuthorization.Evaluate(
             user, labRoles, labRolesEnforced);
         var effectiveBusinessRoles = businessRoles ?? [];
-        var canOperateCommercialWork = businessRolesEnabled
+        var hasActivePhaenoMembership = memberships.Any(value => value.Organization is { IsActive: true, Kind: OrganizationKind.Phaeno });
+        var canOperateCommercialWork = hasActivePhaenoMembership && (businessRolesEnabled || labRolesEnforced
             ? effectiveBusinessRoles.Contains(BusinessRole.CommercialOperator)
-            : isPlatformAdmin;
+            : isPlatformAdmin);
         var canReleasePSeqResults = businessRolesEnabled
             ? effectiveBusinessRoles.Contains(BusinessRole.ResultReleaseManager)
             : isPlatformAdmin;
@@ -337,6 +345,8 @@ public static class SessionEndpoints
                 CanChangeMemberRoles = canManageSelectedMembers,
                 CanLeaveOrganization = selectedMembership != null,
                 CanManageOrganizations = isPlatformAdmin,
+                CanAccessCrm = PhaenoPortal.App.Features.Crm.Services.CrmAccess.CanAccess(user, effectiveBusinessRoles),
+                CanAdministerCrm = isPlatformAdmin,
                 CanManageAllUsers = isPlatformAdmin,
                 CanDisableUsers = isPlatformAdmin,
                 CanViewDatasetConfiguration = isPlatformAdmin,
@@ -345,6 +355,7 @@ public static class SessionEndpoints
                 CanProvisionOrganizationData = isPlatformAdmin,
                 CanViewOrganizationDatasets = canViewOrganizationDatasets,
                 CanViewLabServiceOrders = canViewLabOrders,
+                CanViewLabServiceInvoices = selectedKind == OrganizationKind.Customer,
                 CanCreateLabServiceRequests = canManageLabOrders,
                 CanSubmitLabServiceRequests = canManageLabOrders,
                 CanAcceptLabServiceQuotes = canManageLabOrders,
@@ -396,6 +407,8 @@ public static class SessionEndpoints
             CanChangeMemberRoles = false,
             CanLeaveOrganization = false,
             CanManageOrganizations = false,
+            CanAccessCrm = false,
+            CanAdministerCrm = false,
             CanManageAllUsers = false,
             CanDisableUsers = false,
             CanViewDatasetConfiguration = false,
@@ -404,6 +417,7 @@ public static class SessionEndpoints
             CanProvisionOrganizationData = false,
             CanViewOrganizationDatasets = false,
             CanViewLabServiceOrders = false,
+            CanViewLabServiceInvoices = false,
             CanCreateLabServiceRequests = false,
             CanSubmitLabServiceRequests = false,
             CanAcceptLabServiceQuotes = false,

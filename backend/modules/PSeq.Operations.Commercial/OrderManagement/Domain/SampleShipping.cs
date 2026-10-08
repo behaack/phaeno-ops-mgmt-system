@@ -40,7 +40,8 @@ public enum SampleTubeAssignmentAction
 {
     Assigned,
     Reassigned,
-    Cleared
+    Cleared,
+    MaterialDeclarationUpdated
 }
 
 public sealed class SampleShippingDestination : IAudit, IConcurrency
@@ -70,6 +71,7 @@ public sealed class SampleShippingDestination : IAudit, IConcurrency
     public DateTime EffectiveFrom { get; private set; }
     public DateTime? EffectiveTo { get; private set; }
     public bool IsActive { get; private set; }
+    public ShippingRevisionLifecycle Lifecycle { get; private set; } = ShippingRevisionLifecycle.Draft;
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
     public Guid? CreatedByUserId { get; private set; }
     public DateTime UpdatedAt { get; private set; } = DateTime.UtcNow;
@@ -114,25 +116,27 @@ public sealed class SampleShippingDestination : IAudit, IConcurrency
         Revision = revision;
         SupersedesDestinationId = supersedesDestinationId;
         Code = SampleShippingText.Code(code, nameof(code));
-        Name = OrderText.Required(name, nameof(name), 255);
-        RecipientName = OrderText.Required(recipientName, nameof(recipientName), 255);
-        OrganizationName = OrderText.Required(organizationName, nameof(organizationName), 255);
-        AddressLine1 = OrderText.Required(addressLine1, nameof(addressLine1), 255);
+        Name = OrderText.Optional(name, 255) ?? string.Empty;
+        RecipientName = OrderText.Optional(recipientName, 255) ?? string.Empty;
+        OrganizationName = OrderText.Optional(organizationName, 255) ?? string.Empty;
+        AddressLine1 = OrderText.Optional(addressLine1, 255) ?? string.Empty;
         AddressLine2 = OrderText.Optional(addressLine2, 255);
-        City = OrderText.Required(city, nameof(city), 150);
-        StateOrProvince = OrderText.Required(stateOrProvince, nameof(stateOrProvince), 150);
-        PostalCode = OrderText.Required(postalCode, nameof(postalCode), 50);
-        CountryCode = SampleShippingText.CountryCode(countryCode);
+        City = OrderText.Optional(city, 150) ?? string.Empty;
+        StateOrProvince = OrderText.Optional(stateOrProvince, 150) ?? string.Empty;
+        PostalCode = OrderText.Optional(postalCode, 50) ?? string.Empty;
+        CountryCode = string.IsNullOrWhiteSpace(countryCode) ? string.Empty : SampleShippingText.CountryCode(countryCode);
         ReceivingPhone = OrderText.Optional(receivingPhone, 50);
         ReceivingEmail = SampleShippingText.OptionalEmail(receivingEmail);
-        ReceivingHours = OrderText.Required(receivingHours, nameof(receivingHours), 1000);
-        TimeZoneId = OrderText.Required(timeZoneId, nameof(timeZoneId), 100);
+        ReceivingHours = OrderText.Optional(receivingHours, 1000) ?? string.Empty;
+        TimeZoneId = OrderText.Optional(timeZoneId, 100) ?? string.Empty;
         ClosureInstructions = OrderText.Optional(closureInstructions, 2000);
-        DeliveryInstructions = OrderText.Required(deliveryInstructions, nameof(deliveryInstructions), 4000);
+        DeliveryInstructions = OrderText.Optional(deliveryInstructions, 4000) ?? string.Empty;
         CarrierRestrictions = OrderText.Optional(carrierRestrictions, 2000);
         InternationalShippingAllowed = internationalShippingAllowed;
         EffectiveFrom = effectiveFrom;
         IsActive = isActive;
+        Lifecycle = isActive ? ShippingRevisionLifecycle.Released : ShippingRevisionLifecycle.Draft;
+        if (isActive) ValidateRelease();
     }
 
     public bool IsEffectiveAt(DateTime utcNow) =>
@@ -145,6 +149,66 @@ public sealed class SampleShippingDestination : IAudit, IConcurrency
         if (EffectiveTo.HasValue && effectiveTo > EffectiveTo.Value)
             throw new InvalidOperationException("A destination revision cannot be extended after it has been bounded.");
         EffectiveTo = effectiveTo;
+        if (Lifecycle == ShippingRevisionLifecycle.Released)
+            Lifecycle = ShippingRevisionLifecycle.Superseded;
+    }
+
+    public void SetActive(bool isActive, DateTime utcNow)
+    {
+        if (EffectiveTo.HasValue && EffectiveTo <= utcNow)
+            throw new InvalidOperationException("An ended destination revision cannot change availability.");
+        if (isActive)
+        {
+            if (Lifecycle != ShippingRevisionLifecycle.Draft)
+                throw new InvalidOperationException("Only a Draft destination can be activated.");
+            ValidateRelease();
+            if (EffectiveFrom < utcNow) EffectiveFrom = utcNow;
+            Lifecycle = ShippingRevisionLifecycle.Released;
+        }
+        else
+        {
+            if (Lifecycle is not (ShippingRevisionLifecycle.Released or ShippingRevisionLifecycle.Superseded) || !IsActive)
+                throw new InvalidOperationException("Only a released destination can be deactivated.");
+            Lifecycle = ShippingRevisionLifecycle.Deactivated;
+        }
+        IsActive = isActive;
+    }
+
+    public void Discard()
+    {
+        if (Lifecycle != ShippingRevisionLifecycle.Draft)
+            throw new InvalidOperationException("Only a Draft destination can be discarded.");
+        Lifecycle = ShippingRevisionLifecycle.Discarded;
+    }
+
+    public void UpdateDraftFrom(SampleShippingDestination draft)
+    {
+        if (Lifecycle != ShippingRevisionLifecycle.Draft || draft.Lifecycle != ShippingRevisionLifecycle.Draft
+            || draft.DefinitionKey != DefinitionKey || draft.Revision != Revision)
+            throw new InvalidOperationException("Only the matching Draft destination can be edited.");
+        Name = draft.Name; RecipientName = draft.RecipientName; OrganizationName = draft.OrganizationName;
+        AddressLine1 = draft.AddressLine1; AddressLine2 = draft.AddressLine2;
+        City = draft.City; StateOrProvince = draft.StateOrProvince; PostalCode = draft.PostalCode;
+        CountryCode = draft.CountryCode; ReceivingPhone = draft.ReceivingPhone; ReceivingEmail = draft.ReceivingEmail;
+        ReceivingHours = draft.ReceivingHours; TimeZoneId = draft.TimeZoneId;
+        ClosureInstructions = draft.ClosureInstructions; DeliveryInstructions = draft.DeliveryInstructions;
+        CarrierRestrictions = draft.CarrierRestrictions; InternationalShippingAllowed = draft.InternationalShippingAllowed;
+        EffectiveFrom = draft.EffectiveFrom;
+    }
+
+    private void ValidateRelease()
+    {
+        OrderText.Required(Name, "Destination name", 255);
+        OrderText.Required(RecipientName, "Recipient name", 255);
+        OrderText.Required(OrganizationName, "Organization name", 255);
+        OrderText.Required(AddressLine1, "Address", 255);
+        OrderText.Required(City, "City", 150);
+        OrderText.Required(StateOrProvince, "State or province", 150);
+        OrderText.Required(PostalCode, "Postal code", 50);
+        SampleShippingText.CountryCode(CountryCode);
+        OrderText.Required(ReceivingHours, "Receiving hours", 1000);
+        OrderText.Required(TimeZoneId, "Time zone", 100);
+        OrderText.Required(DeliveryInstructions, "Delivery instructions", 4000);
     }
 
     public void MarkCreated(DateTime utcNow, Guid? actorUserId) { CreatedAt = utcNow; CreatedByUserId = actorUserId; }
@@ -165,6 +229,8 @@ public sealed class SampleTypeDefinition : IAudit, IConcurrency
     public decimal? MinimumQuantity { get; private set; }
     public decimal? MaximumQuantity { get; private set; }
     public string QuantityUnit { get; private set; } = null!;
+    public decimal? MinimumSampleAmount { get; private set; }
+    public string? SampleAmountUnit { get; private set; }
     public string PrimaryContainerRequirements { get; private set; } = null!;
     public string TemperatureRequirements { get; private set; } = null!;
     public string? StabilizerRequirements { get; private set; }
@@ -174,9 +240,11 @@ public sealed class SampleTypeDefinition : IAudit, IConcurrency
     public string SafetyRequirements { get; private set; } = null!;
     public string? CarrierRestrictions { get; private set; }
     public int? MaximumTransitHours { get; private set; }
+    public Guid? ShippingProcedureId { get; private set; }
     public DateTime EffectiveFrom { get; private set; }
     public DateTime? EffectiveTo { get; private set; }
     public bool IsActive { get; private set; }
+    public ShippingRevisionLifecycle Lifecycle { get; private set; } = ShippingRevisionLifecycle.Draft;
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
     public Guid? CreatedByUserId { get; private set; }
     public DateTime UpdatedAt { get; private set; } = DateTime.UtcNow;
@@ -206,7 +274,10 @@ public sealed class SampleTypeDefinition : IAudit, IConcurrency
         string? carrierRestrictions,
         int? maximumTransitHours,
         DateTime effectiveFrom,
-        bool isActive)
+        bool isActive,
+        Guid? shippingProcedureId = null,
+        decimal? minimumSampleAmount = null,
+        string? sampleAmountUnit = null)
     {
         if (definitionKey == Guid.Empty) throw new ArgumentException("A sample-type definition key is required.", nameof(definitionKey));
         if (revision < 1) throw new ArgumentOutOfRangeException(nameof(revision));
@@ -224,27 +295,53 @@ public sealed class SampleTypeDefinition : IAudit, IConcurrency
         Revision = revision;
         SupersedesSampleTypeId = supersedesSampleTypeId;
         Code = SampleShippingText.Code(code, nameof(code));
-        Name = OrderText.Required(name, nameof(name), 255);
+        Name = OrderText.Optional(name, 255) ?? string.Empty;
         Description = OrderText.Optional(description, 2000) ?? string.Empty;
-        MaterialClass = OrderText.Required(materialClass, nameof(materialClass), 255);
+        MaterialClass = OrderText.Optional(materialClass, 255) ?? string.Empty;
         MinimumQuantity = minimumQuantity;
         MaximumQuantity = maximumQuantity;
-        QuantityUnit = OrderText.Required(quantityUnit, nameof(quantityUnit), 100);
-        PrimaryContainerRequirements = OrderText.Required(primaryContainerRequirements, nameof(primaryContainerRequirements), 2000);
-        TemperatureRequirements = OrderText.Required(temperatureRequirements, nameof(temperatureRequirements), 2000);
+        QuantityUnit = OrderText.Optional(quantityUnit, 100) ?? string.Empty;
+        SetMinimumSampleAmount(minimumSampleAmount, sampleAmountUnit);
+        PrimaryContainerRequirements = OrderText.Optional(primaryContainerRequirements, 2000) ?? string.Empty;
+        TemperatureRequirements = OrderText.Optional(temperatureRequirements, 2000) ?? string.Empty;
         StabilizerRequirements = OrderText.Optional(stabilizerRequirements, 2000);
-        PackagingInstructions = OrderText.Required(packagingInstructions, nameof(packagingInstructions), 4000);
-        LabelingInstructions = OrderText.Required(labelingInstructions, nameof(labelingInstructions), 4000);
-        ProhibitedIdentifiers = OrderText.Required(prohibitedIdentifiers, nameof(prohibitedIdentifiers), 2000);
-        SafetyRequirements = OrderText.Required(safetyRequirements, nameof(safetyRequirements), 2000);
+        PackagingInstructions = OrderText.Optional(packagingInstructions, 4000) ?? string.Empty;
+        LabelingInstructions = OrderText.Optional(labelingInstructions, 4000) ?? string.Empty;
+        ProhibitedIdentifiers = OrderText.Optional(prohibitedIdentifiers, 2000) ?? string.Empty;
+        SafetyRequirements = OrderText.Optional(safetyRequirements, 2000) ?? string.Empty;
         CarrierRestrictions = OrderText.Optional(carrierRestrictions, 2000);
         MaximumTransitHours = maximumTransitHours;
+        if (shippingProcedureId == Guid.Empty) throw new ArgumentException("Choose a valid shared shipping procedure.", nameof(shippingProcedureId));
+        ShippingProcedureId = shippingProcedureId;
         EffectiveFrom = effectiveFrom;
         IsActive = isActive;
+        Lifecycle = isActive ? ShippingRevisionLifecycle.Released : ShippingRevisionLifecycle.Draft;
+        if (isActive) ValidateRelease();
     }
 
     public bool IsEffectiveAt(DateTime utcNow) =>
         IsActive && EffectiveFrom <= utcNow && (!EffectiveTo.HasValue || EffectiveTo > utcNow);
+
+    public void SetActive(bool isActive, DateTime utcNow)
+    {
+        if (EffectiveTo.HasValue && EffectiveTo <= utcNow)
+            throw new InvalidOperationException("An ended sample-type revision cannot change availability.");
+        if (isActive)
+        {
+            if (Lifecycle != ShippingRevisionLifecycle.Draft)
+                throw new InvalidOperationException("Only a Draft Sample type can be activated.");
+            ValidateRelease();
+            if (EffectiveFrom < utcNow) EffectiveFrom = utcNow;
+            Lifecycle = ShippingRevisionLifecycle.Released;
+        }
+        else
+        {
+            if (Lifecycle is not (ShippingRevisionLifecycle.Released or ShippingRevisionLifecycle.Superseded) || !IsActive)
+                throw new InvalidOperationException("Only a released Sample type can be deactivated.");
+            Lifecycle = ShippingRevisionLifecycle.Deactivated;
+        }
+        IsActive = isActive;
+    }
 
     public void EndAt(DateTime effectiveTo)
     {
@@ -253,98 +350,67 @@ public sealed class SampleTypeDefinition : IAudit, IConcurrency
         if (EffectiveTo.HasValue && effectiveTo > EffectiveTo.Value)
             throw new InvalidOperationException("A sample-type revision cannot be extended after it has been bounded.");
         EffectiveTo = effectiveTo;
+        if (Lifecycle == ShippingRevisionLifecycle.Released)
+            Lifecycle = ShippingRevisionLifecycle.Superseded;
     }
 
-    public void MarkCreated(DateTime utcNow, Guid? actorUserId) { CreatedAt = utcNow; CreatedByUserId = actorUserId; }
-    public void MarkUpdated(DateTime utcNow, Guid? actorUserId) { UpdatedAt = utcNow; UpdatedByUserId = actorUserId; }
-    public void IncrementVersion() => Version++;
-}
-
-public sealed class SampleShippingInstructionRule : IAudit, IConcurrency
-{
-    public Guid Id { get; private set; } = Guid.NewGuid();
-    public Guid DefinitionKey { get; private set; }
-    public int Revision { get; private set; }
-    public Guid? SupersedesInstructionRuleId { get; private set; }
-    public Guid DestinationId { get; private set; }
-    public Guid SampleTypeDefinitionId { get; private set; }
-    public string CompatibilityGroup { get; private set; } = null!;
-    public string PackingInstructions { get; private set; } = null!;
-    public string TemperatureInstructions { get; private set; } = null!;
-    public string CarrierInstructions { get; private set; } = null!;
-    public string DispatchInstructions { get; private set; } = null!;
-    public string DeliveryInstructions { get; private set; } = null!;
-    public string RequiredDocuments { get; private set; } = null!;
-    public string ExceptionInstructions { get; private set; } = null!;
-    public string? InternationalCustomsInstructions { get; private set; }
-    public bool RequiresSeparateShipment { get; private set; }
-    public DateTime EffectiveFrom { get; private set; }
-    public DateTime? EffectiveTo { get; private set; }
-    public bool IsActive { get; private set; }
-    public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
-    public Guid? CreatedByUserId { get; private set; }
-    public DateTime UpdatedAt { get; private set; } = DateTime.UtcNow;
-    public Guid? UpdatedByUserId { get; private set; }
-    public long Version { get; private set; } = 1;
-
-    private SampleShippingInstructionRule() { }
-
-    public SampleShippingInstructionRule(
-        Guid definitionKey,
-        int revision,
-        Guid? supersedesInstructionRuleId,
-        Guid destinationId,
-        Guid sampleTypeDefinitionId,
-        string compatibilityGroup,
-        string packingInstructions,
-        string temperatureInstructions,
-        string carrierInstructions,
-        string dispatchInstructions,
-        string deliveryInstructions,
-        string requiredDocuments,
-        string exceptionInstructions,
-        string? internationalCustomsInstructions,
-        bool requiresSeparateShipment,
-        DateTime effectiveFrom,
-        bool isActive)
+    public void ChangeShippingProcedure(Guid procedureId)
     {
-        if (definitionKey == Guid.Empty || destinationId == Guid.Empty || sampleTypeDefinitionId == Guid.Empty)
-            throw new ArgumentException("Instruction-rule, destination, and sample-type identifiers are required.");
-        if (revision < 1) throw new ArgumentOutOfRangeException(nameof(revision));
-        if (revision == 1 && supersedesInstructionRuleId.HasValue)
-            throw new ArgumentException("The first instruction-rule revision cannot supersede another revision.", nameof(supersedesInstructionRuleId));
-        if (revision > 1 && !supersedesInstructionRuleId.HasValue)
-            throw new ArgumentException("A later instruction-rule revision must identify the revision it supersedes.", nameof(supersedesInstructionRuleId));
-
-        DefinitionKey = definitionKey;
-        Revision = revision;
-        SupersedesInstructionRuleId = supersedesInstructionRuleId;
-        DestinationId = destinationId;
-        SampleTypeDefinitionId = sampleTypeDefinitionId;
-        CompatibilityGroup = SampleShippingText.Code(compatibilityGroup, nameof(compatibilityGroup));
-        PackingInstructions = OrderText.Required(packingInstructions, nameof(packingInstructions), 4000);
-        TemperatureInstructions = OrderText.Required(temperatureInstructions, nameof(temperatureInstructions), 4000);
-        CarrierInstructions = OrderText.Required(carrierInstructions, nameof(carrierInstructions), 4000);
-        DispatchInstructions = OrderText.Required(dispatchInstructions, nameof(dispatchInstructions), 4000);
-        DeliveryInstructions = OrderText.Required(deliveryInstructions, nameof(deliveryInstructions), 4000);
-        RequiredDocuments = OrderText.Required(requiredDocuments, nameof(requiredDocuments), 4000);
-        ExceptionInstructions = OrderText.Required(exceptionInstructions, nameof(exceptionInstructions), 4000);
-        InternationalCustomsInstructions = OrderText.Optional(internationalCustomsInstructions, 4000);
-        RequiresSeparateShipment = requiresSeparateShipment;
-        EffectiveFrom = effectiveFrom;
-        IsActive = isActive;
+        if (Lifecycle != ShippingRevisionLifecycle.Draft)
+            throw new InvalidOperationException("Change the procedure on a Draft Sample type revision.");
+        if (procedureId == Guid.Empty)
+            throw new ArgumentException("Choose a valid shared shipping procedure.", nameof(procedureId));
+        ShippingProcedureId = procedureId;
     }
 
-    public bool IsEffectiveAt(DateTime utcNow) =>
-        IsActive && EffectiveFrom <= utcNow && (!EffectiveTo.HasValue || EffectiveTo > utcNow);
-
-    public void EndAt(DateTime effectiveTo)
+    private void SetMinimumSampleAmount(decimal? amount, string? unit)
     {
-        if (effectiveTo <= EffectiveFrom)
-            throw new ArgumentException("An instruction-rule revision must end after it begins.", nameof(effectiveTo));
-        if (EffectiveTo.HasValue && effectiveTo > EffectiveTo.Value)
-            throw new InvalidOperationException("An instruction-rule revision cannot be extended after it has been bounded.");
-        EffectiveTo = effectiveTo;
+        if (amount.HasValue != !string.IsNullOrWhiteSpace(unit))
+            throw new ArgumentException("Enter both the minimum sample amount and its unit.");
+        if (amount is <= 0 || amount is > 999999999999.999999m ||
+            amount.HasValue && decimal.Round(amount.Value, 6) != amount.Value)
+            throw new ArgumentException("Enter a positive minimum sample amount with no more than six decimal places.");
+        if (unit is not null && unit.Trim() is not ("µL" or "mL"))
+            throw new ArgumentException("Choose µL or mL for the minimum sample amount.");
+        MinimumSampleAmount = amount;
+        SampleAmountUnit = unit?.Trim();
+    }
+
+    public void Discard()
+    {
+        if (Lifecycle != ShippingRevisionLifecycle.Draft)
+            throw new InvalidOperationException("Only a Draft Sample type can be discarded.");
+        Lifecycle = ShippingRevisionLifecycle.Discarded;
+    }
+
+    public void UpdateDraftFrom(SampleTypeDefinition draft)
+    {
+        if (Lifecycle != ShippingRevisionLifecycle.Draft || draft.Lifecycle != ShippingRevisionLifecycle.Draft
+            || draft.DefinitionKey != DefinitionKey || draft.Revision != Revision)
+            throw new InvalidOperationException("Only the matching Draft Sample type can be edited.");
+        Name = draft.Name; Description = draft.Description; MaterialClass = draft.MaterialClass;
+        MinimumQuantity = draft.MinimumQuantity; MaximumQuantity = draft.MaximumQuantity;
+        QuantityUnit = draft.QuantityUnit; PrimaryContainerRequirements = draft.PrimaryContainerRequirements;
+        MinimumSampleAmount = draft.MinimumSampleAmount; SampleAmountUnit = draft.SampleAmountUnit;
+        TemperatureRequirements = draft.TemperatureRequirements; StabilizerRequirements = draft.StabilizerRequirements;
+        PackagingInstructions = draft.PackagingInstructions; LabelingInstructions = draft.LabelingInstructions;
+        ProhibitedIdentifiers = draft.ProhibitedIdentifiers; SafetyRequirements = draft.SafetyRequirements;
+        CarrierRestrictions = draft.CarrierRestrictions; MaximumTransitHours = draft.MaximumTransitHours;
+        ShippingProcedureId = draft.ShippingProcedureId; EffectiveFrom = draft.EffectiveFrom;
+    }
+
+    private void ValidateRelease()
+    {
+        OrderText.Required(Name, "Sample type name", 255);
+        OrderText.Required(MaterialClass, "Material class", 255);
+        OrderText.Required(QuantityUnit, "Quantity unit", 100);
+        OrderText.Required(PrimaryContainerRequirements, "Primary container requirements", 2000);
+        OrderText.Required(TemperatureRequirements, "Temperature requirements", 2000);
+        OrderText.Required(LabelingInstructions, "Labeling instructions", 4000);
+        OrderText.Required(ProhibitedIdentifiers, "Prohibited identifiers", 2000);
+        OrderText.Required(SafetyRequirements, "Safety requirements", 2000);
+        if (!ShippingProcedureId.HasValue)
+            throw new ArgumentException("Choose a Shipping procedure before activating this Sample type.");
     }
 
     public void MarkCreated(DateTime utcNow, Guid? actorUserId) { CreatedAt = utcNow; CreatedByUserId = actorUserId; }
@@ -354,65 +420,60 @@ public sealed class SampleShippingInstructionRule : IAudit, IConcurrency
 
 public sealed record ResolvedSampleShippingRule(
     SampleTypeDefinition SampleType,
-    SampleShippingInstructionRule Rule);
+    SampleShippingProcedure Procedure,
+    SampleShippingDestination Destination)
+{
+    public Guid ShippingProcedureId => Procedure.Id;
+    public string PackingInstructions => Procedure.PackingInstructions;
+    public string TemperatureInstructions => Procedure.TemperatureInstructions;
+    public string CarrierInstructions => Procedure.CarrierInstructions;
+    public string DispatchInstructions => Procedure.DispatchInstructions;
+    public string DeliveryInstructions => Destination.DeliveryInstructions;
+    public string RequiredDocuments => Procedure.RequiredDocuments;
+    public string ExceptionInstructions => Procedure.ExceptionInstructions;
+    public string? InternationalCustomsInstructions => Procedure.InternationalCustomsInstructions;
+}
 
 public sealed record SampleShippingResolution(
     SampleShippingDestination Destination,
-    IReadOnlyList<ResolvedSampleShippingRule> Rules,
-    string CompatibilityGroup,
-    bool RequiresSeparateShipment);
+    IReadOnlyList<ResolvedSampleShippingRule> Rules);
 
 public static class SampleShippingCompatibilityResolver
 {
     public static SampleShippingResolution Resolve(
         SampleShippingDestination destination,
         IReadOnlyCollection<SampleTypeDefinition> sampleTypes,
-        IReadOnlyCollection<SampleShippingInstructionRule> instructionRules,
-        DateTime effectiveAt)
+        IReadOnlyDictionary<Guid, SampleShippingProcedure> proceduresBySampleTypeId,
+        DateTime effectiveAt,
+        bool pinnedHistory = false)
     {
-        if (!destination.IsEffectiveAt(effectiveAt))
+        if (!pinnedHistory && !destination.IsEffectiveAt(effectiveAt))
             throw new InvalidOperationException("The selected shipping destination is not effective at the requested time.");
         if (sampleTypes.Count == 0)
             throw new ArgumentException("Select at least one sample type.", nameof(sampleTypes));
         if (sampleTypes.Select(item => item.Id).Distinct().Count() != sampleTypes.Count)
             throw new ArgumentException("A sample type cannot be selected more than once.", nameof(sampleTypes));
+        if (sampleTypes.Count > 1)
+            throw new InvalidOperationException("A shipment container may contain only one sample type. Prepare separate containers, packets, and tracking labels.");
 
         var resolved = new List<ResolvedSampleShippingRule>(sampleTypes.Count);
         foreach (var sampleType in sampleTypes)
         {
-            if (!sampleType.IsEffectiveAt(effectiveAt))
+            if (!pinnedHistory && !sampleType.IsEffectiveAt(effectiveAt))
                 throw new InvalidOperationException($"Sample type '{sampleType.Name}' is not effective at the requested time.");
 
-            var matches = instructionRules
-                .Where(rule => rule.DestinationId == destination.Id
-                    && rule.SampleTypeDefinitionId == sampleType.Id
-                    && rule.IsEffectiveAt(effectiveAt))
-                .ToList();
-            if (matches.Count == 0)
-                throw new InvalidOperationException($"No effective shipping instruction rule exists for '{sampleType.Name}' and '{destination.Name}'.");
-            if (matches.Count > 1)
-                throw new InvalidOperationException($"More than one effective shipping instruction rule exists for '{sampleType.Name}' and '{destination.Name}'.");
-            resolved.Add(new ResolvedSampleShippingRule(sampleType, matches[0]));
+            if (!proceduresBySampleTypeId.TryGetValue(sampleType.Id, out var procedure) || !pinnedHistory && !procedure.IsActive)
+                throw new InvalidOperationException($"Sample type '{sampleType.Name}' has no Active shipping procedure.");
+            resolved.Add(new ResolvedSampleShippingRule(sampleType, procedure, destination));
         }
 
-        var compatibilityGroups = resolved
-            .Select(item => item.Rule.CompatibilityGroup)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-        var requiresSeparateShipment = resolved.Any(item => item.Rule.RequiresSeparateShipment);
-        if (resolved.Count > 1 && (requiresSeparateShipment || compatibilityGroups.Count > 1))
-            throw new InvalidOperationException("The selected sample types require separate shipment packets.");
-
-        return new SampleShippingResolution(
-            destination,
-            resolved,
-            compatibilityGroups.Single(),
-            requiresSeparateShipment);
+        return new SampleShippingResolution(destination, resolved);
     }
 }
 
-public sealed class SampleReturnKit : IAudit, IConcurrency
+public sealed partial class SampleReturnKit : IAudit, IConcurrency
 {
+    public string? ProductExpirySnapshotJson { get; private set; }
     public Guid Id { get; private set; } = Guid.NewGuid();
     public string KitNumber { get; private set; } = null!;
     public Guid SampleShipmentId { get; private set; }
@@ -420,6 +481,7 @@ public sealed class SampleReturnKit : IAudit, IConcurrency
     public SampleShipmentAuthorizationSource AuthorizationSource { get; private set; }
     public Guid AuthorizationSourceId { get; private set; }
     public string TubeSupplierName { get; private set; } = null!;
+    public string TubeBarcodeNamespace { get; private set; } = null!;
     public string TubeProductNumber { get; private set; } = null!;
     public string? TubeLotNumber { get; private set; }
     public string ShipperSupplierName { get; private set; } = null!;
@@ -449,7 +511,8 @@ public sealed class SampleReturnKit : IAudit, IConcurrency
         string? tubeLotNumber,
         string shipperSupplierName,
         string shipperProductNumber,
-        int requiredTubeCount)
+        int requiredTubeCount,
+        string? productExpirySnapshotJson = null, string? tubeBarcodeNamespace = null)
     {
         if (sampleShipmentId == Guid.Empty || organizationId == Guid.Empty || authorizationSourceId == Guid.Empty)
             throw new ArgumentException("Shipment, organization, and authorization identifiers are required.");
@@ -462,11 +525,14 @@ public sealed class SampleReturnKit : IAudit, IConcurrency
         AuthorizationSource = authorizationSource;
         AuthorizationSourceId = authorizationSourceId;
         TubeSupplierName = OrderText.Required(tubeSupplierName, nameof(tubeSupplierName), 255);
+        TubeBarcodeNamespace = string.IsNullOrWhiteSpace(tubeBarcodeNamespace)
+            ? throw new ArgumentException("A supplier barcode namespace is required.") : OrderText.Required(tubeBarcodeNamespace, nameof(tubeBarcodeNamespace), 50);
         TubeProductNumber = SampleShippingText.ProductNumber(tubeProductNumber, nameof(tubeProductNumber));
         TubeLotNumber = OrderText.Optional(tubeLotNumber, 100);
         ShipperSupplierName = OrderText.Required(shipperSupplierName, nameof(shipperSupplierName), 255);
         ShipperProductNumber = SampleShippingText.ProductNumber(shipperProductNumber, nameof(shipperProductNumber));
         RequiredTubeCount = requiredTubeCount;
+        ProductExpirySnapshotJson = productExpirySnapshotJson;
     }
 
     public void Fulfill(string outboundCarrier, string outboundTrackingNumber, DateTime fulfilledAt)
@@ -507,11 +573,13 @@ public sealed class SampleReturnKit : IAudit, IConcurrency
     public void IncrementVersion() => Version++;
 }
 
-public sealed class RegisteredSampleTube : IAudit, IConcurrency
+public sealed partial class RegisteredSampleTube : IAudit, IConcurrency
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid SampleReturnKitId { get; private set; }
+    public Guid? SourceStockTubeId { get; private set; }
     public string SupplierBarcode { get; private set; } = null!;
+    public string BarcodeNamespace { get; private set; } = null!;
     public RegisteredSampleTubeStatus Status { get; private set; } = RegisteredSampleTubeStatus.Registered;
     public DateTime? AssignedAt { get; private set; }
     public DateTime? AccessionedAt { get; private set; }
@@ -523,7 +591,7 @@ public sealed class RegisteredSampleTube : IAudit, IConcurrency
 
     private RegisteredSampleTube() { }
 
-    public RegisteredSampleTube(Guid sampleReturnKitId, string supplierBarcode)
+    public RegisteredSampleTube(Guid sampleReturnKitId, string supplierBarcode, string? barcodeNamespace = null, Guid? sourceStockTubeId = null)
     {
         if (sampleReturnKitId == Guid.Empty)
             throw new ArgumentException("A return-kit identifier is required.", nameof(sampleReturnKitId));
@@ -531,6 +599,9 @@ public sealed class RegisteredSampleTube : IAudit, IConcurrency
             throw new ArgumentException("Scan or enter a complete supplier tube barcode.", nameof(supplierBarcode));
         SampleReturnKitId = sampleReturnKitId;
         SupplierBarcode = normalized;
+        BarcodeNamespace = string.IsNullOrWhiteSpace(barcodeNamespace)
+            ? throw new ArgumentException("A supplier barcode namespace is required.") : OrderText.Required(barcodeNamespace, nameof(barcodeNamespace), 50);
+        SourceStockTubeId = sourceStockTubeId;
     }
 
     public void MarkAssigned(DateTime assignedAt)
@@ -543,6 +614,8 @@ public sealed class RegisteredSampleTube : IAudit, IConcurrency
 
     public void MarkAvailable()
     {
+        if (ReceivedAt.HasValue)
+            throw new InvalidOperationException("A physically received tube cannot be reassigned to another sample or shipment.");
         if (Status != RegisteredSampleTubeStatus.Assigned)
             throw new InvalidOperationException("Only an assigned tube can be returned to the available kit inventory.");
         Status = RegisteredSampleTubeStatus.Registered;
@@ -582,6 +655,8 @@ public sealed class SampleTubeAssignmentEvent
     public string? Reason { get; private set; }
     public Guid ActorUserId { get; private set; }
     public DateTime OccurredAt { get; private set; }
+    public decimal? CustomerDeclaredQuantity { get; private set; }
+    public string? CustomerDeclaredQuantityUnit { get; private set; }
 
     private SampleTubeAssignmentEvent() { }
 
@@ -608,7 +683,9 @@ public sealed class SampleTubeAssignmentEvent
         SampleTubeAssignmentAction action,
         string? reason,
         Guid actorUserId,
-        DateTime occurredAt)
+        DateTime occurredAt,
+        decimal? customerDeclaredQuantity = null,
+        string? customerDeclaredQuantityUnit = null)
     {
         if (sampleShipmentId == Guid.Empty || sampleShipmentItemId == Guid.Empty
             || registeredSampleTubeId == Guid.Empty || actorUserId == Guid.Empty)
@@ -623,10 +700,12 @@ public sealed class SampleTubeAssignmentEvent
         Reason = OrderText.Optional(reason, 1000);
         ActorUserId = actorUserId;
         OccurredAt = occurredAt;
+        CustomerDeclaredQuantity = customerDeclaredQuantity;
+        CustomerDeclaredQuantityUnit = customerDeclaredQuantityUnit;
     }
 }
 
-public sealed class SampleShipment : IAudit, IConcurrency
+public sealed partial class SampleShipment : IAudit, IConcurrency
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
     public string ShipmentNumber { get; private set; } = null!;
@@ -680,6 +759,17 @@ public sealed class SampleShipment : IAudit, IConcurrency
         DestinationId = destinationId;
     }
 
+    public void SelectDestination(Guid destinationId)
+    {
+        if (destinationId == Guid.Empty) throw new ArgumentException("Select a Phaeno ship-to destination.", nameof(destinationId));
+        if (DestinationId == destinationId) return;
+        if (Status != SampleShipmentStatus.Preparing || IsPackingPool || ContainerDefinitionId.HasValue
+            || PacketRevisions.Count > 0 || ReturnKit is not null
+            || Items.Any(item => item.TubeSlots.Any(slot => slot.RegisteredSampleTubeId.HasValue)))
+            throw new InvalidOperationException("The selected ship-to destination cannot change after kit fulfillment or shipment preparation.");
+        DestinationId = destinationId;
+    }
+
     public void MarkReadyToShip()
     {
         if (Status != SampleShipmentStatus.Preparing || Items.Count == 0 || PacketRevisions.Count == 0)
@@ -699,8 +789,11 @@ public sealed class SampleShipment : IAudit, IConcurrency
 
     public void MarkDelivered(DateTime deliveredAt)
     {
-        if (Status != SampleShipmentStatus.Shipped)
-            throw new InvalidOperationException("Only a shipped sample shipment can be marked delivered.");
+        if (Status is not (SampleShipmentStatus.ReadyToShip or SampleShipmentStatus.Shipped or SampleShipmentStatus.Delivered or SampleShipmentStatus.Received))
+            throw new InvalidOperationException("Only a confirmed or dispatched sample shipment can be marked delivered.");
+        if (DeliveredAt.HasValue || Status == SampleShipmentStatus.Received) return;
+        if (deliveredAt.Kind != DateTimeKind.Utc)
+            throw new ArgumentException("Delivery time must be UTC.", nameof(deliveredAt));
         if (ShippedAt.HasValue && deliveredAt < ShippedAt.Value)
             throw new ArgumentException("Delivery cannot precede shipment.", nameof(deliveredAt));
         DeliveredAt = deliveredAt;
@@ -709,8 +802,8 @@ public sealed class SampleShipment : IAudit, IConcurrency
 
     public void MarkReceived(DateTime receivedAt)
     {
-        if (Status is not (SampleShipmentStatus.Shipped or SampleShipmentStatus.Delivered))
-            throw new InvalidOperationException("Only an in-transit or delivered sample shipment can be received.");
+        if (Status is not (SampleShipmentStatus.ReadyToShip or SampleShipmentStatus.Shipped or SampleShipmentStatus.Delivered))
+            throw new InvalidOperationException("Only a confirmed or dispatched sample shipment can be received.");
         if (ShippedAt.HasValue && receivedAt < ShippedAt.Value)
             throw new ArgumentException("Receipt cannot precede shipment.", nameof(receivedAt));
         ReceivedAt = receivedAt;
@@ -719,8 +812,8 @@ public sealed class SampleShipment : IAudit, IConcurrency
 
     public void Cancel()
     {
-        if (Status is SampleShipmentStatus.Received or SampleShipmentStatus.Cancelled)
-            throw new InvalidOperationException("A received or cancelled shipment cannot be cancelled.");
+        if (Status is SampleShipmentStatus.Delivered or SampleShipmentStatus.Received or SampleShipmentStatus.Cancelled)
+            throw new InvalidOperationException("A delivered, received or cancelled shipment cannot be cancelled.");
         Status = SampleShipmentStatus.Cancelled;
     }
 
@@ -729,7 +822,7 @@ public sealed class SampleShipment : IAudit, IConcurrency
     public void IncrementVersion() => Version++;
 }
 
-public sealed class SampleShipmentItem : IAudit, IConcurrency
+public sealed partial class SampleShipmentItem : IAudit, IConcurrency
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid SampleShipmentId { get; private set; }
@@ -739,8 +832,6 @@ public sealed class SampleShipmentItem : IAudit, IConcurrency
     public string SampleName { get; private set; } = null!;
     public decimal Quantity { get; private set; }
     public string QuantityUnit { get; private set; } = null!;
-    public Guid? RegisteredSampleTubeId { get; private set; }
-    public DateTime? TubeAssignedAt { get; private set; }
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
     public Guid? CreatedByUserId { get; private set; }
     public DateTime UpdatedAt { get; private set; } = DateTime.UtcNow;
@@ -771,30 +862,12 @@ public sealed class SampleShipmentItem : IAudit, IConcurrency
         QuantityUnit = OrderText.Required(quantityUnit, nameof(quantityUnit), 100);
     }
 
-    public void AssignTube(Guid registeredSampleTubeId, DateTime assignedAt)
-    {
-        if (registeredSampleTubeId == Guid.Empty)
-            throw new ArgumentException("A registered tube is required.", nameof(registeredSampleTubeId));
-        RegisteredSampleTubeId = registeredSampleTubeId;
-        TubeAssignedAt = assignedAt;
-    }
-
-    public Guid ClearTube()
-    {
-        if (!RegisteredSampleTubeId.HasValue)
-            throw new InvalidOperationException("This sample does not have a tube assignment.");
-        var previous = RegisteredSampleTubeId.Value;
-        RegisteredSampleTubeId = null;
-        TubeAssignedAt = null;
-        return previous;
-    }
-
     public void MarkCreated(DateTime utcNow, Guid? actorUserId) { CreatedAt = utcNow; CreatedByUserId = actorUserId; }
     public void MarkUpdated(DateTime utcNow, Guid? actorUserId) { UpdatedAt = utcNow; UpdatedByUserId = actorUserId; }
     public void IncrementVersion() => Version++;
 }
 
-public sealed class SampleShipmentTubeSlot : IAudit, IConcurrency
+public sealed partial class SampleShipmentTubeSlot : IAudit, IConcurrency
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid SampleShipmentItemId { get; private set; }
@@ -947,6 +1020,11 @@ public static class SampleShippingBarcode
 
 public static class SupplierTubeBarcode
 {
+
+    public static string NamespaceForSupplier(Guid supplierId) => supplierId == Guid.Empty
+        ? throw new ArgumentException("Select the tube manufacturer before registering its barcode.", nameof(supplierId))
+        : $"MFR-{supplierId:N}".ToUpperInvariant();
+
     public static bool TryNormalize(string? value, out string barcode)
     {
         barcode = string.Empty;

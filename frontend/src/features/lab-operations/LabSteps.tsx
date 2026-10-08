@@ -1,0 +1,212 @@
+import { useEffect, useRef, useState } from 'react'
+import { Plus } from 'lucide-react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { Link, useBlocker, useNavigate, useRouterState } from '@tanstack/react-router'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { getLabSteps, createLabStep, updateLabStep, saveLabStepVersion, transitionLabStep, type LabStep, type LabStepVersion } from '#/api/lab-steps'
+import { getLabOperationsError } from '#/api/lab-operations'
+import { usePhaenoSession } from '#/features/auth/session-context'
+import { Button } from '#/components/ui/button'
+import { Badge } from '#/components/ui/badge'
+import { Input } from '#/components/ui/input'
+import { Checkbox } from '#/components/ui/checkbox'
+import { Label } from '#/components/ui/label'
+import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardAction } from '#/components/ui/card'
+import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
+import { DialogReturnFocus } from '#/components/ui/dialog'
+import { RequiredLegend } from '#/components/ui/required-field'
+import { recordLinkClassName } from '#/components/ui/record-link'
+import { PreparationFormDialog, PreparationField } from './preparation-ui'
+import { ProtocolStepEditor } from './ProtocolStepEditor'
+import { ConfigurationPreview } from './ConfigurationPreview'
+import { LabSettingsLayout } from './LabSettingsLayout'
+import { createEmptyProtocolStep, deserializeProtocolDefinition, serializeProtocolDefinition, protocolCaptureLabel, protocolDefinitionFormSchema, type ProtocolDefinition, type ProtocolDefinitionFormValues } from './protocol-definition'
+
+function useStepCatalog() {
+  const { session, authProvider } = usePhaenoSession()
+  return useQuery({ queryKey: ['lab-steps'], queryFn: getLabSteps, enabled: Boolean(session?.capabilities.canManageLabOperations) && authProvider !== 'mock' })
+}
+export function LabStepList() {
+  const { session } = usePhaenoSession()
+  const query = useStepCatalog()
+  const client = useQueryClient()
+  const navigate = useNavigate()
+  const [create, setCreate] = useState(false)
+  const listState = useRouterState({ select: state => state.location.search as { labStepSearch?: string; labStepRetired?: boolean; labStepPage?: number } })
+  const search = listState.labStepSearch ?? ''
+  const retired = listState.labStepRetired ?? false
+  const requestedPage = listState.labStepPage ?? 1
+  const updateList = (patch: typeof listState) => void navigate({ to: '/lab-configuration', search: previous => ({ ...labStepListSearch(previous), ...patch }), replace: true, resetScroll: false })
+  const mutation = useMutation({ mutationFn: createLabStep, onSuccess: async step => {
+    await client.invalidateQueries({ queryKey: ['lab-steps'] }); setCreate(false)
+    await navigate({ to: '/lab-operations/steps/$stepId', params: { stepId: step.id }, search: labStepListSearch })
+  } })
+  const items = query.data?.filter(s => (retired || !s.retiredAtUtc) && s.name.toLowerCase().includes(search.toLowerCase())) ?? []
+  const page = Math.min(requestedPage, Math.max(1, Math.ceil(items.length / 10)))
+  return <Card className="gap-0 py-0">
+    <CardHeader className="border-b bg-muted/50 p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <CardTitle>Lab steps</CardTitle>
+          <CardDescription>Reusable, independently approved procedures. Protocols pin exact versions.</CardDescription>
+        </div>
+        {session?.capabilities.canManageLabProtocols ? <Button type="button" onClick={() => setCreate(true)}><Plus data-icon="inline-start" /> New lab step</Button> : null}
+      </div>
+      <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end">
+        <div className="min-w-0 flex-1">
+          <PreparationField label="Find Lab steps" id="find-lab-steps"><Input id="find-lab-steps" value={search} onChange={e => { updateList({ labStepSearch: e.target.value, labStepPage: 1 }) }} /></PreparationField>
+        </div>
+        <div className="flex items-center gap-2 sm:pb-2">
+          <Checkbox id="show-retired-lab-steps" checked={retired} onCheckedChange={checked => { updateList({ labStepRetired: checked === true, labStepPage: 1 }) }} />
+          <Label htmlFor="show-retired-lab-steps" className="cursor-pointer">Show retired</Label>
+        </div>
+      </div>
+    </CardHeader>
+    <CardContent className="p-4">
+    {query.isLoading ? <p role="status">Loading Lab steps…</p> : query.error ? <p role="alert">{getLabOperationsError(query.error, 'Lab steps could not be loaded.')}</p> : !items.length ? <p>No Lab steps match. Create a step to begin.</p> : <div className="divide-y">
+      {items.slice((page - 1) * 10, page * 10).map(step => {
+        const status = step.retiredAtUtc ? 'Retired' : step.versions.at(-1)?.status ?? 'No draft'
+        return <div key={step.id} className="flex flex-wrap items-start justify-between gap-3 py-4">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <Link className={recordLinkClassName} to="/lab-operations/steps/$stepId" params={{ stepId: step.id }} search={labStepListSearch}>{step.name}</Link>
+              {step.latestVersion > 0 ? <Badge variant="outline">Rev {step.latestVersion}</Badge> : null}
+              <Badge variant={status === 'Approved' || status === 'Active' ? 'secondary' : 'outline'}>{status}</Badge>
+            </div>
+            <p className="mt-2 text-sm">{step.description || 'No description provided.'}</p>
+            <p className="mt-1 text-xs">Protocol occurrences: {step.usedBy.length}</p>
+          </div>
+          <LabStepActions step={step} includeView />
+        </div>
+      })}
+    </div>}
+    {items.length > 10 ? <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4 text-xs text-muted-foreground"><span>{items.length} Lab steps · Page {page} of {Math.ceil(items.length / 10)}</span><div className="flex gap-2"><Button type="button" size="sm" variant="outline" disabled={page <= 1} onClick={() => updateList({ labStepPage: page - 1 })}>Previous</Button><Button type="button" size="sm" variant="outline" disabled={page * 10 >= items.length} onClick={() => updateList({ labStepPage: page + 1 })}>Next</Button></div></div> : null}
+    {create ? <PreparationFormDialog title="Create Lab step" description="Give this reusable step a unique name. Draft version 1 is created with it; add instructions before approval." fields={[{ key: 'name', label: 'Step name', required: true, maxLength: 160 }, { key: 'description', label: 'Description', type: 'textarea', maxLength: 2000 }]} pending={mutation.isPending} error={mutation.error ? getLabOperationsError(mutation.error, 'The Lab step could not be created.') : undefined} submitLabel="Create Lab step" onClose={() => setCreate(false)} onSubmit={v => mutation.mutate({ name: v.name, description: v.description })} /> : null}
+  </CardContent></Card>
+}
+
+export function LabStepPage({ stepId, editing = false }: { stepId: string; editing?: boolean }) {
+  const query = useStepCatalog()
+  const { session } = usePhaenoSession()
+  const listState = useRouterState({ select: state => state.location.search as { labStepSearch?: string; labStepRetired?: boolean; labStepPage?: number } })
+  const step = query.data?.find(s => s.id === stepId)
+  return <LabSettingsLayout section="steps" backLabel="Lab steps" backSearch={listState}>
+    <main className="space-y-5">
+    {query.isLoading ? <p role="status">Loading Lab step…</p> : query.error ? <p role="alert">{getLabOperationsError(query.error, 'The Lab step could not be loaded.')}</p> : !step ? <p>Lab step not found or unavailable to this session.</p> : editing ? session?.capabilities.canManageLabProtocols && !step.retiredAtUtc ? <LabStepEditor key={stepId} step={step} /> : <p>Step authoring is unavailable.</p> : <LabStepDetails step={step} />}
+    </main>
+  </LabSettingsLayout>
+}
+
+function LabStepDetails({ step }: { step: LabStep }) {
+  const { session } = usePhaenoSession()
+  const client = useQueryClient()
+  const [preview, setPreview] = useState<LabStepVersion>()
+  const [transition, setTransition] = useState<{ action: string; version?: LabStepVersion }>()
+  const mutation = useMutation({ mutationFn: (values: Record<string, string>) => transitionLabStep(step.id, {
+    action: transition!.action, version: step.version, versionId: transition?.version?.id,
+    reason: values.reason, ...(values.override ? { approvalOverrideReason: values.override } : {}),
+  }), onSuccess: async () => { await client.invalidateQueries({ queryKey: ['lab-steps'] }); setTransition(undefined) }, onError: () => { void client.invalidateQueries({ queryKey: ['lab-steps'] }) } })
+  const selfApproval = transition?.action === 'approve' && transition.version?.authoredByUserId === session?.user?.id
+  return <DialogReturnFocus target={null} fallbackId={`lab-step-${step.id}-actions`}>
+    <Card><CardHeader><CardTitle role="heading" aria-level={2}>{step.name}</CardTitle>{step.description || step.retiredAtUtc ? <CardDescription>{step.description}{step.retiredAtUtc ? `${step.description ? ' · ' : ''}Retired: ${step.retirementReason}` : ''}</CardDescription> : null}<CardAction><LabStepActions step={step} onPreview={setPreview} onVersionTransition={(action, version) => setTransition({ action, version })} /></CardAction></CardHeader><CardContent className="space-y-4">
+      {!step.versions.length ? <p>No version has been authored.</p> : [...step.versions].reverse().map(v => <section key={v.id} className="space-y-3 rounded-lg border p-4"><h3 className="font-medium">Version {v.stepVersion} · {v.status}</h3><p id={`step-version-${v.id}-approval-help`} className="text-sm">{v.status === 'Draft' ? `Requires independent approval. A platform administrator may record an explicit override.${v.definitionJson === '{}' ? ' Save instructions and fields before approval.' : v.authoredByUserId === session?.user?.id && !session?.isPlatformAdmin ? ' A different authorized reviewer must approve your draft.' : ''}` : `Approved ${v.approvedAtUtc?.slice(0, 10) ?? '—'}`}</p>{v.approvalOverrideReason ? <p className="text-sm">Approval override: {v.approvalOverrideReason}</p> : null}<LabStepSummary version={v} /></section>)}
+    </CardContent></Card>
+    <Card><CardHeader><CardTitle role="heading" aria-level={2}>Used by protocols</CardTitle><CardDescription>Each occurrence retains its own identity and step records. New versions are adopted explicitly in a protocol draft.</CardDescription></CardHeader><CardContent className="space-y-2">{step.usedBy.length ? step.usedBy.map(u => <p key={`${u.protocolVersionId}-${u.occurrenceKey}`} className="text-sm">{u.protocolName} v{u.protocolVersion} · {u.status} · {u.occurrenceKey} · Lab step v{step.versions.find(v => v.id === u.stepVersionId)?.stepVersion}{step.versions.some(v => v.status === 'Approved' && v.stepVersion > (step.versions.find(x => x.id === u.stepVersionId)?.stepVersion ?? 0)) ? ' · Newer approved version available' : ''}</p>) : <p>No protocol references this Lab step.</p>}</CardContent></Card>
+    {preview ? <ConfigurationPreview definition={JSON.parse(preview.definitionJson) as ProtocolDefinition} name={`${step.name} v${preview.stepVersion} · ${preview.status}`} onClose={() => setPreview(undefined)} /> : null}
+    {transition ? <PreparationFormDialog title={`${transition.action === 'approve' ? 'Approve' : 'Discard draft'} version ${transition.version?.stepVersion} of ${step.name}`} description={transition.action === 'approve' ? 'Review the instructions, fields and QC criteria. Approval locks this version; assembled protocols require separate approval.' : 'The draft is retained as discarded and can no longer be edited.'} fields={[
+      ...(selfApproval ? [{ key: 'override', label: 'Administrator approval override reason', type: 'textarea' as const, required: true }] : []),
+      { key: 'confirm', label: 'I reviewed this version and confirm this action', type: 'checkbox', required: true },
+    ]} initialFocus="cancel" pending={mutation.isPending} error={mutation.error ? getLabOperationsError(mutation.error, 'The action could not be completed. Review the current version and retry.') : undefined} onClose={() => { setTransition(undefined); mutation.reset() }} onSubmit={v => mutation.mutate(v)} submitLabel={transition.action === 'approve' ? 'Approve version' : 'Discard draft'} /> : null}
+  </DialogReturnFocus>
+}
+
+function LabStepActions({ step, includeView = false, onPreview, onVersionTransition }: {
+  step: LabStep; includeView?: boolean; onPreview?: (version: LabStepVersion) => void
+  onVersionTransition?: (action: 'approve' | 'discard', version: LabStepVersion) => void
+}) {
+  const { session } = usePhaenoSession()
+  const client = useQueryClient()
+  const navigate = useNavigate()
+  const listState = useRouterState({ select: state => state.location.search as { labStepSearch?: string; labStepRetired?: boolean; labStepPage?: number } })
+  const [editingDetails, setEditingDetails] = useState(false)
+  const [retiring, setRetiring] = useState(false)
+  const canManage = Boolean(session?.capabilities.canManageLabProtocols) && !step.retiredAtUtc
+  const draft = step.versions.find(version => version.status === 'Draft')
+  const editVersion = () => void navigate({ to: '/lab-operations/steps/$stepId/edit', params: { stepId: step.id }, search: labStepListSearch(listState) })
+  const detailsMutation = useMutation({ mutationFn: (values: Record<string, string>) => updateLabStep(step.id, { name: values.name, description: values.description, version: step.version }), onSuccess: async () => { await client.invalidateQueries({ queryKey: ['lab-steps'] }); setEditingDetails(false) }, onError: () => { void client.invalidateQueries({ queryKey: ['lab-steps'] }) } })
+  const retireMutation = useMutation({ mutationFn: (values: Record<string, string>) => transitionLabStep(step.id, { action: 'retire', version: step.version, reason: values.reason }), onSuccess: async () => { await client.invalidateQueries({ queryKey: ['lab-steps'] }); setRetiring(false) }, onError: () => { void client.invalidateQueries({ queryKey: ['lab-steps'] }) } })
+  const items = [
+    ...(includeView ? [{ label: 'View details', onClick: () => void navigate({ to: '/lab-operations/steps/$stepId', params: { stepId: step.id }, search: labStepListSearch(listState) }) }] : []),
+    ...(canManage ? [
+      { label: 'Edit Lab step name and description', onClick: () => setEditingDetails(true) },
+      ...(!draft || !onVersionTransition ? [{ label: draft ? 'Edit draft' : 'New version', onClick: editVersion }] : []),
+      { label: 'Retire Lab step', onClick: () => setRetiring(true) },
+    ] : []),
+  ]
+  return <DialogReturnFocus target={null} fallbackId={`lab-step-${step.id}-actions`}>
+    <ActionMenu><DropdownMenuTrigger asChild><Button id={`lab-step-${step.id}-actions`} type="button" variant="outline" aria-label={`Actions for ${step.name}`}>Actions</Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-max min-w-48 max-w-[calc(100vw-2rem)]">
+      {items.length ? <><DropdownMenuLabel>Lab step</DropdownMenuLabel>{items.map(item => <DropdownMenuItem key={item.label} onSelect={item.onClick}>{item.label}</DropdownMenuItem>)}</> : null}
+      {canManage && draft && onVersionTransition ? <>
+        {items.length ? <DropdownMenuSeparator /> : null}<DropdownMenuLabel>Draft · Version {draft.stepVersion}</DropdownMenuLabel>
+        <DropdownMenuItem onSelect={editVersion}>Edit draft</DropdownMenuItem>
+        <DropdownMenuItem disabled={draft.definitionJson === '{}' || draft.authoredByUserId === session?.user?.id && !session?.isPlatformAdmin} aria-describedby={`step-version-${draft.id}-approval-help`} onSelect={() => onVersionTransition('approve', draft)}>Approve version {draft.stepVersion}</DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => onVersionTransition('discard', draft)}>Discard draft</DropdownMenuItem>
+      </> : null}
+      {onPreview && step.versions.some(version => version.definitionJson !== '{}') ? <>
+        {items.length || canManage && draft && onVersionTransition ? <DropdownMenuSeparator /> : null}<DropdownMenuLabel>Configuration previews</DropdownMenuLabel>
+        {[...step.versions].reverse().filter(version => version.definitionJson !== '{}').map(version => <DropdownMenuItem key={version.id} onSelect={() => onPreview(version)}>Preview version {version.stepVersion} · {version.status}</DropdownMenuItem>)}
+      </> : null}
+    </DropdownMenuContent></ActionMenu>
+    {editingDetails ? <PreparationFormDialog title="Edit Lab step" description="The unique name identifies this step in the catalog. Approved protocol versions keep their saved names." fields={[{ key: 'name', label: 'Step name', required: true, maxLength: 160, defaultValue: step.name }, { key: 'description', label: 'Description', type: 'textarea', maxLength: 2000, defaultValue: step.description ?? '' }]} pending={detailsMutation.isPending} error={detailsMutation.error ? getLabOperationsError(detailsMutation.error, 'The Lab step could not be updated.') : undefined} onClose={() => { setEditingDetails(false); detailsMutation.reset() }} onSubmit={values => detailsMutation.mutate(values)} /> : null}
+    {retiring ? <PreparationFormDialog title={`Retire ${step.name}`} description={`Prevents new selection. ${step.usedBy.length} retained protocol occurrences and all execution history remain unchanged.`} fields={[{ key: 'reason', label: 'Retirement reason', type: 'textarea', required: true }, { key: 'confirm', label: 'I reviewed this version and confirm this action', type: 'checkbox', required: true }]} initialFocus="cancel" pending={retireMutation.isPending} error={retireMutation.error ? getLabOperationsError(retireMutation.error, 'The Lab step could not be retired. Review its current version and retry.') : undefined} onClose={() => { setRetiring(false); retireMutation.reset() }} onSubmit={values => retireMutation.mutate(values)} submitLabel="Retire Lab step" /> : null}
+  </DialogReturnFocus>
+}
+
+function LabStepEditor({ step }: { step: LabStep }) {
+  const leaveApproved = useRef(false)
+  const client = useQueryClient()
+  const navigate = useNavigate()
+  const draft = step.versions.find(v => v.status === 'Draft')
+  const [source] = useState(() => draft ?? step.versions.filter(v => v.status === 'Approved').at(-1))
+  const [expectedVersion] = useState(step.version)
+  const [preview, setPreview] = useState<ProtocolDefinition>()
+  const [discard, setDiscard] = useState(false)
+  const initial = source?.definitionJson === '{}' ? { preparationBatchEnabled: true, steps: [{ ...createEmptyProtocolStep(), name: step.name }] } : source ? deserializeProtocolDefinition(source.definitionJson) : { preparationBatchEnabled: true, steps: [{ ...createEmptyProtocolStep(), name: step.name }] }
+  if (initial) initial.steps[0].name = step.name
+  const form = useForm<ProtocolDefinitionFormValues>({ resolver: zodResolver(protocolDefinitionFormSchema), defaultValues: initial ?? undefined })
+  const mutation = useMutation({ mutationFn: (values: ProtocolDefinitionFormValues) => saveLabStepVersion(step.id, { definitionJson: serializeProtocolDefinition(values), version: expectedVersion, draftId: draft?.id }), onSuccess: async () => { leaveApproved.current = true; await client.invalidateQueries({ queryKey: ['lab-steps'] }); await leave() } })
+  useBlocker({ shouldBlockFn: () => !leaveApproved.current && (mutation.isPending || form.formState.isDirty && !window.confirm('Discard unsaved Lab step changes?')), enableBeforeUnload: false })
+  const leave = () => navigate({ to: '/lab-operations/steps/$stepId', params: { stepId: step.id }, search: labStepListSearch })
+  useEffect(() => { const warn = (event: BeforeUnloadEvent) => { if (form.formState.isDirty && !mutation.isSuccess) { event.preventDefault(); event.returnValue = '' } }; window.addEventListener('beforeunload', warn); return () => window.removeEventListener('beforeunload', warn) }, [form.formState.isDirty, mutation.isSuccess])
+  if (!initial) return <p role="alert">This definition cannot be opened safely. Return without changing it.</p>
+  return <>
+    <h2 className="text-2xl font-semibold">{step.name} · {draft ? `Edit draft v${draft.stepVersion}` : `New version ${step.latestVersion + 1}`}</h2>
+    <p className="text-sm text-muted-foreground">Instructions and the scope of each entry belong to this step. Required/conditional placement belongs to each protocol occurrence.</p>
+    {mutation.error ? <p role="alert" className="text-destructive">{getLabOperationsError(mutation.error, 'The draft could not be saved. Your entries are retained; return and reopen if the version changed.')}</p> : null}
+    <form noValidate className="space-y-4" onSubmit={form.handleSubmit(v => mutation.mutate(v))}>
+      <RequiredLegend /><ProtocolStepEditor catalog form={form} index={0} total={1} onMoveUp={() => {}} onMoveDown={() => {}} onDuplicate={() => {}} onRemove={() => {}} onPreview={() => setPreview(JSON.parse(serializeProtocolDefinition(form.getValues())) as ProtocolDefinition)} />
+      <div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={() => form.formState.isDirty ? setDiscard(true) : void leave()}>Cancel</Button><Button type="submit" disabled={mutation.isPending || Boolean(draft) && !form.formState.isDirty}>{mutation.isPending ? 'Saving…' : 'Save draft'}</Button></div>
+    </form>
+    {preview ? <ConfigurationPreview definition={preview} name={`${step.name} · Unsaved draft`} onClose={() => setPreview(undefined)} /> : null}
+    {discard ? <PreparationFormDialog title="Discard unsaved changes?" description="The previously saved configuration remains unchanged." fields={[]} pending={false} submitLabel="Discard changes" onClose={() => setDiscard(false)} onSubmit={() => { leaveApproved.current = true; void leave() }} /> : null}
+  </>
+}
+
+function LabStepSummary({ version }: { version: LabStepVersion }) {
+  if (version.definitionJson === '{}') return <p className="text-sm text-muted-foreground">{version.status === 'Draft' ? 'Configuration not authored yet. Edit this draft to add instructions and fields.' : 'Configuration was not authored.'}</p>
+  const definition = deserializeProtocolDefinition(version.definitionJson)?.steps[0]
+  if (!definition) return <p role="alert">The stored definition cannot be displayed.</p>
+  return <details><summary className="cursor-pointer">Instructions and fields to record</summary><div className="mt-3 space-y-3 text-sm">
+    <p className="whitespace-pre-wrap">{definition.instructions}</p>
+    <dl className="space-y-2">{definition.captures.map((c, i) => <div key={c.key ?? i}><dt className="font-medium">{c.label}{c.type === 'equipment' || c.required ? ' · Required' : ' · Optional'}</dt><dd>{protocolCaptureLabel(c.type)} · {c.scope === 'batch' ? 'Batch' : c.scope === 'shared' ? 'Shared with sample exceptions' : 'Individual sample'}{c.unit ? ` · ${c.unit}` : ''}{c.material ? ` · ${c.material.name}${c.material.vendor ? ` · ${c.material.vendor}` : ''}${c.material.productNumber ? ` · ${c.material.productNumber}` : ''}` : ''}{['material', 'masterMix'].includes(c.type) ? ` · ${c.quantityBasis === 'total' ? 'Total batch quantity' : 'Quantity per sample'} · ${c.type === 'masterMix' ? `Prepared mix from workflow revision ${c.material?.masterMixWorkflowRevision}` : c.includeTracking ? 'Lot number included' : 'Configured material'}` : ''}{c.type === 'equipment' ? ' · Registered equipment selection required' : ''}{c.choices ? ` · ${c.choices}` : ''}</dd></div>)}</dl>
+    <p>Inputs: {definition.inputMaterials || 'None'}<br />Equipment: {definition.equipmentTypes || 'None'}<br />Outputs: {definition.preparedOutputs || 'None'}</p>
+    {definition.attachmentKind && definition.attachmentKind !== 'none' ? <p>{definition.attachmentRequired ? 'Required' : 'Optional'} PDF: {definition.attachmentKind === 'qc' ? 'QC report' : 'Preparation report or worksheet'}</p> : null}
+    {definition.qcEnabled ? <p>QC ({definition.qcScope}): {definition.qcCriteria}</p> : null}
+    <p>Role: {definition.requiredRole || 'Authorized laboratory staff'} · {definition.repeatable ? 'Repeat permitted' : 'Not repeatable'} · {definition.operatorConfirmation ? 'Operator confirmation required' : 'No additional operator confirmation'}</p>
+  </div></details>
+}
+
+function labStepListSearch(previous: { labStepSearch?: string; labStepRetired?: boolean; labStepPage?: number }) {
+  return { section: 'protocols' as const, configurationTab: 'steps' as const, labStepSearch: previous.labStepSearch, labStepRetired: previous.labStepRetired, labStepPage: previous.labStepPage }
+}

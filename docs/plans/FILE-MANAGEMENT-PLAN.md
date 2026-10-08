@@ -1,5 +1,183 @@
 # File Management Plan
 
+## Company retention override actions — September 29, 2026
+
+The Company Services → Retention header uses a plus icon for its single **Add
+override** action. Once an override exists, **Edit override** and **Remove
+override** appear in one **Actions** dropdown. Permissions, required reasons,
+reviewed versions, saved policies, and retention deadlines are unchanged. The
+Phaeno guide and existing component interaction checks follow the new action
+location; automated suites and browser review remain request-only.
+
+## Sample investigation evidence — local implementation, September 18, 2026
+
+The owner approved indefinite internal sample-history, traceability, investigation-report and supporting-report preservation, independently of customer downloadable result retention. The [governance contract](LAB-EVIDENCE-GOVERNANCE-CONTRACT.md) documents the implemented deletion guards and versioned evidence/review controls. No new evidence deletion schedule or external file ownership is introduced.
+
+Phase 1 now stores explicit result→analysis→sequencing→tube links and per-artifact locators, including copied bindings on legacy release projections. It adds no byte deletion or retention policy. Referenced Lab records use restrictive foreign keys and remain separate from artifact byte deletion. The [local restore rehearsal](../testing/runs/2026-09-18-investigation-restore.md) now proves native database/private-file restoration of a synthetic result chain, saved report and QC attachment, including continued access after result-byte deletion through the storage adapter. Supporting-report downloads verify exact size/checksum and sample-step coverage. Hosted scheduling, cleanup/hold acceptance and recovery remain operational gates; the internal retention decision is now settled in the governance contract, while the [capture contract](LAB-RESULT-LINEAGE-CONTRACT.md) describes current limits.
+
+## Optional preparation QC reports — September 17, 2026
+
+Preparation step submissions may attach one PDF up to 10 MiB. Reuse private operational storage and scanning; persist metadata in the existing preparation record and authorize download through its batch/record identity. This is internal execution evidence, outside customer release/retention workflows. The coordinated-backup reference manifest includes its storage key, digest and length. A rejected scan removes the unsaved object. An uncertain database commit does not delete bytes that could already be referenced; unreferenced objects remain private for storage reconciliation. No automatic orphan deletion or new retention policy is introduced.
+
+
+## Combined order and retention settings — September 16, 2026
+
+Superseded September 18: **File retention policies** has its own `/file-management` page and user-menu entry under **Administration**, after **Order Settings** and **Lab Settings**. It is removed from the Order Settings sidebar. Old combined-settings retention links redirect to the standalone page. Existing retention permissions, policy history, edit dialog, API contracts and saved rules remain unchanged.
+
+## Retention UAT supporting verification — September 14, 2026
+
+Grouped verification passed 56 backend and 31 frontend checks. Database journeys cover commit-time download evidence, independent ZIP revocation, concurrent notices, holds, simulated cleanup retries, shared-object preservation and reissue history. Disposable local databases removed; retained UAT packages unreleased. Harness-only source-name adaptation; no runtime/provider/retention activation. Actual Customer downloads, external notification delivery and production cleanup remain separate gates. See [the UAT ledger](../testing/runs/2026-09-12-laboratory-uat-closeout.md#september-14-release-download-and-retention-grouped-continuation).
+
+## Coordinated backup implementation (authorized September 7 follow-up)
+
+The remaining database/Local-file backup item now has a bounded maintenance
+implementation: `portal-backup.yml`, a host systemd timer, coordinated capture,
+isolated database/file restoration, private reference verification, encrypted
+envelope recovery and guarded exported-backup rotation. It reuses the existing
+protected SSH/public-key envelope and adds no application dependencies, migration,
+provider switch or retention activation. See the
+[backup runbook](../../deployment/hetzner/green/BACKUP-RUNBOOK.md).
+
+Capture takes the deployment lock, gracefully stops the API, requires no remaining
+database clients and no other volume writer, and records a matching database dump
+plus both Local areas. The API resumes before restore checks/encryption. An
+independent 180-second watchdog and ordinary cleanup restore the exact original
+container; capture has a separate 120-second budget. This maintenance creates a
+brief API interruption, including public Website API routes, and is scheduled for
+2 a.m. America/Los_Angeles with a spring-DST fallback. It does not alter business
+records, live file bytes, release permissions or worker activation.
+
+The restored database produces a private reference manifest. Every required object
+must match restored bytes and checksums; explicit completed deletions permit absent
+historical bytes. Unknown/orphan bytes remain backed up and counted. Every run also
+restores a nonempty synthetic two-area archive in an isolated helper, separately
+from its actual source-file count. Recovery rejects unsafe archive entries and
+creates new private review directories rather than overwriting live storage.
+
+Encrypted GitHub artifacts retain 35 days. Server copies are rotated only when
+older than 35 days, successfully exported, checksum verified, and composed of the
+exact five owned encrypted/receipt files; the newest and unexported copies remain.
+The host timer works independently of the Git branch. Automatic daily off-server
+collection requires this workflow on the default branch (`main`); until then it
+is a manual verified export, not complete automatic disaster recovery.
+
+Local evidence: 15 synthetic file/archive cases, 5 OpenSSL envelope cases and 6
+cleanup/restart/interruption cases pass. The nonempty two-area shell recovery
+fixture passes, and the private-reference SQL passes guarded read-only local
+EXPLAIN. Shell syntax and workflow YAML checks pass. No production activation,
+timer installation, API pause, off-server export or real-data recovery was run by
+this implementation slice; those remain the root release's explicit acceptance
+gates. Test-plan updates are coordinated with the root release.
+
+## September 7 production outcome
+
+Local storage and the private ClamAV service were activated by successful
+[release 34174323588](https://github.com/behaack/phaeno-ops-mgmt-system/actions/runs/34174323588)
+at `ac0a773e93fe452acc57a47c682d727fc0fadfda`. Initial metadata references and
+managed/legacy file areas were empty. The native clean/EICAR/encrypted/direct-limit
+checks and both-area application write/checksum/readback/scan/deletion check passed.
+The database backup restored successfully before migration; all synthetic check
+files and the isolated restore container were removed. See the
+[release evidence](PORTAL-COMPLETION-IMPLEMENTATION-2026-09-07.md#production-release-evidence).
+Use Preserve for ordinary later deployments. Authenticated approved-format journeys,
+recurring coordinated file/database backups and populated file recovery remain
+acceptance work; S3 and retention activation remain separate.
+
+## 2026-09-07 private scanner deployment activation
+
+The approved production-completion work adds an optional managed ClamAV 1.4 LTS
+Compose service. Explicit `file_scanning_provider=ClamAv` activation installs the
+reviewed private endpoint and limits; ordinary deployments default to Preserve.
+The scanner has no published port, shares an internal network with the API and has
+a separate scanner-only egress network for FreshClam. Signatures persist in their
+own volume and update 12 times daily. Health checks verify the loaded database age,
+daemon responsiveness and updater liveness; supervision restarts a service that
+loses readiness. Neither managed-file volume is mounted by the scanner.
+
+A read-only remote preflight precedes runtime changes: capacity and UID, all nonempty
+references in managed files, operational files, invoice PDFs and result artifacts,
+and exact managed/legacy area file/link counts. It also inspects an existing target
+volume read-only when the old API has not mounted it. Initial Local activation with
+any reference or byte requires explicit inventory/migration instead of automatic
+repointing. The scanner budget is 4 GiB; first activation requires a further 1 GiB
+host-memory reserve and 3 GiB free Docker disk space.
+
+Deployment builds the new API, waits for scanner readiness and requires ephemeral
+container-native clean/EICAR/encrypted-ZIP/direct oversized-INSTREAM limit checks. It then runs
+the API's `--verify-file-services` adapter/volume check before API replacement or
+migrations when storage and scanning are active. Scanner settings use an independent
+guarded rollback receipt; successful releases clear it, failed non-migration releases
+restore reviewed prior settings, and migrations retain the forward-fix boundary.
+No signatures or managed bytes are removed during rollback. Retention remains gated.
+
+Local verification: all new/changed shell files pass syntax checks; Compose validates
+with host-specific environment-file references omitted from a temporary parser copy;
+the original Compose and workflow YAML parse and satisfy isolation, Preserve-default
+and preflight-order checks. A disposable synthetic runtime fixture verifies scanner
+Preserve, activation, restore, completion, disable and concurrent-change refusal.
+These checks do not prove a running Linux daemon or production activation. The root
+release owns protected-host capacity evidence, actual scanner smoke/adapter outcomes
+and signed-in acceptance. No application package dependencies or migrations were
+added by this deployment slice. See the green deployment runbook for the exact
+configuration and primary ClamAV references.
+
+## 2026-09-07 persistent Local storage and scanning
+
+The Product Owner selected local file storage now, with the option of S3 later.
+The existing dependency-injected `IFileStorage` interface, feature-specific ports,
+and Local/Disabled/S3 providers are retained. Local storage now uses an absolute
+private data directory outside the application, public files and source repository.
+The development default is the operating system's local application-data directory
+under `PhaenoPortal/managed-files/Development`; a configured absolute private path
+is also supported. Existing nonempty legacy managed areas under `App_Data` block
+an unconfigured-default transition. No referenced bytes are migrated automatically.
+
+Production Local requires `LocalPersistentVolumeConfirmed=true` and an explicit
+absolute root. The deployment supports `/var/lib/phaeno-portal/files` on the
+dedicated `portal_green_managed_files` volume. Ordinary releases preserve the
+selected provider. An explicit Local selection installs that root; Disabled remains
+available, and future S3 activation remains an explicit configuration/data migration.
+The retained old app-data volume is not deleted or reused silently.
+
+Local reads/writes/deletes reject traversal, unsafe key syntax and existing
+symlinks/reparse points. New writes use unique create-new files, private Unix
+permissions and ownership-aware failed-write cleanup; S3 uploads also use conditional
+creation. The volume must remain writable only by the API and trusted administrators;
+these checks do not defend against a privileged actor replacing paths concurrently.
+Startup verifies Local write/delete access with a temporary private probe and
+restricts the Unix root to its owning user. An unwritable root stops startup before
+the first upload. The container image initializes the dedicated mount point with
+mode 0700; this change does not alter the container's existing process user.
+
+The dependency-free ClamAV INSTREAM adapter streams stored bytes through the same
+storage interface. Managed curation and operational uploads share its verdict while
+retaining their separate authorization and release rules. Only a complete clean
+reply records Clean; rejection, malformed replies, timeouts, size limits and service
+failures never count as clean. Production defaults to unavailable scanning; trusted
+fixture scanning is restricted to Development. The optional managed deployment above
+provides the private daemon and reviewed stream/archive limits. Its runtime activation,
+updated definitions and approved file kinds must still be verified. Local storage
+alone does not enable publication or release.
+
+The final integrated backend checkpoint passed 506 tests, with one Linux-only
+linked-area case skipped on Windows (507 total). Storage and scanner coverage includes
+Local persistence and startup write/delete readiness, unsafe paths, legacy bytes,
+cancellation cleanup, scanner wire framing, clean/rejected/incomplete replies,
+unavailable service and stream limits. The storage runtime installer and release
+script also passed shell syntax checks. Linux volume ownership and linked-area
+acceptance remain deployment checks; runtime configuration, byte migration, scanner
+service setup and production activation were not performed by this storage slice.
+See `docs/operations-readiness.md` and the green
+deployment README for explicit activation and backup requirements.
+
+## 2026-09-07 connected package workspace
+
+- Result release queues now open a dedicated package detail with Customer, job, sample, scientific reviewer, manifest, file evidence and release state. Release/withdraw/reissue are bounded confirmations in that record context.
+- File administrators can read the same governed PSeq package and use the existing retention receipt/preservation controls in its detail; independent release authority is unchanged. Receipt pages link back to the owning package. Retained-release list labels identify the job and sample instead of shortened UUIDs.
+- The global policy screen is titled File retention policy. Existing policy revisions, frozen deadlines, preservation/quarantine, deletion and reissue semantics remain unchanged.
+- Legacy job-specific Data Library links redirect to the owning Customer job results section. Curated example datasets retain their distinct source ownership, grants and governance model.
+- No migration or live state changes in this slice. Focused frontend coverage is retained; the living frontend and E2E test plans record the coordinated verification results.
+
 ## Scientific Pipeline Boundary
 
 This plan does not currently own raw NGS files, intermediate pipeline
@@ -90,10 +268,10 @@ The implemented file flows now share the provider-neutral infrastructure
 The existing `IManagedFileStorage` and `IOperationalFileStorage` feature ports
 adapt to that contract through distinct storage areas, preserving their current
 API, authorization, audit, checksum, size-limit, scan, release, and cleanup
-behavior. Development selects local storage. The production target is S3, and
-startup validation rejects the Local provider in the Production environment.
-Until S3 is provisioned, production explicitly selects a `Disabled` adapter
-that keeps the API healthy but stores no bytes; file operations return HTTP 503.
+behavior. Development selects private local storage. Production may explicitly
+select Local on a confirmed persistent volume, Disabled, or S3. A Disabled adapter
+keeps the API healthy but stores no bytes; file operations return HTTP 503. The
+recorded prior deployment selected Disabled; changing source does not activate it.
 
 The released-deliverable retention configuration and release-snapshot
 foundation is implemented. The API persists versioned global defaults and
@@ -203,7 +381,8 @@ Development database on 2026-07-16.
 This does not complete the general file-management plan or its proposed general
 folder/file schema. The S3 adapter is implemented, but production bucket,
 credentials, encryption, permissions, monitoring, and runtime validation remain
-incomplete. Production malware-scanner integration, shared folders, general
+incomplete. The ClamAV adapter is implemented; external scanner setup and acceptance
+remain required. Shared folders, general
 file versions, general versioned-policy retention processing, and file behavior outside the existing
 curated-data and order-management flows remain unimplemented.
 
@@ -215,10 +394,11 @@ curated-data and order-management flows remain unimplemented.
 - [ ] Store credentials only in the protected deployment secret store and
   root-protected runtime environment; never commit or log them.
 - [ ] Configure encryption, lifecycle, permissions, monitoring, and rotation.
-- [ ] Inventory and migrate any referenced legacy managed-file bytes.
+- [ ] Inventory the currently selected store and retained legacy volume; deliberately
+  migrate any referenced bytes with area/key identity and checksum verification.
 - [ ] Validate representative upload, download, deletion, authorization,
   quarantine/revocation, and rollback behavior before changing production from
-  `Disabled` to `S3`.
+  the currently selected provider to `S3`.
 
 ## Goal
 
@@ -227,7 +407,9 @@ The database is the source of truth for file metadata, folders, retention
 policies, and download events. File bytes are stored outside the database:
 
 - Development: local filesystem storage.
-- Production: Amazon S3 storage.
+- Production: explicitly selected Local storage on its dedicated persistent volume;
+  Disabled remains available, and S3 is the optional later provider after verified
+  activation and any required byte migration.
 
 Backend code should depend on storage abstractions registered through
 dependency injection so environment-specific storage can be swapped without
@@ -274,8 +456,10 @@ public interface IFileStorage
 
 Implementations:
 
-- `LocalFileStorage`: stores bytes under a configured local root such as
-  `App_Data`, separated by feature area.
+- `LocalFileStorage`: stores bytes under an absolute private root outside application,
+  public and source directories, separated by feature area. Production uses an
+  explicitly confirmed persistent volume; the development default uses operating
+  system local application data.
 - `S3FileStorage`: stores bytes in a configured S3 bucket and key prefix.
 - Feature adapters translate shared storage results and failures to the stable
   curated-data and order-management contracts.
@@ -291,7 +475,8 @@ Add a `FileStorage` configuration section.
 {
   "FileStorage": {
     "Provider": "Local",
-    "LocalRootPath": "App_Data",
+    "LocalRootPath": "",
+    "LocalPersistentVolumeConfirmed": false,
     "S3": {
       "BucketName": "",
       "Region": "",
@@ -592,7 +777,7 @@ delivered to the recipient cannot be recalled.
   the future, the user may start a fresh request and lease; otherwise access
   stays closed.
 
-Both development local storage and production S3 storage stream through the
+Both Local and optional S3 storage stream through the
 API. This keeps the API as the current enforcement point for authorization,
 payment/release eligibility, quarantine, revocation, and download auditing.
 Pre-signed URLs are deliberately deferred unless a future product requirement
@@ -991,8 +1176,9 @@ S3 support uses:
 3. Existing curated-data and order-management upload/download endpoints backed
    by shared local storage: complete.
 4. S3 implementation and provider-selected production configuration contract:
-   code complete; production currently uses the non-persisting `Disabled`
-   adapter, and live S3 configuration and validation are incomplete.
+   code complete; the recorded earlier deployment uses the non-persisting Disabled
+   adapter. Persistent Local is now supported for explicit activation; live S3
+   configuration and validation remain an optional later step.
 5. General folder CRUD and policy inheritance: not started.
 6. Released-deliverable policy configuration and release-snapshot foundation:
    complete for the
@@ -1057,8 +1243,9 @@ acceptance remained open at that checkpoint. Commit-time proof is recorded below
 
 ## Current Checkpoint And Recommended Next Slice
 
-Production S3 activation is explicitly on hold, so keep production on the
-`Disabled` adapter. Immutable completion-aware download evidence and
+The earlier S3-only activation direction is superseded by the selected persistent
+Local provider described above. Keep the existing provider until explicit Local
+activation and storage/scanner acceptance. Immutable completion-aware download evidence and
 package-level state are implemented locally. Before any retention worker is
 activated, execute the focused domain/component tests plus a hosted
 controller/PostgreSQL streaming journey that proves full file/archive success,

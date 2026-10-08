@@ -1,5 +1,13 @@
 # Organization Data Provisioning Plan
 
+## September 15 scanner outage recovery
+
+The authorized ten-case continuation found that managed uploads retained an Unavailable scan but provided no recovery command. Implemented a Phaeno-only, source-version-checked retry for Pending/Unavailable files on draft sources. It reuses the actual stored bytes and configured scanner, retains source/file identities and checksums, audits the transition, and updates source/file atomically with optimistic concurrency. Clean/rejected files, foreign file IDs and immutable sources are rejected. No schema, dependency, production setting or authorization change. Scan refresh preserves unsaved metadata and its reviewed version, so a refresh cannot silently authorize an overwrite. Mark ready remains disabled while edits are unsaved or save/upload/scan is in progress. Real scanner/storage outage/restoration, exact byte identity, role/scope/stale/frozen guards and component recovery pass. The source guide now accurately describes creating a new source record for corrections; no in-place new-source-revision endpoint is claimed.
+
+## September 15 governance persistence and notice evidence
+
+Connected quarantine/clearance/withdrawal succeeded, but a new reminder attempted to update its not-yet-saved follow-up and returned a concurrency conflict. Explicitly add new investigation, reminder and recorded-attestation follow-ups to the context; retain the existing transaction and version rules. A PostgreSQL regression reloads between all three actions and checks retained provenance, one reminder notice and exactly three follow-ups. The unconfigured logging sender must fail dispatch rather than claim delivery; a separate PostgreSQL check verifies Failed, a retained retry time and no delivery timestamp. Existing logging-only UAT history is identified as simulation, not rewritten or counted as provider acceptance. Controlled external attestation and actual recipient evidence remain separate acceptance gates.
+
 Keep this file updated as organization-seeding, dataset, and external-tenant requirements
 are supplied and decisions are made.
 

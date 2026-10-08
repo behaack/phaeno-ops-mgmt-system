@@ -183,6 +183,8 @@ export type PhaenoLabRoleState = {
 }
 
 export type BusinessRole =
+  | 'BusinessDevelopment'
+  | 'CommercialLeadership'
   | 'CommercialOperator'
   | 'ResultReleaseManager'
   | 'BillingOperator'
@@ -379,12 +381,20 @@ export async function endEntitlement(
 }
 
 export async function listRelationshipRequests(input?: {
+  activeOnly?: boolean
   organizationId?: string
   status?: RelationshipRequestStatus
 }) {
   const response = await api.get<ApiEnvelope<RelationshipRequest[]>>(
     '/platform/relationships/requests',
     { params: input },
+  )
+  return unwrap(response.data)
+}
+
+export async function listRelationshipRequestHistory(input: { search?: string; requestId?: string; page?: number; pageSize?: number }) {
+  const response = await api.get<ApiEnvelope<{ items: RelationshipRequest[]; page: number; pageSize: number; totalCount: number }>>(
+    '/platform/relationships/requests/history', { params: input },
   )
   return unwrap(response.data)
 }
@@ -411,13 +421,34 @@ export async function decideRelationshipRequest(
   input: {
     approved: boolean
     existingOrganizationId?: string
-    reason: string
+    reason?: string | null
     version: number
+    serviceEntitlements?: RequestedServiceEntitlement[]
   },
 ) {
   const response = await api.post<ApiEnvelope<RelationshipRequest>>(
     `/platform/relationships/requests/${id}/decision`,
     input,
+  )
+  return unwrap(response.data)
+}
+
+export type RequestedServiceEntitlement = {
+  service: PortalService
+  departmentId: string | null
+  effectiveFrom: string
+  effectiveTo: string | null
+  configurationStatus: 'Pending' | 'Ready' | 'Blocked'
+  existingEntitlementId?: string | null
+  existingEntitlementVersion?: number | null
+}
+
+export async function saveApprovedServiceEntitlements(
+  id: string,
+  input: { version: number; serviceEntitlements: RequestedServiceEntitlement[] },
+) {
+  const response = await api.put<ApiEnvelope<ServiceEntitlement[]>>(
+    `/platform/relationships/requests/${id}/service-entitlements`, input,
   )
   return unwrap(response.data)
 }
@@ -436,7 +467,7 @@ export async function completeRelationshipRequestAccountCreation(
 
 export async function applyRelationshipRequest(
   id: string,
-  input: { notes: string; organizationId?: string | null; version: number },
+  input: { notes?: string | null; organizationId?: string | null; version: number },
 ) {
   const response = await api.post<ApiEnvelope<RelationshipRequest>>(
     `/platform/relationships/requests/${id}/applied`,
@@ -526,7 +557,6 @@ export async function listDepartments(
 }
 
 export type DepartmentInput = {
-  code: string
   name: string
   description: string | null
   purchaseOrderRequired: boolean | null
@@ -536,7 +566,7 @@ export type DepartmentInput = {
   resultDeliveryInstructions: string | null
 }
 
-export type OrganizationConfiguration = Omit<DepartmentInput, 'code' | 'name' | 'description'> & {
+export type OrganizationConfiguration = Omit<DepartmentInput, 'name' | 'description'> & {
   organizationId: string
   version: number
 }
@@ -671,6 +701,17 @@ export async function getOperationalReadiness(organizationId: string) {
   return unwrap(response.data)
 }
 
+export type InvitationAccessInput = {
+  isOrganizationAdmin: boolean
+  departments: Array<{ departmentId: string; isDepartmentAdmin: boolean }>
+  version: number
+}
+
+export async function updateInvitationAccess(id: string, input: InvitationAccessInput) {
+  const response = await api.patch<Invitation>(`/invitations/${id}/access`, input)
+  return response.data
+}
+
 export async function revokeInvitation(id: string) {
   const response = await api.post<Invitation>(`/invitations/${id}/revoke`)
   return response.data
@@ -708,4 +749,19 @@ function unwrap<T>(envelope: ApiEnvelope<T>) {
     throw new Error(envelope.error?.message ?? 'The request could not be completed.')
   }
   return envelope.data
+}
+
+export type RequestCompletionReadiness = { canComplete: boolean; blockers: string[]; completesAutomatically: boolean }
+
+export async function getRequestCompletionReadiness(requestId: string) {
+  const response = await api.get<ApiEnvelope<RequestCompletionReadiness>>(
+    `/platform/relationships/requests/${requestId}/completion-readiness`,
+  )
+  return unwrap(response.data)
+}
+export async function reconcileOnlineAccessRequest(requestId: string, version: number) {
+  const response = await api.post<ApiEnvelope<RelationshipRequest>>(
+    `/platform/relationships/requests/${requestId}/reconcile-online-access`, { version },
+  )
+  return unwrap(response.data)
 }

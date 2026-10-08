@@ -16,11 +16,11 @@ Lead statuses are:
 - **Disqualified:** the signal will not proceed; the reason is retained.
 - **Converted:** the selected CRM records were created or linked and the original Lead is immutable history.
 
-Use status and search filters to find the relevant queue. Save a view when the same filter supports recurring work.
+Use status and search filters to find the relevant queue. **All statuses** includes converted history; select **Converted** to reopen a completed Lead and its recorded results. Save a view when the same filter supports recurring work.
 
 ## Qualify or disqualify
 
-Open the Lead. Select **Start working** before active follow-up when it is still New. Qualification and disqualification require an explanation so another Phaeno user can understand the decision.
+Open the Lead and use its **Actions** menu to edit it or change its status. Select **Start working** before active follow-up when it is still New. Qualification and disqualification require an explanation so another Phaeno user can understand the decision.
 
 The full-width Qualification record shows only the applicable decision: qualification notes for Qualified or Converted Leads, the disqualification reason for Disqualified Leads, or a concise pending state while no decision exists.
 
@@ -28,13 +28,13 @@ Qualify only when the organization or person, commercial fit, and next action ar
 
 ## Convert a qualified Lead
 
-Select **Convert lead** only from a Qualified Lead. Review each requested result:
+Select **Actions > Convert lead** from a Qualified Lead. Review each requested result:
 
-- link an existing Company or create a Company from the Lead
+- choose an existing Company or **Create company** in the **Company** dropdown; **No company** supports a Contact-only conversion
 - optionally create a Contact
 - optionally create an Opportunity in an active pipeline
 
-If an existing Company is chosen, POMS links conversion to that CRM identity. If a new Company is requested, the Company name is required. Opportunity creation requires the Company outcome and uses the selected or default active pipeline.
+If an existing Company is chosen, POMS links conversion to that CRM identity. **Create company** uses the Lead's recorded company name when available. If the Lead has no company name, enter the required **Company name** in the conversion modal. This names the new Company without changing the original Lead's captured details. Opportunity creation requires an existing or new Company and uses the selected or default active pipeline.
 
 Likely Company or Contact duplicates stop unsafe creation or are returned as warnings. Review the suggested records and retry with an existing authoritative identity when appropriate. Do not alter spelling or identifying data merely to bypass duplicate detection.
 

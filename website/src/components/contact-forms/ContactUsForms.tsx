@@ -48,10 +48,10 @@ export default function ContactUsForms() {
               data-phaeno-search="Get Phaeno updates and the PSeq technical brief"
               data-phaeno-search-summary="Sign up for Phaeno product releases, validation updates, technical insights, and the PSeq technical brief."
               data-phaeno-search-keywords="Phaeno updates PSeq technical brief validation updates product releases"
-            >Stay Updated on Phaeno</h2>
+            >Phaeno updates and technical brief</h2>
             <p>
-              Follow product releases, validation updates, and technical insights. You can also request the PSeq
-              Technical Brief.
+              Follow product releases, validation updates, and technical insights. Select the optional checkbox
+              to also receive the PSeq Technical Brief by email.
             </p>
           </div>
           <ContactForm />

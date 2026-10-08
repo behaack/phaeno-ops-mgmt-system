@@ -1,10 +1,19 @@
 import { api } from './client'
+import type { ReleasedDeliverableRetention } from './order-management'
+import { isAxiosError } from 'axios'
 
 export type TrialChoice = { id: string; name: string; version: number }
+export type TrialSourceGroup = { biologicalSource: string; specimenCount: number | null }
+export type TrialCreateRequest = {
+  companyId: string; departmentId: string | null; name: string; objective: string; sampleTypeId: string; sources: TrialSourceGroup[]
+  submissionOpensAtUtc: string; submissionClosesAtUtc: string
+}
+export type TrialSampleType = TrialChoice & { quantityUnit: string; minimumQuantity: number | null; maximumQuantity: number | null }
 export type TrialDeliverable = { id: string; revision: number; key: string; name: string }
 export type TrialAnalysis = { id: string; version: number; name: string; instructions: string; requiredInputsJson: string; resultContractJson: string }
 export type TrialScopeValues = {
   name: string; objective: string; sampleAllowance: number; submissionOpensAtUtc: string; submissionClosesAtUtc: string
+  sampleType: TrialSampleType; sources: TrialSourceGroup[]
   workflowVersionId: string; analyses: TrialAnalysis[]; deliverables: TrialDeliverable[]; submissionInstructions: string
   successCriteria: string; estimatedRetailValue: number; anticipatedInternalCost: number; residualRetentionDays: number
   materialDisposition: 'Destroy' | 'Return'; returnDestination: string | null; returnHandling: string | null; returnShippingPayer: string | null; terms: string
@@ -13,10 +22,21 @@ export type TrialScope = Omit<TrialScopeValues, 'workflowVersionId' | 'estimated
   revision: number; internalValues: TrialScopeValues | null; termsVersion: string; ruoStatement: string
   decisions: { domain: string; decision: string; reason: string | null; actorUserId: string | null; asDelegate: boolean | null; atUtc: string }[]
 }
+export type TrialScopeDraftValues = {
+  sampleTypeId: string | null; sources: TrialSourceGroup[] | null
+  departmentId: string | null; name: string | null; objective: string | null; sampleAllowance: number | null
+  submissionOpensAtUtc: string | null; submissionClosesAtUtc: string | null; workflowVersionId: string | null
+  analysisIds: string[] | null; deliverableIds: string[] | null; submissionInstructions: string | null
+  successCriteria: string | null; estimatedRetailValue: number | null; anticipatedInternalCost: number | null
+  residualRetentionDays: number | null; materialDisposition: 'Destroy' | 'Return' | null
+  returnDestination: string | null; returnHandling: string | null; returnShippingPayer: string | null; terms: string | null; reason: string | null
+}
+export type TrialScopeDraft = { values: TrialScopeDraftValues; savedByUserId: string; savedByName: string; savedAtUtc: string }
 export type TrialRow = { salesOwnerUserId?: string; salesOwnerName?: string; requestedAtUtc?: string; dueAtUtc?: string; id: string; number: string; name: string; companyName: string; status: string; isOnHold: boolean; sampleCount: number; sampleAllowance: number | null; submissionClosesAtUtc: string | null; updatedAtUtc: string; version: number }
-export type TrialRelease = { id: string; releaseVersion: number; scopeRevision: number; isCompletePackage: boolean; isWithdrawn: boolean; releasedAtUtc: string; retentionSnapshotId: string | null; files: { id: string; fileName: string; fileKind: string; sizeBytes: number; sha256: string }[] }
+export type TrialRelease = { id: string; releaseVersion: number; scopeRevision: number; isCompletePackage: boolean; isWithdrawn: boolean; releasedAtUtc: string; retentionSnapshotId: string | null; isDownloadAvailable: boolean; downloadUnavailableReason: string | null; retention: ReleasedDeliverableRetention | null; files: { id: string; fileName: string; fileKind: string; sizeBytes: number; sha256: string }[] }
 export type TrialDetail = {
-  crmPendingMilestones?: number; canRecordCommercialOutcome?: boolean; canDeactivateProspect?: boolean; canReleaseResults?: boolean; id: string; number: string; companyName: string; companyId: string; opportunityId: string; organizationId: string | null; departmentId: string | null
+  scopeDraft?: TrialScopeDraft | null
+  crmPendingMilestones?: number; canRecordCommercialOutcome?: boolean; canDeactivateProspect?: boolean; canReleaseResults?: boolean; canManageScientificOperations?: boolean; canApproveScopeOnSubmission?: boolean; id: string; number: string; companyName: string; companyId: string; opportunityId: string | null; organizationId: string | null; departmentId: string | null
   status: string; version: number; isStaff: boolean; canManage: boolean; canAccept: boolean; canSubmit: boolean; submissionBlocker: string | null
   approvalDomains: string[]; originalSamplesRemaining: number; isOnHold: boolean; holdReason: string | null; scheduleEstimate: string | null
   closureReason: string | null; closedAtUtc: string | null; residualRetainUntilUtc: string | null; actualMaterialDisposition: string | null
@@ -28,9 +48,8 @@ export type TrialDetail = {
 }
 export type TrialConfiguration = {
   canManageConfiguration: boolean; canAssignPrimary: boolean; primaryDomains: string[]
-  handoffs: { id: string; companyName: string; opportunityName: string; summary: string }[]
   analyses: TrialChoice[]; workflows: TrialChoice[]; deliverables: TrialDeliverable[]; defaultDeliverableIds: string[]
-  departments: TrialChoice[]; destinations: TrialChoice[]; sampleTypes: TrialChoice[]; staff: TrialChoice[]
+  departments: TrialChoice[]; destinations: TrialChoice[]; sampleTypes: TrialSampleType[]; staff: TrialChoice[]
   authorities: { id: string; userId: string; userName: string; domain: string; isPrimary: boolean; primaryAuthorityId: string | null; designatedByUserId?: string; effectiveAtUtc?: string; reason?: string; revocationReason?: string; revokedAtUtc: string | null; version: number }[]
 }
 export type TrialOutputPackage = { id: string; trialSampleId: string; packageVersion: number; state: string; scientificApprovalId: string | null; artifacts: { id: string; logicalRole: string; fileName: string; scanState: string }[] }
@@ -41,8 +60,15 @@ export const getTrialConfiguration = async (companyId?: string) => (await api.ge
 export const getTrialOutputPackages = async (id: string) => (await api.get<Envelope<TrialOutputPackage[]>>(`/trials/${id}/results/candidates`)).data.data
 export const changeTrial = async <T = TrialDetail>(path: string, payload: unknown, key: string) =>
   (await api.post<Envelope<T>>(`/trials${path}`, payload, { headers: { 'Idempotency-Key': key } })).data.data
-export async function downloadTrial(path: string, fallbackName: string) {
-  const result = await api.get<Blob>(`/trials${path}`, { responseType: 'blob' })
+export async function downloadTrial(path: string, fallbackName: string, onProgress?: (percent: number | null) => void) {
+  let result
+  try { result = await api.get<Blob>(`/trials${path}`, { responseType: 'blob', onDownloadProgress: event => onProgress?.(event.total ? Math.round(event.loaded / event.total * 100) : null) }) }
+  catch (failure) {
+    if (isAxiosError(failure) && failure.response?.data instanceof Blob) {
+      try { failure.response.data = JSON.parse(await failure.response.data.text()) } catch { /* Preserve the original error if the body is not JSON. */ }
+    }
+    throw failure
+  }
   const link = document.createElement('a'); const url = URL.createObjectURL(result.data)
   link.href = url; link.download = fallbackName; document.body.append(link); link.click(); link.remove()
   setTimeout(() => URL.revokeObjectURL(url), 60_000)

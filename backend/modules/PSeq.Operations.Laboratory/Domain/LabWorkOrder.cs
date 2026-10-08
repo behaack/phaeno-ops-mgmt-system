@@ -23,6 +23,7 @@ public enum LabWorkOrderStatus
 
 public sealed class LabWorkOrder : IAudit, IConcurrency
 {
+    public const string FullReceiptBusinessDayPolicy = "business-days-after-full-receipt";
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid AuthorizationId { get; private set; }
     public int CurrentAuthorizationVersion { get; private set; }
@@ -31,8 +32,23 @@ public sealed class LabWorkOrder : IAudit, IConcurrency
     public Guid SubmittingOrganizationId { get; private set; }
     public string ServiceKey { get; private set; } = null!;
     public int ServiceVersion { get; private set; }
+    // Historical commercial assignment or explicitly approved Trial scope.
+    // Commercial execution eligibility uses ServiceKey; attempts/batches own workflow versions.
     public Guid? LabServiceWorkflowVersionId { get; private set; }
+    public string? TubeUsePolicyKey { get; private set; }
+    public int? TubeUsePolicyVersion { get; private set; }
+    public int? TubeUsePolicyAuthorizationVersion { get; private set; }
     public string TurnaroundPolicyKey { get; private set; } = null!;
+    public int? MinimumTurnaroundDays { get; private set; }
+    public int? MaximumTurnaroundDays { get; private set; }
+    public DateTime? OriginalTargetAtUtc { get; private set; }
+    public DateTime? ExpectedCompletionAtUtc { get; private set; }
+    public DateTime? CompletedAtUtc { get; private set; }
+    public bool HasTimingOverride { get; private set; }
+    public DateTime? OriginalDeliveryDueAtUtc { get; private set; }
+    public DateTime? AdjustedDeliveryDueAtUtc { get; private set; }
+    public DateTime? FirstDeliveredAtUtc { get; private set; }
+    public DateTime? DeliveryDueAtFirstDeliveryUtc { get; private set; }
     public string? OpaqueSubmitterReference { get; private set; }
     public LabWorkOrderStatus Status { get; private set; } = LabWorkOrderStatus.AwaitingSpecimens;
     public long ProjectionVersion { get; private set; } = 1;
@@ -46,6 +62,16 @@ public sealed class LabWorkOrder : IAudit, IConcurrency
     public ICollection<LabSpecimen> Specimens { get; } = [];
     public ICollection<LabWorkEvent> Events { get; } = [];
     public ICollection<LabScientificApproval> ScientificApprovals { get; } = [];
+
+    public void SetTubeUsePolicy(string key, int version)
+    {
+        if ((key != LabTubeUsePolicy.RunOneWithFailureFallback && key != LabTubeUsePolicy.RunAuthorizedWithFailureFallback) || version != LabTubeUsePolicy.Version)
+            throw new ArgumentException("The tube-use policy is not supported.");
+        if (TubeUsePolicyKey is not null && (TubeUsePolicyKey != key || TubeUsePolicyVersion != version))
+            throw new InvalidOperationException("The authorized tube-use policy cannot be replaced.");
+        TubeUsePolicyKey = key; TubeUsePolicyVersion = version;
+        TubeUsePolicyAuthorizationVersion ??= CurrentAuthorizationVersion;
+    }
 
     private LabWorkOrder()
     {
@@ -61,7 +87,9 @@ public sealed class LabWorkOrder : IAudit, IConcurrency
         int serviceVersion,
         string turnaroundPolicyKey,
         string? opaqueSubmitterReference,
-        Guid? labServiceWorkflowVersionId = null)
+        Guid? labServiceWorkflowVersionId = null,
+        int? minimumTurnaroundDays = null,
+        int? maximumTurnaroundDays = null)
     {
         if (authorizationId == Guid.Empty
             || authorizationSourceId == Guid.Empty
@@ -88,6 +116,12 @@ public sealed class LabWorkOrder : IAudit, IConcurrency
             labServiceWorkflowVersionId, nameof(labServiceWorkflowVersionId));
         TurnaroundPolicyKey = Required(turnaroundPolicyKey, nameof(turnaroundPolicyKey));
         OpaqueSubmitterReference = Optional(opaqueSubmitterReference);
+        if (minimumTurnaroundDays.HasValue != maximumTurnaroundDays.HasValue
+            || minimumTurnaroundDays is < 1 or > 365 || maximumTurnaroundDays is < 1 or > 365
+            || minimumTurnaroundDays > maximumTurnaroundDays)
+            throw new ArgumentException("A complete valid turnaround range is required.");
+        MinimumTurnaroundDays = minimumTurnaroundDays;
+        MaximumTurnaroundDays = maximumTurnaroundDays;
     }
 
     public void RecordAuthorizationVersion(
@@ -155,6 +189,8 @@ public sealed class LabWorkOrder : IAudit, IConcurrency
             (LabWorkOrderStatus.AwaitingExternalSequencing, LabWorkOrderStatus.OnHold) => true,
             (LabWorkOrderStatus.AwaitingExternalSequencing, LabWorkOrderStatus.DataProcessing) => true,
             (LabWorkOrderStatus.DataProcessing, LabWorkOrderStatus.OnHold) => true,
+            (LabWorkOrderStatus.DataProcessing, LabWorkOrderStatus.AwaitingExternalSequencing) => TubeUsePolicyKey == LabTubeUsePolicy.RunAuthorizedWithFailureFallback,
+            (LabWorkOrderStatus.ScientificReview, LabWorkOrderStatus.AwaitingExternalSequencing) => TubeUsePolicyKey == LabTubeUsePolicy.RunAuthorizedWithFailureFallback,
             (LabWorkOrderStatus.DataProcessing, LabWorkOrderStatus.ScientificReview) => true,
             (LabWorkOrderStatus.ScientificReview, LabWorkOrderStatus.OnHold) => true,
             (LabWorkOrderStatus.ScientificReview, LabWorkOrderStatus.Processing) => true,
@@ -167,8 +203,93 @@ public sealed class LabWorkOrder : IAudit, IConcurrency
         }
 
         Status = status;
+        if (status == LabWorkOrderStatus.ReadyForRelease)
+        {
+            CompletedAtUtc ??= DateTime.UtcNow;
+            foreach (var specimen in Specimens) specimen.Complete(CompletedAtUtc.Value);
+        }
         ProjectionVersion++;
     }
+
+    public void RecordSendoutProgress(LabNgsSendoutStatus sendoutStatus)
+    {
+        var milestone = sendoutStatus switch
+        {
+            LabNgsSendoutStatus.Shipped or LabNgsSendoutStatus.ReceivedByProvider or LabNgsSendoutStatus.Sequencing
+                => LabWorkOrderStatus.AwaitingExternalSequencing,
+            LabNgsSendoutStatus.ResultsReceived => LabWorkOrderStatus.DataProcessing,
+            _ => throw new ArgumentOutOfRangeException(nameof(sendoutStatus))
+        };
+        // Batches within a Job can progress independently. A later batch must not
+        // undo earlier processing/review or clear a hold while recording receipt.
+        if (Status == milestone || Status is LabWorkOrderStatus.DataProcessing
+            or LabWorkOrderStatus.ScientificReview or LabWorkOrderStatus.ReadyForRelease or LabWorkOrderStatus.OnHold)
+            AdvanceProjectionVersion();
+        else
+            RecordMilestone(milestone);
+    }
+
+    public void RefreshAcceptedSpecimenTargets()
+    {
+        if (TurnaroundPolicyKey == FullReceiptBusinessDayPolicy) return;
+        if (!MaximumTurnaroundDays.HasValue) return;
+        foreach (var specimen in Specimens.Where(value => value.AcceptedAtUtc.HasValue))
+            specimen.SetOriginalTarget(MaximumTurnaroundDays.Value);
+        OriginalTargetAtUtc = Specimens.Select(value => value.OriginalTargetAtUtc).Max();
+        // Freeze the job's delivery baseline when its acceptance clock starts.
+        // Later specimens keep their own targets without moving this commitment.
+        OriginalDeliveryDueAtUtc ??= OriginalTargetAtUtc;
+        if (!HasTimingOverride) ExpectedCompletionAtUtc = OriginalTargetAtUtc;
+    }
+
+    public void RecordFullReceiptDeadline(DateTime lastRequiredTubeReceivedAtUtc, DateTime dueAtUtc)
+    {
+        if (TurnaroundPolicyKey != FullReceiptBusinessDayPolicy || !MaximumTurnaroundDays.HasValue)
+            throw new InvalidOperationException("This Job has no full-receipt business-day commitment.");
+        if (OriginalDeliveryDueAtUtc.HasValue) return;
+        if (lastRequiredTubeReceivedAtUtc.Kind != DateTimeKind.Utc || dueAtUtc.Kind != DateTimeKind.Utc
+            || dueAtUtc <= lastRequiredTubeReceivedAtUtc)
+            throw new ArgumentException("The deadline must follow the last required tube receipt.");
+        OriginalTargetAtUtc = dueAtUtc;
+        OriginalDeliveryDueAtUtc = dueAtUtc;
+        if (!HasTimingOverride) ExpectedCompletionAtUtc = dueAtUtc;
+        ProjectionVersion++;
+    }
+
+    public void AdjustDeliveryDueDate(DateTime dueAtUtc)
+    {
+        if (Status == LabWorkOrderStatus.Cancelled || FirstDeliveredAtUtc.HasValue)
+            throw new InvalidOperationException("Only an unfinished job can change its delivery due date.");
+        if (dueAtUtc.Kind != DateTimeKind.Utc)
+            throw new ArgumentException("The delivery deadline must include a UTC time.");
+        if (dueAtUtc == (AdjustedDeliveryDueAtUtc ?? OriginalDeliveryDueAtUtc))
+            throw new InvalidOperationException("Choose a different due date.");
+        AdjustedDeliveryDueAtUtc = dueAtUtc;
+        ProjectionVersion++;
+    }
+
+    public void RecordFirstDelivery(DateTime deliveredAtUtc)
+    {
+        if (FirstDeliveredAtUtc.HasValue) return;
+        FirstDeliveredAtUtc = deliveredAtUtc;
+        DeliveryDueAtFirstDeliveryUtc = AdjustedDeliveryDueAtUtc ?? OriginalDeliveryDueAtUtc;
+    }
+
+    public void OverrideExpectedCompletion(DateTime expectedAtUtc)
+    {
+        if (Status is LabWorkOrderStatus.ReadyForRelease or LabWorkOrderStatus.Cancelled || !OriginalTargetAtUtc.HasValue)
+            throw new InvalidOperationException("Only an accepted, unfinished Job with a quoted turnaround can change its expected completion.");
+        if (expectedAtUtc.Kind != DateTimeKind.Utc || expectedAtUtc <= DateTime.UtcNow)
+            throw new ArgumentException("Expected completion must be a future UTC date.");
+        if (ExpectedCompletionAtUtc == expectedAtUtc) throw new InvalidOperationException("Choose a different expected completion date.");
+        ExpectedCompletionAtUtc = expectedAtUtc;
+        HasTimingOverride = true;
+        ProjectionVersion++;
+    }
+
+    public string ScheduleHealth(DateTime now) => Status is LabWorkOrderStatus.ReadyForRelease or LabWorkOrderStatus.Cancelled ? "Complete"
+        : ExpectedCompletionAtUtc < now ? "Delayed"
+        : Status == LabWorkOrderStatus.OnHold || ExpectedCompletionAtUtc > OriginalTargetAtUtc ? "AtRisk" : "OnTrack";
 
     public void AdvanceProjectionVersion() => ProjectionVersion++;
 

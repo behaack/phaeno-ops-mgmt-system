@@ -5,6 +5,13 @@ import { XIcon } from "lucide-react"
 import { Alert } from "#/components/ui/alert"
 import { cn } from "#/lib/utils"
 
+const DialogReturnFocusContext = React.createContext<{ target: HTMLElement | null; fallbackId?: string } | null>(null)
+
+// Menu items vanish after selection. Their dialogs can name a surviving control.
+export function DialogReturnFocus({ target, fallbackId, children }: { target: HTMLElement | null; fallbackId?: string; children: React.ReactNode }) {
+  return <DialogReturnFocusContext.Provider value={{ target, fallbackId }}>{children}</DialogReturnFocusContext.Provider>
+}
+
 function Dialog({
   modal = true,
   ...props
@@ -51,18 +58,71 @@ function DialogContent({
   className,
   onInteractOutside,
   onPointerDownOutside,
+  onEscapeKeyDown,
+  onOpenAutoFocus,
+  onCloseAutoFocus,
+  onMouseDownCapture,
   showCloseButton = true,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
 }) {
   const arrangedChildren = arrangeDialogChildren(children)
+  const openerRef = React.useRef<HTMLElement | null>(null)
+  const returnFocus = React.useContext(DialogReturnFocusContext)
 
   return (
     <DialogPortal>
       <DialogOverlay />
       <DialogPrimitive.Content
         data-slot="dialog-content"
+        onMouseDownCapture={(event) => {
+          onMouseDownCapture?.(event)
+          if (event.defaultPrevented || event.button !== 0) return
+          const action = event.target instanceof Element
+            ? event.target.closest('button')
+            : null
+          const active = document.activeElement
+          if (
+            action && !action.disabled
+            && action.closest('[data-slot="dialog-content"]') === event.currentTarget
+            && (action.closest('[data-slot="dialog-footer"]') || action.matches('[data-slot="dialog-close"]'))
+            && active instanceof HTMLElement
+            && active.closest('[data-slot="dialog-content"]') === event.currentTarget
+            && active.matches('input, select, textarea, [contenteditable="true"]')
+          ) {
+            // Blur validation can resize a centered dialog between mouse-down and
+            // click, moving the intended action away. Let the action handle focus
+            // and submission; ordinary field blur and keyboard navigation remain intact.
+            event.preventDefault()
+          }
+        }}
+        onOpenAutoFocus={(event) => {
+          const active = document.activeElement
+          openerRef.current = active instanceof HTMLElement && active !== document.body ? active : null
+          onOpenAutoFocus?.(event)
+        }}
+        onCloseAutoFocus={(event) => {
+          onCloseAutoFocus?.(event)
+          if (!event.defaultPrevented && openerRef.current?.isConnected) {
+            event.preventDefault()
+            openerRef.current.focus()
+          } else if (!event.defaultPrevented && returnFocus) {
+            event.preventDefault()
+            // A loading dialog may hand off to a form; retain the new dialog's focus.
+            if (document.querySelector('[data-slot="dialog-content"][data-state="open"]')) return
+            const target = returnFocus.target?.isConnected ? returnFocus.target : returnFocus.fallbackId ? document.getElementById(returnFocus.fallbackId) : null
+            target?.focus()
+          }
+        }}
+        onEscapeKeyDown={(event) => {
+          // Radix handles Escape in capture, before the combobox closes its list.
+          if (event.target instanceof Element && event.target.closest('[data-searchable-select-open="true"]')) {
+            event.preventDefault()
+            return
+          }
+          onEscapeKeyDown?.(event)
+        }}
         onInteractOutside={(event) => {
           onInteractOutside?.(event)
           event.preventDefault()
@@ -115,13 +175,25 @@ function splitDialogChildren(children: React.ReactNode) {
   const body: React.ReactNode[] = []
   const footer: React.ReactNode[] = []
 
-  for (const child of React.Children.toArray(children)) {
-    const region = dialogRegion(child)
-    if (region === "header") header.push(child)
-    else if (region === "feedback") feedback.push(child)
-    else if (region === "footer") footer.push(child)
-    else body.push(child)
+  function visit(nodes: React.ReactNode, prefix: string) {
+    for (const child of React.Children.toArray(nodes)) {
+      const key = React.isValidElement(child) ? `${prefix}/${child.key}` : prefix
+      if (React.isValidElement<{ children?: React.ReactNode }>(child) && child.type === React.Fragment) {
+        visit(child.props.children, key)
+        continue
+      }
+
+      const keyedChild = React.isValidElement(child) ? React.cloneElement(child, { key }) : child
+      const region = dialogRegion(child)
+      if (region === "header") header.push(keyedChild)
+      else if (region === "feedback") feedback.push(keyedChild)
+      else if (region === "footer") footer.push(keyedChild)
+      else body.push(keyedChild)
+    }
   }
+
+  // Conditional fragments group JSX without defining a layout region.
+  visit(children, "dialog")
 
   return { header, feedback, body, footer }
 }
@@ -131,7 +203,7 @@ function scrollableDialogBody(children: React.ReactNode, key: string) {
     <div
       key={key}
       data-slot="dialog-body"
-      className="grid min-h-0 flex-1 gap-4 overflow-y-auto overscroll-contain p-[var(--dialog-inset)]"
+      className="grid min-h-0 flex-1 gap-4 overflow-y-auto has-[[data-searchable-select-portal=true]]:overflow-y-hidden overscroll-contain p-[var(--dialog-inset)]"
     >
       {children}
     </div>
@@ -231,7 +303,7 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="dialog-header"
       className={cn(
-        "flex shrink-0 flex-col gap-1.5 border-b bg-muted/40 px-[var(--dialog-inset)] py-4 pr-12",
+        "flex shrink-0 flex-col gap-1.5 border-b bg-muted/40 px-[var(--dialog-inset)] py-4",
         className,
       )}
       {...props}
@@ -274,7 +346,7 @@ function DialogTitle({
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
-      className={cn("text-lg font-semibold", className)}
+      className={cn("pr-8 text-lg font-semibold", className)}
       {...props}
     />
   )
@@ -287,7 +359,7 @@ function DialogDescription({
   return (
     <DialogPrimitive.Description
       data-slot="dialog-description"
-      className={cn("text-sm text-muted-foreground", className)}
+      className={cn("pr-8 text-sm text-muted-foreground", className)}
       {...props}
     />
   )

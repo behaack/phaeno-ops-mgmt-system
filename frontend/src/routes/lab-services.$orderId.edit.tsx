@@ -28,11 +28,12 @@ function LabServiceEditRoute() {
       open
       order={order.data}
       onOpenChange={(open) => {
-        if (!open) void navigate({ to: '/lab-services/$orderId', params: { orderId } })
+        if (!open) void navigate({ to: '/lab-services/$orderId', params: { orderId }, search: previous => previous })
       }}
       onSaved={(savedOrder) => navigate({
         to: '/lab-services/$orderId',
         params: { orderId: savedOrder.id },
+        search: previous => previous,
       })}
     />
   )

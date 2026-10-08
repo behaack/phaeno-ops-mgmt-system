@@ -1,15 +1,13 @@
 using Microsoft.EntityFrameworkCore;
 using PhaenoPortal.App.Features.Website.DTOs;
 using PhaenoPortal.App.Features.Website.Entities;
-using PhaenoPortal.App.Features.Website.Notifications;
 using PhaenoPortal.App.Infrastructure.Persistence;
 
 namespace PhaenoPortal.App.Features.Website.Services;
 
 public sealed class WebsiteService(
     PSeqOperationsDbContext dbContext,
-    IWebsiteRecaptchaVerifier recaptchaVerifier,
-    IWebsiteNotificationSender notificationSender)
+    IWebsiteRecaptchaVerifier recaptchaVerifier)
 {
     public Task PingDatabaseAsync(CancellationToken cancellationToken = default) =>
         dbContext.Database.ExecuteSqlRawAsync("SELECT 1", cancellationToken);
@@ -48,6 +46,9 @@ public sealed class WebsiteService(
             CreatedAtUtc = DateTimeOffset.UtcNow
         };
         dbContext.WebContacts.Add(contact);
+        dbContext.Add(new WebNotificationDelivery { WebContactId = contact.Id, Kind = WebNotificationKind.MailingListAlert });
+        if (contact.SendBrochure == true)
+            dbContext.Add(new WebNotificationDelivery { WebContactId = contact.Id, Kind = WebNotificationKind.TechnicalBrief });
 
         try
         {
@@ -67,11 +68,6 @@ public sealed class WebsiteService(
             throw;
         }
 
-        await notificationSender.SendContactAsync(contact, cancellationToken);
-        if (contact.SendBrochure == true)
-        {
-            await notificationSender.SendTechnicalBriefAsync(contact, cancellationToken);
-        }
     }
 
     public async Task CreateOrderAsync(
@@ -96,8 +92,8 @@ public sealed class WebsiteService(
             Description = request.WebOrder.Description.Trim()
         };
         dbContext.WebOrders.Add(order);
+        dbContext.Add(new WebNotificationDelivery { WebOrderId = order.Id, Kind = WebNotificationKind.DemoRequestAlert });
         await dbContext.SaveChangesAsync(cancellationToken);
-        await notificationSender.SendOrderAsync(order, cancellationToken);
     }
 
     private static string NormalizeEmail(string email) =>

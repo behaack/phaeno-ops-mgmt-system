@@ -19,7 +19,8 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 [Route("api/platform/lab-operations")]
 public sealed partial class LabOperationsController(
     PSeqOperationsDbContext dbContext,
-    LabOperationsRequestContext requestContext) : ControllerBase
+    LabOperationsRequestContext requestContext,
+    Microsoft.Extensions.Options.IOptions<PhaenoPortal.App.Features.Accounts.Services.PSeqOrderToCashOptions>? traceabilityOptions = null) : ControllerBase
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -53,7 +54,7 @@ public sealed partial class LabOperationsController(
         var workflows = await ReadServiceWorkflowsAsync(cancellationToken);
         var marketedServices = await dbContext.QboCatalogItems.AsNoTracking()
             .Where(item => item.IsActive
-                && item.ExternalItemId.ToLower() == OrderServiceKeys.PSeqLabService
+                && item.ServiceFamily == CatalogServiceFamily.PSeqLabService
                 && item.SalesUnit.ToLower() == OrderSalesUnits.Specimen)
             .OrderBy(item => item.Name)
             .Select(item => new LabMarketedServiceDto(item.ExternalItemId.ToLower(), item.Name))
@@ -62,11 +63,13 @@ public sealed partial class LabOperationsController(
         var materialDefinitions = await dbContext.LabMaterialDefinitions.AsNoTracking()
             .Where(item => item.IsActive).OrderBy(item => item.Name)
             .Select(item => new LabMaterialDefinitionDto(
-                item.Id, item.Key, item.Name, item.Kind.ToString(), item.IsActive))
+                item.Id, item.Key, item.Name, item.Kind.ToString(), item.IsActive, item.DefaultQuantityUnit,
+                dbContext.LabSupplierProducts.Where(product => product.MaterialDefinitionId == item.Id)
+                    .Select(product => (Guid?)product.Id).FirstOrDefault()))
             .ToListAsync(cancellationToken);
         var suppliers = await dbContext.LabSuppliers.AsNoTracking()
             .Where(item => item.IsActive).OrderBy(item => item.Name)
-            .Select(item => new LabSupplierDto(item.Id, item.Name, item.IsActive))
+            .Select(item => new LabSupplierDto(item.Id, item.Name, item.IsActive, item.IsInternalProducer))
             .ToListAsync(cancellationToken);
         var storageLocations = await dbContext.LabStorageLocations.AsNoTracking()
             .Where(item => item.IsActive).OrderBy(item => item.Name)
@@ -75,7 +78,8 @@ public sealed partial class LabOperationsController(
         var equipment = await dbContext.LabEquipment.AsNoTracking().OrderBy(item => item.AssetCode)
             .Select(item => new LabEquipmentDto(item.Id, item.AssetCode, item.Name, item.EquipmentType,
                 item.Location, item.Status.ToString(), item.LastCalibrationOn,
-                item.CalibrationDueOn, item.Version)).ToListAsync(cancellationToken);
+                item.CalibrationDueOn, item.Version, item.RetirementReason,
+                item.RetiredAtUtc, item.RetiredByUserId)).ToListAsync(cancellationToken);
         var batches = await ReadBatchesAsync(cancellationToken);
         var roles = await ReadRoleAssignmentsAsync(cancellationToken);
 
@@ -107,7 +111,9 @@ public sealed partial class LabOperationsController(
                 item.LabSpecimenId, item.ParentContainerId, item.Kind.ToString(), item.Barcode,
                 item.BarcodeSource.ToString(), item.ExternalBarcodeReferenceId,
                 item.Label, item.LabelPrintCount, item.Location, item.Quantity, item.QuantityUnit,
-                item.Status.ToString(), item.RetainUntilUtc, item.Version)).ToListAsync(cancellationToken);
+                item.Status.ToString(), item.RetainUntilUtc, item.Version, item.BarcodeNamespace,
+                item.IntakeDisposition == null ? null : item.IntakeDisposition.ToString(), item.IntakeReasonCode, item.IntakeNotes,
+                item.IntakeReviewedAtUtc, item.IntakeReviewedByUserId)).ToListAsync(cancellationToken);
         var executions = await dbContext.LabProtocolExecutions.AsNoTracking().Where(item => item.LabWorkOrderId == work.Id)
             .OrderBy(item => item.CreatedAt).Select(item => new LabExecutionDto(item.Id,
                 item.LabSpecimenId, item.LabProtocolVersionId, item.AssignedToUserId,
@@ -131,6 +137,25 @@ public sealed partial class LabOperationsController(
                 item.ApprovedByUserId, item.ApprovedAtUtc, item.ProjectionVersion,
                 item.ResultOutputPackageId)).ToListAsync(cancellationToken);
 
+        var readyPackages = await dbContext.ResultOutputPackages.AsNoTracking()
+            .Where(item => item.LabWorkOrderId == work.Id && item.State == ResultOutputPackageState.ReadyForReview)
+            .OrderBy(item => item.CreatedAt).ToListAsync(cancellationToken);
+        var readyIds = readyPackages.Select(item => item.Id).ToList();
+        var readyArtifacts = await dbContext.ResultArtifacts.AsNoTracking()
+            .Where(item => readyIds.Contains(item.ResultOutputPackageId)).ToListAsync(cancellationToken);
+        var readySampleIds = readyPackages.Where(item => item.LabSampleId.HasValue).Select(item => item.LabSampleId!.Value).ToList();
+        var readyTrialSampleIds = readyPackages.Where(item => item.TrialSampleId.HasValue).Select(item => item.TrialSampleId!.Value).ToList();
+        var submittedNames = await dbContext.LabSamples.AsNoTracking()
+            .Where(item => readySampleIds.Contains(item.Id))
+            .ToDictionaryAsync(item => item.Id, item => item.CustomerSampleId, cancellationToken);
+        var trialNames = await dbContext.TrialSamples.AsNoTracking()
+            .Where(item => readyTrialSampleIds.Contains(item.Id))
+            .ToDictionaryAsync(item => item.Id, item => item.Reference, cancellationToken);
+        var reviewPackages = readyPackages.Select(item => new LabReviewPackageDto(item.Id,
+            item.LabSampleId.HasValue ? submittedNames.GetValueOrDefault(item.LabSampleId.Value, "Sample")
+                : item.TrialSampleId.HasValue ? trialNames.GetValueOrDefault(item.TrialSampleId.Value, "Trial sample") : "Sample",
+            item.PackageVersion, item.ManifestSha256,
+            readyArtifacts.Where(file => file.ResultOutputPackageId == item.Id).Select(file => file.FileName).ToList())).ToList();
         var authorizationMap = authorization is null
             ? new Dictionary<Guid, CommercialLabAuthorization>()
             : new Dictionary<Guid, CommercialLabAuthorization> { [authorization.AuthorizationId] = authorization };
@@ -140,7 +165,7 @@ public sealed partial class LabOperationsController(
         return new LabWorkOrderDetailDto(
             MapWorkOrder(work, authorizationMap, commercialMap, specimens.Count,
                 exceptions.Count(item => item.Status == LabExceptionStatus.Open.ToString())),
-            specimens, containers, executions, libraries, exceptions, approvals);
+            specimens, containers, executions, libraries, exceptions, approvals, reviewPackages, requestContext.GovernedPSeqResultsEnabled);
     }
 
     [HttpGet("work-orders/by-commercial-order/{commercialOrderId:guid}")]
@@ -282,6 +307,7 @@ public sealed partial class LabOperationsController(
         var protocol = await dbContext.LabProtocols.SingleOrDefaultAsync(item => item.Id == protocolId, cancellationToken)
             ?? throw Missing();
         EnsureVersion(protocol.Version, request.ProtocolVersion);
+        Execute(protocol.RequireCurrent);
         var hasOpenCandidate = await dbContext.LabProtocolVersions.AnyAsync(item =>
             item.LabProtocolId == protocolId
             && item.Status == LabProtocolStatus.Draft,
@@ -291,7 +317,9 @@ public sealed partial class LabOperationsController(
             throw Conflict("protocol_candidate_exists",
                 "Continue or discard the open protocol draft before creating another version.");
         }
-        var definition = NormalizeJson(request.DefinitionJson, "protocol_definition_invalid");
+        var sourceJson = await dbContext.LabProtocolVersions.Where(v => v.LabProtocolId == protocolId && v.ApprovedAtUtc != null)
+            .OrderByDescending(v => v.ProtocolVersion).Select(v => v.DefinitionJson).FirstOrDefaultAsync(cancellationToken);
+        var definition = (await ResolveLabStepReferencesAsync(request.DefinitionJson, sourceJson, cancellationToken)).ToJson();
         var nextVersion = protocol.LatestVersion + 1;
         protocol.RecordVersion(nextVersion);
         dbContext.LabProtocolVersions.Add(new LabProtocolVersion(protocol.Id, nextVersion,
@@ -313,7 +341,8 @@ public sealed partial class LabOperationsController(
             .SingleOrDefaultAsync(item => item.Id == version.LabProtocolId, cancellationToken)
             ?? throw Missing();
         EnsureVersion(protocol.Version, request.ProtocolVersion);
-        var definition = NormalizeJson(request.DefinitionJson, "protocol_definition_invalid");
+        Execute(protocol.RequireCurrent);
+        var definition = (await ResolveLabStepReferencesAsync(request.DefinitionJson, version.DefinitionJson, cancellationToken)).ToJson();
         Execute(() => version.UpdateDraft(definition));
         MarkProtocolCandidateChanged(protocol);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -332,20 +361,31 @@ public sealed partial class LabOperationsController(
             .SingleOrDefaultAsync(item => item.Id == version.LabProtocolId, cancellationToken)
             ?? throw Missing();
         EnsureVersion(protocol.Version, request.ProtocolVersion);
+        Execute(protocol.RequireCurrent);
+        if (request.ApprovalOverrideReason is not null && !string.Equals(request.Action.Trim(), "approve", StringComparison.OrdinalIgnoreCase))
+            throw Invalid("approval_override_action_invalid", "An approval override can only be used when approving a version.");
         switch (request.Action.Trim().ToLowerInvariant())
         {
             case "approve":
+                await ResolveLabStepReferencesAsync(version.DefinitionJson, version.DefinitionJson, cancellationToken);
                 var previousApprovedVersions = await dbContext.LabProtocolVersions
                     .Where(item => item.LabProtocolId == version.LabProtocolId
                         && item.Id != version.Id
                         && (item.Status == LabProtocolStatus.Approved
                             || item.Status == LabProtocolStatus.Active))
                     .ToListAsync(cancellationToken);
-                if (version.AuthoredByUserId == actor.User.Id)
-                    throw Conflict(
-                        "protocol_author_approval_conflict",
-                        "A protocol author cannot approve the same protocol version. An independent Protocol Administrator must approve it.");
-                Execute(() => version.Approve(actor.User.Id, DateTime.UtcNow));
+                if (request.ApprovalOverrideReason is not null)
+                {
+                    RequireApprovalOverrideAdministrator(actor);
+                    Execute(() => version.ApproveWithOverride(actor.User.Id, DateTime.UtcNow, request.ApprovalOverrideReason));
+                }
+                else
+                {
+                    if (version.AuthoredByUserId == actor.User.Id)
+                        throw Conflict("protocol_author_approval_conflict",
+                            "An independent Protocol Administrator must approve this protocol, or a platform administrator must explicitly record an approval override.");
+                    Execute(() => version.Approve(actor.User.Id, DateTime.UtcNow));
+                }
                 foreach (var previous in previousApprovedVersions) Execute(previous.Retire);
                 break;
             case "discard": Execute(version.Discard); break;

@@ -1,58 +1,244 @@
 # Request laboratory services
 
-Customer organization administrators use Lab services to describe and price a Job before doing the detailed work of entering its sample list.
+PSeq Lab Service permission applies to the service family. Choose an available offering within that family; each offering has its own price, supported samples and scientific scope. Inactive offerings are unavailable for new work. Additional-sample quotes retain the service accepted for the Job.
+
+Use Lab services within the selected Department to describe and price a Job before entering its exact sample list. Organization and Department administrators may prepare a Job. An organization administrator or an administrator of the selected Department may place a configured standard order or accept an applicable manual quote.
+
+## Additional samples after acceptance
+
+Phaeno can issue a separate **Change quote** for additional samples on an active accepted Job. Review the added source counts, incremental charge, tax status and expiry. An organization or assigned-Department administrator can **Review and accept addition**, enter a required purchase order number and affirm the exact scope and price, or **Decline addition**. The original agreement and existing laboratory work remain in effect. An accepted addition creates a later phase. After preceding phases are recorded as sent, request or allocate its own compatible kits, confirm receipt, and prepare the added sample IDs, tube barcodes and purchased runs. Confirming the addition preserves the original samples and their receipt and work history. Expired or superseded proposals cannot be accepted.
+
+Acceptance opens preparation for the additional counts. Previously authorized samples remain locked. For a Job using paired preparation, request kits and confirm each added phase’s Sample ID/tube pairs. Earlier Jobs retain their individual sample-list entry. Only new samples receive additional laboratory and shipping authorization. If laboratory review is required, no partial authorization is saved. Completion bills the original accepted quote plus accepted additions; declining a proposal does not cancel the Job.
+
+## Follow the Job workspace
+
+For a Job with one phase, **Shipping (1 sample)** or **Shipping (N samples)** identifies the work to send. **Progress** shows status, timing, samples and shipments directly; there is no Phase 1 row to expand. Before tubes and containers are recorded, physical receipt reads **Awaiting sample shipment**. TAT starts after all required samples are received. The ordered phase list and phase instructions below apply to Jobs with multiple phases.
+
+The current task stays above four supporting tabs. Accepted Jobs open in **Progress**; unaccepted requests open in **Order and billing** for pricing review. For multi-phase Jobs, **Progress** lists every cohort, including phases already sent and phases still planned. Expand a phase to review its samples, shipment links, physical receipt, laboratory stages and turnaround. A phase's shipment reference opens its saved shipment, where permitted instructions and reprinting remain available.
+
+For a single-phase Job, eligible progress actions appear at the end of the **Progress** heading. **Request cancellation** stays in **Actions**; when **View results** is the only available action, it appears directly. Multi-phase actions remain within their expanded phase.
+
+**Files and results** contains released packages and downloads. For multi-phase Jobs, use **Phase** to show one cohort or **All phases**. **Order and billing** contains the accepted scope, quote and permitted invoices. **History** combines order decisions and timing changes, newest first, with submitted request snapshots. Changing supporting tabs retains the current shipping task and saved work.
+
+Sample preparation and shipment controls appear immediately beneath the current task when its preparation or Send step needs them. Request and Receive do not show an unrelated preparation form.
+
+For earlier Jobs, the Job has two areas. **Ordering and shipping** shows six horizontal icons: **Pricing review** (or **Confirm pricing** when a quote is ready), **Sample identification**, **Container supply**, **Assign containers**, **Match samples to tubes**, and **Send samples**. Checkmarks show completed work, the current step is highlighted, and future steps are muted. On a narrow screen, move along the step strip to review the remaining steps. Once transportation kits are ordered and compatible containers are still needed, **Your next step** reads **Wait for containers to arrive**. **View kit delivery** opens the shipping area; the message distinguishes Phaeno preparing the containers from containers in transit. Confirm receipt only after the kits physically arrive. **Assign shipping containers** appears when compatible received containers are available at the selected container location; previously received stock can be used without waiting for a new delivery. **Container location** appears with container selection: one active location is shown as plain text, while multiple locations offer a selector. The selector remains available when the selected location has no stock so you can check another location. The kit-order modal separately uses **Kit receiving location** for the address where new kits should arrive.
+
+Hover over an icon, focus it with the keyboard, or tap it to read its detailed explanation and status, including who must act when work remains. Press Escape, move keyboard focus away or tap outside to close the information. Icons provide information; selecting one does not open work or change the Job. This also applies to completed and future steps. **Your next step** below the icons explains the required task, any prerequisite, and whether it is with you, your administrator, Phaeno or the carrier. Use its action button for the required work on the same Job. The steps reflect saved records; they are not checkboxes to mark yourself. Waiting for pricing or delivery is not a task you must complete personally.
+
+**Send** includes reviewing and confirming the shipping insert, printing its current revision, following the packing instructions, putting the insert inside the correct container, handing the package to the carrier and recording the shipment. Repeat for each required container. Confirming an insert records its revision; opening a print dialog does not prove that it was printed or packed. Send is complete only when every required active shipment has been recorded as sent.
+
+The Job's **Actions** menu gathers eligible commands under **This order** and **Selected shipment**, with the selected shipment reference shown when shipping commands apply. One available command may appear directly. Permissions and the current stage determine which commands are available; Members retain review and permitted downloads without administrator actions. Cancellation remains available under its existing rules.
+
+Use **Progress** for current shipping, physical receipt and laboratory progress. For multi-phase Jobs, expand a phase for its recorded shipments and tracking. Other phases can still be prepared while a sent phase is processing. Any request for your attention remains above the work areas.
 
 ## Review a Job initiated by Phaeno
 
 Phaeno may initiate a Customer-owned Job when your organization has already discussed the work with Phaeno. It appears in **Lab services** as **Quote in preparation** while Phaeno prices it. You do not need to submit that Job for pricing.
 
-Open the Job and review its committed sample count, biological-source composition, storage requirements, safety declaration, and notes. When Phaeno issues the quote and it becomes **Quote issued**, an organization administrator can review and accept it in **Quote & billing**. Phaeno cannot accept it for your organization. If the scope is incorrect, do not accept the quote; contact Phaeno so the Job can be returned for a corrected revision.
+Open the Job and review its services, quantities, sample count, biological-source composition, storage requirements, safety declaration, and notes. When Phaeno issues the quote and it becomes **Quote issued**, an organization or department administrator can use **Actions** beside **Order details and billing** to accept it, propose changes, or decline it. Phaeno cannot accept it for your organization.
 
-Individual sample entry remains unavailable until your organization accepts the quote.
+For a manually quoted Job, individual sample entry remains unavailable until your organization accepts the quote.
 
-## Create a draft
+## Create and save a standard order
 
-**Request lab service** is available only while your organization has current ordering authorization and PSeq Lab Service is offered. If new Jobs are unavailable, the page explains whether Phaeno must enable ordering authorization or the service is temporarily unavailable. Existing accepted Jobs remain available and follow their normal hold or cancellation workflow.
+Choose **Request lab service** in the selected Department. Select a service, enter a unique Job name, choose one Sample type, and enter each biological source with its sample count. Each sample includes one library preparation, one sequencing run and data assembly. Additional sequencing runs and multiple phases require Sales.
 
-1. Open **Lab services** and select **Request lab service**.
-2. In **Job pricing details**, enter a unique **Job name** and each **Biological source** with its sample count. The Portal calculates the Job's total sample count from those source groups. Enter the **Storage requirements** and **Safety declaration** shared by every sample, and any optional **Job notes**. Do not enter a patient name or identifier.
-3. Select **Create job**. The portal assigns an immutable eight-character **Job number** using unambiguous uppercase letters and numbers.
-4. The new Job opens on its detail page. Individual sample entry remains unavailable until the price is issued and accepted.
+**Save draft** retains incomplete work without accepting pricing or authorizing laboratory work. A Job name is required to save. Reopen the Job and choose **Edit Draft** to continue. Storage uses the Sample type's configured requirements; check **Use different storage requirements** only for an exception. Enter handling risks in **Safety declaration**, or enter “No known hazards”. Keep patient names and identifying information out of notes.
 
-Other members can see organization work but cannot create, edit, submit, or commercially approve it unless they are an organization administrator.
+If another administrator changes your Draft, the latest values are loaded and your edits are preserved. Review the form and the latest saved changes shown in the message, then select **I reviewed the refreshed Draft** before saving or reviewing pricing again. Locally edited source rows remain together; check their sources and counts against the other administrator's changes.
 
-If an older draft still contains sample rows from the former workflow, the Job identifies them as legacy rows. Remove each row before submitting for pricing; enter the current sample roster again only after accepting the price.
+The displayed price uses your applicable negotiated service price, when one exists. If both your Organization and selected Department have negotiated prices, the lower of those two applies. Otherwise the standard catalog price applies. You cannot edit these prices. Each service shows its maximum Customer sample count. At the limit, ordering is allowed; above it, retain your entries as a Draft and contact your sales representative for negotiated pricing.
 
-## Submit for review
+Choose **Review order** to save the scope and refresh the authoritative price. Review the sample count, included service, subtotal, approved tax and total. Complete any listed setup blockers, enter a purchase order number when required, and confirm the Sample type, scope and prohibited-data statement. **Place order** accepts those reviewed terms directly, without a separate manual pricing request. Exact Sample IDs and tube pairing follow placement.
 
-Complete the Job pricing details, then select **Submit for pricing**. Confirm that those details contain no patient identifiers, PHI, or unnecessary personal data. No individual sample list is required or permitted at this stage. Submission freezes the pricing profile revision. Phaeno can prepare pricing, request specific corrections, or reject work that cannot be performed.
+If prices or configuration change, use **Refresh review** to return to the scope and review again before placing. Accepted orders keep their saved price and source. If the placement outcome is uncertain, keep the review open and choose **Retry placement**; the same placement is recovered rather than creating another commitment.
+
+Members can review work in their assigned Department. Organization and assigned-Department administrators may prepare and place orders. Department authority does not grant access to other Departments.
+
+## Existing configured standard drafts
+
+For an existing unsubmitted draft with a configured standard offering, in **Standard PSeq Lab Service**, choose an available **Offering**. Review its allowed material types and biological sources, included scientific outputs, single delivery target in business days, sample count, purchased sample-sequencing runs, and price per sample. Standard pricing includes one library preparation, one sequencing run and data assembly per sample; it does not require a separate assembly purchase. Extra runs use the existing prepared library while material remains available and are quoted separately through pricing review.
+
+Choose **Review standard order**. The review shows the current subtotal, approved tax, and final total. An organization or assigned-Department administrator supplies a PO when required, confirms the scope and prohibited-data statement, and selects **Place standard order**. The offering, scope, price and approved tax are retained with the Job. Detailed samples are entered afterward.
+
+If a readiness or billing requirement is incomplete, the displayed blockers explain why placement is unavailable. Phaeno must resolve the relevant service, shipping, billing or tax setup. A standard order cannot be committed with an unknown final total. If the offering, scientific definitions, price or organization settings change while reviewing, select **Refresh terms and review again** and affirm the new terms before placing.
+
+Describe any required sources, outputs or timing in the lab service request and its **Job notes**. There is no separate custom-work inquiry to submit for this Job.
+
+## Existing requests awaiting manual pricing
+
+Existing unsubmitted manual requests can use **Actions → Submit for pricing**. New Customer standard orders use the Draft and Review flow above. Do not include patient identifiers, PHI, or unnecessary personal data. No individual sample list is required or permitted at this stage. Submission preserves a pricing-profile revision. Phaeno can prepare pricing, request specific corrections, or reject work that cannot be performed.
+
+While **Pricing review** is pending, use **Actions → Edit request** to change the scope and select **Submit changes**, or **Actions → Withdraw request** to stop the request. Each submitted change preserves the earlier revision and returns the latest scope to Phaeno for pricing. When pricing is issued, the first step changes to **Confirm pricing**; review the quote and accept or decline it. Direct scope edits are unavailable once pricing is issued.
 
 When corrections are requested, create and submit a new revision. The prior revision remains in the job history; it is not silently overwritten.
 
 ## Review and accept a quote
 
-Laboratory services are priced per job. Phaeno issues an itemized, immutable POMS quote for the accepted scope. When your approved billing and tax information is available, the quote includes calculated tax and freezes those commercial terms. Otherwise the quote is labeled **Pre-tax total**, and applicable tax is calculated when the invoice is issued. A zero tax amount is valid for an exempt, non-taxable, or zero-rate determination. The quote is available after all non-billing readiness items are complete and a Customer administrator is active; billing must be complete before invoicing.
+**Order scope** shows the single **Service** for the order and its **Service quantity** in samples across phases. Additional sequencing runs are charges for that service. Each phase's TAT starts when Phaeno physically receives every required sample for that phase. Business days exclude Phaeno holidays.
 
-Before accepting, confirm the committed sample count, biological-source composition, standard service scope, price, currency, expiration date, and whether the displayed amount includes tax or is pre-tax. Only a Customer organization administrator can accept the current unexpired quote.
+For a quote with several phases, **Order details and billing** keeps each phase's scope and pricing in one block. Review its samples, biological sources, **TAT**, total sequencing runs, quantity × unit price and **Phase price**. When the saved scope and prices support it, **Runs per sample** distinguishes the one included run from additional runs, and pricing explains their quantity. For example, 15 samples with 3 total runs per sample include 1 run and add 2 runs per sample: 15 × 2 = 30 additional runs. On a narrow screen, pricing follows scope within the same phase. The quote's subtotal, tax status and total appear after the phases. The **Progress** tab tracks operational progress after the order is confirmed.
+
+From **Actions** beside **Order details and billing**, select **Download quote PDF** below the divider to save a Phaeno-branded copy of the displayed quote. It includes the Job, quote revision and dates, service and sample quantity, and any billing details and payment terms saved with that quote. Each phase keeps its recorded samples, sequencing runs, biological sources, TAT and prices in one block. When supported by the saved allocation and prices, it explains the included run, additional runs per sample and their quoted quantity. The quote total appears beside payment terms. Longer quotes continue with repeated headings and page numbers. Members can download quotes for their assigned Department; downloading does not accept a quote. If the download fails, select **Download quote PDF** again to retry. If the quote has incomplete saved scope or terms and the PDF remains unavailable, contact Phaeno with the Job number.
+
+Laboratory services are priced per job. Phaeno issues an itemized, immutable Portal quote for the accepted scope. When your approved billing and tax information is available, the quote includes calculated tax and freezes those commercial terms. Otherwise the quote is labeled **Pre-tax total**, and applicable tax is calculated when the invoice is issued. A zero tax amount is valid for an exempt, non-taxable, or zero-rate determination. The quote is available after all non-billing readiness items are complete and a Customer administrator is active; billing must be complete before invoicing.
+
+Before accepting, confirm the committed sample count, biological-source composition, standard service scope, price, currency, expiration date, and whether the displayed amount includes tax or is pre-tax. Confirm the quoted Sample type you will send. A Customer organization administrator or an administrator of the selected Department can accept the current unexpired quote. Acceptance does not request kits. Request the compatible kits and confirm the Department delivery address when you are ready.
 
 If the scope changes after acceptance, Phaeno issues a separate change quote. Added work does not begin until the applicable change is accepted.
 
-## Ship and track samples
+Use **Actions → Accept quote**, **Propose changes**, or **Decline quote** beside **Order details and billing**. **Download quote PDF** appears below the divider in the same menu. When downloading is the only available action, it appears directly. Declining a quote closes the entire request; the confirmation explains this before you proceed. Before a quote is available, use **Withdraw request** to close your request. After acceptance, use **Request cancellation** for Phaeno review.
 
-After accepting the quote, return to **Samples & shipping**. Add samples manually or download and complete the Job-specific CSV template. The CSV accepts exactly `customer_sample_id`, `biological_source`, and `tube_count`; it does not accept barcodes. Previewing a CSV does not change the Job. Confirming a valid preview atomically replaces the editable draft list.
+**Propose changes** opens one multiline **Proposed changes** field. Explain the pricing, service, phase or timing changes you would like reviewed, using up to 2,000 characters, then select **Send proposal**. The Job stays open and returns to Phaeno for pricing review. Acceptance is paused until Phaeno issues a revised quote. Your explanation and the exact quote revision remain in history; sending a proposal does not approve your suggested terms.
 
-Do not ship physical samples before the quote is accepted and the exact roster is finalized. An early or unmatched package is quarantined and escalated by Phaeno; it is not accessioned or attached to active Job work.
+When declining, choose a reason: **Our needs changed**, **Cost is too high**, **Selected another vendor**, **Prefer not to say**, or **Other**. Only **Other** requires an explanation in the multiline **Please explain** field. The selected reason is recorded with the request closure.
 
-The final list must contain exactly the accepted number of unique non-PHI sample IDs, match every accepted source-group count, and give each sample a positive whole-number tube count. Finalize the list only after reviewing the no-PHI confirmation. Finalization authorizes the specimen-specific Lab work and lets Phaeno prepare the registered return kit.
+If accepting, declining, withdrawing, or requesting cancellation fails, review the message in the open dialog. Your entries remain available to correct and retry. Closing the dialog does not confirm the action. You are asked before discarding changed entries. While saving, the dialog stays open and its entries and actions are unavailable until the save finishes.
 
-When the kit is fulfilled, match every physical Phaeno-supplied tube to the displayed tube slot. A sample with multiple tubes appears once per tube as **Tube 1 of N**, **Tube 2 of N**, and so on. Review the packet and record carrier details after the package leaves your organization. Shipping remains part of the Job.
+## Expired quotes and extension requests
 
-The Portal tracks receipt, accessioning, processing, external sequencing, data processing, scientific review, holds, and readiness for release. A job can remain in progress while different samples move through laboratory work.
+An unaccepted quote shows **Expired** and its expiration date once its deadline passes. **Accept quote** appears beside **Order details and billing** for organization and department administrators; it is disabled with an explanation when acceptance is unavailable. Members can review and download the quote, and should ask an administrator to accept it.
+
+For the current expired quote, an organization or department administrator can select **Request quote extension**, optionally explain why more time is needed, and submit the request. **Extension requested** confirms that Phaeno has the request; another request for the same quote is unnecessary. If saving fails, the dialog keeps the entered reason so you can retry.
+
+If Phaeno issues a new revision, review its price, terms and new expiration date before accepting. An extension request does not accept a quote or automatically extend its deadline. The original revision remains in the history, and its PDF stays available. An accepted quote remains **Accepted** when its former expiration date passes.
+
+## Prepare and send samples for a newly confirmed order
+
+The shipping tracker shows connected stage icons, checks for completed steps,
+and a highlighted current step. Future steps read **Upcoming**. Its progress count
+applies to the current phase or single-phase Job; the steps stack vertically on
+phones. Continue using the action in **Next step**.
+
+In **Progress**, expand a phase to see its **Laboratory sample progress** tracker;
+single-phase Jobs show it directly. Each stage shows how many samples have finished
+that step, with a check only when all samples have finished. Samples still in
+preparation, sequencing, data assembly or review are listed separately as **in this
+stage**. Later-stage samples count toward earlier completed steps. **Results
+available** finishes only after all samples' required results are released to your
+Portal; approved results awaiting release remain separate. Holds and samples
+needing review stay visible and do not advance their saved stage.
+
+Before acceptance, **Review and Accept Order** keeps the focus on scope, pricing
+and the quote's **Actions** menu. Shipping steps and next-step guidance are hidden
+until the order is accepted.
+
+Acceptance confirms the Job once. For multi-phase Jobs, **Shipping: Phase N · Phase name (X samples)** identifies the earliest phase that has not been fully shipped and its sample count, with four steps: **Request transportation kits**, **Receive kits**, **Prepare sample shipment**, and **Send and record shipments**. The **Next step** card names the current action and provides its button. After sending samples, use **View progress** to follow physical receipt and laboratory work. After every required shipment from the current phase is recorded as sent, the page opens the next phase at **Request transportation kits**. Request its kits whenever you are ready; you do not need to wait for the preceding phase’s results. **Progress** keeps each sent cohort’s physical receipt, laboratory progress and available result counts in the same list as planned phases. Laboratory processing still follows the agreed phase order. Approved cancelled phases are skipped. TAT starts after complete physical receipt of each phase’s required samples.
+
+Under **Send and record shipments**, one button follows the selected shipment: **Review and confirm shipment contents**, then **Print shipping insert**, then **Record shipment** after you confirm the insert is printed and packed. Packing instructions open inside **Confirm printed and packed** after printing; keep them open while packing or collapse them when finished. You can also use **Actions → View shipping instructions**. Repeat for each physical kit.
+
+Choose **Request transportation kits** in the **Next step** card and confirm the active Department delivery address. The request covers the current phase only. Each phase gets distinct physical kits sized for its samples, not its sequencing runs. Compatible physically received, unused stock is allocated once; Phaeno sends only the remaining shortage. Kits and outbound delivery are included in the agreed price. You can request kits months after acceptance. You are asked before discarding a changed address; failed requests preserve it for retry.
+
+If previously received kits cover every sample in the phase, the first two steps show **Existing kits allocated** and **Received · existing stock**. **Next step** explains that no new delivery is needed and opens sample preparation. A new kit delivery stays at **Receive kits** until every requested kit is physically received and confirmed. Under **Receive kits**, the status shows **Request received**, **Sent**, or **Received**; partial dispatch and receipt show **Partially sent** or **Partially received**.
+
+While Phaeno prepares the kits, **Next step** shows **Wait for Phaeno to send kits**, with no receipt action. **View kit order** beside the shipping heading opens the saved address, quantities and fulfillment status. Once Phaeno has sent a kit awaiting receipt, an administrator can choose **Record kit receipt** in **Next step** to open the kit order and tracking. Select **Confirm received** beside each dispatched kit and scan its physical barcode only after arrival. If all sent kits in a partial delivery have been received, wait for Phaeno to send the remaining kits before recording more receipts. **Cancel** returns without recording receipt. **Cancel kit request** cancels an unshipped request; the accepted Job and prices stay intact and you can request corrected kits. Dispatched requests cannot be cancelled this way. After receipt, **View kit order** remains available beside the phase heading, in **Actions** when several secondary actions are available. Other phase orders and earlier whole-Job requests retain their delivery history. Received physical kits are assigned to one phase.
+
+For each sample, select one received kit and enter one non-PHI Sample ID with one barcode from a physical tube in that kit. Enter the accepted biological source and actual material amount. The Quantity label shows the accepted unit and range. One sequencing run is assigned automatically unless the accepted order explicitly includes additional runs. Select **Save pair** at the end of the row; a new row opens after it is saved. The page shows the saved pairs and remaining accepted totals. A wrong-kit, duplicate, unknown or unavailable barcode is rejected without clearing the entry. Use **Correct pair** with a reason before final confirmation if a saved match needs correction.
+
+When the pairs, source counts and run allocation match the selected phase, select **Confirm phase pairs**, then confirm that phase’s crosswalk. Future phases do not yet need exact Sample IDs. This locks the exact Sample ID/tube crosswalk and authorizes Lab work. Review, print and pack the current insert for each kit's return shipment, then record carrier handoff and tracking after giving it to the carrier. A partially sent Job remains open for its other kits. See **Prepare and ship samples** for details.
+
+## Earlier Jobs and supplemental sample work
+
+The following sample-list, CSV, container-assignment and tube-matching instructions apply to Jobs that use separate sample-list preparation. Their saved history remains available. Accepted additions to Jobs using paired preparation follow the kit and sample/tube workflow of their new phase.
+
+After placing the standard order or accepting the manual quote, open **Sample identification** in **Samples and shipping**. A blank row is provided for each remaining accepted sample, grouped under its biological source. Enter a unique **Sample ID** in each row; **Tubes** starts at 1 and can be changed if that sample includes reserves. Select **Save sample IDs** for the group. You can save part of a group and return to the remaining blank rows. The counts show saved samples; blank rows are not saved records. If a save is interrupted, confirmed saves remain and unconfirmed entries stay available for review and retry.
+
+Use **Actions** at the right of the **Samples and shipping** heading for list options. For CSV entry, select **Actions → Download CSV template** and **Actions → Import sample list**. Import is available only while there are no saved samples or unsaved entries; discard unsaved entries and clear saved sample details first to start again with a CSV. Once all required sample IDs and tube counts are saved, the menu is replaced by **Review and finalize list**, and CSV options are hidden. The CSV accepts `customer_sample_id`, `biological_source`, `tube_count`, and optionally `sequencing_runs`; it does not accept barcodes. If sequencing_runs is omitted, each sample has one run. Previewing a CSV does not change the Job. Confirming a valid preview saves the complete list as one operation.
+
+Samples are grouped by **Biological source**. Each heading shows saved and accepted sample counts, including sources with no saved entries yet. These counts measure samples, not tubes. All expected rows are visible during identification. Once the list is complete, saved samples are shown 10 per page with **Previous samples**, **Next samples**, and a range such as **Samples 1–10 of 18**. A group spanning pages repeats its heading and full count. Each saved sample’s **Actions** menu shows its sample ID in the header. Use **Actions → Edit sample** or **Actions → Clear sample details**. The **Clear sample details?** modal offers **Cancel** and **Clear sample details**. Confirming clears the saved ID and tube count while preserving the accepted source and required sample count. A blank required row returns with one tube as its default; complete it again before finalizing. Use Edit sample for simple corrections. Finalized samples retain their existing editing restrictions. The routine **Expected** lab status is hidden while preparing the list; other statuses remain visible.
+
+After finalization, each sample's **Matched** count shows saved tube matches across its active shipments. Expand the sample to review its tubes and their containers. Once a shipment is sent, tubes are received, or laboratory progress is recorded, the row also shows relevant **Receipt** and laboratory details. Receipt means actual tubes recorded as received, such as **1 of 4 tubes received**; matching barcodes does not establish receipt. These counts cover the whole sample even when its tubes are split across containers. Accession details and review reasons remain visible when present. **Checking...** means information is loading; **Not available** means it cannot currently be shown, not that the count is zero.
+
+Sample IDs must be unique within the Job, and tube counts must be positive whole numbers. Do not enter patient names or direct identifiers. The biological source is already supplied by the group. To correct a saved sample, use **Actions → Edit sample** and choose another accepted source with room only when it accurately describes the sample. Save or discard unsaved IDs before editing saved samples, importing, or finalizing. Leaving with unsaved entries requires confirmation.
+
+If an existing group exceeds its accepted count, such as **2 of 1**, it shows a red warning. Its samples remain available to review and correct. Edit a sample's source only when another accepted source accurately describes it and has room, or clear an extra entry’s details with confirmation. Samples with a source outside the accepted list are also shown for correction. The list cannot be finalized until its total and every source count match the accepted scope.
+
+Do not ship physical samples before the order is commercially committed and the exact roster is finalized. An early or unmatched package is quarantined and escalated by Phaeno; it is not accessioned or attached to active Job work.
+
+The final list must contain exactly the accepted number of unique non-PHI sample IDs, match every accepted source-group count, and give each sample a positive whole-number tube count. A green check beside the overall counter means the total and source counts are complete; it does not finalize the list.
+
+After saving every required sample ID and matching the accepted source counts, select **Review and finalize list** at the right of the **Samples and shipping** heading or in **Your next step**. Both buttons open the same review. Clearing sample details returns the card to its incomplete-list controls and hides the finalization shortcut until the required details are saved again. The review follows the same biological-source grouping as the sample area. Both views sort sample IDs in natural numeric order within each group, such as TEST-2 before TEST-10. The review shows source counts and the overall sample, allocated run and tube totals. Review every sample and affirm the no-PHI confirmation before selecting **Finalize sample list**. Finalization authorizes the specimen-specific Lab work and opens shipment preparation.
+
+Use **Prepare containers** from the Job's **Actions**, or use the container preparation area in **Samples and shipping**, and select the location you will ship from. Use compatible received containers available there, including unused kits originally requested for another Job. Order additional transportation kits when needed; kits and outbound delivery are included. Confirm physical arrivals from the location inventory or the Job's kit-delivery area. Links to delivery-location management retain **Return to Lab Job** with your selected container.
+
+Scan each physical container's permanent barcode, review tube allocations, and confirm to assign those containers to this Job's shipments. Each nonempty container becomes a separate shipment, and a sample's tubes may be split across them. With multiple choices, select the **Shipping container** deliberately before a shipment command; a single available choice is selected directly. Its reference remains visible. **Container, kit and receipt details** expands the supporting information without narrowing the scanner.
+
+Use **Match tubes** in **Samples and shipping** or the Job's **Actions** to match registered tubes in the selected container. One scan field opens inside the active tube row in the expanded sample. Container identity and overall progress stay above the list. For the displayed sample and tube number, scan its permanent barcode and press Enter or **Save scan**. Each match is saved separately before the next sample and tube are revealed. A successful save updates the barcode and progress, expands the next unmatched tube’s sample, scrolls its row into view and focuses its inline field. Failed, unknown, ineligible, duplicate and already-used scans retain the entered barcode and current target for review and retry. The first saved match locks container reset. Expand a sample to review its individual tubes and container identities. The same list keeps 10 samples per page throughout matching. Reviewing another page does not change the entered barcode or target; **Return to active tube** restores its sample. **Done scanning** appears at the right of the **Samples and shipping** heading only after every tube in the selected container has a saved match. The last saved match closes the field and leaves the list open for review.
+
+As part of **Send**, use the next-step button to review and confirm the selected shipment's contents. It then becomes **Print shipping insert**. Use **Actions → View shipping instructions** to check the packing directions, print the current insert and place it inside the matching container. After the print dialog returns, confirm that printing and packing are complete only when you have done both. Cancelling printing, dismissing the confirmation or a print error does not acknowledge the work. The Job, selected container and saved matches remain intact.
+
+After that explicit confirmation, the next-step button becomes **Record shipment**. Your confirmation is remembered in this browser tab for this shipment's current insert. A corrected insert must be printed and confirmed again. You must still hand the package to the carrier before recording its carrier, tracking number and shipment time. With several shipments, deliberately select the container you are working on; each keeps its own reminder. A sole available container remains selected directly. Reprint the current insert from **Actions**. **Samples** returns to the grouped overview without opening another page. Existing standalone shipment bookmarks remain available, and Trial shipping keeps its existing entry point. See **Prepare and ship samples** for the complete inventory, receipt, packing and scanning steps.
+
+Use **Progress** for current shipping, physical receipt and laboratory progress. For multi-phase Jobs, expand a phase for its recorded shipments and tracking. Other phases can still be prepared while a sent phase is processing. Any request for your attention remains above the work areas.
+
+When Phaeno records the first container's arrival, the Job shows **Received**. Individual sample receipt follows verification of actual tubes. A sample shows **Accessioned** after all its expected tubes across shipments have been accessioned. Partial receipt remains visible while other tubes are outstanding. Receipt does not mean scientific acceptance or analysis has begun.
+
+The Job list and header show recorded laboratory progress: **Received → Library Prep → Sequencing → Data Assembly → Quality Review → Results Available**. **Progress** shows each cohort’s current sample stages; expand the phase to review individual samples. Counts describe current work, not completion checkmarks. Partial release does not complete the whole Job. The **Order status** filter still finds commercial stages such as In Progress, On Hold or Completed.
+
+**Sequencing** requires recorded sequencing activity; shipping to the sequencing provider alone is insufficient. **Quality Review** includes scientific review and approved results awaiting release. **Results Available** requires an actual release. Holds, cancellation requests, and completed or cancelled orders retain their visible status.
 
 If Phaeno needs replacement material or clarification, the job shows a Customer-safe action and the current schedule health. Internal scientific investigation details are not shown.
 
 **Ready for release** means Phaeno's scientific review is complete and the final deliverable package is complete, checksummed, and malware-clean. It does not mean a file is downloadable until an authorized Result Release Manager publishes that sample. Invoice balance and credit status never gate PSeq result release.
 
+## Understand turnaround
+
+For newly approved Jobs, the quote or standard-order review shows one delivery target before you approve. The business-day clock starts after Phaeno physically receives every required tube for every sample, including across separate shipments. Business days are Monday–Friday, excluding Phaeno holidays. At that point the due date is set. Earlier approved Jobs keep the turnaround terms shown when they were placed.
+
+In **Progress**, review complete receipt, TAT and delivery due date (expand the relevant phase for a multi-phase Job), including the original due date when changed. **Job milestones** retains first receipt, scientific acceptance, laboratory completion and full Portal-delivery time. One-phase Jobs also show original and current processing/delivery targets there. Timing changes and customer-safe reasons appear in **History**. Receipt, scientific acceptance and release remain distinct.
+
+Phaeno may update the expected completion with a recorded reason. The original target remains visible. A later expected date queues a notice; an earlier date updates the Portal. Read the customer-safe explanation and current dates on the Job rather than treating an earlier message as the current schedule.
+
 ## Cancel work
 
+For an eligible Job, choose the red **Request cancellation** item in its header's **Actions** menu. For an eligible phase, expand it in **Progress** and use that phase's **Actions → Request cancellation**. Cancellation stays inside **Actions** even when it is the only available action. Review the affected scope and enter the required reason before submitting; closing the dialog leaves the Job and phase unchanged.
+
 A draft can be discarded before submission. Before Phaeno accepts work, an administrator can cancel eligible scope. After acceptance, submit a cancellation request. Phaeno records whether the request is approved, partially approved, or declined. Any correction to an issued PSeq invoice is retained as an append-only credit, debit, or write-off adjustment rather than editing the invoice.
+
+## Find and resume work
+
+Search and filter by status, dates, or **Submitted by me**. **Previous** and **Next** show the complete matching result set. From a Job, select **Back to lab services** to return with the filters and page retained. **Clear all** removes them. An empty filtered result is distinct from a failed load; use **Retry records** when loading fails.
+
+## What appears at each stage
+
+While reviewing an order or quote, the **Order and billing** tab opens by default, with **Order details and billing** visible.
+Its heading row gathers **Accept quote** and **Decline quote** under **Actions** when your permissions
+and the current order allow those actions. Review the total sample count and the
+biological-source counts in **Order scope** and the price and expiry in **Quote and billing**.
+Accepting still opens the confirmation dialog and any required purchase-order
+entry; selecting the first button alone does not place the order. Expired quotes
+cannot be accepted, and Members retain their existing review-only permissions.
+
+After **Confirm price and order** succeeds, the confirmation closes and **Progress** opens automatically. Use the shipping task's next action when eligible, including **Request transportation kits**; acceptance itself does not request kits.
+
+Preparation and shipment controls appear beneath the current task when needed. Saved submission instructions appear with preparation. Previously saved samples and shipment records remain available in **Progress**; **Order and billing** remains accessible through its tab.
+
+
+## Multiple tubes for one sample
+
+Standard pricing is per **sample** and includes one library preparation, one sequencing run and data assembly. Additional runs are priced separately and use the prepared library while material remains available. Twenty samples sequenced once require twenty standard services. One sample sequenced twenty times requires one standard service plus nineteen additional runs. Both allocate twenty **sample-sequencing runs** for laboratory execution. In the Job profile, leave **Sample-sequencing runs** blank for one run per sample, or enter the total requested runs. A machine batch is not the pricing unit.
+
+After accepting pricing, enter each sample once. When pricing includes one run per sample, **Runs** shows a fixed **1** during sample entry, and **Sample-sequencing runs** is fixed at **1** in **Edit sample**. **Tubes** remains editable: you may send reserve tubes so material is available in case of failure, without buying extra runs. For Jobs explicitly priced with additional runs, allocate those purchased runs across samples; the total must equal the purchased run count before **Review and finalize list** becomes available. The CSV template includes **sequencing_runs** and validates the same purchased total; an older three-column CSV defaults each sample to one run. Existing accepted prices and previously recorded scope are preserved.
+
+Phaeno reviews each received tube independently and selects one suitable source. A reserve is used only after the preceding processing attempt is explicitly closed as failed. If no material remains for further permitted analysis, the sample can have a failed processing outcome even though a tube passed receipt checks. Follow the Job's customer-facing progress and any request for additional information.
+
+### Delivery due date
+
+The delivery due date is separate from the current expected completion. Phaeno may adjust it with a recorded customer-safe reason; the original delivery target remains visible, and the change queues a notice. A forecast change alone does not move the delivery due date. Results are delivered when data for every in-scope sample has been made available through the Portal; you do not have to download or acknowledge them. Partial results and laboratory completion do not by themselves complete delivery. Standard turnaround remains an operating target unless your agreement explicitly provides a guarantee.
+
+## Follow phased Jobs
+
+Sales may agree phase-specific biological sources, sample counts and sequencing runs per sample with you. Review those phases and prices in the one issued quote. During **Prepare sample shipment**, select the phase for each Sample ID/tube pair. Choose one of that phase's biological sources. The agreed runs per sample are shown as a fixed value. Saved pairs cannot exceed the phase's source counts or purchased runs. A single-scope Job does not require phase selection. Contact Phaeno to correct Sales-entered scope before accepting pricing.
+
+One Job may have several ordered phases, each with its own samples, agreed turnaround expectation and billing portion. After confirmation, the **Progress** tab shows each cohort, receipt counts, current sample stages and delivery due date. **Mixed** means samples are at different stages; **Received** remains the customer-facing receipt status. Held and review counts accompany progress. Results complete a phase only when all required outputs for its samples and purchased runs are available through the Portal. The next phase can then begin processing.
+
+A phase's TAT starts when Phaeno physically receives the last required tube across that phase's samples and containers. Receiving a future cohort early starts its clock even while it waits for the preceding phase. A container arrival alone is not complete tube receipt.
+
+An administrator can select the red **Actions → Request cancellation** item for an eligible phase before the first required tube is received. Phaeno reviews the request; a request is not approval. Receipt closes eligibility. Cancellation retains the recorded scope and any invoices for separate financial review.
+
+After approval, that phase no longer requires Sample IDs or physical tube pairs to complete preparation. Prepare all remaining phases. Previously saved cancelled pairs remain marked as history and are excluded from the required totals and new shipments.
+
+Phaeno may propose rephasing an open Job. Review the previous plan, proposed counts, TAT, billing portions and named sample moves, then use **Actions → Accept rephasing** or **Decline rephasing**. Only unsent future samples can move, including while earlier work runs. Sending any required tube fixes that sample's assignment; received and processing samples remain fixed. Acceptance rechecks current facts and retains original commitments and issued invoices. Closed Jobs cannot be rephased.
+
+Invoices follow the agreed billing schedule and can cover upfront or completed work, or portions of several phases. Phase completion does not automatically issue an invoice. Payment does not gate PSeq result release.

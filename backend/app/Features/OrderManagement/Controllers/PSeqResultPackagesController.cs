@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Npgsql;
 using PSeq.Operations.Commercial.Accounts.Domain;
 using PSeq.Operations.Commercial.LabOperations.Domain;
 using PSeq.Operations.Commercial.OrderManagement.Application;
@@ -16,14 +17,16 @@ using PhaenoPortal.App.Features.FileManagement.Services;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.Services;
 using PhaenoPortal.App.Infrastructure.Persistence;
+using PhaenoPortal.App.Features.LabOperations.Services;
 
 public sealed record RegisterResultPackageRequest(
     Guid OrganizationId, Guid? LabServiceOrderId, Guid LabWorkOrderId,
     Guid? LabSampleId, Guid? CorrectsPackageId, string ManifestJson,
-    string ManifestSha256, int ExpectedArtifactCount, string IdempotencyKey, Guid? TrialProjectId = null, Guid? TrialSampleId = null);
+    string ManifestSha256, int ExpectedArtifactCount, string IdempotencyKey, Guid? TrialProjectId = null, Guid? TrialSampleId = null,
+    Guid? LabAnalysisRunId = null);
 public sealed record RegisterResultArtifactRequest(
     string LogicalRole, string FileName, string ContentType, long SizeBytes,
-    string Sha256, string ObjectStorageKey);
+    string Sha256, string ObjectStorageKey, string? ResultLocator = null);
 public sealed record RegisterResultArtifactsRequest(
     IReadOnlyList<RegisterResultArtifactRequest> Artifacts);
 public sealed record ResultArtifactScanRequest(
@@ -36,10 +39,16 @@ public sealed record ResultPackageDto(
     string PipelineProviderKey, string PipelineSubmissionId, string ManifestSha256,
     int ExpectedArtifactCount, Guid? ScientificApprovalId, DateTime? ReleasedAtUtc,
     string? FailureCode, string? FailureDetail, string? RetentionState, long Version,
-    IReadOnlyList<ResultArtifactDto> Artifacts, Guid? TrialProjectId = null, Guid? TrialSampleId = null);
+    IReadOnlyList<ResultArtifactDto> Artifacts, Guid? TrialProjectId = null, Guid? TrialSampleId = null, ResultPackageContextDto? Context = null,
+    Guid? LabAnalysisRunId = null, bool TraceabilityRequired = false);
+public sealed record ResultPackageContextDto(string OrganizationName, string? OrderNumber,
+    string? CustomerReference, string? CustomerSampleId, Guid? RetentionSnapshotId,
+    string? ScientificReviewer, DateTime? ScientificallyApprovedAtUtc,
+    string? ReleaseDefinitionKey, int? ReleaseDefinitionVersion, ResultPackageQcSummary? AssemblyQc = null);
+public sealed record ResultPackageQcSummary(Guid JobId, int ReviewVersion, string Decision, string Note, string ReviewedBy, DateTime RecordedAtUtc);
 public sealed record ResultArtifactDto(
     Guid Id, string LogicalRole, string FileName, string ContentType, long SizeBytes,
-    string Sha256, string ScanState, DateTime? ScanCompletedAtUtc, DateTime? DeletedAtUtc);
+    string Sha256, string ScanState, DateTime? ScanCompletedAtUtc, DateTime? DeletedAtUtc, string? ResultLocator = null);
 public sealed record ResultPackageRegistrationDto(
     ResultPackageDto Package, IReadOnlyList<string> ObjectStorageUploadTargets);
 
@@ -47,7 +56,7 @@ public sealed record ResultPackageRegistrationDto(
 [ApiController]
 [AllowAnonymous]
 [Route("api/integrations/pseq-results")]
-public sealed class PSeqResultPipelineController(
+public sealed partial class PSeqResultPipelineController(
     PSeqOperationsDbContext dbContext,
     IPSeqResultPipelineAdapter pipelineAdapter,
     IOptions<PSeqOrderToCashOptions> options) : ControllerBase
@@ -71,16 +80,12 @@ public sealed class PSeqResultPipelineController(
             Encoding.ASCII.GetBytes(request.ManifestSha256.Trim().ToUpperInvariant())))
             throw Invalid("result_manifest_checksum_mismatch", "The manifest checksum does not match its normalized content.");
 
+        await using var resultTransaction = dbContext.Database.IsRelational() && dbContext.Database.CurrentTransaction is null
+            ? await dbContext.Database.BeginTransactionAsync(cancellationToken) : null;
         var existing = await dbContext.ResultOutputPackages.AsNoTracking()
             .SingleOrDefaultAsync(item => item.IdempotencyKey == request.IdempotencyKey, cancellationToken);
         if (existing is not null)
-        {
-            if (existing.ManifestSha256 != calculatedHash || existing.OrganizationId != request.OrganizationId
-                || existing.LabServiceOrderId != request.LabServiceOrderId || existing.LabWorkOrderId != request.LabWorkOrderId
-                || existing.LabSampleId != request.LabSampleId || existing.TrialProjectId != request.TrialProjectId || existing.TrialSampleId != request.TrialSampleId)
-                throw Conflict("result_idempotency_conflict", "The idempotency key was already used with a different manifest.");
-            return new ResultPackageRegistrationDto(await MapAsync(existing, cancellationToken), []);
-        }
+            return await ReplayRegistrationAsync(existing, request, calculatedHash, cancellationToken);
 
         var validReferences = await dbContext.LabServiceOrders.AsNoTracking().AnyAsync(order =>
             order.Id == request.LabServiceOrderId && order.OrganizationId == request.OrganizationId
@@ -109,9 +114,23 @@ public sealed class PSeqResultPipelineController(
             throw Invalid("result_package_scope_invalid", "The organization, order, work order, and sample do not describe one authorized PSeq result scope.");
         if (request.CorrectsPackageId.HasValue && !await dbContext.ResultOutputPackages.AnyAsync(item =>
             item.Id == request.CorrectsPackageId.Value && item.LabSampleId == request.LabSampleId && item.TrialSampleId == request.TrialSampleId
-            && item.State == ResultOutputPackageState.Released, cancellationToken))
+            && item.OrganizationId == request.OrganizationId && item.LabWorkOrderId == request.LabWorkOrderId
+            && item.ReleasedAtUtc.HasValue && (item.State == ResultOutputPackageState.Released || item.State == ResultOutputPackageState.Withdrawn), cancellationToken))
             throw Invalid("result_correction_target_invalid", "A correction must reference a released package for the same sample.");
 
+        {
+            if (request.CorrectsPackageId.HasValue)
+            {
+                using var correctionManifest = JsonDocument.Parse(normalizedManifest);
+                if (correctionManifest.RootElement.ValueKind != JsonValueKind.Object
+                    || !correctionManifest.RootElement.TryGetProperty("correctionReason", out var reason)
+                    || reason.ValueKind != JsonValueKind.String || string.IsNullOrWhiteSpace(reason.GetString())
+                    || reason.GetString()!.Length > 2000)
+                    throw Invalid("result_correction_reason_required", "Include correctionReason (up to 2,000 characters) in the checksummed manifest for a replacement result.");
+            }
+            await new LabResultLineageService(dbContext).RequireResultAsync(request.LabAnalysisRunId, true,
+                request.OrganizationId, request.LabWorkOrderId, (request.LabSampleId ?? request.TrialSampleId)!.Value, cancellationToken, Rollout.RequireScientificEvidence, allowPendingQc: true);
+        }
         var packageVersion = await dbContext.ResultOutputPackages
             .CountAsync(item => request.TrialSampleId.HasValue ? item.TrialSampleId == request.TrialSampleId : item.LabSampleId == request.LabSampleId, cancellationToken) + 1;
         var transfer = await pipelineAdapter.RegisterManifestAsync(new PSeqResultManifestRegistration(
@@ -121,11 +140,41 @@ public sealed class PSeqResultPipelineController(
         var package = new ResultOutputPackage(request.OrganizationId, request.LabServiceOrderId,
             request.LabWorkOrderId, request.LabSampleId, packageVersion, request.CorrectsPackageId,
             transfer.ProviderKey, transfer.PipelineSubmissionId, request.IdempotencyKey,
-            normalizedManifest, calculatedHash, request.ExpectedArtifactCount, request.TrialProjectId, request.TrialSampleId);
+            normalizedManifest, calculatedHash, request.ExpectedArtifactCount, request.TrialProjectId, request.TrialSampleId,
+            request.LabAnalysisRunId, true);
         dbContext.ResultOutputPackages.Add(package);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException error) when (error.InnerException is PostgresException
+            { SqlState: PostgresErrorCodes.UniqueViolation, TableName: "result_output_packages" })
+        {
+            // Another connection may commit after the initial lookup or version count.
+            // Discard only our failed insert before reading the committed winner.
+            dbContext.Entry(package).State = EntityState.Detached;
+            existing = await dbContext.ResultOutputPackages.AsNoTracking()
+                .SingleOrDefaultAsync(item => item.IdempotencyKey == request.IdempotencyKey, cancellationToken);
+            if (existing is not null)
+                return await ReplayRegistrationAsync(existing, request, calculatedHash, cancellationToken);
+            throw Conflict("result_package_registration_conflict",
+                "Another result package was registered at the same time. Retry this request without changing its idempotency key.");
+        }
+        if (resultTransaction is not null) await resultTransaction.CommitAsync(cancellationToken);
         return new ResultPackageRegistrationDto(await MapAsync(package, cancellationToken),
             transfer.ObjectStorageUploadTargets);
+    }
+
+    private async Task<ResultPackageRegistrationDto> ReplayRegistrationAsync(ResultOutputPackage existing,
+        RegisterResultPackageRequest request, string calculatedHash, CancellationToken cancellationToken)
+    {
+        if (existing.ManifestSha256 != calculatedHash || existing.OrganizationId != request.OrganizationId
+            || existing.LabServiceOrderId != request.LabServiceOrderId || existing.LabWorkOrderId != request.LabWorkOrderId
+            || existing.LabSampleId != request.LabSampleId || existing.TrialProjectId != request.TrialProjectId
+            || existing.TrialSampleId != request.TrialSampleId || existing.CorrectsPackageId != request.CorrectsPackageId
+            || existing.ExpectedArtifactCount != request.ExpectedArtifactCount || existing.LabAnalysisRunId != request.LabAnalysisRunId)
+            throw Conflict("result_idempotency_conflict", "The idempotency key was already used with a different manifest.");
+        return new ResultPackageRegistrationDto(await MapAsync(existing, cancellationToken), []);
     }
 
     [HttpPost("packages/{packageId:guid}/artifacts")]
@@ -142,9 +191,11 @@ public sealed class PSeqResultPipelineController(
             throw Invalid("result_manifest_incomplete", "Register exactly the artifact count declared by the manifest.");
         if (await dbContext.ResultArtifacts.AnyAsync(item => item.ResultOutputPackageId == package.Id, cancellationToken))
             throw Conflict("result_artifacts_already_registered", "Artifacts were already registered for this package.");
+        if ((package.TraceabilityRequired || Rollout.RequireResultTraceability || Rollout.RequireScientificEvidence) && request.Artifacts.Any(x => string.IsNullOrWhiteSpace(x.ResultLocator) || x.ResultLocator.Length > 1000))
+            throw Invalid("result_locator_required", "Identify the result within every artifact. Use '*' only when the entire file belongs to this sample and analysis.");
         foreach (var item in request.Artifacts)
             dbContext.ResultArtifacts.Add(new ResultArtifact(package.Id, item.LogicalRole,
-                item.FileName, item.ContentType, item.SizeBytes, item.Sha256, item.ObjectStorageKey));
+                item.FileName, item.ContentType, item.SizeBytes, item.Sha256, item.ObjectStorageKey, item.ResultLocator));
         package.BeginScanning();
         await dbContext.SaveChangesAsync(cancellationToken);
         return await MapAsync(package, cancellationToken);
@@ -156,11 +207,19 @@ public sealed class PSeqResultPipelineController(
     {
         RequirePipelineAuthentication();
         RequireGovernedResultsConfiguration();
+        await using var resultTransaction = await SampleShippingPackingData.BeginAsync(dbContext, "package-scan:" + packageId, cancellationToken);
         var package = await dbContext.ResultOutputPackages.SingleOrDefaultAsync(item => item.Id == packageId, cancellationToken)
             ?? throw Missing();
         if (package.State != ResultOutputPackageState.Scanning)
             throw Conflict("result_package_not_scanning", "Scan results can be recorded only for a scanning package.");
         var artifacts = await dbContext.ResultArtifacts.Where(item => item.ResultOutputPackageId == package.Id).ToListAsync(cancellationToken);
+        if (package.TraceabilityRequired || Rollout.RequireResultTraceability || Rollout.RequireScientificEvidence)
+        {
+            await new LabResultLineageService(dbContext).RequireResultAsync(package.LabAnalysisRunId, true,
+                package.OrganizationId, package.LabWorkOrderId, (package.LabSampleId ?? package.TrialSampleId)!.Value, cancellationToken, Rollout.RequireScientificEvidence, allowPendingQc: true);
+            if (artifacts.Any(x => string.IsNullOrWhiteSpace(x.ResultLocator)))
+                throw Invalid("result_locator_required", "Every artifact needs an explicit result locator before scientific review.");
+        }
         if (request.Artifacts.Count != artifacts.Count || request.Artifacts.Select(item => item.ArtifactId).Distinct().Count() != artifacts.Count)
             throw Invalid("result_scan_manifest_incomplete", "Provide one scan result for every registered artifact.");
         var byId = request.Artifacts.ToDictionary(item => item.ArtifactId);
@@ -183,6 +242,7 @@ public sealed class PSeqResultPipelineController(
             package.Fail(checksumsMatch ? "malware_scan_rejected" : "artifact_checksum_mismatch",
                 checksumsMatch ? "One or more artifacts failed malware scanning." : "One or more artifact checksums did not match the manifest.");
         await dbContext.SaveChangesAsync(cancellationToken);
+        if (resultTransaction is not null) await resultTransaction.CommitAsync(cancellationToken);
         return await MapAsync(package, cancellationToken);
     }
 
@@ -212,7 +272,7 @@ public sealed class PSeqResultPipelineController(
             .Where(item => item.ResultOutputPackageId == package.Id).OrderBy(item => item.FileName)
             .Select(item => new ResultArtifactDto(item.Id, item.LogicalRole, item.FileName,
                 item.ContentType, item.SizeBytes, item.Sha256, item.ScanState.ToString(),
-                item.ScanCompletedAtUtc, item.DeletedAtUtc)).ToListAsync(cancellationToken);
+                item.ScanCompletedAtUtc, item.DeletedAtUtc, item.ResultLocator)).ToListAsync(cancellationToken);
         return Map(package, artifacts);
     }
 
@@ -225,7 +285,8 @@ public sealed class PSeqResultPipelineController(
             package.LabSampleId, package.PackageVersion, package.CorrectsPackageId, package.State.ToString(),
             package.PipelineProviderKey, package.PipelineSubmissionId, package.ManifestSha256,
             package.ExpectedArtifactCount, package.ScientificApprovalId, package.ReleasedAtUtc,
-            package.FailureCode, package.FailureDetail, retentionState, package.Version, artifacts, package.TrialProjectId, package.TrialSampleId);
+            package.FailureCode, package.FailureDetail, retentionState, package.Version, artifacts, package.TrialProjectId, package.TrialSampleId,
+            LabAnalysisRunId: package.LabAnalysisRunId, TraceabilityRequired: package.TraceabilityRequired);
 
     private static string NormalizeJson(string value)
     {
@@ -249,7 +310,8 @@ public sealed class PSeqResultReleaseController(
     OrderRequestContext requestContext,
     IOptions<PSeqOrderToCashOptions> options,
     ReleasedDeliverableRetentionSnapshotService retentionSnapshots,
-    GovernedResultRetentionService retentionService) : ControllerBase
+    GovernedResultRetentionService retentionService,
+    IOptions<InvitationOptions>? invitations = null) : ControllerBase
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -271,11 +333,68 @@ public sealed class PSeqResultReleaseController(
         var artifacts = await dbContext.ResultArtifacts.AsNoTracking().Where(item => packageIds.Contains(item.ResultOutputPackageId))
             .OrderBy(item => item.FileName).ToListAsync(cancellationToken);
         var retention = await retentionService.ReadAsync(packages, artifacts, await RetentionTransaction.ClockAsync(dbContext, cancellationToken), cancellationToken);
+        var contexts = await ReadContextsAsync(packages, cancellationToken);
         return packages.Select(package => PSeqResultPipelineController.Map(package,
             artifacts.Where(item => item.ResultOutputPackageId == package.Id)
                 .Select(item => new ResultArtifactDto(item.Id, item.LogicalRole, item.FileName, item.ContentType,
-                    item.SizeBytes, item.Sha256, item.ScanState.ToString(), item.ScanCompletedAtUtc, item.DeletedAtUtc)).ToList(),
-            retention[package.Id].State)).ToList();
+                    item.SizeBytes, item.Sha256, item.ScanState.ToString(), item.ScanCompletedAtUtc, item.DeletedAtUtc, item.ResultLocator)).ToList(),
+            retention[package.Id].State) with { Context = contexts[package.Id] }).ToList();
+    }
+
+    [HttpGet("{packageId:guid}")]
+    public async Task<ResultPackageDto> Get(Guid packageId, CancellationToken cancellationToken)
+    {
+        RequireGovernedResultsConfiguration();
+        // Release managers review publication; file administrators may inspect the
+        // same package without receiving any additional release authority.
+        await requestContext.RequirePackageReaderAsync(HttpContext,
+            options.Value.BusinessRoles || options.Value.DualControlEnforced, cancellationToken);
+        var package = await dbContext.ResultOutputPackages.AsNoTracking()
+            .SingleOrDefaultAsync(item => item.Id == packageId && item.TrialProjectId == null, cancellationToken)
+            ?? throw new OrderManagementException("result_package_not_found", "The result package was not found.", StatusCodes.Status404NotFound);
+        var artifacts = await dbContext.ResultArtifacts.AsNoTracking().Where(item => item.ResultOutputPackageId == packageId)
+            .OrderBy(item => item.FileName).ToListAsync(cancellationToken);
+        var retention = await retentionService.ReadAsync([package], artifacts,
+            await RetentionTransaction.ClockAsync(dbContext, cancellationToken), cancellationToken);
+        var contexts = await ReadContextsAsync([package], cancellationToken);
+        return PSeqResultPipelineController.Map(package, artifacts.Select(item => new ResultArtifactDto(
+            item.Id, item.LogicalRole, item.FileName, item.ContentType, item.SizeBytes, item.Sha256,
+            item.ScanState.ToString(), item.ScanCompletedAtUtc, item.DeletedAtUtc, item.ResultLocator)).ToList(), retention[package.Id].State)
+            with { Context = contexts[package.Id] };
+    }
+
+    private async Task<Dictionary<Guid, ResultPackageContextDto>> ReadContextsAsync(
+        IReadOnlyList<ResultOutputPackage> packages, CancellationToken token)
+    {
+        var organizationIds = packages.Select(item => item.OrganizationId).Distinct().ToList();
+        var orderIds = packages.Where(item => item.LabServiceOrderId.HasValue).Select(item => item.LabServiceOrderId!.Value).ToList();
+        var sampleIds = packages.Where(item => item.LabSampleId.HasValue).Select(item => item.LabSampleId!.Value).ToList();
+        var packageIds = packages.Select(item => item.Id).ToList();
+        var approvalIds = packages.Where(item => item.ScientificApprovalId.HasValue).Select(item => item.ScientificApprovalId!.Value).ToList();
+        var organizations = await dbContext.Organizations.AsNoTracking().Where(item => organizationIds.Contains(item.Id)).ToDictionaryAsync(item => item.Id, item => item.Name, token);
+        var orders = await dbContext.LabServiceOrders.AsNoTracking().Where(item => orderIds.Contains(item.Id)).ToDictionaryAsync(item => item.Id, token);
+        var samples = await dbContext.LabSamples.AsNoTracking().Where(item => sampleIds.Contains(item.Id)).ToDictionaryAsync(item => item.Id, item => item.CustomerSampleId, token);
+        var snapshots = await dbContext.ResultRetentionSchedules.AsNoTracking().Where(item => packageIds.Contains(item.ResultOutputPackageId)).ToDictionaryAsync(item => item.ResultOutputPackageId, item => item.RetentionSnapshotId, token);
+        var approvals = await dbContext.LabScientificApprovals.AsNoTracking().Where(item => approvalIds.Contains(item.Id)).ToDictionaryAsync(item => item.Id, token);
+        var reviewerIds = approvals.Values.Select(item => item.ApprovedByUserId).Distinct().ToList();
+        var reviewers = await dbContext.Users.AsNoTracking().Where(item => reviewerIds.Contains(item.Id)).ToDictionaryAsync(item => item.Id, item => item.FirstName + " " + item.LastName, token);
+        var qcReviews = await (from qc in dbContext.Set<PSeq.Operations.Laboratory.Domain.LabAssemblyQc>().AsNoTracking()
+            join user in dbContext.Users on qc.RecordedByUserId equals user.Id
+            where packageIds.Contains(qc.ResultOutputPackageId)
+            orderby qc.ReviewVersion descending
+            select new { qc.ResultOutputPackageId, qc.LabAssemblyJobId, qc.ReviewVersion, qc.Decision, qc.Note, qc.RecordedAtUtc,
+                author = user.FirstName + " " + user.LastName }).ToListAsync(token);
+        return packages.ToDictionary(item => item.Id, item => {
+            var order = item.LabServiceOrderId.HasValue ? orders.GetValueOrDefault(item.LabServiceOrderId.Value) : null;
+            var approval = item.ScientificApprovalId.HasValue ? approvals.GetValueOrDefault(item.ScientificApprovalId.Value) : null;
+            var qc = qcReviews.FirstOrDefault(q => q.ResultOutputPackageId == item.Id);
+            return new ResultPackageContextDto(organizations.GetValueOrDefault(item.OrganizationId, "Organization"),
+                order?.OrderNumber, order?.CustomerReference, item.LabSampleId.HasValue ? samples.GetValueOrDefault(item.LabSampleId.Value) : null,
+                snapshots.TryGetValue(item.Id, out var snapshotId) ? snapshotId : null,
+                approval is null ? null : reviewers.GetValueOrDefault(approval.ApprovedByUserId, "Former reviewer"),
+                approval?.ApprovedAtUtc, approval?.ReleaseDefinitionKey, approval?.ReleaseDefinitionVersion,
+                qc is null ? null : new(qc.LabAssemblyJobId, qc.ReviewVersion, qc.Decision, qc.Note, qc.author, qc.RecordedAtUtc));
+        });
     }
 
     [HttpPost("{packageId:guid}/release")]
@@ -290,11 +409,16 @@ public sealed class PSeqResultReleaseController(
         if (package.TrialProjectId.HasValue) throw new OrderManagementException("trial_release_required", "Release Trial results from the owning Trial Project.", StatusCodes.Status409Conflict);
         EnsureVersion(package.Version, request.Version);
         var now = DateTime.UtcNow;
+        await using var resultTransaction = await SampleShippingPackingData.BeginAsync(dbContext, "result-publication:" + packageId, cancellationToken);
+        await new LabResultLineageService(dbContext).RequirePackageAsync(package, cancellationToken, options.Value);
         package.Release(actor.Id, now);
+        await new LabOperations.Services.LabJobDeliveryRecorder(dbContext).RecordAsync(package.LabWorkOrderId,
+            [new(package.LabSampleId!.Value, now)], cancellationToken);
         var release = new LabResultRelease(package.OrganizationId, package.LabServiceOrderId!.Value,
             package.LabSampleId!.Value, package.PackageVersion, "PSeq", package.PipelineProviderKey,
             $"Output package {package.Id}; manifest SHA-256 {package.ManifestSha256}", "ScientificallyApproved",
-            JsonSerializer.Serialize(new { resultOutputPackageId = package.Id }, JsonOptions), now);
+            JsonSerializer.Serialize(new { resultOutputPackageId = package.Id }, JsonOptions), now,
+            package.LabAnalysisRunId, package.TraceabilityRequired, package.LabAnalysisRunId.HasValue ? $"package:{package.Id}" : null);
         release.MarkReady(false);
         release.Release(now);
         dbContext.LabResultReleases.Add(release);
@@ -303,15 +427,17 @@ public sealed class PSeqResultReleaseController(
         dbContext.ResultDeliveryEvidence.Add(new ResultDeliveryEvidence(package.Id, null,
             ResultDeliveryEvidenceKind.Notification, actor.Id, now,
             JsonSerializer.Serialize(new { status = "queued", paymentGateApplied = false }, JsonOptions)));
-        var departmentId = await dbContext.LabServiceOrders.AsNoTracking()
+        var orderContext = await dbContext.LabServiceOrders.AsNoTracking()
             .Where(order => order.Id == package.LabServiceOrderId)
-            .Select(order => order.DepartmentId)
+            .Select(order => new { order.DepartmentId, order.OrderNumber })
             .SingleAsync(cancellationToken);
         dbContext.OrderNotifications.Add(new OrderNotification(package.OrganizationId, null,
             OrderWorkflowTypes.LabService, package.LabServiceOrderId!.Value, "pseq-result-released",
-            "PSeq result available", "A scientifically approved PSeq result package is available for download.", departmentId));
+            "PSeq result available", $"A scientifically approved PSeq result package is available for Job {orderContext.OrderNumber}. "
+                + $"Open the Job in the Portal:\n{(invitations?.Value ?? new InvitationOptions()).PublicBaseUrl.TrimEnd('/')}/lab-services/{package.LabServiceOrderId.Value}", orderContext.DepartmentId));
         await dbContext.SaveChangesAsync(cancellationToken);
-        return (await List(package.State.ToString(), cancellationToken)).Single(item => item.Id == package.Id);
+        if (resultTransaction is not null) await resultTransaction.CommitAsync(cancellationToken);
+        return await Get(package.Id, cancellationToken);
     }
 
     [HttpPost("{packageId:guid}/withdraw")]
@@ -326,6 +452,7 @@ public sealed class PSeqResultReleaseController(
         EnsureVersion(package.Version, request.Version);
         if (package.TrialProjectId.HasValue) throw new OrderManagementException("trial_release_required", "Manage Trial results from the owning Trial Project.", StatusCodes.Status409Conflict);
         package.Withdraw(actor.Id, DateTime.UtcNow, request.Reason ?? "Withdrawn by result release manager.");
+        await new LabOperations.Services.LabJobDeliveryRecorder(dbContext).RecordAsync(package.LabWorkOrderId, [], cancellationToken);
         var release = await dbContext.LabResultReleases.SingleOrDefaultAsync(item =>
             item.LabSampleId == package.LabSampleId && item.ReleaseVersion == package.PackageVersion, cancellationToken);
         release?.Withdraw();
@@ -333,7 +460,7 @@ public sealed class PSeqResultReleaseController(
             ResultDeliveryEvidenceKind.Withdrawn, actor.Id, DateTime.UtcNow,
             JsonSerializer.Serialize(new { reason = request.Reason }, JsonOptions)));
         await dbContext.SaveChangesAsync(cancellationToken);
-        return (await List(package.State.ToString(), cancellationToken)).Single(item => item.Id == package.Id);
+        return await Get(package.Id, cancellationToken);
     }
 
     [HttpPost("{packageId:guid}/authorize-reissue")]
@@ -349,6 +476,8 @@ public sealed class PSeqResultReleaseController(
             .SingleOrDefaultAsync(item => item.Id == packageId, cancellationToken)
             ?? throw new OrderManagementException("result_package_not_found",
                 "The result package was not found.", StatusCodes.Status404NotFound);
+        if (package.TrialProjectId.HasValue)
+            throw new OrderManagementException("trial_release_required", "Manage Trial results from the owning Trial Project.", StatusCodes.Status409Conflict);
         EnsureVersion(package.Version, request.Version);
         if (string.IsNullOrWhiteSpace(request.Reason))
             throw new OrderManagementException("result_reissue_reason_required",
@@ -369,8 +498,7 @@ public sealed class PSeqResultReleaseController(
             null, ResultDeliveryEvidenceKind.Reissued, actor.Id, DateTime.UtcNow,
             JsonSerializer.Serialize(new { reason = request.Reason }, JsonOptions)));
         await dbContext.SaveChangesAsync(cancellationToken);
-        return (await List(package.State.ToString(), cancellationToken))
-            .Single(item => item.Id == package.Id);
+        return await Get(package.Id, cancellationToken);
     }
 
     private static void EnsureVersion(long actual, long expected)

@@ -1,0 +1,156 @@
+# Sequencing vendors and shipment addresses
+
+## Product discovery — October 5, 2026
+
+Phaeno purchasing administrators maintain sequencing vendors; laboratory operators
+prepare and track their sequencing shipments. Reuse Purchasing's Suppliers and
+Products, with a built-in **Sequencing service** product type and one or more named
+shipment addresses for a vendor offering active sequencing services. Do not create
+a second vendor identity. Existing laboratory material and transportation workflows
+retain their catalog identities.
+
+Shipment preparation selects an active vendor, its sequencing service product and
+one of its active addresses. Show the full selected address for review. Require
+explicit selections; changing vendor clears the dependent service/address choices.
+Retain optional carrier, tracking, vendor reference, ETA and notes. After preparation,
+the vendor/service are fixed. An address can be changed explicitly before dispatch,
+with evidence; after dispatch it is fixed. Catalog edits never rewrite saved
+shipment names, service names, address text or manifest/custody evidence.
+
+## Engineering scope
+
+- Add an audited, versioned supplier-address child record (label, recipient,
+  street lines, city, region, postal code, country, optional phone/instructions,
+  active state). Use add/edit modals and one Actions menu for edit/retirement;
+  preserve inactive addresses. Address summaries are bounded child configuration,
+  rather than independent major record workspaces.
+- Sequencing service is a stable built-in type. Its products do not require
+  physical inventory units or expiration and are unavailable as kit components
+  or inventory materials. An active sequencing vendor must retain an active
+  address; require addresses before activating its service products.
+- Catalog administration keeps existing administrator permissions. Add a narrow
+  laboratory-authorized vendor/service/address lookup for shipment selectors;
+  do not expose general catalog-management writes to operators.
+- Replace free-text vendor/destination input in new shipment preparation with
+  reviewed catalog IDs and versions. Validate relationships, eligibility and
+  stale selections on the backend. Save supplier/product/address lineage and
+  readable snapshots on the sendout and prepared manifest. Retargeting an address
+  before dispatch is an explicit versioned command recorded in custody history.
+- Use additive nullable sendout lineage fields for historical records with no
+  recorded catalog association. Existing demo sendouts retain their observed
+  provider/destination/history; do not invent catalog links or create vendors
+  from demo labels. No reset or data conversion is needed or authorized.
+- Create/review an additive EF migration, update the complete ERD and apply only
+  to the verified configured local development database. No Git mutation,
+  deployment, dependency or authentication change is authorized here.
+
+## Acceptance
+
+- Purchasing can manage multiple addresses and sequencing service products for
+  one vendor; inactive records remain readable and unavailable for new selections.
+- Vendor changes clear dependent selections; address preview is readable on
+  desktop and phone layouts. Required fields, shared controls, modal regions,
+  keyboard behavior and focus return follow Portal policy.
+- Reject wrong-vendor addresses/products, inactive records, stale selections and
+  any post-dispatch address change. Retain original snapshots after catalog edits.
+- Existing demo batches, material balances and custody facts remain unchanged.
+- Update the Phaeno guides and backend/frontend/E2E plans. Batch build/type/lint,
+  migration and read-only browser verification at a logical checkpoint. Automated
+  suites and operational fixture writes remain request-only.
+
+Status: implemented locally. Migration `20261005182306_SequencingVendorCatalog`
+is applied to localhost / `phaeno_ops_clean_20260919`; the complete ERD is current.
+The solution builds with zero warnings/errors, TypeScript/scoped lint and help
+corpus checks pass, and EF reports no model drift. Read-only connected browser
+inspection confirms required fields, service inventory exclusion, empty catalog
+setup guidance, three shipment selectors, 320 px reflow and modal/focus behavior.
+Existing demo batch/sendout/tube fingerprints match before and after the migration.
+
+The manifest also freezes the vendor service description. The last required
+address has a disabled retirement action with an explanation, backed by the API
+invariant. Automated regressions were authored and compiled but not executed;
+complete configured-vendor shipment acceptance and physical/provider/scientific
+proof remain pending. No real vendor information was invented and no operational
+fixture was written. See [local evidence](../testing/runs/2026-10-05-sequencing-vendor-catalog.md).
+
+Success metrics: every new preparation uses an owned, reviewed vendor/service/address
+selection; operators can distinguish destinations before saving; catalog corrections
+retain the earlier shipment evidence; services never become physical inventory.
+
+
+## October 5 controlled release verification
+
+The owner separately authorized full tests, commit/push, deployment and the two
+preserving EF migrations under [the hosted release plan](PORTAL-WORKFLOW-RELEASE-20261005-PLAN.md).
+Final results and hosted activation are recorded in [the release receipt](../operations/portal-workflow-release-20261005.md).
+This supersedes request-only execution statements in the earlier local checkpoints;
+physical/scientific/provider and authenticated operator acceptance remain separate.
+
+## Completed hosted release — October 5, 2026
+
+This implementation batch is included in application
+`c781988630ddfdb07f0d76dd7c3bb9753c15d660`, now deployed as matching API/UI with
+the two preserving EF migrations. Full regression, fresh recovery verification,
+hosted row/runtime preservation and public smoke checks pass under
+[the completed release receipt](../operations/portal-workflow-release-20261005.md).
+This supersedes earlier request-only test/release statements for this batch;
+physical/scientific/provider and authenticated operator acceptance remain separate.
+
+## Supplier detail tabs — October 5, 2026 (local)
+
+The owner requested separate **Products | Addresses** tabs so Purchasing
+administrators can manage each collection without scanning two stacked cards.
+Use the shared Portal Tabs beneath the supplier identity and Actions menu. The
+tab bar spans the full container width at every viewport, with two equal columns.
+Products opens first and owns its search, inactive filter and New product
+action. Each pane retains its filters while switching, and only the selected
+pane exposes controls to keyboard and assistive technology. Persist Addresses
+selection through the supplier route query; returning to the supplier list
+retains its existing filters. Phaeno's internal-producer record keeps its existing
+Products-only view because it does not support vendor shipment addresses.
+
+Implemented locally with no persistence or permission changes. Scoped lint,
+TypeScript, help generation and whitespace checks pass. A read-only simulated
+browser preview at 1,440 and 320 px in both themes confirms exclusive panels,
+retained filters, arrow-key selection/focus, no horizontal overflow, no browser
+errors and zero automated accessibility violations. Screenshot review passes.
+Existing component/product-creation E2E cases now enter Products explicitly;
+those regression suites were not executed for this presentation request. The
+earlier hosted release receipt does not include this subsequent tab change.
+
+## Supplier tabs UI-only release — October 5, 2026
+
+The owner now authorizes commit/push and Portal UI deployment. The separate
+[hosted release plan](PORTAL-WORKFLOW-RELEASE-20261005-PLAN.md) already addresses
+the September production-database planning hold. This follow-up changes only the
+UI: no API deployment, EF migration, data reset, provider/authentication switch or
+public Website deployment. Preserve the protected workflow and Vercel Git holds.
+
+Build the committed frontend from a frozen snapshot with the existing installed
+lockfile-compatible dependencies. Pull production configuration; require the
+production Clerk key, mock sessions disabled and the existing `/api` proxy.
+Stage without assigning public domains, verify READY state, source SHA and
+protected root rendering, then promote the exact deployment. Roll back the UI
+alias to `dpl_EeQv4SD3AgZkL8fKGw2DMHyxcDS2` if activation checks fail. Verify
+public health, authorization/proxy and actual sign-in, plus unchanged API source
+and twenty migrations. Retain evidence and remove task-only build outputs.
+
+UI-only documentation boundary: browser search requires the same corpus hash as
+the API. Preserve the current generic vendor guide and generated corpus/version
+`1fcbe16fb9a6`, matching API `c781988630ddfdb07f0d76dd7c3bb9753c15d660`.
+Its existing collection-management instructions remain accurate. Defer this
+explicit wording until a paired UI/API help release: “Open the supplier name to
+use Products and Addresses. Products opens first for catalog search and New
+product; Addresses contains Shipment addresses and New address. The selected tab
+survives refresh, and switching tabs preserves their filters.” This avoids
+introducing a documentation-search version failure in a UI-only deployment.
+
+Record deployment identities and validation in the
+[UI release receipt](../operations/supplier-tabs-ui-release-20261005.md).
+
+Completed UI-only release: source `4c61eddb73a94e4c46d26caefc4e0bddaabb7753` is
+pushed and active in UI `dpl_Fk24GZmK2zmyHojYgLw1StfatFkj`. Production build,
+staged/public source verification, live sign-in/health/proxy checks and preserved
+API source/twenty migrations pass. See the completed UI release receipt. The
+current generic bundled guide remains on the API-compatible corpus; the explicit
+tab wording above remains deferred to a paired documentation release.

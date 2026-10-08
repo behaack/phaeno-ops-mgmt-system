@@ -2,24 +2,26 @@
 
 A Company request carries commercial context into an audited review queue. It can propose online access, products and services, a relationship change, or reviewed work without creating another customer identity.
 
+Company Requests, approval/completion, and Portal-access changes are available to platform administrators. Business Development, Commercial leadership and Platform administrators create Trials directly in **Trial projects**, without an Opportunity or Company request. Business Development submits scope for leadership review; Commercial leadership and Platform administrators approve complete scope on submission. Commercial staff should keep the Company and Opportunity context current and ask an administrator to prepare or complete the reviewed handoff.
+
 ## Create a Company request
 
 Open the CRM Company, select **Requests**, and then select **Create request**. Start with **What does this Company need?**:
 
 - **Online access:** onboarding, evaluation, or offboarding
 - **Products and services:** service change
-- **Work:** Trial Project or custom work
+- **Work:** custom work
 - **Relationship:** relationship change
 
-The form asks for a more specific request type only when the selected outcome has more than one. It then shows only fields relevant to that request. Choose the requested Prospect, Customer, or Partner relationship when required. Link an Opportunity when evaluation or work arose from a specific commercial pursuit; Customer order handoffs still begin from the Opportunity workspace.
+The form asks for a more specific request type only when the selected outcome has more than one. It then shows only fields relevant to that request. For new online access, choose Prospect, Customer, or Partner. Requests for an existing relationship show its current kind. An existing Prospect can use **Change the relationship** to request Customer or Partner; the selected target is preserved for review. Link an Opportunity when evaluation or work arose from a specific commercial pursuit; Customer order handoffs still begin from the Opportunity workspace.
 
-An **Online access** request never asks for a product or service. It creates or changes the Company's sign-in scope, and users can reach only the products and services the Company is separately entitled to use. Choose **Products and services** and **Service change** when product or ordering eligibility must change. Add a tenant-safe summary only when the reviewer needs more context; POMS supplies a short request label when the summary is blank.
+An **Online access** request never asks for a product or service. It creates or changes the Company's sign-in scope, and users can reach only the products and services the Company is separately entitled to use. Choose **Products and services** and **Service change** when product or ordering eligibility must change. Add a relationship summary suitable for the affected Company only when the reviewer needs more context; POMS supplies a short request label when the summary is blank.
 
 Do not include patient information, sample identifiers, scientific results, credentials, confidential file contents, or laboratory investigation detail. The handoff summary is relationship context for review, not an unrestricted notes field.
 
 ## Understand what is created
 
-Submitting creates one pending, idempotent Company request. It appears in CRM's **Requests** review queue and, when applicable, Order operations intake. The Company workspace shows the request number, type, status, and creation time.
+Submitting creates one pending Company request with a retained operation identity. It appears in CRM's **Requests** review queue and, when applicable, Order operations intake. The Company workspace shows the request number, type, status, and creation time.
 
 The handoff does not by itself:
 
@@ -30,22 +32,72 @@ The handoff does not by itself:
 - create a quote, order, sample roster, shipment, or Lab work order
 - approve offboarding or revoke existing access
 
-An authorized reviewer owns those consequences in the destination workflow. Online access is one possible request outcome, not the parent of every request. When onboarding or evaluation is approved, POMS attaches one internal tenant scope to the existing Company. That scope provides tenant isolation and sign-in controls; it is not another Company or customer identity and does not add or remove any product or service entitlement.
+An authorized reviewer owns those consequences in the destination workflow. Online access is one possible request outcome, not the parent of every request. Department setup is available directly from the Company's **Departments** tab before an access request. When onboarding or evaluation is approved, POMS enables the Company's existing department setup or attaches one internal tenant scope if setup has not started. Existing departments, references and settings are retained. That access scope keeps the Company's records and sign-in rights separate; it is not another Company or customer identity and does not add or remove any product or service entitlement.
 
 ## Review and follow up
 
-Open CRM's central **Requests** section to review onboarding, evaluation, products and services, relationship, work, or offboarding requests. The Company's **Requests** tab keeps the history in context and links pending items to that queue; it does not repeat approve, decline, or completion controls. Open **Order operations** for custom-work or order-intake review when the request is applicable there. Keep CRM Activities and Tasks focused on commercial follow-up; record each decision in its owning workflow.
+The Requests queue stays within CRM, with **CRM** selected in the main navigation and **Requests** selected in the sidebar. Older saved Requests links open the same queue and retain the selected request and queue tab.
+
+Open CRM's central **Requests** section to review onboarding, evaluation, products and services, relationship, work, or offboarding requests. Use **Needs decision** for pending review, **Approved / needs work** for fulfillment and access recovery, and **Completed / history** for finished decisions. The Company's **Requests** tab keeps history and links both pending and approved items to the same queue; open a row's **Actions** menu when it offers more than one destination. Access-only onboarding and Portal evaluation complete automatically once Company access is active and an organization administrator or an administrator of an active Department has accepted access. For requests with additional work, perform that work, then select **Complete request** to confirm completion. For an approved relationship change, **Apply Customer relationship** or **Apply Partner relationship** performs the Prospect conversion and completes the request in one action. Open **Order operations** for custom-work or order-intake review when the request is applicable there. Keep CRM Activities and Tasks focused on commercial follow-up; record each decision in its owning workflow.
+
+Approving **Online access** (onboarding, evaluation or offboarding) or a **Service change** does not require a reason. Use **Approval note (optional)** if you want to retain additional context. For a service change with Company access already enabled, **Approve and set up services** also saves the dated permission for each requested service in the same decision. Choose the approved Company or Department scope and effective dates; select **Ready** when service setup is complete, **Pending** while work remains, or **Blocked** when it cannot proceed. Existing matching permissions can be updated in the same dialog. If Company access has not yet been approved, approve the service decision first and finish online-access setup; then use **Set up approved services** on the service request. Every **Decline request** and **Cancel request** requires a reason. Relationship-change and sales-assisted-order approvals still require a reason. The decision history retains who reviewed the request and when, even without an approval note. **Completed work (optional)** can be left blank when completing a request or applying an approved relationship change; completion still records who completed it and when.
+
+### Follow the work checklist
+
+Every approved request shows **Work needed**, with **Done**, **Needs attention**, **Waiting**,
+or **Needs review** beside each step. Progress comes from saved Company and workflow records;
+it updates every 15 seconds while the page is visible and when you return. A pending invitation
+shows **Waiting for acceptance** until an organization or active-Department administrator accepts and gains active access. Expired or revoked invitations
+return to Needs attention. A progress-loading failure disables completion and offers **Retry progress**.
+
+Each work item has an expandable **Instructions**, **Waiting details**, or **Completion details** section. Select its chevron or label to expand or collapse it. Several items can stay open together. Instructions identify who handles the work, where to go, which fields to complete, how to save, and what clears the requirement. For a service step marked **Needs attention**, use **Actions → Set up approved services** on that request. This also handles service changes approved before the simplified approval flow. Review **Applies to**, **Effective from**, and **Effective to**; choose an existing permission when one covers that service and scope. Set **Service configuration** to **Ready** when the permission is ready to use, then select **Save services**. The request is linked automatically. A pending or blocked configuration stays **Needs attention**, and a future start date stays **Waiting**. Enabling a service does not create an order or remove other operational-readiness requirements.
+
+Operational-readiness instructions distinguish shared Phaeno configuration from Company setup:
+
+- **Order settings**, in the user menu, contains **Service catalog** and **Quote & workflow**. A Phaeno platform administrator maintains these shared definitions.
+- **Samples & shipping settings**, in the user menu, contains **Sample types**, **Phaeno ship-to destinations**, **Shipping procedures**, **Transportation kits**, and **Order submission guidance**. New Orders require an Active Sample type with one Active procedure, at least one usable linked kit, and an available Default destination.
+- **Order operations → Finance → Customer billing** contains this Company's billing contact, address, payment terms, and tax decision. Open the Company and select **Edit billing and tax**. Save required fields, then have Finance enter **Finance approval notes** and select **Approve current tax decision**. Any later billing or tax edit requires fresh approval.
+
+The message below the checklist points back to the remaining **Work needed** items instead of repeating the requirements. Follow the expanded instructions for the specific missing requirement. After saving, return to
+**Work needed** for the next progress refresh. Resolved readiness blockers leave the list;
+when readiness passes, **Complete Customer operational readiness** shows **Done**.
+
+When all checklist items are done, the message says **All checklist items are complete**
+and highlights **Actions → Complete request to record the completed work.** A reminder
+to finish items marked **Needs review** appears only when those items are present.
+
+Use the request's **Actions** menu to open the owning workspace, apply a relationship change,
+complete access enablement, record completion where needed, or cancel. Access-only onboarding and ordinary Portal evaluation have no **Complete request** action: acceptance records completion automatically and moves the request to **Completed / history**. If active administrator access already exists, approval completes the request immediately. Trial Projects retain their separate scope and acceptance requirements. For other requests, **Complete request** is disabled until
+the displayed minimum requirements pass. The server checks them again when you submit, so a
+previously open page cannot rely on outdated approval, access, or entitlement state.
+
+| Request | Work to perform and verify |
+| --- | --- |
+| Onboarding or Portal evaluation | Enable Company access; invite an organization or Department administrator from Company People; have that administrator accept and gain active access. The request then completes automatically, with the completion details and time retained in history. Services and orders are separate requests. |
+| Trial Project | Start the Trial from this exact request; submit the current scope; obtain Commercial and Scientific Operations approvals; have the Prospect accept that revision. Continue laboratory execution in the Trial workspace. |
+| Products and services | Approve and save the service permission together in Requests. For an older approval or unfinished setup, use **Actions → Set up approved services** on the request. A future start date remains Waiting. Customer PSeq requests also show the existing operational-readiness blockers. |
+| Relationship change | Review the requested Customer or Partner relationship, then use the corresponding Apply action. It performs the supported Prospect conversion and records completion together. |
+| Customer order handoff | Resolve the displayed order-start blockers, then start the Customer order from this handoff in Order operations Intake. Creating the linked order completes the request. |
+| Other custom work | Review the Company and Opportunity, document the agreed scope and commercial decision, and carry out the approved work in its owning workflow. Add completion notes if useful. |
+| Offboarding | Review active work, billing, files and retention obligations with their owners, then disable Company access. Existing work and historical records are retained for their own controlled workflows. |
+
+Items marked **Needs review** cannot be verified automatically. Complete those reviews
+before confirming completion. The minimum-requirements check does not attest that a person
+reviewed operational, billing, or retention obligations. For requests requiring manual
+closeout, after all work is done, use **Actions → Complete request**. Submitting confirms
+the work is complete; the **Completed work (optional)** note is available for additional
+context. Completion does not send invitations or configure services.
 
 For Customer PSeq Lab Service, a Won Opportunity can create a dedicated **Customer order handoff** from its detail page. After Company request review approves the request and confirms the active Company operational scope, Ready ordering entitlement, available service offering, and no manual operational block, **Start Customer order** appears in both the Opportunity and Order intake. An online Customer administrator is not required to begin pricing, but every non-billing readiness item and an active administrator are required before the quote can be issued. Billing readiness may be completed after acceptance and must be complete before invoicing. Starting the order creates one order, marks the request Applied in the same transaction, and links both records. Open the resulting order from either surface. Create a separate reviewed handoff when the same Opportunity legitimately produces another order; never retry by creating a duplicate handoff.
 
 Trial Project and Portal Evaluation handoffs do not start Customer orders. Company-level Customer order handoffs may start an order without an Opportunity, but they follow the same approval and eligibility checks.
 
-If the Company already has active online access, choose the appropriate change or offboarding request instead of creating a second onboarding request. If the same submission is retried, POMS returns the existing request through its idempotency boundary rather than creating duplicate work.
+If the Company already has active online access, choose the appropriate change or offboarding request instead of creating a second onboarding request. If a submission outcome is uncertain, check Company request history before creating another request. A repeated operation key is rejected as an existing handoff.
 
 CRM lifecycle labels and Opportunity Won status never substitute for this reviewed boundary.
 
-## Trial Project handoff
+## Create a Trial project
 
-Create a **Trial Project** request from an active Company Opportunity. Its request carries commercial context; scientific analyses and deliverables are selected in the Trial workspace. Use **Start Trial** or **Open Trial** on the Company request to open that workspace. Commercial and Scientific Operations independently approve a frozen scope, then a Prospect organization administrator accepts it. The CRM request review does not replace either Trial approval. See [Trial Projects](./trial-projects).
+Business Development creates a Trial directly in **Order ops → LAB SERVICES → Trial projects**. Choose **Create Trial**, search for the Company, select its Department, and enter the name, Objective / Description, Sample type, source quantities and submission dates. An Opportunity or CRM approval request is not required. Complete the scientific scope and submit it for Commercial leadership approval. Platform administrators and Commercial leadership can also create Trials; their complete scope is approved when submitted. A Prospect organization administrator or an administrator of the assigned Department then accepts the approved scope. See [Trial Projects](./trial-projects).
 
-Trial milestones appear on the Company and Opportunity activity history. A pending CRM publication does not block laboratory work. The Trial shows pending milestones and provides **Retry CRM publication**; retries preserve the original event identity. Sales updates the Opportunity stage separately from Trial scientific completion.
+Trial milestones appear on the Company's activity history. A pending CRM publication does not block laboratory work. The Trial shows pending milestones and provides **Retry CRM publication**; retries preserve the original event identity.

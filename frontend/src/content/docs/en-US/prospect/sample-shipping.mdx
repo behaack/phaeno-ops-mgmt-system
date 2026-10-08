@@ -1,19 +1,64 @@
 # Prepare and ship Trial Project samples
 
-When Phaeno makes an accepted Trial Project shipment available, open **Samples & shipping**. The shipment shows the Phaeno return kit, expected samples, destination, and current packet status. Phaeno creates and approves scope in **Trial Projects**. A Prospect organization administrator accepts it and submits coded samples there before this shared shipment is authorized. See [Trial Projects](./trial-projects).
+Open the approved Trial and its **Shipping containers** section. Phaeno creates and approves the Trial scope. A Prospect organization administrator or an administrator of the selected Department accepts the Trial scope and submits coded samples before shipping is authorized. These administrators may then prepare the resulting shipments within that Department. See [Trial Projects](./trial-projects).
 
-## Keep your records connected to the tubes
+## Choose compatible containers
 
-Each Phaeno-supplied tube has a permanent manufacturer barcode. Your organization administrator scans or enters that barcode beside the correct Customer sample identifier before anything is shipped. Use a stable, non-PHI identifier that your organization can connect to its own sample record. Do not enter a patient name, medical-record number, date of birth, or other direct identifier.
+Open **Choose containers** for tubes awaiting allocation. Review the recommended sizes by common name, SKU and usable tube capacity. The recommendation prefers the fewest containers and then the least spare capacity; it does not verify or reserve stock.
 
-Phaeno preserves the tube-to-sample crosswalk in the Portal and in the shipment packet. Download the CSV or print the packet for your records. Your organization remains responsible for knowing what its Customer sample identifier means; Phaeno is responsible for retaining the identifier-to-tube association used for shipping and intake.
+Open **Assign containers** to review **Containers to use**. The recommendation starts as one row per container, with a compatible size selector, SKU/capacity and tube count. **Add container** chooses a size for the capacity still needed and assigns the remaining tubes up to its capacity. A row's **Remove** action removes only that container; changing or removing it preserves the other rows' tube counts.
 
-If the wrong tube was assigned, an organization administrator can scan the replacement tube and record why the assignment changed. The earlier association remains in history. If a packet was already confirmed, saving the correction before shipment voids that packet and issues a corrected revision; destroy any unused copy of the old packet and print the replacement. Do not cover, alter, or remove the manufacturer barcode.
+Size choices include smaller containers and the smallest size that covers the remaining capacity needed, excluding choices that make another selected container unnecessary. With sizes 5/10/20, three remaining tubes offer only a 5. For 30 tubes, 20+10 or six 5s are valid; two 20s are not offered. With 10+5 already selected, Add chooses another 10 and then a 5. **Add container** is disabled once selected capacity covers all tubes. **Use recommendation** replaces the current rows and tube counts. Stock requirements apply automatically; no manual stock quantities are entered here. The preview shows tubes, containers, capacity, spare slots and unallocated tubes.
 
-## Confirm and ship
+**Confirm assignment** creates one shipment for each container with allocated tubes. A partly filled container is valid and empty containers do not become shipments. If capacity is insufficient, **Confirm partial assignment** prepares the allocated tubes while the remaining tubes stay visible. The accepted Trial sample count and no-charge scope do not change. Tubes from one sample may occupy different containers.
 
-Assign exactly one registered tube from the displayed return kit to every expected sample. Confirm the crosswalk only after checking every row. POMS then freezes the destination, instructions, manifest, packet barcode, and tube-to-sample crosswalk for that packet revision.
+Adjust each row's tube count as needed. Counts must be whole numbers, fit each container and together equal the tubes allocated in the preview. The **Summary** stays visible while updating; confirmation becomes available when the current allocation has been checked.
 
-Print the full packet. Follow the preparation and packing instructions, place the manifest inside the package, and use the ship-to page with the carrier label. The Phaeno packet barcode does not buy postage and is not a tube barcode.
+## Scan permanent tube barcodes
 
-After handing the package to the carrier, record the carrier, tracking number, and shipment time in **Samples & shipping**. If a tube cannot be matched confidently or its barcode will not scan, stop and contact Phaeno instead of guessing.
+Use **Shipping container** at the top of the shipment page to switch between this Trial's containers or return to remaining tubes awaiting containers. Each option shows the container identity, tube count and status. Switching with an unsaved scan asks whether to discard it; switching is blocked while saving.
+
+Before scanning starts, an organization or Department administrator can use **Reset container configuration** beside the **Shipping container** selector. The confirmation covers **all containers and tubes for the Trial's shipment plan**, not just the shipment you opened. The submitted sample list stays intact, and the previous configurations remain in the records and audit history for support. Retired configurations are not shown in your **Shipping containers** panel. Cancelling the confirmation changes nothing.
+
+**Reset container configuration** is also unavailable while a barcode entry is unsaved or saving. Discard an unsaved entry before revising the plan; saving the first scan locks the plan as described below.
+
+The action is locked once any container in that plan has a scan, linked physical kit, shipping insert, dispatch or receipt. Clearing a scan does not restore it. If work starts while your confirmation is open, the change is rejected; refresh and review the current state. A successful change returns you to container selection while preserving approved Trial scope, tube identities and physical kit inventory.
+
+Your organization must retain the connection between each coded sample ID and its own sample record. Do not enter patient names, medical-record numbers, dates of birth or other direct identifiers. Phaeno retains the permanent-tube-to-sample crosswalk used for shipping and intake.
+
+Select **Open shipment** for a prepared container and use **Scan tubes into this shipment**. Use the barcode field inside the active tube row. Scan the physical tube for that sample and tube number, enter its material amount and unit, then press Enter or **Save scan**. A successful match shows the saved number and readable barcode, updates progress and advances to the next tube. The next active row scrolls into view and receives focus. Failed scans remain in their row for correction. Saved matches survive leaving the page. Paging away retains an unfinished barcode; **Return to active tube** restores its inline field. **Previous tubes** and **Next tubes** review long lists without expanding the whole page.
+
+Use tubes registered in a fulfilled kit for this Trial. The first successful scan associates the physical kit with this container; subsequent tubes must come from that kit. Unknown, ineligible, duplicate and already-used barcodes cannot advance scanning. A failed scan retains the barcode and current sample for correction and retry. Do not cover, alter or remove a permanent manufacturer barcode.
+
+Use **Edit tube** or **Correct tube** to fix an assignment before dispatch and explain the correction. History is retained. When a shipping insert has already been confirmed, the correction voids it and issues a corrected revision. Destroy unused copies of the old shipping insert.
+
+## Record the material in each physical tube
+
+When matching a tube, enter **Material amount in this tube** and **Material unit** with its barcode. Enter the actual biological material being sent in that tube, such as 20 µL. Tube capacity, the number of tubes and a total for the sample are separate facts. Do not divide a sample total across tubes or assume they contain equal amounts. The entry must be positive, with up to six decimal places, and each new tube starts with empty amount fields.
+
+The saved amount is a **customer declaration**. Phaeno retains who recorded it and when, includes it in the frozen shipment crosswalk and tube-list CSV, and uses it as the declared opening amount during accession. It is kept distinct from a laboratory measurement. Earlier shipments without a recorded declaration show **Unknown**.
+
+For a matched tube with no amount, select **Record material amount**. Use **Edit tube** or **Correct tube** to change a barcode or amount before dispatch. Corrections retain history and require a reason when changing existing declared information or a confirmed shipping insert. A correction to a confirmed shipment issues a revised insert; print and pack the current revision. Every tube must have a declared amount and unit before a new shipping insert is confirmed or a shipment is recorded as sent.
+
+## Confirm, print and dispatch each shipment
+
+When the shipment header has more than one action, open **Actions** to find them, including **View shipping instructions**, **Print shipping insert**, **Download tube list (CSV)** and **Record shipment** when permitted. If only one header action is available, it appears directly. Your permissions and the shipment's stage determine which actions appear. Use **Print shipping insert** again if you need another copy of the current revision.
+
+Review every declared tube, then select **Review and confirm shipment contents**. Confirmation distinguishes samples from tubes and freezes that shipment's destination, packing instructions and crosswalk. Spare slots do not create expected returns.
+
+Print one receiving sheet for each physical container and place it inside that container. It shows the Customer, Job/Trial and shipment references, sample and tube totals, essential handling notes and two widely separated scan targets: the large **Scan to receive this shipment** PH-P- insert barcode and, when assigned, the physical container barcode. Follow the full preparation and packing instructions in the Portal before shipping. Follow the approved temperature-control method, amount and packing steps for the actual container. Instructions may call for regular ice, dry ice, cold packs, another method or no cooling. Do not substitute methods or multiply the amount by the number of samples. Contact Phaeno if the instructions are missing or conflict. **Full packing instructions and sample / tube list** on the insert page retains the confirmed manifest, every sample and tube barcode, and split-sample references; these details do not print with the receiving sheet. Use **Download tube list (CSV)** to retain the complete crosswalk.
+
+Choose **Actions → View shipping instructions** to read the saved destination, common steps, sample requirements and actual container’s packing instructions. Check its cooling method and amount before packing. Close the instructions, then choose **Print shipping insert** from **Actions**. You can reopen the instructions without leaving the shipment.
+
+**Print shipping insert** checks the current revision, then opens the browser print dialog while keeping your shipment page open. Cancelling printing leaves you on the same shipment with your saved tube matches intact. If the insert cannot be checked, review the message on the shipment page, reconnect if needed and select **Try again**. Failed confirmation keeps the dialog entries for retry. Retain the shipping insert or use **Download tube list (CSV)** for your records. The shipping insert does not purchase postage or replace the carrier label.
+
+After handing each package to the carrier, record its carrier, tracking number and shipment time. If you close the form after entering details, confirm whether to discard them; the form stays open while a save is in progress. Receipt progress aggregates tubes across shipments. In the Trial's **Shipping containers** panel, expand **Sample receipt progress** to review each sample. The first received package does not mark all tubes of a split sample received, and a barcode lookup is not proof that physical material arrived.
+
+Use **Back to Trial** for approved scope and current progress or **Shipping container** to move between its containers. Contact Phaeno with the Trial and shipment references if no compatible container exists, a tube cannot be matched confidently, or existing assignments need repacking. Do not guess a tube identity or change approved scope through shipping.
+
+
+Shipping inserts, printable kit labels and retained packet copies show QR codes with readable identifiers. Phaeno-printed laboratory tube labels use DataMatrix and readable identifiers. Saved scan results show the identifier as text. Use a 2D scanner that supports both QR and DataMatrix where both workflows are performed. Existing manufacturer labels and older printed barcodes remain valid; do not relabel a tube or change its saved identity merely to match a display. A scan still requires the correct workflow and does not by itself confirm receipt or accession.
+
+With one container, the tube count is assigned automatically up to its capacity and shown in a read-only text box. Any remaining tubes stay unallocated. With multiple containers, edit the tube counts to split the allocation. Returning to one container restores its automatic allocation.
+
+Samples are ordered by ID alphabetically and digit by digit, rather than by numeric value. In the Job, biological-source groups stay together. Tube matching follows that sample order, with each sample’s tubes in tube-number order. Saving a match advances to the next unmatched tube.

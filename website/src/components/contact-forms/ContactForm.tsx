@@ -4,6 +4,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 import Spinner from "../Spinner";
+import { websiteContactError } from "./websiteContactError.mjs";
 import { isWebsiteReviewMode } from "@/lib/reviewMode";
 
 const BASE_URL = import.meta.env.PUBLIC_API_BASE_URL;
@@ -46,12 +47,14 @@ export function ContactForm() {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { sendBrochure: false },
   });
 
+  const sendBrochure = watch("sendBrochure");
   const { executeRecaptcha } = useGoogleReCaptcha();
   const [message, setMessage] = useState<string>("");
   const [isSuccess, setIsSuccess] = useState<boolean>(true);
@@ -93,34 +96,12 @@ export function ContactForm() {
       });
 
       if (!res.ok) {
-        let errorText = `Request failed (${res.status}).`;
-        try {
-          const detail = await res.json();
-          if (detail?.message) errorText = detail.message;
-        } catch {
-          /* ignore */
-        }
-
-        switch (res.status) {
-          case 400:
-            errorText = "Thanks — we already have this email on file.";
-            break;
-          case 403:
-            errorText =
-              "The reCAPTCHA verification failed. Please refresh and try again.";
-            break;
-          case 500:
-            errorText =
-              "Whoops — something went wrong on our side. Please try again.";
-            break;
-        }
-        reset();
-        throw new Error(errorText);
+        throw new Error(await websiteContactError(res));
       }
 
       let message = "";
       if (data.sendBrochure) {
-        message = "Thank you! We have added you to our email list and sent you a link to the PSeq Technical Brief. You may unsubscribe at any time.";
+        message = "Thank you! We have added you to our email list and queued your PSeq Technical Brief email. If it does not arrive, contact Phaeno for help. You may unsubscribe at any time.";
       } else {
         message = "Thank you! We have added you to our email list. You may unsubscribe at any time.";
       }
@@ -255,10 +236,14 @@ export function ContactForm() {
               <input
                 id={`${formId}-sendBrochure`}
                 type="checkbox"
+                aria-describedby={`${formId}-sendBrochure-help`}
                 {...register("sendBrochure")}
               />
-              <span>Please email me the PSeq Technical Brief</span>
+              <span>Also email me the PSeq Technical Brief (optional)</span>
             </label>
+            <p id={`${formId}-sendBrochure-help`} className="mt-1 text-sm text-slate-700">
+              Leave unchecked to receive updates only.
+            </p>
           </div>
 
           {/* MESSAGE */}
@@ -295,7 +280,9 @@ export function ContactForm() {
                 "disabled:cursor-not-allowed disabled:opacity-60",
               ].join(" ")}
             >
-              {isSubmitting ? <Spinner size={21} /> : "Get Updates"}
+              {isSubmitting
+                ? <><Spinner size={21} /><span>Sending request…</span></>
+                : sendBrochure ? "Get updates and technical brief" : "Get updates"}
             </button>
           </div>
         </form>

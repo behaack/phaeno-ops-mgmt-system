@@ -1,4 +1,7 @@
 import { api } from './client'
+import type { ContainerRecommendation, ShippingContainerDefinition } from './shipping-containers'
+import type { CustomerDeliveryLocation } from './customer-delivery-locations'
+import type { LocationStockKit } from './transportation-kit-requests'
 
 type ApiEnvelope<T> = {
   success: boolean
@@ -33,9 +36,11 @@ export type SampleShippingDestination = {
   effectiveTo: string | null
   isActive: boolean
   version: number
+  lifecycle: 'Draft' | 'Released' | 'Superseded' | 'Deactivated' | 'Discarded'
 }
 
 export type SampleTypeDefinition = {
+  shippingProcedureId?: string | null
   id: string
   definitionKey: string
   revision: number
@@ -47,6 +52,8 @@ export type SampleTypeDefinition = {
   minimumQuantity: number | null
   maximumQuantity: number | null
   quantityUnit: string
+  minimumSampleAmount: number | null
+  sampleAmountUnit: string | null
   primaryContainerRequirements: string
   temperatureRequirements: string
   stabilizerRequirements: string | null
@@ -60,42 +67,20 @@ export type SampleTypeDefinition = {
   effectiveTo: string | null
   isActive: boolean
   version: number
-}
-
-export type SampleShippingInstructionRule = {
-  id: string
-  definitionKey: string
-  revision: number
-  supersedesInstructionRuleId: string | null
-  destinationId: string
-  destinationName: string
-  sampleTypeDefinitionId: string
-  sampleTypeName: string
-  compatibilityGroup: string
-  packingInstructions: string
-  temperatureInstructions: string
-  carrierInstructions: string
-  dispatchInstructions: string
-  deliveryInstructions: string
-  requiredDocuments: string
-  exceptionInstructions: string
-  internationalCustomsInstructions: string | null
-  requiresSeparateShipment: boolean
-  effectiveFrom: string
-  effectiveTo: string | null
-  isActive: boolean
-  version: number
+  lifecycle: 'Draft' | 'Released' | 'Superseded' | 'Deactivated' | 'Discarded'
 }
 
 export type SampleShippingConfiguration = {
+  defaultDestinationDefinitionKey?: string | null
+  defaultDestinationVersion?: number
+  procedures?: SampleShippingProcedure[]
   destinations: SampleShippingDestination[]
   sampleTypes: SampleTypeDefinition[]
-  instructionRules: SampleShippingInstructionRule[]
 }
 
 export type SampleShippingDestinationWrite = Omit<
   SampleShippingDestination,
-  'id' | 'definitionKey' | 'revision' | 'supersedesDestinationId' | 'effectiveTo' | 'version'
+  'id' | 'definitionKey' | 'revision' | 'supersedesDestinationId' | 'effectiveTo' | 'version' | 'lifecycle'
 > & {
   supersedesDestinationId: string | null
   supersededVersion: number | null
@@ -103,26 +88,18 @@ export type SampleShippingDestinationWrite = Omit<
 
 export type SampleTypeDefinitionWrite = Omit<
   SampleTypeDefinition,
-  'id' | 'definitionKey' | 'revision' | 'supersedesSampleTypeId' | 'effectiveTo' | 'version'
+  'id' | 'definitionKey' | 'revision' | 'supersedesSampleTypeId' | 'effectiveTo' | 'version' | 'lifecycle'
 > & {
   supersedesSampleTypeId: string | null
-  supersededVersion: number | null
-}
-
-export type SampleShippingInstructionRuleWrite = Omit<
-  SampleShippingInstructionRule,
-  'id' | 'definitionKey' | 'revision' | 'supersedesInstructionRuleId' | 'destinationName' | 'sampleTypeName' | 'effectiveTo' | 'version'
-> & {
-  supersedesInstructionRuleId: string | null
   supersededVersion: number | null
 }
 
 export type SampleShippingPreview = {
   effectiveAt: string
   destination: SampleShippingDestination
-  compatibilityGroup: string
-  requiresSeparateShipment: boolean
   sampleRules: Array<{
+    shippingProcedureId?: string | null
+    destinationInstructions?: string | null
     sampleType: SampleTypeDefinition
     packingInstructions: string
     temperatureInstructions: string
@@ -132,11 +109,11 @@ export type SampleShippingPreview = {
     requiredDocuments: string
     exceptionInstructions: string
     internationalCustomsInstructions: string | null
-    requiresSeparateShipment: boolean
   }>
 }
 
 export type SampleShippingPacketScan = {
+  containerReceivedAt?: string | null
   packetRevisionId: string
   packetNumber: string
   barcode: string
@@ -184,6 +161,15 @@ export type SampleShippingCrosswalkItem = {
   tubeSlotId?: string | null
   tubeOrdinal?: number
   tubeCount?: number
+  sampleBarcode?: string
+  totalSampleTubeCount?: number
+  otherShipments?: Array<{ shipmentId: string; shipmentNumber: string; tubeCount: number }>
+  unallocatedTubeCount?: number
+  receivedTubeCount?: number
+  customerDeclaredQuantity?: number | null
+  customerDeclaredQuantityUnit?: string | null
+  customerDeclaredAt?: string | null
+  customerDeclaredByUserId?: string | null
 }
 
 export type RegisteredSampleTube = {
@@ -214,6 +200,7 @@ export type SampleReturnKit = {
   fulfilledAt: string | null
   version: number
   tubes: RegisteredSampleTube[]
+  productExpirations?: Array<{ supplierProductId: string; supplierName: string; productNumber: string; canExpire: boolean; expirationDate: string | null }> | null
 }
 
 export type SampleShipmentWorkflow = {
@@ -221,18 +208,27 @@ export type SampleShipmentWorkflow = {
   shipmentNumber: string
   organizationId: string
   organizationName: string
+  organizationKind?: string
   authorizationSource: 'ProspectTrialProject' | 'CustomerPromotionalOrder' | 'CustomerLabServiceOrder'
   authorizationSourceId: string
   authorizationReference: string
   authorizationName: string
   labWorkOrderId: string
-  destinationId: string
+  destinationId: string | null
   destinationName: string
   status: string
   carrier: string | null
   trackingNumber: string | null
   shippedAt: string | null
   version: number
+  container?: { definitionId: string; sku: string; commonName: string; capacity: number } | null
+  departureDeliveryLocationId?: string | null
+  assignedContainer?: LocationStockKit | null
+  isPackingPool?: boolean
+  expectedTubeCount?: number
+  receivedTubeCount?: number
+  orderExpectedTubeCount?: number
+  orderReceivedTubeCount?: number
   returnKit: SampleReturnKit | null
   crosswalk: SampleShippingCrosswalkItem[]
   currentPacket: {
@@ -243,6 +239,110 @@ export type SampleShipmentWorkflow = {
     issuedAt: string
     isVoided: boolean
   } | null
+}
+
+export type SampleShippingProcedure = {
+  id: string
+  definitionKey: string
+  revision: number
+  supersedesProcedureId: string | null
+  name: string
+  description: string
+  packingInstructions: string
+  temperatureInstructions: string
+  carrierInstructions: string
+  dispatchInstructions: string
+  requiredDocuments: string
+  exceptionInstructions: string
+  internationalCustomsInstructions: string | null
+  isActive: boolean
+  version: number
+  lifecycle: 'Draft' | 'Released' | 'Superseded' | 'Deactivated' | 'Discarded'
+}
+export type SampleShippingProcedureWrite = Omit<SampleShippingProcedure, 'id' | 'definitionKey' | 'revision' | 'version' | 'lifecycle'> & { supersededVersion: number | null }
+export async function createSampleShippingProcedure(input: SampleShippingProcedureWrite) {
+  const response = (await api.post<ApiEnvelope<SampleShippingProcedure>>('/platform/sample-shipping/procedures', input)).data
+  if (!response.success) throw new Error(response.error?.message ?? 'The shipping procedure could not be saved.')
+  return response.data
+}
+
+export async function deactivateSampleShippingProcedure(id: string, version: number) {
+  const response = (await api.post<ApiEnvelope<SampleShippingProcedure>>(`/platform/sample-shipping/procedures/${id}/deactivate`, { version })).data
+  if (!response.success) throw new Error(response.error?.message ?? 'The shipping procedure could not be deactivated.')
+  return response.data
+}
+
+export async function setSampleShippingProcedureStatus(id: string, input: { isActive: boolean; version: number }) {
+  const response = (await api.post<ApiEnvelope<SampleShippingProcedure>>(`/platform/sample-shipping/procedures/${id}/status`, input)).data
+  if (!response.success) throw new Error(response.error?.message ?? 'The shipping procedure status could not be changed.')
+  return response.data
+}
+
+export async function updateSampleShippingProcedureDraft(id: string, version: number, draft: SampleShippingProcedureWrite) {
+  const response = (await api.put<ApiEnvelope<SampleShippingProcedure>>(`/platform/sample-shipping/procedures/${id}/draft`, { version, ...draft })).data
+  return unwrap(response)
+}
+export async function discardSampleShippingProcedureDraft(id: string, version: number) {
+  const response = (await api.post<ApiEnvelope<SampleShippingProcedure>>(`/platform/sample-shipping/procedures/${id}/discard`, { version })).data
+  return unwrap(response)
+}
+
+export type SampleShipmentPacking = {
+  shipmentId: string
+  version: number
+  tubeCount: number
+  containerTypes: ShippingContainerDefinition[]
+  canPack: boolean
+  blockedReason: string | null
+  deliveryLocationId?: string | null
+  locations?: CustomerDeliveryLocation[]
+  availableKits?: LocationStockKit[]
+}
+
+export type SampleContainerQuantity = { containerDefinitionId: string; quantity: number }
+
+export type SampleShipmentPackingReset = {
+  canReset: boolean
+  blockedReason: string | null
+  containerCount: number
+  tubeCount: number
+  shipments: { shipmentId: string; version: number }[]
+}
+
+export async function getSampleShipmentPackingReset(shipmentId: string) {
+  const response = await api.get<ApiEnvelope<SampleShipmentPackingReset>>(`/sample-shipping/${shipmentId}/packing/reset`)
+  return unwrap(response.data)
+}
+
+export async function resetSampleShipmentPacking(shipmentId: string, input: Pick<SampleShipmentPackingReset, 'shipments'>) {
+  const response = await api.post<ApiEnvelope<SampleShipmentWorkflow>>(`/sample-shipping/${shipmentId}/packing/reset`, input)
+  return unwrap(response.data)
+}
+
+export async function getSampleShipmentPacking(shipmentId: string, deliveryLocationId?: string) {
+  const response = await api.get<ApiEnvelope<SampleShipmentPacking>>(`/sample-shipping/${shipmentId}/packing`, { params: { deliveryLocationId } })
+  return unwrap(response.data)
+}
+
+export async function previewSampleShipmentPacking(shipmentId: string, input: {
+  deliveryLocationId?: string
+  availability?: SampleContainerQuantity[]
+  selection?: SampleContainerQuantity[]
+}) {
+  const response = await api.post<ApiEnvelope<ContainerRecommendation>>(`/sample-shipping/${shipmentId}/packing/preview`, input)
+  return unwrap(response.data)
+}
+
+export async function confirmSampleShipmentPacking(shipmentId: string, input: {
+  deliveryLocationId?: string
+  stockKits?: { stockKitId: string; version: number }[]
+  version: number
+  containers: SampleContainerQuantity[]
+  availability?: SampleContainerQuantity[]
+  containerTubeCounts?: number[]
+}) {
+  const response = await api.post<ApiEnvelope<SampleShipmentWorkflow[]>>(`/sample-shipping/${shipmentId}/packing`, input)
+  return unwrap(response.data)
 }
 
 export type SampleShippingPacketDocument = {
@@ -262,6 +362,7 @@ export type RegisteredSampleTubeScan = {
   sampleName: string | null
   tubeStatus: string | null
   isAccessioned: boolean
+  isReceived?: boolean
   outcome: 'Expected' | 'AlreadyAccessioned' | 'PacketVoided' | 'TubeNotRegistered' | 'TubeNotExpectedForPacket'
 }
 
@@ -270,8 +371,36 @@ export async function getSampleShippingConfiguration() {
   return unwrap(response.data)
 }
 
+export async function setDefaultShippingDestination(definitionKey: string, version: number) {
+  const response = await api.put<ApiEnvelope<SampleShippingConfiguration>>('/platform/sample-shipping/destinations/default', { definitionKey, version })
+  return unwrap(response.data)
+}
+
 export async function createSampleShippingDestination(input: SampleShippingDestinationWrite) {
   const response = await api.post<ApiEnvelope<SampleShippingDestination>>('/platform/sample-shipping/destinations', input)
+  return unwrap(response.data)
+}
+export async function updateSampleShippingDestinationDraft(id: string, version: number, draft: SampleShippingDestinationWrite) {
+  const response = await api.put<ApiEnvelope<SampleShippingDestination>>(`/platform/sample-shipping/destinations/${id}/draft`, { version, draft })
+  return unwrap(response.data)
+}
+export async function discardSampleShippingDestinationDraft(id: string, version: number) {
+  const response = await api.post<ApiEnvelope<SampleShippingDestination>>(`/platform/sample-shipping/destinations/${id}/discard`, { version })
+  return unwrap(response.data)
+}
+
+export async function setSampleTypeStatus(id: string, input: { isActive: boolean; version: number }) {
+  const response = await api.post<ApiEnvelope<SampleTypeDefinition>>(`/platform/sample-shipping/sample-types/${id}/status`, input)
+  return unwrap(response.data)
+}
+
+export async function changeSampleTypeProcedure(id: string, procedureId: string, version: number) {
+  const response = await api.post<ApiEnvelope<SampleTypeDefinition>>(`/platform/sample-shipping/sample-types/${id}/procedure`, { procedureId, version })
+  return unwrap(response.data)
+}
+
+export async function setShippingDestinationStatus(id: string, input: { isActive: boolean; version: number }) {
+  const response = await api.post<ApiEnvelope<SampleShippingDestination>>(`/platform/sample-shipping/destinations/${id}/status`, input)
   return unwrap(response.data)
 }
 
@@ -279,9 +408,23 @@ export async function createSampleTypeDefinition(input: SampleTypeDefinitionWrit
   const response = await api.post<ApiEnvelope<SampleTypeDefinition>>('/platform/sample-shipping/sample-types', input)
   return unwrap(response.data)
 }
+export async function updateSampleTypeDraft(id: string, version: number, draft: SampleTypeDefinitionWrite) {
+  const response = await api.put<ApiEnvelope<SampleTypeDefinition>>(`/platform/sample-shipping/sample-types/${id}/draft`, { version, draft })
+  return unwrap(response.data)
+}
+export async function discardSampleTypeDraft(id: string, version: number) {
+  const response = await api.post<ApiEnvelope<SampleTypeDefinition>>(`/platform/sample-shipping/sample-types/${id}/discard`, { version })
+  return unwrap(response.data)
+}
 
-export async function createSampleShippingInstructionRule(input: SampleShippingInstructionRuleWrite) {
-  const response = await api.post<ApiEnvelope<SampleShippingInstructionRule>>('/platform/sample-shipping/instruction-rules', input)
+export type ShippingJobSafetyHold = { jobId: string; isOnHold: boolean; reason: string | null; heldAt: string | null; resolvedAt: string | null; version: number }
+export async function getShippingJobSafetyHold(jobId: string) {
+  const response = await api.get<ApiEnvelope<ShippingJobSafetyHold>>(`/platform/lab-service-orders/${jobId}/shipping-safety-hold`)
+  return unwrap(response.data)
+}
+export async function changeShippingJobSafetyHold(jobId: string, isOnHold: boolean, version: number, reason: string) {
+  const suffix = isOnHold ? '' : '/resolve'
+  const response = await api.post<ApiEnvelope<ShippingJobSafetyHold>>(`/platform/lab-service-orders/${jobId}/shipping-safety-hold${suffix}`, { version, reason })
   return unwrap(response.data)
 }
 
@@ -306,6 +449,12 @@ export async function getSampleShipments() {
   return unwrap(response.data)
 }
 
+export async function getSourceSampleShipments(sourceId: string, staff = false) {
+  const path = staff ? '/platform/lab-operations/sample-shipping/workflow/shipments' : '/sample-shipping'
+  const response = await api.get<ApiEnvelope<SampleShipmentWorkflow[]>>(path, { params: { sourceId } })
+  return unwrap(response.data)
+}
+
 export async function getSampleShipment(id: string) {
   const response = await api.get<ApiEnvelope<SampleShipmentWorkflow>>(`/sample-shipping/${id}`)
   return unwrap(response.data)
@@ -313,6 +462,8 @@ export async function getSampleShipment(id: string) {
 
 export async function assignSampleTube(shipmentId: string, shipmentItemId: string, input: {
   supplierBarcode: string
+  customerDeclaredQuantity: number
+  customerDeclaredQuantityUnit: string
   reason?: string | null
   version: number
   tubeSlotId?: string | null
@@ -360,7 +511,17 @@ export async function getPlatformSampleShipments() {
   return unwrap(response.data)
 }
 
+export type ReturnKitShipmentPage = { items: SampleShipmentWorkflow[]; page: number; pageSize: number; totalCount: number }
+
+export async function getPlatformReturnKitShipments(search: string, page: number, shipmentId?: string) {
+  const response = await api.get<ApiEnvelope<ReturnKitShipmentPage>>('/platform/lab-operations/sample-shipping/workflow/shipments/return-kits', { params: { search: search || undefined, page, pageSize: 20, shipmentId } })
+  return unwrap(response.data)
+}
+
 export async function createSampleReturnKit(shipmentId: string, input: {
+  tubeSupplierProductId: string
+  shipperSupplierProductId: string
+  productExpirations?: Array<{ supplierProductId: string; expirationDate: string }>
   requiredTubeCount: number
   tubeSupplierName: string
   tubeProductNumber: string

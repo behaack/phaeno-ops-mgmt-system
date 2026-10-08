@@ -14,6 +14,7 @@ public static class StorageServiceCollectionExtensions
         IConfiguration configuration,
         IWebHostEnvironment environment)
     {
+        services.AddSingleton(new BackupDeletionLease(configuration));
         var section = configuration.GetSection(FileStorageOptions.SectionName);
         services.AddOptions<FileStorageOptions>()
             .Bind(section)
@@ -64,7 +65,11 @@ public static class StorageServiceCollectionExtensions
         }
 
         services.AddSingleton<IManagedFileStorage, ManagedFileStorageAdapter>();
-        services.AddSingleton<IOperationalFileStorage, OperationalFileStorageAdapter>();
+        services.AddScoped<IOperationalFileStorage>(provider => new PhaenoPortal.App.Features.LabOperations.Services.InvestigationPreservingFileStorage(
+            new OperationalFileStorageAdapter(provider.GetRequiredService<IFileStorage>()),
+            provider.GetRequiredService<PhaenoPortal.App.Infrastructure.Persistence.PSeqOperationsDbContext>()));
+        services.AddHostedService<LocalFileStorageStartupCheck>();
+        services.AddHostedService<PhaenoPortal.App.Features.LabOperations.Services.LabScientificUploadCleanup>();
         return services;
     }
 }

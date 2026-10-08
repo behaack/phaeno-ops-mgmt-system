@@ -1,0 +1,253 @@
+namespace PSeq.Operations.Laboratory.Domain;
+
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
+
+/// <summary>The portable, versioned procedure contract shared by authoring and execution.</summary>
+public sealed record LabProtocolDefinition
+{
+    internal static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
+    {
+        PropertyNameCaseInsensitive = false,
+        UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow
+    };
+    private static readonly JsonSerializerOptions DefinitionWriteOptions = new(JsonOptions)
+    {
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+    };
+
+    public required int SchemaVersion { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool PreparationBatchEnabled { get; init; }
+    public required IReadOnlyList<LabProtocolStepDefinition> Steps { get; init; }
+
+    public static LabProtocolDefinition Parse(string json)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(json) || json.Length > 1_000_000)
+                throw new ArgumentException("A structured protocol definition of at most 1 MB is required.");
+            using var document = JsonDocument.Parse(json);
+            RejectDuplicateProperties(document.RootElement);
+            var definition = JsonSerializer.Deserialize<LabProtocolDefinition>(json, JsonOptions)
+                ?? throw new ArgumentException("A structured protocol definition is required.");
+            definition.Validate();
+            return definition;
+        }
+        catch (JsonException)
+        {
+            throw new ArgumentException("The definition must use the supported structured protocol format. Open the draft in the protocol editor.");
+        }
+    }
+
+    public string ToJson() => JsonSerializer.Serialize(this, DefinitionWriteOptions);
+
+    private void Validate()
+    {
+        if (SchemaVersion != 1) throw new ArgumentException("Protocol schema version 1 is required.");
+        if (Steps is null || Steps.Count is < 1 or > 100)
+            throw new ArgumentException("A protocol must contain between 1 and 100 steps.");
+        var keys = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var step in Steps)
+        {
+            if (step is null) throw new ArgumentException("Every protocol step must contain a definition.");
+            if (step.ProcessType is not (null or "masterMix")) throw new ArgumentException("Choose an existing step process type.");
+            ValidateKey(step.Key, keys, "Step");
+            if (step.AttachmentKind is not (null or "none" or "qc" or "preparation")) throw new ArgumentException("Choose a QC report, preparation worksheet, or no attachment.");
+            if (step.AttachmentRequired && (step.AttachmentKind is not ("qc" or "preparation") || !PreparationBatchEnabled))
+                throw new ArgumentException("A required report needs a report type and preparation batch recording.");
+            RequiredText(step.Name, 160, "Step name");
+            RequiredText(step.Instructions, 4000, $"{step.Name}: instructions");
+            if (step.Condition is not null)
+            {
+                RequiredText(step.Condition, 1000, $"{step.Name}: condition");
+                if (step.Required) throw new ArgumentException($"{step.Name}: a conditional step cannot also be unconditionally required.");
+            }
+            if (step.RequiredRole is not null && !Enum.GetNames<LabRole>().Contains(step.RequiredRole))
+                throw new ArgumentException($"{step.Name}: choose an existing laboratory role.");
+            ValidateResources(step.InputMaterials, "Input materials");
+            ValidateResources(step.PreparedOutputs, "Prepared outputs");
+            ValidateResources(step.EquipmentTypes, "Equipment types");
+            if (step.Captures is null || step.Captures.Count > 30)
+                throw new ArgumentException($"{step.Name}: at most 30 typed captures are allowed.");
+            var captureKeys = new HashSet<string>(StringComparer.Ordinal);
+            if (step.Captures.Count(c => c?.Type == "output") > 1) throw new ArgumentException("A step can define one library output field per sample.");
+            if (step.Captures.Count(c => c?.Type == "biologicalMaterial") > 1) throw new ArgumentException("A step can define one biological material transfer per sample.");
+            foreach (var capture in step.Captures)
+            {
+                if (capture is null) throw new ArgumentException("Every capture must contain a definition.");
+                if (capture.PlannedQuantityText is not null)
+                {
+                    if (capture.Type != "material") throw new ArgumentException("Only reagent fields have planned amounts.");
+                    LabMasterMixDefinition.ParseAmount(capture.PlannedQuantityText);
+                }
+                ValidateKey(capture.Key, captureKeys, "Capture");
+                RequiredText(capture.Label, 120, "Capture label");
+                if (PreparationBatchEnabled && capture.Scope is not ("batch" or "tube" or "shared"))
+                    throw new ArgumentException($"{capture.Label}: explicitly choose Batch, Tube or Shared with exceptions scope.");
+                if (PreparationBatchEnabled && capture.Type == "barcode" && capture.Scope != "tube")
+                    throw new ArgumentException("Barcode identity must be confirmed separately for each tube.");
+                if (capture.Type is not ("number" or "text" or "date" or "choice" or "fileReference" or "barcode" or "material" or "equipment" or "output" or "biologicalMaterial"))
+                    throw new ArgumentException($"{capture.Label}: the capture type is not supported.");
+                if (capture.IsResource && (!PreparationBatchEnabled || (capture.Scope is not ("batch" or "tube") && !(capture.Type == "material" && capture.Scope == "shared" && capture.QuantityBasis != "total")) || capture.Type is "output" or "biologicalMaterial" && capture.Scope != "tube"))
+                    throw new ArgumentException("Linked resource fields require batch preparation; outputs are recorded for each sample.");
+                if (capture.QuantityBasis is not null && (capture.Type != "material" || capture.QuantityBasis is not ("perSample" or "total")))
+                    throw new ArgumentException("Only material fields can specify per-sample or total quantity.");
+                if (capture.IncludeTracking && capture.Type is not ("material" or "equipment"))
+                    throw new ArgumentException("Lot or equipment tracking applies only to material or equipment fields.");
+                if (capture.Material is not null)
+                {
+                    if (capture.Type != "material") throw new ArgumentException("Only material fields can define a material.");
+                    RequiredText(capture.Material.Name, 1000, "Configured material name");
+                    if (capture.Material.Vendor?.Length > 255 || capture.Material.ProductNumber?.Length > 100) throw new ArgumentException("The configured material details are too long.");
+                    if (capture.Material.MaterialDefinitionId == Guid.Empty || capture.Material.MaterialDefinitionId.HasValue && (capture.Material.ProductId.HasValue || capture.Material.SupplierId.HasValue)) throw new ArgumentException("Prepared materials require a definition and cannot also select a supplier product.");
+                    if (capture.Material.ProductId == Guid.Empty || capture.Material.SupplierId == Guid.Empty || capture.Material.ProductId.HasValue != capture.Material.SupplierId.HasValue) throw new ArgumentException("Catalog materials require valid product and supplier identities.");
+                    if (capture.Material.MasterMixWorkflowId == Guid.Empty || capture.Material.MasterMixWorkflowId.HasValue &&
+                        (capture.Material.ProductId.HasValue || capture.Material.SupplierId.HasValue || capture.Material.MaterialDefinitionId.HasValue || capture.IncludeTracking || capture.Material.MasterMixWorkflowRevision is null or <= 0))
+                        throw new ArgumentException("A master mix requires its approved workflow revision and cannot also use lot tracking or another material identity.");
+                    if (!capture.Material.MasterMixWorkflowId.HasValue && capture.Material.MasterMixWorkflowRevision.HasValue)
+                        throw new ArgumentException("A master-mix revision requires its workflow identity.");
+                }
+                if (capture.SourceTube && capture.Type != "barcode")
+                    throw new ArgumentException("Only barcode captures can verify the selected source tube.");
+                if (capture.Unit is not null)
+                {
+                    RequiredText(capture.Unit, 50, "Capture unit");
+                    if (capture.Type is not ("number" or "material" or "biologicalMaterial")) throw new ArgumentException("Only number and material captures can specify a unit.");
+                }
+                if (capture.Type == "choice")
+                {
+                    if (capture.Options is null || capture.Options.Count == 0
+                        || capture.Options.Sum(value => value?.Length ?? 0) + capture.Options.Count - 1 > 1000)
+                        throw new ArgumentException($"{capture.Label}: enter permitted choices (at most 1000 characters).");
+                    foreach (var option in capture.Options) RequiredText(option, 1000, "Choice");
+                    if (capture.Options.Distinct(StringComparer.Ordinal).Count() != capture.Options.Count)
+                        throw new ArgumentException($"{capture.Label}: choices cannot repeat.");
+                }
+                else if (capture.Options is not null)
+                    throw new ArgumentException("Only choice captures can specify permitted choices.");
+            }
+            if (step.ProcessType == "masterMix") LabMasterMixDefinition.ValidateStep(step);
+            if (step.QcGate is not null)
+            {
+                RequiredText(step.QcGate.Criteria, 2000, "QC acceptance criteria");
+                if (PreparationBatchEnabled && step.QcGate.Scope is not ("batch" or "tube" or "shared"))
+                    throw new ArgumentException($"{step.Name}: explicitly choose the QC scope for preparation batches.");
+                if (step.QcGate.Outcomes is null
+                    || !step.QcGate.Outcomes.SequenceEqual(new[] { "pass", "fail", "hold" }))
+                    throw new ArgumentException("A QC gate must provide Pass, Fail, and Hold outcomes.");
+            }
+        }
+    }
+
+    internal static void RequiredText(string? value, int maximum, string label)
+    {
+        if (string.IsNullOrWhiteSpace(value) || value.Length > maximum)
+            throw new ArgumentException($"{label} is required and must contain at most {maximum} characters.");
+    }
+
+    private static void ValidateKey(string? value, HashSet<string> keys, string label)
+    {
+        if (value is null || value.Length > 200
+            || !Regex.IsMatch(value, "^[a-z0-9]+(?:-[a-z0-9]+)*$", RegexOptions.CultureInvariant)
+            || !keys.Add(value))
+            throw new ArgumentException($"{label} keys must be unique readable identifiers.");
+    }
+
+    private static void ValidateResources(IReadOnlyList<string>? values, string label)
+    {
+        if (values is null || values.Sum(value => value?.Length ?? 0) + Math.Max(0, values.Count - 1) > 2000)
+            throw new ArgumentException($"{label} must be a list of at most 2000 characters.");
+        foreach (var value in values) RequiredText(value, 2000, label);
+    }
+
+    private static void RejectDuplicateProperties(JsonElement value)
+    {
+        if (value.ValueKind == JsonValueKind.Object)
+        {
+            var names = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var property in value.EnumerateObject())
+            {
+                if (!names.Add(property.Name)) throw new ArgumentException("Repeated JSON property names are not allowed.");
+                RejectDuplicateProperties(property.Value);
+            }
+        }
+        else if (value.ValueKind == JsonValueKind.Array)
+            foreach (var item in value.EnumerateArray()) RejectDuplicateProperties(item);
+    }
+}
+
+public sealed record LabProtocolStepDefinition
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? ProcessType { get; init; }
+    public Guid? LabStepVersionId { get; init; }
+    public string? AttachmentKind { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool AttachmentRequired { get; init; }
+    [JsonIgnore]
+    public string? PreparationReportProperty => ProcessType == "masterMix" || AttachmentKind == "none" ? null
+        : AttachmentKind == "preparation" ? "preparationReport"
+        : AttachmentKind == "qc" || QcGate is not null ? "qcReport"
+        : Captures.Any(c => LabProtocolEvidence.IsPreparationReportReference(this, c)) ? "preparationReport" : null;
+
+    public void ValidatePreparationReport(bool hasReport, string outcome)
+    {
+        if (hasReport && (PreparationReportProperty is null || outcome != "recorded"))
+            throw new ArgumentException("This step does not accept a report for this entry.");
+        if (AttachmentRequired && outcome == "recorded" && !hasReport)
+            throw new ArgumentException("Attach the required report before saving the step record.");
+    }
+    public required string Key { get; init; }
+    public required string Name { get; init; }
+    public required string Instructions { get; init; }
+    public required bool Required { get; init; }
+    public string? Condition { get; init; }
+    public required bool Repeatable { get; init; }
+    public required bool OperatorConfirmation { get; init; }
+    public string? RequiredRole { get; init; }
+    public required IReadOnlyList<LabProtocolCaptureDefinition> Captures { get; init; }
+    public required IReadOnlyList<string> InputMaterials { get; init; }
+    public required IReadOnlyList<string> PreparedOutputs { get; init; }
+    public required IReadOnlyList<string> EquipmentTypes { get; init; }
+    public LabProtocolQcGate? QcGate { get; init; }
+}
+
+public sealed record LabProtocolCaptureDefinition
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? PlannedQuantityText { get; init; }
+    [JsonIgnore]
+    public bool IsResource => Type is "material" or "equipment" or "output" or "biologicalMaterial";
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public LabConfiguredMaterial? Material { get; init; }
+    public string? QuantityBasis { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool IncludeTracking { get; init; }
+    public string? Scope { get; init; }
+    public required string Key { get; init; }
+    public required string Label { get; init; }
+    public required string Type { get; init; }
+    public required bool Required { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool SourceTube { get; init; }
+    public string? Unit { get; init; }
+    public IReadOnlyList<string>? Options { get; init; }
+}
+
+public sealed record LabProtocolQcGate
+{
+    public string? Scope { get; init; }
+    public required string Criteria { get; init; }
+    public required IReadOnlyList<string> Outcomes { get; init; }
+}
+
+public sealed record LabConfiguredMaterial(string Name,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Vendor = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] Guid? ProductId = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] Guid? SupplierId = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? ProductNumber = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] Guid? MaterialDefinitionId = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] Guid? MasterMixWorkflowId = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? MasterMixWorkflowRevision = null);

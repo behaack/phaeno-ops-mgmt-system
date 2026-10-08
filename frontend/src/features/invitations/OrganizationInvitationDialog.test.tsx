@@ -30,11 +30,14 @@ describe('organization invitations retain explicit department intent', () => {
     const { onSubmit } = setup()
     await fillPerson()
     fireEvent.click(screen.getByRole('checkbox', { name: 'General (default)' }))
+    expect(screen.getByRole('button', { name: 'Send invitation' })).toHaveProperty('disabled', false)
     fireEvent.click(screen.getByRole('button', { name: 'Send invitation' }))
     await screen.findByText('Select at least one department before sending the invitation.')
+    await waitFor(() => expect(document.activeElement?.id).toBe('organization-invite-departments'))
     expect(onSubmit).not.toHaveBeenCalled()
     fireEvent.click(screen.getByRole('checkbox', { name: 'Research' }))
     fireEvent.click(screen.getByRole('checkbox', { name: 'Department administrator for Research' }))
+    expect(screen.getByRole('button', { name: 'Send invitation' })).toHaveProperty('disabled', false)
     fireEvent.click(screen.getByRole('button', { name: 'Send invitation' }))
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ departments: [{ departmentId: 'research', isDepartmentAdmin: true }] })))
   })
@@ -48,8 +51,10 @@ describe('organization invitations retain explicit department intent', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Send invitation' }))
     await waitFor(() => expect(screen.queryByRole('checkbox', { name: 'Research' })).toBeNull())
     expect((screen.getByLabelText(/First name/) as HTMLInputElement).value).toBe('Ada')
+    expect(screen.getByRole('button', { name: 'Send invitation' })).toHaveProperty('disabled', false)
     fireEvent.click(screen.getByRole('button', { name: 'Send invitation' }))
     await screen.findByText('Department availability changed. Your entries are preserved. Review access before sending again.')
+    await waitFor(() => expect(document.activeElement?.id).toBe('organization-invite-departments'))
     expect(onSubmit).toHaveBeenCalledTimes(1)
   })
 
@@ -63,10 +68,21 @@ describe('organization invitations retain explicit department intent', () => {
     expect(onOpenChange).toHaveBeenCalledWith(false)
   })
 
+  it('keeps sending unavailable when no active department can receive access', async () => {
+    mocks.listDepartments.mockResolvedValue([{ ...general, isActive: false }])
+    const { onSubmit } = setup()
+    await fillPerson()
+    expect(screen.getByRole('button', { name: 'Send invitation' })).toHaveProperty('disabled', true)
+    fireEvent.click(screen.getByRole('radio', { name: 'Organization administrator' }))
+    expect(screen.getByRole('button', { name: 'Send invitation' })).toHaveProperty('disabled', true)
+    expect(onSubmit).not.toHaveBeenCalled()
+  })
+
+
   it('explains all-department access for an organization administrator', async () => {
     const { onSubmit } = setup()
     await fillPerson()
-    fireEvent.change(screen.getByLabelText(/Role/), { target: { value: 'Administrator' } })
+    fireEvent.click(screen.getByRole('radio', { name: 'Organization administrator' }))
     expect(screen.getByText(/including departments added later/)).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Send invitation' }))
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ role: 'Administrator', departments: [{ departmentId: 'general', isDepartmentAdmin: false }] })))

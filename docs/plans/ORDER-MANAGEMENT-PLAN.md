@@ -1,5 +1,1130 @@
 # Order Management Plan
 
+## Graphical phase sample completion — October 5, 2026
+
+The Owner requested the same graphical tracker in Customer Progress, with sample
+counts at each laboratory stage and a check when all samples finish a step.
+Customer/Partner administrators and members need to understand mixed progress,
+including seven samples sequencing while three remain ready for preparation.
+
+Place a six-stage Laboratory sample progress tracker at the top of an expanded
+phase, before timing; single-phase Jobs show it directly. Preserve the compact
+phase summary for comparison, sample/shipment details, phase expansion/URL state,
+and contextual Actions. Reuse shared WorkflowProgress, with sample counts at each
+stage, distinct completed/current/in-progress/upcoming labels and mobile reflow.
+
+Owner refinements: single-phase tracking Actions moves to the trailing end of the
+Progress header, with no second control beside timing. Multi-phase actions remain
+with their cohort. Share the same eligibility/callback logic in both locations;
+preserve the cancellation-only neutral dropdown and the directly labeled sole
+results action. Sample fractions use smaller `text-xs` with semibold weight.
+Shared stage circles shrink from 48 to 40 pixels, their icons from 20 to 16 pixels,
+and check badges/connectors remain aligned in horizontal and vertical layouts.
+
+The Owner also requested visual demarcation below the laboratory tracker.
+Add a full-width semantic border and top padding before the timing/receipt/run
+details, in both single-phase and expanded multi-phase Progress. Preserve the
+existing tracker size, counts, header Actions and responsive grid. This is a
+presentation-only refinement; audience guides need no instruction changes.
+
+Highlighted summary labels (Samples, Shipping, Physical receipt, Laboratory,
+Results), TAT, Complete receipt, Delivery due, Containers received and biological
+source names use bold weight. Retain their font sizes and normal-weight values
+and sample counts. Apply the same summary emphasis to multi-phase column/mobile
+labels. This visual refinement requires no audience instruction change.
+
+Use only the existing authorized sample-scoped LabPhaseFacts stage counts, never
+the coarse Job milestone, tube totals or vendor batch status. Current source keys
+are AwaitingReceipt, AwaitingAcceptance, ReadyForPreparation, LibraryPreparation,
+Sequencing, DataProcessing, QualityReview, AwaitingDelivery, Delivered, Cancelled.
+Received completes for the two received states and every later recorded state.
+Library preparation completes at Sequencing or later; Sequencing at DataProcessing
+or later; Data assembly at QualityReview or later; Quality review at AwaitingDelivery
+or Delivered; Results available only at Delivered. Later-stage samples count toward
+earlier completed steps, while current stage populations are labeled separately.
+Missing, unknown and cancelled samples do not create completion checks. A check
+requires a positive expected cohort count and exactly that many finished samples.
+Holds/failed flags remain visible without advancing stage facts; cancelled or
+superseded phases do not advertise a next stage.
+
+For seven Sequencing plus three ReadyForPreparation samples, counts are
+10/10 Received, 7/10 Library preparation, 0/10 Sequencing, with seven in sequencing.
+Approved results awaiting release can complete review while Results available
+remains unfinished. Denominators are samples, independent of physical tube or
+purchased sequencing-run totals. No API, persistence, authorization, migration,
+historical repair, scientific decision, operational writes or deployment change.
+
+Acceptance: correct mixed-stage counts/checks, no sequencing-start completion or
+scientific-approval delivery shortcut, no empty-cohort checks, read-only histories,
+preserved phase/next-action behavior, desktop/mobile and semantic theme readability.
+Author focused count regressions, update Customer/Partner help and living plans;
+automated execution remains request-only. Current source supersedes older plan
+wording that makes result delivery a prerequisite for Customer phase shipping:
+shipping advances after all required dispatches, as recorded in the owning
+on-demand phase kit plan.
+
+Implementation and bounded verification completed. See the
+[graphical progress review](../testing/runs/2026-10-05-graphical-workflow-progress.md)
+for static results, synthetic Customer previews, read-only sequencing evidence,
+responsive/menu focus checks and remaining acceptance boundaries.
+
+## Customer authorization snapshot read — October 5, 2026
+
+The Customer order endpoint failed to read a laboratory authorization saved by
+the purchased-service correction because `sourceType` was a named enum. Both
+Customer roster readers now use scoped string-enum serialization options that
+match the correction writer; initial and additional authorization writes use
+the same format. General order/quote serialization, tenant permissions, saved
+order data and immutable laboratory history are unchanged. No conversion or
+migration is needed. A PostgreSQL controller regression covers Customer detail,
+authorized sample identities and unchanged saved evidence after reading. Its
+source is compiled; automated execution remains request-only.
+
+## Catalog sequencing requirement — October 4, 2026
+
+Catalog administrators configure the positive minimum sequencing volume on each PSeq Lab Service. Operators read it during one-pair-at-a-time tube preparation; each allocated pair retains its service version and requirement. Batch-level editing is superseded. See [the owning plan](CATALOG-SEQUENCING-TUBE-PAIRING-PLAN.md) for behavior, conversion and verification.
+
+## Subject workspace navigation — October 3, 2026
+
+The approved [navigation restructure](WORKSPACE-NAVIGATION-RESTRUCTURE-PLAN.md) groups Lab Order intake and Trials under LAB SERVICES and commercial Kit/Data assembly work under PARTNER SERVICES within Order Ops, governed result release to Lab ops, cross-workflow attention to the Dashboard, and Finance/Legacy integrations to More. Canonical list and record routes follow their subject domains; existing bookmarks redirect. Role isolation, scientific review, approval, billing, records and backend contracts remain intact. No persistence change or migration.
+
+## Commercial draft source-row presentation — October 3, 2026
+
+Show the **Biological source** and **Samples** column headings once per order or
+phase, with all source rows aligned underneath at desktop and mobile widths.
+Replace the row's Remove text with a trash-can icon and preserve its accessible
+name, keyboard behavior, last-row protection, quantity validation and source cap.
+Use shared Field spacing for these controls. This is a presentation refinement;
+current audience guides remain accurate without a content change.
+
+## Customer/Partner Job detail organization — October 1, 2026
+
+Approved refinement: the supporting tab is **Progress** for every Job. Single-phase
+Jobs display their status, timing, samples, shipments and holds directly;
+multi-phase Jobs retain the expandable phase list. Single-phase shipping uses
+`Shipping (N samples)` with correct singular wording and no phase-sequence
+instructions. Missing tube/container identities mean **Awaiting sample shipment**,
+not an empty receipt ratio. See the owning on-demand kit plan for the complete
+acceptance criteria. This supersedes the older tab name in the notes below.
+
+Owner-approved refinement: current shipping task above Phases, Files and results,
+Order and billing, and History. One phase list owns receipt, laboratory progress,
+shipment links, timing and holds; results offer an exact phase filter. Remove
+separate Sent phases and After you send summaries. Preparation/shipment controls
+appear only for the current task and persist during background refresh and tab
+changes. Accepted Jobs default to Phases, pricing requests to commercial review.
+Unique milestones/QC and recorded timing changes remain accessible. Active
+holds/customer actions remain prominent. See ON-DEMAND-PHASE-KIT-REQUESTS-PLAN.md
+for detailed scope and unchanged sequential shipping/processing rules. Current
+source supersedes older help describing automatic kit orders and stacked panels;
+the affected Customer/Partner guidance is updated with the feature.
+
+## October 1 update: on-demand phase kit requests
+
+[On-demand phase kit requests](ON-DEMAND-PHASE-KIT-REQUESTS-PLAN.md) supersedes the earlier automatic-at-acceptance fulfillment decision and whole-Job preparation requirement below. Acceptance places no kit order. Administrators request kits and confirm an address when ready, for the current phase, with distinct kits and sample-based capacity per phase. Customer shipping follows phase order and advances after every required result from that phase is Portal-accessible; approved cancelled phases are skipped. The Next step card names the action and provides its button. Preparation/finalization and shipping repeat per phase; laboratory execution and full-sample-receipt TAT rules remain sequential. Existing fulfillment and custody history is preserved. Earlier statements below describe the prior implementation/decision history.
+
+
+## Order details disclosure heading — October 1, 2026
+
+Accepted-Job presentation refinement: the **Order details and billing** disclosure
+keeps its expand indicator beside its label, including when quote actions wrap on
+a narrow screen. Native details/summary expansion and keyboard behavior remain
+in place; one decorative indicator replaces the browser marker. Customer and
+Partner guide instructions still describe the same collapse/review workflow.
+Scoped lint and manual wide/narrow layout checks pass; no automated test execution
+was requested for this spacing change. TypeScript also passes.
+
+## Service catalog row actions — October 1, 2026
+
+Phaeno platform administrators can use each catalog row's shared Actions menu to Edit or Activate/Deactivate the item according to its saved status. Edit reuses the existing bounded catalog editor; item names still open view-first details. Status changes require a named shared confirmation with a separate consequence body, Cancel initial focus, busy dismissal protection and focus return to the row or search if an active-only row disappears. The existing versioned catalog write preserves all other reviewed fields and refreshes configuration after success or failure; a changed reviewed version blocks resubmission. Existing order/quote snapshots, permissions and detail-only deletion eligibility are preserved. No backend or persisted-model change is needed. The Phaeno configuration guide describes the row actions.
+
+Verification: TypeScript, scoped ESLint, generated documentation consistency and whitespace checks passed. The signed-in local desktop catalog showed one menu indicator per row, keyboard opening and single-line Edit/Deactivate entries; Show inactive exposed Edit/Activate. Edit opened the existing populated editor. Both status confirmations named the item and explained the consequence in a separate body; Cancel received initial focus and cancellation returned focus to the row. No catalog edit or status save was submitted. Component regression coverage was authored but not executed under the request-only test policy. Narrow/dark rendering and connected status-save acceptance remain unverified. The browser console showed a body-attribute hydration mismatch involving `cz-shortcut-listen` and a Clerk development-key warning, with no observed row-action error.
+
+## Service catalog discovery — September 30, 2026
+
+The Company's Add negotiated price Service dropdown also excludes inactive services, with backend validation against stale or direct inactive-service creation. Existing price records remain readable/editable with their saved inactive service fixed. Current catalog status is included in the existing pricing response; no persistence change is required.
+
+The catalog header contains an accessibly named search textbox without a visible label and Show inactive; inactive items are hidden by default. Search matches names, descriptions, permanent references and displayed sales units without regard to case. Filters combine, apply without submission, persist through item details and Back to service catalog, and Clear all restores the active-only default. Empty configuration, no search matches and no active items have distinct messages. Both list and item headers group title/description beside their action so text wraps in the available column instead of being pushed below the button. This presentation change uses the existing configuration response and changes no persisted model or permissions. The configuration guide corrects its older sales-unit wording to match the implemented Per sample service pricing.
+
+## Review corrections — September 30, 2026
+
+The owner authorized fixes for three reviewed edge cases. Accepted sample/source/run counts and quote history remain unchanged when a phase is cancelled. The preparation workspace instead returns the outstanding source/run scope and active phase IDs; pairing, finalization, laboratory authorization and new shipments require only those cohorts. Existing cancelled sample/pair identities remain recorded. An unscoped phase without a named allocation must have its sources/runs established before partial cancellation can be approved; do not guess the removed composition.
+
+Customer Draft conflict recovery loads current server values and preserves local edits through a field-level merge, keeping source rows and storage choices together. Save and Review stay blocked until the user reviews the latest saved changes and acknowledges the refreshed Draft. The refreshed version is adopted only then. Phase invoices reconcile rounding against prior non-void invoices with the same issued tax rate; a new approved rate does not recalculate earlier invoices.
+
+Regression coverage and follow-up verification are recorded in [the review-fix run](../testing/runs/2026-09-30-order-review-fixes.md). This correction changes no persisted model, dependencies or authentication and requires no migration or existing-order conversion.
+
+## Customer-initiated standard orders — confirmed September 30, 2026
+
+Status: implemented in source. On September 30, 2026 the owner lifted the verification hold and requested migration application, tests and builds, followed by resolution of the remaining 25 backend failures. The two pending additive migrations were applied to the configured local development database, with a preserved backup and no existing-order conversion. The corrected backend build passes with zero warnings/errors, and the complete PostgreSQL-enabled rerun passes 1,157 cases with zero failures and two environment-specific skips. All original failures are closed in [the current run](../testing/runs/2026-09-30-order-management-verification.md); broader connected business acceptance remains open. No commit or deployment is included. Earlier implementation checkpoints below describe the hold as it stood at that time.
+
+### Customer experience
+
+Use one bounded modal with Scope and Review states, preserving the list context. This is appropriate because the Customer orders one service, one sample type and one scope without phase configuration or proposed-price entry. The selected Department identifies the order. Choose an available service, enter a unique Job name and biological-source sample counts, and complete handling/safety notes using the Sample type's configured storage default where applicable. Exact Sample IDs and physical tubes remain part of preparation after placement.
+
+Customers cannot create or configure multiple phases. Every Customer-created order has one scope and one included run per sample. Do not expose phase controls, a run-count editor or proposed-price controls in this flow. Sales-originated phased orders can remain visible to the Customer with their agreed scope; this restriction does not remove Customer access to those orders.
+
+Show the effective per-sample price, included service (one library preparation, one run and data assembly), sample count, subtotal, applicable tax and total before placement. Save draft retains incomplete work without accepting prices or authorizing work. Review order refreshes the authoritative price and availability. Place order confirms that review and records the accepted standard commitment without a separate manual quote-preparation step. Later price/configuration changes require a new review before placement and cannot change accepted order terms. Preserve the existing kit-receipt, sample/tube pairing, shipment and result-delivery workflow after placement.
+
+### Service pricing
+
+The configured standard service price applies when no current negotiated service price exists for the Customer. Negotiated pricing must be stored per specific catalog service at Organization scope or at a Department belonging to that Organization. Phaeno Commercial staff maintain the rates from the Company's service-pricing context; Customers see their applicable effective price and cannot edit it. Keep these commercial rates separate from service entitlements and scientific-definition versions.
+
+If only one applicable negotiated price exists, use it. If both Organization and selected-Department prices exist, use the lower of those two. Another Department's price must never affect this order. If neither exists, use the standard catalog price. Do not substitute Department priority for the owner's lower-price rule. Track active/effective pricing and audit changes; freeze the chosen unit price and its source in the accepted order's pricing snapshot. Negotiated pricing does not itself grant ordering permission or bypass readiness.
+
+Example: a standard price of USD 1,000, Organization price of USD 900 and selected-Department price of USD 850 yields USD 850 per sample. With Department price USD 950, the Organization's USD 900 wins. Without either negotiated rate, USD 1,000 applies.
+
+### Customer sample limit and Sales boundary
+
+Configure the maximum Customer-order sample count on each service's commercial settings. No numerical limit has been selected in this conversation; do not guess one or reuse the 10,000-record technical cap as a commercial policy. The service must have an explicit positive configured limit before new Customer standard placement is available. Count samples across all biological-source rows; physical tubes, reserve tubes and sequencing batches do not increase that count. Orders at the configured limit are allowed; orders above it require Sales negotiation and cannot be placed through Customer self-service, even when a stored negotiated unit price exists.
+
+Display the limit near the sample counts and show “For orders above [limit] samples, contact your sales representative for negotiated pricing.” Retain entries when the limit is exceeded and block Customer placement. Additional sequencing runs also require Sales pricing; do not make them an alternative way to expand Customer standard orders. Sales retains the dedicated Draft workflow, phase configuration and separate additional-run pricing.
+
+### Engineering and acceptance scope
+
+Pre-implementation evidence: `/lab-services/new` already opens `LabJobDetailsDialog`; the older unused `LabServiceCreatePage` does not determine the current entry workflow. Standard preview/placement and accepted commercial snapshots exist. Lab Service prices currently come from the catalog only. Organization/Department service entitlements govern permission and do not contain negotiated Lab Service rates. Partner PSeq Kit negotiated offerings are a separate business model and must not become Customer Lab Service price records.
+
+Implement service-scoped commercial negotiated-price records, a service-owned Customer sample limit, backend price resolution and limit enforcement, current-preview concurrency evidence, immutable accepted price provenance, Company pricing administration and the compact Customer scope/review form. Persisted changes require additive migrations and ERD updates. Existing orders remain excluded from conversion. Update Customer help only with implemented behavior; keep this proposed behavior in the plan until implemented.
+
+Acceptance must cover: standard fallback; Organization-only and Department-only negotiated pricing; lower-price resolution with both; other-Department isolation; expired/future/inactive rates; no permission gained from a price record; missing sample-limit setup; exactly the limit versus one sample above it; retained Draft entries after a blocked review; Customer rejection of extra runs, phase creation and submitted price overrides; repricing between review and placement; accepted-price preservation; duplicate/uncertain placement recovery; keyboard, focus, narrow layout and themes. Success means an eligible Customer can place a standard order at the displayed applicable price without Commercial quote preparation, with zero price-resolution or sample-limit bypasses. The current run distinguishes automated source/API evidence from connected Customer acceptance, which remains pending.
+
+
+### Implementation checkpoint — September 30, 2026
+
+- The service catalog owns nullable **Maximum Customer samples**. Null explicitly disables Customer standard placement; no default was guessed. It is independent of scientific-definition revisions.
+- Commercial staff maintain audited USD negotiated rates under **Company → Services → Lab service pricing** at Organization or selected-Department scope. Serializable writes reject overlapping active windows for the same service and scope. Pricing records do not grant entitlements.
+- New Customer entry uses a Scope/Review modal with no phase, run-count or proposed-price controls. A Job name is required to save; other fields may remain incomplete. Draft JSON is tenant/Department scoped. Customer payloads reject unknown phase/run/price properties. Partner requests and existing Sales-managed orders retain their entry workflow.
+- Review resolves the selected Sample type storage default on the server, fixes one run per sample and validates a single scope. Customer placement rechecks readiness, membership, maximum sample count, effective negotiated price and the existing current-review token within the serializable idempotent commitment transaction. The accepted snapshot retains price provenance and selected-rate version. Retry placement preserves the same key and request when the outcome is uncertain.
+- The additive authored migration is `20260930233000_AddCustomerStandardOrdering`; it adds catalog sample limits, Customer Draft JSON and `lab_service_negotiated_prices`. The complete model snapshot/designer and generated ERD were updated. It depends on the pending separate sample/additional-run pricing migration. Neither migration is applied in this checkpoint.
+- Authored domain and component coverage covers negotiated resolution/isolation/windows, inclusive limits, incomplete Drafts, disallowed client overrides, price evidence, Draft storage and reviewed placement. PostgreSQL persistence coverage and the living verification plans track further acceptance. Source review and diff whitespace review are the only validation here; no build, lint, typecheck, suite or browser acceptance was run.
+
+## Pricing clarification — September 30, 2026
+
+The owner clarified that phased and non-phased standard pricing is per sample, including one library preparation, one run and data assembly. Price only additional runs separately from the existing prepared library, subject to remaining material. Draft proposals, formal review, Change quotes and retained quote/Finance portions use separate sample and additional-run components. Standard direct placement covers one run per sample; additional runs require explicit pricing review. See `MULTI-PHASE-LAB-JOBS-PLAN.md` for scope, the additive rate migration and the owner-requested hold on tests/builds. Existing orders are excluded from conversion; final compilation, migration application and runtime activation remain pending.
+
+## Sales Draft entry decision — September 30, 2026
+
+The owner authorized dedicated-page initial Sales entry, a phaseless default, optional phase count and per-phase biological sources, sample counts, sequencing runs per sample and pricing. **Save draft** retains incomplete work before **Submit for pricing**. Phase-specific final rates and turnaround remain part of one Customer quote. The documented complexity exception and detailed scope are owned by `MULTI-PHASE-LAB-JOBS-PLAN.md`. Existing orders are excluded from conversion and deletion. No Git mutation, automated test execution or deployment is authorized by this implementation request.
+
+## Sequential phase Jobs — planning, September 30, 2026
+
+The owner selected one commercial order and Job with sequential phases, each
+completed by Portal results delivery before the next begins. Capture phase scope,
+required samples/tubes, accepted priced lines and phase TAT for operations and
+invoicing. Each phase's TAT starts on complete physical receipt of its required
+samples. Support cancellation requests for unstarted phases only until the first
+required sample/tube is received. Phaeno chooses invoice timing and amounts
+allocated to accepted phase scope, including upfront and completion portions,
+without creating a contract-management system or collecting additional general
+contract terms. The first implementation partitions the accepted Job sample
+roster into distinct phase cohorts with configurable names, ordering and sample
+quantities; the 350-sample split of 50/150/150 is an example, not a fixed template.
+See [the owning phase plan](MULTI-PHASE-LAB-JOBS-PLAN.md) for confirmed rules,
+cancellation/invoice handling, receipt-before-activation implications and the
+implementation boundary. The generalized product model is ready for implementation
+within that scope. Mutually agreed rephasing may split, merge, reorder or
+redistribute unsent future cohorts of an open Job, even while an earlier
+phase processes. The first required tube sent fixes that sample's assignment;
+in-transit and received-but-unprocessed samples are ineligible. Preserve sent,
+started and delivered work, original dispatch/receipt/deadline history and issued
+invoices; retain the exact accepted before/after plan and
+reconcile remaining sample and billing scope. Completed Jobs cannot be rephased.
+This is future scope; current order, quote, invoice and single-phase completion
+behavior is unchanged.
+
+September 29, 2026 superseding decision for new PSeq Lab Service approvals: Customer review presents one delivery target in business days. The agreed target is saved on the initial quote or standard placement before Customer approval. Its due date is calculated after Phaeno physically receives all required tubes for all samples, using the Phaeno observed-holiday calendar. Existing placed Jobs retain their prior accepted terms. See `LAB-JOB-DEADLINE-TRACKING-PLAN.md` for the receipt trigger, calendar, historical behavior, and acceptance criteria.
+
+The approved four-stage Customer quote-to-shipment redesign is tracked in
+[Customer Lab order: four-step kit and sample workflow](CUSTOMER-LAB-ORDER-FOUR-STEP-WORKFLOW-PLAN.md).
+
+## Customer dashboard Lab request card presentation — September 29, 2026
+
+Shade the Customer dashboard Lab service requests header using the existing
+muted card-header pattern. Keep the request list on the card surface and give
+the View all lab services action an outlined background so it remains distinct
+from the muted footer. This is a visual change only; Department scope, list
+contents, actions, and pagination remain as implemented. Automated and browser
+tests remain request-only.
+
+## Customer order Department ownership — September 29, 2026
+
+The Johns Hopkins POMS order 6MZBLUGM was created under the default General
+Department even though the Customer's active user is assigned only to Oncology.
+The Customer Portal correctly scopes its dashboard to Oncology, making that
+Quote-issued order invisible there. For Customers with several active Departments,
+New Customer order now requires staff to select one explicitly. Department
+readiness and the initiation endpoint both block pricing when no active Customer
+user can access the selected Department; organization administrators count as
+having access to every active Department. An active non-admin user is enough to
+start pricing, while existing quote-approval requirements remain separate.
+
+Correct only this preexisting local order to Oncology after guarding its identity,
+unaccepted quote, and absence of downstream work. Preserve its issued quote and
+historical failed notification; do not retry or send a Customer notice as part of
+the repair. Backend and frontend regression sources are updated. Automated and
+browser tests remain request-only.
+
+## Customer order source composition control — September 29, 2026
+
+Move the existing **Add source** button to the trailing edge of the required
+Biological-source composition heading in New Customer order. Keep the sample
+total below the source rows, aligned right. The source count, validation,
+pricing, and submission behavior remain unchanged; the grouped field keeps an
+accessible name and the control may wrap to the trailing edge on narrow widths.
+Automated and browser verification remain request-only.
+
+## Customer order readiness controls — September 29, 2026
+
+Phaeno order staff can clear a freely selected Customer in New Customer order,
+then select another without losing entered Job details. Clearing also removes
+the prior Department and readiness display until the new Customer is selected;
+the Customer of an approved CRM handoff remains fixed. Refresh readiness sits
+inside the readiness message at the trailing edge, centered against its text,
+and retains the draft while checking current setup. On narrow layouts the action
+may wrap within the same message. No pricing gate, authorization, or API rule
+changes.
+
+Implemented locally. TypeScript, scoped ESLint, documentation generation/check,
+and whitespace checks pass. A focused Customer-switch regression source was
+added but automated and browser tests remain request-only.
+
+## One Sample type per PSeq order — September 25, 2026
+
+Customer and Phaeno Job creation require one currently Active PSeq Sample type. The Job stores its selected controlled type and shows it in the order scope. Every sample entered later belongs to that same type, regardless of biological source. A request covering another type must be placed as a separate order with separate containers, packets, and tracking labels. A selected type can follow an approved Active revision in the same family for new shipping work; already issued instructions retain their saved facts. Older orders without a recorded selection remain readable. Each pricing request snapshot includes the selected type. The type may change only while the Job is editable and has no sample rows or placement; changing a pending request submits a revised pricing scope.
+
+Add nullable selected-type identity and material-class snapshot fields to the order, with an EF migration and ERD update. Keep legacy order reads and shipping fallback. Validate availability and configured offering support before standard placement or new shipping authorization. Update Customer and Phaeno guidance. The owner authorized the migration, and EF applied it to the configured local development database `phaeno_ops_clean_20260919`. Automated test execution remains request-only.
+
+## Customer result projection follow-up — September 23, 2026
+
+The existing Department-scoped New results definition remains unchanged. The retention and download projections group loaded artifacts and attempts by package or file once. The dashboard query filters fully downloaded packages in the database before loading package, artifact, and retention evidence; packages with missing, pending, or duplicate governed commit evidence stay in the authoritative projection so failures are not hidden. The Portal now reads counts and the selected, paged Job list from one Department-authorized `GET /api/lab-service-orders/dashboard` response, so each refresh evaluates New results once. Existing summary and list routes remain available for their existing consumers. Both retry controls reload the shared response, and failed refreshes hide stale counts and Jobs. This additive API/UI change was verified with PostgreSQL reference cases and desktop/mobile browser fixtures in disposable local environments. Historical database rows still participate in the indexed eligibility query; a durable current-state projection would need a separate data-model and migration decision if measured production load remains high. No schema change, production deployment, or production load measurement is included.
+
+## Customer dashboard card removal — September 22, 2026
+
+Remove the Data Library summary card from the Customer dashboard and skip its
+unused dataset query there. Retain Data Library navigation and access, Job Files
+and results, dashboard metrics and other audiences' existing cards. This removes
+the selected dashboard element only; no datasets or permissions are changed.
+
+Verified the signed-in Customer dashboard: the card is absent, both Job actions
+and summary metrics remain, and Data library is available in navigation.
+
+## Customer dashboard metrics — September 22, 2026
+
+Add two large, responsive metrics above Your work: Items requiring attention and
+New results. Counts cover the selected Department's full accessible Lab Service
+set, independent of pagination. Attention counts Jobs requiring quote review,
+requested corrections, draft completion, sample preparation/shipping or hold
+review; requests being priced or processed by Phaeno are excluded. New results
+counts released, currently downloadable PSeq result packages that have not been
+fully downloaded by the Department, using existing completion/retention evidence.
+The owner selected this definition over a recent-release time window. Partial or
+failed downloads do not clear a package. Completed Jobs can still have new results.
+Completion is measured per file across successful downloads, so different members
+may complete different files within a package. Customer help describes this and
+the separate summary/list retry actions without treating an unavailable list as
+an empty result.
+
+Selecting a metric filters the requests below; All active requests restores the
+normal view. Members can review Department work while existing administrator
+permissions remain authoritative. Scope the new read-only summary and list views
+with the existing tenant/Department authorization. Loading/failure states never
+show invented zero counts. No schema, authentication or deployment change.
+
+## Priced runs and sized-tube finalization — September 22, 2026
+
+For accepted Jobs with the same sample and purchased-run count, sample entry and
+Edit sample display one fixed run per sample. Tubes remain editable for reserve
+material after failure. The API rejects a different per-sample run count for that
+priced scope before adding or changing sample metadata. Explicitly purchased
+additional runs retain their existing allocation workflow and final-total check.
+
+The local saved Job LLW7BD2Y has five accepted samples and five runs. Its active
+sample type uses submission unit `20 µL tube` and has an active destination/rule;
+an exact `tube` comparison incorrectly excluded it. Recognize plain tubes and
+positive µL/mL-sized tubes consistently in scientific configuration, availability
+and finalization. Freeze the selected submission unit on shipment items so packet
+validation agrees with the sample type. Preserve material, effective revision,
+service assignment, unique destination/rule and packing checks. Volume-only,
+block, section and other container units remain outside automatic tube intake.
+This corrects the previous blanket exclusion of sized tubes; it does not change
+saved configuration, accepted pricing or authorize/finalize the user's roster.
+No schema migration is needed.
+
+Verification: isolated backend solution build passed with zero warnings/errors;
+frontend typecheck, scoped lint and generated-help consistency passed. Automated
+tests were not run. Both dashboard requests were observed with their individual
+links and changing next steps. Further live checks stopped when the local API
+became unavailable; the user's server and saved roster were not changed.
+
+## Customer dashboard request actions — September 22, 2026
+
+The Customer dashboard must surface each active Lab Service request by Job name,
+with its next step and a direct link to the owning Job. Replace the one-record
+summary with a paged request card ahead of the other workspace cards. Prioritize
+pricing review, requested corrections, drafts and sample preparation; distinguish
+work waiting on Phaeno. Completed, cancelled, declined and discarded requests stay
+in Lab services history. Pagination exposes the full active set without a silent
+record cap. Ordinary members get review links and administrator guidance; existing
+Job permissions and confirmation dialogs remain authoritative.
+
+Implementation scope: an optional dashboard view on the existing read-only Lab Service list
+using the existing Lab Service tenant/Department access checks and list envelope,
+plus a Customer-only dashboard card. Query caches include organization, Department
+and page, refresh on return, and hide stale records after errors. No schema,
+authentication, workflow mutation or deployment changes. Regression sources cover
+both quote requests, links, waiting/read-only states, pagination, error recovery,
+Department changes and server tenant filtering. Automated execution remains
+request-only. Update Customer and Phaeno help with the implemented entry point.
+
+## Recognizable quote notification — September 22, 2026
+
+New Lab Service quote-issued notices lead with the saved Customer-visible Job name:
+“Pricing for {Job name} is available for review.” A separate line retains
+“Order reference: {Order number}” for tracking. This applies to initial and revised
+quotes through the existing issuance path. Recipients, subject, readiness checks
+and delivery behavior are unchanged; existing notices are not rewritten or resent.
+Updated Phaeno authorization help. No new tests for this copy-only change, and no
+email is sent during verification.
+Verification: isolated backend solution build passed with zero warnings/errors;
+help consistency (56 guides, corpus `b0627e7daa1d`) and whitespace checks passed.
+Automated suites were not executed.
+
+## Pricing next step in intake — September 22, 2026
+
+Lab Service rows in Quote in preparation show a bold next-step message identifying
+Phaeno as responsible: open the Job, select Review and issue quote under Commercial
+control (Issue quote when no price was proposed), review price and terms, and issue
+the quote for Customer acceptance. The message is limited to preparation status
+and disappears after issuance. Keep the Job name as the navigation link and retain
+existing permissions, readiness checks and price-review safeguards. The row text
+can wrap without squeezing the status badge. Updated Phaeno Order operations help.
+The owner selected **Review and issue quote** as the review-entry button label;
+the final **Approve price and issue quote** / **Amend price and issue quote**
+confirmation labels and behavior remain unchanged.
+This presentation change needs no new tests; automated suites remain request-only.
+Frontend typecheck, scoped lint, documentation consistency (56 guides, corpus
+`6c7eaed84ae2`) and whitespace checks passed. Browser verification was not run.
+The subsequent label rename passed scoped lint, whitespace and help consistency
+checks (56 guides, corpus `fda04ef5187b`).
+Intake Job titles now use bold weight so they remain prominent above the next-step
+message. This styling-only adjustment leaves the existing help accurate.
+
+## Empty later requirements — September 22, 2026
+
+In New Customer order, hide the Later requirements disclosure when both quote
+and invoice blocker lists are empty. Keep it when either list has requirements.
+The Ready to start pricing message references later requirements only when the
+disclosure is present. Readiness rules and order creation remain unchanged.
+Updated Phaeno Order operations help; no new tests are needed for this small
+presentation change. Automated suites and browser verification were not run.
+Scoped lint, documentation generation/consistency and whitespace checks passed
+(56 guides, corpus `e913c5c34865`).
+
+## Catalog readiness clarity - September 22, 2026
+
+Implemented locally. Migration `20260922194907_AddCatalogServiceFamily` was
+applied only to the verified development target `phaeno_ops_clean_20260919` on
+localhost:5432; it was the only pending migration. The full ERD is updated.
+Through the signed-in catalog editor, PSeq RNA Service was classified as
+PSeq Lab Service while retaining Active status, its permanent reference,
+Per sample-sequencing run unit and USD 1,250 price. PSeq Service remains inactive.
+The actual CRM request no longer contains the active-offering blocker.
+
+Verification: Release and Debug solution builds passed with zero warnings or
+errors, including the added backend regression sources. Frontend type checking,
+scoped lint, documentation consistency and EF model/migration consistency passed.
+Signed-in local checks verified the quiet catalog, saved family, unchanged prices
+and statuses, inactive creation default, pristine editor, cancellation/focus return,
+and the legacy item's disabled deletion with an incomplete-history explanation.
+No catalog item was deleted. Screenshot capture timed out, so full responsive/theme
+visual verification remains unconfirmed. Automated tests were authored but not run
+under the request-only rule; successful destructive confirmation, independent-connection
+races and new quote acceptance remain integration acceptance work. No deployment,
+production migration, staging, commit or push was performed for this correction.
+
+The owner clarified the product distinction: PSeq Lab Service is the service
+family; PSeq RNA Service is a specific offering within that family. The generic
+PSeq Service row is an existing priced catalog record, not the parent family.
+Its inactive state should not block a different approved active offering in
+the same family. Company entitlements remain family-level permissions.
+
+The owner reaffirmed the readiness rule on September 22: this catalog checklist
+passes when at least one offering in the entitled PSeq Lab Service family is
+active. It must not require the generic PSeq Service record, or every offering,
+to be active. An unrelated active Kit or other-family item does not establish
+Lab Service availability. Keep Company/Department service permission and the
+selected offering's scientific, sample and commercial requirements separate.
+
+Acceptance examples for the approved correction:
+
+- Active PSeq RNA Service plus inactive PSeq Service: catalog readiness passes;
+  ordering selects PSeq RNA Service and retains its identity and price.
+- Multiple active Lab offerings: catalog readiness passes; ordering permits an
+  explicit offering choice and retains that choice in accepted work.
+- No active Lab offering: the checklist explains that an approved Lab offering
+  must be activated, without directing staff to a particular legacy row.
+- Only unrelated active catalog items: Lab catalog readiness remains incomplete.
+- Inactive historical offerings and existing accepted Jobs remain unchanged.
+
+The implementation replaces the old reference-based restriction across catalog
+readiness, manual quoting, configured offering availability, Trials and Lab catalog
+lookups. Quotes select one actual offering; initial acceptance records that item's
+identity and additional-work quotes must retain the original service. Family
+changes are rejected once saved work or configuration references the item.
+
+This supersedes the earlier interim warning/role-label change and older plan
+sections that describe one designated catalog reference. The catalog now uses
+ordinary Active/Inactive status without a warning banner or special-role badge.
+
+### Approved family/offerings correction - September 22, 2026
+
+The owner explicitly approved implementation and the local database update on
+September 22. This supersedes the earlier approval-review block for this scope.
+The approved scope is:
+
+1. Add `service_family` to commercial catalog items, with `Other` and
+   `PSeqLabService` values. Existing stable item references remain immutable and
+   separate from service classification. Add an optional family input to catalog
+   writes, retaining the existing derived `isPSeqLabService` response for clients.
+2. Add an additive migration. Backfill only the existing `pseq-lab-service`
+   reference into the family so current installations preserve behavior; leave
+   other records unclassified until explicitly reviewed. Do not infer a family
+   from names or prices. Update the complete database ERD.
+3. Expose Service family in the bounded catalog editor. The specific item owns
+   its name, price, status, sales unit and scientific definition. Multiple
+   specific offerings can belong to the family; no duplicate generic offering
+   is required. Supported scientific/intake constraints remain enforced.
+4. Update readiness, commercial pricing, scientific definition availability,
+   Trial analysis choices and Lab catalog lookups to use the saved family.
+   Quotes select one actual offering explicitly when several are available.
+   Accepted quotes and additional-sample quotes retain the selected item;
+   never switch an existing Job to whichever catalog row is first. Preserve
+   immutable prices, scope, shipping, scientific and order snapshots.
+5. After approval and verification of the local development database target,
+   apply the additive migration locally and classify the existing PSeq RNA
+   Service as PSeq Lab Service through the application. Keep its current price,
+   unit and Active state; leave the older PSeq Service inactive. No production
+   migration, deployment, automatic activation or catalog deletion is included.
+
+Validation: build backend, check frontend types/lint, author focused regression
+coverage for family classification, multiple offerings, selected quote identity
+and historical continuity; automated test execution remains request-only. Verify
+the actual catalog/checklist and editing without accidental saves, and update
+audience-specific help and generated documentation. Git publishing is excluded.
+
+### Catalog deletion and quiet inactive states - September 22, 2026
+
+The owner also requested deletion of items never made active and removal of the
+prominent inactive-item warning and confusing Catalog role callout. Implement
+platform-admin-only deletion with optimistic concurrency and a named confirmation.
+Use existing audit history to prove creation as inactive and no later activation;
+missing or malformed history remains protected. Reject deletion when saved
+scientific/configuration records or order snapshots reference the item. Retain
+the audit trail. No activation-history schema change is needed. Add a read-only
+deletion-eligibility endpoint and a versioned delete endpoint, with one Actions
+menu containing Edit item and Delete item. No actual user record is to be deleted
+as part of implementation verification. Inactive status is ordinary catalog state,
+not an error banner; service family is an explicit field rather than a special
+role derived from an item reference.
+
+## Service-owned scientific configuration — implemented locally, September 18, 2026
+
+Product direction: Lab service offerings belong within Service catalog items, and each service explicitly identifies its supported sample types. They must not appear as independent peer configuration subjects.
+
+The previous implementation linked `LabServiceOffering.CatalogItemId` to the commercial catalog but exposed offerings in a separate settings sidebar and represented material compatibility as text. The implementation now owns scientific version management inside the catalog item's view-first detail page and persists explicit supported sample-type revision relationships.
+
+Implemented scope:
+
+- Open a catalog item in a dedicated, view-first service workspace. Show commercial details, included analyses and outputs, turnaround, supported sample types and scientific revision history under that item. Bounded changes use existing modal conventions and shaded section headers.
+- Retain reusable sample-type definitions while explicitly assigning supported types within each service. Do not infer support merely because a type is globally active or has a shipping rule.
+- Enforce service compatibility in backend availability, configured commitment and shipping authorization. Customer review displays the assigned sample types. The existing PSeq automatic intake resolves the single assigned extracted-RNA tube type; no new sample picker or material workflow is introduced. Existing destination, packaging and sample-handling checks remain additional requirements.
+- Preserve committed order definitions, scientific versions, accepted sample scope and shipment snapshots. Review ambiguous existing text-to-type matches rather than assuming all sample types are supported.
+- Preserve existing entry URLs with redirects or contextual links. Retire the independent Lab service offerings navigation after its capabilities are available inside service items. The treatment of a shared sample-definition maintenance surface must preserve shared revisions and shipping references.
+- Add `commercial_ops.lab_service_sample_types`, with unique offering/revision pairs and restrictive foreign keys. Migration `20260918232810_ConsolidateServiceSampleTypes` was applied only to verified local `phaeno_ops` at localhost:5432. The complete database ERD is regenerated. No inferred assignment backfill or shared-database migration is included.
+
+Confirmed product decision: each service catalog item has one current scientific definition, with prior versions retained for accepted work. It does not contain independently selectable packages. Serializable admin writes prevent overlapping active definitions across all version families for the same item; creating another version cannot move its parent item. Existing backend validation still limits configured direct laboratory purchases to the designated PSeq specimen-priced catalog item. Other catalog items retain their current Kit/Assembly/manual pricing behavior.
+
+New configured commitments freeze exact supported sample-type revision IDs. Null assignments in legacy snapshots retain their former shipping resolution; they are not rewritten. Existing scientific versions with no reviewed mapping remain visible but unavailable for new configured purchases. Staff create a new version to assign supported types explicitly. If a pinned type ceases to be effective before new shipping authorization, the operation blocks for review rather than replacing it with a globally matching material. Shipping snapshots already issued stay unchanged.
+
+The separate offering sidebar entry is removed, old `configurationSection=lab-service-offerings` links redirect to the catalog, and shared Sample types maintenance remains available. Scientific definition and catalog edits use bounded dialogs, unsaved-change guards, and concurrency recovery. Contextual version actions share one Actions menu. New scientific versions default inactive.
+
+Regression coverage was authored for immutable parent ownership, duplicate definitions, explicit mapping, frozen snapshots, and navigation. Automated suites remain unrun under the repository's request-only rule. Release build, frontend typecheck, scoped lint, migration/model checks and manual browser findings are recorded at the implementation checkpoint below. Deployment and production migration are not part of this implementation turn.
+
+Implementation checkpoint: Release solution build passed with zero warnings/errors; TypeScript, scoped ESLint, generated documentation consistency, whitespace and EF pending-model checks passed. Signed-in local browser checks confirmed catalog-name navigation to the owned detail, removal of independent offering navigation, legacy-link redirection to the catalog, empty scientific-definition guidance, fixed parent in the editor, explicit sample-revision choices, required-field validation, inactive defaults, pristine catalog Save disabled, and cancellation/focus restoration without saving temporary edits. The local item has no saved scientific definition or approved analyses, so populated history/publication and customer shipping acceptance were not exercised. Browser screenshot capture became unavailable; responsive visual and theme verification remain unconfirmed. These checks are local implementation evidence, not a production release.
+
+## Service-based commercial jobs — September 16, 2026
+
+Commercial Lab authorizations now describe the purchased service and its version without choosing a laboratory workflow. New commercial jobs have no workflow pin; existing nullable pins remain historical metadata. Additive authorizations preserve specimens, service scope and execution history without copying an old job workflow into the order contract. See LAB-OPERATIONS-PLAN.md, Service-based commercial jobs. Multi-service order composition and sequential service handoffs remain separate work.
+
+
+## Complete sample list review and clearing details — September 16, 2026
+
+Once every required sample has a unique saved ID, a positive tube count and the accepted source composition, replace the roster menu with the primary **Review and finalize list** action. Hide CSV actions and import advice in that state. **Your next step** becomes **Review and finalize sample list** and hosts the same review action, including permission, busy and unsaved-entry guards. Both open the existing review; finalization remains an explicit separately confirmed write.
+
+Replace Remove sample with **Clear sample details**, keeping Edit sample for corrections. An application confirmation modal names the sample and offers Cancel / Clear sample details; it focuses Cancel, blocks dismissal during the save and keeps failures visible for retry. Confirmation clears only the unfinalized saved identification using the existing versioned endpoint; accepted scope and source counts never change. The generated required slot reappears with a blank ID and one tube, focus moves to the source’s entry field, readiness returns to incomplete, and finalization stays blocked until re-entry. Finalized/authorized samples remain protected by existing backend restrictions. Legacy or invalid extra entries may also be cleared without adding any scope. No model, migration, permission or API-contract change.
+
+Regression coverage updated for complete/partial roster controls, confirmation/cancel, clear-and-reenter placeholders, protected finalized samples, source/ID/tube validation and the shared next-step review action. Tests were not executed (not requested). Verification: TypeScript, scoped ESLint, generated-documentation consistency and whitespace checks passed. Changes remain local and uncommitted.
+
+## Sample identification — September 16, 2026
+
+Approved workflow: Customer and entitled Partner users see a row for each accepted sample after placement or quote acceptance. **Sample identification** replaces **Samples** in the progress strip. **Match samples to tubes** names the barcode-matching step explicitly, and **Send samples** names the final shipping step. Source groups prefill the biological source and one tube; users enter unique non-PHI IDs and adjust reserve-tube counts only when needed. This bounded, accepted-roster task is an explicit inline-form exception to the usual form-free discovery-list rule: showing missing sample identities makes the remaining work visible without repeated Add dialogs.
+
+Rows are unsaved placeholders until **Save sample IDs**. Blank rows never create specimen records or prevent CSV import. Each group can be saved incrementally with existing versioned sample APIs; sequential writes use returned versions, and failures preserve unconfirmed entries while reconciling confirmed saves. Enforce unique IDs, positive tube counts, accepted source and total capacity. Unsaved entries block leaving without confirmation and must be saved or discarded before import, editing saved rows or finalization. Contextual roster and saved-row actions use Actions menus. Each saved-sample menu identifies the sample in its header and uses concise Edit sample / Clear sample details labels in a wider menu. The roster Actions control sits at the right end of the Samples and shipping title row, including the embedded shipping workspace, with enough menu width for single-line action labels. Completed roster browsing retains ten-row pagination and existing tube work. No schema, authentication, dependency or cross-app contract change.
+
+Acceptance: ten accepted samples show ten identifiable rows, known source and default tube counts; no writes occur on display; blanks do not count as saved; partial saves retain remaining entries; finalization still requires exact total and source composition plus the existing explicit confirmation. CSV preview/import remains available for an untouched empty list. Customer and Partner guides are updated. Component regression coverage is updated but not executed because tests were not requested. Verification: frontend TypeScript and scoped ESLint passed, documentation artifacts were regenerated and checked, and whitespace checks passed. Changes remain local and uncommitted.
+
+
+## Customer-submitted Lab Service requests — September 16, 2026
+
+Approved product scope: Customer and entitled Partner administrators submit the biological-source profile directly for pricing. The create modal is **Submit lab service request**, its action is **Submit request**, and its footer explains that submission does not accept a price or authorize work. Customer price proposals and the separate Sales custom-work inquiry are removed from this Lab request flow; internal Commercial price proposals and Kit custom-work inquiries remain separate capabilities.
+
+Engineering plan: add an optional `SubmitForPricing` flag to the existing write request so creation and submission are one atomic save with the existing idempotency guard. Editing while SubmittedForQuote or QuoteInPreparation replaces the pending scope and atomically submits a new immutable request revision, retaining prior revisions and concurrency checks. Once a quote is issued, direct scope edits stop and the existing accept/decline controls apply. No schema, role, authentication, or dependency change. Keep draft APIs compatible for existing callers; do not create a draft and submit it as two independent browser requests.
+
+Request edits use the existing ordering-eligibility checks; quote-issuance readiness is not a prerequisite for correcting a pending request. Quote issuance and acceptance retain their own readiness gates.
+
+The progress strip shows **Pricing review** while awaiting Phaeno and **Confirm pricing** when an issued quote requires a decision. Waiting guidance explains Modify/Edit request and Withdraw request. Current saved drafts still need submission; never label an unsent draft as waiting. Acceptance criteria include one submitted request per create retry, fresh scope revisions after edits, stale/issued/accepted edit rejection, no sample entry before acceptance, and retained withdrawal/history. Automated tests are updated but not run unless requested; perform build/type/lint/documentation checks at the implementation checkpoint.
+
+Implementation verification: backend Release solution build passed with zero warnings/errors; frontend TypeScript, scoped ESLint, generated documentation consistency and whitespace checks passed. Regression cases were added/updated but not executed. No deployment or production data changes in this task.
+
+## Order header actions — September 16, 2026
+
+The operational order detail header groups its permitted actions in one **Actions** menu, including assignment, status transitions, opening Lab work, and Job completion. The shared action-menu component shows a labeled button for one action and no control for zero actions. Existing permissions, pending states, confirmation dialogs, and completion safeguards remain intact; closing a dialog returns focus to the header action control. The Phaeno Lab authorization guide describes the menu. No API or persisted behavior changes.
+
+## Combined order and retention settings — September 16, 2026
+
+As revised September 18, **Order Settings** and **File retention policies** are separate destinations under **Administration** in the user dropdown menu, in that order. Order Settings is removed from the Order operations sidebar, and File retention policies is removed from the settings sidebar. Each menu item and page retains its own existing capability gate. `/file-management` opens the standalone retention page; old `/order-configuration?configurationSection=retention` links redirect there. No retention rules, API contracts, or saved policies change.
+
+## Intake create action — September 16, 2026
+
+The Commercial order intake list places **+ New Order** at the right end of its title row. As clarified September 18, one shaded list header contains the title, a single description, View, Search intake and Clear filters; the separate introductory card is removed. Customer loading/eligibility notices remain above the rows. The existing creation dialog and eligibility rules remain unchanged. Operator help uses the updated action label.
+
+## Final acceptance closure — September 15, 2026
+
+The owner's request to finish authorizes the missing additive Change-quote workflow. Commercial staff propose additional source counts and an incremental price on an active accepted Job; the Customer organization administrator accepts or declines that separate immutable proposal. Original placement, accepted prices, existing specimens and ongoing work stay intact. New sample entry opens only after acceptance; finalization appends a versioned Lab authorization and shipping records for new samples only. Started-work amendments preserve every existing specimen and the pinned scientific configuration. Completion includes accepted amendment charges and requires all accepted samples to finish. Stale, expired, unauthorized and repeated decisions must not duplicate scope, work or billing. Use existing roles and native receivables; no auth change or dependency is needed. Verify in disposable local databases and browser fixtures; production backup activation/deployment remains separately authorized.
+
+Verification: ORD-03 now passes the approved simulated software scope. Seventy-five distinct backend checks, 40 component checks and four browser scenarios pass across the documented runs; the additive migration is applied only to the owned local UAT database. The local API has been refreshed. [Complete crosswalk](../testing/runs/2026-09-15-final-three-acceptance.md). Historical missing-workflow findings below are superseded by this completion.
+
+## Remaining acceptance implementation — September 15, 2026
+
+The Product Owner requested completion of the eight remaining cases. Exercise the remaining scripts, repair the recorded notice-link and partial Lab cancellation defects, and verify authoritative terminal Lab-to-Commercial outcomes. The scope-increase probe confirms that the immutable change-quote requirement is still missing; retain ORD-03 as Fail, with implementation outstanding rather than claiming that rejection satisfies the requirement. Preserve accepted agreements, receipt/custody, result access, version checks and reviewed Finance adjustments. Verify in disposable databases and controlled browser fixtures; production deployment, shared migrations, private MFA and independent backup/owner acceptance remain distinct gates.
+
+**Approved billing policy:** an accepted, processed specimen that ultimately fails remains billable under the accepted quote. A replacement or credit is a separate reviewed remedy; it does not rewrite the original agreement or automatically block Job completion. Failed processing must remain distinct from rejected intake and approved cancellation. Map successful scientifically approved work, exhausted-material failure, rejected intake and approved cancellation to distinct terminal sample outcomes; unresolved holds must still prevent completion.
+
+Partial cancellation requires an explicit reviewed selection of unreceived samples, revalidates current Lab eligibility atomically, retains the unaffected received/consumed specimens and resumes the remaining Job. Dispatched or mixed selected/unaffected shipment contents require shipping review and separation before cancellation; wholly selected eligible unshipped shipments are cancelled with their reservations released. It must not reduce the accepted quote automatically; Finance records any adjustment separately. Additive request fields and safe projected outcome values are limited to this acceptance scope, with API/UI/tests updated together.
+
+## September 15 scientific and workflow acceptance
+
+UAT confirms custom/sales handoff and acceptance-based timing but finds the documented partial Lab cancellation incomplete (SC-02). The provider returns PartiallyAccepted; Commercial full approval rolls back it, and the Lab decision UI exposes no partial outcome. A raw PartiallyApproved status is not a supported specimen-level resolution and currently follows the non-approved branch. Complete reviewed specimen outcome, preserved received/consumed history and safe external projection before closing ORD-06/SYS-04. Result notice context/link is also missing (SC-01). These findings are recorded, not implemented. [Ten-case report](../testing/runs/2026-09-15-scientific-ten-software-acceptance.md).
+
+## Approved simulated Kit acceptance — September 15, 2026
+
+The Product Owner approved extending the simulated software approach; KIT-02–06 now pass that scope with 19 distinct backend checks, 20 component checks and actual-route desktop/mobile evidence. The fulfillment table received a narrow readability/reflow/keyboard-scroll correction. Real physical/scientific/provider and historical-record acceptance remain open. [Full crosswalk](../testing/runs/2026-09-15-kit-batch-software-acceptance.md).
+
+Documentation reconciliation: the current Partner reagent guide and controller permit Organization or Department administrators to decide substitutions; ordinary members are denied. Organization-administrator authority remains required for a new Kit purchase. This supersedes the older substitution wording below without changing permissions. Tests cover Department-admin decline and Organization-admin approval of a subsequent different-product proposal.
+
+## Included Kit input recovery checkpoint — September 15, 2026 (pre-approval)
+
+The KIT-04 continuation adds three disposable PostgreSQL tests and one component recovery test; nine related backend checks and five selected component checks pass. Validation, interrupted-upload cleanup/replay, frozen purchased scope, submitted-revision integrity and expired-draft preservation now have direct software evidence. No product behavior changed. Actual shipped-case/approved-input/storage/scanner acceptance remains open, and the earlier seven-case simulation approval is not extended. See [the case crosswalk](../testing/runs/2026-09-15-kit-input-continuation.md).
+
+September 14 ten-case UAT reproduced a zero-tube add as HTTP 500 without a saved row. Add/edit now validate positive tube count before mutation and return a clear 400. The disposable PostgreSQL regression fails before and passes afterward, including unchanged roster/version and valid retry. Existing Customer/Partner sample-list guides remain accurate. Connected CSV, conflict and finalization evidence is recorded in ../testing/runs/2026-09-14-ten-case-execution.md.
+
+## Commercial intake role correction — September 14, 2026
+
+The owner approved the bounded intake correction by continuing after review of `docs/testing/runs/2026-09-14-next-ten-uat.md`. With business roles enforced, an active Phaeno Commercial Operator can read the Lab Service intake queue, active Customer/Department choices, readiness and the canonical pricing catalog, open the commercial order, start pricing and manage quote decisions. Platform administrators retain read access; pricing still requires the assigned role. With enforcement disabled the existing administrator fallback remains. This supersedes the earlier administrator-only intake workaround and September 8 quote-read restriction for this scoped workflow.
+
+The aggregate queue restricts non-administrator Commercial users to Lab Service records. Department and price lookups expose only the bounded fields needed by intake. Organization/Department administration, other order queues, configuration editing, laboratory execution, Finance and result release retain their own authorization. No role grants, identity-provider change or migration. Revoked roles and inactive Phaeno memberships must fail closed. Focused rollback database tests and the existing actual UAT identities verify both successful and denied paths; this correction alone does not complete an order UAT case.
+
+
+## Versioned tube-use instruction — September 11, 2026
+
+New/edited Lab order drafts explicitly carry Run one tube per specimen; use a reserve only after failure. Creation, review and order details show the instruction; source/tube counts and pricing remain independent. Finalizing an older unfinalized order requires explicit confirmation, records an order event and produces V2 Lab authorization without rewriting prior order snapshots. Policy is immutable after authorization. V1 replay preserves absent policy fields. See [tube attempts](SPECIMEN-TUBE-ATTEMPT-PLAN.md). Local implementation only; acceptance scenarios remain Not run.
+
+## Customer-requested specimen holds - September 11, 2026
+
+The [customer-requested specimen hold plan](CUSTOMER-SPECIMEN-HOLD-PLAN.md) captures future request scope, operational acknowledgment, safe pause, resumption and commercial decisions. **Implementation is blocked by Product Owner direction** pending separate design approval and implementation authorization. Do not include customer hold controls in the tube-use policy implementation.
+
+## Specimen tube-use policy - September 11, 2026
+
+See the [specimen tube selection and fallback plan](SPECIMEN-TUBE-ATTEMPT-PLAN.md) for the explicit order instruction and authorization snapshot changes. The first policy runs one tube per specimen with explicit reserve fallback on failure. Run-all and subset selection remain deferred. Run-one/failure-fallback is implemented locally as described above.
+
+## Order progress and in-page shipping — September 10, 2026
+
+The Product Owner approved execution of the
+[Lab Job progress and shipping workspace plan](LAB-JOB-PROGRESS-AND-SHIPPING-WORKSPACE-PLAN.md).
+The local implementation splits the Job into **Ordering and shipping** and
+**After you send**. The customer steps form a horizontal sequence of icons,
+short labels and completion checks, with the current step highlighted and its
+instructions below. Completion follows saved evidence and explicit responsibility;
+partial shipments can have work in both parts.
+
+The full-width **Samples and shipping** workspace combines the paginated sample
+roster and tube matching in one grouped list, with selected-container commands in
+the Job's **Actions** menu and in-place insert printing. **Accept quote** and
+**Decline quote** appear at the end of the **Order details and billing** heading
+row. Order scope sits left of Quote and billing on wide screens, with pricing
+and invoices on the right. The separate Sample submission card is removed;
+saved instructions appear with sample preparation when relevant. Samples and
+shipping appear after commitment;
+**After you send** appears when shipment, receipt, lab progress or results exist.
+A detailed scientific checklist is deferred.
+The owning plan records scope, navigation guards, meaningful assertions and
+remaining acceptance. No API, database, dependency, Git or release change is
+included. The physical workflow remains at the saved 18/18 ReadyToShip checkpoint.
+
+## Finalization review sorting — September 8, 2026
+
+The owner reviewed the nine-sample finalization dialog and found its insertion
+order difficult to scan. Display the same accepted biological-source groups
+as the main panel, with natural numeric sample-ID ordering within each group.
+Use that ordering in the main panel too, without mutating the saved array or
+changing sample records, quantities, accepted scope, versions or API payloads.
+Retain unmatched records in their visible repair groups. The compact review
+shows each source's entered/required count, aligned ID/tube rows, and an overall
+sample/tube summary. Shared modal scrolling, no-PHI confirmation and all existing
+finalization guards remain unchanged. No backend or migration is needed.
+
+The owner's Firefox screenshot confirms the revised grouping and sorting for
+HS5Y7DB7: nine unique sample IDs, 18 tubes and accepted source counts 1/5/3.
+The owner approved the result as "Much better" and then finalized the list.
+Read-only local verification confirmed finalization at September 8, 3:53:25 PM
+PDT: nine unique sample records and IDs, 18 tubes, exact source counts 1/1,
+5/5 and 3/3, and Job status PlacedAwaitingSamples. Shipment
+SHP-20260908-7437F875A7D was created in Preparing with nine items and 18
+unassigned tube slots. No registered return kit exists yet, and shipped,
+delivered and received timestamps are empty; Phaeno preparation remains next.
+
+Review of the long-list case found initial keyboard focus on the off-screen
+no-PHI checkbox. Finalization now starts focus on the visible sample/tube
+summary inside the scrolling body; keyboard scrolling and normal Tab movement
+then reach confirmation. Import focus and shared close/focus-return behavior
+are preserved.
+
+Verification passed: seven existing sample-panel cases, full TypeScript,
+scoped ESLint and eight final synthetic browser cases across desktop/phone
+and both themes. The latter includes natural IDs, preserved source/input
+order, exact quantities, no-PHI gating/reset and long/short-height keyboard
+scrolling. Temporary browser fixtures were removed. Customer/Partner help,
+generated documentation and living test plans are current.
+
+## Biological-source groups and sample capacity — September 8, 2026
+
+The owner approved grouping sample rows by biological source instead of
+repeating the source on each row. Each accepted source has a heading with its
+entered/required sample count, including empty groups; the overall count stays
+above the list. Preserve compact ID/tube/status/icon rows and show unexpected
+source records explicitly so no saved sample disappears from review.
+
+The owner's longer-list walkthrough also exposed excessive page height. Bound
+the sample groups to a keyboard-focusable vertical scroll region, up to 24rem
+or 60 percent of the viewport height. Keep group bands sticky within that
+region and use an opaque semantic background in both themes. Overall counts,
+CSV/finalization controls and shipment content stay outside it. Short lists
+keep their natural height; all sample rows stay available without pagination.
+Show the owner's requested green check beside the overall counter only when
+the total and every accepted source count match; an equal overall total with
+an incorrect source mix still shows the warning. The icon has an accessible
+completion label and uses the existing light/dark status-ready token. This
+indicates count completion; finalization remains a separate confirmed action.
+Each accepted group also shows that check beside its count when exactly full;
+empty, incomplete, overfilled and unmatched groups never show a completion check.
+
+The owner also observed 2 of 1 samples for a source. Add previously enforced only
+the overall Job count. Enforce source quotas during add and source changes in
+both UI and API, using sample records rather than tube quantity. New entries
+start from a + Add button beside the count in the selected group band. That
+button is disabled when the group or overall roster is full. The Add dialog
+inherits that exact source and displays it as context without a source field;
+Edit retains the source choice so records can be corrected. Full sources are
+unavailable for new assignments. An open Add dialog never silently switches
+source if its original group fills during a background refresh.
+Keep existing excess records and mark the group red with an explanatory warning.
+Allow unchanged-source metadata edits and removal so existing data can be
+corrected; moving a sample must respect the destination quota. Exact overall
+and per-source composition is required before finalization.
+
+Preserve tenant/department/role boundaries and existing version checks. Review
+all roster writes (add/edit/remove/import/finalize) for serialized capacity
+decisions and CSV bypasses. Background refresh must update available capacity
+without discarding an open form's entered values. No accepted scientific scope,
+price or persisted record may be silently altered to accommodate excess.
+
+Following the owner's populated-list feedback, disable Import sample list
+while any sample exists and explain that all entries must be removed before
+importing a new list. Keep Download CSV template available because it does not
+change saved records. Guard the open import action if a refresh reveals newly
+added samples. Existing API import confirmation/version and atomicity safeguards
+remain in place; no saved rows are removed by this UI change.
+
+This authorized correction is local. Existing reason/status contracts and
+sample/source entities should suffice without a migration. Cover count and
+source boundaries, overfilled-data recovery, import, finalization, concurrent
+writes, grouped rendering, keyboard/mobile behavior and preserved form drafts
+with focused tests. Root reloads the local API after the checkpoint; no real
+test Job samples are changed automatically.
+
+Completed locally: 24 focused frontend cases and 24 synthetic browser cases
+passed, including a 36-row scroll region, group/overall completion checks,
+fixed Add context, import protection and correction of existing excess. The
+backend checkpoint passed 13 focused cases, including eight PostgreSQL cases;
+an earlier unit/domain batch passed 27. These tests also exposed and fixed EF
+navigation fix-up adding a new sample twice to the immediate Add/import
+response, despite one persisted record. Roster insertion now adds the
+collection member before tracking it, so saved response counts are accurate.
+
+Visual Studio repeatedly restarted the development API during initial test
+setup, so database tests moved to freshly created isolated local databases
+with existing migrations and no copied data. All scratch databases were
+removed and absence verified, with no remaining synthetic notices. No user
+Job records were changed. The computed count property is not EF-mapped;
+no migration was created or required. Full frontend TypeScript, scoped lint,
+documentation and whitespace checks passed. Root built the local API with
+zero warnings/errors, restarted it and verified health HTTP 200.
+
+## Compact sample list rows — September 8, 2026
+
+The owner confirmed TEST-001 was saved for HS5Y7DB7: one sample out of nine,
+one tube and the first source group at one of one. The row used three stacked
+lines for short details and actions. Compact ordinary rows into a single
+wrapping line: sample ID, biological source/tube count, status, then the existing
+Edit sample and Remove sample actions. The owner then chose pencil/trash icons
+for those actions; provide keyboard/hover tooltips and sample-specific accessible
+names, keeping removal confirmation. Keep accession details and any
+customer-visible reason; long content and narrow viewports may wrap without
+clipping. Use singular tube for one in both the list and finalization preview.
+
+The owner also approved hiding the informational Expected badge while preparing
+the sample list. Show it after roster finalization; other sample statuses stay
+visible so exceptions and laboratory progress are not concealed.
+
+This changes presentation only. Preserve all edit/remove permissions,
+confirmation, pending state, sample count and shipping/finalization behavior.
+Update Customer/Partner guidance for the pencil/trash actions,
+run focused existing checks and responsive browser review, then resume the
+owner's Edit sample step. No schema, API, migration or deployment is required.
+
+Completed locally: existing sample-list tests (2), TypeScript and scoped lint
+passed. Browser review passed 16 row/action cases and 24 final status cases
+across desktop/phone and both themes. Long details, sample-specific tooltips,
+keyboard edit/focus return and cancelled removal were checked without real
+mutations. Customer/Partner help and generated-documentation checks are current.
+
+## Sample entry layout refinement — September 8, 2026
+
+The owner's Firefox walkthrough confirmed quote acceptance for HS5Y7DB7:
+revision 1 is Accepted at USD900 pre-tax and sample entry is available at
+0 of 9. The Add sample modal then exposed cramped header/body spacing, a long
+introduction, and excessive width for three short fields.
+
+Use the shared compact dialog width and padded scrolling body, stack the
+sample identifier, accepted biological-source choice and tube count, and put
+short persistent guidance beside its control. Keep the extracted-RNA context,
+no-patient-identifiers instruction, shared Job settings and standard data-file
+scope visible. Keep existing default values, accepted-source filtering,
+single-source handling, integer tube validation, save/error behavior and
+permissions. The footer and header remain fixed; only the body scrolls.
+
+Browser review also found the existing dirty-dismissal warning did not fire:
+the form's dirty state was only read inside the event handler. Subscribe to it
+during render so Cancel, Close and Escape preserve an edited draft until the
+user confirms discarding it. Add a focused regression for that behavior. Show
+the accepted source as read-only text when there is only one choice; its saved
+value and the source-selection rules remain unchanged.
+
+This is a local presentation correction for both Add and Edit sample. No API,
+database, migration or scientific workflow change is needed. Review existing
+audience guidance, run scoped static checks and synthetic desktop/phone browser
+checks, then resume the owner's same Add sample step. Do not add cosmetic unit
+tests or create a real sample during layout verification. The dirty-dismissal
+regression is behavioral coverage for the discovered bug.
+
+Completed locally: 20 synthetic browser cases passed across Add/Edit, sources,
+errors, desktop/phone, both themes and short-height scrolling. Four Add/Edit
+dirty/pristine dismissal regressions passed, along with TypeScript, scoped
+lint, documentation and whitespace checks. Audience guides now explain the
+form and discard warning. No real samples were created; owner review of the
+refined Add sample form is the next manual checkpoint.
+
+## Quote decline reasons — September 8, 2026
+
+The owner requested a short reason dropdown instead of a mandatory free-text
+explanation when a Customer or eligible Partner administrator declines a quote.
+The required selection starts blank and offers Our needs changed, Cost is too
+high, Selected another vendor, Prefer not to say, and Other. Other reveals a
+required multiline Please explain field. Named reasons need no explanation.
+
+The existing closure confirmation, role scope, request status transition,
+version check and recorded reason remain. Store the selected reason's readable
+label through the existing reason contract; Other includes its trimmed
+explanation. Hidden explanation text must never accompany a named reason.
+Preserve in-progress choices/text on recoverable errors and when toggling the
+selection; retain dirty-dismissal confirmation and busy-state protection.
+Prequote withdrawal and postacceptance cancellation keep their current forms.
+This is a local frontend change with no database migration or permission change.
+
+Acceptance covers each reason, conditional required explanation, whitespace,
+switching away from Other, retry/draft preservation, accessible labels/errors,
+keyboard operation, and responsive dialog layout. Resume the owner's Firefox
+walkthrough by inspecting Other without submitting a real decline.
+
+Completed locally: 45 focused frontend cases, TypeScript, scoped lint,
+documentation and whitespace checks passed. Four synthetic desktop/phone,
+light/dark browser cases passed, with no real request closure. The React
+component review confirmed conditional fields, preserved drafts and repeated
+submission protection. No EF migration, backend code change or deployment
+was required.
+
+## Expired quotes and extension requests — September 8, 2026
+
+The Product Owner approved a complete recovery path for expired, unaccepted
+Lab Service quotes. Customer and eligible Partner organization/department
+administrators can request an extension; ordinary Members can review/download
+and see who is authorized to accept. Phaeno users with existing Order Operations
+access and quote-issuance authority review the request
+and issue a new quote revision with an approved future expiration. Accepted
+quotes stay Accepted when their former deadline passes.
+
+Effective expiration is derived from the current issued quote's UTC deadline
+without mutating the stored quote on read. Portal shows a red Expired badge,
+warning icon and expiration date. Accept quote, Decline quote and Download quote PDF
+share a wrapping action row beneath the total in Quote and billing. Accept quote
+is available to administrators, disabled with an explanation when blocked.
+The API also rejects expired acceptance. PDF downloads remain available.
+
+### Quote negotiation refinement — October 1, 2026
+
+The owner requested a **Propose changes** option and a visible **Decline quote** option alongside acceptance. Customer and Partner organization/department administrators decide the exact current initial quote through one **Actions** menu. Members can review the offer and history. Phase scope must never hide a pre-acceptance decline option.
+
+**Propose changes** collects one required Customer-safe explanation (up to 2,000 characters), covering requested pricing, scope, service or timing changes. It keeps the Job open, returns it to **Quote in preparation**, and pauses acceptance until Phaeno issues a new revision. The customer does not directly edit an issued quote or approve their proposed terms. Phaeno sees the proposal in Commercial control and the existing pricing queue, may request corrected scope through the established workflow, and issues a revised quote through existing readiness and pricing authority. Original terms remain readable and immutable.
+
+Store the proposal as an append-only order status event with `ChildRecordId` identifying the exact quote, the actor, required explanation and time. Project the pending proposal only while that quote remains current and the Job remains unaccepted and open; new issuance ends the pending projection while retaining history. This uses existing persistence and needs no migration or data conversion. Commands enforce active tenant administrator scope, exact quote, last-read Job version, idempotency and the shared order lock against acceptance/reissuance. Retried submissions cannot add duplicate proposal events. Decline marks the current initial quote Declined and closes the entire unaccepted Job as Cancelled, retaining phased scope, quotes and audit history. Post-acceptance Change quotes and cancellation decisions keep their separate rules.
+
+Quote PDF download moves from the page header to the quote **Actions** menu after a horizontal divider. Keep menu entries on one line. The initial October 1 scope layout showed services ordered with each quoted quantity summed across phases; the phase-block refinement below supersedes that on-screen presentation. Label meaningful notes as **Order notes** and omit a notes value consisting only of None. Phase TAT copy now says: "Each phase's TAT starts when Phaeno physically receives every required sample for that phase. Business days exclude Phaeno holidays."
+
+### On-screen phase scope and pricing refinement — October 1, 2026
+
+Approved users/problem: Customer and entitled Partner readers reviewing an issued manual quote need to understand each phase's scientific scope and charges together. The current order accepts one catalog service and one controlled Sample type; biological-source rows do not change that restriction. The owner authorized the on-screen review only and explicitly excluded the PDF presentation.
+
+Replace the global phase-details/pricing columns with one bordered block per frozen phase. Within each block, show samples, TAT, purchased runs, recorded runs per sample and biological sources alongside concise charges and the saved Phase price; stack scope then pricing on narrow screens. Order scope uses singular Service and Service quantity, summed from the saved base service lines, without presenting additional runs as a second catalog service. Quote metadata, saved tax/totals, billing and the existing permission-aware Actions menu retain their behavior.
+
+Explain additional runs from frozen scope and price-component quantities: 15 samples at 3 total runs each means 1 included plus 2 additional per sample, and 15 × 2 = 30 additional runs. Show the per-sample formula only for a recorded uniform allocation that reconciles with quoted quantities; otherwise a reconciled aggregate can show total minus included. Omit a derived explanation when saved quantities disagree, while keeping every quoted charge visible. Match scope and charges by exact phase ID; ambiguous associations retain the complete ungrouped quote. No model, service selection, Sample type, pricing authority or quote snapshot changes are included.
+
+Acceptance: each phase is a single named review region containing scope and prices; base-only phases omit additional charges; additional runs show their source; amounts and tax remain unchanged; mobile scope precedes its own pricing without overflow. Success means readers can trace every additional-run quantity to the phase allocation and assess its price within the same block. Customer/Partner help and existing component regressions are updated; automated execution remains request-only. Static and read-only browser verification are recorded at the checkpoint. PDF generation and PDF-specific help remain untouched.
+
+On-screen checkpoint: TypeScript and scoped ESLint pass. The owner confirmed the connected Customer presentation in the supplied screenshot. An isolated actual-component preview verified both phases, saved example values, singular service/sample quantity, the 15 × 2 = 30 explanation, base-only omission and the 16px gap between phase blocks. At 320px, scope precedes pricing without horizontal overflow in dark content, including the twenty-phase preview. Enter opens the existing Actions menu, Escape returns focus, and four entries remain single-line below one indicator with one divider. No order decision/write or automated suite was performed. The preview tab/server/files were removed and viewport restored.
+
+### PDF phase blocks and compact pagination — October 1, 2026
+
+After accepting the on-screen refinement, the owner explicitly authorized the PDF follow-up. This supersedes the preceding PDF exclusion for the new work only. Match the single-service summary and contained phase scope/pricing, explain reconciled included/additional runs, preserve saved quantities/rates/tax/terms and retain exact phase identities. Replace the redundant service/component quantity table with singular Service and sample/phase scope; add shared phase borders and one phase heading; keep quantity × unit price together when a narrow pricing column wraps. Reduce inter-charge and totals-box whitespace so a representative 25-sample quote with a full billing address, two phases, 30 additional runs and determined tax occupies one Letter page.
+
+Keep ordinary phases together, reserve space for the final phase's timing and terms/totals, and continue genuinely oversized sources/descriptions with repeated phase/source headings and page identity. Continued source blocks retain the additional-run scope explanation and identify where their pricing appeared. A mismatched frozen run allocation keeps all quoted charges without a guessed formula. No database, API contract, authorization, catalog selection, quote state or monetary calculation changes are included. Regression cases are authored but not executed; compilation, synthetic renderer inspection and connected download remain distinct evidence.
+
+PDF checkpoint: the full five-line billing address plus 25-sample/two-phase/30-additional-run example renders on one Letter page for both determined-tax and pre-tax variants. Twenty phases render on five pages, an oversized phased source on seven, and an oversized single-scope service description on four. All 18 rendered pages were visually inspected; complete end markers, continuation identity/source headings and saved totals were retained, with zero extracted glyphs outside content/footer bounds. The quantity/rate group remains intact when pricing wraps. Isolated solution/test assembly and normal API compilation pass with zero warnings/errors. Generated help and whitespace checks pass. The identified local IIS Express API was rebuilt/restarted and its health endpoint reports healthy. No automated suite, tenant quote decision, database write or deployment was performed; connected Customer download remains a separate acceptance check. The representative synthetic preview is retained at `output/pdf/quote-layout-preview.pdf`; scratch previews/build outputs are removed.
+
+Billing-address follow-up: the owner supplied the connected downloaded PDF and requested city, state and ZIP on one line, for example **Baltimore, MD 54415**. Compose city/region with a comma, then postal code with a space, omitting blank parts and retaining street/address-line-2/country as separate lines. This formats the saved billing snapshot; it does not change stored address data. Existing wrapping still protects unusually long locality lines from clipping. The compact synthetic preview is refreshed; no new mirrored test or automated suite is required for this formatting-only change.
+
+Address checkpoint: normal API compilation passes with zero warnings/errors; the identified local API is restarted and healthy. The refreshed one-page PDF visibly keeps **Baltimore, MD 21201** together, retains both phases/terms/$38,750 and has zero out-of-bounds glyphs. Whitespace checks pass. The scratch generator is removed; no automated suite or database write was performed.
+
+On-screen checkpoint: TypeScript and scoped ESLint pass. The owner confirmed the connected Customer presentation in the supplied screenshot. An isolated actual-component preview verified both phases, saved example values, singular service/sample quantity, the 15 × 2 = 30 explanation, base-only omission and the 16px gap between phase blocks. At 320px, scope precedes pricing without horizontal overflow in dark content, including the twenty-phase preview. Enter opens the existing Actions menu, Escape returns focus, and four entries remain single-line below one indicator with one divider. No order decision/write or automated suite was performed. The preview tab/server/files were removed and viewport restored.
+
+### PDF phase blocks and compact pagination — October 1, 2026
+
+After accepting the on-screen refinement, the owner explicitly authorized the PDF follow-up. This supersedes the preceding PDF exclusion for the new work only. Match the single-service summary and contained phase scope/pricing, explain reconciled included/additional runs, preserve saved quantities/rates/tax/terms and retain exact phase identities. Replace the redundant service/component quantity table with singular Service and sample/phase scope; add shared phase borders and one phase heading; keep quantity × unit price together when a narrow pricing column wraps. Reduce inter-charge and totals-box whitespace so a representative 25-sample quote with a full billing address, two phases, 30 additional runs and determined tax occupies one Letter page.
+
+Keep ordinary phases together, reserve space for the final phase's timing and terms/totals, and continue genuinely oversized sources/descriptions with repeated phase/source headings and page identity. Continued source blocks retain the additional-run scope explanation and identify where their pricing appeared. A mismatched frozen run allocation keeps all quoted charges without a guessed formula. No database, API contract, authorization, catalog selection, quote state or monetary calculation changes are included. Regression cases are authored but not executed; compilation, synthetic renderer inspection and connected download remain distinct evidence.
+
+Acceptance criteria: all three choices are visible to authorized administrators for single/multi-phase initial quotes; proposing validates nonblank text, retains drafts on failure, explains the acceptance pause and shows the exact proposal to both audiences; reissuance supersedes the old offer and removes the pending message; decline explicitly confirms whole-request closure, requires the existing reason selection and cannot target accepted/superseded quotes. Modal dismissal uses shared dialogs, cancel focus, persistent error feedback and focus restoration. Static verification is batched; automated tests are authored but not run unless requested. Git mutations and deployment remain outside this request.
+
+Local checkpoint: solution/test-project compilation and normal API compilation pass with zero warnings/errors; TypeScript, scoped lint, generated-help and diff-whitespace checks pass. The updated local API is running and /api/health reports healthy. Manual synthetic presentation checks cover multiline proposal validation/dismissal/focus, decline consequences, menu divider/width, service quantities, notes and 320px dark-content reflow. Automated suites and connected customer decision/reissue acceptance were not executed. The Visual Studio debugger may need reattachment after the local restart.
+
+The owner previously approved contextual action wording: Decline quote for
+an issued/expired offer, Withdraw request before a quote is available, and
+Request cancellation after acceptance. Decline retains the existing request
+closure operation; its confirmation explicitly says the entire request will
+close. The October 1 refinement above adds negotiation through the existing pricing state; it does not reopen a closed Job.
+
+An extension request belongs to the exact current expired quote, with optional
+reason (up to 2,000 characters), requester, timestamps and durable Pending /
+Resolved status. A unique quote reference, idempotency and order-level locking
+prevent duplicate requests across retries/tabs. Only active scoped administrators
+may request; requesting a review does not itself require new-order eligibility.
+Pending requests appear in Phaeno intake and detail, and customers see Extension
+requested. New issuance resolves the request atomically, records the replacement
+quote, and preserves the original dates/prices and audit history. Existing
+issuance readiness, authority, concurrency and quote-ready notification rules
+remain in force. No request sends an email directly.
+
+Contract: POST `/api/lab-service-orders/{orderId}/quotes/{quoteId}/extension-request`
+accepts `{version, reason?}` plus Idempotency-Key and returns the refreshed Job.
+Quote DTOs gain `extensionRequest`; Job DTOs gain `canManageQuotes`,
+`canRequestQuoteExtension`, and `quoteAcceptanceBlockedReason`; staff queue
+rows expose `hasPendingQuoteExtension`; active intake displays the marker, and
+the Lab Service list API supports a pending-only filter. The durable
+request needs an additive EF migration and updated ERD, applied only to the
+verified local development database in this authorized implementation.
+
+Acceptance covers admin/member/department/tenant boundaries, deadline crossing,
+accepted-state preservation, duplicate and stale commands, rejected expired
+acceptance, visible staff review, future-dated revision and request resolution,
+immutable original quote, and retryable accessible dialogs. Focused tests and
+local browser checks precede the owner's next Firefox walkthrough step.
+
+Completed locally: migration `20260908204524_AddLabServiceQuoteExtensionRequests`
+was applied to guarded `localhost/phaeno_ops`; the ERD and audience guides were
+updated. Six real PostgreSQL extension cases and 36 related quote/domain cases
+passed across the focused checkpoint and corrected fixture rerun. All 59
+focused customer/staff frontend cases passed. Synthetic browser review covered
+20 desktop/phone, light/dark scenarios with no real account, email or API writes;
+the final action-row grouping was subsequently covered by component assertions
+and a separate seven-width synthetic layout review. All actions fit together
+at 1280px and above; the download wraps cleanly on narrower quote cards/phones.
+Owner acceptance in Firefox remains the next manual gate.
+
+The final local API build passed with zero warnings/errors, documentation
+generation/checks passed, and the local migration list has no pending entries.
+
+Existing Phaeno read permissions remain unchanged. Automatic approval review
+rejected expanding quote-review access to Commercial Operators who are not
+platform administrators; the workflow uses the existing authorized staff path.
+
+## Quote PDF spacing refinement — September 8, 2026
+
+The owner confirmed the branded PDF opens for HS5Y7DB7 and requested a more
+balanced layout. Tighten excess space before the pricing table, give header
+details consistent alignment and spacing, and separate totals from their
+dividers with clear padding. Retain the existing readable type sizes, branding,
+all quote facts and frozen commercial terms, and long-content pagination.
+This changes PDF presentation only; the download action and help instructions
+remain current. Recheck the representative and long PDFs visually, then return
+to the owner's same download step.
+
+Completed locally: aligned Prepared for/Quote details columns, reduced the gap
+before pricing, balanced table row padding, and added a padded pale totals
+panel with clear divider spacing. All 6 existing renderer cases passed; the
+sample and every page of the five-page long quote were visually reviewed.
+API build passed with zero warnings/errors. No prices, terms, content or
+workflow permissions changed.
+
+## Lab Job heading cleanup — September 8, 2026
+
+The owner walkthrough identified a redundant Job number immediately above the
+same number in the main heading. The Customer/Partner Lab Job detail now uses
+**Back to lab services** with a decorative back arrow. The main Job heading,
+status, Job name and update date remain; the link preserves the existing list
+search/filter state. This is a presentation-only correction.
+
+## Branded quote download — September 8, 2026
+
+The owner walkthrough found that **Download quote** exported the internal quote
+object as JSON. Customer and Partner members reviewing an issued quote need a
+readable document they can retain and share. The approved correction is
+**Download quote PDF**, using the Phaeno logo, brand colors, job identity,
+quote revision/status, dates, itemized pricing, and saved commercial terms.
+
+The authenticated `GET /api/lab-service-orders/{orderId}/quotes/{quoteId}/pdf`
+endpoint reuses the active organization/department read boundary, including
+ordinary assigned Members. Draft and SyncPending quotes are unavailable.
+Issued and historical issued revisions can be downloaded without accepting,
+updating, or recalculating the quote. Prices, tax determination, billing details,
+and payment terms come only from the saved quote; legacy missing terms are not
+filled from a mutable billing profile. Undetermined tax remains labeled
+**Pre-tax total**. Internal identifiers, review notes, and raw snapshot JSON are
+excluded. Request revision snapshots retain their separate JSON download.
+
+Acceptance requires a branded PDF with accurate saved amounts, readable wrapping
+and pagination, a retryable download failure, and unchanged authorization and
+database state. This is a local API/UI correction with no new dependency,
+authentication-setting change, migration, or deployment. Focused automated checks
+and PDF visual review precede retrying the owner's Firefox download.
+
+Local verification: 6 renderer and 5 PostgreSQL access/data-integrity cases
+passed; 16 focused frontend cases, TypeScript, scoped lint, documentation and
+whitespace checks passed. The one-page representative quote and all five pages
+of the long layout sample were visually reviewed. The local API was rebuilt
+with zero warnings/errors and reloaded for the owner's same-step retry.
+
+## Shared handling controls — October 1, 2026
+
+The POMS order-entry user can explicitly choose **Insert “No known hazards”** beside the guidance above an empty Safety declaration. The subtle shared link-style button fills that exact editable text, marks the Draft dirty, validates the field and focuses the textarea. It is a field shortcut, not a save or submission action; an existing nonblank declaration is preserved and clearing the field restores the helper. Saving/submitting retains the existing required declaration rules. No default declaration, backend, persisted-model, permissions or release changes are needed. Update the Phaeno guide and verify entry, focus, dirty state, retained text, busy-state behavior and narrow/theme layout. Automated tests remain request-only.
+
+Place **Use different storage requirements** beside the **Storage requirements** heading and its **Sample type default** indicator. The configured default remains beneath that row; checking the control reveals the existing different-requirements field. Use a wrapping row on narrow screens, retaining the labeled checkbox, description association and existing default/override semantics.
+
+Place the visibly underlined insertion helper at the right end of the guidance row above the textarea. The guidance row wraps with a 3px vertical gap at narrow widths and keeps the helper right-aligned; surrounding Field spacing stays shared.
+
+## Phase-aware quote PDF refinement — October 1, 2026
+
+Customer and Partner readers need the exported quote to carry the same clear services, quantities, phase scope, TAT and pricing as Portal review. The owner supplied a two-page two-phase quote with verbose generic descriptions, duplicated scope and delivery information, excessive unused space and totals isolated on page two.
+
+Use compact prepared-for/billing columns, visible quote dates, a services-and-quantities summary and paired phase details/pricing. Resolve descriptive service names through the exact catalog identities already recorded in quote lines, as Portal review does; quantity, rate, phase allocation and totals remain frozen quote facts. Group by frozen phase ID and position rather than labels or the current Job. Each phase shows samples, purchased runs, runs per sample when recorded, TAT, biological sources, concise service quantity x unit price, conditional additional runs and Phase price. Put the approved sample-based TAT explanation beneath the phases. Present payment terms beside the saved subtotal/tax/total and keep the final phase, explanatory text and totals together where they fit. Repeat branding, Job/revision identity and phase headings on continuation pages; long sources/descriptions remain complete.
+
+Acceptance: the representative two-phase ten-sample quote fits one Letter page at readable type sizes; additional-run, determined/pre-tax, accepted/historical, many-phase and oversized-text documents preserve complete terms and have no clipped or overlapping content. Existing authorization, frozen billing terms, download failure behavior and quote data are unchanged. No model, migration, dependency, Git or deployment change. Use the existing PDF renderer, compile the affected projects and inspect rendered PDFs; automated test execution remains request-only. Document the output and verification limits at the checkpoint.
+
+Implemented presentation: exact saved phase IDs/positions pair scope and line prices; the concise catalog label is descriptive only and does not supply prices. The representative two-phase and additional-run/pre-tax PDFs each fit one Letter page. Twenty phases paginate to five pages, an oversized biological source to five, and an oversized accepted service description to four. Every rendered page was visually inspected, end markers and accented billing text were retained, and content/footer glyph bounds stayed on page. Ordinary phase blocks stay together, continuation pages repeat phase/source identity, and a final oversized service keeps its ending with TAT/terms/totals. The synthetic preview is `output/pdf/quote-layout-preview.pdf`; no quote/order/database writes were made for verification. Automated cases are authored but not executed under the request-only rule.
+
+Documentation discrepancy corrected: older Customer/Partner prose said missing recorded sample scope simply omitted the PDF source table. The current endpoint requires complete frozen source scope and returns `quote_document_unavailable` otherwise. Guides now explain the support path; endpoint behavior is retained.
+
+Verification checkpoint: the isolated solution, including authored PDF coverage, compiles with zero warnings/errors. Documentation generation/check and working/index diff checks pass. The local API was rebuilt and restarted with the refined renderer; its health check passes. Temporary renderer/build outputs are removed, retaining only the review PDF. No automated test suite was executed and no production release occurred; exact tenant download acceptance remains pending.
+
+## Authorized bundle implementation — September 7, 2026
+
+The Product Owner has requested completion of the configured Lab Service and
+Partner Kit bundles. The exact transition, pricing, persistence, API/UI and
+compatibility boundaries are recorded in
+[Portal operational completion](PORTAL-OPERATIONAL-COMPLETION-2026-09-08.md).
+This executes the approved rules below and preserves historical manual/standalone
+records. New production scientific offerings are not inferred from test fixtures.
+
+## Current feature status review - 2026-09-07
+
+Use [Portal feature readiness](../feature-readiness.md) for the current distinction between implemented behavior, deployment and operational acceptance. Dated verification sections below retain their historical evidence. The configured direct Lab Service and Kit-linked Assembly direction remains roadmap work; the current application still uses Customer quotes and independent historical Partner Assembly workflows. The completed September production releases do not establish populated scientific or Finance acceptance.
+
+## External workflow continuity - 2026-09-07
+
+The authorized consistency-review repairs are recorded in
+[External order workflow continuity](EXTERNAL-ORDER-WORKFLOW-CONTINUITY-2026-09-07.md).
+This connects exact Customer sample lists and shared shipments, preserves Partner
+drafts and Assembly corrections, restores Trial shipment context, and aligns
+external list navigation and audience-specific help. No persisted model or
+shared-database change is included.
+
+## Consolidated Customer order creation - 2026-09-07
+
+Product Owner approved one entry point: Order intake > New Customer order.
+Remove the separate staging form/menu and resolve old staging section links to
+Intake. Reuse Job pricing details, its Department selection, CRM handoffs,
+idempotent creation, pricing validation, and post-acceptance sample-roster boundary.
+Show all active Customers in creation, with selected-Department readiness grouped
+into start-pricing, quote, and invoice requirements. Later requirements must not
+disable pricing; unavailable readiness must offer retry and preserve the draft.
+Add read-only Customer options/readiness endpoints under existing platform order
+authorization. No persistence, authentication, migration, or deployment changes.
+Retain legacy staging API compatibility; the application no longer calls it.
+Acceptance: one menu entry, incomplete Customers discoverable, accurate stage
+grouping, blocked pricing prevented, later blockers non-blocking for pricing,
+and existing saved-order detail/queue handoff preserved.
+
+Implemented locally. API build, frontend TypeScript, scoped lint, documentation
+corpus check, and whitespace check passed. Synthetic browser checks covered
+pricing blocks, non-blocking later requirements, Department switching, retry
+with retained entries, synthetic save, desktop/mobile light and dark layouts,
+and two-step Escape with focus restored to the invoking action. Automated suites
+and connected order creation were not run. Restart the API to load the new
+read-only endpoints. No database migration is required.
+
+## Trial navigation placement - 2026-09-07
+
+Trial projects is now a capability-filtered section in the Phaeno Order operations
+sidebar. Existing Trial URLs retain this workspace context and highlight Order ops
+in desktop and narrow navigation. A Trial-only Phaeno user can reach Trials through
+Order ops without gaining paid-order capabilities. Returning to another Order ops
+section uses the optional validated `orderSection` search parameter. Trial projects
+remain no-charge evaluations, not orders. See the current presentation checkpoint
+in `PROSPECT-TRIAL-PROJECT-PLAN.md`.
+
+The 2026-09-05 [review gap closure](REVIEW-GAP-CLOSURE-2026-09-05.md)
+adds explicit discard confirmation to the quote dialog, including Close,
+Cancel and Escape, while preserving price proposals, authoritative conflict
+recovery and pending-issuance protection. Quote business rules are unchanged.
+
 ## 2026-08-29 PSeq order-to-cash implementation update
 
 For PSeq Lab Service, `PSEQ-ORDER-TO-CASH-GAP-CLOSURE-PLAN.md` supersedes the
@@ -150,9 +1275,12 @@ by `FILE-MANAGEMENT-PLAN.md`.
   5-day whole-package grace period when any file is still undownloaded at the
   standard deadline. Authorized Phaeno users can configure Customer-, Partner-,
   or Prospect-organization overrides, and release snapshots the effective
-  settings and dates. Warning, grace, download-cutoff, notification, and byte-
-  deletion processing remain unimplemented. Trial Project release integration
-  remains future scope because the Trial Project aggregate is not implemented.
+  settings and dates. Warning, grace, download-cutoff, notification and byte-
+  deletion processing are implemented behind independent activation gates.
+  Trial Projects and complete-package Trial release integration are implemented;
+  partial Trial release does not start the complete-package retention clock.
+  See `FILE-MANAGEMENT-PLAN.md` and `PROSPECT-TRIAL-PROJECT-PLAN.md` for the
+  current contracts and remaining hosted acceptance.
 - `SAMPLE-SHIPPING-AND-INTAKE-PLAN.md` owns a shared pre-receipt
   shipment-packet workflow for an accepted Prospect Trial Project and a future
   Customer promotional no-charge order. It includes versioned destinations,
@@ -161,9 +1289,9 @@ by `FILE-MANAGEMENT-PLAN.md`.
   configuration, return-kit and registered supplier-tube inventory, external
   assignment/correction crosswalk, printable packet and retained CSV, packet-
   plus-tube comparison scan, and Lab supplier-barcode adoption are implemented.
-  Trial/freebie parent authorization and issuance remain later phases. This
-  foundation does not alter the current paid-order or Trial Project boundaries
-  by itself.
+  Trial parent authorization and issuance are integrated with the accepted
+  Trial scope. Customer promotional no-charge ordering remains a distinct
+  future capability; Trial authority does not confer general ordering access.
 - Initial ordering authority is organization-admin-only. Active Customer
   organization administrators may create and place Customer lab service orders;
   active Partner organization administrators may create and place enabled
@@ -430,6 +1558,11 @@ verified behavior until that work is completed.
 CRM-to-operations handoff. When implementation is explicitly requested, this
 plan must be expanded into exact transition, pricing, API, migration, UI, and
 rollout changes before modifying the current order aggregates.
+
+The turnaround-range and acceptance-start bullets in this historical direction
+describe already placed Jobs. For new approvals, the September 29 business-day
+delivery target and complete physical receipt trigger at the top of this plan
+supersede them.
 
 - A direct Portal order is standard, configured, entitlement-checked work. The
   complete price is shown before commitment and no Sales negotiation is needed.
@@ -1031,8 +2164,9 @@ commercial direction is implemented and verified.
   tracked by line and quantity, and the Partner can see shipped and remaining
   quantities plus an estimated ship date when known.
 - Unfulfilled quantities remain visible as backordered. Phaeno cannot substitute
-  a different reagent without explicit approval from a Partner organization
-  administrator.
+  a different reagent without explicit approval from an eligible Partner
+  organization or Department administrator. See the September 15 documentation
+  reconciliation above; new Kit purchases still require Organization-admin consent.
 - Reagent orders may be saved as drafts. The initial release does not schedule
   automatically recurring orders or accept bulk order uploads.
 - A Partner administrator may create a new draft from a prior order. The new
@@ -2388,3 +3522,52 @@ deployment; the unchecked activation gate above remains binding.
   manual placement price overrides, and offline order imports.
 - Final delivery confirmation from carriers; `Fulfilled` is Phaeno operational
   closeout after all active quantities are shipped or cancelled.
+
+## Quote PDF sample scope — September 10, 2026
+
+The owner requested the same **Biological source / Samples** detail shown in the
+Job's quote card in **Download quote PDF**. The PDF now includes a sample-scope
+table before the saved pricing lines, with **Sample scope · N samples** together
+in a shaded band directly above the source rows. Sources come from the quote's
+immutable request revision; standard orders use only their quote-linked placement
+snapshot. Later request edits cannot change an older quote's source breakdown.
+Legacy quotes without a recorded breakdown omit the table rather than using
+current editable order data. Inconsistent recorded counts fail through the
+existing safe document-unavailable response. Long names wrap, long scopes paginate,
+and source headings repeat. No pricing, authorization, database or API contract
+changes are required.
+
+Local verification: 16 focused renderer and PostgreSQL download tests passed,
+including historical scope and unchanged data. The representative one-page PDF
+and all six pages of the long-source stress PDF were visually reviewed. The
+scope heading and count share a shaded band attached to the source table; pricing
+headers retain room for the first item. Documentation generation and freshness
+checks passed (56 guides); whitespace checks passed. No commit or deployment.
+
+September 14 ten-case closeout: ORD-01/02/04 pass for isolated software acceptance. Setup/Finance links open separately and Refresh readiness preserves the entered Customer/Department pricing draft. Actual staged quote/invoice denials and applicable offering version versus frozen accepted terms pass. ORD-03 remains open: post-acceptance scope-increase proposal, immutable change quote and acceptance/work gates are missing; do not treat ordinary quote reissue as that workflow. [Full evidence and limits](../testing/runs/2026-09-14-ten-case-execution.md).
+
+## Separate shipping settings — September 18, 2026
+
+Sample types is now its own Order Settings sidebar subject and reads the existing shared sample definitions independently of the commercial configuration request. Container sizes, destinations, shipping instruction rules and preview move to standalone Sample Shipping Settings after Lab Settings in Administration. The former shipping section URL redirects with container filters preserved. Scientific/sample requirements and existing frozen order and shipment revisions remain unchanged.
+
+## September 18, 2026 — Quote and workflow settings
+
+The Order Settings sidebar now calls Defaults Quote & workflow. It retains quote validity and explicit supported sample/result workflow review. Default sample-submission guidance has moved to its own Sample Shipping Settings page. The underlying instruction value remains required for readiness and is copied to new lab orders when tenant-specific instructions are absent; existing order snapshots remain unchanged. Quote edits preserve that text, and instruction edits omit the optional readiness JSON fields so older workflows are neither converted nor revalidated by an unrelated guidance edit. Existing optimistic concurrency is preserved. No backend or persisted-model changes.
+
+## September 19 — Clear catalog status and managed references
+
+The catalog modal uses one field per row at every viewport size. The catalog editor now uses an explicit Status selector (Active/Inactive) and explains new-pricing availability. Inactive item details give the exact activation path. Creation selects PSeq Lab Service or Other catalog item: the canonical PSeq reference/unit are supplied automatically, while other items receive a generated ITEM UUID reference retained through retries and renames. Existing references are preserved and shown under Reference details, outside routine editing. Sales units use predefined per-specimen, per-kit, per-item and per-service choices plus saved catalog units for compatibility. PSeq uses the required specimen unit. Existing API contracts, uniqueness/concurrency validation, permissions and saved records are unchanged. No migration or automatic activation is performed. Request instructions and Phaeno configuration help match the controls.
+
+Verification: TypeScript, scoped ESLint, generated documentation consistency and whitespace checks passed. Signed-in browser inspection confirmed the edit and create dialogs, one field per row, fixed PSeq unit, no code input, predefined unit choices, and Status changes enabling Save item. No catalog save was submitted during verification; existing pricing and activation were not changed by the agent. No browser errors were reported. Automated suites were not run under repository policy.
+
+September 30 local phase implementation: [MULTI-PHASE-LAB-JOBS-PLAN.md](MULTI-PHASE-LAB-JOBS-PLAN.md) now owns the implemented sequential cohort extension, derived mixed progress, phase-specific receipt/TAT/deadline, unsent-only mutual rephasing, first-tube cancellation cutoff and explicit partial/combined phase invoices. It supersedes older whole-Job completion invoicing and single-status assumptions for phased PSeq Jobs. Local migration applied after the authorized Job purge; connected/browser/physical/scientific acceptance and release remain separate, unverified gates.
+
+## Completed hosted release — October 5, 2026
+
+This implementation batch is included in application
+`c781988630ddfdb07f0d76dd7c3bb9753c15d660`, now deployed as matching API/UI with
+the two preserving EF migrations. Full regression, fresh recovery verification,
+hosted row/runtime preservation and public smoke checks pass under
+[the completed release receipt](../operations/portal-workflow-release-20261005.md).
+This supersedes earlier request-only test/release statements for this batch;
+physical/scientific/provider and authenticated operator acceptance remain separate.

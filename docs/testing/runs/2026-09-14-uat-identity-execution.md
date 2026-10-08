@@ -1,0 +1,9 @@
+# UAT identity setup record — September 14, 2026
+
+This is a historical record of the isolated acceptance cohort, not a current account-setup plan. The Product Owner authorized the bounded setup through the September 14 continuation. It covered the Clerk development instance and the isolated loopback UAT database only; it did not authorize production access, changes to existing people's credentials, real invitations, or provider publication.
+
+Exactly 19 dedicated identities were created in the verified Clerk development instance, with encrypted credentials and a retry-safe inventory journal. Nineteen audited local memberships were applied in one committed transaction. The first attempt rolled back after a fixture dependency-order error; zero cohort users or organizations were committed before the correction. Existing primary Trial approvers retained authority, and the test approvers were delegates. Research-only members had no Operations membership. New Prospect and Partner organizations were marked TEST ONLY. Existing passwords and reviewer roles were unchanged.
+
+Real sign-in and effective-role readback verified the Phaeno administrator, Lab operator, supervisor, and three external member audiences. Later connected checks verified Customer organization and Department administrators, the Scientific Operations Trial delegate, and the Commercial Operator. The ordinary Sales membership was correctly denied CRM access under the current business-role rules; no unrelated role was granted. A temporary Department assignment used for ACC-03 was restored, and the temporary Department was retired with its revoked history retained. Account setup alone closed no acceptance case.
+
+The ignored local setup artifacts were `tmp/uat-closure-identities/definitions.json`, `identities.json`, `local-grants.json`, and encrypted per-alias credential files. This record contains no credentials.

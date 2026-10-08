@@ -85,7 +85,7 @@ public sealed class PlatformDataAssemblyRequestsController(
 
     [HttpPost("{requestId:guid}/accept-intake")]
     public Task<DataAssemblyRequestDto> AcceptIntake(Guid requestId, [FromBody] VersionRequest request, CancellationToken cancellationToken)
-        => Mutate(requestId, request.Version, item => item.BeginQuotePreparation(), "quote-preparation", null, null, cancellationToken);
+        => Mutate(requestId, request.Version, item => { if (item.KitAssemblyCaseId.HasValue) item.AcceptIncludedIntake(); else item.BeginQuotePreparation(); }, "intake-accepted", null, null, cancellationToken);
 
     [HttpPost("{requestId:guid}/reject")]
     public Task<DataAssemblyRequestDto> Reject(Guid requestId, [FromBody] ReasonRequest request, CancellationToken cancellationToken)
@@ -156,9 +156,11 @@ public sealed class PlatformDataAssemblyRequestsController(
                 if (!item.CurrentInputRevisionId.HasValue) throw Conflict("assembly_input_revision_missing", "The accepted input revision is unavailable.");
                 var before = item.Status.ToString();
                 Execute(item.StartProcessing);
-                item.ProcessingRuns.Add(new AssemblyProcessingRun(item.Id, item.CurrentInputRevisionId.Value,
+                var run = new AssemblyProcessingRun(item.Id, item.CurrentInputRevisionId.Value,
                     item.ProcessingRuns.Count == 0 ? 1 : item.ProcessingRuns.Max(value => value.RunNumber) + 1,
-                    request.ProfileVersion, request.PipelineVersion, request.Provenance, DateTime.UtcNow));
+                    request.ProfileVersion, request.PipelineVersion, request.Provenance, DateTime.UtcNow);
+                item.ProcessingRuns.Add(run);
+                dbContext.AssemblyProcessingRuns.Add(run);
                 Event(item, before, item.Status.ToString(), actor.Id);
                 await dbContext.SaveChangesAsync(operationCancellationToken);
                 return await MapAsync(item, operationCancellationToken);
@@ -184,6 +186,18 @@ public sealed class PlatformDataAssemblyRequestsController(
             Event(item, "Processing", "ProcessingFailed", actor.Id, request.QcStatusOrReason);
         }
         await dbContext.SaveChangesAsync(cancellationToken); return await MapAsync(item, cancellationToken);
+    }
+
+    [HttpGet("{requestId:guid}/processing-runs/{runId:guid}/outputs")]
+    public async Task<IReadOnlyList<OperationalFileDto>> ListRunOutputs(Guid requestId, Guid runId, CancellationToken cancellationToken)
+    {
+        await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        var item = await ReadAsync(requestId, cancellationToken);
+        if (!item.ProcessingRuns.Any(value => value.Id == runId)) throw Missing();
+        var files = await dbContext.ManagedOperationalFiles.AsNoTracking().Where(file =>
+            file.OrganizationId == item.OrganizationId && file.WorkflowId == item.Id && file.ParentRecordId == runId
+            && file.Purpose == OperationalFilePurpose.AssemblyOutput).OrderBy(file => file.FileName).ToListAsync(cancellationToken);
+        return files.Select(file => file.ToDto()).ToList();
     }
 
     [HttpPost("{requestId:guid}/processing-runs/{runId:guid}/outputs")]
@@ -230,18 +244,26 @@ public sealed class PlatformDataAssemblyRequestsController(
                     && file.Purpose == OperationalFilePurpose.AssemblyOutput && file.ReleaseStatus == FileReleaseStatus.Internal).ToListAsync(operationCancellationToken);
                 if (files.Count == 0 || files.Any(file => file.ScanStatus != OperationalFileScanStatus.Clean)) throw Conflict("assembly_output_files_not_clean", "Every output file must pass scanning before approval.");
                 var release = new AssemblyOutputRelease(item.OrganizationId, item.Id, item.CurrentInputRevisionId.Value, run.Id,
-                    item.OutputReleases.Count == 0 ? 1 : item.OutputReleases.Max(value => value.ReleaseVersion) + 1, request.ManifestJson,
-                    request.PipelineVersion, request.Provenance, request.QcStatus, DateTime.UtcNow);
+                    item.OutputReleases.Count == 0 ? 1 : item.OutputReleases.Max(value => value.ReleaseVersion) + 1,
+                    JsonSerializer.Serialize(new { runId = run.Id, files = files.OrderBy(file => file.FileName).Select(file => new { id = file.Id, file.FileName, file.SizeBytes, file.Sha256 }) }, JsonOptions),
+                    run.PipelineVersion, run.Provenance, request.QcStatus, DateTime.UtcNow);
                 release.MarkReady(holdForPayment: true);
                 foreach (var file in files) { file.AttachToParent(release.Id); file.HoldForPayment(); }
                 item.OutputReleases.Add(release);
+                dbContext.AssemblyOutputReleases.Add(release);
                 Execute(item.MarkOutputAvailable);
-                var quote = item.Quotes.SingleOrDefault(value => value.Id == item.AcceptedQuoteId) ?? throw Conflict("accepted_quote_missing", "The accepted assembly quote is unavailable.");
-                var invoice = new CommercialDocumentLink(OrderWorkflowTypes.DataAssembly, item.Id, CommercialDocumentKind.Invoice, quote.Total, quote.Currency);
-                invoice.MarkReadyForManualAccounting(item.RequestNumber, DateTime.UtcNow);
-                dbContext.CommercialDocumentLinks.Add(invoice);
+                decimal balance;
+                if (item.KitAssemblyCaseId.HasValue)
+                    balance = await new KitBundleService(dbContext).ReadIncludedBalanceAsync(item.KitAssemblyCaseId.Value, operationCancellationToken);
+                else
+                {
+                    var quote = item.Quotes.SingleOrDefault(value => value.Id == item.AcceptedQuoteId) ?? throw Conflict("accepted_quote_missing", "The accepted assembly quote is unavailable.");
+                    var invoice = new CommercialDocumentLink(OrderWorkflowTypes.DataAssembly, item.Id, CommercialDocumentKind.Invoice, quote.Total, quote.Currency);
+                    invoice.MarkReadyForManualAccounting(item.RequestNumber, DateTime.UtcNow);
+                    dbContext.CommercialDocumentLinks.Add(invoice); balance = invoice.Balance;
+                }
                 await dbContext.SaveChangesAsync(operationCancellationToken);
-                await commercialRelease.ApplyAssemblyReleaseGateAsync(item.Id, invoice.Balance, operationCancellationToken);
+                await commercialRelease.ApplyAssemblyReleaseGateAsync(item.Id, balance, operationCancellationToken);
                 Event(item, "OutputReview", item.Status.ToString(), actor.Id);
                 Notice(item, "assembly-output-approved", "Data assembly output approved", $"Outputs for {item.RequestNumber} are approved. Payment-release rules have been applied.");
                 await dbContext.SaveChangesAsync(operationCancellationToken);
@@ -296,6 +318,7 @@ public sealed class PlatformDataAssemblyRequestsController(
         cancellation.Decide(decision, request.Reason, actor.Id, DateTime.UtcNow); var before = item.Status.ToString();
         Execute(() => item.ResolveCancellation(decision is CancellationRequestStatus.Approved or CancellationRequestStatus.PartiallyApproved,
             request.Reason, null)); Event(item, before, item.Status.ToString(), actor.Id, request.Reason);
+        await new KitBundleService(dbContext).SyncAssemblyClosureAsync(item, actor.Id, request.Reason, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken); return await MapAsync(item, cancellationToken);
     }
 
@@ -307,6 +330,7 @@ public sealed class PlatformDataAssemblyRequestsController(
         if (HttpContext.Request.Path.StartsWithSegments("/api/platform/lab-operations"))
             EnsureLabHoldOwnership(item, eventName);
         Execute(() => mutation(item)); Event(item, before, item.Status.ToString(), actor.Id, reason, internalNote);
+        await new KitBundleService(dbContext).SyncAssemblyClosureAsync(item, actor.Id, reason ?? "Assembly request closed.", cancellationToken);
         Notice(item, $"assembly-{eventName}", "Data assembly status changed", reason ?? $"{item.RequestNumber} is now {item.Status}.");
         await dbContext.SaveChangesAsync(cancellationToken); return await MapAsync(item, cancellationToken);
     }
@@ -346,7 +370,7 @@ public sealed class PlatformDataAssemblyRequestsController(
         var docs = await dbContext.CommercialDocumentLinks.AsNoTracking().Where(value => value.WorkflowType == OrderWorkflowTypes.DataAssembly && value.WorkflowId == item.Id).OrderBy(value => value.CreatedAt).ToListAsync(cancellationToken);
         var cancellations = await dbContext.OrderCancellationRequests.AsNoTracking().Where(value => value.WorkflowType == OrderWorkflowTypes.DataAssembly && value.WorkflowId == item.Id).OrderBy(value => value.CreatedAt).ToListAsync(cancellationToken);
         var timeline = await dbContext.OrderStatusEvents.AsNoTracking().Where(value => value.WorkflowType == OrderWorkflowTypes.DataAssembly && value.WorkflowId == item.Id).OrderBy(value => value.OccurredAt).ToListAsync(cancellationToken);
-        return new DataAssemblyRequestDto(item.Id, item.OrganizationId, item.RequestNumber, item.ProjectReference, item.AssemblyProfileId,
+        var dto = new DataAssemblyRequestDto(item.Id, item.OrganizationId, item.RequestNumber, item.ProjectReference, item.AssemblyProfileId,
             item.AssemblyProfileVersion, item.ProfileNameSnapshot, item.ProfileInstructionsSnapshot, item.MetadataJson, item.RequestedOutput,
             item.ProcessingNotes, item.ProhibitedDataConfirmed, item.Status.ToString(), item.InputRevision, item.PurchaseOrderNumber,
             item.SubmittedAt, item.PlacedAt, item.CompletedAt, item.TenantSafeReason, item.InternalNote, item.CreatedAt, item.UpdatedAt,
@@ -362,6 +386,7 @@ public sealed class PlatformDataAssemblyRequestsController(
             files.Where(file => file.Purpose == OperationalFilePurpose.AssemblyInput && file.ReleaseStatus != FileReleaseStatus.Withdrawn).Select(file => file.ToDto()).ToList(),
             docs.Select(value => value.ToDto(true)).ToList(), cancellations.Select(value => value.ToDto()).ToList(), timeline.Select(value => value.ToDto(true)).ToList(),
             item.AssignedToUserId, item.DueAt, item.ResumeStatus?.ToString());
+        return await new KitBundleService(dbContext).EnrichAsync(dto, cancellationToken);
     }
 
     private void Event(DataAssemblyRequest item, string from, string to, Guid actorId, string? reason = null, string? internalNote = null)

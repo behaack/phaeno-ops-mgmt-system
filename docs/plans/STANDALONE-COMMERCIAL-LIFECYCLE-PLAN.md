@@ -9,6 +9,8 @@ retain their normal approval boundaries.
 
 ## Status
 
+- The Product Owner's September 7 completion instruction authorizes the configured Lab/Partner Kit and first-party custom-work implementation. Current decisions, local migration and remaining activation/acceptance gates are tracked in [Portal operational completion](PORTAL-OPERATIONAL-COMPLETION-2026-09-08.md). Historical proposal wording below does not supersede that implementation evidence or imply production acceptance.
+
 - Product direction changed on 2026-08-26: develop POMS as a complete
   standalone application without a HubSpot runtime integration.
 - POMS must support its core Customer, Prospect, Partner, Trial Project,
@@ -36,11 +38,14 @@ retain their normal approval boundaries.
   entitlements, operational work, results, and audit history. Preserve those
   boundaries and extend them instead of adding a parallel commercial system.
 - QuickBooks Online integration is deferred. POMS owns the active commercial
-  catalog, immutable quote and billing-source facts, credit/release state, and
-  the Phaeno-only manual journal-entry source report. Finance prepares and
-  posts journal entries and invoices outside POMS under a separately approved
-  reconciliation procedure. Dormant QuickBooks adapter and compatibility types
-  are not active runtime dependencies and do not establish payment state.
+  catalog, immutable quote and billing-source facts, and the Phaeno-only manual
+  journal-entry source report. Native PSeq accounts receivable now also owns
+  invoice issuance, receipts, allocations and independently approved
+  reconciliation behind its activation flag. The manual accounting-source
+  workflow remains relevant to the other implemented commercial paths.
+  Dormant QuickBooks compatibility types are not active dependencies and do
+  not establish payment state. Native PSeq and Trial scientific release is
+  independent of payment. See [current feature readiness](../feature-readiness.md).
 
 ## Product Need
 
@@ -115,8 +120,10 @@ POMS owns all state required to operate the standalone product:
 - committed-sale records and the approved manual-accounting boundary
 
 A CRM company or contact is not a Portal organization or Portal user. Only an
-explicit approved transition creates or links a Portal account, and only the
-invitation flow creates access.
+explicit approved transition enables or links a Portal account, and only the
+invitation flow creates user access. Company department setup may create an
+inactive internal Organization beforehand; this is not approved Portal access.
+See [Departments before online access](CRM-PLAN.md#september-22-2026--departments-before-online-access).
 
 A future external CRM may import, export, or synchronize approved
 relationship-safe facts through an adapter. It may not be required to use any
@@ -128,8 +135,10 @@ executable scientific work, or overwrite POMS-owned operational state.
 1. A CRM company, contact, or lead is not automatically a Portal account.
 2. A Portal Prospect is an approved evaluation tenant, not a CRM lead or
    opportunity stage.
-3. An account proposal begins as a request. Creation or approval alone grants
-   no invitation, membership, service entitlement, order, or laboratory work.
+3. An account proposal begins as a request. Online-access approval grants no
+   invitation, membership, service entitlement, order, or laboratory work.
+   Service-change approval separately saves the reviewed dated entitlement;
+   Ready and effective permissions can be used when other operational gates pass.
 4. A company already approved to buy may be created directly as a pending
    Customer or Partner; it need not pass through Prospect.
 5. Prospect conversion is an explicit, authorized POMS action and preserves
@@ -163,13 +172,14 @@ executable scientific work, or overwrite POMS-owned operational state.
    records the actor and time.
 4. An authorized reviewer approves, returns, or declines the request using the
    existing review queue and optimistic-concurrency rules.
-5. Online-access approval atomically creates and associates the pending
-   internal tenant scope when one does not already exist. It does not add or
-   remove product or service entitlements, grant membership, or create an
+5. Online-access approval atomically enables and associates existing Company
+   department setup, or creates the pending internal tenant scope if needed.
+   It does not add or remove product or service entitlements, grant membership, or create an
    order.
-6. Staff complete readiness, review or add any remaining approved services,
-   and invite the designated organization administrator through explicit
-   actions.
+6. Staff complete readiness and invite the designated organization administrator
+   through explicit actions. Service-change approvals save their reviewed
+   entitlements in Requests; older approvals and unfinished setup use the
+   request's **Set up approved services** action.
 7. Staff mark the request complete only after the owning setup checks pass.
 
 Order-pricing preparation may begin before step 6 is complete when the active
