@@ -1078,7 +1078,7 @@
       "title": "Company requests and approvals",
       "summary": "Create Company requests, decide them centrally, complete approved work, and apply reviewed Prospect conversions.",
       "order": 21,
-      "reviewedAt": "2026-10-03",
+      "reviewedAt": "2026-10-08",
       "navigationGroup": "customer-relationship-management",
       "contentType": "guide",
       "topicIds": [
@@ -1494,7 +1494,7 @@
       "title": "PSeq billing, cash, and result release",
       "summary": "Review PSeq invoices, record and reconcile cash, release scientifically approved results, and distinguish disabled capabilities from loading failures.",
       "order": 45,
-      "reviewedAt": "2026-10-06",
+      "reviewedAt": "2026-10-08",
       "navigationGroup": "order-operations",
       "contentType": "guide",
       "topicIds": [

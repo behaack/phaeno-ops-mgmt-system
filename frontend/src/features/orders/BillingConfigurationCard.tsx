@@ -28,8 +28,9 @@ type Values = z.infer<typeof schema>
 const approvalSchema = z.object({ notes: required('Finance approval notes') })
 const fields = [{ name: 'contactName', label: 'Billing contact name' }, { name: 'contactEmail', label: 'Billing contact email', type: 'email' }, { name: 'line1', label: 'Address line 1' }, { name: 'line2', label: 'Address line 2 (optional)' }, { name: 'city', label: 'City' }, { name: 'region', label: 'State or region' }, { name: 'postalCode', label: 'Postal code' }, { name: 'countryCode', label: 'Country code' }, { name: 'paymentTermsDays', label: 'Payment terms (days)', type: 'number' }] as const
 
-export function BillingConfigurationCard({ apiEnabled, customers, customersLoading, initialOrganizationId = '', modal = false, onDirtyChange, onBusyChange }: {
+export function BillingConfigurationCard({ apiEnabled, customers, customersLoading, initialOrganizationId = '', modal = false, billingFormId, onSaveStateChange, onDirtyChange, onBusyChange }: {
   apiEnabled: boolean; customers: AccountsReceivableCustomer[]; customersLoading: boolean; initialOrganizationId?: string; modal?: boolean
+  billingFormId?: string; onSaveStateChange?: (state: { canSave: boolean; isSaving: boolean }) => void
   onDirtyChange?: (dirty: boolean) => void; onBusyChange?: (busy: boolean) => void
 }) {
   const client = useQueryClient()
@@ -53,6 +54,9 @@ export function BillingConfigurationCard({ apiEnabled, customers, customersLoadi
   const approve = useMutation({ mutationFn: (values: z.infer<typeof approvalSchema>) => approveTaxDecision(organizationId, selected!.profileVersion!, values.notes), onSuccess: async () => { approval.reset(); await refresh() } })
   const busy = save.isPending || approve.isPending
   const dirty = form.formState.isDirty || approval.formState.isDirty
+  useEffect(() => {
+    onSaveStateChange?.({ canSave: apiEnabled && form.formState.isDirty && !busy, isSaving: save.isPending })
+  }, [apiEnabled, form.formState.isDirty, busy, save.isPending, onSaveStateChange])
   useEffect(() => { onDirtyChange?.(dirty) }, [dirty, onDirtyChange])
   useEffect(() => { onBusyChange?.(busy) }, [busy, onBusyChange])
   useEffect(() => {
@@ -71,19 +75,19 @@ export function BillingConfigurationCard({ apiEnabled, customers, customersLoadi
     version.current = next?.profileVersion ?? 0
     setOrganizationId(id); form.reset(toValues(next)); approval.reset(); save.reset(); approve.reset()
   }
-  return <Card><CardHeader><CardTitle>Customer billing and tax configuration</CardTitle><CardDescription>Finance owns the billing contact, address, payment terms, and effective tax decision. Saving resets Finance approval. Approval is required to include tax in a quote and must be complete before invoice issuance.</CardDescription></CardHeader><CardContent className="space-y-5">
+  const content = <>
     {error ? <Alert variant="destructive"><AlertTitle>Billing configuration was not updated</AlertTitle><AlertDescription>{getOrderErrorMessage(error, 'Review the current Customer profile and try again. Your entered values are retained.')}</AlertDescription></Alert> : null}
     {customersLoading ? <p role="status" className="text-sm text-muted-foreground">Loading Customer billing profiles…</p> : null}
     {!initialOrganizationId ? <FinanceField id="billing-customer" label="Customer" required><select required className={financeSelectClass} value={organizationId} disabled={busy} onChange={event => selectCustomer(event.target.value)}><option value="">Select a Customer</option>{customers.map(customer => <option key={customer.organizationId} value={customer.organizationId}>{customer.organizationName}</option>)}</select></FinanceField> : <p className="font-medium">{selected?.organizationName}</p>}
     {selected ? <><div className="flex flex-wrap items-center gap-2"><Badge variant={selected.financeApprovedAtUtc ? 'secondary' : 'outline'}>{selected.financeApprovedAtUtc ? 'Finance approved' : 'Finance approval required'}</Badge><span className="text-xs text-muted-foreground">Configuration version {selected.configurationVersion || 'not configured'}</span></div>
-      <form noValidate className="space-y-4" onSubmit={form.handleSubmit(values => save.mutate(values))}>
+      <form id={billingFormId} noValidate className="space-y-4" onSubmit={form.handleSubmit(values => save.mutate(values))}>
         <FinanceValidationSummary errors={errors} focus={name => form.setFocus(name as keyof Values)} />
         <fieldset disabled={busy} className="grid gap-4 sm:grid-cols-2">{fields.map(field => <FinanceField key={field.name} id={`billing-${field.name}`} label={field.label} required={field.name !== 'line2'} error={form.formState.errors[field.name]?.message}><Input required={field.name !== 'line2'} type={'type' in field ? field.type : 'text'} maxLength={field.name === 'countryCode' ? 2 : undefined} {...register(field.name)} /></FinanceField>)}
           <FinanceField id="billing-tax-decision" label="Tax decision" required error={form.formState.errors.taxDecision?.message}><select required className={financeSelectClass} {...register('taxDecision')}><option value="Taxable">Taxable</option><option value="Exempt">Exempt</option><option value="NonTaxable">Non-taxable</option></select></FinanceField>
           {taxDecision === 'Taxable' ? <FinanceField id="billing-tax-rate" label="Approved tax rate (%)" required error={form.formState.errors.taxRatePercent?.message}><Input required type="number" min="0" max="100" step="0.0001" {...register('taxRatePercent')} /></FinanceField> : null}
           {taxDecision === 'Exempt' ? <FinanceField id="billing-exemption" label="Exemption evidence" required error={form.formState.errors.exemptionEvidence?.message}><Input required {...register('exemptionEvidence')} /></FinanceField> : null}
         </fieldset>
-        {!modal ? <RequiredLegend /> : null}<Button type="submit" disabled={!apiEnabled || !form.formState.isDirty || busy}>{save.isPending ? 'Saving changes…' : 'Save changes'}</Button>
+        {!modal ? <RequiredLegend /> : null}{!billingFormId ? <Button type="submit" disabled={!apiEnabled || !form.formState.isDirty || busy}>{save.isPending ? 'Saving changes…' : 'Save changes'}</Button> : null}
         {save.isSuccess && !form.formState.isDirty && !selected.financeApprovedAtUtc ? <p role="status" className="text-sm">Billing changes saved. Review and approve the current tax decision.</p> : null}
       </form>
       <form noValidate className="space-y-3 border-t pt-4" onSubmit={approval.handleSubmit(values => { if (!form.formState.isDirty) approve.mutate(values) })}>
@@ -93,7 +97,8 @@ export function BillingConfigurationCard({ apiEnabled, customers, customersLoadi
         {selected.financeApprovedAtUtc ? <p className="text-xs text-muted-foreground">Approved {new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(selected.financeApprovedAtUtc))}. Any billing or tax change requires a new approval.</p> : null}
       </form>
     </> : !customersLoading ? <p className="text-sm text-muted-foreground">Select a Customer to configure PSeq billing.</p> : null}
-  </CardContent></Card>
+  </>
+  return modal ? <div className="space-y-5">{content}</div> : <Card><CardHeader><CardTitle>Customer billing and tax configuration</CardTitle><CardDescription>Finance owns the billing contact, address, payment terms, and effective tax decision. Saving resets Finance approval. Approval is required to include tax in a quote and must be complete before invoice issuance.</CardDescription></CardHeader><CardContent className="space-y-5">{content}</CardContent></Card>
 }
 
 function toValues(customer?: AccountsReceivableCustomer): Values {

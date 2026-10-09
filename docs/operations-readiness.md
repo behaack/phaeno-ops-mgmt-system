@@ -1,5 +1,10 @@
 # Operations and production-readiness boundary
 
+## Billing dialog/navigation release — prepared October 8, 2026
+
+The Owner requested preserving remote API/Portal UI updates. The [scoped release plan](plans/PORTAL-BILLING-RELEASE-20261008-PLAN.md) covers the fixed billing modal and Finance navigation, matching API help corpus, existing hosted database/file preservation, verified recovery, exact-source activation and rollback. Clean-source API Release/UI builds, TypeScript, focused lint and corpus validation pass; unrelated in-progress CRM work is excluded. The Owner has authorized the scoped commit and push; activation is pending publication of the reviewed revision and access to the intended Vercel Portal project. Existing SSH cannot access the protected deploy runtime without sudo, so use the established protected CI credentials. No remote application/data/auth changes or workflow enablement have occurred.
+
+
 ## Sequencing results and FASTQ release — October 6, 2026
 
 The Owner's two commit/push checkpoints and preserving API/Portal deployment with
