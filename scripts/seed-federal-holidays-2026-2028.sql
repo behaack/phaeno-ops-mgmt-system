@@ -59,7 +59,7 @@ DECLARE
     request_id text := 'federal-holidays-2026-2028-' || current_database();
 BEGIN
     IF current_database() <> current_setting('holiday_seed.expected_database')
-        OR current_database() NOT IN ('phaeno_ops_clean_20260919', 'phaeno_portal_green') THEN
+        OR current_database() NOT IN ('phaeno_ops_clean_20260919', 'phaeno_ops_recovery_20261008', 'phaeno_portal_green') THEN
         RAISE EXCEPTION 'The connected database is not the verified holiday-seeding target.';
     END IF;
     IF (SELECT count(*) FROM federal_holiday_seed) <> 33
