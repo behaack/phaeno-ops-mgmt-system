@@ -1,5 +1,16 @@
 # Operations and production-readiness boundary
 
+## Scientific storage and progress source release — completed October 9, 2026
+
+The Owner-authorized matched API/Portal frontend release is active on source
+[0fbfa87c](https://github.com/behaack/phaeno-ops-mgmt-system/commit/0fbfa87c7232f1b2b9751ba1c581a187608a976f).
+The [release summary](operations/portal-scientific-storage-progress-release-20261009.md)
+records completed automated verification, fresh encrypted restore-verified
+off-server recovery, live source/health/rendering/authorization checks and restored
+release controls. Existing data, Local storage and ClamAV are preserved; no EF
+migration or identity cutover was needed. S3 provider conversion, versioned original
+preservation, S3-aware recovery and real DPS acceptance remain separately gated.
+
 ## Billing dialog/navigation release — completed October 8, 2026
 
 The Owner-authorized API/Portal UI update is complete on matching application source [64c5d9dc](https://github.com/behaack/phaeno-ops-mgmt-system/commit/64c5d9dcbef45c7d15d5681c29547399c1eab187). The [release summary](operations/portal-billing-release-20261008.md) records the scrolling/footer and Finance guidance fixes, vendor security/SSR compatibility update and verification boundaries. Verified encrypted recovery is retained separately. Live health, authorization, sign-in and authenticated billing-modal checks pass. No migration/reset or business-data write occurred. Release controls are restored and unrelated local work remains preserved.

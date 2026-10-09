@@ -54,8 +54,16 @@ write occurred.
 Follow the [preserving source release plan](../../plans/PORTAL-S3-PROGRESS-RELEASE-20261009-PLAN.md).
 S3 conversion still requires retained-file conversion, versioned originals and
 S3-aware recovery under its separate cutover plan. Automated tests do not establish
-real DPS processing or independent scientific acceptance. Frontend hosting access
-is currently a release blocker; no matched API/UI release is activated yet.
-Live baseline checks confirm API health and Portal rendering (HTTP 200), direct
-and proxied anonymous authorization rejection (HTTP 401), and unchanged prior
-matched API/UI source. Source publication is separate from runtime activation.
+real DPS processing or independent scientific acceptance. Hosting access was
+restored with Owner-authorized official CLI authentication. Matched source
+`0fbfa87c` is now active on the API and public Portal frontend. A second fresh
+recovery point passed restore/cleanup and off-server verification before release.
+Live checks confirm API/Portal/help/Website rendering (HTTP 200), sign-in markup,
+direct and proxied anonymous laboratory rejection (HTTP 401), the exact API image
+revision and public frontend alias. Storage/scanning and 25 migrations remain
+unchanged. Workflow and Vercel Git holds are restored.
+
+Browser-control initialization failed, so live verification used authenticated
+Vercel HTTP checks and independent API/server metadata. Interactive signed-in
+scientific acceptance was not exercised; its automated cases and the real DPS/S3
+activation boundaries remain distinct. See the [release summary](../../operations/portal-scientific-storage-progress-release-20261009.md).

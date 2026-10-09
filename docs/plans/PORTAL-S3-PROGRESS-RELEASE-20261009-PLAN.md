@@ -26,8 +26,9 @@ matched API/UI source `c10c622e`. Do not reset or replace the hosted database.
 The fresh protected coordinated backup completed successfully, including isolated
 populated restore and cleanup verification and encrypted off-server collection.
 Its recovery identifiers and log are retained privately. The backup workflow hold
-was restored immediately after dispatch. Frontend deployment access remains a
-release gate: the connected Vercel account cannot currently see the Portal project.
+was restored immediately after dispatch. Frontend access was restored through
+the Owner-authorized official CLI login. A second fresh coordinated recovery
+point was verified immediately before activation; detailed receipts stay private.
 
 ## Preparation, recovery and cutover
 
@@ -56,3 +57,16 @@ anonymous authorization rejection, retained file access, upload verification sta
 and active/unknown/terminal assembly progress behavior. Smoke must not save business
 records, submit scientific results, activate storage conversion or invoke real DPS.
 Record actual completed checks and blockers; preparation alone is not deployment.
+
+## Completed source release
+
+The matched application source [0fbfa87c](https://github.com/behaack/phaeno-ops-mgmt-system/commit/0fbfa87c7232f1b2b9751ba1c581a187608a976f)
+is active on the Portal API and public frontend. The frontend was built from an
+isolated archive of that exact commit with the public Portal domain left on the
+prior release until API health/source verification passed, then promoted without
+rebuilding. No migration, reset, identity cutover, storage conversion or scientific
+write occurred during release smoke. Local/ClamAV settings and 25 migrations are
+unchanged. Protected workflow and Vercel Git deployment holds are restored.
+
+See the [release summary](../operations/portal-scientific-storage-progress-release-20261009.md)
+for acceptance evidence and the remaining S3/provider boundaries.
