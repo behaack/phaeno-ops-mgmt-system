@@ -28,7 +28,7 @@ public sealed class S3FileStorageOptions
 
     public string Region { get; set; } = string.Empty;
 
-    public string KeyPrefix { get; set; } = "phaeno-portal";
+    public string KeyPrefix { get; set; } = string.Empty;
 
     public string ServiceUrl { get; set; } = string.Empty;
 

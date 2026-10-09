@@ -1,8 +1,8 @@
 import type { LabReceiptTab } from './lab-receipt-tabs'
 
-export type LabSection = 'receipt' | 'jobs' | 'work' | 'results' | 'release' | 'kits' | 'assembly' | 'protocols' | 'reagent-runs' | 'master-mixes' | 'kit-requests' | 'transportation-kits' | 'batches'
+export type LabSection = 'receipt' | 'specimens' | 'jobs' | 'work' | 'results' | 'release' | 'kits' | 'assembly' | 'protocols' | 'reagent-runs' | 'master-mixes' | 'kit-requests' | 'transportation-kits' | 'batches'
 export function parseLabSection(value: unknown): LabSection | undefined {
-  return typeof value === 'string' && ['receipt', 'jobs', 'work', 'results', 'release', 'kits', 'assembly', 'reagent-runs', 'master-mixes', 'kit-requests', 'transportation-kits', 'batches'].includes(value) ? value as LabSection : undefined
+  return typeof value === 'string' && ['receipt', 'specimens', 'jobs', 'work', 'results', 'release', 'kits', 'assembly', 'reagent-runs', 'master-mixes', 'kit-requests', 'transportation-kits', 'batches'].includes(value) ? value as LabSection : undefined
 }
 
 export function resolveLabWorkspaceSection(section: LabSection | undefined, receiptTab: LabReceiptTab | undefined): LabSection {

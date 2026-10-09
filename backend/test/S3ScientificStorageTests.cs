@@ -25,6 +25,24 @@ public sealed class S3ScientificStorageTests
     private sealed class MemoryS3() : AmazonS3Client(new AnonymousAWSCredentials(), new AmazonS3Config { RegionEndpoint = Amazon.RegionEndpoint.USWest2 })
     {
         public Dictionary<string, byte[]> Objects { get; } = [];
+        private readonly Dictionary<int, byte[]> parts = [];
+        public override Task<InitiateMultipartUploadResponse> InitiateMultipartUploadAsync(InitiateMultipartUploadRequest request, CancellationToken cancellationToken = default) =>
+            Task.FromResult(new InitiateMultipartUploadResponse { UploadId = "fixture-upload" });
+        public override async Task<UploadPartResponse> UploadPartAsync(UploadPartRequest request, CancellationToken cancellationToken = default)
+        {
+            using var bytes = new MemoryStream(); await request.InputStream.CopyToAsync(bytes, cancellationToken);
+            parts.Add(request.PartNumber!.Value, bytes.ToArray());
+            Assert.InRange(bytes.Length, 1, 8 * 1024 * 1024);
+            return new UploadPartResponse { ETag = $"part-{request.PartNumber}", ChecksumSHA256 = Convert.ToBase64String(SHA256.HashData(bytes.ToArray())) };
+        }
+        public override Task<CompleteMultipartUploadResponse> CompleteMultipartUploadAsync(CompleteMultipartUploadRequest request, CancellationToken cancellationToken = default)
+        {
+            Assert.Equal("*", request.IfNoneMatch); Assert.False(Objects.ContainsKey(request.Key));
+            Objects.Add(request.Key, parts.OrderBy(p => p.Key).SelectMany(p => p.Value).ToArray()); parts.Clear();
+            return Task.FromResult(new CompleteMultipartUploadResponse());
+        }
+        public override Task<AbortMultipartUploadResponse> AbortMultipartUploadAsync(AbortMultipartUploadRequest request, CancellationToken cancellationToken = default)
+        { parts.Clear(); return Task.FromResult(new AbortMultipartUploadResponse()); }
         public override async Task<PutObjectResponse> PutObjectAsync(PutObjectRequest request, CancellationToken cancellationToken = default)
         {
             Assert.Equal("*", request.IfNoneMatch); Assert.False(Objects.ContainsKey(request.Key));

@@ -287,3 +287,83 @@ The primary success measure is **100% of specific released results in the enable
 - [ ] Deploy schema/API and compatible producers before UI/enforcement; record exact source revisions, migration/backup identity, runtime health and read-only signed-in smoke evidence.
 - [ ] Do not roll back by deleting evidence or dropping populated new tables. Disable new enforcement/writers or forward-fix while preserving captured history if rollout must pause.
 - [ ] Complete the laboratory-owner investigation walkthrough and resolve all mandatory decisions. Only then mark the full plan complete.
+
+## Proposed specimen-centered operational workspace — October 9, 2026
+
+Status: implemented and verified locally October 9, 2026 within the fixture boundaries recorded below. The Product Owner confirmed that users will primarily trace the laboratory lifecycle at specimen level. The Job layout and new Job Sequencing tab remain implemented; the Product Owner accepted the organization below and requested implementation. This section does not change scientific, approval, release, retention, failure/retry, purchased-run, billing or authorization rules.
+
+### Users and outcome
+
+Operators need to open a specimen, identify its current work and blockers, and reach the exact owning execution or batch. Supervisors and scientific reviewers need to reconstruct the full chain, including failures, reserve use, repeated authorized runs, corrections and the exact result version delivered. Success means following a specimen from receipt to delivery without repeatedly searching Job tabs or shared batch lists, while preserving the existing result-to-physical-tube investigation contract.
+
+### Existing foundations
+
+The dedicated specimen route already exposes physical tubes, available/reserve material, processing attempts, controlled workflow stages, processing actions, Assembly work and Sample history. Sample history already includes result-version-to-source tracing, step/performer evidence, scientific outputs and analysis, resources, approvals, exceptions, delivery/retention history, supporting reports and saved investigation manifests. Reorganize and connect these foundations; do not introduce a competing specimen identity or duplicate evidence store. Review the current approved repeated-run and multi-phase contracts rather than treating older run-one assumptions in historical plans as current.
+
+### Recommended hierarchy and entry
+
+- Job: overall delivery commitments, phase coordination and cross-specimen oversight; Specimens is its operational roster.
+- Specimen: the primary lifecycle and traceability workspace, shared by active and historical investigation entry.
+- Execution, preparation tray and sequencing batch: owning work surfaces reached from specimen-scoped links. A shared batch may contain multiple Jobs; this does not expose another specimen's detail in the originating specimen trace or create specimen-local batch actions.
+
+Add a direct **Specimens** entry beside **Jobs** in Lab operations. Its bounded, permission-scoped table/card list finds active and historical specimens by customer specimen ID, accession, source/derived tube barcode and Job reference, with explicit stage/blocker filters and current-versus-historical context. A known result/run identifier may link directly only when persisted identity resolves unambiguously. Reuse the current accessioned-sample discovery patterns; returning from a specimen restores the selected search/filter/page/scroll state. No customer specimen is exposed across an unauthorized organization boundary. This entry gives daily tracing a direct start without first locating the Job.
+
+Keep the Job opening in Overview. Enrich its Specimens roster with the customer specimen identifier, accession, current processing stage, received/required tubes, recorded run progress and a next-action/blocker summary where authoritative data exists. The specimen identifier opens its existing dedicated route. Preserve Job/queue filters, chosen tab and scroll when returning; make a bounded specimen picker available in the specimen header for moving through that Job's roster.
+
+### Recommended specimen presentation
+
+Header: customer specimen ID, accession, Job/phase context, current operational state, urgent holds/blockers, authorized-run context and the existing permission-aware Actions control. Avoid presenting vendor success, scientific approval and Portal delivery as one completion flag.
+
+Tabs immediately below the header:
+
+| Tab | Scope |
+| --- | --- |
+| Overview | Current state, next required action, material/run summaries and a connected lifecycle trace with links to exact saved records. |
+| Processing | Receipt/acceptance, received and reserve tubes, source selection, attempts, pinned workflow and preparation/execution evidence. |
+| Libraries | Library identity and physical source/library tubes, producing preparation attempt/execution, status and recorded QC. |
+| Sequencing & analysis | This specimen's library memberships, shared batches/vendor stages, actual runs, FASTQ/output identities, analysis inputs and producing analysis/correction records. |
+| Results & delivery | Result versions, QC/scientific review, approval/release and actual Portal delivery; retain existing distinctions between availability, a download attempt and verified completed transfer. |
+| History | Chronological events, holds/exceptions, performer/recorder evidence, corrections, reports, supporting files and investigation tools. |
+
+Overview provides a compact receipt/acceptance -> preparation -> sequencing -> analysis -> review -> delivery orientation, derived from the applicable approved workflow and recorded evidence. A stage strip is navigation, not proof of a single linear processing chain or a new status engine. Its expanded trace branches by processing attempt and authorized run: exact source tube -> preparation/executions -> library -> sequencing member/run/output -> analysis -> result version -> review/release/delivery. Selecting a result version highlights its producing chain; failed/abandoned attempts and unused reserve tubes remain identifiable. Do not silently attach unlinked historical evidence to the latest attempt, infer identity from a display name, collapse independently authorized runs, or treat a failed retry as an extra purchased run.
+
+Specimen-scoped links from Job Libraries, Sequencing and Exceptions should open the corresponding specimen section where identity is authoritative. Batch identifiers still open the full shared batch workspace. Existing deep links, investigation reports and underlying workflow actions remain available.
+
+### Implementation slices after approval
+
+1. Reorganize the existing specimen page into the five surfaces with stable URL-backed selection, compact header, current actions and context-preserving navigation. Reuse existing attempt, work and investigation reads; move content without changing records or workflow gates.
+2. Add the connected Overview trace and specimen-scoped sequencing summary. Map available data to immutable specimen/attempt/run/result identities server-side; extend bounded read contracts only where evidence is missing from existing reads. No persisted-model change is currently proposed; any discovered capture/schema gap is a separate plan boundary.
+3. Enrich Job specimen discovery and connect related Job rows to the correct specimen section. Keep batch-wide operations in their existing owner workspace, with a clear return path.
+4. Update Phaeno guides and focused backend/frontend/E2E coverage; verify connected desktop/narrow, keyboard, light/dark, multiple Jobs in one batch, multiple authorized runs, failed retry with reserve, explicit no-run, unlinked historical evidence, latest corrections and exact delivered-version traces. Follow the standing rule on test execution; plan approval does not itself request automated suite execution or deployment.
+
+### Acceptance and measures
+
+- Selecting a specimen from the Job shows its current state/blocker and linked work without searching another queue.
+- Every displayed sequencing library, output, analysis and result is scoped to the selected specimen; shared-resource context never includes another specimen's evidence rows.
+- Every trace branch retains its actual source tube, processing attempt and authorized-run identity, including failed/replaced/corrected work.
+- Choosing an exact result version leads to its actual producing chain; unknown links are visibly unknown and never guessed.
+- Library preparation, vendor outcome, scientific review, Portal publication and verified download remain distinct facts.
+- Existing actions, roles, scientific gates, concurrency, history/report access and data retention continue unchanged.
+- Navigation preserves Job/queue context, supports keyboard and narrow screens, and does not require scrolling past unrelated evidence to reach the active task.
+
+Evaluate through a representative operator/supervisor walkthrough: time and navigation hops to find the active work, identify a blocker, and trace a delivered version to its physical source. Establish the current-page baseline before implementation; no invented numeric target is treated as an acceptance rule. Compare the proposed workspace on those same tasks and require correct, complete trace results.
+
+### Implementation record — October 9, 2026
+
+Implemented the existing specimen route with URL-backed Overview, Processing, Sequencing & analysis, Results & delivery and History tabs, a Job specimen picker, compact run/material context, persistent recorded holds/blocking exceptions, retained operational actions and Portal draft-discard confirmation. Existing `#sample-history` links select History. Reorganized existing investigation/scientific/Assembly reads without changing scientific, release, authorization or persistence rules.
+
+Direct Specimens discovery beside Jobs reuses the paginated authorized accession read with an explicit `includePending` mode, Active/Historical Job context, processing state and blocker filters; the existing accession-only default remains. Search includes exact scoped source/derived tube records. Job rosters use wide tables and narrow cards; Job library, sequencing and specimen-linked exception rows open the corresponding specimen tab. Shared sequencing reads validate the selected specimen against its Job and filter library memberships server-side; total batch counts retain shared context without exposing other specimen rows.
+
+Overview joins existing typed specimen/attempt/library/output/analysis identities and exact result analysis IDs, retains failed attempts, output corrections, reanalysis and unlinked records, and highlights the authoritative selected-result chain. Missing source attribution is explicit. Delivery/download evidence remains in Results & delivery. No schema, migration, dependency, authentication change or deployment is included. Broader prospective writer/capture completeness and physical/provider qualification remain the separate open boundaries above; this workspace does not certify them.
+
+Added focused regression sources for pending specimen discovery/filter validation, same-Job shared batch specimen isolation, specimen default/return context, draft retention, and scoped sequencing calls. Automated test execution is deferred under the standing repository instruction. Verification results are recorded in the Lab operations and test plans.
+
+
+Implemented locally. The API solution and expanded regression sources compile with zero warnings/errors; frontend TypeScript, scoped ESLint, documentation consistency (56 guides, a2fd07edf7bb) and diff whitespace checks pass. After the owner restarted the API, connected read-only Chrome verification passed discovery search/Active/Succeeded filters, empty Historical results, all five specimen tabs, specimen-scoped sequencing (one library versus two in the Job), picker tab preservation, directory-return filters, and keyboard tab navigation. The rendered 417px narrow layout has no horizontal overflow. Specimens uses Lucide TestTubeDiagonal and Master mixes uses Pipette; both were verified in the rendered sidebar. Desktop screenshot inspection passed earlier; final screenshot recapture timed out. Temporary viewport override was reset. Dark-theme verification was not performed. The local fixture has no sequencing outputs or results; populated shared batches, reserve retries, repeated runs, corrections and exact delivered-result tracing remain unexecuted fixture-dependent checks. Automated suites were not run under the standing repository rule. No laboratory records, schema, dependencies, authentication, Git staging/commits or deployments were changed.
+
+
+### Specimen Libraries tab — October 9, 2026
+
+Owner approved a dedicated Libraries tab after Processing. Reuse the authorized Job read, scope rows to the selected specimen, show physical library/source tubes, preparation execution and uniquely matching source/attempt, status and QC evidence. Missing linkage stays explicit. Keep existing creation/QC/batch commands in Job Libraries, and keep downstream vendor/scientific work in Sequencing & analysis. Move detailed library evidence out of Processing and retarget Job library links. No API, schema, dependency or scientific-rule change. Verify TypeScript, scoped lint, generated help, connected deep links, picker preservation, keyboard and narrow layout; automated suites remain deferred.
+
+Verification: TypeScript and scoped ESLint pass. Generated help consistency passes (56 guides). Signed-in Chrome verified the Libraries deep link, exact specimen-only library/source/attempt/QC, expanded saved QC, preservation of Libraries when selecting specimen 002, and ArrowRight to Sequencing & analysis. The rendered 417px narrow viewport uses cards and three tab rows without overflow; its temporary override was reset. Desktop screenshot inspected. Automated suites were not run; no API restart, persisted data change or deployment.

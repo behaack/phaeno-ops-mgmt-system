@@ -79,7 +79,7 @@ describe('box-at-a-time accession', () => {
     expect(api.scan.mock.calls.map(call => call[1])).toEqual(['TUBE-1', 'TUBE-2', 'TUBE-3', 'TUBE-4', 'TUBE-5'])
     expect(screen.queryByRole('table', { name: 'Tubes awaiting an intake decision' })).toBeNull()
     expect(screen.getByText('Accessioned tubes (5)').closest('details')).toHaveProperty('open', false)
-  })
+  }, 15_000)
 
   it('rejects duplicate, unselected and previously rejected tubes without expanding the group', async () => {
     const rejected = { ...initialWork, containers: [{ barcode: 'TUBE-3', intakeDisposition: 'Rejected', status: 'Rejected' }] } as unknown as LabWorkOrderDetail

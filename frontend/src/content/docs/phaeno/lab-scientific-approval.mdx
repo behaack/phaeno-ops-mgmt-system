@@ -1,8 +1,10 @@
 # Scientific approval and release readiness
 
-Open **Lab operations → Results & scientific review**, then select a job to inspect its scientific review. Jobs may appear before their evidence is complete; appearing here does not establish approval or release readiness.
+Open **Lab operations → Results & scientific review**, then select a job to inspect its scientific review. This list contains Jobs with at least one completed assembly output package whose files are verified, latest assembly QC decision is Pass, and scientific approval is still pending. Sequencing-only work, incomplete or failed assembly, missing/Fail/Hold QC, and already-approved packages are excluded. On-hold and cancelled Jobs are excluded. Each row shows the number of pending packages; it does not mean every specimen in the Job is ready. Scientific approval still applies its independent evidence and reviewer checks.
 
 Scientific approval is the final Lab Ops decision. It confirms that the authorized laboratory work satisfied the configured execution and exception gates. It is not a Customer file publication action.
+
+When S3 is configured, supporting-file selectors also offer **Actions → Choose original S3 file**. POMS verifies and scans the original before recording its scientific receipt. This preserves access in place; it does not copy the original into another managed store or satisfy scientific approval by itself. Downloads and assembly inputs recheck the retained checksum and size. Missing or changed source evidence must be investigated before advancing the affected work.
 
 ## Enter scientific review
 
@@ -16,9 +18,9 @@ Older results remain available, but missing historical links are not guessed or 
 
 ## Scientific evidence requirements
 
-The producing team can record the required information from the specimen's **Sample history**, using **Record sequencing output** and **Record analysis run**. Both staff and pipeline registration pin the current scientific requirements on new analyses. File and run names open the detailed evidence; corrections and reanalysis preserve the preceding record. Reviewers retain read access without receiving capture authority.
+The producing team can record the required information from the specimen's **Sequencing & analysis**, using **Record sequencing output** and **Record analysis run**. Both staff and pipeline registration pin the current scientific requirements on new analyses. File and run names open the detailed evidence; corrections and reanalysis preserve the preceding record. Reviewers retain read access without receiving capture authority.
 
-Scientific evidence requirements apply before new approvals and releases, including work already in progress. **Sample history** shows each analysis's saved requirement assessment. The producing team must record sequencing QC and run times, analysis software versions, settings checksum, reference versions, exact input roles/checksums and result attribution. QC needs a summary with named metrics or a referenced QC report. A meaningful **Not applicable** requires an explanation and is available only for QC, software, settings or references. It cannot waive the source tube, sample/run identity, times or file attribution.
+Scientific evidence requirements apply before new approvals and releases, including work already in progress. **History → Scientific requirement assessment** shows each analysis's saved requirement assessment. The producing team must record sequencing QC and run times, analysis software versions, settings checksum, reference versions, exact input roles/checksums and result attribution. QC needs a summary with named metrics or a referenced QC report. A meaningful **Not applicable** requires an explanation and is available only for QC, software, settings or references. It cannot waive the source tube, sample/run identity, times or file attribution.
 
 Missing evidence or pending performer/time review blocks approval and release. A rejected on-behalf entry remains unverified until corrected and independently approved. Review those proposals under **Performer and time reviews**. Recorded coverage still requires your scientific judgment. Historical analyses without a saved requirements profile remain readable; their evidence is not invented or automatically backfilled. Capture the required evidence and create an attributed replacement before approving or releasing an incomplete older result.
 

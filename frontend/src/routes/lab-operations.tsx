@@ -1,3 +1,4 @@
+import { parseSpecimenSearch, type SpecimenSearch } from '#/features/lab-operations/specimen-navigation'
 import { parseJobListSearch, type JobListSearch } from '#/features/lab-operations/job-deadlines'
 import { Navigate, Outlet, createFileRoute, useNavigate, useRouterState } from '@tanstack/react-router'
 import { usePhaenoSession } from '#/features/auth/session-context'
@@ -12,14 +13,15 @@ import { parseShipmentHistorySearch, type ShipmentHistorySearch } from '#/featur
 import { parseAccessionSearch, type AccessionSearch } from '#/features/lab-operations/lab-accession-search'
 
 export const Route = createFileRoute('/lab-operations')({
-  validateSearch: (search: Record<string, unknown>): StockKitListSearch & KitRequestListSearch & JobListSearch & ShipmentHistorySearch & AccessionSearch & { section?: LabSection; resultState?: string; assemblyTab?: 'runs' | 'cases'; assemblySearch?: string; shipmentId?: string; receiptTab?: LabReceiptTab; labStepSearch?: string; labStepRetired?: boolean; labStepPage?: number; returnKitRequestId?: string } => ({
+  validateSearch: (search: Record<string, unknown>): SpecimenSearch & StockKitListSearch & KitRequestListSearch & JobListSearch & ShipmentHistorySearch & AccessionSearch & { section?: LabSection; resultState?: string; assemblyTab?: 'inputs' | 'jobs'; assemblySearch?: string; shipmentId?: string; receiptTab?: LabReceiptTab; labStepSearch?: string; labStepRetired?: boolean; labStepPage?: number; returnKitRequestId?: string } => ({
     resultState: typeof search.resultState === 'string' ? search.resultState : undefined,
-    assemblyTab: search.assemblyTab === 'cases' ? 'cases' : 'runs',
+    assemblyTab: search.assemblyTab === 'jobs' ? 'jobs' : 'inputs',
     assemblySearch: typeof search.assemblySearch === 'string' ? search.assemblySearch.slice(0, 255) : undefined,
     labStepSearch: typeof search.labStepSearch === 'string' ? search.labStepSearch.slice(0, 255) : undefined,
     labStepRetired: search.labStepRetired === true || search.labStepRetired === 'true' ? true : undefined,
     labStepPage: Number.isInteger(Number(search.labStepPage)) && Number(search.labStepPage) > 0 ? Number(search.labStepPage) : undefined,
     ...parseJobListSearch(search),
+    ...parseSpecimenSearch(search),
     ...parseStockKitListSearch(search),
     ...parseKitRequestSearch(search),
     ...parseShipmentHistorySearch(search),

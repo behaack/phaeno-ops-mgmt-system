@@ -1,7 +1,9 @@
 import { SequencingBatchList as BatchList } from './SequencingBatchList'
 import { StageDurations } from './StageDurations'
 import { HolidayCalendar } from './HolidayCalendar'
+import { SpecimenDiscovery } from './SpecimenDiscovery'
 import { JobsList } from './JobsList'
+import { ResultsWorkQueue } from './ResultsWorkQueue'
 import { LabStepList } from './LabSteps'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
@@ -16,7 +18,6 @@ import {
   createLabProtocol,
   deleteLabProtocol,
   getLabOperationsDashboard,
-  labWorkOrderLabel,
   getLabOperationsError,
   recordLabMaterialQc,
   retireLabEquipment,
@@ -90,11 +91,11 @@ export function LabOperationsPage({ section, shipmentId, receiptTab, onReceiptTa
   const activeConfiguration = configurationTab ?? localConfigurationTab
   const needsDashboard = configuring
     ? activeConfiguration === 'protocols' || activeConfiguration === 'workflows'
-    : section !== 'receipt' && section !== 'kit-requests' && section !== 'transportation-kits' && section !== 'jobs' && section !== 'assembly' && section !== 'reagent-runs' && section !== 'master-mixes'
+    : section !== 'receipt' && section !== 'kit-requests' && section !== 'transportation-kits' && section !== 'jobs' && section !== 'specimens' && section !== 'assembly' && section !== 'results' && section !== 'reagent-runs' && section !== 'master-mixes'
   const dashboard = useQuery({ queryKey: ['lab-operations'], queryFn: getLabOperationsDashboard, enabled: apiEnabled && needsDashboard })
   const refresh = () => Promise.all((section === 'receipt' || section === 'kit-requests' || section === 'transportation-kits'
     ? ['platform-transportation-kit-requests', 'shipping-stock-kits', 'sample-shipping-workflow', 'lab-shipment-queue']
-    : ['lab-operations', 'lab-storage-locations', 'lab-preparation', 'lab-jobs', 'assembly-jobs', 'assembly-job', 'lab-job-deadline', 'lab-forecast-configuration', 'lab-completion-forecast']).map(key => queryClient.invalidateQueries({ queryKey: [key] })))
+    : ['lab-operations', 'lab-storage-locations', 'lab-preparation', 'lab-jobs', 'lab-specimen-discovery', 'lab-scientific-review', 'assembly-jobs', 'assembly-job', 'lab-job-deadline', 'lab-forecast-configuration', 'lab-completion-forecast']).map(key => queryClient.invalidateQueries({ queryKey: [key] })))
 
   if (!canView) return <AccessDenied />
 
@@ -133,9 +134,10 @@ export function LabOperationsPage({ section, shipmentId, receiptTab, onReceiptTa
             <LabKitRequestQueues apiEnabled={apiEnabled} shipmentId={shipmentId} />
           </section> : null}
           {section === 'transportation-kits' ? <TransportationKitWorkspace apiEnabled={apiEnabled} shipmentId={shipmentId} /> : null}
+          {section === 'specimens' ? <SpecimenDiscovery enabled={apiEnabled} /> : null}
           {section === 'jobs' ? <JobsList enabled={apiEnabled} /> : null}
           {dashboard.data && section === 'work' ? <PreparationBatchList /> : null}
-          {dashboard.data && section === 'results' ? <ResultsWorkQueue items={dashboard.data.workOrders.filter((item) => item.status !== 'AwaitingSpecimens')} /> : null}
+          {section === 'results' ? <ResultsWorkQueue enabled={apiEnabled} /> : null}
           {section === 'kits' ? <LabManufacturingQueue workflow="reagent" apiEnabled={apiEnabled} /> : null}
           {section === 'assembly' ? <DataAssemblyWorkspace apiEnabled={apiEnabled} /> : null}
           {section === 'reagent-runs' ? <ReagentManufacturingWorkspace enabled={apiEnabled} canOperate={Boolean(session?.capabilities.canOperateLabWork)} /> : null}
@@ -185,22 +187,6 @@ export function LabOperationsPage({ section, shipmentId, receiptTab, onReceiptTa
   )
 }
 
-function ResultsWorkQueue({ items }: { items: Awaited<ReturnType<typeof getLabOperationsDashboard>>['workOrders'] }) {
-  return <Card className="gap-0 py-0">
-    <CardHeader className="border-b bg-muted/50 p-4">
-      <CardTitle>Results & scientific review</CardTitle>
-      <CardDescription>Open a job to inspect scientific approval and release readiness. Jobs remain visible while their required evidence is being completed.</CardDescription>
-    </CardHeader>
-    <CardContent className="space-y-3 p-4">
-      {items.map(item => <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/30 p-4 shadow-xs">
-        <div><Link to="/lab-operations/$workOrderId" params={{ workOrderId: item.id }} search={previous => ({ ...previous, section: 'results', tab: 'review' })} className="font-medium text-primary hover:underline">{labWorkOrderLabel(item)}</Link>
-          <p className="mt-1 text-xs text-muted-foreground">{item.specimenCount} specimen(s) · {item.openExceptionCount} open exception(s) · updated {formatDate(item.updatedAt)}</p>
-        </div><Status value={item.status} />
-      </div>)}
-      {items.length === 0 ? <Empty>No received laboratory jobs are available for results review.</Empty> : null}
-    </CardContent>
-  </Card>
-}
 export function ProtocolList({ protocols, canManage, canOverride = false, actorId, onCreate, refresh }: { protocols: LabProtocol[]; canManage: boolean; canOverride?: boolean; actorId?: string; onCreate: () => void; refresh: () => Promise<unknown> }) {
   const [showRetired, setShowRetired] = useState(false)
   const retiredFilterRef = useRef<HTMLButtonElement>(null)

@@ -54,7 +54,7 @@ public sealed partial class LabOperationsController
 
     [HttpGet("sendouts/{sendoutId:guid}/results/intake")]
     public async Task<object> ResultsIntake(Guid sendoutId, [FromServices] IOptions<LabFastqOptions> limits,
-        [FromServices] IOptions<FileScanningOptions> scanning, CancellationToken ct)
+        [FromServices] IOptions<FileScanningOptions> scanning, CancellationToken ct, [FromServices] ScientificS3Access? s3 = null)
     {
         var actor = await requestContext.RequireAsync(HttpContext, ct, LabRole.Operator, LabRole.Supervisor);
         var sendout = await dbContext.LabNgsSendouts.AsNoTracking().SingleOrDefaultAsync(s => s.Id == sendoutId, ct) ?? throw Missing();
@@ -83,7 +83,7 @@ public sealed partial class LabOperationsController
                 payload = JsonSerializer.Deserialize<JsonElement>(draft.PayloadJson) },
             sendoutVersion = sendout.Version,
             protectedPackages = await new LabVendorResultSafety(dbContext).ProtectedPackagesAsync(retained?.SelectMany(s => s.Files).Select(f => f.OutputId).ToArray() ?? [], ct),
-            tentative = true, policy = limits.Value, effectiveMaximumFileBytes = Math.Min(limits.Value.MaximumFileBytes, scanning.Value.MaximumStreamBytes),
+            tentative = true, s3Available = s3?.Available == true, policy = limits.Value, effectiveMaximumFileBytes = Math.Min(limits.Value.MaximumFileBytes, scanning.Value.MaximumStreamBytes),
             effectiveMaximumArchiveBytes = Math.Min(limits.Value.MaximumBatchArchiveBytes, scanning.Value.MaximumStreamBytes),
             archives = archives.Select(ArchivePublic),
             members = members.Select(m => new { m.Id, m.LabWorkOrderId, m.LabSpecimenId, m.LibraryKey, m.sampleName,
@@ -188,12 +188,13 @@ public sealed partial class LabOperationsController
     {
         var actor = await requestContext.RequireAsync(HttpContext, ct, LabRole.Operator, LabRole.Supervisor);
         await using var tx = await SampleShippingPackingData.BeginAsync(dbContext, "fastq-upload:" + uploadId, ct);
-        var (upload, _) = await RequireFastqUpload(uploadId, actor.User.Id, ct);
+        var (upload, set) = await RequireFastqUpload(uploadId, actor.User.Id, ct);
         if (upload.LabScientificFileId.HasValue) return FastqUploadPublic(upload);
         var chunks = JsonSerializer.Deserialize<List<ScientificChunk>>(upload.ChunksJson)!; var received = chunks.Sum(c => c.SizeBytes);
         if (offset < 0 || offset % ScientificChunkBytes != 0 || offset > received || offset >= upload.SizeBytes
             || Request.ContentLength != Math.Min(ScientificChunkBytes, upload.SizeBytes - offset)) throw Conflict("fastq_upload_offset", "Resume from the verified upload position.");
-        var stored = await storage.SaveAsync(Request.Body, ".chunk", ScientificChunkBytes, ct); var attempted = false;
+        var directory = await FastqRawDirectoryAsync(set, ct);
+        var stored = await storage.SaveScopedAsync(Request.Body, ".chunk", ScientificChunkBytes, $"{directory}/staging/upload-{upload.Id:N}", ct); var attempted = false;
         try {
             if (stored.SizeBytes != Request.ContentLength) throw Conflict("fastq_chunk_incomplete", "The file portion was interrupted.");
             if (offset < received) {
@@ -228,7 +229,9 @@ public sealed partial class LabOperationsController
         foreach (var chunk in chunks) { await using var bytes = await LabScientificFiles.OpenVerifiedAsync(storage, chunk.Key, chunk.Sha256, chunk.SizeBytes, ct); await bytes.CopyToAsync(assembled, ct); }
         assembled.Position = 0;
         var receipt = await LabFastqValidation.ValidateAsync(assembled, upload.FileName.EndsWith(".gz"), upload.ReadNumber, policy, ct);
-        assembled.Position = 0; var stored = await storage.SaveAsync(assembled, upload.FileName.EndsWith(".gz") ? ".fastq.gz" : ".fastq", upload.SizeBytes, ct); var attempted = false;
+        assembled.Position = 0;
+        var directory = await FastqRawDirectoryAsync(set, ct);
+        var stored = await storage.SaveScopedAsync(assembled, upload.FileName.EndsWith(".gz") ? ".fastq.gz" : ".fastq", upload.SizeBytes, directory, ct); var attempted = false;
         try {
             if (stored.SizeBytes != upload.SizeBytes || (await scanner.ScanAsync(stored.StorageKey, ct)).Status != OperationalFileScanStatus.Clean)
                 throw Conflict("fastq_scan_required", "The complete FASTQ file could not pass scanning. Its upload portions are retained for retry.");

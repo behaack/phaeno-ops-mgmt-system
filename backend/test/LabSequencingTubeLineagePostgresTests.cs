@@ -13,7 +13,14 @@ using PSeq.Operations.Laboratory.Domain;
 public partial class SampleShippingPostgresTests
 {
     [PostgreSqlReferenceFact]
-    public async Task SequencingTubeManifestRetainsActualAliquotAndRejectsWrongTubeOrAmount()
+    public Task SequencingTubeManifestRetainsActualAliquotAndRejectsWrongTubeOrAmount()
+        => VerifySequencingTubeManifestAsync(2);
+
+    [PostgreSqlReferenceFact]
+    public Task CatalogSendoutSchemaV3RetainsActualAliquotAndRejectsWrongTubeOrAmount()
+        => VerifySequencingTubeManifestAsync(3);
+
+    private async Task VerifySequencingTubeManifestAsync(int manifestSchema)
     {
         await using var scope = await ShippingTestScope.CreateAsync();
         var db = scope.DbContext;
@@ -67,7 +74,7 @@ public partial class SampleShippingPostgresTests
             db.LabBiologicalMaterialTransfers.Add(transfer);
             var manifest = JsonSerializer.Serialize(new
             {
-                schemaVersion = 2,
+                schemaVersion = manifestSchema,
                 members = new[] { new { memberId = member.Id, libraryId = library.Id, libraryKey = library.LibraryKey,
                     libraryContainerId = libraryTube.Id, libraryContainerBarcode = libraryTube.Barcode,
                     sequencingContainerId = sequencingTube.Id, containerBarcode = sequencingTube.Barcode,
@@ -94,6 +101,16 @@ public partial class SampleShippingPostgresTests
                 Assert.Equal("result_lineage_invalid", rejected.ErrorCode);
                 Assert.False(await db.LabSequencingOutputs.AnyAsync(o => o.Id == request.Id));
             }
+            foreach (var unsupportedSchema in new[] { 0, 4 })
+            {
+                var unsupported = JsonNode.Parse(manifest)!.AsObject();
+                unsupported["schemaVersion"] = unsupportedSchema;
+                db.Entry(sendout).Property(s => s.ManifestJson).CurrentValue = unsupported.ToJsonString();
+                await db.SaveChangesAsync();
+                var rejected = await Assert.ThrowsAsync<OrderManagementException>(() => service.RegisterOutputAsync(request, actor, "lab-staff", default));
+                Assert.Contains("unsupported manifest version", rejected.Message);
+                Assert.False(await db.LabSequencingOutputs.AnyAsync(o => o.Id == request.Id));
+            }
             db.Entry(sendout).Property(s => s.ManifestJson).CurrentValue = manifest;
             await db.SaveChangesAsync();
             var output = await service.RegisterOutputAsync(request, actor, "lab-staff", default);
@@ -108,6 +125,49 @@ public partial class SampleShippingPostgresTests
             Assert.Equal(15m, libraryTube.Quantity);
             Assert.Equal(5m, sequencingTube.Quantity);
             Assert.Equal(100m, source.Quantity);
+
+            // Job reads retain physical membership and use only the latest result-version exceptions.
+            var api = scope.CreateLabController();
+            var linked = Assert.Single(await api.JobSequencing(work.Id, default));
+            Assert.Equal(batch.Id, linked.Batch.Id);
+            var linkedLibrary = Assert.Single(linked.Libraries);
+            Assert.Equal(library.Id, linkedLibrary.LibraryId);
+            Assert.Equal(sequencingTube.Barcode, linkedLibrary.SequencingTubeBarcode);
+            Assert.Equal("Success", linkedLibrary.Outcome);
+            var oldVersion = new LabVendorResultsVersion(Guid.NewGuid(), sendout.Id, 1, "{}", null, actor, "TEST actor", now);
+            var currentVersion = new LabVendorResultsVersion(Guid.NewGuid(), sendout.Id, 2, "{}", "TEST correction", actor, "TEST actor", now);
+            db.AddRange(oldVersion, currentVersion, new LabVendorLibraryException(sendout.Id, member.Id, oldVersion.Id, LabVendorOutcome.Failure, "Retired failure"));
+            await db.SaveChangesAsync();
+            linked = Assert.Single(await api.JobSequencing(work.Id, default));
+            Assert.Equal(2, linked.Batch.ResultsVersion);
+            Assert.Equal("Success", Assert.Single(linked.Libraries).Outcome);
+            var latestVersion = new LabVendorResultsVersion(Guid.NewGuid(), sendout.Id, 3, "{}", "TEST latest correction", actor, "TEST actor", now);
+            db.AddRange(latestVersion, new LabVendorLibraryException(sendout.Id, member.Id, latestVersion.Id, LabVendorOutcome.Failure, "Current failure"));
+            var otherOrder = new LabServiceOrder(scope.CustomerOrganization.Id,
+                scope.CustomerOrganization.Departments.Single(d => d.IsDefault).Id, $"OTHER-{scope.Suffix}",
+                "TEST ONLY unassigned job", null, 1, false, "TEST source", "Frozen", "TEST safe", "TEST instructions");
+            var otherWork = new LabWorkOrder(Guid.NewGuid(), 1, LabAuthorizationSource.CommercialOrder, otherOrder.Id,
+                scope.CustomerOrganization.Id, "TEST unassigned job", 1, "test", null);
+            db.AddRange(otherOrder, otherWork);
+            await db.SaveChangesAsync();
+            linked = Assert.Single(await api.JobSequencing(work.Id, default));
+            Assert.Equal("Failure", Assert.Single(linked.Libraries).Outcome);
+            Assert.Equal("Current failure", Assert.Single(linked.Libraries).OutcomeReason);
+            Assert.Empty(await api.JobSequencing(otherWork.Id, default));
+            var specimenRead = Assert.Single(await api.JobSequencing(work.Id, default, specimen.Id));
+            Assert.Equal(library.Id, Assert.Single(specimenRead.Libraries).LibraryId);
+            await Assert.ThrowsAsync<OrderManagementException>(() => api.JobSequencing(work.Id, default, Guid.NewGuid()));
+            var otherSpecimen = new LabSpecimen(work.Id, Guid.NewGuid());
+            var otherLibrary = new LabLibrary(work.Id, otherSpecimen.Id, source.Id, libraryTube.Id, execution.Id, $"OTHER-{scope.Suffix}");
+            var otherMember = new LabBatchMember(batch.Id, work.Id, otherLibrary.Id, now);
+            db.AddRange(otherSpecimen, otherLibrary, otherMember);
+            await db.SaveChangesAsync();
+            specimenRead = Assert.Single(await api.JobSequencing(work.Id, default, specimen.Id));
+            Assert.Equal(2, specimenRead.Batch.MemberCount);
+            Assert.Equal(library.Id, Assert.Single(specimenRead.Libraries).LibraryId);
+            Assert.Equal(otherLibrary.Id, Assert.Single(Assert.Single(await api.JobSequencing(work.Id, default, otherSpecimen.Id)).Libraries).LibraryId);
+            Assert.False(db.ChangeTracker.HasChanges());
+
         }
         finally
         {

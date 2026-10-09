@@ -9,6 +9,8 @@ import { NativeSelect } from '#/components/ui/native-select'
 import { PreparationField } from './preparation-ui'
 import type { VendorResultsValues } from './VendorResultsWorkspacePage'
 import { restoreZipMappings } from './fastq-zip-mapping'
+import { FileUploadProgress } from '#/components/ui/file-upload-progress'
+import type { FileUploadProgress as UploadState } from '#/api/file-upload-progress'
 
 export function FastqBatchZipUpload({ form, intake, sendoutId, tubes, getDraft, saveDraft, refresh, disabled, onBusy }: {
   form: UseFormReturn<VendorResultsValues>; intake: FastqIntake; sendoutId: string; tubes: LabBatchDetail['tubes']['members'];
@@ -16,6 +18,7 @@ export function FastqBatchZipUpload({ form, intake, sendoutId, tubes, getDraft, 
 }) {
   const [busy, setBusy] = useState(false)
   const [status, setStatus] = useState('')
+  const [transfer, setTransfer] = useState<UploadState>()
   const [error, setError] = useState('')
   const archiveId = form.watch('zipArchiveId')
   const rows = form.watch('zipRows')
@@ -41,7 +44,7 @@ export function FastqBatchZipUpload({ form, intake, sendoutId, tubes, getDraft, 
     setBusy(true); onBusy(true)
     try {
       const id = await getDraft()
-      const inspected = await uploadFastqArchive(id, file, setStatus)
+      const inspected = await uploadFastqArchive(id, file, setStatus, setTransfer)
       mapArchive(inspected)
       await saveDraft(); await refresh(); setStatus('ZIP inspected. Review every FASTQ library/read mapping before importing.')
     } catch (failure) { setError(getLabOperationsError(failure, failure instanceof Error ? failure.message : 'The ZIP could not be inspected. Select the same ZIP to resume.')) }
@@ -87,9 +90,13 @@ export function FastqBatchZipUpload({ form, intake, sendoutId, tubes, getDraft, 
       for (const [index, row] of chosen.entries()) {
         const entry = archive.entries?.find(e => e.index === row.index)
         setStatus(`Importing ${index + 1} of ${chosen.length}: ${entry?.fileName}`)
+        setTransfer({ fileName: archive.fileName, phase: 'extracting', transferredBytes: archive.sizeBytes, totalBytes: archive.sizeBytes,
+          percentage: index / chosen.length * 100, completedItems: index, totalItems: chosen.length, message: `Extracting and verifying ${entry?.fileName ?? 'FASTQ entry'}` })
         await importFastqArchiveEntry(archive.id, { uploadId: row.uploadId, setId: sets.get(row.memberId)!, entryIndex: row.index,
           groupNumber: Number(row.group), readNumber: Number(row.read), partNumber: Number(row.part), groupDescription: row.description.trim() })
         await refresh()
+        setTransfer({ fileName: archive.fileName, phase: 'extracting', transferredBytes: archive.sizeBytes, totalBytes: archive.sizeBytes,
+          percentage: (index + 1) / chosen.length * 100, completedItems: index + 1, totalItems: chosen.length, message: 'Extracting and verifying reviewed files' })
       }
       setStatus('Selected FASTQ files imported and verified. Review file-set completeness before saving results.')
     } catch (failure) { setError(getLabOperationsError(failure, failure instanceof Error ? failure.message : 'Import failed. Completed files are retained; review the mapping and retry.')) }
@@ -111,6 +118,7 @@ export function FastqBatchZipUpload({ form, intake, sendoutId, tubes, getDraft, 
         <Button type="button" disabled={busy || disabled} onClick={() => void importFiles()}>Import reviewed FASTQ files</Button>
       </>}
     </> : null}
+    {transfer ? <FileUploadProgress progress={transfer} /> : null}
     {status ? <p role="status" className="break-words text-sm">{status}</p> : null}{error ? <p role="alert" className="break-words text-sm text-destructive">{error}</p> : null}
     {intake.sets.some(s => form.getValues('files').some(f => f.setId === s.id)) ? <ul className="space-y-2 text-sm">{intake.sets.filter(s => form.getValues('files').some(f => f.setId === s.id)).map(s => <li key={s.id} className="break-words">{intake.members.find(m => m.id === s.memberId)?.libraryKey} · File set v{s.setVersion} · {s.files.filter(f => f.fileId).length}/{s.files.length} files verified</li>)}</ul> : null}
   </section>

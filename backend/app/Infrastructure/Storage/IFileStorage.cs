@@ -6,7 +6,11 @@ public sealed record FileStorageWriteRequest(
     string Area,
     Stream Content,
     string FileExtension,
-    long MaximumBytes);
+    long MaximumBytes)
+{
+    // Authorized feature context; never accepted directly from a browser request.
+    public string? RelativeDirectory { get; init; }
+}
 
 public sealed record FileStorageWriteResult(
     string StorageKey,
@@ -57,9 +61,10 @@ internal static class FileStorageKeys
 {
     public static string Create(string fileExtension)
     {
-        var extension = NormalizeExtension(fileExtension);
-        return $"{DateTime.UtcNow:yyyy/MM}/{Guid.NewGuid():N}{extension}";
+        return $"{DateTime.UtcNow:yyyy/MM}/{CreateName(fileExtension)}";
     }
+
+    public static string CreateName(string fileExtension) => $"{Guid.NewGuid():N}{NormalizeExtension(fileExtension)}";
 
     public static string ValidateArea(string area)
     {

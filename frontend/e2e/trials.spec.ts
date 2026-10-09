@@ -414,6 +414,7 @@ test('Trial staff reach configuration in Order settings without broader order co
 
 async function trialAction(page: import('@playwright/test').Page, name: string) {
   const button = page.getByRole('button', { name, exact: true })
+  await button.or(page.getByRole('button', { name: 'Actions', exact: true })).first().waitFor({ state: 'visible' })
   if (await button.count()) { await button.click(); return }
   await page.getByRole('button', { name: 'Actions', exact: true }).click()
   await page.getByRole('menuitem', { name, exact: true }).click()

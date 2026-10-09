@@ -19,11 +19,12 @@ import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/require
 import { Textarea } from '#/components/ui/textarea'
 import { usePhaenoSession } from '#/features/auth/session-context'
 
+import type { SpecimenTab } from './specimen-navigation'
 import { ExecutionStepDialog } from './ExecutionStepDialog'
 import { StepPerformanceEvidence } from './StepPerformanceEvidence'
 import { parseLabSection, type LabSection } from './lab-sections'
 
-export function LabExecutionPage({ executionId, returnSection, returnShipmentId }: { executionId: string; returnSection?: LabSection; returnShipmentId?: string }) {
+export function LabExecutionPage({ executionId, returnSection, returnShipmentId, returnSpecimenId, returnSpecimenTab }: { executionId: string; returnSection?: LabSection; returnShipmentId?: string; returnSpecimenId?: string; returnSpecimenTab?: SpecimenTab }) {
   const { session, authProvider } = usePhaenoSession()
   const canView = Boolean(session?.capabilities.canManageLabOperations)
   const client = useQueryClient()
@@ -56,12 +57,13 @@ export function LabExecutionPage({ executionId, returnSection, returnShipmentId 
   if (!canView || authProvider === 'mock') return <main className="page-wrap p-6"><Alert><AlertTitle>Connected laboratory session required</AlertTitle><AlertDescription>Open this execution with an authorized Phaeno laboratory account.</AlertDescription></Alert></main>
   if (execution.isLoading) return <main className="page-wrap p-6"><p role="status">Loading protocol execution…</p></main>
   if (!execution.data) return <main className="page-wrap p-6"><Alert variant="destructive"><AlertTitle>Execution could not be loaded</AlertTitle><AlertDescription>{getLabOperationsError(execution.error, 'Reload the execution and try again.')}</AlertDescription></Alert><Button className="mt-4" onClick={() => void execution.refetch()}>Reload execution</Button></main>
+  const returnToSpecimen = Boolean(returnSpecimenId && returnSpecimenId === execution.data.execution.labSpecimenId)
   const error = record.error ?? transition.error
   return <LabExecutionWorkspace data={execution.data} pending={record.isPending || transition.isPending}
     error={error ? `${getLabOperationsError(error, 'The laboratory action could not be saved.')} ${recovery ?? ''}` : undefined}
-    returnLink={<Link to="/lab-operations/$workOrderId" params={{ workOrderId: execution.data.workOrderId }} search={previous => ({ ...previous, section: returnSection ?? 'jobs', shipmentId: returnShipmentId, tab: 'execution' })} className="text-sm text-primary underline underline-offset-4">Back to laboratory job</Link>}
-    reviewTubesLink={<Button asChild size="sm"><Link to="/lab-operations/$workOrderId" params={{ workOrderId: execution.data.workOrderId }} search={previous => ({ ...previous, section: returnSection ?? 'jobs', shipmentId: returnShipmentId, tab: 'lineage' })}>Open tubes</Link></Button>}
-    specimenLink={execution.data.execution.labSpecimenId ? <Button asChild size="sm" variant="outline"><Link to="/lab-operations/$workOrderId/specimens/$specimenId" params={{ workOrderId: execution.data.workOrderId, specimenId: execution.data.execution.labSpecimenId }} search={previous => ({ ...previous, section: parseLabSection(previous.section) ?? 'jobs' })}>Open specimen and source</Link></Button> : null}
+    returnLink={returnToSpecimen ? <Link to="/lab-operations/$workOrderId/specimens/$specimenId" params={{ workOrderId: execution.data.workOrderId, specimenId: returnSpecimenId! }} search={previous => ({ ...previous, section: returnSection ?? 'jobs', shipmentId: returnShipmentId, specimenTab: returnSpecimenTab ?? 'processing', returnSpecimenId: undefined, returnSpecimenTab: undefined })} className="text-sm text-primary underline underline-offset-4">Back to specimen</Link> : <Link to="/lab-operations/$workOrderId" params={{ workOrderId: execution.data.workOrderId }} search={previous => ({ ...previous, section: returnSection ?? 'jobs', shipmentId: returnShipmentId, returnSpecimenId: undefined, returnSpecimenTab: undefined, tab: 'execution' })} className="text-sm text-primary underline underline-offset-4">Back to laboratory job</Link>}
+    reviewTubesLink={<Button asChild size="sm"><Link to="/lab-operations/$workOrderId" params={{ workOrderId: execution.data.workOrderId }} search={previous => ({ ...previous, section: returnSection ?? 'jobs', shipmentId: returnShipmentId, returnSpecimenId: undefined, returnSpecimenTab: undefined, tab: 'lineage' })}>Open tubes</Link></Button>}
+    specimenLink={execution.data.execution.labSpecimenId ? <Button asChild size="sm" variant="outline"><Link to="/lab-operations/$workOrderId/specimens/$specimenId" params={{ workOrderId: execution.data.workOrderId, specimenId: execution.data.execution.labSpecimenId }} search={previous => ({ ...previous, section: parseLabSection(previous.section) ?? 'jobs', specimenTab: 'processing', returnSpecimenId: undefined, returnSpecimenTab: undefined })}>Open specimen and source</Link></Button> : null}
     onRecord={async input => { await record.mutateAsync(input) }}
     onTransition={async (action, note, sourceBarcode) => { await transition.mutateAsync({ action, note, sourceBarcode }) }} />
 }

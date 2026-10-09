@@ -15,6 +15,8 @@ public sealed record LabWorkOrderSummaryDto(
     int OpenExceptionCount, DateTime UpdatedAt, long Version,
     Guid? LabServiceWorkflowVersionId = null, string? DisplayName = null, int ServiceVersion = 1);
 
+public sealed record LabScientificReviewQueueItemDto(LabWorkOrderSummaryDto WorkOrder, int PendingPackageCount);
+
 public sealed record LabProtocolDto(
     Guid Id, string Key, string Name, string? Description, int LatestVersion,
     IReadOnlyList<LabProtocolVersionDto> Versions, long Version,

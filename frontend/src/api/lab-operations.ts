@@ -48,7 +48,7 @@ export type CreateLabMaterialLotInput = {
 }
 
 export type LabSpecimen = { id: string; submittedSpecimenId: string; accessionNumber: string | null; receivedAtUtc: string | null; intakeDisposition: string; receiptCondition: string | null; intakeReasonCode: string | null; currentLocation: string | null; version: number }
-export type LabAccessionedSample = { id: string; labWorkOrderId: string; customerSampleId: string; accessionNumber: string; organizationName: string; jobReference: string; intakeDisposition: string; receivedAtUtc: string | null; useStatus: 'Used' | 'NotUsed'; tubes: { id: string; barcode: string; location: string | null; intakeDisposition: string | null; status: string; useStatus: 'Used' | 'NotUsed' | 'Unknown' }[] }
+export type LabAccessionedSample = { id: string; labWorkOrderId: string; customerSampleId: string; accessionNumber: string | null; processingState?: string | null; jobStatus?: string; historical?: boolean; blocked?: boolean; nextAction?: string | null; organizationName: string; jobReference: string; intakeDisposition: string; receivedAtUtc: string | null; useStatus: 'Used' | 'NotUsed'; tubes: { id: string; barcode: string; location: string | null; intakeDisposition: string | null; status: string; useStatus: 'Used' | 'NotUsed' | 'Unknown' }[] }
 export type LabAccessionedSamplePage = { items: LabAccessionedSample[]; page: number; pageSize: number; totalCount: number }
 export type LabContainer = { id: string; labSpecimenId: string | null; parentContainerId: string | null; kind: string; barcode: string; barcodeNamespace?: string; barcodeSource: 'PhaenoGenerated' | 'RegisteredSupplier' | 'Manufacturer'; externalBarcodeReferenceId: string | null; label: string; labelPrintCount: number; location: string | null; quantity: number | null; quantityText?: string | null; quantityUnit: string | null; status: string; retainUntilUtc: string | null; version: number; intakeDisposition?: string | null; intakeReasonCode?: string | null; intakeNotes?: string | null; intakeReviewedAtUtc?: string | null; intakeReviewedByUserId?: string | null; initialQuantity?: number | null; initialQuantityText?: string | null; initialQuantityUnit?: string | null; quantityBasis?: string | null; quantityHistoryJson?: string }
 export type LabContainerScan = { labWorkOrderId: string; commercialOrderNumber: string | null; accessionNumber: string | null; parentBarcode: string | null; labLibraryId: string | null; libraryStatus: string | null; container: LabContainer }
@@ -97,6 +97,9 @@ export type LabWorkOrderDetail = { workOrder: LabWorkOrderSummary; specimens: La
 export type LabReviewPackage = { id: string; sampleName: string; packageVersion: number; manifestSha256: string; fileNames: string[] }
 export type LabPSeqKitOffering = { id: string; partnerOrganizationId: string; itemName: string }
 
+export type LabScientificReviewQueueItem = { workOrder: LabWorkOrderSummary; pendingPackageCount: number }
+export const getLabScientificReviewQueue = () => get<LabScientificReviewQueueItem[]>('/platform/lab-operations/scientific-review-queue')
+
 export const getLabOperationsDashboard = () => get<LabOperationsDashboard>('/platform/lab-operations')
 export type LabPurchasedService = { currentServiceKey: string; purchasedServiceKey: string; purchasedServiceName: string; workVersion: number; canCorrect: boolean }
 export const getLabPurchasedService = (workOrderId: string) => get<LabPurchasedService>(`/platform/lab-operations/work-orders/${workOrderId}/purchased-service`)
@@ -105,6 +108,11 @@ export const listLabStorageLocations = () => get<ManagedLabStorageLocation[]>('/
 export const createLabStorageLocation = (name: string) => post<ManagedLabStorageLocation>('/platform/lab-operations/storage-locations', { name })
 export const updateLabStorageLocation = (location: ManagedLabStorageLocation, name: string, isActive: boolean) =>
   put<ManagedLabStorageLocation>(`/platform/lab-operations/storage-locations/${location.id}`, { name, isActive, version: location.version })
+export type LabJobSequencingBatch = {
+  batch: LabBatch; sequencingStartedAtUtc: string | null; sequencingCompletedAtUtc: string | null;
+  libraries: { memberId: string; libraryId: string; specimenId: string; libraryKey: string; sequencingTubeBarcode: string | null; outcome: 'Success' | 'Failure' | null; outcomeReason: string | null }[];
+}
+export const getLabJobSequencing = (workOrderId: string, specimenId?: string) => get<LabJobSequencingBatch[]>('/platform/lab-operations/work-orders/' + workOrderId + '/sequencing' + (specimenId ? '?specimenId=' + encodeURIComponent(specimenId) : ''))
 export const getLabWorkOrder = (id: string) => get<LabWorkOrderDetail>(`/platform/lab-operations/work-orders/${id}`)
 export const getLabAccessionedSamples = (search: string, page: number, intakeStatus?: string, useStatus?: string) => get<LabAccessionedSamplePage>(`/platform/lab-operations/samples/accessioned?${new URLSearchParams({ search, page: String(page), pageSize: '20', ...(intakeStatus ? { intakeStatus } : {}), ...(useStatus ? { useStatus } : {}) })}`)
 export const getLabExecution = (id: string) => get<LabExecutionDetail>(`/platform/lab-operations/executions/${id}`)
@@ -255,3 +263,5 @@ export type VendorResultsSnapshot = { fastqSets?: VendorResultsFastqSet[] | null
 export type VendorResultsVersionDetail = { version: VendorResultsVersionSummary; snapshot: VendorResultsSnapshot }
 export const getVendorResultsVersions = (batchId: string) => get<VendorResultsVersionSummary[]>(`/platform/lab-operations/batches/${batchId}/results/versions`)
 export const getVendorResultsVersion = (batchId: string, resultVersion: number) => get<VendorResultsVersionDetail>(`/platform/lab-operations/batches/${batchId}/results/versions/${resultVersion}`)
+
+export const getLabSpecimens = (search: string, page: number, scope?: string, processingStatus?: string, blockedOnly?: boolean) => get<LabAccessionedSamplePage>(`/platform/lab-operations/samples/accessioned?${new URLSearchParams({ includePending: 'true', search, page: String(page), pageSize: '20', ...(scope ? { scope } : {}), ...(processingStatus ? { processingStatus } : {}), ...(blockedOnly ? { blockedOnly: 'true' } : {}) })}`)

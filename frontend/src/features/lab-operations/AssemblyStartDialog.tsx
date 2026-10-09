@@ -43,7 +43,7 @@ export function AssemblyStartDialog({ availability, previous, workOrderId, speci
   }, onSuccess: async job => {
     await client.invalidateQueries({ queryKey: ['assembly-jobs'] })
     dismissal.allowNavigation(); form.reset(form.getValues()); onClose()
-    await navigate({ to: '/lab-operations/assembly-jobs/$jobId', params: { jobId: job.id }, search: p => ({ ...p, section: 'assembly', assemblyTab: 'runs' }) })
+    await navigate({ to: '/lab-operations/assembly-jobs/$jobId', params: { jobId: job.id }, search: p => ({ ...p, section: 'assembly', assemblyTab: 'jobs' }) })
   } })
   const dismissal = useOrderDecisionDismissal(form.formState.isDirty, mutation.isPending, onClose, { scope: 'assembly request', description: 'The unsaved input and recipe selection will be discarded. No assembly will be started.' })
   return <><Dialog open onOpenChange={open => { if (!open && !mutation.isPending) dismissal.close() }}><DialogContent>

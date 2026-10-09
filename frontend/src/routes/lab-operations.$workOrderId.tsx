@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { LabWorkOrderPage } from '#/features/lab-operations/LabWorkOrderPage'
 
 export const Route = createFileRoute('/lab-operations/$workOrderId')({
-  validateSearch: z.object({ packet: z.string().max(100).optional(), tube: z.string().max(100).optional(), tab: z.enum(['specimens', 'execution', 'lineage', 'libraries', 'exceptions', 'review']).optional() }),
+  validateSearch: z.object({ packet: z.string().max(100).optional(), tube: z.string().max(100).optional(), tab: z.enum(['overview', 'specimens', 'execution', 'lineage', 'libraries', 'sequencing', 'exceptions', 'review']).optional() }),
   component: LabWorkOrderRoute,
 })
 

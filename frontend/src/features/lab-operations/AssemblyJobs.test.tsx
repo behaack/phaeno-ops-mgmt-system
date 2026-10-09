@@ -24,13 +24,13 @@ it('displays live progress and replaces it with the final disposition', () => {
   expect(screen.getByText('Terminated')).toBeTruthy()
 })
 
-it('keeps start unavailable and explains missing setup without claiming a job failed', async () => {
+it('uses the assembly tracker without a generic start action and explains missing setup', async () => {
   mockApi.list.mockResolvedValue({ jobs: [], canOperate: true,
     availability: { available: false, message: 'The processing service is not connected.', supportsCancellation: false, recipes: [] } })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   render(<QueryClientProvider client={client}><AssemblyJobsList enabled /></QueryClientProvider>)
   expect(await screen.findByText('Assembly setup required')).toBeTruthy()
-  expect((screen.getByRole('button', { name: 'Start assembly' }) as HTMLButtonElement).disabled).toBe(true)
+  expect(screen.queryByRole('button', { name: 'Start assembly' })).toBeNull()
   expect(screen.getByText('No assembly jobs have been requested.')).toBeTruthy()
   expect(screen.queryByText('Failed')).toBeNull()
   client.clear()
@@ -39,8 +39,22 @@ it('keeps start unavailable and explains missing setup without claiming a job fa
 it('shows unavailable progress after transient data is lost', () => {
   render(<AssemblyJobProgress job={{ ...job, progress: null }} />)
   expect(screen.getByText('Progress unavailable')).toBeTruthy()
-  expect(screen.queryByRole('progressbar')).toBeNull()
+  expect(screen.getByRole('progressbar', { name: 'Assembly progress for Sample A, run 2' }).hasAttribute('value')).toBe(false)
   expect(screen.getByText('Running')).toBeTruthy()
+})
+
+it('keeps stale progress indeterminate without inventing a percentage', () => {
+  render(<AssemblyJobProgress job={{ ...job, progress: { percentage: 75, receivedAtUtc: new Date(Date.now() - 180_000).toISOString(), sequence: 2 } }} />)
+  expect(screen.getByRole('progressbar').hasAttribute('value')).toBe(false)
+  expect(screen.queryByText('75%')).toBeNull()
+  expect(screen.getByText('Progress unavailable')).toBeTruthy()
+})
+
+it('does not replace a running state with success when reported progress reaches 100', () => {
+  render(<AssemblyJobProgress job={{ ...job, progress: { percentage: 100, receivedAtUtc: new Date().toISOString(), sequence: 3 } }} />)
+  expect(screen.getByRole('progressbar').getAttribute('value')).toBe('100')
+  expect(screen.getByText('Running')).toBeTruthy()
+  expect(screen.queryByText('Succeeded')).toBeNull()
 })
 
 it('shows a confirmed cancellation outcome without claiming an unsent cancellation was received', () => {

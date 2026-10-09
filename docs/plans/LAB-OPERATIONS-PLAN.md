@@ -1786,3 +1786,70 @@ and active in UI `dpl_HkmQDYddxbcAj37ZKc1MvgGinis2`. Frozen-source production
 build, staging/source/alias verification, live sign-in/health/proxy and unchanged
 API/twenty migrations checks pass. See the completed QC layout release receipt.
 No QC outcome was recorded by verification or deployment.
+
+
+## Job details navigation — October 9, 2026
+
+The Product Owner approved moving Job navigation directly below the compact record header. Overview is the default for ordinary Job entry and owns phase summaries, delivery commitments, Portal delivery progress, forecasts and date history. Specimens owns the detailed hold workspace and scanned shipment/tube receipt context. Existing tab deep links remain valid; scanned entry defaults to Specimens. The header retains linked delivery due/risk, active hold count, open/blocking exception counts and urgent deadline reasons across tabs. Workflow assignment warnings remain visible on every tab. The existing Actions menu and workflow authorization remain intact.
+
+Acceptance: Review and other task tabs are reachable without scrolling past deadline/hold panels; ordinary Jobs-list entry opens Overview; direct links preserve selected tabs and list search context; receipt/ accession entry remains in Specimens; urgent blockers stay discoverable; tabs wrap without overlapping content on narrow screens. No schema, dependency, backend contract, data mutation or deployment is required. Static and read-only browser verification will be recorded here. Automated suites are deferred under the repository instruction not to run them unless requested.
+
+Implemented locally. Frontend TypeScript, scoped ESLint, generated documentation consistency (56 guides) and diff whitespace checks passed. Connected signed-in Chrome verified ordinary entry without a tab defaults to Overview, the Review deep link shows only scientific review content beneath the tab bar, Overview retains phase/delivery/forecast detail, the hold summary opens Specimens, list search parameters remain and ArrowRight wraps from Review to Overview. Desktop screenshot inspection passed. At the rendered 417px narrow viewport, all seven tabs wrapped into four rows without horizontal overflow; the active panel began 8px below the tab list. Narrow screenshot capture timed out, so narrow acceptance is DOM/interaction evidence. The temporary viewport override was reset. Active hold, blocking exception, overdue and scanned-receipt fixtures were not exercised in the connected browser; component regression sources cover default/deep-link isolation and persistent urgency, and existing physical-tube receipt coverage is retained. Automated suites were not run, following the standing repository rule. No database, laboratory record, dependency, authentication, Git mutation or deployment change occurred.
+
+
+## Job Sequencing tab — October 9, 2026
+
+Approved: add Sequencing after Libraries to show a Job’s batch assignments, vendor progress, actual run timing and recorded library outcomes, linking to the existing shared batch record. Engineering slice: add a read-only GET work-orders/{workOrderId}/sequencing under the existing Lab controller, with the same authenticated Phaeno Lab-role boundary as Job details. Scope members/libraries to that exact Job, read only its linked batches and latest result-version exceptions, and reuse existing batch status semantics. No writes, schema, migrations, new dependencies or commercial/pipeline contract changes. The UI queries only while Sequencing is selected, retains all current tab deep links/list context, and distinguishes unassigned libraries, loading, failure, unknown outcomes and run not performed. Vendor success is separate from scientific approval/release. Verify API compilation, frontend types/scoped lint, documentation consistency and connected read-only browser behavior; expand relevant source coverage without running suites unless requested.
+
+Implemented locally. The full API solution and expanded API regression sources compile with zero warnings/errors; frontend TypeScript, scoped ESLint, generated documentation consistency (56 guides) and diff whitespace checks pass. After the Product Owner rebuilt/restarted the local API, signed-in Chrome opened the sequencing deep link for M82N5JTB and showed exactly its two passing libraries as unassigned with zero linked batches. Open sequencing batches, browser Back, Open libraries and ArrowRight from Libraries to Sequencing preserve navigation and search context. Desktop screenshot inspection passed. At the rendered 417px narrow viewport, eight tabs wrap into four rows without horizontal overflow and the active panel starts 8px below the tab bar; the viewport override was reset. Current local data has no sequencing batches, so populated/shared-batch, per-library exception, actual run timing and no-run browser scenarios remain fixture-dependent. Expanded API/panel regression sources compile but were not executed under the standing no-suite-without-request rule. No sequencing assignment, shipment, result, laboratory data, schema, migration, dependency, auth, staging/commit or deployment action occurred. Temporary isolated build output was removed.
+
+## Specimen-centered tracing — October 9, 2026
+
+The Product Owner authorized the specimen workspace after reviewing the proposal in the [sample traceability plan](SAMPLE-TRACEABILITY-AND-INVESTIGATION-PLAN.md#proposed-specimen-centered-operational-workspace--october-9-2026). Direct discovery and the existing specimen route now provide Overview, Processing, Sequencing & analysis, Results & delivery and History. Job coordination and shared batch execution remain in their owning surfaces. Exact identity joins, missing-attribution states, navigation context, documentation and regression sources are implemented; broader prospective capture qualification remains open in the owning plan.
+
+Implemented locally. The API solution and expanded regression sources compile with zero warnings/errors; frontend TypeScript, scoped ESLint, documentation consistency (56 guides, a2fd07edf7bb) and diff whitespace checks pass. After the owner restarted the API, connected read-only Chrome verification passed discovery search/Active/Succeeded filters, empty Historical results, all five specimen tabs, specimen-scoped sequencing (one library versus two in the Job), picker tab preservation, directory-return filters, and keyboard tab navigation. The rendered 417px narrow layout has no horizontal overflow. Specimens uses Lucide TestTubeDiagonal and Master mixes uses Pipette; both were verified in the rendered sidebar. Desktop screenshot inspection passed earlier; final screenshot recapture timed out. Temporary viewport override was reset. Dark-theme verification was not performed. The local fixture has no sequencing outputs or results; populated shared batches, reserve retries, repeated runs, corrections and exact delivered-result tracing remain unexecuted fixture-dependent checks. Automated suites were not run under the standing repository rule. No laboratory records, schema, dependencies, authentication, Git staging/commits or deployments were changed.
+
+
+## Specimen Libraries tab — October 9, 2026
+
+Implemented the owner-approved tab between Processing and Sequencing & analysis. Existing specimen-scoped Job records provide source/library tubes, preparation attempts/executions and QC. Job library links target the tab; existing mutation controls remain in Job Libraries. TypeScript, scoped lint and help consistency pass. Connected read-only verification passed direct entry, exact specimen row isolation, saved QC expansion, picker selection preservation, keyboard navigation and narrow card/tab layout with no overflow. Automated suites were not run. See the [workspace implementation record](SAMPLE-TRACEABILITY-AND-INVESTIGATION-PLAN.md#specimen-libraries-tab--october-9-2026).
+
+
+## Specimen-origin execution return — October 9, 2026
+
+Owner requested the execution Back link follow the navigation origin. Specimen Overview, Processing, Libraries and protocol-evidence links carry explicit validated specimen/tab return context. Execution uses Back to specimen only when that origin matches its saved specimen, preserves section/filter/shipment context, and restores the originating tab. Job entry clears specimen-origin context and retains Back to laboratory job; direct entry retains the Job default. No backend, workflow guards, persisted data or dependency changes. Verify types/scoped lint/help, specimen and Job entry/return, reload and keyboard navigation; do not execute automated suites unless requested.
+
+
+Execution return verification — October 9, 2026: TypeScript, scoped ESLint and documentation consistency pass (56 guides, 038e1e33274c). Connected read-only Chrome followed specimen 002 Libraries → preparation execution → reload → Back to specimen, restoring the same specimen/Libraries tab and specimen search. Entering the same execution from Job Execution still shows Back to laboratory job and restores Job Execution, even with retained specimen-directory filters. Desktop screenshot inspected. Overview/Processing and protocol-evidence links carry explicit tab origins; the origin is checked against the loaded execution specimen. No automated suites, API/schema/data mutation or deployment was performed.
+
+
+## Scientific review queue correction — October 9, 2026
+
+Owner confirmed this queue must contain assembled work ready for scientific
+review, not every received Job. This supersedes the earlier broad results list.
+A dedicated read-only scientific-review-queue endpoint uses the existing Lab-role
+boundary, selecting exact ReadyForReview output packages linked to reconciled
+Succeeded assembly with matching organization/Job/specimen/analysis and latest
+package QC Pass. On-hold/cancelled Jobs and already-approved packages are excluded.
+Qualifying Jobs are selected before the 250-row limit; each row reports its
+pending package count and opens Job Review with return context preserved. No
+schema, records, provider settings, approval rules or release behavior change.
+
+The existing PostgreSQL FASTQ/QC scenario now covers sequencing-only exclusion,
+completed-package-without-QC exclusion, Fail/Hold/Pass, a later Hold overriding
+Pass, restored Pass and approved/released removal. Frontend sources cover pending
+counts, empty and failed reads. Suites remain unexecuted unless requested.
+API restart and connected verification follow the static build checkpoint.
+
+Verification completed locally: full API solution and expanded regression sources
+compile with zero warnings/errors; TypeScript, scoped ESLint, generated help
+consistency (56 guides, af945a2e207d) and diff whitespace checks pass. After the
+Owner rebuilt/restarted the API, connected read-only UI acceptance confirmed the
+new query returns an empty scientific-review queue, M82N5JTB is absent after
+Refresh, and its two specimen/run input sets remain in Data assembly. The empty
+state was inspected at desktop and 375 px in light theme with no horizontal
+overflow; temporary viewport override reset. Final screenshot is retained as
+scientific-review-queue-corrected.png. No records or scientific/provider state
+were mutated. Positive completed-package scenarios are covered in compiled
+regression sources but were not executed, and no qualifying live assembly fixture
+exists locally. Dark-theme and automated-suite acceptance remain unperformed.

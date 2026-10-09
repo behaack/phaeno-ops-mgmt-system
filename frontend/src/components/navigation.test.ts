@@ -260,7 +260,7 @@ describe('navigation placement', () => {
       getVisibleMainMenuItems(session, context, 'workspace').map(
         (item) => item.label,
       ),
-    ).toEqual(['Dashboard', 'CRM', 'Order ops', 'Lab ops'])
+    ).toEqual(['Dashboard', 'Lab ops', 'CRM', 'Order ops'])
     expect(
       getVisibleMainMenuItems(session, context, 'administration').map(
         (item) => item.label,

@@ -9,6 +9,14 @@ import { Input } from '#/components/ui/input'
 import { NativeSelect } from '#/components/ui/native-select'
 import { RequiredMark } from '#/components/ui/required-field'
 import { PreparationField } from './preparation-ui'
+import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
+import { getFastqS3Files, registerFastqS3File, type S3ScientificObject } from '#/api/lab-s3-scientific'
+import { S3ScientificFileDialog } from './S3ScientificFileDialog'
+import { FileUploadProgress } from '#/components/ui/file-upload-progress'
+import type { FileUploadProgress as UploadState } from '#/api/file-upload-progress'
+
+const positive = z.string().refine(v => /^\d+$/.test(v) && Number(v) > 0 && Number(v) <= 2_147_483_647, 'Enter a positive whole number.')
+const mappingSchema = z.object({ layout: z.enum(['PairedEnd', 'SingleEnd']), run: positive, preparation: z.enum(['NewPreparation', 'ExistingLibrary']), group: positive, part: positive, read: z.enum(['1', '2']), description: z.string().trim().min(1, 'Describe the actual flowcell/lane or merged group.').max(255) })
 
 export function FastqLibraryUpload({ form, index, disabled, intake, memberId, sendoutId, selected, getDraft, onSelected, refresh, onBusy }: {
   form: UseFormReturn<VendorResultsValues>; index: number; disabled: boolean; intake: FastqIntake; memberId: string; sendoutId: string; selected?: FastqSet;
@@ -24,10 +32,46 @@ export function FastqLibraryUpload({ form, index, disabled, intake, memberId, se
   const fields = (key: 'layout' | 'run' | 'preparation' | 'group' | 'part' | 'read' | 'description') => form.register(`${path}.${key}`)
   const fieldError = (key: 'layout' | 'run' | 'preparation' | 'group' | 'part' | 'read' | 'description') => form.formState.errors.files?.[index]?.[key]?.message
   const [status, setStatus] = useState('')
+  const [transfer, setTransfer] = useState<UploadState>()
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const newId = useRef(crypto.randomUUID())
   const active = selected
+  const [s3Open, setS3Open] = useState(false)
+  const [sourceSet, setSourceSet] = useState('')
+  const fileInput = useRef<HTMLInputElement>(null)
+  const actionButton = useRef<HTMLButtonElement>(null)
+  function reviewMapping(read: string) {
+    const checked = mappingSchema.safeParse({ ...mapping, layout, run, preparation, read })
+    if (!checked.success) {
+      for (const issue of checked.error.issues) form.setError(`${path}.${issue.path[0] as keyof typeof mapping}`, { message: issue.message })
+      form.setFocus(`${path}.${checked.error.issues[0].path[0] as keyof typeof mapping}`)
+      setError('Review the required file mapping before choosing files.'); return
+    }
+    return checked.data
+  }
+  async function ensureSet() {
+    if (active?.id) return active.id
+    const draftId = await getDraft()
+    const created = await beginFastqSet(sendoutId, { id: newId.current, draftId, memberId, sequencingRunNumber: Number(run), libraryPreparationChoice: preparation, readLayout: layout })
+    onSelected(created.id); return created.id
+  }
+  async function openS3() {
+    if (busy || disabled || !reviewMapping(layout === 'SingleEnd' ? '1' : mapping.read)) return
+    setError(''); setBusy(true); onBusy(true)
+    try { setSourceSet(await ensureSet()); await refresh(); setS3Open(true) }
+    catch (failure) { setError(getLabOperationsError(failure, 'The S3 file selection could not be opened.')) }
+    finally { setBusy(false); onBusy(false) }
+  }
+  async function useOriginal(file: S3ScientificObject) {
+    const values = reviewMapping(layout === 'SingleEnd' ? '1' : mapping.read)
+    if (!values) throw new Error('Review the required FASTQ mapping.')
+    setBusy(true); onBusy(true)
+    try {
+      await registerFastqS3File(sourceSet, file, { groupNumber: Number(values.group), partNumber: Number(values.part), readNumber: Number(values.read), groupDescription: values.description })
+      setStatus(`${file.fileName}: original S3 file verified`); await refresh()
+    } finally { setBusy(false); onBusy(false) }
+  }
   async function select(files: FileList | null) {
     if (!files?.length || busy || disabled) return
     setError('')
@@ -37,27 +81,15 @@ export function FastqLibraryUpload({ form, index, disabled, intake, memberId, se
     if (values.length > 2 || values.length === 2 && (active?.readLayout ?? layout) !== 'PairedEnd') { setError('Select one file, or its R1/R2 pair for this group and part.'); return }
     const roles = values.map(file => /(?:^|[_\-.])R([12])(?:[_\-.]|$)/i.exec(file.name)?.[1])
     if (values.length === 2 && (roles.some(role => !role) || new Set(roles).size !== 2)) { setError('The selected pair needs recognizable R1/R2 names. Upload files individually with an explicit read role otherwise.'); return }
-    const positive = z.string().refine(v => /^\d+$/.test(v) && Number(v) > 0 && Number(v) <= 2_147_483_647, 'Enter a positive whole number.')
-    const schema = z.object({ layout: z.enum(['PairedEnd', 'SingleEnd']), run: positive, preparation: z.enum(['NewPreparation', 'ExistingLibrary']), group: positive, part: positive, read: z.enum(['1', '2']), description: z.string().trim().min(1, 'Describe the actual flowcell/lane or merged group.').max(255) })
-    const checked = schema.safeParse({ ...mapping, layout, run, preparation, read: values.length === 2 || layout === 'SingleEnd' ? '1' : mapping.read })
-    if (!checked.success) {
-      for (const issue of checked.error.issues) form.setError(`${path}.${issue.path[0] as keyof typeof mapping}`, { message: issue.message })
-      form.setFocus(`${path}.${checked.error.issues[0].path[0] as keyof typeof mapping}`)
-      setError('Review the required file mapping before uploading.'); return
-    }
-    const verifiedMapping = checked.data
+    const verifiedMapping = reviewMapping(values.length === 2 || layout === 'SingleEnd' ? '1' : mapping.read)
+    if (!verifiedMapping) return
     setBusy(true); onBusy(true)
     try {
-      let id = active?.id
-      if (!id) {
-        const draftId = await getDraft()
-        const created = await beginFastqSet(sendoutId, { id: newId.current, draftId, memberId, sequencingRunNumber: Number(run), libraryPreparationChoice: preparation, readLayout: layout })
-        id = created.id; onSelected(id)
-      }
+      const id = await ensureSet()
       for (const [i, file] of values.entries()) {
         const role = values.length === 2 ? Number(roles[i]) : Number(verifiedMapping.read)
         setStatus(`Preparing ${file.name}`)
-        await uploadFastqFile(id, file, { groupNumber: Number(verifiedMapping.group), partNumber: Number(verifiedMapping.part), readNumber: role, groupDescription: verifiedMapping.description }, message => setStatus(`${file.name}: ${message}`))
+        await uploadFastqFile(id, file, { groupNumber: Number(verifiedMapping.group), partNumber: Number(verifiedMapping.part), readNumber: role, groupDescription: verifiedMapping.description }, message => setStatus(`${file.name}: ${message}`), setTransfer)
         await refresh()
       }
     } catch (failure) { setError(getLabOperationsError(failure, failure instanceof Error ? failure.message : 'Upload failed. Select the same file and mapping to resume.')) }
@@ -72,13 +104,22 @@ export function FastqLibraryUpload({ form, index, disabled, intake, memberId, se
       <PreparationField id={`${prefix}-prep`} label="Library preparation" required error={fieldError('preparation')}><NativeSelect id={`${prefix}-prep`} {...fields('preparation')} disabled={busy || disabled}><option value="">Choose preparation</option><option value="NewPreparation">New for this run</option><option value="ExistingLibrary">Existing library</option></NativeSelect></PreparationField>
     </div>}
     {active?.files.length ? <ol className="divide-y text-sm">{active.files.map(file => <li key={file.id} className="min-w-0 py-2"><p className="break-all">{file.originalFileName} · G{file.groupNumber} / R{file.readNumber} / P{file.partNumber}</p><p className="text-xs text-muted-foreground">{file.fileId ? `Verified · ${file.readCount?.toLocaleString()} reads` : `${Math.round(file.receivedBytes / file.sizeBytes * 100)}% uploaded · verification pending`}</p><details><summary className="cursor-pointer text-xs">POMS filename</summary><p className="break-all text-xs">{file.fileName}</p></details></li>)}</ol> : null}
-    {active ? <Button type="button" variant="outline" disabled={busy || disabled} onClick={() => { newId.current = crypto.randomUUID(); form.setValue(`${path}.layout`, '', { shouldDirty: true }); form.setValue(`${path}.run`, '', { shouldDirty: true }); form.setValue(`${path}.preparation`, '', { shouldDirty: true }); onSelected('') }}>Start a new file set</Button> : null}
+    <ActionMenu><DropdownMenuTrigger asChild><Button ref={actionButton} id={`${prefix}-files`} type="button" variant="outline" disabled={busy || disabled} aria-label={`${member.libraryKey} file actions`}>Actions</Button></DropdownMenuTrigger>
+      <DropdownMenuContent>
+        {!active?.sealedSet ? <DropdownMenuItem onSelect={() => fileInput.current?.click()}>Upload from computer</DropdownMenuItem> : null}
+        {!active?.sealedSet && intake.s3Available ? <DropdownMenuItem onSelect={() => { void openS3() }}>Choose original S3 file</DropdownMenuItem> : null}
+        {active ? <DropdownMenuItem onSelect={() => { newId.current = crypto.randomUUID(); form.setValue(`${path}.layout`, '', { shouldDirty: true }); form.setValue(`${path}.run`, '', { shouldDirty: true }); form.setValue(`${path}.preparation`, '', { shouldDirty: true }); onSelected('') }}>Start a new file set</DropdownMenuItem> : null}
+      </DropdownMenuContent>
+    </ActionMenu>
+    <S3ScientificFileDialog open={s3Open} onOpenChange={setS3Open} queryKey={['fastq-s3-files', sourceSet]}
+      load={cursor => getFastqS3Files(sourceSet, cursor)} select={useOriginal} maximumBytes={intake.effectiveMaximumFileBytes} fastqOnly returnFocus={actionButton} />
     {active?.sealedSet ? <p className="text-xs text-muted-foreground">Retained verified files satisfy upload coverage. Replacing them creates a new file set.</p> : <>
       <div className="grid gap-3 sm:grid-cols-3"><PreparationField id={`${prefix}-group`} label="Group" required error={fieldError('group')}><Input id={`${prefix}-group`} type="number" min="1" max={intake.policy.allowMultipleGroups ? undefined : 1} disabled={busy || disabled} {...fields('group')} /></PreparationField><PreparationField id={`${prefix}-part`} label="Part" required error={fieldError('part')}><Input id={`${prefix}-part`} type="number" min="1" max={intake.policy.allowSplitParts ? undefined : 1} disabled={busy || disabled} {...fields('part')} /></PreparationField>{layout === 'SingleEnd' ? <p className="self-end text-sm">Read · R1</p> : <PreparationField id={`${prefix}-read`} label="Read for single-file selection" required error={fieldError('read')}><NativeSelect id={`${prefix}-read`} disabled={busy || disabled} {...fields('read')}><option value="">Choose read</option><option value="1">R1</option>{(active?.readLayout ?? layout) === 'PairedEnd' ? <option value="2">R2</option> : null}</NativeSelect></PreparationField>}</div>
       <PreparationField id={`${prefix}-description`} label="Flowcell / lane or merged group" required error={fieldError('description')}><Input id={`${prefix}-description`} disabled={busy || disabled} maxLength={255} {...fields('description')} placeholder="Use vendor evidence; describe merged lanes explicitly" /></PreparationField>
-      <PreparationField id={`${prefix}-files`} label="FASTQ file or R1/R2 pair" required><Input id={`${prefix}-files`} type="file" multiple accept=".fastq,.fq,.fastq.gz,.fq.gz" disabled={busy || disabled} aria-describedby={`${prefix}-help`} onChange={e => { void select(e.target.files); e.target.value = '' }} /></PreparationField>
+      <Input ref={fileInput} className="hidden" id={`${prefix}-file-input`} type="file" aria-label={`${member.libraryKey} FASTQ file or R1/R2 pair`} multiple accept=".fastq,.fq,.fastq.gz,.fq.gz" disabled={busy || disabled} aria-describedby={`${prefix}-help`} onChange={e => { void select(e.target.files); e.target.value = '' }} />
       <p id={`${prefix}-help`} className="text-xs text-muted-foreground">Up to {(intake.effectiveMaximumFileBytes / 1024 / 1024).toLocaleString()} MiB per file. Select the same file and mapping to resume an interrupted upload.</p>
     </>}
+    {transfer ? <FileUploadProgress progress={transfer} /> : null}
     {status ? <p role="status" className="break-words text-sm">{status}</p> : null}{error ? <p role="alert" className="break-words text-sm text-destructive">{error}</p> : null}
   </section>
 }

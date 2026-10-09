@@ -84,6 +84,15 @@ export const mainMenuItems: readonly MainMenuItem[] = [
     exact: true,
   },
   {
+    label: 'Lab ops',
+    to: '/lab-operations',
+    icon: Microscope,
+    group: 'workspace',
+    visibleWhen: (session, context) =>
+      context.selectedOrganizationKind === 'Phaeno' &&
+      Boolean(session?.capabilities.canManageLabOperations || session?.capabilities.canReleasePSeqResults),
+  },
+  {
     label: 'CRM',
     to: '/crm',
     icon: Handshake,
@@ -146,15 +155,6 @@ export const mainMenuItems: readonly MainMenuItem[] = [
     visibleWhen: (session, context) =>
       context.selectedOrganizationKind === 'Phaeno' &&
       Boolean(session?.capabilities.canManageOrderConfiguration || session?.capabilities.canQuoteLabServiceWork || session?.capabilities.canViewTrialProjects),
-  },
-  {
-    label: 'Lab ops',
-    to: '/lab-operations',
-    icon: Microscope,
-    group: 'workspace',
-    visibleWhen: (session, context) =>
-      context.selectedOrganizationKind === 'Phaeno' &&
-      Boolean(session?.capabilities.canManageLabOperations || session?.capabilities.canReleasePSeqResults),
   },
   {
     label: 'Finance',

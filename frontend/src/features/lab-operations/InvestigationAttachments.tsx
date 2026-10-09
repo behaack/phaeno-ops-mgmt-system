@@ -28,7 +28,7 @@ function Attachment({ workOrderId, specimenId, row }: { workOrderId: string; spe
   } })
   return <div className="space-y-3 rounded-md border p-3">
     <div className="flex flex-wrap items-start justify-between gap-3">
-      <div className="min-w-0 flex-1"><h4 className="break-all text-sm font-medium">{name}</h4><p className="text-xs text-muted-foreground">{row.role === 'qcReport' ? 'QC report' : 'Preparation report'} · {evidenceDate(row.recordedAtUtc)}</p></div>
+      <div className="min-w-0 flex-1"><h3 className="break-all text-sm font-medium">{name}</h3><p className="text-xs text-muted-foreground">{row.role === 'qcReport' ? 'QC report' : 'Preparation report'} · {evidenceDate(row.recordedAtUtc)}</p></div>
       <Button variant="outline" size="sm" disabled={!clean || download.isPending} aria-label={`Download ${name}`} onClick={() => download.mutate()}>{download.isPending ? 'Checking report…' : 'Download report'}</Button>
     </div>
     {!clean ? <p className="text-sm">This report has not passed scanning and cannot be downloaded.</p> : null}

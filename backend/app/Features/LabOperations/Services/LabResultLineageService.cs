@@ -22,7 +22,7 @@ public sealed class LabResultLineageService(PSeqOperationsDbContext db)
         Guid? actorId, string recordedBySource, CancellationToken ct)
     {
         var normalized = Normalize(request);
-        await LabScientificFiles.ValidateAsync(db, normalized.LabWorkOrderId, normalized.LabSpecimenId,
+        var sourceFile = await LabScientificFiles.ValidateAsync(db, normalized.LabWorkOrderId, normalized.LabSpecimenId,
             normalized.ExternalFileReference, normalized.Sha256, normalized.SizeBytes, ct);
         await LabScientificFiles.ValidateDocumentsAsync(db, normalized.LabWorkOrderId, normalized.LabSpecimenId, normalized.ScientificEvidence, ct);
         var hash = Hash(normalized);
@@ -38,6 +38,8 @@ public sealed class LabResultLineageService(PSeqOperationsDbContext db)
         var specimen = await RequireSpecimenAsync(request.LabWorkOrderId, request.LabSpecimenId, ct);
         await SampleShippingPackingData.LockAsync(db, $"sample-sequencing:{specimen.Id}", ct);
         await ValidatePurchasedRunAsync(normalized, specimen, ct);
+        if (sourceFile is not null && PhaenoPortal.App.Infrastructure.Storage.S3OriginalObject.IsOriginal(sourceFile.StorageKey))
+            ScientificStorageHierarchy.RequireOriginalSequencingBranch(sourceFile.StorageKey, specimen.Id, normalized.LabLibraryId, normalized.SequencingRunNumber ?? 1);
         var library = await db.LabLibraries.SingleOrDefaultAsync(x => x.Id == request.LabLibraryId
             && x.LabWorkOrderId == specimen.LabWorkOrderId && x.LabSpecimenId == specimen.Id, ct)
             ?? throw Invalid("The selected library does not belong to this specimen and job.");
@@ -69,9 +71,9 @@ public sealed class LabResultLineageService(PSeqOperationsDbContext db)
         List<ContainerFact>? sequencingChain = null;
         var manifestSchema = 1;
         if (manifest.RootElement.TryGetProperty("schemaVersion", out var manifestVersion)
-            && (manifestVersion.ValueKind != JsonValueKind.Number || !manifestVersion.TryGetInt32(out manifestSchema) || manifestSchema is not (1 or 2)))
+            && (manifestVersion.ValueKind != JsonValueKind.Number || !manifestVersion.TryGetInt32(out manifestSchema) || manifestSchema is not (1 or 2 or 3)))
             throw Invalid("The saved sequencing submission has an unsupported manifest version.");
-        if (manifestSchema == 2)
+        if (manifestSchema >= 2)
         {
             var submitted = matching[0];
             if (!submitted.TryGetProperty("sequencingContainerId", out var sequencingId) || !sequencingId.TryGetGuid(out var tubeId)

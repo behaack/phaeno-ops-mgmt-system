@@ -1,5 +1,38 @@
 # Frontend Test Plan
 
+October 9 release review covers single-argument S3 mutation callbacks, distinct
+native-file/source-choice accessible names and current library/specimen fixtures.
+The complete five-tube/two-box accession case has a bounded fifteen-second timeout.
+The [October 9 release review](../testing/runs/2026-10-09-scientific-storage-release-review.md)
+records 234 passing files, 1,483 passing tests and three Owner-disabled hold skips,
+superseding the compilation-only checkpoints below.
+
+## Assembly progress bars — October 9, 2026
+
+Updated `AssemblyJobs.test.tsx` source coverage for the accessible, indeterminate
+missing-progress bar, stale percentage suppression and a running 100% report
+that does not imply success. Existing terminal-outcome replacement coverage
+remains. Lists and detail share the same progress component; upload bars now use
+its semantic styling too. Type/lint/docs checks are appropriate; unit suites
+remain request-only and were not executed for this change.
+
+## Original S3 selection — October 9, 2026
+
+Streaming/progress follow-up adds `file-upload-progress.test.tsx` source coverage
+for measured transfer bytes/percent, indeterminate validation, and separately
+counted extracted/admitted entries. FASTQ, supporting-file and ZIP controls use
+the shared component. Verify resume/error states, current-file changes during
+pair upload and no false 100%-ready state before verification. Tests are added
+but not executed; static checks and isolated browser layout are separate evidence.
+
+Added `S3ScientificFileDialog.test.tsx` source coverage for explicit original
+selection, verification callbacks, unavailable setup and over-limit originals.
+Updated scientific upload selectors for the shared Actions control and native
+file input. Type/lint verification is required; unit suites remain unexecuted
+under the request-only rule. Verify keyboard menus, selection, source-folder
+display, pagination/errors, busy dismissal protection and focus return manually
+and in the owning browser journey. Original admission never grants approval.
+
 ## Sequencing review fixes — October 6, 2026
 
 The focused workspace and ZIP mapping slice has nine passing tests. It covers
@@ -3989,3 +4022,84 @@ drafts, required identity validation, current dirty-state confirmation, Keep
 editing, discard and focus return. Final CRM browser error capture is empty.
 The UI is deployed with the same API source; automated suite execution remains
 deferred. See the [release summary](../operations/portal-crm-followup-release-20261008.md).
+
+
+## Job details navigation — October 9, 2026
+
+Expanded the existing physical-tube receipt component coverage with ordinary-entry Overview selection, Review deep-link preservation, delivery/hold panel isolation and persistent overdue/active-hold summaries. Existing scanned entry stays in Specimens for physical receipt and accession. Test execution is deferred under the repository instruction not to run suites unless requested; static checks and read-only browser acceptance are tracked in LAB-OPERATIONS-PLAN.md.
+
+
+## Job Sequencing tab — October 9, 2026
+
+Acceptance: tab after Libraries; linked batch progress, recorded timing and effective latest-version library outcomes; Job-only library membership in shared batches; unassigned/empty/loading/error states; batch navigation; retained tab/list context and responsive table/cards. API reads use the Job-detail role boundary and make no writes. Automated suites are not requested and remain unrun; source and connected verification evidence is tracked in LAB-OPERATIONS-PLAN.md.
+
+Sequencing regression sources added: the existing PostgreSQL tube-lineage scenario now checks Job membership/tube identity, latest-version overrides and no-write/empty-other-Job reads; the panel scenarios cover owning-Job requests, library failure despite batch success, unknown/no-run facts, error recovery without false unassigned labels and no-library empty state. These sources remain unexecuted because suites were not requested.
+
+## Specimen workspace — October 9, 2026
+
+Specimen page regression sources cover Overview default, directory-return context, pinned workflow and Portal draft-discard retention. Sequencing sources cover specimen-scoped calls. Exact-result/reserve/correction trace and narrow keyboard navigation are included in the focused workspace coverage. Type/lint checks run; automated suites not executed under the standing instruction.
+
+
+## Specimen Libraries tab — October 9, 2026
+
+Implemented the owner-approved tab between Processing and Sequencing & analysis. Existing specimen-scoped Job records provide source/library tubes, preparation attempts/executions and QC. Job library links target the tab; existing mutation controls remain in Job Libraries. TypeScript, scoped lint and help consistency pass. Connected read-only verification passed direct entry, exact specimen row isolation, saved QC expansion, picker selection preservation, keyboard navigation and narrow card/tab layout with no overflow. Automated suites were not run. See the [workspace implementation record](SAMPLE-TRACEABILITY-AND-INVESTIGATION-PLAN.md#specimen-libraries-tab--october-9-2026).
+
+
+Execution return verification — October 9, 2026: TypeScript, scoped ESLint and documentation consistency pass (56 guides, 038e1e33274c). Connected read-only Chrome followed specimen 002 Libraries → preparation execution → reload → Back to specimen, restoring the same specimen/Libraries tab and specimen search. Entering the same execution from Job Execution still shows Back to laboratory job and restores Job Execution, even with retained specimen-directory filters. Desktop screenshot inspected. Overview/Processing and protocol-evidence links carry explicit tab origins; the origin is checked against the loaded execution specimen. No automated suites, API/schema/data mutation or deployment was performed.
+
+
+## PSeq Service assembly tabs — October 9, 2026
+
+Data assembly has exclusive Sequencing inputs and Sequencing assembly tabs;
+Partner cases are accessed through their separate Order ops case route. Adapted
+the existing assembly missing-setup regression to require no generic Start button
+on the unscoped tracker. Existing specimen-scoped start stays available under its
+permissions/setup gate. Check URL inputs/jobs, retained job search, input-row
+starts, detail return to jobs, setup/empty/error feedback, and keyboard/reflow.
+No automated suite execution requested.
+
+Verification: TypeScript and scoped ESLint pass; generated help is current (56
+guides, corpus 8878f9f515ad), and git diff --check passes. Connected read-only
+browser acceptance passed both exclusive panes, two specimen/run input sets with
+two files each, setup-disabled input starts, no generic tracker Start, keyboard
+arrow selection, URL/search restoration after reload, and the inputs shortcut.
+Desktop and 375 px light-theme screenshots were inspected; narrow content equals
+viewport width with no horizontal overflow. Provider execution was not attempted
+because configuration is unavailable; there are no live assembly attempts in the
+local fixture, so attempt-detail return paths were checked in source/TypeScript.
+Partner case entry and its corrected return were checked against existing routes.
+Dark-theme and automated-suite acceptance were not performed. React review found
+no new hooks, conditional-hook use, cross-feature writes or dependencies; shared
+tabs and semantic tokens retain their existing focus and theme behavior.
+
+
+## Scientific review queue correction — October 9, 2026
+
+Owner confirmed this queue must contain assembled work ready for scientific
+review, not every received Job. This supersedes the earlier broad results list.
+A dedicated read-only scientific-review-queue endpoint uses the existing Lab-role
+boundary, selecting exact ReadyForReview output packages linked to reconciled
+Succeeded assembly with matching organization/Job/specimen/analysis and latest
+package QC Pass. On-hold/cancelled Jobs and already-approved packages are excluded.
+Qualifying Jobs are selected before the 250-row limit; each row reports its
+pending package count and opens Job Review with return context preserved. No
+schema, records, provider settings, approval rules or release behavior change.
+
+The existing PostgreSQL FASTQ/QC scenario now covers sequencing-only exclusion,
+completed-package-without-QC exclusion, Fail/Hold/Pass, a later Hold overriding
+Pass, restored Pass and approved/released removal. Frontend sources cover pending
+counts, empty and failed reads. Suites remain unexecuted unless requested.
+API restart and connected verification follow the static build checkpoint.
+
+Verification completed locally: full API solution and expanded regression sources
+compile with zero warnings/errors; TypeScript, scoped ESLint, generated help
+consistency (56 guides, af945a2e207d) and diff whitespace checks pass. After the
+Owner rebuilt/restarted the API, connected read-only UI acceptance confirmed the
+new query returns an empty scientific-review queue, M82N5JTB is absent after
+Refresh, and its two specimen/run input sets remain in Data assembly. The empty
+state was inspected at desktop and 375 px in light theme with no horizontal
+overflow; temporary viewport override reset. Final screenshot is retained as
+scientific-review-queue-corrected.png. No records or scientific/provider state
+were mutated. Positive completed-package scenarios are covered in compiled
+regression sources but were not executed, and no qualifying live assembly fixture
+exists locally. Dark-theme and automated-suite acceptance remain unperformed.

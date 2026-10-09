@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
 using PhaenoPortal.App.Features.OrderManagement.Services;
 using PhaenoPortal.App.Infrastructure.Persistence;
+using PhaenoPortal.App.Infrastructure.Storage;
 using PSeq.Operations.Laboratory.Domain;
 
 public static class LabScientificFiles
@@ -13,19 +14,21 @@ public static class LabScientificFiles
     public static object Public(LabScientificFile file) => new
     {
         file.Id, file.FileName, file.Sha256, file.SizeBytes, file.RecordedAtUtc,
-        externalFileReference = Prefix + file.Id.ToString("D")
+        externalFileReference = Prefix + file.Id.ToString("D"),
+        sourceKind = S3OriginalObject.IsOriginal(file.StorageKey) ? "S3Original" : "PortalUpload"
     };
 
-    public static async Task ValidateAsync(PSeqOperationsDbContext db, Guid work, Guid specimen,
+    public static async Task<LabScientificFile?> ValidateAsync(PSeqOperationsDbContext db, Guid work, Guid specimen,
         string reference, string sha256, long size, CancellationToken ct)
     {
         // Historical/provider-owned references remain declarations, never managed-file claims.
-        if (!reference.StartsWith(Prefix, StringComparison.OrdinalIgnoreCase)) return;
+        if (!reference.StartsWith(Prefix, StringComparison.OrdinalIgnoreCase)) return null;
         if (!Guid.TryParseExact(reference[Prefix.Length..], "D", out var id)) throw Invalid();
         var file = await db.LabScientificFiles.AsNoTracking().SingleOrDefaultAsync(
             f => f.Id == id && f.LabWorkOrderId == work && f.LabSpecimenId == specimen, ct);
         if (file is null || size != file.SizeBytes || !string.Equals(sha256, file.Sha256, StringComparison.OrdinalIgnoreCase))
             throw Invalid();
+        return file;
     }
 
     public static async Task ValidateDocumentsAsync(PSeqOperationsDbContext db, Guid work, Guid specimen,

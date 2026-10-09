@@ -19,6 +19,13 @@ public partial class SampleShippingPostgresTests
         var customer = scope.CreateCustomerWorkflowController();
         var lab = scope.CreateLabController();
         Assert.Empty((await lab.AccessionedSamples(search: fixture.Item.CustomerSampleId)).Items);
+        var pending = Assert.Single((await lab.AccessionedSamples(search: fixture.Item.CustomerSampleId, includePending: true, scope: "Active")).Items);
+        Assert.Equal(fixture.Specimen.Id, pending.Id);
+        Assert.Null(pending.AccessionNumber);
+        Assert.False(pending.Historical);
+        Assert.Empty((await lab.AccessionedSamples(search: fixture.Item.CustomerSampleId, includePending: true, scope: "Historical")).Items);
+        await Assert.ThrowsAsync<OrderManagementException>(() => lab.AccessionedSamples(includePending: true, scope: "Unknown"));
+        await Assert.ThrowsAsync<OrderManagementException>(() => lab.AccessionedSamples(includePending: true, processingStatus: "999"));
         var codes = Enumerable.Range(1, 3).Select(i => $"BATCH-{scope.Suffix}-{i}").ToArray();
         await admin.CreateReturnKit(fixture.Shipment.Id, await scope.CatalogReturnKitRequestAsync(new CreateSampleReturnKitRequest(3,
             "Test supplier", "Test tube", null, "Test shipper", "Test product")), default);

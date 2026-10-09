@@ -8,13 +8,16 @@ using Microsoft.Extensions.Options;
 using PhaenoPortal.App.Features.Accounts.Services;
 using PhaenoPortal.App.Features.OrderManagement.Services;
 using PhaenoPortal.App.Infrastructure.Persistence;
+using PhaenoPortal.App.Infrastructure.Storage;
 using PSeq.Operations.Laboratory.Domain;
 
 public sealed record StartAssemblyRequest(Guid Id, Guid LabSpecimenId, int SequencingRunNumber, string RecipeKey,
     IReadOnlyList<Guid> SequencingOutputIds, Guid? PreviousJobId = null, string? Reason = null);
 public sealed record AssemblyReasonRequest(long Version, string Reason);
 public sealed record AssemblyAnalysisRequest(long Version, Guid AnalysisRunId);
-public sealed record AssemblyFrozenInputs(IReadOnlyList<AssemblyInput> Inputs, AssemblyInputVerification Verification, int AuthorizationVersion = 0);
+public sealed record AssemblyStorageDestination(string Bucket, string Region, string Prefix, Guid AttemptId);
+public sealed record AssemblyFrozenInputs(IReadOnlyList<AssemblyInput> Inputs, AssemblyInputVerification Verification, int AuthorizationVersion = 0,
+    AssemblyStorageDestination? OutputStorage = null);
 public sealed record AssemblyJobDto(Guid Id, Guid LabWorkOrderId, Guid LabSpecimenId, string SampleName, int SequencingRunNumber,
     string State, DateTime RequestedAtUtc, DateTime? StartedAtUtc, DateTime? StoppedAtUtc, DateTime? DispositionAtUtc,
     double? DurationSeconds, bool IsTerminal, bool CancellationRequested, string? DispositionReason, string? AttentionReason,
@@ -23,7 +26,7 @@ public sealed record AssemblyJobDto(Guid Id, Guid LabWorkOrderId, Guid LabSpecim
 
 public sealed class LabAssemblyService(PSeqOperationsDbContext db, ILabAssemblyProvider provider,
     LabAssemblyProgress progress, IOptions<LabAssemblyOptions> options, IOptions<PSeqOrderToCashOptions> policy, TimeProvider time,
-    IOperationalFileStorage? fileStorage = null)
+    IOperationalFileStorage? fileStorage = null, IOptions<FileStorageOptions>? fileOptions = null)
 {
     public static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
     private static readonly string[] TerminalStates = ["Succeeded", "Failed", "Terminated", "CancelledBeforeStart"];
@@ -105,8 +108,23 @@ public sealed class LabAssemblyService(PSeqOperationsDbContext db, ILabAssemblyP
         }
         var verification = await provider.VerifyInputsAsync(frozen, ct);
         ValidateVerification(frozen, verification, Now);
+        AssemblyStorageDestination? outputStorage = null;
+        if (string.Equals(fileOptions?.Value.Provider, FileStorageProviders.S3, StringComparison.OrdinalIgnoreCase))
+        {
+            var s3 = fileOptions!.Value.S3;
+            var fileIds = frozen.Where(i => i.ExternalFileReference.StartsWith(LabScientificFiles.Prefix, StringComparison.Ordinal))
+                .Select(i => Guid.Parse(i.ExternalFileReference[LabScientificFiles.Prefix.Length..])).ToArray();
+            var captures = await db.Set<LabFastqUpload>().AsNoTracking().Where(u => u.LabScientificFileId.HasValue && fileIds.Contains(u.LabScientificFileId.Value))
+                .Select(u => u.LabFastqSetId).Distinct().ToListAsync(ct);
+            var directory = fileIds.Length == inputs.Count && captures.Count == 1 && inputs.Select(i => i.LabLibraryId).Distinct().Count() == 1
+                ? ScientificStorageHierarchy.Assembly(work.SubmittingOrganizationId, work.Id, specimen.Id, inputs[0].LabLibraryId,
+                    captures[0], request.SequencingRunNumber, request.Id)
+                : ScientificStorageHierarchy.Sample(work.SubmittingOrganizationId, work.Id, specimen.Id) + $"/assemblies/assembly-{request.Id:N}";
+            var prefix = FileStorageKeys.NormalizePrefix(s3.KeyPrefix);
+            outputStorage = new(s3.BucketName, s3.Region, (prefix.Length == 0 ? directory : $"{prefix}/{directory}") + "/", request.Id);
+        }
         var job = new LabAssemblyJob(request.Id, workId, specimen.Id, work.SubmittingOrganizationId, request.SequencingRunNumber,
-            actorId, provider.Key, JsonSerializer.Serialize(recipe, Json), JsonSerializer.Serialize(new AssemblyFrozenInputs(frozen, verification, work.CurrentAuthorizationVersion), Json),
+            actorId, provider.Key, JsonSerializer.Serialize(recipe, Json), JsonSerializer.Serialize(new AssemblyFrozenInputs(frozen, verification, work.CurrentAuthorizationVersion, outputStorage), Json),
             hash, Now, request.PreviousJobId, request.Reason);
         db.Add(job); db.Add(new LabAssemblyCommand(job.Id, "Run", job.RequestedAtUtc)); Record(job, "Requested", actorId);
         // Participate in concurrency with a new parent hold/cancellation.

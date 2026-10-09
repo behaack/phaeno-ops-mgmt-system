@@ -17,11 +17,11 @@ import { Label } from '#/components/ui/label'
 import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/required-field'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '#/components/ui/tabs'
 import { Textarea } from '#/components/ui/textarea'
+import { ProgressBar } from '#/components/ui/progress-bar'
 import { usePhaenoSession } from '#/features/auth/session-context'
 import { useAssemblyNotifications } from './use-assembly-notifications'
 import { AssemblyStartDialog } from './AssemblyStartDialog'
 import { assemblyDuration, assemblyMatches, assemblyStateLabel, currentAssemblyPercentage } from './assembly-jobs'
-import { LabManufacturingQueue } from './LabManufacturingPage'
 
 const date = (value: string | null) => value ? new Date(value).toLocaleString() : 'Not reported'
 const linkStyle = 'text-primary underline underline-offset-4'
@@ -29,12 +29,12 @@ const linkStyle = 'text-primary underline underline-offset-4'
 export function DataAssemblyWorkspace({ apiEnabled }: { apiEnabled: boolean }) {
   const search = useSearch({ from: '/lab-operations' })
   const navigate = useNavigate()
-  const tab = search.assemblyTab ?? 'runs'
+  const tab = search.assemblyTab ?? 'inputs'
   const { session } = usePhaenoSession()
-  return <Tabs value={tab} onValueChange={value => void navigate({ to: '/lab-operations', search: p => ({ ...p, section: 'assembly', assemblyTab: value === 'cases' ? 'cases' : 'runs' }), resetScroll: false })}>
-    <TabsList className="grid w-full grid-cols-2"><TabsTrigger value="runs">Sequencing runs</TabsTrigger><TabsTrigger value="cases">Assembly cases</TabsTrigger></TabsList>
-    <TabsContent value="runs">{session?.capabilities.canOperateLabWork ? <ReadyAssemblyInputs enabled={apiEnabled} /> : null}<AssemblyJobsList enabled={apiEnabled} search={search.assemblySearch ?? ''} onSearch={value => void navigate({ to: '/lab-operations', search: p => ({ ...p, section: 'assembly', assemblyTab: 'runs', assemblySearch: value || undefined }), replace: true, resetScroll: false })} /></TabsContent>
-    <TabsContent value="cases"><LabManufacturingQueue workflow="assembly" apiEnabled={apiEnabled} /></TabsContent>
+  return <Tabs value={tab} onValueChange={value => void navigate({ to: '/lab-operations', search: p => ({ ...p, section: 'assembly', assemblyTab: value === 'jobs' ? 'jobs' : 'inputs' }), resetScroll: false })}>
+    <TabsList aria-label="PSeq Service data assembly" className="grid w-full grid-cols-2"><TabsTrigger value="inputs">Sequencing inputs</TabsTrigger><TabsTrigger value="jobs">Sequencing assembly</TabsTrigger></TabsList>
+    <TabsContent value="inputs">{session?.capabilities.canOperateLabWork ? <ReadyAssemblyInputs enabled={apiEnabled} /> : <p className="text-sm text-muted-foreground">Laboratory operator access is required to view and start sequencing inputs.</p>}</TabsContent>
+    <TabsContent value="jobs"><AssemblyJobsList enabled={apiEnabled} search={search.assemblySearch ?? ''} onSearch={value => void navigate({ to: '/lab-operations', search: p => ({ ...p, section: 'assembly', assemblyTab: 'jobs', assemblySearch: value || undefined }), replace: true, resetScroll: false })} /></TabsContent>
   </Tabs>
 }
 
@@ -43,7 +43,8 @@ function ReadyAssemblyInputs({ enabled }: { enabled: boolean }) {
   const queue = useQuery({ queryKey: ['assembly-jobs'], queryFn: () => getAssemblyJobs(), enabled })
   const [selected, setSelected] = useState<{ work: string; specimen: string } | null>(null)
   const groups = [...new Map((inputs.data ?? []).map(i => [`${i.labSpecimenId}:${i.sequencingRunNumber}:${i.labSpecimenAttemptId}`, i])).entries()]
-  return <Card className="mb-5"><CardHeader><CardTitle>Sequencing inputs</CardTitle></CardHeader><CardContent className="space-y-3">
+  return <Card><CardHeader><CardTitle>Sequencing inputs</CardTitle></CardHeader><CardContent className="space-y-3">
+    <p className="text-sm text-muted-foreground">Verified FASTQ files for each PSeq Service specimen and run. Start assembly from an input set, then follow its progress in Sequencing assembly.</p>
     {inputs.isPending && enabled ? <p role="status">Loading available input sets…</p> : null}
     {inputs.error ? <p role="alert">{getLabOperationsError(inputs.error, 'Sequencing inputs could not be loaded.')}</p> : null}
     {!inputs.isPending && !groups.length ? <p className="text-sm text-muted-foreground">Record vendor results with complete verified FASTQ files to prepare assembly inputs.</p> : null}
@@ -56,8 +57,10 @@ function ReadyAssemblyInputs({ enabled }: { enabled: boolean }) {
 export function AssemblyJobProgress({ job }: { job: AssemblyJob }) {
   const percentage = currentAssemblyPercentage(job.progress, job.isTerminal)
   if (job.isTerminal) return <Badge variant="outline">{assemblyStateLabel(job.state)}</Badge>
-  return <div className="space-y-1"><span className="text-sm">{job.cancellationRequested ? 'Cancellation requested' : assemblyStateLabel(job.state)}</span>
-    {percentage === null ? <p className="text-xs text-muted-foreground">Progress unavailable</p> : <><progress aria-label={`Assembly progress for ${job.sampleName}, run ${job.sequencingRunNumber}`} max={100} value={percentage} className="h-2 w-full accent-primary" /><p className="text-xs tabular-nums">{Math.round(percentage)}%</p></>}
+  return <div className="min-w-0 space-y-2"><span className="text-sm">{job.cancellationRequested ? 'Cancellation requested' : assemblyStateLabel(job.state)}</span>
+    <ProgressBar aria-label={`Assembly progress for ${job.sampleName}, run ${job.sequencingRunNumber}`} value={percentage}
+      aria-valuetext={percentage === null ? 'Progress unavailable' : `${Math.round(percentage)}% reported`} />
+    {percentage === null ? <p className="text-xs text-muted-foreground">Progress unavailable</p> : <p className="text-xs tabular-nums">{Math.round(percentage)}%</p>}
   </div>
 }
 
@@ -70,16 +73,17 @@ export function AssemblyJobsList({ enabled, workOrderId, specimenId, search = ''
   const data = query.data
   useAssemblyNotifications(data?.jobs.map(job => job.id) ?? [], enabled)
   return <Card><CardHeader><div className="flex flex-wrap items-center justify-between gap-3"><CardTitle>Sequencing assembly</CardTitle>
-    {data?.canOperate ? <Button onClick={() => setCreating(true)} disabled={!data.availability.available}>Start assembly</Button> : null}</div></CardHeader><CardContent className="space-y-4">
+    {workOrderId && specimenId && data?.canOperate ? <Button onClick={() => setCreating(true)} disabled={!data.availability.available}>Start assembly</Button> : null}</div></CardHeader><CardContent className="space-y-4">
     {!enabled ? <p className="text-sm text-muted-foreground">Connect with an authorized Phaeno session to view assembly jobs.</p> : null}
     {query.isPending && enabled ? <p role="status">Loading assembly jobs…</p> : null}
     {query.error ? <Alert variant="destructive"><AlertTitle>Assembly jobs could not be refreshed</AlertTitle><AlertDescription>{getLabOperationsError(query.error, 'Refresh to recover the current job status.')}<Button variant="outline" onClick={() => void query.refetch()}>Refresh</Button></AlertDescription></Alert> : null}
     {data && !data.availability.available ? <Alert><AlertTitle>Assembly setup required</AlertTitle><AlertDescription>{data.availability.message}</AlertDescription></Alert> : null}
+    {onSearch ? <p className="text-sm text-muted-foreground">Track requested PSeq Service assembly attempts here. Start a new assembly from <Link to="/lab-operations" search={p => ({ ...p, section: 'assembly', assemblyTab: 'inputs' })} className={linkStyle}>Sequencing inputs</Link>.</p> : null}
     {onSearch ? <div className="space-y-1"><Label htmlFor="assembly-search">Find assembly jobs</Label><Input id="assembly-search" value={search} onChange={event => onSearch(event.target.value)} placeholder="Sample, run, or disposition" /></div> : null}
     {data && !data.jobs.length ? <p className="text-sm text-muted-foreground">No assembly jobs have been requested.</p> : null}
     {data?.jobs.length && !data.jobs.some(j => assemblyMatches(j, search)) ? <p>No assembly jobs match this search.</p> : null}
     {data?.jobs.filter(j => assemblyMatches(j, search)).map(job => <div key={job.id} className="grid gap-3 rounded-lg border p-4 sm:grid-cols-[minmax(0,1fr)_minmax(10rem,16rem)]">
-      <div className="min-w-0"><Link className={`${linkStyle} font-medium`} to="/lab-operations/assembly-jobs/$jobId" params={{ jobId: job.id }} search={p => ({ ...p, section: 'assembly', assemblyTab: 'runs' })}>{job.sampleName} · Run {job.sequencingRunNumber}</Link>
+      <div className="min-w-0"><Link className={`${linkStyle} font-medium`} to="/lab-operations/assembly-jobs/$jobId" params={{ jobId: job.id }} search={p => ({ ...p, section: 'assembly', assemblyTab: 'jobs' })}>{job.sampleName} · Run {job.sequencingRunNumber}</Link>
         <p className="mt-1 text-xs text-muted-foreground">Requested {date(job.requestedAtUtc)}</p><p className="text-xs text-muted-foreground">Start: {date(job.startedAtUtc)} · Stop: {date(job.stoppedAtUtc)}</p>
         {job.attentionReason ? <p className="mt-1 text-sm">{job.attentionReason}</p> : null}</div><AssemblyJobProgress job={job} />
     </div>)}
@@ -105,9 +109,9 @@ export function AssemblyJobPage({ jobId }: { jobId: string }) {
     ...(job.state === 'Succeeded' && !job.attentionReason && !job.labAnalysisRunId && data.analyses.length ? [{ label: 'Link completed analysis', action: 'analysis' as const }] : []),
     ...(job.state === 'Succeeded' && job.labAnalysisRunId && !job.attentionReason ? [{ label: 'Review QC', action: 'qc' as const }] : []),
   ] : []
-  const openAction = (action: typeof actions[number]['action']) => action === 'qc' ? void navigate({ to: '/lab-operations/assembly-jobs/$jobId/qc', params: { jobId }, search: p => ({ ...p, section: 'assembly', assemblyTab: 'runs' }) }) : setAction(action)
+  const openAction = (action: typeof actions[number]['action']) => action === 'qc' ? void navigate({ to: '/lab-operations/assembly-jobs/$jobId/qc', params: { jobId }, search: p => ({ ...p, section: 'assembly', assemblyTab: 'jobs' }) }) : setAction(action)
   return <main className="page-wrap space-y-5 px-4 py-8">
-    <Link className={linkStyle} to="/lab-operations" search={p => ({ ...p, section: 'assembly', assemblyTab: 'runs' })}>Back to sequencing assembly</Link>
+    <Link className={linkStyle} to="/lab-operations" search={p => ({ ...p, section: 'assembly', assemblyTab: 'jobs' })}>Back to sequencing assembly</Link>
     {query.error ? <Alert variant="destructive"><AlertTitle>Assembly could not be refreshed</AlertTitle><AlertDescription>{getLabOperationsError(query.error, 'Refresh to recover the saved job.')}<Button variant="outline" onClick={() => void query.refetch()}>Refresh</Button></AlertDescription></Alert> : null}
     {!data ? <p role="status">{authProvider === 'mock' ? 'Use a connected Phaeno session to view this job.' : 'Loading assembly job…'}</p> : null}
     {data && job ? <>
@@ -119,7 +123,7 @@ export function AssemblyJobPage({ jobId }: { jobId: string }) {
       <Card><CardHeader><CardTitle>Execution</CardTitle></CardHeader><CardContent className="space-y-4"><AssemblyJobProgress job={job} />
         <dl className="grid gap-4 text-sm sm:grid-cols-2"><div><dt className="text-muted-foreground">Actual start</dt><dd>{date(job.startedAtUtc)}</dd></div><div><dt className="text-muted-foreground">Actual stop</dt><dd>{date(job.stoppedAtUtc)}</dd></div><div><dt className="text-muted-foreground">Elapsed duration</dt><dd>{assemblyDuration(job.durationSeconds)}</dd></div><div><dt className="text-muted-foreground">Final disposition</dt><dd>{job.isTerminal ? `${assemblyStateLabel(job.state)} · ${date(job.dispositionAtUtc)}` : 'Not yet confirmed'}</dd></div></dl>
         {job.dispositionReason ? <p>{job.dispositionReason}</p> : null}{job.retryReason ? <p>Reason for repeat: {job.retryReason}</p> : null}
-        {job.previousJobId ? <Link className={linkStyle} to="/lab-operations/assembly-jobs/$jobId" params={{ jobId: job.previousJobId }} search={p => ({ ...p, section: 'assembly', assemblyTab: 'runs' })}>Previous assembly attempt</Link> : null}
+        {job.previousJobId ? <Link className={linkStyle} to="/lab-operations/assembly-jobs/$jobId" params={{ jobId: job.previousJobId }} search={p => ({ ...p, section: 'assembly', assemblyTab: 'jobs' })}>Previous assembly attempt</Link> : null}
       </CardContent></Card>
       {data.delivery.length ? <Card><CardHeader><CardTitle>Delivery and recovery</CardTitle></CardHeader><CardContent className="space-y-3 text-sm">
         <p className="text-muted-foreground">A command receipt confirms delivery. Actual start and final outcome require processing evidence.</p>

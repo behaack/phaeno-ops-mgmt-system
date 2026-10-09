@@ -66,8 +66,10 @@ approval, preservation, release, commercial and messaging rules remain.
    receipts, then atomically saves metadata, member decisions and exact file-set
    bindings as one numbered result version. Partial/failed/unmapped uploads block
    save without losing the draft or already verified uploads.
-3. **Start assembly.** Extend Lab operations → Data assembly → Sequencing runs
-   with work awaiting inputs or ready to start; preserve Assembly cases.
+3. **Start assembly.** Use Lab operations → Data assembly → Sequencing inputs
+   for PSeq Service work awaiting inputs or ready to start, and Sequencing assembly
+   for requested attempts. Partner Assembly cases remain a separate workflow
+   reached from Order ops → Partner services → Data assembly → Open Lab work.
    Sample/run detail shows confirmed files and recipe/version. Start assembly
    reviews and freezes the complete set. Explain missing prerequisites and
    unavailable processing. A batch convenience action creates separate attempts
@@ -341,3 +343,42 @@ reviewed rows and command identities; server receipts restore completed imports
 when switching archives. New attribution receives new command identities.
 No persisted model change, migration, legacy data repair, provider activation,
 Git mutation or deployment is required for this slice.
+
+
+## Current sendout manifest v3 acceptance — October 9, 2026
+
+The UI mock sequencing walkthrough created a current schemaVersion=3 vendor sendout. Saving verified FASTQs failed because LabResultLineageService accepted only versions 1/2. Align the reader with the current v3 writer and existing custody reader: allow v3 and apply the complete sequencing-tube/transfer/quantity/source-chain validation used for v2. Unknown versions remain rejected; no membership inference, data repair, schema or migration change. Existing physical-lineage regression source now runs the same rejection/accepted-chain journey for v2 and v3 and includes unsupported-version rejection. Build the solution/test sources; do not execute suites under the standing rule. Rebuild/restart the API, then retry the saved UI result draft without recreating files or changing the frozen manifest.
+
+Verification: full solution and regression sources build with zero warnings/errors. After the owner rebuilt/restarted the API, the same UI result draft saved Results v1 successfully with four verified FASTQs and both specimen outcomes Success. Reloaded stored checksums match all four original files; each specimen has only its own two outputs. No automated suites, schema changes or direct data workaround. See docs/testing/runs/2026-10-09-m82n5jtb-mock-sequencing.md for mock qualification and remaining UI findings.
+
+
+## Scientific review queue correction — October 9, 2026
+
+Owner confirmed this queue must contain assembled work ready for scientific
+review, not every received Job. This supersedes the earlier broad results list.
+A dedicated read-only scientific-review-queue endpoint uses the existing Lab-role
+boundary, selecting exact ReadyForReview output packages linked to reconciled
+Succeeded assembly with matching organization/Job/specimen/analysis and latest
+package QC Pass. On-hold/cancelled Jobs and already-approved packages are excluded.
+Qualifying Jobs are selected before the 250-row limit; each row reports its
+pending package count and opens Job Review with return context preserved. No
+schema, records, provider settings, approval rules or release behavior change.
+
+The existing PostgreSQL FASTQ/QC scenario now covers sequencing-only exclusion,
+completed-package-without-QC exclusion, Fail/Hold/Pass, a later Hold overriding
+Pass, restored Pass and approved/released removal. Frontend sources cover pending
+counts, empty and failed reads. Suites remain unexecuted unless requested.
+API restart and connected verification follow the static build checkpoint.
+
+Verification completed locally: full API solution and expanded regression sources
+compile with zero warnings/errors; TypeScript, scoped ESLint, generated help
+consistency (56 guides, af945a2e207d) and diff whitespace checks pass. After the
+Owner rebuilt/restarted the API, connected read-only UI acceptance confirmed the
+new query returns an empty scientific-review queue, M82N5JTB is absent after
+Refresh, and its two specimen/run input sets remain in Data assembly. The empty
+state was inspected at desktop and 375 px in light theme with no horizontal
+overflow; temporary viewport override reset. Final screenshot is retained as
+scientific-review-queue-corrected.png. No records or scientific/provider state
+were mutated. Positive completed-package scenarios are covered in compiled
+regression sources but were not executed, and no qualifying live assembly fixture
+exists locally. Dark-theme and automated-suite acceptance remain unperformed.

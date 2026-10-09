@@ -2,9 +2,23 @@
 
 Library and batch records preserve the physical lineage from submitted specimen through prepared library and outsourced sequencing custody.
 
+## Choose original S3 files when configured
+
+Computer uploads show a progress bar, transferred bytes and percentage for the current file or ZIP. **Checking selected file**, **Uploading**, and **Finalizing storage, verifying and scanning** are separate phases. A completed transfer does not by itself mean that scientific input has been admitted. Verification may show an indeterminate bar until its result is known.
+
+For a bundle, create a ZIP on your computer and choose the batch ZIP workflow. POMS completes storage of the ZIP before scanning and inspecting it. Review its exact library/run/read/group/part mappings, then choose **Import reviewed FASTQ files**. Extraction shows how many selected files have been verified. Each admitted FASTQ is stored separately under its scientific capture; the original ZIP remains temporary transport. S3 stores the objects while POMS performs inspection and extraction. Current displayed file, archive and scanner limits still apply.
+
+The file selector uses **Upload from computer** when local upload is the only available option. When S3 is configured, use its **Actions** menu to choose **Upload from computer** or **Choose original S3 file**. In vendor-results intake, complete the library, purchased run, preparation, layout and read/group/part mapping before choosing an original FASTQ. Only originals under that sample/library/submission/run are offered. Choose R1 and R2 separately with their exact read roles, and wait for verification before saving successful results.
+
+POMS checks the complete file, records its checksum and size, scans it, and validates FASTQ contents without creating another stored copy. Over-limit, changed, unavailable or unscannable files cannot be admitted. A saved source locator does not approve an analysis or publish a Customer result. Keep original evidence available; if its recorded version or contents are no longer retrievable, investigate the source rather than substituting a different file.
+
+Original-file registration requires an exact S3 object version. If POMS reports that versioned source uploads are required, contact Operations before the producer uploads or replaces files. POMS does not enable bucket versioning or recover a missing original automatically.
+
+New S3 scientific uploads are organized by Customer, Job, sample, library and sequencing event. A new preparation has its own library; sequencing an existing library again has its own event. Raw files remain separate from each assembly attempt's outputs. Reassembling the same inputs creates another attempt with its own settings, outputs, QC and outcome; it does not overwrite earlier work.
+
 ## Record sequencing and analysis evidence
 
-Open a job, select its specimen, and go to **Sample history**. Operators and Supervisors can choose **Record sequencing output** or **Record analysis run**. Reviewers can open the saved records without changing them. Each file or run name links to its own detail page.
+Open a job, select its specimen, and go to **Sequencing & analysis**. Operators and Supervisors can choose **Record sequencing output** or **Record analysis run**. Reviewers can open the saved records without changing them. Each file or run name links to its own detail page.
 
 For sequencing, select the recorded **Library / tube** and **Sequencing submission**. The submission must contain the exact library and barcode in its saved manifest. Upload the actual sequencing file and enter its actual run reference and sample/index/lane mapping. POMS records the file identity, checksum and size automatically. Record the actual run start and completion times, plus a QC summary and named measurements or a supporting document with role `qc`. The library must have completed the required preparation and QC before the record can be saved.
 
@@ -18,11 +32,13 @@ Where the legacy manual-upload workflow is still enabled, authorized platform ad
 
 ## Track sequencing assembly
 
-Open **Lab operations > Data assembly > Sequencing runs**, or the **Sequencing assembly** section on a sample. Select a sample/run in the list to open its assembly attempt. **Assembly cases** contains the existing Partner manufacturing work.
+Open **Lab operations > Data assembly** for PSeq Service work. **Sequencing inputs** lists verified FASTQ input sets by specimen and run; start assembly from the relevant input set. **Sequencing assembly** tracks requested attempts, progress and outcomes. Select a specimen/run there to open its attempt. Partner Assembly cases are a separate concern, available from **Order ops > PARTNER SERVICES > Data assembly**; open the case and select **Open Lab work** for its manufacturing workflow.
 
 The processing connection is not yet configured. POMS displays **Assembly setup required**, and **Start assembly** remains unavailable until the external service is connected. This notice does not mean a job failed.
 
 For a connected service, Start assembly selects the registered inputs for one sample/run and a configured processing recipe. The server verifies the inputs before accepting the request. Processing continues after the browser closes. Percentage progress is live display information; individual updates are not retained. After a connection interruption, the percentage may be unavailable until a fresh update arrives.
+
+Active assembly jobs show a progress bar in the assembly list and attempt detail. A fresh percentage reported by the service fills the bar; when no current percentage is available, an indeterminate bar says **Progress unavailable**. The job's status still applies. A reported 100% does not replace a confirmed final outcome or satisfy scientific QC/release. Finished jobs show their recorded outcome instead of retaining a live percentage bar.
 
 Each attempt retains actual start and stop times and its final disposition: succeeded, failed or terminated. These times are displayed in the browser's local time zone. Elapsed duration is calculated from the recorded start and stop. A request cancelled before execution has no fabricated execution times. **Job history** contains meaningful lifecycle events, not a percentage-update feed.
 
@@ -237,8 +253,8 @@ material, purchase replacement runs or approve/release Customer findings.
 
 ## Assembly QC and Customer handoff
 
-Open **Lab operations → Data assembly → Sequencing runs** to review available
-sample/run input sets and assembly attempts. Select the complete registered files
+Open **Lab operations → Data assembly → Sequencing inputs** to review available
+specimen/run input sets. Use **Sequencing assembly** to track requested attempts. Select the complete registered files
 and an explicit processing recipe/version before Start assembly. The actual
 processing connection remains required; setup guidance is shown while unavailable.
 
@@ -295,3 +311,6 @@ The file picker shows the current limit (normally 100 MiB). A 50 MB file is with
 If the connection fails, choose **Resume upload**. In the same browser tab, selecting the same file after returning to the page also resumes confirmed portions for up to 24 hours. Keep the original file unchanged. After expiry, select it again to start a new transfer. A failed replacement preserves the previously selected evidence file. If complete-file scanning is unavailable, retry verification after the service recovers.
 
 Abandoned transfer portions expire; admitted scientific files and their receipts remain protected internal evidence. Customer result retention does not delete these internal files. Names, sample and run attribution stay the same when the configured private storage provider changes.
+
+
+For specimen-level preparation and QC review, open a specimen’s **Libraries** tab. Review each library’s identity, physical library/source tubes, preparation attempt and execution, status and recorded QC. **Manage Job libraries** opens the existing Job actions; **Sequencing & analysis** shows downstream batch assignments and scientific outputs.

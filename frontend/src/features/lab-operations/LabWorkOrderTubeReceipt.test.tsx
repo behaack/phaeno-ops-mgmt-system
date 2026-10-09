@@ -6,7 +6,9 @@ import { LabWorkOrderPage } from './LabWorkOrderPage'
 const mocks = vi.hoisted(() => ({ work: vi.fn(), dashboard: vi.fn(), packet: vi.fn(), tube: vi.fn(), receive: vi.fn(), accession: vi.fn() }))
 vi.mock('#/api/lab-operations', async original => ({ ...await original<typeof import('#/api/lab-operations')>(), getLabWorkOrder: mocks.work, getLabOperationsDashboard: mocks.dashboard, receiveLabSpecimen: mocks.receive, accessionLabSpecimen: mocks.accession }))
 // Hold interactions have their own component and browser coverage.
-vi.mock('#/features/orders/SpecimenHolds', () => ({ SpecimenHolds: () => null }))
+vi.mock('#/features/orders/SpecimenHolds', () => ({ SpecimenHolds: () => <p>Specimen hold details</p> }))
+vi.mock('#/features/orders/use-specimen-holds', () => ({ useSpecimenHolds: () => ({ query: { data: { holds: [{ state: 'Applied' }, { state: 'Released' }] }, isPending: false, isError: false } }) }))
+vi.mock('./JobDeadlinePanel', () => ({ useJobDeadline: () => ({ data: { summary: { job: { dueAtUtc: '2026-10-01T00:00:00Z' }, deadlineStatus: 'Overdue', reason: 'Delivery commitment is overdue.' } }, isPending: false }), JobDeadlinePanel: () => <p>Delivery deadline details</p>, AdjustJobDeadlineDialog: () => null }))
 vi.mock('#/api/sample-shipping', () => ({ scanSampleShippingPacket: mocks.packet, scanRegisteredSampleTube: mocks.tube }))
 vi.mock('@tanstack/react-router', () => ({ useNavigate: () => vi.fn(), Link: ({children}:{children:ReactNode}) => <a href="#lab">{children}</a> }))
 vi.mock('#/features/auth/session-context', () => ({ usePhaenoSession: () => ({ authProvider:'clerk',session:{capabilities:{canManageLabOperations:true,canOperateLabWork:true}} }) }))
@@ -31,5 +33,30 @@ describe('physical tube receipt within split samples',()=>{
     show()
     expect(await screen.findByRole('button',{name:/^Confirm accession$/})).toBeTruthy()
     expect(screen.queryByRole('button',{name:/^Record receipt$/})).toBeNull()
+  })
+})
+
+
+describe('Job detail navigation', () => {
+  function showTab(selectedTab?: 'review' | 'specimens') {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(<QueryClientProvider client={client}><LabWorkOrderPage workOrderId="work-1" selectedTab={selectedTab} /></QueryClientProvider>)
+  }
+  it('opens ordinary Jobs in Overview and keeps hold details in Specimens', async () => {
+    showTab()
+    expect(await screen.findByText('Delivery deadline details')).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'Overview' }).getAttribute('aria-selected')).toBe('true')
+    expect(screen.queryByText('Specimen hold details')).toBeNull()
+    expect(screen.getByRole('link', { name: '1 active specimen hold(s)' })).toBeTruthy()
+    expect(screen.getByText('Delivery commitment is overdue.')).toBeTruthy()
+  })
+  it('honors Review deep links without showing delivery or hold panels', async () => {
+    showTab('review')
+    expect(await screen.findByText('Scientific approval and handoff')).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'Review' }).getAttribute('aria-selected')).toBe('true')
+    expect(screen.queryByText('Delivery deadline details')).toBeNull()
+    expect(screen.queryByText('Specimen hold details')).toBeNull()
+    expect(screen.getByText('Delivery commitment is overdue.')).toBeTruthy()
+    expect(screen.getByRole('link', { name: '1 active specimen hold(s)' })).toBeTruthy()
   })
 })

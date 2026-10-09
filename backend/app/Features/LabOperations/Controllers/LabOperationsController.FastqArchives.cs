@@ -101,13 +101,14 @@ public sealed partial class LabOperationsController
             throw Conflict("fastq_archive_incomplete", "Upload the exact complete ZIP before inspection.");
         await using var assembled = ArchiveTemporary(archive.SizeBytes);
         foreach (var part in chunks) { await using var content = await LabScientificFiles.OpenVerifiedAsync(storage, part.Key, part.Sha256, part.SizeBytes, ct); await content.CopyToAsync(assembled, ct); }
-        assembled.Position = 0; IReadOnlyList<FastqArchiveEntry> entries;
-        try { using var zip = new ZipArchive(assembled, ZipArchiveMode.Read, true); entries = LabFastqArchiveInspection.Inspect(zip, limits.Value); }
-        catch (InvalidDataException) { throw Conflict("fastq_archive_invalid", "The ZIP is corrupt, truncated or unsupported."); }
         assembled.Position = 0; var stored = await storage.SaveAsync(assembled, ".zip", archive.SizeBytes, ct); var attempted = false;
         try {
             if ((await scanner.ScanAsync(stored.StorageKey, ct)).Status != OperationalFileScanStatus.Clean) throw Conflict("fastq_archive_scan_required", "The ZIP could not pass scanning. Its transfer portions remain available for retry.");
-            await using (var verified = await LabScientificFiles.OpenVerifiedAsync(storage, stored.StorageKey, stored.Sha256, stored.SizeBytes, ct, limits.Value.MaximumBatchArchiveBytes)) { }
+            // Inspect/extract only the completed provider object, never a partially uploaded ZIP.
+            await using var verified = await LabScientificFiles.OpenVerifiedAsync(storage, stored.StorageKey, stored.Sha256, stored.SizeBytes, ct, limits.Value.MaximumBatchArchiveBytes);
+            IReadOnlyList<FastqArchiveEntry> entries;
+            try { using var zip = new ZipArchive(verified, ZipArchiveMode.Read, true); entries = LabFastqArchiveInspection.Inspect(zip, limits.Value); }
+            catch (InvalidDataException) { throw Conflict("fastq_archive_invalid", "The completed ZIP is corrupt, truncated or unsupported."); }
             archive.Inspect(stored.StorageKey, stored.Sha256, JsonSerializer.Serialize(entries, JsonOptions)); attempted = true;
             await dbContext.SaveChangesAsync(ct); if (tx is not null) await tx.CommitAsync(ct); return ArchivePublic(archive);
         } catch { if (!attempted) await storage.DeleteIfExistsAsync(stored.StorageKey, CancellationToken.None); throw; }
@@ -160,7 +161,8 @@ public sealed partial class LabOperationsController
             if (total != entry.SizeBytes) throw Conflict("fastq_archive_entry_invalid", "The ZIP entry is truncated.");
         } catch (InvalidDataException) { throw Conflict("fastq_archive_entry_invalid", "The ZIP entry is corrupt or unsupported."); }
         temp.Position = 0; var validation = await LabFastqValidation.ValidateAsync(temp, gzip, input.ReadNumber, policy, ct); temp.Position = 0;
-        var stored = await storage.SaveAsync(temp, gzip ? ".fastq.gz" : ".fastq", entry.SizeBytes, ct); var attempted = false;
+        var directory = await FastqRawDirectoryAsync(set, ct);
+        var stored = await storage.SaveScopedAsync(temp, gzip ? ".fastq.gz" : ".fastq", entry.SizeBytes, directory, ct); var attempted = false;
         try {
             if ((await scanner.ScanAsync(stored.StorageKey, ct)).Status != OperationalFileScanStatus.Clean) throw Conflict("fastq_scan_required", "The imported FASTQ file could not pass scanning.");
             await using (var verified = await LabScientificFiles.OpenVerifiedAsync(storage, stored.StorageKey, stored.Sha256, stored.SizeBytes, ct, policy.MaximumFileBytes)) { }

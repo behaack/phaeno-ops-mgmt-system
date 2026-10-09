@@ -39,13 +39,15 @@ export const getScientificSendouts = async (work: string, specimen: string, libr
 export const recordSequencing = async (input: SequencingInput) => (await api.post<{ data: SequencingRecord }>('/platform/lab-operations/pseq-results/sequencing-outputs', input)).data.data
 export const recordAnalysis = async (input: AnalysisInput) => (await api.post<{ data: AnalysisRecord }>('/platform/lab-operations/pseq-results/analysis-runs', input)).data.data
 
-export type ScientificFile = { id: string; fileName: string; sha256: string; sizeBytes: number; externalFileReference: string; recordedAtUtc: string }
+export type ScientificFile = { id: string; fileName: string; sha256: string; sizeBytes: number; externalFileReference: string; recordedAtUtc: string; sourceKind?: 'S3Original' | 'PortalUpload' }
 export const scientificFilesKey = (work: string, specimen: string) => ['lab-scientific-files', work, specimen] as const
 export const getScientificFiles = async (work: string, specimen: string) =>
-  (await api.get<{ data: { maximumBytes: number; files: ScientificFile[] } }>(`${base(work, specimen)}/files`)).data.data
+  (await api.get<{ data: { maximumBytes: number; files: ScientificFile[]; s3Available?: boolean } }>(`${base(work, specimen)}/files`)).data.data
 type ScientificUpload = { id: string; chunkBytes: number; receivedBytes: number; expiresAtUtc: string; file: ScientificFile | null }
 const uploadHints = new Map<string, { id: string; expires: number }>()
-export const uploadScientificFile = async (work: string, specimen: string, file: File, progress: (value: number) => void) => {
+export const uploadScientificFile = async (work: string, specimen: string, file: File, progress: (value: number) => void,
+  onProgress?: import('./file-upload-progress').FileUploadProgressCallback) => {
+  onProgress?.({ fileName: file.name, phase: 'checking', transferredBytes: 0, totalBytes: file.size, message: 'Checking selected file' })
   const hash = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', await file.arrayBuffer())))
     .map(value => value.toString(16).padStart(2, '0')).join('')
   const key = `scientific-upload:${work}:${specimen}:${encodeURIComponent(file.name)}:${hash}`
@@ -68,24 +70,32 @@ export const uploadScientificFile = async (work: string, specimen: string, file:
   if (state.file) {
     uploadHints.delete(key)
     try { sessionStorage.removeItem(key) } catch { /* optional hint */ }
+    onProgress?.({ fileName: file.name, phase: 'complete', transferredBytes: file.size, totalBytes: file.size, percentage: 100, message: 'Verified' })
     return state.file
   }
   let offset = state.receivedBytes
+  onProgress?.({ fileName: file.name, phase: 'uploading', transferredBytes: offset, totalBytes: file.size, percentage: Math.min(99, offset / file.size * 100), message: 'Uploading resumable portions' })
   while (offset < file.size) {
     const start = offset
     const chunk = file.slice(start, Math.min(start + state.chunkBytes, file.size))
     const response = await api.put<{ data: ScientificUpload }>(`${url}/${id}/chunks/${start}`, chunk, {
       headers: { 'Content-Type': 'application/octet-stream' },
-      onUploadProgress: event => progress(Math.min(99, Math.round((start + event.loaded) / file.size * 100))),
+      onUploadProgress: event => {
+        const percentage = Math.min(99, (start + event.loaded) / file.size * 100)
+        progress(Math.round(percentage))
+        onProgress?.({ fileName: file.name, phase: 'uploading', transferredBytes: Math.min(file.size, start + event.loaded), totalBytes: file.size, percentage, message: 'Uploading resumable portions' })
+      },
     })
     offset = response.data.data.receivedBytes
     if (offset <= start) throw new Error('The upload did not advance. Resume the upload to try again.')
   }
   progress(100)
+  onProgress?.({ fileName: file.name, phase: 'verifying', transferredBytes: file.size, totalBytes: file.size, message: 'Finalizing storage, verifying and scanning' })
   const completed = (await api.post<{ data: ScientificUpload }>(`${url}/${id}/complete`)).data.data.file
   if (!completed) throw new Error('The file has not finished verification. Resume to retry verification.')
   uploadHints.delete(key)
   try { sessionStorage.removeItem(key) } catch { /* optional retry hint */ }
+  onProgress?.({ fileName: file.name, phase: 'complete', transferredBytes: file.size, totalBytes: file.size, percentage: 100, message: 'Verified' })
   return completed
 }
 export const downloadScientificFile = async (work: string, specimen: string, id: string) =>

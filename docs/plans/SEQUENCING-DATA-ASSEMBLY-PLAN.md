@@ -1,5 +1,21 @@
 # Sequencing data assembly and job traceability
 
+## Assembly progress bars — October 9, 2026
+
+The Owner requested the upload-style progress presentation for data assembly.
+Use the shared themed `ProgressBar` in the existing job-list and attempt-detail
+component. Active jobs retain a visible indeterminate bar when reported progress
+is absent/stale; display **Progress unavailable** without synthesizing a value.
+Fresh provider percentages remain ephemeral with the existing two-minute
+freshness rule, polling and notifications. Terminal outcome replaces the live
+bar, and reported 100% cannot imply success, QC approval or Customer release.
+No provider, backend, schema, authentication or action-menu behavior changed.
+Phaeno help and frontend/browser coverage plans follow the same distinction.
+
+Type/lint and isolated actual-component layout checks passed, including accessible
+values, light/dark rendering and measured 320px reflow. Automated suites were not
+executed. See the [presentation checkpoint](../testing/runs/2026-10-09-assembly-progress.md).
+
 ## Local FASTQ intake and downstream UX — discovery, October 6, 2026
 
 The Owner requested local managed FASTQ uploads with explicit library/vendor
@@ -46,7 +62,7 @@ Current source already provides immutable sequencing outputs, completed analyses
 | [Run accounting](../../backend/app/Features/LabOperations/Services/LabSequencingRunProgress.cs) and [sequencing-run plan](SAMPLE-SEQUENCING-RUNS-PLAN.md) | Preserve counts by sample/run allocation. Current analysis registration checks the same specimen, preparation attempt and source tube, but does not explicitly reject different purchased-run numbers within that input set. Add that check to shared capture and downstream approval/release validation. |
 | [Configured pipeline adapter](../../backend/app/Features/OrderManagement/Services/ConfiguredPSeqResultPipelineAdapter.cs) | Currently registers a manifest/transfer submission; it does not dispatch or monitor external computation. Keep transfer identity distinct from execution identity. |
 | [Scientific approval](../../backend/app/Features/LabOperations/Controllers/LabOperationsController.Release.cs), [result packages](../../backend/app/Features/OrderManagement/Controllers/PSeqResultPackagesController.cs) and [evidence governance](LAB-EVIDENCE-GOVERNANCE-CONTRACT.md) | Preserve input/output attribution, file verification and scan admission, reviewer rules, holds, release authority and customer-delivery accounting. |
-| [Lab navigation](../../frontend/src/features/lab-operations/LabOperationsPage.tsx) | Data assembly currently hosts commercial assembly cases. Extend that workspace with a Sequencing runs tab while preserving existing cases and their routes. |
+| [Lab navigation](../../frontend/src/features/lab-operations/LabOperationsPage.tsx) | Data assembly is PSeq Service only, with Sequencing inputs and Sequencing assembly tabs. Partner case routes remain separate and accessible from Order ops. |
 
 Older architecture notes that describe all pipeline provenance as undefined are superseded by these implemented contracts. This plan fills the live job-execution gap; source inspection does not establish that a real external assembly integration has been verified.
 
@@ -138,7 +154,7 @@ Retain internal lifecycle history and traceability metadata indefinitely under t
 
 ## POMS experience and access
 
-Add a Sequencing runs queue within Data assembly and links from each sample's sequencing/analysis history. Keep existing commercial assembly cases available in their own tab. The queue is a form-free view with sample/run identity, lifecycle state, live percentage and freshness, and attention filters. The primary identifier opens a view-first attempt detail page with inputs, a concise lifecycle timeline, final disposition, diagnostic references, outputs and QC/release links. There is no historical progress chart or percentage-update feed.
+Use Sequencing inputs and Sequencing assembly tabs within Data assembly, with links from each specimen's sequencing/analysis history. Partner commercial assembly cases remain outside this workspace, reached through Order ops and Open Lab work. The queue is a form-free view with sample/run identity, lifecycle state, live percentage and freshness, and attention filters. The primary identifier opens a view-first attempt detail page with inputs, a concise lifecycle timeline, final disposition, diagnostic references, outputs and QC/release links. There is no historical progress chart or percentage-update feed.
 
 Use bounded Start, Retry/reanalyse and Request cancellation dialogs; explain blockers and require reasons for retries and cancellation. Use one Actions menu where a context offers multiple actions, and preserve filters/focus on return. Show the provider's current percentage; if it also supplies stage-specific progress, label that meaning clearly. Display an indeterminate state when progress is unavailable or stale, and do not invent completion estimates. Separate output validation, QC and distribution status from execution progress. Once the job ends, its final disposition replaces the live percentage display.
 
@@ -195,3 +211,37 @@ Implemented the approved preparatory scope:
 Verification: backend solution and frontend production builds, TypeScript, focused ESLint, documentation generation/check and whitespace checks. Regression sources compile, but automated suites and browser acceptance remain request-only and have not been run for this change. This evidence does not establish provider compatibility, scientific validity or external-byte preservation.
 
 Remaining contract-dependent work: implement the real SignalR adapter and its authentication/reconnection mapping; connect the actual S3 completion/verification contract and processing recipes; map and verify successful output manifests into the existing scientific-analysis/result-package pipeline; prove provider-side idempotency and cancellation/replay semantics; and run a representative staging journey. The public method names and records on `ILabAssemblyProvider` are internal POMS abstractions, not a proposed external wire contract. Live cancellation retries will require idempotent provider cancellation. Commit/push and deployment are now authorized; production migration and real-provider activation remain separate actions.
+
+
+## PSeq Service workspace separation — October 9, 2026
+
+The Owner requested removing Partner Assembly cases from this page and separating
+sequencing inputs from assembly tracking. This supersedes the earlier combined
+Sequencing runs / Assembly cases navigation in this plan. Lab operations Data
+assembly now contains only Sequencing inputs and Sequencing assembly, with URL
+values inputs/jobs (inputs default). Start assembly belongs to a registered input
+set; the generic tracker-header Start action is removed. Existing specimen-scoped
+start and attempt repeat/cancel/QC actions remain. Attempt detail returns select
+the assembly tracker and preserve its search. Partner cases retain their
+independent commercial and manufacturing routes, reached from Order ops Partner
+services Data assembly and Open Lab work; their breadcrumb returns there. No API,
+model, authorization, provider configuration or scientific-release change.
+
+Acceptance: separate panels, input-only starts, URL/refresh/search restoration,
+keyboard tabs, narrow reflow, setup/empty feedback and retained Partner entry.
+Automated suites remain request-only; static and connected checks are recorded
+below after verification.
+
+Verification: TypeScript and scoped ESLint pass; generated help is current (56
+guides, corpus 8878f9f515ad), and git diff --check passes. Connected read-only
+browser acceptance passed both exclusive panes, two specimen/run input sets with
+two files each, setup-disabled input starts, no generic tracker Start, keyboard
+arrow selection, URL/search restoration after reload, and the inputs shortcut.
+Desktop and 375 px light-theme screenshots were inspected; narrow content equals
+viewport width with no horizontal overflow. Provider execution was not attempted
+because configuration is unavailable; there are no live assembly attempts in the
+local fixture, so attempt-detail return paths were checked in source/TypeScript.
+Partner case entry and its corrected return were checked against existing routes.
+Dark-theme and automated-suite acceptance were not performed. React review found
+no new hooks, conditional-hook use, cross-feature writes or dependencies; shared
+tabs and semantic tokens retain their existing focus and theme behavior.

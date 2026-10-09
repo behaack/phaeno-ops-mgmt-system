@@ -87,3 +87,10 @@ Customer user management reuses its existing panel in People and access; prior
 menu entry and route. Backend access rules, authentication, and data contracts
 are unchanged. Automated suites and signed-in browser acceptance remain
 request-only; the living frontend and E2E plans track those checks.
+
+
+## Primary workspace order — October 9, 2026
+
+Owner requested Lab ops immediately to the right of Dashboard. The shared workspace order is Dashboard, Lab ops, CRM, Order ops, followed by More. Role filtering retains its existing rules and the narrow menu uses the same order. Only the existing Lab ops entry moved; routes, icons and actions are unchanged. Verify scoped lint/types and connected desktop order; no automated suite is required for this label-preserving reorder.
+
+Verification: scoped ESLint and TypeScript checks passed. Existing navigation-order expectation is updated; no suites were executed. Connected Chrome was unavailable for this follow-up, so rendered browser confirmation is not recorded. In-app guide labels and destination instructions remain accurate; no corpus update is needed.

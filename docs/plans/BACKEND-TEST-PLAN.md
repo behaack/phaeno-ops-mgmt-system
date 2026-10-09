@@ -1,5 +1,34 @@
 # Backend Test Plan
 
+October 9 release review adds exact sample/library/purchased-run checks when
+original S3 bytes become sequencing evidence, plus rejection of an empty multipart
+upload identity before any part or verified receipt. Full connected verification
+uses a task-owned PostgreSQL 18 instance with commit timestamps enabled, preserving
+the normal development database. The [October 9 release review](../testing/runs/2026-10-09-scientific-storage-release-review.md)
+supersedes the earlier compilation-only checkpoint: 1,285 full-suite passes,
+successful opt-in restore and all six final S3 cases; only the Unix filesystem
+case remains excluded on Windows.
+
+## Scientific S3 hierarchy and originals — October 9, 2026
+
+Streaming follow-up: the 50 MiB simulated S3 journey now implements offline
+multipart initiation, bounded parts and conditional completion. Added source
+coverage for non-seekable input, full-file SHA-256 distinct from composite
+checksums and abort-on-limit failure. ZIP inspection now reads the completed
+provider object after storage/scanning; verify malformed/unsafe ZIP cleanup,
+interrupted multipart abort and completed-object-only extraction in the
+database/provider acceptance journey. Sources compile; suites remain unexecuted.
+
+Added `ScientificS3StorageTests` source coverage for repeated library/capture/
+assembly directory separation, exact scoped S3 write/read/delete addressing,
+storage-area isolation, conditional/version-pinned original reads, source-copy
+absence, deletion protection and invalid/mismatched source locators. The existing
+50 MiB simulated S3 adapter journey remains applicable. Tests are compilation
+verified only; suites were not requested or executed. Database-backed acceptance
+must cover cross-sample/library/set scope, actor-owned drafts, scan/FASTQ failures,
+paired completeness, concurrent scientific/FASTQ registration, retry after
+ambiguous commit, source replacement/deletion and frozen assembly destinations.
+
 ## Sequencing review fixes — October 6, 2026
 
 `LabVendorResultSafetyTests` covers unchanged input identity retention, unrelated
@@ -2987,3 +3016,53 @@ API compilation is part of this source checkpoint. Focused integration execution
 was not requested; verification of inactive Company rejection, details without a
 Company, relationship validation and rollback on failure remains deferred. No
 persisted model or migration change is involved.
+
+
+## Job Sequencing tab — October 9, 2026
+
+Acceptance: tab after Libraries; linked batch progress, recorded timing and effective latest-version library outcomes; Job-only library membership in shared batches; unassigned/empty/loading/error states; batch navigation; retained tab/list context and responsive table/cards. API reads use the Job-detail role boundary and make no writes. Automated suites are not requested and remain unrun; source and connected verification evidence is tracked in LAB-OPERATIONS-PLAN.md.
+
+Sequencing regression sources added: the existing PostgreSQL tube-lineage scenario now checks Job membership/tube identity, latest-version overrides and no-write/empty-other-Job reads; the panel scenarios cover owning-Job requests, library failure despite batch success, unknown/no-run facts, error recovery without false unassigned labels and no-library empty state. These sources remain unexecuted because suites were not requested.
+
+## Specimen workspace — October 9, 2026
+
+Regression sources extended in LabTubeAccessionPostgresTests and LabSequencingTubeLineagePostgresTests: pending discovery, scope/state rejection, exact specimen validation and same-Job shared batch isolation. Compiled during local verification; not executed. Live populated multi-Job/repeated-run fixtures remain a separate verification boundary.
+
+
+## Current sendout manifest v3 acceptance — October 9, 2026
+
+The UI mock sequencing walkthrough created a current schemaVersion=3 vendor sendout. Saving verified FASTQs failed because LabResultLineageService accepted only versions 1/2. Align the reader with the current v3 writer and existing custody reader: allow v3 and apply the complete sequencing-tube/transfer/quantity/source-chain validation used for v2. Unknown versions remain rejected; no membership inference, data repair, schema or migration change. Existing physical-lineage regression source now runs the same rejection/accepted-chain journey for v2 and v3 and includes unsupported-version rejection. Build the solution/test sources; do not execute suites under the standing rule. Rebuild/restart the API, then retry the saved UI result draft without recreating files or changing the frozen manifest.
+
+Verification: full solution and regression sources build with zero warnings/errors. After the owner rebuilt/restarted the API, the same UI result draft saved Results v1 successfully with four verified FASTQs and both specimen outcomes Success. Reloaded stored checksums match all four original files; each specimen has only its own two outputs. No automated suites, schema changes or direct data workaround. See docs/testing/runs/2026-10-09-m82n5jtb-mock-sequencing.md for mock qualification and remaining UI findings.
+
+
+## Scientific review queue correction — October 9, 2026
+
+Owner confirmed this queue must contain assembled work ready for scientific
+review, not every received Job. This supersedes the earlier broad results list.
+A dedicated read-only scientific-review-queue endpoint uses the existing Lab-role
+boundary, selecting exact ReadyForReview output packages linked to reconciled
+Succeeded assembly with matching organization/Job/specimen/analysis and latest
+package QC Pass. On-hold/cancelled Jobs and already-approved packages are excluded.
+Qualifying Jobs are selected before the 250-row limit; each row reports its
+pending package count and opens Job Review with return context preserved. No
+schema, records, provider settings, approval rules or release behavior change.
+
+The existing PostgreSQL FASTQ/QC scenario now covers sequencing-only exclusion,
+completed-package-without-QC exclusion, Fail/Hold/Pass, a later Hold overriding
+Pass, restored Pass and approved/released removal. Frontend sources cover pending
+counts, empty and failed reads. Suites remain unexecuted unless requested.
+API restart and connected verification follow the static build checkpoint.
+
+Verification completed locally: full API solution and expanded regression sources
+compile with zero warnings/errors; TypeScript, scoped ESLint, generated help
+consistency (56 guides, af945a2e207d) and diff whitespace checks pass. After the
+Owner rebuilt/restarted the API, connected read-only UI acceptance confirmed the
+new query returns an empty scientific-review queue, M82N5JTB is absent after
+Refresh, and its two specimen/run input sets remain in Data assembly. The empty
+state was inspected at desktop and 375 px in light theme with no horizontal
+overflow; temporary viewport override reset. Final screenshot is retained as
+scientific-review-queue-corrected.png. No records or scientific/provider state
+were mutated. Positive completed-package scenarios are covered in compiled
+regression sources but were not executed, and no qualifying live assembly fixture
+exists locally. Dark-theme and automated-suite acceptance remain unperformed.

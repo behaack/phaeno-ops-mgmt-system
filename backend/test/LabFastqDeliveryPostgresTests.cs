@@ -128,6 +128,7 @@ public partial class SampleShippingPostgresTests
             await api.RecordVendorResults(sendout.Id, Request(restartedId, recoveredSet, "SIMULATED explicitly reviewed recovered file"), default);
             Assert.Equal(JsonValueKind.Null, GapJson(await api.ResultsIntake(sendout.Id, limits, scan, default)).GetProperty("draft").ValueKind);
             var current = await Snapshot(); var ids = current.FastqSets!.Single().Files.Select(f => f.OutputId).ToArray();
+            Assert.False(await LabScientificReviewQueueQuery.PendingPackages(db).AnyAsync(p => p.LabWorkOrderId == fixture.WorkId));
             var lineage = new LabResultLineageService(db);
             var analysis = await lineage.RegisterAnalysisAsync(new(Guid.NewGuid(), fixture.WorkId, fixture.SpecimenId, "SIMULATED", "SIMULATED-EXECUTION", ids), actor, "SIMULATED test fixture", default);
             var job = new LabAssemblyJob(Guid.NewGuid(), fixture.WorkId, fixture.SpecimenId, scope.CustomerOrganization.Id, 1, actor, "SIMULATED", "{}",
@@ -146,13 +147,16 @@ public partial class SampleShippingPostgresTests
             db.AddRange(job, package, report, artifact); await db.SaveChangesAsync();
             var policy = new PSeqOrderToCashOptions { RequireScientificEvidence = false, RequireResultTraceability = false };
             await Assert.ThrowsAsync<OrderManagementException>(() => lineage.RequirePackageAsync(package, default, policy));
+            Assert.False(await LabScientificReviewQueueQuery.PendingPackages(db).AnyAsync(p => p.Id == package.Id));
             var version = 0;
-            foreach (var decision in new[] { "Fail", "Hold", "Pass" }) {
+            foreach (var decision in new[] { "Fail", "Hold", "Pass", "Hold", "Pass" }) {
                 await api.RecordAssemblyQc(job.Id, new(Guid.NewGuid(), job.Version, package.Id, package.Version, version++, decision, "SIMULATED QC decision", report.Id, [], true), default);
+                Assert.Equal(decision == "Pass", await LabScientificReviewQueueQuery.PendingPackages(db).AnyAsync(p => p.Id == package.Id));
                 if (decision != "Pass") await Assert.ThrowsAsync<OrderManagementException>(() => lineage.RequirePackageAsync(package, default, policy));
             }
             await lineage.RequirePackageAsync(package, default, policy);
             package.RecordScientificApproval(Guid.NewGuid(), scope.CustomerUser.Id, DateTime.UtcNow); package.MarkReadyForRelease(package.ScientificApprovalId!.Value); package.Release(actor, DateTime.UtcNow); await db.SaveChangesAsync();
+            Assert.False(await LabScientificReviewQueueQuery.PendingPackages(db).AnyAsync(p => p.Id == package.Id));
             var failed = new RecordVendorResultsRequest(Guid.NewGuid(), sendout.Version, "SIMULATED-JOB", false, now, now, now, "Failure", [], [], "SIMULATED corrected failure");
             var protectedError = await Assert.ThrowsAsync<OrderManagementException>(() => api.RecordVendorResults(sendout.Id, failed, default));
             Assert.Equal("vendor_results_withdrawal_required", protectedError.ErrorCode);

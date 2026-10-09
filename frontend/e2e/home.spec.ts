@@ -188,7 +188,7 @@ test('keeps workspace navigation concise and groups the user menu', async ({
       await page.getByRole('menuitem', { name: label, exact: true }).focus()
       await page.keyboard.press('Shift+Tab')
       await expect(page.getByRole('menu')).toHaveCount(0)
-      await expect(header.getByRole('link', { name: 'Lab ops', exact: true })).toBeFocused()
+      await expect(header.getByRole('link', { name: 'Order ops', exact: true })).toBeFocused()
     }
     await moreTrigger.press('Enter')
     await page.keyboard.press('Escape')

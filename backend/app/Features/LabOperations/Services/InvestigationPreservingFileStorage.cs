@@ -6,9 +6,11 @@ using PhaenoPortal.App.Features.OrderManagement.Services;
 using PhaenoPortal.App.Infrastructure.Persistence;
 
 /// <summary>Internal supporting reports outlive customer deliverable expiry.</summary>
-public sealed class InvestigationPreservingFileStorage(IOperationalFileStorage storage, PSeqOperationsDbContext db) : IOperationalFileStorage
+public sealed class InvestigationPreservingFileStorage(IOperationalFileStorage storage, PSeqOperationsDbContext db) : IOperationalFileStorage, IScopedOperationalFileStorage
 {
     public Task<StoredOperationalFile> SaveAsync(Stream content, string extension, long maximumBytes, CancellationToken ct) => storage.SaveAsync(content, extension, maximumBytes, ct);
+    public Task<StoredOperationalFile> SaveScopedAsync(Stream content, string extension, long maximumBytes, string relativeDirectory, CancellationToken ct) =>
+        storage.SaveScopedAsync(content, extension, maximumBytes, relativeDirectory, ct);
     public Task<Stream> OpenReadAsync(string key, CancellationToken ct) => storage.OpenReadAsync(key, ct);
     public async Task DeleteIfExistsAsync(string key, CancellationToken ct)
     {

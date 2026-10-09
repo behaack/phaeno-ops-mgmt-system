@@ -31,15 +31,15 @@ describe('Create a Contact from Company association search', () => {
     const onSubmit = setup()
     fireEvent.change(screen.getByLabelText('Job title'), { target: { value: 'Scientist' } })
     fireEvent.change(screen.getByLabelText('Relationship role'), { target: { value: 'Scientific lead' } })
-    fireEvent.change(screen.getByLabelText('Effective from'), { target: { value: '2026-10-01' } })
+    fireEvent.change(screen.getByLabelText(/^Effective from/), { target: { value: '2026-10-01' } })
     fireEvent.click(screen.getByRole('checkbox', { name: 'Primary Company for this Contact' }))
     fireEvent.focus(screen.getByRole('combobox', { name: 'Contact' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Create new contact' }))
     expect(screen.getByText(/associated with Atlas Research/)).toBeTruthy()
     expect((screen.getByLabelText('Job title') as HTMLInputElement).value).toBe('Scientist')
     expect((screen.getByLabelText('Relationship role') as HTMLSelectElement).value).toBe('Scientific lead')
-    fireEvent.change(screen.getByLabelText('First name'), { target: { value: 'Jane' } })
-    fireEvent.change(screen.getByLabelText('Last name'), { target: { value: 'Doe' } })
+    fireEvent.change(screen.getByLabelText(/^First name/), { target: { value: 'Jane' } })
+    fireEvent.change(screen.getByLabelText(/^Last name/), { target: { value: 'Doe' } })
     fireEvent.click(screen.getByRole('button', { name: 'Create and associate contact' }))
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith({ kind: 'new', input: {
       firstName: 'Jane', lastName: 'Doe', email: null, phone: null, jobTitle: 'Scientist',

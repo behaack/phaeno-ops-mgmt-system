@@ -15,6 +15,7 @@ public static class StorageServiceCollectionExtensions
         IWebHostEnvironment environment)
     {
         services.AddSingleton(new BackupDeletionLease(configuration));
+        services.AddScoped<PhaenoPortal.App.Features.LabOperations.Services.ScientificS3Access>();
         var section = configuration.GetSection(FileStorageOptions.SectionName);
         services.AddOptions<FileStorageOptions>()
             .Bind(section)

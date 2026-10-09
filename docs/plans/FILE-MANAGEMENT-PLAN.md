@@ -1,5 +1,24 @@
 # File Management Plan
 
+## S3 uploads and original-object access — discovery, October 9, 2026
+
+Source implementation now includes record-derived S3 keys, exact-version original
+receipts, bounded multipart S3 writes, completed-ZIP inspection/extraction and
+measured upload/extraction progress. Local/hosted activation remains gated by
+four-file local preservation, versioned original sources and S3-aware recovery;
+the runtime provider, database and cloud settings were not switched.
+
+The Owner selected both Portal uploads stored in S3 and access to scientific
+objects already in S3. The requested S3 hierarchy is Customer -> Job -> Sample
+-> Library -> Sequencing run; existing scientific objects are accessed in place,
+without importing another managed copy. The [S3 integration plan](S3-STORAGE-AND-SCIENTIFIC-ACCESS-PLAN.md)
+records the confirmed product scope, empty scientific-source starting point, scientific custody,
+hierarchy changes, existing-file conversion and hosted backup/release gates.
+The Owner confirmed no scientific S3 files exist yet; that removes historical
+S3 import/reorganization work, but not the current Portal-file inventory gate.
+No provider switch, source-file import, database migration or deployment has
+occurred. Existing internal-evidence retention remains authoritative.
+
 ## Company retention override actions — September 29, 2026
 
 The Company Services → Retention header uses a plus icon for its single **Add

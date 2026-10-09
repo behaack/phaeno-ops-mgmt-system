@@ -1,5 +1,17 @@
 # Managed scientific files
 
+## Original scientific S3 objects — discovery, October 9, 2026
+
+The Owner additionally selected in-place access to existing S3 scientific objects,
+alongside S3-backed Portal uploads, organized Customer -> Job -> Sample -> Library
+-> Sequencing run. Reuse existing sample/library/run identities. The
+[S3 integration plan](S3-STORAGE-AND-SCIENTIFIC-ACCESS-PLAN.md) owns source discovery,
+immutable locators, verification/mapping, source-preservation requirements and
+local/hosted activation. The Owner confirmed no scientific S3 files exist yet;
+establish the agreed hierarchy for future original-object registration.
+This is planned scope: current managed receipts are not
+proof of original-object custody, and no existing source objects were changed.
+
 ## FASTQ library-result intake extension — discovery, October 6, 2026
 
 The Owner requested local FASTQ uploads as the vendor-result handoff, followed

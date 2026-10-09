@@ -72,16 +72,16 @@ region="${region_line#FileStorage__S3__Region=}"
 }
 
 case "${prefix_line}" in
-    FileStorage__S3__KeyPrefix=?*) ;;
+    FileStorage__S3__KeyPrefix=*) ;;
     *)
         printf 'Invalid S3 key-prefix input.\n' >&2
         exit 1
         ;;
 esac
 key_prefix="${prefix_line#FileStorage__S3__KeyPrefix=}"
-[[ "${key_prefix}" =~ ^[A-Za-z0-9][A-Za-z0-9._/-]*[A-Za-z0-9]$
+[[ -z "${key_prefix}" || ( "${key_prefix}" =~ ^[A-Za-z0-9][A-Za-z0-9._/-]*[A-Za-z0-9]$
     && "${key_prefix}" != *..*
-    && "${key_prefix}" != *//* ]] || {
+    && "${key_prefix}" != *//* ) ]] || {
     printf 'Invalid S3 key prefix.\n' >&2
     exit 1
 }

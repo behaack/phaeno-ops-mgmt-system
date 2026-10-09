@@ -71,12 +71,16 @@ public sealed partial class LabOperationsController
             && u.LabWorkOrderId == workOrderId && u.LabSpecimenId == specimenId, ct) ?? throw Missing();
         if (upload.CompletedFileId is not null) return await UploadState(upload, ct);
         if (upload.ExpiresAtUtc <= DateTime.UtcNow) throw Conflict("scientific_upload_expired", "This upload expired. Start a new upload.");
+        var work = await RequireWorkOrderAsync(workOrderId, ct);
+        if (work.Status is LabWorkOrderStatus.OnHold or LabWorkOrderStatus.Cancelled)
+            throw Conflict("scientific_upload_unavailable", "Resolve the job hold or cancellation before continuing evidence uploads.");
         var chunks = ReadChunks(upload);
         var received = chunks.Sum(c => c.SizeBytes);
         if (offset < 0 || offset % ScientificChunkBytes != 0 || offset > received || offset >= upload.SizeBytes
             || Request.ContentLength != Math.Min(ScientificChunkBytes, upload.SizeBytes - offset))
             throw Conflict("scientific_upload_offset", "Resume from the last verified upload position.");
-        var stored = await storage.SaveAsync(Request.Body, ".chunk", ScientificChunkBytes, ct);
+        var directory = ScientificStorageHierarchy.Sample(work.SubmittingOrganizationId, work.Id, specimenId) + $"/staging/upload-{upload.Id:N}";
+        var stored = await storage.SaveScopedAsync(Request.Body, ".chunk", ScientificChunkBytes, directory, ct);
         var saveAttempted = false;
         try
         {
@@ -131,7 +135,8 @@ public sealed partial class LabOperationsController
         var hash = Convert.ToHexString(await SHA256.HashDataAsync(assembled, ct));
         if (hash != upload.Sha256) throw Conflict("scientific_upload_changed", "The complete file does not match the selected file's fingerprint.");
         assembled.Position = 0;
-        var stored = await storage.SaveAsync(assembled, ".bin", upload.SizeBytes, ct);
+        var directory = ScientificStorageHierarchy.Sample(work.SubmittingOrganizationId, work.Id, specimenId) + "/evidence";
+        var stored = await storage.SaveScopedAsync(assembled, ".bin", upload.SizeBytes, directory, ct);
         var saveAttempted = false;
         try
         {

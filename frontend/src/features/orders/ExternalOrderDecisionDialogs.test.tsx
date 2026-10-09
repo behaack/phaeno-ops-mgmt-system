@@ -50,7 +50,7 @@ const record = {
   requestedSpecimenCount: 7, sourceGroups: [{ id: 'source-1', biologicalSource: 'Human PBMCs', specimenCount: 7, version: 1 }],
   samples: [], resultFiles: [], resultReleases: [], inputRevisions: [], inputFiles: [], outputReleases: [],
   lines: [], timeline: [], documents: [], adjustments: [], shipments: [],
-  quotes: [{ id: 'quote-1', revision: 1, status: 'Issued', expiresAt: '2026-10-07T12:00:00Z', deliveryTargetBusinessDays: 14,
+  quotes: [{ id: 'quote-1', revision: 1, status: 'Issued', expiresAt: '2099-10-07T12:00:00Z', deliveryTargetBusinessDays: 14,
     linesJson: '[]', currency: 'USD', subtotal: 50, tax: 0, total: 50 }],
 }
 const cases = [
@@ -82,7 +82,7 @@ describe.each(cases)('$name decision dialog', ({ name, page, field, open, keep, 
   async function openDialog() {
     render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}>{page}</QueryClientProvider>)
     fireEvent.click(await headerAction(open))
-    return screen.getByRole('dialog')
+    return await screen.findByRole('dialog')
   }
 
   it('retains edited entries after declined Close, footer, Escape and navigation, and resets after a confirmed discard', async () => {

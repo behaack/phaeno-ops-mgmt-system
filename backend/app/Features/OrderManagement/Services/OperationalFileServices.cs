@@ -18,9 +18,32 @@ public interface IOperationalFileScanner
     Task<OperationalScanResult> ScanAsync(string storageKey, CancellationToken cancellationToken);
 }
 
-public sealed class OperationalFileStorageAdapter(IFileStorage storage) : IOperationalFileStorage
+public interface IScopedOperationalFileStorage
 {
-    public async Task<StoredOperationalFile> SaveAsync(Stream content, string extension, long maximumBytes, CancellationToken cancellationToken)
+    Task<StoredOperationalFile> SaveScopedAsync(Stream content, string extension, long maximumBytes,
+        string relativeDirectory, CancellationToken cancellationToken);
+}
+
+public static class ScopedOperationalFileStorage
+{
+    public static Task<StoredOperationalFile> SaveScopedAsync(this IOperationalFileStorage storage,
+        Stream content, string extension, long maximumBytes, string relativeDirectory, CancellationToken ct) =>
+        storage is IScopedOperationalFileStorage scoped
+            ? scoped.SaveScopedAsync(content, extension, maximumBytes, relativeDirectory, ct)
+            : throw new InvalidOperationException("Scientific storage requires the scoped storage adapter.");
+}
+
+public sealed class OperationalFileStorageAdapter(IFileStorage storage) : IOperationalFileStorage, IScopedOperationalFileStorage
+{
+    public Task<StoredOperationalFile> SaveAsync(Stream content, string extension, long maximumBytes, CancellationToken cancellationToken) =>
+        SaveCoreAsync(content, extension, maximumBytes, null, cancellationToken);
+
+    public Task<StoredOperationalFile> SaveScopedAsync(Stream content, string extension, long maximumBytes,
+        string relativeDirectory, CancellationToken cancellationToken) =>
+        SaveCoreAsync(content, extension, maximumBytes, relativeDirectory, cancellationToken);
+
+    private async Task<StoredOperationalFile> SaveCoreAsync(Stream content, string extension, long maximumBytes,
+        string? relativeDirectory, CancellationToken cancellationToken)
     {
         try
         {
@@ -29,7 +52,7 @@ public sealed class OperationalFileStorageAdapter(IFileStorage storage) : IOpera
                     FileStorageAreas.OrderManagement,
                     content,
                     extension,
-                    maximumBytes),
+                    maximumBytes) { RelativeDirectory = relativeDirectory },
                 cancellationToken);
             return new StoredOperationalFile(stored.StorageKey, stored.SizeBytes, stored.Sha256);
         }

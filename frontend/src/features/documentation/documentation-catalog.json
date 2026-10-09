@@ -1436,7 +1436,7 @@
       "title": "Data assembly",
       "summary": "Coordinate commercial quotes and decisions with Lab-owned input validation, processing, QC, and output approval.",
       "order": 53,
-      "reviewedAt": "2026-10-03",
+      "reviewedAt": "2026-10-09",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1569,7 +1569,7 @@
       "title": "Laboratory operations",
       "summary": "Find laboratory work, receive purchased kits and stock, assemble Phaeno kits and reagents, record scientific evidence, and trace result delivery.",
       "order": 50,
-      "reviewedAt": "2026-10-06",
+      "reviewedAt": "2026-10-09",
       "navigationGroup": "laboratory-operations",
       "contentType": "overview",
       "topicIds": [
@@ -1645,7 +1645,7 @@
       "title": "Service workflows, protocol control, and execution",
       "summary": "Configure service, reagent, and master-mix workflows; record controlled Lab steps and material use.",
       "order": 54,
-      "reviewedAt": "2026-10-06",
+      "reviewedAt": "2026-10-09",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1711,9 +1711,9 @@
       "slug": "lab-libraries-batches-sequencing",
       "parentSlug": "lab-operations",
       "title": "Libraries, batches, and sequencing",
-      "summary": "Track library/tube lineage, record vendor results with verified batch ZIP or individual FASTQ uploads, initiate assembly, record QC and hand off approved Customer packages.",
+      "summary": "Track library/tube lineage, record vendor results with verified ZIP/FASTQ uploads or configured S3 originals, preserve repeated sequencing and assembly work, record QC and hand off approved Customer packages.",
       "order": 56,
-      "reviewedAt": "2026-10-06",
+      "reviewedAt": "2026-10-09",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1750,7 +1750,7 @@
       "title": "Exceptions, rework, and cancellation",
       "summary": "Classify exceptions, preserve rework history, and respond safely to cancellation requests.",
       "order": 57,
-      "reviewedAt": "2026-10-05",
+      "reviewedAt": "2026-10-09",
       "navigationGroup": "laboratory-operations",
       "contentType": "troubleshooting",
       "topicIds": [
@@ -1786,7 +1786,7 @@
       "title": "Scientific approval and release readiness",
       "summary": "Review output packages, source-tube lineage and scientific evidence requirements, resolve performer/time reviews, and record independent scientific approval.",
       "order": 58,
-      "reviewedAt": "2026-10-06",
+      "reviewedAt": "2026-10-09",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [

@@ -18,6 +18,7 @@ artifacts
 **/node_modules/
 
 # Test and coverage output
+/.verification/
 **/coverage/
 **/test-results/
 **/TestResults/

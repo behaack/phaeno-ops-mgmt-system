@@ -14,7 +14,7 @@ public sealed partial class LabOperationsController
 {
     [HttpGet("work-orders/{workOrderId:guid}/specimens/{specimenId:guid}/scientific-evidence/files")]
     public async Task<object> ScientificFiles(Guid workOrderId, Guid specimenId,
-        [FromServices] IOptions<FileScanningOptions> scanOptions, CancellationToken ct)
+        [FromServices] IOptions<FileScanningOptions> scanOptions, CancellationToken ct, [FromServices] ScientificS3Access? s3 = null)
     {
         await requestContext.RequireAsync(HttpContext, ct, LabRole.Operator, LabRole.Supervisor, LabRole.ScientificReviewer, LabRole.OperationsAdministrator);
         await RequireSpecimenAsync(workOrderId, specimenId, ct);
@@ -22,7 +22,8 @@ public sealed partial class LabOperationsController
             .Where(f => f.LabWorkOrderId == workOrderId && f.LabSpecimenId == specimenId)
             .OrderByDescending(f => f.RecordedAtUtc).ThenBy(f => f.Id).Take(1001).ToListAsync(ct);
         if (files.Count > 1000) throw Conflict("scientific_files_limit", "This sample has too many uploaded files for this workspace. Contact an administrator.");
-        return new { maximumBytes = ScientificUploadLimit(scanOptions.Value), files = files.Select(LabScientificFiles.Public) };
+        return new { maximumBytes = ScientificUploadLimit(scanOptions.Value), files = files.Select(LabScientificFiles.Public),
+            s3Available = s3?.Available == true };
     }
 
     [HttpPost("work-orders/{workOrderId:guid}/specimens/{specimenId:guid}/scientific-evidence/files")]
@@ -43,7 +44,8 @@ public sealed partial class LabOperationsController
         var limit = ScientificUploadLimit(scanOptions.Value);
         if (Request.ContentLength is <= 0 || Request.ContentLength > limit)
             throw Invalid("scientific_file_size_invalid", $"Choose a nonempty file no larger than {limit / 1024 / 1024} MiB.");
-        var stored = await storage.SaveAsync(Request.Body, ".bin", limit, ct);
+        var directory = ScientificStorageHierarchy.Sample(work.SubmittingOrganizationId, work.Id, specimenId) + "/evidence";
+        var stored = await storage.SaveScopedAsync(Request.Body, ".bin", limit, directory, ct);
         var saveAttempted = false;
         try
         {

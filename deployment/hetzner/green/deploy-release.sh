@@ -91,12 +91,13 @@ elif grep --fixed-strings --line-regexp 'FileStorage__Provider=S3' "${PORTAL_ENV
     for key in \
         FileStorage__S3__BucketName \
         FileStorage__S3__Region \
-        FileStorage__S3__KeyPrefix \
         AWS_ACCESS_KEY_ID \
         AWS_SECRET_ACCESS_KEY; do
         grep --extended-regexp --quiet "^${key}=.+$" "${PORTAL_ENV}" \
             || fail "Portal S3 runtime is missing ${key}."
     done
+    [[ "$(grep -c '^FileStorage__S3__KeyPrefix=' "${PORTAL_ENV}" || true)" == 1 ]] \
+        || fail "Portal S3 runtime requires exactly one key-prefix setting (empty is valid)."
 else
     fail "Portal production runtime must configure FileStorage__Provider=Disabled, Local or S3."
 fi
