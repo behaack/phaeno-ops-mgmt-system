@@ -3983,3 +3983,9 @@ state during render; existing workspace discard/retention regression sources
 remain applicable. Focused lint, TypeScript and production build pass. Component
 execution is still not requested; corrected live discard/focus acceptance is
 required before closing the deployment.
+
+Corrected hosted acceptance passes on `c10c622e`: retained relationship/identity
+drafts, required identity validation, current dirty-state confirmation, Keep
+editing, discard and focus return. Final CRM browser error capture is empty.
+The UI is deployed with the same API source; automated suite execution remains
+deferred. See the [release summary](../operations/portal-crm-followup-release-20261008.md).

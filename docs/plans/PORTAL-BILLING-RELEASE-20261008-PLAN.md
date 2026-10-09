@@ -49,3 +49,12 @@ The narrow forward correction passes focused lint, TypeScript and production UI
 build. Release its reviewed commit to both API and UI from the same branch,
 using the current verified recovery copy and unchanged preserving settings.
 Final acceptance and exact source are recorded after the corrected hosted smoke.
+
+## Follow-up completed
+
+The final matched application source `c10c622e` is deployed to API and Production
+UI. Independent source identity, health, database connectivity and anonymous
+authorization checks pass; migration count stays 25. Corrected live CRM checks
+confirm retained creation details, Keep editing, discard confirmation and focus
+return. Billing controls remain accessible. Smoke saved no business record.
+Workflow holds are restored. See the [follow-up release summary](../operations/portal-crm-followup-release-20261008.md).

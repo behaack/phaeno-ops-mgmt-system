@@ -38,6 +38,12 @@ Cancel and navigation use current draft state and open the Portal confirmation.
 Reverify retained values, Keep editing, Discard changes and focus return on the
 corrected hosted UI before final acceptance. No record was saved by this smoke.
 
+Final hosted acceptance passes on `c10c622e`: Keep editing retains the draft,
+creation mode preserves relationship fields, Cancel shows the confirmation,
+discard closes it and restores focus to Add existing person. API and UI run
+the same source; source/health/authorization checks pass, with no smoke writes
+or migration. See the [release summary](../operations/portal-crm-followup-release-20261008.md).
+
 ## October 2, 2026 — Searchable Opportunity Company and Department scope
 
 The owner requires Company search in New/Edit Opportunity and an explicit
