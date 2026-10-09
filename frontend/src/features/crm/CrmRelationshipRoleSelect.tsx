@@ -1,3 +1,5 @@
+import { NativeSelect } from '#/components/ui/native-select';
+
 const relationshipRoleOptions = [
   "Decision maker",
   "Scientific lead",
@@ -12,24 +14,33 @@ const relationshipRoleOptions = [
 export function CrmRelationshipRoleSelect({
   id,
   defaultValue = "",
+  value,
+  onValueChange,
+  onBlur,
 }: {
   id: string;
   defaultValue?: string;
+  value?: string;
+  onValueChange?: (value: string) => void;
+  onBlur?: () => void;
 }) {
+  const currentRole = value ?? defaultValue;
   const options =
-    defaultValue &&
+    currentRole &&
     !relationshipRoleOptions.includes(
-      defaultValue as (typeof relationshipRoleOptions)[number],
+      currentRole as (typeof relationshipRoleOptions)[number],
     )
-      ? [defaultValue, ...relationshipRoleOptions]
+      ? [currentRole, ...relationshipRoleOptions]
       : relationshipRoleOptions;
 
   return (
-    <select
+    <NativeSelect
       id={id}
       name="role"
-      defaultValue={defaultValue}
-      className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+      defaultValue={value === undefined ? defaultValue : undefined}
+      value={value}
+      onChange={(event) => onValueChange?.(event.target.value)}
+      onBlur={onBlur}
     >
       <option value="">Not specified</option>
       {options.map((role) => (
@@ -37,6 +48,6 @@ export function CrmRelationshipRoleSelect({
           {role}
         </option>
       ))}
-    </select>
+    </NativeSelect>
   );
 }

@@ -176,6 +176,12 @@ export type CrmContact = {
 
 export type CrmContactInput = {
   companyId?: string;
+  companyAssociation?: {
+    jobTitle: string | null;
+    relationshipRole: string | null;
+    isPrimaryCompany: boolean;
+    effectiveFrom: string;
+  };
   firstName: string;
   lastName: string;
   email: string | null;
@@ -209,6 +215,23 @@ export type CrmCompanyContact = {
   isActive: boolean;
   version: number;
 };
+
+export type CreateCompanyContactInput = {
+  firstName: string;
+  lastName: string;
+  email: string | null;
+  phone: string | null;
+  jobTitle: string | null;
+  relationshipRole: string | null;
+  isPrimaryCompany: boolean;
+  effectiveFrom: string;
+};
+
+export async function createCompanyContact(companyId: string, input: CreateCompanyContactInput) {
+  const { firstName, lastName, email, phone, ...companyAssociation } = input;
+  return createCrmContact({ firstName, lastName, email, phone, companyId, companyAssociation,
+    communicationPreference: 'Unknown', lawfulContactBasis: null, communicationNotes: null, tags: [] });
+}
 
 export type CrmPersonDepartmentAccess = {
   departmentId: string;

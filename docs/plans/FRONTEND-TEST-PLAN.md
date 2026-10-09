@@ -3964,3 +3964,15 @@ simulated desktop/320 px checks in both themes verify action at the top-right,
 long details wrapping, no overlap/overflow, Cancel focus return and operator
 absence, with zero browser/accessibility errors and no API requests. Existing
 behavior assertions remain applicable; no automated regression suite was requested.
+
+### October 8 — Company association search creation draft closeout
+
+`CrmAssociatePersonDialog.test.tsx` covers one combined new Contact submission,
+retained relationship details, required identity, failed-search denial and
+already-associated duplicate prevention. The dialog is connected to Company
+People and its single create/associate mutation; navigation and dirty dismissal
+use a Portal confirmation. Static-check evidence is recorded in CRM-PLAN.md.
+Existing Company workspace and session-acceptance fixtures now supply the
+controlled Contact selection and preserve failure/draft checks. Automated
+component execution was not requested and remains deferred; this
+source checkpoint does not claim hosted activation.

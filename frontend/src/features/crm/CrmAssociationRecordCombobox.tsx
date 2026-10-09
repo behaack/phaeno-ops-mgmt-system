@@ -27,6 +27,9 @@ export function CrmAssociationRecordCombobox({
   invalid = false,
   describedBy,
   initialValue,
+  initialSearch = "",
+  onCreate,
+  onBlur,
   inputRef: externalInputRef,
 }: {
   id: string;
@@ -40,14 +43,17 @@ export function CrmAssociationRecordCombobox({
   invalid?: boolean;
   describedBy?: string;
   initialValue?: { id: string; label: string; description?: string | null };
+  initialSearch?: string;
+  onCreate?: (search: string) => void;
+  onBlur?: () => void;
   inputRef?: Ref<HTMLInputElement>;
 }) {
   const generatedId = useId();
   const listboxId = `${id}-${generatedId}-results`;
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
-  const [search, setSearch] = useState(initialValue?.label ?? "");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [search, setSearch] = useState(initialValue?.label ?? initialSearch);
+  const [debouncedSearch, setDebouncedSearch] = useState(initialSearch.trim());
   const [selected, setSelected] = useState<SearchOption | null>(initialValue ? { ...initialValue, description: initialValue.description ?? null } : null);
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -90,9 +96,11 @@ export function CrmAssociationRecordCombobox({
     staleTime: 30_000,
   });
 
-  const options = (results.isFetching || results.isError ? [] : results.data ?? []).filter(
+  const searchSettled = search.trim() === debouncedSearch;
+  const options = (!searchSettled || results.isFetching || results.isError ? [] : results.data ?? []).filter(
     (option) => !excluded.has(option.id),
   );
+  const canCreate = Boolean(onCreate && kind === "contact" && results.isSuccess && !results.isFetching && searchSettled && results.data.length === 0);
   const activeOption = options[activeIndex];
   const recordLabel = kind === "company" ? "Company" : "Contact";
   const recordPlural = kind === "company" ? "companies" : "contacts";
@@ -101,6 +109,7 @@ export function CrmAssociationRecordCombobox({
     setSelected(option);
     onValueChange?.(option.id);
     setSearch(option.label);
+    onSearchChange?.(option.label);
     setOpen(false);
     inputRef.current?.setCustomValidity("");
   }
@@ -128,7 +137,7 @@ export function CrmAssociationRecordCombobox({
   }, [portal, open, activeOption, listboxId]);
 
   function renderChoices() {
-    return (results.isFetching ? (
+    return (results.isFetching || !searchSettled ? (
       <p className="px-3 py-2 text-sm text-muted-foreground" role="status">
         Searching…
       </p>
@@ -161,9 +170,13 @@ export function CrmAssociationRecordCombobox({
         </button>
       ))
     ) : (
-      <p className="px-3 py-2 text-sm text-muted-foreground" role="status">
-        No available {recordPlural} found.
-      </p>
+      <div>
+        <p className="px-3 py-2 text-sm text-muted-foreground" role="status">
+          {results.data?.length ? `Matching ${recordLabel}s are already associated with this record.` : `No available ${recordPlural} found.`}
+        </p>
+        {canCreate ? <button type="button" className="w-full cursor-pointer rounded-sm px-3 py-2 text-left text-sm font-medium text-primary hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring"
+          onMouseDown={event => event.preventDefault()} onClick={() => { setOpen(false); onCreate?.(search.trim()); }}>Create new contact</button> : null}
+      </div>
     ));
   }
 
@@ -197,6 +210,7 @@ export function CrmAssociationRecordCombobox({
           autoComplete="off"
           className="pl-9"
           placeholder={`Search ${recordPlural}`}
+          onBlur={onBlur}
           onFocus={() => { if (portal) inputRef.current?.scrollIntoView({ block: "nearest" }); setOpen(true); }}
           onChange={(event) => {
             setSearch(event.target.value);
@@ -232,7 +246,7 @@ export function CrmAssociationRecordCombobox({
           <Popover.Content
             ref={listRef}
             id={listboxId}
-            role="listbox"
+            role={options.length ? "listbox" : undefined}
             aria-label={`${recordLabel} search results`}
             data-searchable-select-open="true"
             align="start"
@@ -251,7 +265,7 @@ export function CrmAssociationRecordCombobox({
       ) : open ? (
         <div
           id={listboxId}
-          role="listbox"
+          role={options.length ? "listbox" : undefined}
           aria-label={`${recordLabel} search results`}
           className="absolute z-50 mt-1 max-h-60 w-full overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
         >

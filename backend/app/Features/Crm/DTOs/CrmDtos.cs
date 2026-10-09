@@ -57,7 +57,14 @@ public sealed record UpsertCrmContactRequest(
     IReadOnlyList<string> Tags,
     long? Version,
     Guid? CompanyId = null,
-    CrmOutreachDecisionInput? OutreachDecision = null);
+    CrmOutreachDecisionInput? OutreachDecision = null,
+    CreateCrmCompanyAssociationInput? CompanyAssociation = null);
+
+public sealed record CreateCrmCompanyAssociationInput(
+    string? JobTitle,
+    string? RelationshipRole,
+    bool IsPrimaryCompany,
+    DateOnly EffectiveFrom);
 
 public sealed record CrmOutreachDecisionInput(
     CrmCommunicationPreference Preference,

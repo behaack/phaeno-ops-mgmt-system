@@ -1,12 +1,13 @@
 import { useCrmPermissions } from './use-crm-permissions';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { ChevronDown, Link2, Plus, Send, Unlink } from 'lucide-react'
+import { Link2, Plus, Send, Unlink } from 'lucide-react'
 import { useState } from 'react'
 
 import {
   apiErrorMessage,
   associateCompanyContact,
+  createCompanyContact,
   createCrmContact,
   updateCompanyContact,
   type CrmCompanyContact,
@@ -32,17 +33,14 @@ import {
   CardHeader,
   CardTitle,
 } from '#/components/ui/card'
-import { Checkbox } from '#/components/ui/checkbox'
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFeedback,
   DialogHeader,
   DialogTitle,
 } from '#/components/ui/dialog'
 import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
-import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/required-field'
 import { Textarea } from '#/components/ui/textarea'
@@ -51,10 +49,8 @@ import { CrmPersonAccessDialog } from './CrmPersonAccessDialog'
 import { CrmPersonInvitationDialog, type PersonInvitationAction } from './CrmPersonInvitationDialog'
 import { CrmCompanyContactEditDialog } from './CrmCompanyContactEditDialog'
 import { CrmContactDialog } from './CrmContactDialog'
-import { CrmAssociationRecordCombobox } from './CrmAssociationRecordCombobox'
-import { CrmRelationshipRoleSelect } from './CrmRelationshipRoleSelect'
-import { CrmCollectionFeedback, type CrmCollectionQueryState } from './CrmCollectionFeedback'
-import { useOrderDraftGuard } from '#/features/orders/use-order-draft-guard'
+import { CrmAssociatePersonDialog, type CompanyPersonSubmission } from './CrmAssociatePersonDialog'
+import { CrmCollectionFeedback } from './CrmCollectionFeedback'
 
 type IdentityAction =
   | { kind: 'link'; person: CrmCompanyPerson }
@@ -73,6 +69,7 @@ export function CrmCompanyPeople({
   const { canAdminister } = useCrmPermissions();
   const client = useQueryClient()
   const [associateOpen, setAssociateOpen] = useState(false)
+  const [associateTrigger, setAssociateTrigger] = useState<HTMLElement | null>(null)
   const [createOpen, setCreateOpen] = useState(false)
   const [relationshipTarget, setRelationshipTarget] = useState<CrmCompanyContact | null>(null)
   const [personActionTrigger, setPersonActionTrigger] = useState<HTMLElement | null>(null)
@@ -106,16 +103,14 @@ export function CrmCompanyPeople({
     ])
   }
   const associate = useMutation({
-    mutationFn: (input: {
-      contactId: string
-      jobTitle: string | null
-      relationshipRole: string | null
-      isPrimaryCompany: boolean
-      effectiveFrom: string
-    }) => associateCompanyContact(companyId, input),
+    mutationFn: async (submission: CompanyPersonSubmission) => {
+      if (submission.kind === 'new') await createCompanyContact(companyId, submission.input)
+      else await associateCompanyContact(companyId, submission.input)
+    },
     onSuccess: async () => {
       setAssociateOpen(false)
       await refresh()
+      await client.invalidateQueries({ queryKey: ['crm-contacts'] })
     },
   })
   const editRelationship = useMutation({
@@ -173,7 +168,7 @@ export function CrmCompanyPeople({
             {canAdminister ? 'Company contacts, Portal identities, invitations, and department access in one reviewed list.' : 'Company contacts and their roles. A Phaeno administrator manages Portal invitations and access.'}
           </CardDescription>
           <CardAction className="flex flex-wrap gap-2">
-            <Button size="sm" variant="outline" disabled={contactsUnavailable} onClick={() => setAssociateOpen(true)}>
+            <Button size="sm" variant="outline" disabled={contactsUnavailable} onClick={(event) => { associate.reset(); setAssociateTrigger(event.currentTarget); setAssociateOpen(true) }}>
               <Plus data-icon="inline-start" />
               Add existing person
             </Button>
@@ -206,7 +201,7 @@ export function CrmCompanyPeople({
         </CardContent>
       </Card>
 
-      {associateOpen ? <AssociatePersonDialog
+      {associateOpen ? <CrmAssociatePersonDialog
         open={associateOpen}
         excludedContactIds={(contacts.data ?? [])
           .filter((contact) => contact.isActive)
@@ -214,6 +209,9 @@ export function CrmCompanyPeople({
         pending={associate.isPending}
         error={associate.error}
         contactsQuery={contacts}
+        companyName={companyName ?? 'this Company'}
+        onModeChange={() => associate.reset()}
+        onCloseAutoFocus={event => { event.preventDefault(); associateTrigger?.focus() }}
         onOpenChange={setAssociateOpen}
         onSubmit={(input) => associate.mutate(input)}
       /> : null}
@@ -310,7 +308,7 @@ function PersonRow({
           </div>
         </div>
         <ActionMenu>
-          <DropdownMenuTrigger asChild><Button id={personActionsId(person)} size="sm" variant="outline" className="shrink-0" aria-label={`Actions for ${person.displayName}`}>Actions<ChevronDown aria-hidden="true" /></Button></DropdownMenuTrigger>
+          <DropdownMenuTrigger asChild><Button id={personActionsId(person)} size="sm" variant="outline" className="shrink-0" aria-label={`Actions for ${person.displayName}`}>Actions</Button></DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-max min-w-48 max-w-[calc(100vw-2rem)]">
             {onEditRelationship ? <DropdownMenuItem onSelect={onEditRelationship}>Edit relationship</DropdownMenuItem> : null}
             {canInvite ? <DropdownMenuItem onSelect={onInvite}><Send aria-hidden="true" />Invite to Portal</DropdownMenuItem> : null}
@@ -374,77 +372,6 @@ function IdentityReviewDialog({
   )
 }
 
-function AssociatePersonDialog({
-  open,
-  excludedContactIds,
-  pending,
-  error,
-  contactsQuery,
-  onOpenChange,
-  onSubmit,
-}: {
-  open: boolean
-  excludedContactIds: string[]
-  pending: boolean
-  error: unknown
-  contactsQuery: CrmCollectionQueryState
-  onOpenChange: (open: boolean) => void
-  onSubmit: (value: {
-    contactId: string
-    jobTitle: string | null
-    relationshipRole: string | null
-    isPrimaryCompany: boolean
-    effectiveFrom: string
-  }) => void
-}) {
-  const [primary, setPrimary] = useState(false)
-  const [dirty, setDirty] = useState(false)
-  useOrderDraftGuard(dirty, pending)
-  const close = (nextOpen: boolean) => {
-    if (pending || (!nextOpen && dirty && !window.confirm('Discard unsaved Company association changes?'))) return
-    onOpenChange(nextOpen)
-  }
-  return (
-    <Dialog open={open} onOpenChange={close}>
-      <DialogContent>
-        <form onChange={() => setDirty(true)} onSubmit={(event) => {
-          event.preventDefault()
-          if (pending || contactsQuery.isPending || contactsQuery.isError) return
-          const data = new FormData(event.currentTarget)
-          onSubmit({
-            contactId: String(data.get('contactId')),
-            jobTitle: nullable(data, 'jobTitle'),
-            relationshipRole: nullable(data, 'role'),
-            isPrimaryCompany: primary,
-            effectiveFrom: String(data.get('effectiveFrom')),
-          })
-        }}>
-          <DialogHeader>
-            <DialogTitle>Associate contact</DialogTitle>
-            <DialogDescription>Add an existing CRM Contact to this Company without granting Portal access.</DialogDescription>
-          </DialogHeader>
-          {contactsQuery.isPending || contactsQuery.isError ? <DialogFeedback><CrmCollectionFeedback name="contacts" query={contactsQuery} /></DialogFeedback> : null}
-          {error ? <Alert variant="destructive"><AlertDescription>{apiErrorMessage(error)}</AlertDescription></Alert> : null}
-          <div className="grid gap-4">
-            <div className="grid gap-1.5">
-              <Label htmlFor="people-association-contact"><RequiredFieldName>Contact</RequiredFieldName></Label>
-              <CrmAssociationRecordCombobox id="people-association-contact" name="contactId" kind="contact" excludedIds={excludedContactIds} required onValueChange={() => setDirty(true)} />
-            </div>
-            <div className="grid gap-1.5"><Label htmlFor="people-association-title">Job title</Label><Input id="people-association-title" name="jobTitle" maxLength={150} /></div>
-            <div className="grid gap-1.5"><Label htmlFor="people-association-role">Relationship role</Label><CrmRelationshipRoleSelect id="people-association-role" /></div>
-            <div className="grid gap-1.5"><Label htmlFor="people-association-date"><RequiredFieldName>Effective from</RequiredFieldName></Label><Input id="people-association-date" name="effectiveFrom" type="date" required defaultValue={new Date().toISOString().slice(0, 10)} /></div>
-            <Label className="flex cursor-pointer items-center gap-2 font-normal"><Checkbox checked={primary} onCheckedChange={(value) => { setPrimary(value === true); setDirty(true) }} />Primary Company for this Contact</Label>
-          </div>
-          <RequiredDialogFooter>
-            <Button type="button" variant="outline" disabled={pending} onClick={() => close(false)}>Cancel</Button>
-            <Button type="submit" disabled={pending || contactsQuery.isPending || contactsQuery.isError}>Associate contact</Button>
-          </RequiredDialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  )
-}
-
 function personActionsId(person: CrmCompanyPerson) {
   return `company-person-actions-${person.contactAssociationId ?? person.contactId ?? person.portalUserId ?? person.invitationId}`
 }
@@ -459,9 +386,4 @@ function portalAccessLabel(value: string) {
     MembershipInactive: 'Membership inactive',
   }
   return labels[value] ?? value
-}
-
-function nullable(data: FormData, name: string) {
-  const value = String(data.get(name) ?? '').trim()
-  return value || null
 }

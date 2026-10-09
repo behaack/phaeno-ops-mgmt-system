@@ -2977,3 +2977,13 @@ The 63 focused repair cases also pass. Fixture repairs preserve unique preparati
 identity, actual custody actor, catalog-backed sendouts and immutable JSON values
 across PostgreSQL JSONB formatting. Hosted backup restoration has its own evidence
 in the release receipt; it does not substitute for the opt-in scientific scenario.
+
+### October 8 — Atomic Contact and Company association details
+
+The existing Contact-create endpoint now accepts optional Company relationship
+details and saves both records with one SaveChanges transaction. Existing CRM
+authorization, identity normalization, outreach review and audit rules remain.
+API compilation is part of this source checkpoint. Focused integration execution
+was not requested; verification of inactive Company rejection, details without a
+Company, relationship validation and rollback on failure remains deferred. No
+persisted model or migration change is involved.

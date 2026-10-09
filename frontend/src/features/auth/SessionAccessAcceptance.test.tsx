@@ -19,8 +19,8 @@ vi.mock('#/api/client', () => ({ configureApiAuth: vi.fn() }))
 vi.mock('#/api/session', () => ({ getSession: mocks.session }))
 vi.mock('#/features/crm/use-crm-permissions', () => ({ useCrmPermissions: () => ({ canAccess: true, canAdminister: true }) }))
 vi.mock('#/api/crm', async original => ({ ...await original<typeof import('#/api/crm')>(), listCompanyContacts: async () => [], associateCompanyContact: mocks.associate }))
-vi.mock('@tanstack/react-router', () => ({ useBlocker: vi.fn(), Link: ({ children }: { children: ReactNode }) => <a href="/record">{children}</a> }))
-vi.mock('#/features/crm/CrmAssociationRecordCombobox', () => ({ CrmAssociationRecordCombobox: ({ id, name }: { id: string; name: string }) => <input id={id} name={name} /> }))
+vi.mock('@tanstack/react-router', () => ({ useBlocker: () => ({ status: 'idle' }), Link: ({ children }: { children: ReactNode }) => <a href="/record">{children}</a> }))
+vi.mock('#/features/crm/CrmAssociationRecordCombobox', () => ({ CrmAssociationRecordCombobox: ({ id, name, onValueChange }: { id: string; name: string; onValueChange?: (value: string) => void }) => <input id={id} name={name} onChange={event => onValueChange?.(event.target.value)} /> }))
 
 const ready = { state: 'ready', user: { id: 'simulated', email: 'simulated@example.test', firstName: 'SIMULATED', lastName: 'Tester', status: 'Active' }, isPlatformAdmin: true,
   memberships: [], selectedOrganization: null, selectedDepartment: null, capabilities: noSessionCapabilities }

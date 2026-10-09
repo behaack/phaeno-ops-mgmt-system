@@ -1,5 +1,37 @@
 # First-Party CRM Plan
 
+## October 8, 2026 — Finish Contact creation from Company association search
+
+The remaining local draft lets authorized CRM staff create a missing Contact
+without abandoning Company People association details. Reuse the bounded
+association dialog, preserve job title, relationship role, primary designation
+and effective date when moving between search and creation, and save the new
+Contact and Company association in one API transaction. Existing Contact
+association and the separate New person action remain available.
+
+Offer Create new contact only after a successful, settled search with no
+matches. Failed searches offer retry; already-associated matches explain their
+status rather than suggest a duplicate. First and last name remain required;
+email format and relationship limits retain validation. Preserve drafts on
+failure, prevent repeat submission and pending dismissal, confirm dirty
+abandonment in a Portal dialog, and restore focus on close. Creation grants no
+Portal membership, invitation or ordering entitlement.
+
+Scope: finish the existing additive Contact-create association payload and
+connect its draft dialog. No persisted model, migration, dependency, identity
+provider or permission change. Update Phaeno help and living regression plans.
+Acceptance: compile both applications, verify lint/generated documentation,
+and retain focused component regression sources. Automated test execution and
+hosted activation of this separate change remain outside this checkpoint.
+
+Source verification: full UI lint passes; focused lint passes after the final
+selection-preservation fix; TypeScript and the production UI build pass. The
+API build has zero warnings and errors. Generated documentation validation
+passes for 56 guides (corpus `6a704f184ae0`), and whitespace checks pass. The
+current patched Router generator reorders the generated route tree; import and
+route-configuration comparisons confirm no route additions or behavior edits.
+Focused regression sources are updated, with execution explicitly deferred.
+
 ## October 2, 2026 — Searchable Opportunity Company and Department scope
 
 The owner requires Company search in New/Edit Opportunity and an explicit

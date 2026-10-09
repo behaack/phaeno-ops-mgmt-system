@@ -10,8 +10,8 @@ import { CrmCompanySales } from './CrmCompanySales'
 const api = vi.hoisted(() => ({ listCompanyContacts: vi.fn(), listCrmCompanyPeople: vi.fn(), listCrmOpportunities: vi.fn(), associateCompanyContact: vi.fn(), listDepartments: vi.fn(), createInvitation: vi.fn() }))
 vi.mock('#/api/crm', async (importOriginal) => ({ ...await importOriginal<typeof import('#/api/crm')>(), listCompanyContacts: api.listCompanyContacts, listCrmCompanyPeople: api.listCrmCompanyPeople, listCrmOpportunities: api.listCrmOpportunities, associateCompanyContact: api.associateCompanyContact }))
 vi.mock('#/api/organization-management', async (importOriginal) => ({ ...await importOriginal<typeof import('#/api/organization-management')>(), listDepartments: api.listDepartments, createInvitation: api.createInvitation }))
-vi.mock('@tanstack/react-router', () => ({ useBlocker: vi.fn(), Link: ({ children }: { children: ReactNode }) => <a href="/record">{children}</a> }))
-vi.mock('./CrmAssociationRecordCombobox', () => ({ CrmAssociationRecordCombobox: ({ id, name }: { id: string; name: string }) => <input id={id} name={name} /> }))
+vi.mock('@tanstack/react-router', () => ({ useBlocker: () => ({ status: 'idle' }), Link: ({ children }: { children: ReactNode }) => <a href="/record">{children}</a> }))
+vi.mock('./CrmAssociationRecordCombobox', () => ({ CrmAssociationRecordCombobox: ({ id, name, onValueChange }: { id: string; name: string; onValueChange?: (value: string) => void }) => <input id={id} name={name} onChange={event => onValueChange?.(event.target.value)} /> }))
 
 const person = { recordKind: 'Contact', contactId: 'contact-1', contactAssociationId: 'association-1', displayName: 'Avery Scientist', email: 'avery@example.test', firstName: 'Avery', lastName: 'Scientist', isContactActive: true, portalAccessState: 'NotInvited', departments: [] }
 const opportunity = { id: 'opportunity-1', name: 'RNA evaluation', ownerName: 'Phaeno owner', stageName: 'Discovery' }
@@ -29,7 +29,6 @@ describe('Company People and Sales recovery', () => {
   })
 
   it('keeps a dirty association on declined dismissal and resets a discarded draft', async () => {
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
     mount()
     await waitFor(() => expect(screen.getByRole('button', { name: 'Add existing person' })).toHaveProperty('disabled', false))
     fireEvent.click(screen.getByRole('button', { name: 'Add existing person' }))
@@ -37,16 +36,16 @@ describe('Company People and Sales recovery', () => {
     fireEvent.change(screen.getByLabelText('Job title'), { target: { value: 'Unfinished title' } })
     fireEvent.click(screen.getByRole('checkbox', { name: 'Primary Company for this Contact' }))
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
-    expect(confirm).toHaveBeenCalledWith('Discard unsaved Company association changes?')
+    expect(screen.getByRole('heading', { name: 'Discard unsaved Contact changes?' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Keep editing' }))
     expect(screen.getByLabelText('Job title')).toHaveProperty('value', 'Unfinished title')
     expect(api.associateCompanyContact).not.toHaveBeenCalled()
-    confirm.mockReturnValue(true)
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Discard changes' }))
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
     fireEvent.click(screen.getByRole('button', { name: 'Add existing person' }))
     expect(screen.getByLabelText('Job title')).toHaveProperty('value', '')
     expect(screen.getByRole('checkbox', { name: 'Primary Company for this Contact' }).getAttribute('data-state')).toBe('unchecked')
-    confirm.mockRestore()
   })
 
   it('shows Commercial staff Contact relationships without querying Portal access or invitations', async () => {
