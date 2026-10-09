@@ -1,9 +1,8 @@
 # Operations and production-readiness boundary
 
-## Billing dialog/navigation release — prepared October 8, 2026
+## Billing dialog/navigation release — completed October 8, 2026
 
-The Owner requested preserving remote API/Portal UI updates. The [scoped release plan](plans/PORTAL-BILLING-RELEASE-20261008-PLAN.md) covers the fixed billing modal and Finance navigation, matching API help corpus, existing hosted database/file preservation, verified recovery, exact-source activation and rollback. Clean-source API Release/UI builds, TypeScript, focused lint and corpus validation pass; unrelated in-progress CRM work is excluded. The Owner has authorized the scoped commit and push; activation is pending publication of the reviewed revision and access to the intended Vercel Portal project. Existing SSH cannot access the protected deploy runtime without sudo, so use the established protected CI credentials. No remote application/data/auth changes or workflow enablement have occurred.
-
+The Owner-authorized API/Portal UI update is complete on matching application source [64c5d9dc](https://github.com/behaack/phaeno-ops-mgmt-system/commit/64c5d9dcbef45c7d15d5681c29547399c1eab187). The [release summary](operations/portal-billing-release-20261008.md) records the scrolling/footer and Finance guidance fixes, vendor security/SSR compatibility update and verification boundaries. Verified encrypted recovery is retained separately. Live health, authorization, sign-in and authenticated billing-modal checks pass. No migration/reset or business-data write occurred. Release controls are restored and unrelated local work remains preserved.
 
 ## Sequencing results and FASTQ release — October 6, 2026
 

@@ -1,5 +1,9 @@
 # PSeq Order-to-Cash Gap-Closure Plan
 
+## Hosted billing correction — completed October 8, 2026
+
+The Owner-authorized API/UI release is complete with the billing scrolling/footer fix, corrected Finance guidance and required framework security/SSR compatibility update. Actual live billing and health checks pass without saving billing decisions. See the [public release summary](../operations/portal-billing-release-20261008.md); detailed operational recovery evidence is retained separately.
+
 ## Billing dialog save visibility — October 8, 2026
 
 The Owner reported a Customer billing dialog with only Close visible and missing tax fields. Keep one Save changes action in the fixed modal footer, connected to the existing validated billing form and its dirty/pending state. Remove the redundant inner card and duplicate title in modal mode. Render the billing fields directly in the shared scroll body so payment terms, tax decision, conditional rate/exemption fields and Finance approval remain reachable instead of being clipped. Preserve the separate Finance approval and existing save/error/dirty-guard behavior. Update the billing guide and generated help corpus. Use focused lint, TypeScript, corpus validation and diff checks; automated suites remain request-only. Browser control recovered. A temporary local preview of the actual components, with all API writes blocked, verified body scrolling, no nested card, fixed footer Save/form association, tax-rate validation focus, conditional exemption evidence and reachable Finance approval. Focused lint and corpus/diff checks passed. Full TypeScript checking is blocked only by pre-existing CrmAssociatePersonDialog initialSearch/onCreate typing errors; those unrelated edits are preserved. The preview was stopped and removed; the proof screenshot is retained. No backend, data, migration or deployment scope.
