@@ -68,15 +68,16 @@ export function CrmAssociatePersonDialog({ open, companyName, excludedContactIds
   onCloseAutoFocus: (event: Event) => void
 }) {
   const form = useForm<Values>({ resolver: zodResolver(associationSchema), defaultValues: defaults(), mode: 'onTouched' })
+  const { isDirty } = form.formState
   const [discard, setDiscard] = useState(false)
   const allowNavigation = useRef(false)
   const keepEditingRef = useRef<HTMLButtonElement>(null)
-  const blocker = useBlocker({ withResolver: true, shouldBlockFn: () => !allowNavigation.current && (pending || form.formState.isDirty), enableBeforeUnload: () => pending || form.formState.isDirty })
+  const blocker = useBlocker({ withResolver: true, shouldBlockFn: () => !allowNavigation.current && (pending || isDirty), enableBeforeUnload: () => pending || isDirty })
   const confirmingDiscard = discard || blocker.status === 'blocked'
   const close = (next: boolean) => {
     if (pending) return
     if (!next && confirmingDiscard) { setDiscard(false); blocker.reset?.(); return }
-    if (!next && form.formState.isDirty) { setDiscard(true); return }
+    if (!next && isDirty) { setDiscard(true); return }
     onOpenChange(next)
   }
   const mode = useWatch({ control: form.control, name: 'mode' })

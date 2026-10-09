@@ -3976,3 +3976,10 @@ Existing Company workspace and session-acceptance fixtures now supply the
 controlled Contact selection and preserve failure/draft checks. Automated
 component execution was not requested and remains deferred; this
 source checkpoint does not claim hosted activation.
+
+Hosted acceptance of the October 8 draft closeout found that callback-only
+`isDirty` access did not subscribe to the RHF proxy. The correction reads dirty
+state during render; existing workspace discard/retention regression sources
+remain applicable. Focused lint, TypeScript and production build pass. Component
+execution is still not requested; corrected live discard/focus acceptance is
+required before closing the deployment.

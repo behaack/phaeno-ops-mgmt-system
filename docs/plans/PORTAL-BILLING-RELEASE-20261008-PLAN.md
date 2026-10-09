@@ -17,3 +17,35 @@ If acceptance fails, restore the retained matched application versions without r
 The matched application release [64c5d9dc](https://github.com/behaack/phaeno-ops-mgmt-system/commit/64c5d9dcbef45c7d15d5681c29547399c1eab187) is active. The vendor security patch required updating the complete Start/Router/SSR-query integration; its broad old peer range did not guarantee runtime compatibility. The final package set passes local and real hosted checks, including the previously failing server-rendering path.
 
 Encrypted recovery and live health/authenticated billing checks pass. No migration/reset or financial/scientific write was made during smoke. Release controls are restored. See the [public release summary](../operations/portal-billing-release-20261008.md); detailed evidence is retained locally.
+
+## Owner-authorized follow-up API/UI release
+
+The Owner requested deployment of the committed remaining work after source
+closeout. Release `e33b49b8fe47070525c501f4f7880212b88f7ee0` from
+`codex/recover-october6` to the same hosted-test API and Portal UI. The application
+change finishes Contact creation from Company association search, preserving
+relationship details and saving Contact plus association together. The local
+holiday-seed initializer and operation summary are source records only; do not
+execute the seed against hosted data.
+
+Use the same protected deployment process and the previously approved encrypted
+backup/export destination. Take and restore-verify current database/private-file
+recovery, deploy API with storage/scanning/bootstrap preserved and migration and
+identity cutover off, then activate the same-source Production UI after the
+hosted preview renders. Preserve the prior matched billing release for rollback.
+Restore workflow controls afterward.
+
+The committed source passes API/UI builds, lint, TypeScript and documentation
+checks. Full automated test execution was not requested. Live acceptance checks
+will cover health, existing authentication and authorization, CRM association
+search/creation draft behavior and continued billing modal access without saving
+business records, issuing invitations or placing an order. Keep detailed runtime
+and recovery identifiers in ignored local evidence.
+
+The initial follow-up deployed `e33b49b8` successfully, with API health and
+authorization passing and 25 applied migrations unchanged. Fresh hosted CRM
+acceptance found the draft dirty-state subscription defect recorded in CRM-PLAN.
+The narrow forward correction passes focused lint, TypeScript and production UI
+build. Release its reviewed commit to both API and UI from the same branch,
+using the current verified recovery copy and unchanged preserving settings.
+Final acceptance and exact source are recorded after the corrected hosted smoke.

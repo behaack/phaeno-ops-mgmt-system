@@ -32,6 +32,12 @@ current patched Router generator reorders the generated route tree; import and
 route-configuration comparisons confirm no route additions or behavior edits.
 Focused regression sources are updated, with execution explicitly deferred.
 
+Hosted smoke caught that dirty state was read only inside callbacks, leaving
+React Hook Form's proxy unsubscribed. Subscribe to `isDirty` during render so
+Cancel and navigation use current draft state and open the Portal confirmation.
+Reverify retained values, Keep editing, Discard changes and focus return on the
+corrected hosted UI before final acceptance. No record was saved by this smoke.
+
 ## October 2, 2026 — Searchable Opportunity Company and Department scope
 
 The owner requires Company search in New/Edit Opportunity and an explicit
