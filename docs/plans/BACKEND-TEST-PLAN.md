@@ -1,5 +1,13 @@
 # Backend Test Plan
 
+October 9 testing S3 cutover follow-up: named credential-profile selection fails
+closed when the configured profile is missing. FileStorage/ScientificS3 regression
+checkpoint passes 27 cases with one Unix-only skip. Live bucket-scoped probes verify
+exact version reads, multipart/full-byte integrity, overwrite rejection, permanent
+version-delete denial and other-bucket denial. The hosted console verifier checks
+both storage areas and ClamAV with no application business writes. Testing backups
+are explicitly deferred by Owner policy; production S3 recovery remains required.
+
 October 9 release review adds exact sample/library/purchased-run checks when
 original S3 bytes become sequencing evidence, plus rejection of an empty multipart
 upload identity before any part or verified receipt. Full connected verification

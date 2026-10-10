@@ -1,8 +1,10 @@
 # S3 storage and scientific file access
 
-Status: source implementation October 9, 2026. Runtime cutover and configured,
-authenticated provider acceptance remain pending. Local and hosted settings
-have not been switched, and no external scientific originals have been admitted.
+Status: hosted-test S3 active October 9, 2026. Private isolated test destinations
+and scoped credentials are configured, and live storage/ClamAV verification passes.
+The local four-file conversion is prepared and awaits stopping its Visual Studio
+API before address conversion/restart. No external scientific originals have been
+admitted. S3 backup/restore remains a production requirement, deferred for testing.
 
 ## Implementation checkpoint
 

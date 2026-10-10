@@ -11,6 +11,13 @@ copies and do not claim S3 backup coverage. Production still requires implemente
 and rehearsed S3 recovery, scheduled off-server protection and monitoring under
 the [cutover plan](plans/S3-HOSTED-CUTOVER-PLAN.md).
 
+The guarded hosted-test switch is active on source `9a391b3f`, with private versioned
+S3 storage, scoped credentials and unchanged ClamAV/authentication/worker settings.
+The Local volume is retained, the Local-only backup timer is disabled and testing
+backup deferral is explicit. Health/rendering/authorization checks pass; no EF
+migration or application data reset occurred. Local file copies are verified, with
+its API restart/address conversion pending the operator's stop.
+
 ## Scientific storage and progress source release — completed October 9, 2026
 
 The Owner-authorized matched API/Portal frontend release is active on source
