@@ -1,0 +1,77 @@
+{
+  "contract_version": "poms-dps/1.0",
+  "environment": "local",
+  "document_type": "output_manifest",
+  "job_id": "1476fdca-9f62-5779-b160-f4f0465595b0",
+  "provider_job_id": "fixture-execution-01",
+  "scope": {
+    "organization_id": "82e39acb-fef9-426b-89a1-ab7dfd4e1bb8",
+    "commercial_order_id": "592cd408-f968-452f-8082-09c037642f74",
+    "lab_work_order_id": "07289da4-0361-4ef9-a475-89c3ecf2b9ae",
+    "specimen_id": "caff0091-6f41-46ab-aff5-3e2634e49698",
+    "library_id": "f5b731cf-6fb6-5011-afb2-8741d5b5c388",
+    "sequencing_batch_id": "1d0291ea-09f4-44f0-848e-83014141d2c8",
+    "vendor_results_version": 1,
+    "fastq_set_id": "9d2d3cf8-ced2-45bd-bb5d-d82f4be8b02f",
+    "fastq_set_version": 1,
+    "sequencing_run_number": 1
+  },
+  "recipe": {
+    "key": "example-assembly-recipe",
+    "version": "fixture-1",
+    "parameters": {
+      "fixture_only": true
+    },
+    "required_output_roles": [
+      "assembly_output",
+      "provenance_report"
+    ]
+  },
+  "input_manifest_sha256": "48a8522ac277e47ee107230ace705d07e05d823ebb58da552a772c0d70daf740",
+  "started_at_utc": "2026-10-10T18:01:00Z",
+  "stopped_at_utc": "2026-10-10T18:02:00Z",
+  "created_at_utc": "2026-10-10T18:02:05Z",
+  "provenance": {
+    "engine": "example-engine",
+    "engine_version": "fixture-1",
+    "tools": [
+      {
+        "name": "example-tool",
+        "version": "fixture-1"
+      }
+    ],
+    "container_images": [],
+    "reference_data": [],
+    "reference_data_not_applicable": "Contract fixture only: no reference dataset or actual scientific processing is represented."
+  },
+  "outputs": [
+    {
+      "artifact_id": "2c51d791-89a7-565b-9f76-7650aae2e2db",
+      "role": "assembly_output",
+      "format": "FASTA",
+      "file_name": "fixture-output.fasta",
+      "s3": {
+        "bucket": "example-contract-fixture-not-real",
+        "region": "us-east-2",
+        "key": "fixture/assemblies/assembly-1476fdca-9f62-5779-b160-f4f0465595b0/outputs/fixture-output.fasta",
+        "version_id": "fixture-version-not-real",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "size_bytes": 100
+      }
+    },
+    {
+      "artifact_id": "12fdf6f6-34b5-5391-a03c-412b8176275a",
+      "role": "provenance_report",
+      "format": "JSON",
+      "file_name": "fixture-provenance.json",
+      "s3": {
+        "bucket": "example-contract-fixture-not-real",
+        "region": "us-east-2",
+        "key": "fixture/assemblies/assembly-1476fdca-9f62-5779-b160-f4f0465595b0/outputs/fixture-provenance.json",
+        "version_id": "fixture-version-not-real",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "size_bytes": 100
+      }
+    }
+  ]
+}

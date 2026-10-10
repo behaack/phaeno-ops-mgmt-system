@@ -1,0 +1,10 @@
+{
+  "contract_version": "poms-dps/1.0",
+  "environment": "local",
+  "dto_id": 105,
+  "event_id": "0a4e9780-efa0-5ae1-bc7e-4a48badfb583",
+  "job_id": "1476fdca-9f62-5779-b160-f4f0465595b0",
+  "status": "committed",
+  "receipt_id": "4dffc868-dbcd-5932-a4d1-0727cff5639d",
+  "reason": null
+}

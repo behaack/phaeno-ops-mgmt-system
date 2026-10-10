@@ -1,13 +1,16 @@
 import { SignOutButton } from '@clerk/react'
 import { Link } from '@tanstack/react-router'
-import { ChevronDown, Ellipsis, LogOut, Menu, Monitor, Moon, Settings, Sun, UsersRound, X } from 'lucide-react'
+import { Building2, ChevronDown, Ellipsis, LogOut, Menu, Monitor, Moon, Settings, Sun, UsersRound, X } from 'lucide-react'
 import { type KeyboardEvent, useEffect, useId, useState } from 'react'
 
 import { getVisibleMainMenuItems, isMainMenuRouteActive } from './navigation'
 import { type ThemeMode } from './theme-mode'
-import { type SessionDepartment, type SessionUser } from '#/api/session'
+import { type SessionDepartment, type SessionMembership, type SessionUser } from '#/api/session'
 import { Avatar, AvatarFallback } from '#/components/ui/avatar'
 import { Button } from '#/components/ui/button'
+import { Field } from '#/components/ui/field'
+import { Label } from '#/components/ui/label'
+import { NativeSelect } from '#/components/ui/native-select'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '#/components/ui/dialog'
 import { cn } from '#/lib/utils'
 
@@ -23,6 +26,9 @@ type MobileUserMenuProps = {
   settingsItems: NavigationItems
   resourceItems: NavigationItems
   showUserManagement: boolean
+  memberships?: SessionMembership[]
+  selectedOrganizationId?: string | null
+  onOrganizationChange?: (organizationId: string) => void
   departments?: SessionDepartment[]
   selectedDepartmentId?: string | null
   onDepartmentChange?: (departmentId: string) => void
@@ -41,6 +47,7 @@ export function MobileUserMenu({
   user, authProvider, mode, onModeChange, currentPath,
   workspaceItems, moreItems, settingsItems, resourceItems,
   showUserManagement, departments, selectedDepartmentId, onDepartmentChange,
+  memberships, selectedOrganizationId, onOrganizationChange,
 }: MobileUserMenuProps) {
   const [open, setOpen] = useState(false)
   const [expandedSection, setExpandedSection] = useState<'more' | 'settings' | null>(null)
@@ -107,13 +114,21 @@ export function MobileUserMenu({
               </label>
             ))}
           </fieldset>
-          {(departments?.length ?? 0) > 1 ? (
-            <div className="space-y-1 border-t border-border pt-3">
-              <label htmlFor={departmentId} className="text-sm font-medium">Department</label>
-              <select id={departmentId} value={selectedDepartmentId ?? ''} onChange={event => onDepartmentChange?.(event.target.value)} className="min-h-11 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                {departments?.map(department => <option key={department.departmentId} value={department.departmentId}>{department.departmentName}{department.isDepartmentAdmin ? ' · Admin' : ''}</option>)}
-              </select>
+          {(memberships?.length ?? 0) > 1 ? (
+            <div className="flex items-center gap-2 border-t border-border px-3 pt-3">
+              <Building2 aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
+              <NativeSelect aria-label="Organization" value={selectedOrganizationId ?? ''} onChange={event => { close(); onOrganizationChange?.(event.target.value) }}>
+                {memberships?.map(membership => <option key={membership.organizationId} value={membership.organizationId}>{membership.organizationName}</option>)}
+              </NativeSelect>
             </div>
+          ) : null}
+          {(departments?.length ?? 0) > 1 ? (
+            <Field className="border-t border-border pt-3">
+              <Label htmlFor={departmentId}>Department</Label>
+              <NativeSelect id={departmentId} value={selectedDepartmentId ?? ''} onChange={event => onDepartmentChange?.(event.target.value)}>
+                {departments?.map(department => <option key={department.departmentId} value={department.departmentId}>{department.departmentName}{department.isDepartmentAdmin ? ' · Admin' : ''}</option>)}
+              </NativeSelect>
+            </Field>
           ) : null}
           <nav aria-label="Mobile navigation" data-mobile-navigation className="border-t border-border pt-3">
             <MobileNavigationLinks items={workspaceItems} currentPath={currentPath} onNavigate={close} />

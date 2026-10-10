@@ -1,5 +1,19 @@
 # Sequencing results to Customer delivery
 
+## Batch data summary correction — October 10, 2026
+
+The Owner's UI journey saved Results v1 for two synthetic samples, each with ten
+verified FASTQs, but the batch still reported missing data based only on the
+superseded external-reference model. Batch detail now reads its exact current
+results snapshot through the existing API/query key, displays library/run/set
+version/count/layout and a link to file identities, and counts saved verified
+sets as data handoff. External reference strings remain optional and unverified.
+Loading or failed snapshot reads do not declare files missing. This changes UI
+presentation only; no receipts, bindings, outcomes, model or API contract change.
+Connected UI confirms both ten-file counts and removal of the false warning.
+Static checks are recorded in the October 10 UI workflow review; automated
+suites remain request-only.
+
 Status: local implementation complete; bounded verification recorded, October 6, 2026.
 The Owner requested replacing declared FASTQ locations with local uploads,
 assembly initiation, QC capture, and Customer download publication. This plan

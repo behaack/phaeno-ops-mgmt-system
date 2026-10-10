@@ -149,7 +149,6 @@ describe('combined physical-kit packing', () => {
   })
   it('retains scans after a failed save and warns before dirty dismissal', async () => {
     mocks.record.mockRejectedValue(new Error('Kit changed.'))
-    vi.spyOn(window, 'confirm').mockReturnValue(false)
     await mount()
     scans('TUBE-0001')
     fireEvent.click(screen.getByRole('button', { name: 'Save for later' }))
@@ -157,7 +156,10 @@ describe('combined physical-kit packing', () => {
     expect((screen.getByRole('textbox', { name: 'Permanent tube barcodes' }) as HTMLTextAreaElement).value).toBe('TUBE-0001')
     await waitFor(() => expect((screen.getByRole('button', { name: 'Cancel' }) as HTMLButtonElement).disabled).toBe(false))
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
-    expect(window.confirm).toHaveBeenCalledWith('Discard the unsaved assembly entries? Previously saved scans and material use will be retained.')
+    const confirmation = screen.getByRole('dialog', { name: 'Discard unsaved assembly entries?' })
+    expect(confirmation.querySelector('[data-slot="dialog-body"]')?.textContent).toContain(kit.kitNumber)
+    fireEvent.click(screen.getByRole('button', { name: 'Keep editing' }))
+    expect((screen.getByRole('textbox', { name: 'Permanent tube barcodes' }) as HTMLTextAreaElement).value).toBe('TUBE-0001')
   })
   it.each(['abc', 'TUBE 0001', '*TUBE-0001'])('rejects incomplete or malformed barcode %s', async code => {
     await mount()
@@ -226,6 +228,14 @@ describe('combined physical-kit packing', () => {
     fireEvent.change(picker, { target: { value: 'lot' } })
     submit()
     await waitFor(() => expect(mocks.record).toHaveBeenCalledWith(kit.id, { version: 8, stockKitVersion: 3, supplierBarcodes: ['NEW-0001', 'NEW-0002'], complete: false, containerBarcode: null, components: [{ supplierProductId: 'tube', quantity: 2, sourceMaterialLotId: 'lot' }], assemblyNotes: null }))
+  })
+  it('offers only source lots matching the kit recorded tube lot', async () => {
+    mocks.inventory.mockResolvedValue({ materialLots: [lot(), lot({ id: 'other', lotNumber: 'OTHER' })] })
+    await mount({ ...kit, tubeLotNumber: 'lot-1' })
+    scans('TUBE-0001')
+    const picker = screen.getByRole('combobox', { name: 'Source lot' })
+    expect(within(picker).getAllByRole('option').map(option => option.textContent)).toEqual(['Select source lot', 'LOT-1 · 20 each available'])
+    expect(screen.getByText('Use the kit’s recorded tube lot: lot-1.')).toBeTruthy()
   })
   it('prevents repeated submissions while a save is pending', async () => {
     let resolve!: (value: KitAssemblyRun) => void

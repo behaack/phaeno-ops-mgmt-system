@@ -1,5 +1,27 @@
 # Auth and User System Plan
 
+## October 10 2026 Organization membership selection
+
+The Owner approved an Organization switcher for users with multiple active
+memberships. This supersedes the earlier prohibition below for the user's own
+memberships. Organization search and administrator act-as access remain excluded.
+The requirement arose during the local single-phase two-sample UI order journey.
+The Owner also requested a native select beside an organization icon, without a
+visible label; its accessible name remains Organization.
+
+Scope: desktop and narrow-screen user menus use the existing session membership
+list, selected-organization setter, query reset and persisted scope. Navigate to
+Dashboard before changing scope so dirty-page navigation blockers can cancel.
+Reset Department selection; derive navigation, branding, capabilities and help
+from the confirmed session. This control adds no membership, provider-authentication
+change, backend contract, dependency, migration or deployment.
+
+Acceptance: list only existing active memberships when at least two are available;
+retain scope when navigation is cancelled; enter the chosen Dashboard; preserve
+keyboard/mobile behavior and backend tenant checks. Getting-started guides for
+all four audiences are updated. Static and connected UI checks apply; automated
+suite execution remains request-only.
+
 ## October 2, 2026 - Trial business roles
 
 Owner-approved additive roles: Business Development creates Trials and submits

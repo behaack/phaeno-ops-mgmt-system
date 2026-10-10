@@ -8,8 +8,9 @@ import { getLabOperationsDashboard, getLabOperationsError } from '#/api/lab-oper
 import type { ShippingStockKit } from '#/api/shipping-containers'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '#/components/ui/dialog'
-import { FieldDescription, FieldError } from '#/components/ui/field'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '#/components/ui/dialog'
+import { Field, FieldDescription, FieldError } from '#/components/ui/field'
+import { NativeSelect } from '#/components/ui/native-select'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/required-field'
@@ -34,6 +35,10 @@ export function RecordKitPackedContentsDialog({ kit, assembly, writesBlocked, pr
   const submitting = useRef(false)
   const intent = useRef<'save' | 'complete'>('save')
   const automaticPrint = useRef(false)
+  const [discardOpen, setDiscardOpen] = useState(false)
+  const cancelButton = useRef<HTMLButtonElement>(null)
+  const keepEditingButton = useRef<HTMLButtonElement>(null)
+  const restoreCancelFocus = useRef(false)
   const step = assembly.run!.steps[0]
   const blocked = writesBlocked || !assembly.canEdit || assembly.run!.steps.length !== 1 || assembly.query.isFetching || inventory.isPending || inventory.isFetching || Boolean(inventory.error)
   function lotsFor(productId: string, quantity: number) {
@@ -44,6 +49,7 @@ export function RecordKitPackedContentsDialog({ kit, assembly, writesBlocked, pr
       && !lot.quantityHoldReason && (component?.kind === 'Other' || lot.quantityUnit.toLowerCase() === 'each')
       && ['Passed', 'ApprovedException'].includes(lot.qcDisposition)
       && (!lot.expirationOrRetestDate || lot.expirationOrRetestDate >= new Date().toISOString().slice(0, 10))
+      && (component?.kind !== 'Tube' || !kit.tubeLotNumber || lot.lotNumber.trim().toLowerCase() === kit.tubeLotNumber.trim().toLowerCase())
       && (component?.kind !== 'Tube' || previousUses.every(use => use.sourceMaterialLotId === lot.id)))
     return { all, available, untrackedTubeUse: component?.kind === 'Tube' && previousUses.some(use => !use.sourceMaterialLotId) }
   }
@@ -123,9 +129,22 @@ export function RecordKitPackedContentsDialog({ kit, assembly, writesBlocked, pr
     })
     if (changed && form.formState.isSubmitted) void form.trigger()
   }, [form, tubeQuantitiesKey])
+  useEffect(() => {
+    if (discardOpen || !restoreCancelFocus.current) return
+    restoreCancelFocus.current = false
+    const frame = requestAnimationFrame(() => cancelButton.current?.focus())
+    return () => cancelAnimationFrame(frame)
+  }, [discardOpen])
   function close() {
-    if (!submitting.current && !assembly.pending && (!form.formState.isDirty || window.confirm('Discard the unsaved assembly entries? Previously saved scans and material use will be retained.'))) { allowNavigation(); assembly.setComponentsOpen(false) }
+    if (submitting.current || assembly.pending) return
+    if (form.formState.isDirty) { setDiscardOpen(true); return }
+    allowNavigation(); assembly.setComponentsOpen(false)
   }
+  if (discardOpen) return <Dialog open onOpenChange={open => { if (!open) { restoreCancelFocus.current = true; setDiscardOpen(false) } }}><DialogContent showCloseButton={false} onOpenAutoFocus={event => { event.preventDefault(); keepEditingButton.current?.focus() }}>
+    <DialogHeader><DialogTitle>Discard unsaved assembly entries?</DialogTitle></DialogHeader>
+    <div><DialogDescription>Discard the unsaved tube scans, source-lot selections and label entries for {kit.kitNumber}? Previously saved scans and material use remain recorded.</DialogDescription></div>
+    <DialogFooter><Button ref={keepEditingButton} variant="outline" onClick={() => { restoreCancelFocus.current = true; setDiscardOpen(false) }}>Keep editing</Button><Button variant="destructive" onClick={() => { allowNavigation(); assembly.setComponentsOpen(false) }}>Discard entries</Button></DialogFooter>
+  </DialogContent></Dialog>
   return <Dialog open onOpenChange={open => { if (!open) close() }}><DialogContent className="max-w-2xl stock-kit-print-dialog" showCloseButton={!assembly.pending}>
     <DialogHeader><DialogTitle>Assemble transportation kit</DialogTitle><DialogDescription>{kit.container.commonName} · {kit.container.capacity} tubes. Save for later to resume; the kit enters Inventory only when completed.</DialogDescription></DialogHeader>
     <div className="stock-kit-print-surface hidden print:block"><p>Phaeno · {kit.container.commonName} · SKU {kit.container.sku}</p><ShippingBarcode value={kit.kitNumber} label="Container barcode" /></div>
@@ -154,13 +173,13 @@ export function RecordKitPackedContentsDialog({ kit, assembly, writesBlocked, pr
       <section aria-labelledby="kit-label-heading" className="space-y-2 border-b pb-4">
         <div className="flex flex-wrap items-start justify-between gap-2"><h3 id="kit-label-heading" className="text-sm font-medium">Container label</h3><Button type="button" variant="outline" disabled={assembly.pending || writesBlocked || !assembly.canEdit || assembly.query.isFetching} onClick={() => assembly.printLabel.mutate()}><Printer aria-hidden="true" />{assembly.printLabel.isPending ? 'Preparing label…' : 'Print container barcode'}</Button></div>
         <p className="wrap-anywhere font-mono text-xs text-muted-foreground">{kit.kitNumber}</p>
-        {assembly.run!.containerBarcodeVerifiedAtUtc ? <p role="status" className="text-sm">Attached container barcode verified.</p> : <div className="space-y-1">
+        {assembly.run!.containerBarcodeVerifiedAtUtc ? <p role="status" className="text-sm">Attached container barcode verified.</p> : <Field>
           <Label htmlFor="kit-attached-barcode"><RequiredFieldName>Attached container barcode</RequiredFieldName></Label>
           <FieldDescription id="kit-attached-barcode-help">Print the label, affix it to this container, then scan it here. Required to complete.</FieldDescription>
           <Input id="kit-attached-barcode" autoComplete="off" maxLength={100} disabled={assembly.pending || !assembly.run!.labelPrintRequestedAtUtc}
             aria-invalid={Boolean(errors.containerBarcode)} aria-describedby={'kit-attached-barcode-help' + (errors.containerBarcode ? ' kit-attached-barcode-error' : '')} {...form.register('containerBarcode')} />
           <FieldError id="kit-attached-barcode-error">{errors.containerBarcode?.message}</FieldError>
-        </div>}
+        </Field>}
       </section>
       <FieldError>{errors.components?.root?.message ?? errors.components?.message}</FieldError>
       {kit.tubes.length ? <section aria-labelledby="kit-recorded-tubes-heading" className="space-y-2 border-b pb-4">
@@ -193,7 +212,7 @@ export function RecordKitPackedContentsDialog({ kit, assembly, writesBlocked, pr
             <p role="status" className="text-xs text-muted-foreground tabular-nums">{acceptedBarcodes.length} unique valid new scans · {kit.tubes.length + acceptedBarcodes.length} of {kit.container.capacity} tubes</p>
           </div> : null}
           <div className="grid items-start gap-3 sm:grid-cols-[10rem_minmax(0,1fr)]">
-            <div className="min-w-0 space-y-1">
+            <Field className="min-w-0">
               <Label htmlFor={id + '-quantity'}><RequiredFieldName>Quantity</RequiredFieldName></Label>
               <FieldDescription id={id + '-quantity-help'}>{component.kind === 'Tube' ? 'From tube scans.' : 'Packed now.'}</FieldDescription>
               <Input id={id + '-quantity'} required type="number" min={0} max={remaining}
@@ -206,21 +225,20 @@ export function RecordKitPackedContentsDialog({ kit, assembly, writesBlocked, pr
                 } })} />
               <FieldError id={id + '-quantity-error'}>{quantityError?.message}</FieldError>
               {component.kind === 'Tube' && quantity === 0 ? <p id={id + '-scan-warning'} className="text-xs text-warning">Scan the packed tubes above to record their use.</p> : null}
-            </div>
-            {!inventory.isPending && !inventory.error ? lots.all.length ? <div className="min-w-0 space-y-1">
+            </Field>
+            {!inventory.isPending && !inventory.error ? lots.all.length ? <Field className="min-w-0">
               <Label htmlFor={id + '-lot'}>{quantity > 0 ? <RequiredFieldName>Source lot</RequiredFieldName> : 'Source lot'}</Label>
               <FieldDescription id={id + '-lot-help'} className={quantity > 0 && !lots.available.length ? 'text-warning' : undefined}>
-                {quantity > 0 && lots.untrackedTubeUse ? 'Earlier tubes were recorded without a source lot. Review their recorded use before packing more tubes.' : quantity > 0 && !lots.available.length ? 'No eligible lot has enough available stock.' : component.kind === 'Tube' ? 'All tubes must use the same lot.' : 'Stock is deducted when recorded.'}
+                {quantity > 0 && lots.untrackedTubeUse ? 'Earlier tubes were recorded without a source lot. Review their recorded use before packing more tubes.' : quantity > 0 && !lots.available.length ? component.kind === 'Tube' && kit.tubeLotNumber ? `No eligible lot matching ${kit.tubeLotNumber} is available for this quantity.` : 'No eligible lot has enough available stock.' : component.kind === 'Tube' ? kit.tubeLotNumber ? `Use the kit’s recorded tube lot: ${kit.tubeLotNumber}.` : 'All tubes must use the same lot.' : 'Stock is deducted when recorded.'}
               </FieldDescription>
-              <select id={id + '-lot'} required={quantity > 0} disabled={assembly.pending || quantity <= 0}
+              <NativeSelect id={id + '-lot'} required={quantity > 0} disabled={assembly.pending || quantity <= 0}
                 aria-invalid={Boolean(lotError)} aria-describedby={id + '-lot-help' + (lotError ? ' ' + id + '-lot-error' : '')}
-                className="h-9 w-full cursor-pointer rounded-md border border-input bg-background px-3 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
                 {...form.register(lotName)}>
                 <option value="">Select source lot</option>
                 {lots.available.map(lot => <option key={lot.id} value={lot.id}>{lot.lotNumber} · {lot.availableQuantity} {lot.quantityUnit} available</option>)}
-              </select>
+              </NativeSelect>
               <FieldError id={id + '-lot-error'}>{lotError?.message}</FieldError>
-            </div> : <div className="min-w-0 space-y-1">
+            </Field> : <div className="min-w-0 space-y-1">
               <p className="text-sm leading-none font-medium">Source lot</p>
               <FieldDescription>Stock tracking for this component.</FieldDescription>
               <Alert variant="warning" className="text-xs">
@@ -240,6 +258,6 @@ export function RecordKitPackedContentsDialog({ kit, assembly, writesBlocked, pr
         {expiredComponents ? <li>A component is expired or has no verified expiration date. Review the saved kit’s product expiration records.</li> : null}
       </ul></AlertDescription></Alert> : null}
     </form>
-    <RequiredDialogFooter><Button type="button" variant="ghost" disabled={assembly.pending} onClick={close}>Cancel</Button><Button type="submit" form="kit-components-record" variant="outline" disabled={blocked || assembly.pending} onClick={() => { intent.current = 'save' }}>{mutation.isPending && intent.current === 'save' ? 'Saving…' : 'Save for later'}</Button><Button type="submit" form="kit-components-record" disabled={blocked || assembly.pending || !completeReady} onClick={() => { intent.current = 'complete' }}>{mutation.isPending && intent.current === 'complete' ? 'Completing…' : 'Complete'}</Button></RequiredDialogFooter>
+    <RequiredDialogFooter><Button ref={cancelButton} type="button" variant="ghost" disabled={assembly.pending} onClick={close}>Cancel</Button><Button type="submit" form="kit-components-record" variant="outline" disabled={blocked || assembly.pending} onClick={() => { intent.current = 'save' }}>{mutation.isPending && intent.current === 'save' ? 'Saving…' : 'Save for later'}</Button><Button type="submit" form="kit-components-record" disabled={blocked || assembly.pending || !completeReady} onClick={() => { intent.current = 'complete' }}>{mutation.isPending && intent.current === 'complete' ? 'Completing…' : 'Complete'}</Button></RequiredDialogFooter>
   </DialogContent></Dialog>
 }

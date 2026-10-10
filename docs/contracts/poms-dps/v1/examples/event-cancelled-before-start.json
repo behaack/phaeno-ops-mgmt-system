@@ -1,0 +1,18 @@
+{
+  "contract_version": "poms-dps/1.0",
+  "environment": "local",
+  "dto_id": 102,
+  "event_id": "aaedf71d-c3ea-5f78-96cd-5f173e738b57",
+  "job_id": "1476fdca-9f62-5779-b160-f4f0465595b0",
+  "provider_job_id": "fixture-execution-01",
+  "sequence": 7,
+  "event_type": "CancelledBeforeStart",
+  "occurred_at_utc": "2026-10-10T18:02:10Z",
+  "started_at_utc": null,
+  "stopped_at_utc": null,
+  "disposition_at_utc": "2026-10-10T18:02:10Z",
+  "never_started": true,
+  "percentage": null,
+  "reason": "Example final reason; alternative outcome fixture only.",
+  "output_manifest": null
+}

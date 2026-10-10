@@ -38,6 +38,19 @@ The processing connection is not yet configured. POMS displays **Assembly setup 
 
 For a connected service, Start assembly selects the registered inputs for one sample/run and a configured processing recipe. The server verifies the inputs before accepting the request. Processing continues after the browser closes. Percentage progress is live display information; individual updates are not retained. After a connection interruption, the percentage may be unavailable until a fresh update arrives.
 
+Start assembly saves the attempt before dispatch and waits for DPS to accept
+the command. Broker delivery alone does not establish acceptance or execution.
+If dispatch fails, is rejected or has no confirmed response, POMS displays an
+error. When an attempt was already saved, choose **Open saved attempt** to inspect
+its delivery and recovery state; closing the dialog does not cancel it. The
+original input and recipe selection stays fixed while that saved attempt needs
+reconciliation. Do not create another attempt to work around an uncertain response.
+
+For connected DPS work, cancellation also reports a dispatch error when DPS does
+not accept the command. An accepted cancellation request is still separate from
+confirmed termination. Recovery queries the same attempt and preserves any
+actual completion that wins the cancellation race.
+
 Active assembly jobs show a progress bar in the assembly list and attempt detail. A fresh percentage reported by the service fills the bar; when no current percentage is available, an indeterminate bar says **Progress unavailable**. The job's status still applies. A reported 100% does not replace a confirmed final outcome or satisfy scientific QC/release. Finished jobs show their recorded outcome instead of retaining a live percentage bar.
 
 Each attempt retains actual start and stop times and its final disposition: succeeded, failed or terminated. These times are displayed in the browser's local time zone. Elapsed duration is calculated from the recorded start and stop. A request cancelled before execution has no fabricated execution times. **Job history** contains meaningful lifecycle events, not a percentage-update feed.
@@ -45,6 +58,12 @@ Each attempt retains actual start and stop times and its final disposition: succ
 Repeating an ended attempt requires a reason and keeps it linked to the earlier attempt for the same purchased run. **Request cancellation** is available only when the job can still be stopped; a request does not confirm termination. The external service may complete the job before cancellation takes effect.
 
 Successful execution does not approve or publish results. Record the completed analysis and scientific evidence through the existing capture workflow. When the matching analysis is available, **Link completed analysis** checks its provider execution, inputs and actual start/stop times. Result files still require verification and scientific QC before the separate customer-release workflow.
+
+For DPS-produced outputs, POMS verifies the exact output manifest, file versions,
+checksums, sizes and scans before admitting the files and linking their producing
+analysis. An admission problem remains visible and is retried separately from
+the saved execution outcome. Missing scientific evidence, QC, independent approval
+and Customer publication remain separate requirements.
 
 The attempt's **Delivery and recovery** section shows saved Run/Cancel delivery attempts and their confirmation status. Command delivery does not prove processing started. An unconfirmed receipt, start or cancellation remains visible as attention required; recovery retries with bounded delays and escalates after the configured interval (30 minutes by default). A successful result can arrive after a cancellation request and remains the recorded outcome. Conflicting evidence preserves saved execution facts and requires Operations reconciliation.
 
@@ -244,6 +263,14 @@ packages. Their history and internal files remain preserved.
 **Results versions** opens exact read-only outcomes and file metadata. Earlier
 location-only snapshots stay readable; their strings are not imported or treated
 as verified bytes. Current batch returns to the latest record.
+
+The current batch's **Verified FASTQ file sets** panel shows each library's
+purchased run, file-set version, verified file count and read layout. Open its
+results-version link to inspect the exact filenames, read/group/part mappings
+and checksums. Uploaded file sets satisfy the data handoff; an additional
+external storage reference is not required. External references remain optional
+and unverified. If saved file sets cannot be loaded, use **Reload file sets**;
+the batch does not infer that the files are missing.
 
 A saved result correction never rewrites inputs already used in an assembly.
 Superseded inputs need a new assembly/reanalysis and fresh review before further

@@ -1,5 +1,26 @@
 # Backend Test Plan
 
+October 10 POMS DPS implementation: validation is explicitly deferred by the
+Owner. New DpsContractTests sources cover explicit schema/version/object identity,
+unknown and duplicate fields, unsupported/missing/external parameter-schema
+references, progress=100 not establishing completion, broker isolation and
+disabled defaults. No build, test or live validation run was performed. Pending
+Chris-dependent acceptance includes correlated dispatch receipts, API errors
+with saved attempt IDs, duplicate/restarted dispatch, command rejection/conflict,
+query replay, cancellation races, commit-only ACKs, output admission recovery,
+exact S3 versions, scanning, scope/authorization changes and capacity enforcement.
+
+October 10 Owner-defined DPS contract handoff: JSON Schema Draft 2020-12 compiles
+and all 22 example documents validate using existing Ajv/formats packages.
+Static fixture checks verify two ten-file sets against the actual synthetic
+FASTQ sizes/checksums, Start/manifest binding, output-manifest binding and exact
+Query event replay. These are specification/document checks, not evidence of
+runtime integration. No application test suite or DPS job was run. Planned
+adapter coverage is version/topic scope, malformed/oversized payloads, duplicate
+Start, changed replay, authoritative query/uncertainty, actual times, terminal
+precedence, commit ACK, restarts, cancellation races and S3 integrity/lineage.
+The full scope is in POMS-DPS-DEVELOPER-CONTRACT.md; execution remains request-only.
+
 October 9 testing S3 cutover follow-up: named credential-profile selection fails
 closed when the configured profile is missing. FileStorage/ScientificS3 regression
 checkpoint passes 27 cases with one Unix-only skip. Live bucket-scoped probes verify

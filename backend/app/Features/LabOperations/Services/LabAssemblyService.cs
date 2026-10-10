@@ -17,7 +17,7 @@ public sealed record AssemblyReasonRequest(long Version, string Reason);
 public sealed record AssemblyAnalysisRequest(long Version, Guid AnalysisRunId);
 public sealed record AssemblyStorageDestination(string Bucket, string Region, string Prefix, Guid AttemptId);
 public sealed record AssemblyFrozenInputs(IReadOnlyList<AssemblyInput> Inputs, AssemblyInputVerification Verification, int AuthorizationVersion = 0,
-    AssemblyStorageDestination? OutputStorage = null);
+    AssemblyStorageDestination? OutputStorage = null, DpsSubmission? Dps = null);
 public sealed record AssemblyJobDto(Guid Id, Guid LabWorkOrderId, Guid LabSpecimenId, string SampleName, int SequencingRunNumber,
     string State, DateTime RequestedAtUtc, DateTime? StartedAtUtc, DateTime? StoppedAtUtc, DateTime? DispositionAtUtc,
     double? DurationSeconds, bool IsTerminal, bool CancellationRequested, string? DispositionReason, string? AttentionReason,
@@ -71,7 +71,9 @@ public sealed class LabAssemblyService(PSeqOperationsDbContext db, ILabAssemblyP
             if (existing.RequestSha256 != hash) throw Error("This request identity already belongs to different assembly instructions.", 409);
             return existing;
         }
-        if (!Availability.Available) throw Error(Availability.Message, 409);
+        if (!Availability.Available) throw provider.Key == DpsContract.Provider
+            ? new OrderManagementException("dps_dispatch_unavailable", Availability.Message, 503)
+            : Error(Availability.Message, 409);
         var recipe = provider.Availability.Recipes.SingleOrDefault(r => r.Key == request.RecipeKey)
             ?? throw Error("Choose an available assembly recipe.");
         await SampleShippingPackingData.LockAsync(db, $"assembly-run:{request.LabSpecimenId}:{request.SequencingRunNumber}", ct);
@@ -126,6 +128,13 @@ public sealed class LabAssemblyService(PSeqOperationsDbContext db, ILabAssemblyP
         var job = new LabAssemblyJob(request.Id, workId, specimen.Id, work.SubmittingOrganizationId, request.SequencingRunNumber,
             actorId, provider.Key, JsonSerializer.Serialize(recipe, Json), JsonSerializer.Serialize(new AssemblyFrozenInputs(frozen, verification, work.CurrentAuthorizationVersion, outputStorage), Json),
             hash, Now, request.PreviousJobId, request.Reason);
+        if (provider is ILabAssemblySubmissionProvider submissionProvider) {
+            var submission = await submissionProvider.PrepareAsync(job, recipe, ct);
+            job = new LabAssemblyJob(request.Id, workId, specimen.Id, work.SubmittingOrganizationId, request.SequencingRunNumber,
+                actorId, provider.Key, JsonSerializer.Serialize(recipe, Json),
+                JsonSerializer.Serialize(new AssemblyFrozenInputs(frozen, verification, work.CurrentAuthorizationVersion, outputStorage, submission), Json),
+                hash, job.RequestedAtUtc, request.PreviousJobId, request.Reason);
+        }
         db.Add(job); db.Add(new LabAssemblyCommand(job.Id, "Run", job.RequestedAtUtc)); Record(job, "Requested", actorId);
         // Participate in concurrency with a new parent hold/cancellation.
         db.Entry(work).Property(w => w.UpdatedAt).IsModified = true;

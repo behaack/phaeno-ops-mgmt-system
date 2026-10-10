@@ -1,0 +1,28 @@
+{
+  "contract_version": "poms-dps/1.0",
+  "environment": "local",
+  "dto_id": 100,
+  "command_id": "cc5f5c71-27b3-5870-8861-21d1416af74c",
+  "job_id": "1476fdca-9f62-5779-b160-f4f0465595b0",
+  "requested_at_utc": "2026-10-10T18:00:01Z",
+  "data_folder": "s3://example-contract-fixture-not-real/fixture/assemblies/assembly-1476fdca-9f62-5779-b160-f4f0465595b0/",
+  "input_manifest": {
+    "bucket": "example-contract-fixture-not-real",
+    "region": "us-east-2",
+    "key": "fixture/assemblies/assembly-1476fdca-9f62-5779-b160-f4f0465595b0/input-manifest.json",
+    "version_id": "fixture-version-not-real",
+    "sha256": "48a8522ac277e47ee107230ace705d07e05d823ebb58da552a772c0d70daf740",
+    "size_bytes": 10390
+  },
+  "recipe": {
+    "key": "example-assembly-recipe",
+    "version": "fixture-1",
+    "parameters": {
+      "fixture_only": true
+    },
+    "required_output_roles": [
+      "assembly_output",
+      "provenance_report"
+    ]
+  }
+}

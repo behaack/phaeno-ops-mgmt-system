@@ -1,5 +1,49 @@
 # POMS–DPS MQTT messaging plan
 
+## POMS implementation authorized — October 10, 2026
+
+Status: implementation written, compilation/validation deferred. The API now
+registers DpsAssemblyProvider, a configured MQTT hosted client, schema/recipe
+checks, pinned S3 handoff and parameter objects, scoped command/lifecycle
+receipts/query/ACK mapping, immediate Start/Cancel dispatch errors, saved-request
+UI recovery and scanned output/analysis admission. See
+[configuration and recovery](../operations/dps-integration-configuration.md).
+The adopted output provenance now explicitly supplies reference-data versions
+or a no-reference reason, matching existing scientific evidence requirements.
+The schema/examples and Chris's handoff are updated; those revisions have not
+been validated. Historical probe/fixture checks below do not validate this code.
+
+The Owner authorized completing POMS without validation runs, then explicitly
+requested dispatch and an API error when dispatch fails. Implement the adopted
+1.0 contract with MQTTnet 5.2.0.1603 (the existing probe's pinned dependency),
+server-only configured broker/TLS identities, approved recipe configuration,
+exact versioned S3 manifests, receipt/query/event/ACK mapping and scanned output
+admission into existing scientific-file/analysis records. No new persisted
+entities, authentication-provider changes or public browser MQTT contract are
+introduced. The saved request/command precede publication; initial dispatch
+requires a correlated DPS business receipt and reports unavailable/rejected/
+timeout failures through the existing API error envelope. An uncertain dispatch
+remains recoverable under its original ID. Defaults stay disabled/unconfigured;
+no connection, dispatch, build, test, validation, migration or deployment is run
+as part of implementation, per the Owner's instruction. Chris-dependent runtime
+acceptance remains outstanding.
+
+## Owner-defined integration contract — October 10, 2026
+
+The Owner asked to finish the assembly integration, then confirmed the current
+DPS source/real input-output guide is unavailable and directed POMS to define
+the required contract for the MQTT developer. The implementation scope is now
+the [POMS–DPS developer contract](POMS-DPS-DEVELOPER-CONTRACT.md), its machine-readable
+schemas/examples and an exact two-sample acceptance handoff. These define a new,
+versioned operational contract; they do not claim the earlier dummy server
+implements it. Baseline topic/DTO observations below remain historical evidence.
+The provider adapter and controlled activation follow developer implementation
+and verification of this contract. No guessed legacy translation, fabricated
+execution times, runtime simulation, deployment, credential/access change or
+new dependency is included in the contract handoff. The Owner can forward the
+bundle. The Owner chose a standalone Markdown handoff addressed to Chris Yourch;
+it is supplied as a downloadable file, with no outbound email/chat message.
+
 ## Immediate milestone — MQTT plumbing test, October 1, 2026
 
 Status: **plumbing round trip verified** on the owner-authorized retry. The remote server returned six correlated status messages from 0% through 100%; see the [October 1 run record](../testing/runs/2026-10-01-remote-mqtt-plumbing-probe.md).

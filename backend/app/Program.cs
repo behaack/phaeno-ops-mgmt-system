@@ -162,7 +162,14 @@ builder.Services.AddOptions<LabFastqOptions>().Bind(builder.Configuration.GetSec
     })
     .Validate(o => o.IsValid(), "Review the tentative LabFastq configuration limits and supported layouts.").ValidateOnStart();
 builder.Services.AddSingleton(TimeProvider.System);
-builder.Services.AddSingleton<ILabAssemblyProvider, UnavailableLabAssemblyProvider>();
+builder.Services.AddOptions<DpsOptions>().Bind(builder.Configuration.GetSection(DpsOptions.SectionName));
+builder.Services.AddSingleton<DpsMqttClient>();
+builder.Services.AddHostedService(services => services.GetRequiredService<DpsMqttClient>());
+builder.Services.AddSingleton<ILabAssemblyProvider, DpsAssemblyProvider>();
+builder.Services.AddScoped<DpsS3Objects>();
+builder.Services.AddScoped<DpsHandoff>();
+builder.Services.AddScoped<DpsEventReceiver>();
+builder.Services.AddScoped<DpsOutputAdmission>();
 builder.Services.AddSignalR(options => options.MaximumReceiveMessageSize = 16 * 1024);
 builder.Services.AddSingleton<LabAssemblySubscriptions>();
 builder.Services.AddScoped<LabAssemblyDelivery>();

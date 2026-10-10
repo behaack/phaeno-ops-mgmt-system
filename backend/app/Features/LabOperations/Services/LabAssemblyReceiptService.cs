@@ -61,7 +61,8 @@ public sealed class LabAssemblyReceiptService(PSeqOperationsDbContext db, LabAss
         }
         else
         {
-            var sequence = await db.Set<LabAssemblyReceipt>().Where(r => r.LabAssemblyJobId == job.Id && r.Outcome == "Applied")
+            var sequence = await db.Set<LabAssemblyReceipt>().Where(r => r.LabAssemblyJobId == job.Id && r.Outcome == "Applied"
+                && !r.ProviderEventId.StartsWith("command:"))
                 .Select(r => (long?)r.Sequence).MaxAsync(ct) ?? 0;
             var outcome = "Applied";
             if ((message.Sequence <= sequence || job.IsTerminal) && !IsFinal(message.Snapshot.State)) outcome = "Ignored";

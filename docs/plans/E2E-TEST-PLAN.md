@@ -1,5 +1,45 @@
 # Playwright E2E Test Plan
 
+October 10 POMS DPS implementation: connected validation waits for Chris. Verify
+two ten-file specimen/run attempts, actual configured recipe, manifest/object
+version integrity, correlated Start and Cancel business receipts, visible API
+errors and Open saved attempt on post-save failure, no duplicate execution after
+timeout/restart, monotonic lifecycle evidence, transient progress, commit ACKs,
+and scanned output/analysis admission without automatic scientific approval or
+Customer publication. All automated and browser validation is deferred; the
+earlier mock sequencing completion is not evidence of DPS execution.
+
+## Two-sample sequencing journey October 10 2026
+
+Connected manual UI execution completed order 739XKNR4: one phase, two samples,
+accepted quote, kit/return shipment, accession, preparation, barcode identity,
+sequencing tube transfers, mock vendor receipt and Results v1. The ZIP was
+explicitly mapped into five R1/R2 parts per library, purchased run 1, new
+preparation and group 1. Twenty files were admitted and both libraries saved
+Success. Current batch shows two ten-file verified sets, no false outstanding
+handoff warning, and the exact version link opens retained file identities.
+Automated suite execution is deferred under the request-only rule. Further
+regression should cover snapshot load failure without a false missing-data claim,
+and an older result without uploaded sets retaining truthful handoff feedback.
+
+## Label and kit recovery October 10 2026
+
+Verify label Actions keyboard/focus behavior, recovery of a previously printed
+label after leaving the page, explicit outcome and wrong-scan rejection, and
+successful matching-scan availability. Verify kit source lots match the saved
+lot number before submission, and shared discard header/body/footer, initial
+Keep editing focus, preserved drafts and focus return. Automated execution is
+request-only; connected evidence belongs to the local two-sample UI journey.
+
+## Organization selection October 10 2026
+
+Added organization-switching.spec.ts source for desktop and mobile icon-adjacent
+native organization selects, Dashboard entry, updated Customer documentation audience
+and persisted scope after refresh. Automated suites are not run under the
+request-only policy. Connected local Phaeno/Customer switching is exercised within
+the Owner's single-phase two-sample journey; one-membership and revoked-access
+cases remain regression checks for the existing session infrastructure.
+
 October 9 release review covers current customer-hold fixtures, exact scientific
 file selectors, separate Results and History views, report heading order with axe,
 and toolbar focus return to the preceding Order ops link. Run desktop/mobile

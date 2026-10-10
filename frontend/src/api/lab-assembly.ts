@@ -1,4 +1,15 @@
 import { api } from './client'
+import axios from 'axios'
+
+export function assemblyAttemptFromDispatchError(error: unknown): string | null {
+  if (!axios.isAxiosError(error)) return null
+  const envelope = error.response?.data as { error?: { code?: string; details?: unknown } } | undefined
+  if (!['assembly_dispatch_failed', 'assembly_dispatch_unconfirmed'].includes(envelope?.error?.code ?? '')) return null
+  const details = envelope?.error?.details
+  if (!details || typeof details !== 'object' || Array.isArray(details)) return null
+  const id = (details as Record<string, unknown>).assemblyJobId
+  return typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id) ? id : null
+}
 
 export type AssemblyRecipe = { key: string; name: string; version: string; parametersJson: string }
 export type AssemblyAvailability = { available: boolean; message: string; supportsCancellation: boolean; recipes: AssemblyRecipe[] }

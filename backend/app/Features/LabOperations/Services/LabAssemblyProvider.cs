@@ -3,7 +3,7 @@ namespace PhaenoPortal.App.Features.LabOperations.Services;
 using System.Collections.Concurrent;
 using PSeq.Operations.Laboratory.Domain;
 
-public sealed record AssemblyRecipe(string Key, string Name, string Version, string ParametersJson);
+public sealed record AssemblyRecipe(string Key, string Name, string Version, string ParametersJson, IReadOnlyList<string>? RequiredOutputRoles = null);
 public sealed record AssemblyProviderAvailability(bool Available, string Message, bool SupportsCancellation, IReadOnlyList<AssemblyRecipe> Recipes);
 public sealed record AssemblyInput(Guid SequencingOutputId, string ExternalFileReference, string Sha256, long SizeBytes);
 public sealed record VerifiedAssemblyInput(Guid SequencingOutputId, string Bucket, string Key, string? VersionId, string Sha256, long SizeBytes,

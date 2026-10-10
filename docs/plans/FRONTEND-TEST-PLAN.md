@@ -1,5 +1,38 @@
 # Frontend Test Plan
 
+October 10 DPS dispatch recovery: new lab-assembly API regression sources cover
+recoverable saved IDs from failed/unconfirmed dispatch and rejection of setup
+errors or arbitrary locators. Start dialog refreshes saved jobs after an error,
+preserves/fixes a saved request's selection, and offers Open saved attempt instead
+of a duplicate Start. Initial setup errors retain normal editing. Builds, lint,
+tests and UI validation are deferred at the Owner's request. Pending component
+coverage includes the matching request-ID guard, disabled fieldset, accessible
+recovery action, Close behavior and navigation with preserved scientific state.
+
+October 10 batch summary checkpoint: connected UI confirms the exact current
+results snapshot shows two libraries with ten verified FASTQs each, and suppresses
+the obsolete missing-external-reference warning. Pending/error snapshot reads
+must show loading/retry feedback without inferring absent data. Source review and
+TypeScript/scoped lint cover the narrow presentation change; automated regression
+execution is deferred under the request-only rule.
+
+## Label and kit recovery October 10 2026
+
+LabLabelDialog source regressions now use the shared Actions menu and cover
+recording an earlier print without invoking window.print, retaining the explicit
+outcome and exact scan gate. Kit packing regressions cover the matching saved
+lot identity and a shared discard confirmation that preserves entries on Keep
+editing. These sources are not run under the request-only test policy. Static
+and connected checks are recorded in UI-WORKFLOW-REVIEW-20261010.md.
+
+## Organization selection October 10 2026
+
+Added UserMenu.test.tsx source coverage for the account's own membership options,
+Dashboard navigation before scope change, cancelled dirty-page navigation and
+omission for one membership. Existing session scope/query-reset and Department
+selection regressions remain applicable. Automated tests are not run under the
+request-only policy; TypeScript, scoped lint and connected UI checks are separate.
+
 October 9 release review covers single-argument S3 mutation callbacks, distinct
 native-file/source-choice accessible names and current library/specimen fixtures.
 The complete five-tube/two-box accession case has a bounded fifteen-second timeout.

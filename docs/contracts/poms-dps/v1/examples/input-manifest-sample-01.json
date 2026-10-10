@@ -1,0 +1,238 @@
+{
+  "contract_version": "poms-dps/1.0",
+  "environment": "local",
+  "document_type": "input_manifest",
+  "job_id": "1476fdca-9f62-5779-b160-f4f0465595b0",
+  "created_at_utc": "2026-10-10T18:00:00Z",
+  "scope": {
+    "organization_id": "82e39acb-fef9-426b-89a1-ab7dfd4e1bb8",
+    "commercial_order_id": "592cd408-f968-452f-8082-09c037642f74",
+    "lab_work_order_id": "07289da4-0361-4ef9-a475-89c3ecf2b9ae",
+    "specimen_id": "caff0091-6f41-46ab-aff5-3e2634e49698",
+    "library_id": "f5b731cf-6fb6-5011-afb2-8741d5b5c388",
+    "sequencing_batch_id": "1d0291ea-09f4-44f0-848e-83014141d2c8",
+    "vendor_results_version": 1,
+    "fastq_set_id": "9d2d3cf8-ced2-45bd-bb5d-d82f4be8b02f",
+    "fastq_set_version": 1,
+    "sequencing_run_number": 1
+  },
+  "read_layout": "PairedEnd",
+  "recipe": {
+    "key": "example-assembly-recipe",
+    "version": "fixture-1",
+    "parameters": {
+      "fixture_only": true
+    },
+    "required_output_roles": [
+      "assembly_output",
+      "provenance_report"
+    ]
+  },
+  "files": [
+    {
+      "file_id": "49e7bd4b-c65f-5b11-8ff6-13e0680ac7c9",
+      "sequencing_output_id": "99fd9bf8-0713-5d64-9687-cc0b26e0e838",
+      "original_file_name": "UI-20261010-01_S1_L001_R1_001.fastq.gz",
+      "stored_file_name": "PH-L-GQXNCJRKP2-A__9d2d3cf8ced245bdbb5dd82f4be8b02f__F001__G001__R1__P001.fastq.gz",
+      "group_number": 1,
+      "read_number": 1,
+      "part_number": 1,
+      "group_description": "MOCK-FLOWCELL-739XKNR4 / L001",
+      "read_count": 100,
+      "compression": "gzip",
+      "s3": {
+        "bucket": "example-contract-fixture-not-real",
+        "region": "us-east-2",
+        "key": "fixture/raw/PH-L-GQXNCJRKP2-A__9d2d3cf8ced245bdbb5dd82f4be8b02f__F001__G001__R1__P001.fastq.gz",
+        "version_id": "fixture-version-not-real",
+        "sha256": "be085ae2017e0fa2d16afcc841b593476e4f17509439a627e13c8c4d32bf10a9",
+        "size_bytes": 5644
+      }
+    },
+    {
+      "file_id": "2497328f-bc16-5031-a025-2f8b61ef6a0c",
+      "sequencing_output_id": "b36ca78b-4ad0-5505-9fc6-c9ebbf565307",
+      "original_file_name": "UI-20261010-01_S1_L001_R2_001.fastq.gz",
+      "stored_file_name": "PH-L-GQXNCJRKP2-A__9d2d3cf8ced245bdbb5dd82f4be8b02f__F001__G001__R2__P001.fastq.gz",
+      "group_number": 1,
+      "read_number": 2,
+      "part_number": 1,
+      "group_description": "MOCK-FLOWCELL-739XKNR4 / L001",
+      "read_count": 100,
+      "compression": "gzip",
+      "s3": {
+        "bucket": "example-contract-fixture-not-real",
+        "region": "us-east-2",
+        "key": "fixture/raw/PH-L-GQXNCJRKP2-A__9d2d3cf8ced245bdbb5dd82f4be8b02f__F001__G001__R2__P001.fastq.gz",
+        "version_id": "fixture-version-not-real",
+        "sha256": "9e7a44f8ebad5502fd0d39a1bf45b7a2ac09a1d39bd646df8173bfc2e8281be1",
+        "size_bytes": 5648
+      }
+    },
+    {
+      "file_id": "5f7a38bb-c5df-54a0-97df-2609296f444a",
+      "sequencing_output_id": "6c86928e-9834-5d72-8e92-d5e301b3d9ee",
+      "original_file_name": "UI-20261010-01_S1_L001_R1_002.fastq.gz",
+      "stored_file_name": "PH-L-GQXNCJRKP2-A__9d2d3cf8ced245bdbb5dd82f4be8b02f__F001__G001__R1__P002.fastq.gz",
+      "group_number": 1,
+      "read_number": 1,
+      "part_number": 2,
+      "group_description": "MOCK-FLOWCELL-739XKNR4 / L001",
+      "read_count": 100,
+      "compression": "gzip",
+      "s3": {
+        "bucket": "example-contract-fixture-not-real",
+        "region": "us-east-2",
+        "key": "fixture/raw/PH-L-GQXNCJRKP2-A__9d2d3cf8ced245bdbb5dd82f4be8b02f__F001__G001__R1__P002.fastq.gz",
+        "version_id": "fixture-version-not-real",
+        "sha256": "de62a0b203677d2bf79ecc0d6a6b918437869a2b122df2a61c91824dce97491b",
+        "size_bytes": 5660
+      }
+    },
+    {
+      "file_id": "205c5ab6-a3aa-5fbc-b550-84ee8ea32054",
+      "sequencing_output_id": "83772b60-5514-5341-81d8-91da61def166",
+      "original_file_name": "UI-20261010-01_S1_L001_R2_002.fastq.gz",
+      "stored_file_name": "PH-L-GQXNCJRKP2-A__9d2d3cf8ced245bdbb5dd82f4be8b02f__F001__G001__R2__P002.fastq.gz",
+      "group_number": 1,
+      "read_number": 2,
+      "part_number": 2,
+      "group_description": "MOCK-FLOWCELL-739XKNR4 / L001",
+      "read_count": 100,
+      "compression": "gzip",
+      "s3": {
+        "bucket": "example-contract-fixture-not-real",
+        "region": "us-east-2",
+        "key": "fixture/raw/PH-L-GQXNCJRKP2-A__9d2d3cf8ced245bdbb5dd82f4be8b02f__F001__G001__R2__P002.fastq.gz",
+        "version_id": "fixture-version-not-real",
+        "sha256": "d1ccdce9cf833e0bec8a176ae06d4c2f8ca2a63a10792a63fd6c1ba928935c1b",
+        "size_bytes": 5665
+      }
+    },
+    {
+      "file_id": "2cd89b89-0177-5465-8a8d-5314a47a4324",
+      "sequencing_output_id": "8464b6d2-f88f-5dce-86ff-a7e6d789fce5",
+      "original_file_name": "UI-20261010-01_S1_L001_R1_003.fastq.gz",
+      "stored_file_name": "PH-L-GQXNCJRKP2-A__9d2d3cf8ced245bdbb5dd82f4be8b02f__F001__G001__R1__P003.fastq.gz",
+      "group_number": 1,
+      "read_number": 1,
+      "part_number": 3,
+      "group_description": "MOCK-FLOWCELL-739XKNR4 / L001",
+      "read_count": 100,
+      "compression": "gzip",
+      "s3": {
+        "bucket": "example-contract-fixture-not-real",
+        "region": "us-east-2",
+        "key": "fixture/raw/PH-L-GQXNCJRKP2-A__9d2d3cf8ced245bdbb5dd82f4be8b02f__F001__G001__R1__P003.fastq.gz",
+        "version_id": "fixture-version-not-real",
+        "sha256": "b53a8f63addbe9aff82a5628a212a7246695c35257290290dc1b62fe67e7d558",
+        "size_bytes": 5660
+      }
+    },
+    {
+      "file_id": "980d868c-2cb0-5dd1-b84c-bc5663fd95b3",
+      "sequencing_output_id": "9a59d31a-5d0c-5ccc-973c-1a6b7d29ee0f",
+      "original_file_name": "UI-20261010-01_S1_L001_R2_003.fastq.gz",
+      "stored_file_name": "PH-L-GQXNCJRKP2-A__9d2d3cf8ced245bdbb5dd82f4be8b02f__F001__G001__R2__P003.fastq.gz",
+      "group_number": 1,
+      "read_number": 2,
+      "part_number": 3,
+      "group_description": "MOCK-FLOWCELL-739XKNR4 / L001",
+      "read_count": 100,
+      "compression": "gzip",
+      "s3": {
+        "bucket": "example-contract-fixture-not-real",
+        "region": "us-east-2",
+        "key": "fixture/raw/PH-L-GQXNCJRKP2-A__9d2d3cf8ced245bdbb5dd82f4be8b02f__F001__G001__R2__P003.fastq.gz",
+        "version_id": "fixture-version-not-real",
+        "sha256": "f143fa07ba692f1744d6cd6cb3aa87a9d8b26f62fa13e256ffe443f348a3736f",
+        "size_bytes": 5656
+      }
+    },
+    {
+      "file_id": "911c72be-19f7-5b07-aac9-c199327a7ba6",
+      "sequencing_output_id": "202e5995-eb35-5e01-9e44-0acf90d30822",
+      "original_file_name": "UI-20261010-01_S1_L001_R1_004.fastq.gz",
+      "stored_file_name": "PH-L-GQXNCJRKP2-A__9d2d3cf8ced245bdbb5dd82f4be8b02f__F001__G001__R1__P004.fastq.gz",
+      "group_number": 1,
+      "read_number": 1,
+      "part_number": 4,
+      "group_description": "MOCK-FLOWCELL-739XKNR4 / L001",
+      "read_count": 100,
+      "compression": "gzip",
+      "s3": {
+        "bucket": "example-contract-fixture-not-real",
+        "region": "us-east-2",
+        "key": "fixture/raw/PH-L-GQXNCJRKP2-A__9d2d3cf8ced245bdbb5dd82f4be8b02f__F001__G001__R1__P004.fastq.gz",
+        "version_id": "fixture-version-not-real",
+        "sha256": "f6cb64d6bef7ee951dcc66433846effbe6768ef5c1c786d964816cd9faadc1f1",
+        "size_bytes": 5653
+      }
+    },
+    {
+      "file_id": "00ac5689-9ef2-5b85-a1f0-6e17455ea12f",
+      "sequencing_output_id": "3c32717b-fe4d-55e1-b080-4c0634689889",
+      "original_file_name": "UI-20261010-01_S1_L001_R2_004.fastq.gz",
+      "stored_file_name": "PH-L-GQXNCJRKP2-A__9d2d3cf8ced245bdbb5dd82f4be8b02f__F001__G001__R2__P004.fastq.gz",
+      "group_number": 1,
+      "read_number": 2,
+      "part_number": 4,
+      "group_description": "MOCK-FLOWCELL-739XKNR4 / L001",
+      "read_count": 100,
+      "compression": "gzip",
+      "s3": {
+        "bucket": "example-contract-fixture-not-real",
+        "region": "us-east-2",
+        "key": "fixture/raw/PH-L-GQXNCJRKP2-A__9d2d3cf8ced245bdbb5dd82f4be8b02f__F001__G001__R2__P004.fastq.gz",
+        "version_id": "fixture-version-not-real",
+        "sha256": "80401fd3adc0ae8ee56633ef2e9ff724dc5cceb503cfad0620970b4597a24f00",
+        "size_bytes": 5656
+      }
+    },
+    {
+      "file_id": "ed214cef-8f66-52cf-ad67-c8d299596432",
+      "sequencing_output_id": "fa503e07-67ee-5093-af83-731b0a24fb10",
+      "original_file_name": "UI-20261010-01_S1_L001_R1_005.fastq.gz",
+      "stored_file_name": "PH-L-GQXNCJRKP2-A__9d2d3cf8ced245bdbb5dd82f4be8b02f__F001__G001__R1__P005.fastq.gz",
+      "group_number": 1,
+      "read_number": 1,
+      "part_number": 5,
+      "group_description": "MOCK-FLOWCELL-739XKNR4 / L001",
+      "read_count": 100,
+      "compression": "gzip",
+      "s3": {
+        "bucket": "example-contract-fixture-not-real",
+        "region": "us-east-2",
+        "key": "fixture/raw/PH-L-GQXNCJRKP2-A__9d2d3cf8ced245bdbb5dd82f4be8b02f__F001__G001__R1__P005.fastq.gz",
+        "version_id": "fixture-version-not-real",
+        "sha256": "cab48cff088161e98641a72f80d15a6864139a72f75d44c012d734622efca3b9",
+        "size_bytes": 5656
+      }
+    },
+    {
+      "file_id": "0bbacef7-1a34-5a98-915a-1a3c78344720",
+      "sequencing_output_id": "a15373b7-96d0-5b2e-b5a2-9fe70a1ac9f5",
+      "original_file_name": "UI-20261010-01_S1_L001_R2_005.fastq.gz",
+      "stored_file_name": "PH-L-GQXNCJRKP2-A__9d2d3cf8ced245bdbb5dd82f4be8b02f__F001__G001__R2__P005.fastq.gz",
+      "group_number": 1,
+      "read_number": 2,
+      "part_number": 5,
+      "group_description": "MOCK-FLOWCELL-739XKNR4 / L001",
+      "read_count": 100,
+      "compression": "gzip",
+      "s3": {
+        "bucket": "example-contract-fixture-not-real",
+        "region": "us-east-2",
+        "key": "fixture/raw/PH-L-GQXNCJRKP2-A__9d2d3cf8ced245bdbb5dd82f4be8b02f__F001__G001__R2__P005.fastq.gz",
+        "version_id": "fixture-version-not-real",
+        "sha256": "fb464ef44798df790f9c21cd514a0cbe68b31bbebdf9833e9feb7fbb3f070c4b",
+        "size_bytes": 5648
+      }
+    }
+  ],
+  "output_destination": {
+    "bucket": "example-contract-fixture-not-real",
+    "region": "us-east-2",
+    "prefix": "fixture/assemblies/assembly-1476fdca-9f62-5779-b160-f4f0465595b0/outputs/"
+  }
+}

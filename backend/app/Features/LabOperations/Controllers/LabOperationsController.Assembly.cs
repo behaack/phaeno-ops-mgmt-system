@@ -68,20 +68,41 @@ public sealed partial class LabOperationsController
 
     [HttpPost("work-orders/{workOrderId:guid}/assembly-jobs")]
     public async Task<AssemblyJobDto> StartAssembly(Guid workOrderId, [FromBody] StartAssemblyRequest request,
-        [FromServices] LabAssemblyService service, CancellationToken ct)
+        [FromServices] LabAssemblyService service, CancellationToken ct, [FromServices] LabAssemblyProcessor? processor = null)
     {
         var actor = await requestContext.RequireAsync(HttpContext, ct, LabRole.Operator, LabRole.Supervisor);
         var job = await service.StartAsync(workOrderId, request, actor.User.Id, ct);
+        if (job.ProviderKey == DpsContract.Provider) {
+            if (processor is null) throw DpsMqttClient.Unavailable();
+            // Request and command are committed before any publish. A broker PUBACK alone is insufficient.
+            if (job.State is "Queued" or "Dispatching") await processor.ProcessAsync(job.Id, ct, failInitialDispatch: true);
+            job = await service.RequireJobAsync(job.Id, ct);
+            await dbContext.Entry(job).ReloadAsync(ct);
+            if (job.State is "Queued" or "Dispatching") throw new PhaenoPortal.App.Features.OrderManagement.Services.OrderManagementException(
+                "assembly_dispatch_unconfirmed", $"DPS has not confirmed dispatch for saved attempt {job.Id:D}. Reconcile this attempt before starting another.",
+                503, new { assemblyJobId = job.Id, dispatchConfirmed = false });
+        }
         Response.StatusCode = StatusCodes.Status202Accepted;
         return await service.ReadAsync(job.Id, ct);
     }
 
     [HttpPost("work-orders/{workOrderId:guid}/assembly-jobs/{jobId:guid}/cancel")]
     public async Task<AssemblyJobDto> CancelAssembly(Guid workOrderId, Guid jobId, [FromBody] AssemblyReasonRequest request,
-        [FromServices] LabAssemblyService service, CancellationToken ct)
+        [FromServices] LabAssemblyService service, CancellationToken ct, [FromServices] LabAssemblyProcessor? processor = null)
     {
         var actor = await requestContext.RequireAsync(HttpContext, ct, LabRole.Operator, LabRole.Supervisor);
         await service.CancelAsync(workOrderId, jobId, request, actor.User.Id, ct);
+        var saved = await service.RequireJobAsync(jobId, ct);
+        if (saved.ProviderKey == DpsContract.Provider && !saved.IsTerminal) {
+            if (processor is null) throw DpsMqttClient.Unavailable();
+            await processor.ProcessAsync(jobId, ct, failInitialDispatch: true, requiredCommandKind: "Cancel");
+            saved = await service.RequireJobAsync(jobId, ct);
+            await dbContext.Entry(saved).ReloadAsync(ct);
+            if (!saved.IsTerminal && !await dbContext.Set<LabAssemblyCommand>().AnyAsync(c => c.LabAssemblyJobId == jobId && c.Kind == "Cancel" && c.ReceivedAtUtc != null, ct))
+                throw new PhaenoPortal.App.Features.OrderManagement.Services.OrderManagementException("assembly_dispatch_unconfirmed",
+                    $"DPS has not accepted cancellation for saved attempt {jobId:D}. Reconcile this attempt; cancellation has not been inferred.",
+                    503, new { assemblyJobId = jobId, commandKind = "Cancel", dispatchConfirmed = false });
+        }
         return await service.ReadAsync(jobId, ct);
     }
 

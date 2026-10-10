@@ -65,12 +65,11 @@ describe('LabLabelDialog', () => {
     )
 
     const reason = await screen.findByLabelText(/Print reason/)
-    const openPrint = screen.getByRole('button', { name: 'Open print dialog' })
     expect((reason as HTMLInputElement).value)
       .toBe('Initial container label')
     expect(api.recordLabContainerLabelPrint).not.toHaveBeenCalled()
 
-    fireEvent.click(openPrint)
+    await choosePrintAction('Open print dialog')
     expect(print).toHaveBeenCalledOnce()
     expect(screen.getByText('Record the print outcome')).toBeTruthy()
     expect(screen.queryByLabelText(/Scan printed tube barcode/)).toBeNull()
@@ -119,7 +118,7 @@ describe('LabLabelDialog', () => {
     )
 
     await screen.findByLabelText(/Print reason/)
-    fireEvent.click(screen.getByRole('button', { name: 'Open print dialog' }))
+    await choosePrintAction('Open print dialog')
     expect(screen.queryByRole('button', { name: 'Print again' })).toBeNull()
     expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Close' }).disabled).toBe(true)
     fireEvent.change(screen.getByLabelText(/Print outcome/), { target: { value: 'Failed' } })
@@ -144,13 +143,32 @@ describe('LabLabelDialog', () => {
         scannedBarcode: null,
       },
     ))
-    const retry = await screen.findByRole('button', { name: 'Open print dialog' })
-    fireEvent.click(retry)
+    await screen.findByRole('button', { name: 'Actions' })
+    await choosePrintAction('Open print dialog')
     expect(print).toHaveBeenCalledTimes(2)
     expect(api.recordLabContainerLabelPrint).toHaveBeenCalledTimes(1)
     print.mockRestore()
   })
+  it('recovers an earlier print without printing again and still requires an exact scan', async () => {
+    const print = vi.spyOn(window, 'print').mockImplementation(() => undefined)
+    renderWithClient(<LabLabelDialog container={container} onClose={vi.fn()} onRecorded={vi.fn().mockResolvedValue(undefined)} />)
+    await screen.findByLabelText(/Print reason/)
+    await choosePrintAction('Record an earlier print')
+    expect(print).not.toHaveBeenCalled()
+    expect(api.recordLabContainerLabelPrint).not.toHaveBeenCalled()
+    fireEvent.change(screen.getByLabelText(/Print outcome/), { target: { value: 'Succeeded' } })
+    expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Label printed' }).disabled).toBe(true)
+    fireEvent.change(screen.getByLabelText(/Scan printed tube barcode/), { target: { value: container.barcode } })
+    fireEvent.click(screen.getByRole('button', { name: 'Label printed' }))
+    await waitFor(() => expect(api.recordLabContainerLabelPrint).toHaveBeenCalledWith(container.id, expect.objectContaining({ outcome: 'Succeeded', scannedBarcode: container.barcode })))
+    print.mockRestore()
+  })
 })
+
+async function choosePrintAction(name: string) {
+  fireEvent.keyDown(screen.getByRole('button', { name: 'Actions' }), { key: 'Enter' })
+  fireEvent.click(await screen.findByRole('menuitem', { name }))
+}
 
 function renderWithClient(children: React.ReactNode) {
   const client = new QueryClient({

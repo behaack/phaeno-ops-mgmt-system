@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="MQTTnet" Version="5.2.0.1603" />
     <PackageReference Include="AngleSharp" Version="1.7.0" />
     <PackageReference Include="AWSSDK.S3" Version="4.0.101.4" />
     <PackageReference Include="Google.Cloud.RecaptchaEnterprise.V1" Version="2.20.0" />
@@ -39,6 +40,9 @@
     <EmbeddedResource Include="EmailTemplates\organization-invitation.en-US.txt"
                       LogicalName="EmailTemplates/organization-invitation.en-US.txt"
                       WithCulture="false" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\docs\contracts\poms-dps\v1\contract.schema.json" LogicalName="Dps.contract.schema.json" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="QuoteDocuments\*.ttf" LogicalName="QuoteDocuments/%(Filename)%(Extension)" />

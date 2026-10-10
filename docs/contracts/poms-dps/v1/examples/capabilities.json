@@ -1,0 +1,39 @@
+{
+  "contract_version": "poms-dps/1.0",
+  "environment": "local",
+  "dto_id": 107,
+  "request_id": "d7f7e2db-ed0d-58ac-bfff-0144d2e3eb8f",
+  "service_key": "dps",
+  "instance_id": "example-dps-instance",
+  "available": true,
+  "message": "Contract fixture only; not a real service advertisement.",
+  "supports_idempotent_start": true,
+  "supports_authoritative_query": true,
+  "supports_cancellation": true,
+  "recipes": [
+    {
+      "key": "example-assembly-recipe",
+      "name": "Example recipe for schema review only",
+      "version": "fixture-1",
+      "parameters_schema": {
+        "type": "object",
+        "properties": {
+          "fixture_only": {
+            "const": true
+          }
+        },
+        "required": [
+          "fixture_only"
+        ],
+        "additionalProperties": false
+      },
+      "supported_read_layouts": [
+        "PairedEnd"
+      ],
+      "required_output_roles": [
+        "assembly_output",
+        "provenance_report"
+      ]
+    }
+  ]
+}

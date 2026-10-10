@@ -1,14 +1,15 @@
-import { Link, useRouterState } from '@tanstack/react-router'
+import { Link, useRouter, useRouterState } from '@tanstack/react-router'
 import { SignOutButton } from '@clerk/react'
 import {
   LogOut,
+  Building2,
   Menu,
   Monitor,
   Moon,
   Sun,
   UsersRound,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { MobileUserMenu } from './MobileUserMenu'
 import {
@@ -18,6 +19,7 @@ import {
 } from './navigation'
 import { type ThemeMode, useThemeMode } from './theme-mode'
 import { Avatar, AvatarFallback } from '#/components/ui/avatar'
+import { NativeSelect } from '#/components/ui/native-select'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,6 +48,8 @@ const displayModes: readonly {
 
 export function UserMenu() {
   const [open, setOpen] = useState(false)
+  const organizationSelect = useRef<HTMLSelectElement>(null)
+  const router = useRouter()
   const { mode, setMode } = useThemeMode()
   const currentPath = useRouterState({
     select: (state) => state.location.pathname,
@@ -55,6 +59,7 @@ export function UserMenu() {
     signedIn,
     session,
     selectedOrganizationId,
+    setSelectedOrganizationId,
     selectedDepartmentId,
     setSelectedDepartmentId,
   } = usePhaenoSession()
@@ -64,6 +69,14 @@ export function UserMenu() {
     selectedOrganizationId,
   )
   const selectedOrganizationKind = selectedMembership?.organizationKind ?? null
+  const changeOrganization = async (organizationId: string) => {
+    if (organizationId === selectedOrganizationId ||
+      !session?.memberships.some(membership => membership.organizationId === organizationId)) return
+    setOpen(false)
+    // Route first so existing dirty-form blockers can keep the current scope.
+    await router.navigate({ to: '/' })
+    if (router.state.location.pathname === '/') setSelectedOrganizationId(organizationId)
+  }
   const navigationContext = {
     selectedOrganizationKind,
     selectedMembership,
@@ -100,6 +113,12 @@ export function UserMenu() {
     return () => viewport.removeEventListener('change', closeOnLayoutChange)
   }, [])
 
+  useEffect(() => {
+    if (!open || (session?.memberships.length ?? 0) < 2) return
+    const frame = requestAnimationFrame(() => organizationSelect.current?.focus())
+    return () => cancelAnimationFrame(frame)
+  }, [open, session?.memberships.length])
+
   if (!signedIn) {
     return null
   }
@@ -119,6 +138,24 @@ export function UserMenu() {
             <Menu aria-hidden="true" className="size-5" />
           </DropdownMenuTrigger>
           <DropdownMenuContent
+            onKeyDownCapture={event => {
+              if (event.key === 'Escape' && organizationSelect.current) {
+                event.preventDefault()
+                event.stopPropagation()
+                setOpen(false)
+                return
+              }
+              if (event.key !== 'Tab' || !organizationSelect.current) return
+              const controls = Array.from(event.currentTarget.querySelectorAll<HTMLElement>('select, [role="menuitem"], [role="menuitemradio"]'))
+                .filter(control => !control.hasAttribute('disabled') && control.getAttribute('aria-disabled') !== 'true')
+              const index = controls.findIndex(control => control === event.target || control.contains(event.target as Node))
+              if (index < 0) return
+              event.preventDefault()
+              event.stopPropagation()
+              const next = controls[index + (event.shiftKey ? -1 : 1)]
+              if (next) next.focus()
+              else setOpen(false)
+            }}
             align="end"
             sideOffset={8}
             collisionPadding={8}
@@ -159,6 +196,24 @@ export function UserMenu() {
                 </DropdownMenuRadioItem>
               ))}
             </DropdownMenuRadioGroup>
+
+            {(session?.memberships.length ?? 0) > 1 ? (
+              <>
+                <DropdownMenuSeparator className="mx-1 my-2" />
+                <div className="flex items-center gap-2 px-3 py-2">
+                  <Building2 aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
+                  <NativeSelect
+                    ref={organizationSelect}
+                    aria-label="Organization"
+                    value={selectedOrganizationId ?? ''}
+                    onChange={event => { void changeOrganization(event.target.value) }}
+                    onKeyDown={event => { if (event.key !== 'Tab' && event.key !== 'Escape') event.stopPropagation() }}
+                  >
+                    {session?.memberships.map(membership => <option key={membership.organizationId} value={membership.organizationId}>{membership.organizationName}</option>)}
+                  </NativeSelect>
+                </div>
+              </>
+            ) : null}
 
             {(selectedMembership?.departments?.length ?? 0) > 1 ? (
               <>
@@ -262,6 +317,9 @@ export function UserMenu() {
         settingsItems={administrationMenuItems}
         resourceItems={resourceMenuItems}
         showUserManagement={showUserManagement}
+        memberships={session?.memberships}
+        selectedOrganizationId={selectedOrganizationId}
+        onOrganizationChange={organizationId => { void changeOrganization(organizationId) }}
         departments={selectedMembership?.departments}
         selectedDepartmentId={selectedDepartmentId}
         onDepartmentChange={setSelectedDepartmentId}

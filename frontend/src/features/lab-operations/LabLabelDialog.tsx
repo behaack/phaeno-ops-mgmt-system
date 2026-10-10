@@ -13,6 +13,7 @@ import {
 } from '#/api/lab-operations'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
+import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogReturnFocus, DialogTitle } from '#/components/ui/dialog'
 import { Input } from '#/components/ui/input'
 import { Field, FieldDescription, FieldError } from '#/components/ui/field'
@@ -101,6 +102,15 @@ export function LabLabelDialog({
     setPrintDialogClosed(true)
   }
 
+  const recordEarlierPrint = () => {
+    form.setValue('outcome', '')
+    form.setValue('failureDetails', '')
+    form.setValue('scannedBarcode', '')
+    form.clearErrors()
+    record.reset()
+    setPrintDialogClosed(true)
+  }
+
   useEffect(() => {
     if (printDialogClosed) outcomeInput.current?.focus()
   }, [printDialogClosed])
@@ -156,6 +166,7 @@ export function LabLabelDialog({
               </div>
             </div>
             <p className="mt-2 text-center text-xs text-muted-foreground">Label size: 50 × 25 mm. Print at 100% scale, with margins and browser headers off.</p>
+            {!printDialogClosed ? <p className="mt-2 text-sm">If this exact label was already printed but its outcome was not saved, use Actions → Record an earlier print. You must still confirm the outcome and verify a successful label with its matching barcode.</p> : null}
             </div>
 
             <form className="grid gap-4" id="lab-label-print-form" noValidate onSubmit={form.handleSubmit(values => {
@@ -290,13 +301,15 @@ export function LabLabelDialog({
                 {outcome === 'Failed' ? 'Record failed attempt' : outcome === 'Succeeded' ? 'Label printed' : 'Record outcome'}
               </Button>
             ) : (
-              <Button
-                disabled={!labelSymbol || !reason.trim()}
-                onClick={openPrintDialog}
-                type="button"
-              >
-                <Printer data-icon="inline-start" /> Open print dialog
-              </Button>
+              <ActionMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button disabled={!labelSymbol || !reason.trim()} type="button"><Printer aria-hidden="true" />Actions</Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onSelect={openPrintDialog}>Open print dialog</DropdownMenuItem>
+                  <DropdownMenuItem onSelect={recordEarlierPrint}>Record an earlier print</DropdownMenuItem>
+                </DropdownMenuContent>
+              </ActionMenu>
             )}
           </div>
         </DialogFooter>

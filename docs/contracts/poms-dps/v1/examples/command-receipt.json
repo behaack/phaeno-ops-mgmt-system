@@ -1,0 +1,13 @@
+{
+  "contract_version": "poms-dps/1.0",
+  "environment": "local",
+  "dto_id": 108,
+  "receipt_id": "4f7eb479-002f-5f48-8794-ba0cc58f7527",
+  "command_id": "cc5f5c71-27b3-5870-8861-21d1416af74c",
+  "job_id": "1476fdca-9f62-5779-b160-f4f0465595b0",
+  "command_kind": "Start",
+  "outcome": "Accepted",
+  "provider_job_id": "fixture-execution-01",
+  "occurred_at_utc": "2026-10-10T18:00:02Z",
+  "reason": null
+}

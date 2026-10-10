@@ -1,0 +1,9 @@
+{
+  "contract_version": "poms-dps/1.0",
+  "environment": "local",
+  "dto_id": 101,
+  "command_id": "07fb67a0-69da-54c6-8f4e-2c64251958f6",
+  "job_id": "1476fdca-9f62-5779-b160-f4f0465595b0",
+  "requested_at_utc": "2026-10-10T18:01:30Z",
+  "reason": "Example operator cancellation request."
+}

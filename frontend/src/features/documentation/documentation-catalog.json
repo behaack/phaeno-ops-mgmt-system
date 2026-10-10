@@ -267,7 +267,7 @@
       "title": "Getting started",
       "summary": "Find approved Trials, authorized shipping, curated data, and access for the selected Department.",
       "order": 10,
-      "reviewedAt": "2026-10-03",
+      "reviewedAt": "2026-10-10",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [
@@ -484,7 +484,7 @@
       "title": "Getting started",
       "summary": "Use Department dashboard attention and new-result counts, open Customer Jobs, and find samples, curated data and retained Trials.",
       "order": 10,
-      "reviewedAt": "2026-10-03",
+      "reviewedAt": "2026-10-10",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [
@@ -700,7 +700,7 @@
       "title": "Getting started",
       "summary": "Find reagent orders, Assembly requests, curated data, and retained Trials in the selected Department.",
       "order": 10,
-      "reviewedAt": "2026-10-03",
+      "reviewedAt": "2026-10-10",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [
@@ -871,7 +871,7 @@
       "title": "Phaeno operations guide",
       "summary": "Find each workflow, its owning workspace, reusable configuration, and the roles needed to act.",
       "order": 10,
-      "reviewedAt": "2026-10-03",
+      "reviewedAt": "2026-10-10",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [
@@ -1600,7 +1600,7 @@
       "title": "Sample receipt and accession",
       "summary": "Fulfill kits, receive shipments, accession tubes into freezer boxes, and find recorded samples by identity, location, intake status or sample use.",
       "order": 51,
-      "reviewedAt": "2026-10-04",
+      "reviewedAt": "2026-10-10",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1713,7 +1713,7 @@
       "title": "Libraries, batches, and sequencing",
       "summary": "Track library/tube lineage, record vendor results with verified ZIP/FASTQ uploads or configured S3 originals, preserve repeated sequencing and assembly work, record QC and hand off approved Customer packages.",
       "order": 56,
-      "reviewedAt": "2026-10-09",
+        "reviewedAt": "2026-10-10",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [

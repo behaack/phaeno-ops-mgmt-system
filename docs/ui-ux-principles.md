@@ -67,10 +67,16 @@ Use task-oriented entry points with record-centered workspaces.
 - Primary navigation uses recognizable business and scientific areas rather than technical modules. Phaeno **Order Ops** retains one sidebar with CRM-style **LAB SERVICES** and **PARTNER SERVICES** group headings. The first contains **Order intake** and **Trial projects**; the second contains **PSeq kits** and **Data assembly**. These section and record routes remain beneath `/order-operations`, with subject-domain segments. **Lab ops** owns execution, scientific review and a separately authorized Result release section. **Dashboard → Needs attention** summarizes cross-workflow blockers and opens their full queue through View all. Finance and Legacy integrations belong in More. Routes and record links reflect these subject domains; retained bookmarks redirect to the canonical destination.
 - Phaeno's wide-screen toolbar places secondary workspaces under **More**, ordered **Finance**, **Purchasing**, **Equipment**, **Data provisioning**, then **Legacy integrations**. On narrow screens, show these links inside a collapsible **More** row in the user tray. Put available configuration links inside a collapsible **Settings** row. Workspace links appear directly without a Workspace heading. Both sections start collapsed on each menu opening, expand within the menu width, and allow only one section open at a time. Preserve Enter/Space toggling, Up/Down movement among visible items, Escape dismissal, and accessible expanded state. Preserve destination permissions, active-route indication, and one visible entry per viewport; hide More when none of its destinations are available. Expanded section headers remain neutral. Indent text-only child links beside a subtle vertical guide and reserve the selection background for the current destination. When collapsed, emphasize a section title if it contains the current destination.
 - Place **Documentation** in the user menu for Prospect, Customer, Partner, and Phaeno users at every screen size. It opens the guides for the current organization and retains the existing audience access rules. Customer organization administrators reach user management through **Customer settings → People and access**; for other authorized audiences, place **User management** directly beneath Documentation. Keep section dividers without visible Display, Administration, or Resources headings; theme choices retain their accessible group name.
-- Do not expose an organization-context search or act-as switcher in the user
-  menu. Phaeno users manage external organizations through the Accounts
-  workspace, while external users remain in the organization context
-  established by their authenticated session.
+- When a signed-in user has more than one active organization membership, show
+  an organization select beside an organization icon in the desktop user menu
+  and narrow-screen tray. Omit its visible label and retain **Organization** as
+  its accessible name. Offer only
+  that user's existing session memberships. Switching returns to Dashboard,
+  respects dirty-page navigation guards, resets Department context and scoped
+  workspace state, and retains backend authorization. Hide the selector for one
+  membership. This Owner-approved October 10, 2026 decision supersedes the earlier
+  prohibition on membership switching. It does not introduce organization search,
+  impersonation, or access through a Phaeno administrative role alone.
 - Present CRM as a first-class POMS workspace for Companies, Contacts, Leads,
   Opportunities, Activities, Tasks, relationship reporting, and Company
   requests.

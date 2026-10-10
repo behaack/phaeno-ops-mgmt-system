@@ -6,6 +6,15 @@ Generated from [PSeqOperationsDbContextModelSnapshot.cs](../backend/app/Migratio
 
 The additive [step performance JSON contract](plans/LAB-STEP-PERFORMANCE-CONTRACT.md#persistence-and-reads) describes performer/time/offset/precision and correction-record references inside existing laboratory execution and preparation evidence columns. These are logical JSON references, not additional tables, columns or database foreign keys.
 
+The [DPS 1.0 contract](plans/POMS-DPS-DEVELOPER-CONTRACT.md) adds logical submission
+metadata inside the existing assembly job `inputs_json`: exact input manifest,
+scope/recipe/file mappings, pinned S3 versions and the parameters object locator.
+Command receipts use the existing assembly receipt ledger with provider event
+IDs prefixed `command:`; these control receipts are excluded from lifecycle
+sequence ordering. Verified outputs use existing scientific-file and analysis
+entities. No table, column, key, relationship, migration or historical row is
+changed by this implementation.
+
 The [material tracking contract](plans/LAB-OPERATIONS-CONTRACT.md#material-transfers-and-expiration--september-23-2026) describes per-tube declarations, quantity history and immutable transfer evidence. `sample_shipping_stock_kits.product_expiry_snapshot_json` and `sample_return_kits.product_expiry_snapshot_json` retain arrays of `{supplierProductId, supplierName, productNumber, canExpire, expirationDate}` objects; dates are date-only strings or null. A null historical snapshot means unknown, and later product edits do not rewrite it.
 
 The [master-mix step assembly contract](plans/MASTER-MIX-PREPARATION-PLAN.md#assemble-approved-lab-steps--october-3-2026) describes pinned LabStepVersionId snapshots, batch process fields and exact planned reagent amounts in steps_json, the derived ingredients_json recipe, typed preparation evidence_json, and step_sequence/field_key links on source withdrawals. Step input_json supports exact replay; per-entry evidence_json preserves lot and equipment snapshots, QC, repeats and corrections. JSON identities are application-validated references rather than database foreign keys.

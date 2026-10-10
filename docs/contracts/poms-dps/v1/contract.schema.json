@@ -1,0 +1,1857 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:phaeno:poms-dps:1.0",
+  "title": "POMS–DPS 1.0 developer contract",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/start"
+    },
+    {
+      "$ref": "#/$defs/cancel"
+    },
+    {
+      "$ref": "#/$defs/event"
+    },
+    {
+      "$ref": "#/$defs/query"
+    },
+    {
+      "$ref": "#/$defs/query_response"
+    },
+    {
+      "$ref": "#/$defs/event_ack"
+    },
+    {
+      "$ref": "#/$defs/describe"
+    },
+    {
+      "$ref": "#/$defs/capabilities"
+    },
+    {
+      "$ref": "#/$defs/command_receipt"
+    },
+    {
+      "$ref": "#/$defs/input_manifest"
+    },
+    {
+      "$ref": "#/$defs/output_manifest"
+    }
+  ],
+  "$defs": {
+    "s3_object": {
+      "type": "object",
+      "properties": {
+        "bucket": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "region": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "key": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "version_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "not": {
+            "const": "null"
+          }
+        },
+        "sha256": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "size_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9223372036854775807
+        }
+      },
+      "required": [
+        "bucket",
+        "region",
+        "key",
+        "version_id",
+        "sha256",
+        "size_bytes"
+      ],
+      "additionalProperties": false
+    },
+    "recipe": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "parameters": {
+          "type": "object"
+        },
+        "required_output_roles": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "minItems": 1,
+          "maxItems": 64,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "key",
+        "version",
+        "parameters",
+        "required_output_roles"
+      ],
+      "additionalProperties": false
+    },
+    "scope": {
+      "type": "object",
+      "properties": {
+        "organization_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 36,
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "format": "uuid"
+        },
+        "commercial_order_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 36,
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "format": "uuid"
+        },
+        "lab_work_order_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 36,
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "format": "uuid"
+        },
+        "specimen_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 36,
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "format": "uuid"
+        },
+        "library_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 36,
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "format": "uuid"
+        },
+        "sequencing_batch_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 36,
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "format": "uuid"
+        },
+        "vendor_results_version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "fastq_set_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 36,
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "format": "uuid"
+        },
+        "fastq_set_version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "sequencing_run_number": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        }
+      },
+      "required": [
+        "organization_id",
+        "commercial_order_id",
+        "lab_work_order_id",
+        "specimen_id",
+        "library_id",
+        "sequencing_batch_id",
+        "vendor_results_version",
+        "fastq_set_id",
+        "fastq_set_version",
+        "sequencing_run_number"
+      ],
+      "additionalProperties": false
+    },
+    "input_file": {
+      "type": "object",
+      "properties": {
+        "file_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 36,
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "format": "uuid"
+        },
+        "sequencing_output_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 36,
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "format": "uuid"
+        },
+        "original_file_name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "stored_file_name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "group_number": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "read_number": {
+          "enum": [
+            1,
+            2
+          ]
+        },
+        "part_number": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "group_description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "read_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9223372036854775807
+        },
+        "compression": {
+          "enum": [
+            "gzip",
+            "none"
+          ]
+        },
+        "s3": {
+          "$ref": "#/$defs/s3_object"
+        }
+      },
+      "required": [
+        "file_id",
+        "sequencing_output_id",
+        "original_file_name",
+        "stored_file_name",
+        "group_number",
+        "read_number",
+        "part_number",
+        "group_description",
+        "read_count",
+        "compression",
+        "s3"
+      ],
+      "additionalProperties": false
+    },
+    "input_manifest": {
+      "type": "object",
+      "properties": {
+        "contract_version": {
+          "const": "poms-dps/1.0"
+        },
+        "environment": {
+          "enum": [
+            "local",
+            "staging",
+            "production"
+          ]
+        },
+        "document_type": {
+          "const": "input_manifest"
+        },
+        "job_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 36,
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "format": "uuid"
+        },
+        "created_at_utc": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40,
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,7})?Z$",
+          "format": "date-time"
+        },
+        "scope": {
+          "$ref": "#/$defs/scope"
+        },
+        "read_layout": {
+          "enum": [
+            "PairedEnd",
+            "SingleEnd"
+          ]
+        },
+        "recipe": {
+          "$ref": "#/$defs/recipe"
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/input_file"
+          },
+          "minItems": 1,
+          "maxItems": 256
+        },
+        "output_destination": {
+          "type": "object",
+          "properties": {
+            "bucket": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255
+            },
+            "region": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "prefix": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024,
+              "pattern": "/$"
+            }
+          },
+          "required": [
+            "bucket",
+            "region",
+            "prefix"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "contract_version",
+        "environment",
+        "document_type",
+        "job_id",
+        "created_at_utc",
+        "scope",
+        "read_layout",
+        "recipe",
+        "files",
+        "output_destination"
+      ],
+      "additionalProperties": false
+    },
+    "output_file": {
+      "type": "object",
+      "properties": {
+        "artifact_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 36,
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "format": "uuid"
+        },
+        "role": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "format": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "file_name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "s3": {
+          "$ref": "#/$defs/s3_object"
+        }
+      },
+      "required": [
+        "artifact_id",
+        "role",
+        "format",
+        "file_name",
+        "s3"
+      ],
+      "additionalProperties": false
+    },
+    "output_manifest": {
+      "type": "object",
+      "properties": {
+        "contract_version": {
+          "const": "poms-dps/1.0"
+        },
+        "environment": {
+          "enum": [
+            "local",
+            "staging",
+            "production"
+          ]
+        },
+        "document_type": {
+          "const": "output_manifest"
+        },
+        "job_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 36,
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "format": "uuid"
+        },
+        "provider_job_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "scope": {
+          "$ref": "#/$defs/scope"
+        },
+        "recipe": {
+          "$ref": "#/$defs/recipe"
+        },
+        "input_manifest_sha256": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "started_at_utc": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40,
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,7})?Z$",
+          "format": "date-time"
+        },
+        "stopped_at_utc": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40,
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,7})?Z$",
+          "format": "date-time"
+        },
+        "created_at_utc": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40,
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,7})?Z$",
+          "format": "date-time"
+        },
+        "provenance": {
+          "type": "object",
+          "properties": {
+            "engine": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            },
+            "engine_version": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            },
+            "tools": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "version": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  }
+                },
+                "required": [
+                  "name",
+                  "version"
+                ],
+                "additionalProperties": false
+              },
+              "minItems": 1,
+              "maxItems": 63
+            },
+            "container_images": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1024
+              },
+              "minItems": 0,
+              "maxItems": 100
+            },
+            "reference_data": {
+              "type": "array",
+              "minItems": 0,
+              "maxItems": 64,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "version": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1000
+                  },
+                  "sha256": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{64}$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "name",
+                  "version",
+                  "sha256"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "reference_data_not_applicable": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4000
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "engine",
+            "engine_version",
+            "tools",
+            "container_images",
+            "reference_data",
+            "reference_data_not_applicable"
+          ],
+          "additionalProperties": false,
+          "oneOf": [
+            {
+              "properties": {
+                "reference_data": {
+                  "minItems": 1
+                },
+                "reference_data_not_applicable": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "properties": {
+                "reference_data": {
+                  "maxItems": 0
+                },
+                "reference_data_not_applicable": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          ]
+        },
+        "outputs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/output_file"
+          },
+          "minItems": 1,
+          "maxItems": 256
+        }
+      },
+      "required": [
+        "contract_version",
+        "environment",
+        "document_type",
+        "job_id",
+        "provider_job_id",
+        "scope",
+        "recipe",
+        "input_manifest_sha256",
+        "started_at_utc",
+        "stopped_at_utc",
+        "created_at_utc",
+        "provenance",
+        "outputs"
+      ],
+      "additionalProperties": false
+    },
+    "start": {
+      "type": "object",
+      "properties": {
+        "contract_version": {
+          "const": "poms-dps/1.0"
+        },
+        "environment": {
+          "enum": [
+            "local",
+            "staging",
+            "production"
+          ]
+        },
+        "dto_id": {
+          "const": 100
+        },
+        "command_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 36,
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "format": "uuid"
+        },
+        "job_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 36,
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "format": "uuid"
+        },
+        "requested_at_utc": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40,
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,7})?Z$",
+          "format": "date-time"
+        },
+        "data_folder": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048,
+          "pattern": "^s3://[^/]+/.+/$"
+        },
+        "input_manifest": {
+          "$ref": "#/$defs/s3_object"
+        },
+        "recipe": {
+          "$ref": "#/$defs/recipe"
+        }
+      },
+      "required": [
+        "contract_version",
+        "environment",
+        "dto_id",
+        "command_id",
+        "job_id",
+        "requested_at_utc",
+        "data_folder",
+        "input_manifest",
+        "recipe"
+      ],
+      "additionalProperties": false
+    },
+    "cancel": {
+      "type": "object",
+      "properties": {
+        "contract_version": {
+          "const": "poms-dps/1.0"
+        },
+        "environment": {
+          "enum": [
+            "local",
+            "staging",
+            "production"
+          ]
+        },
+        "dto_id": {
+          "const": 101
+        },
+        "command_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 36,
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "format": "uuid"
+        },
+        "job_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 36,
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "format": "uuid"
+        },
+        "requested_at_utc": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40,
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,7})?Z$",
+          "format": "date-time"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        }
+      },
+      "required": [
+        "contract_version",
+        "environment",
+        "dto_id",
+        "command_id",
+        "job_id",
+        "requested_at_utc",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "event": {
+      "type": "object",
+      "properties": {
+        "contract_version": {
+          "const": "poms-dps/1.0"
+        },
+        "environment": {
+          "enum": [
+            "local",
+            "staging",
+            "production"
+          ]
+        },
+        "dto_id": {
+          "const": 102
+        },
+        "event_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 36,
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "format": "uuid"
+        },
+        "job_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 36,
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "format": "uuid"
+        },
+        "provider_job_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "sequence": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9223372036854775807
+        },
+        "event_type": {
+          "enum": [
+            "Accepted",
+            "Running",
+            "Progress",
+            "Succeeded",
+            "Failed",
+            "Terminated",
+            "CancelledBeforeStart"
+          ]
+        },
+        "occurred_at_utc": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40,
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,7})?Z$",
+          "format": "date-time"
+        },
+        "started_at_utc": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 40,
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,7})?Z$",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "stopped_at_utc": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 40,
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,7})?Z$",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "disposition_at_utc": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 40,
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,7})?Z$",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "never_started": {
+          "type": "boolean"
+        },
+        "percentage": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "output_manifest": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/s3_object"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "contract_version",
+        "environment",
+        "dto_id",
+        "event_id",
+        "job_id",
+        "provider_job_id",
+        "sequence",
+        "event_type",
+        "occurred_at_utc",
+        "started_at_utc",
+        "stopped_at_utc",
+        "disposition_at_utc",
+        "never_started",
+        "percentage",
+        "reason",
+        "output_manifest"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "event_type": {
+                "const": "Accepted"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "never_started": {
+                "const": false
+              },
+              "started_at_utc": {
+                "type": "null"
+              },
+              "stopped_at_utc": {
+                "type": "null"
+              },
+              "disposition_at_utc": {
+                "type": "null"
+              },
+              "percentage": {
+                "type": "null"
+              },
+              "output_manifest": {
+                "type": "null"
+              },
+              "reason": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "event_type": {
+                "const": "Running"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "never_started": {
+                "const": false
+              },
+              "started_at_utc": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 40,
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,7})?Z$",
+                "format": "date-time"
+              },
+              "stopped_at_utc": {
+                "type": "null"
+              },
+              "disposition_at_utc": {
+                "type": "null"
+              },
+              "percentage": {
+                "type": "null"
+              },
+              "output_manifest": {
+                "type": "null"
+              },
+              "reason": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "event_type": {
+                "const": "Progress"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "never_started": {
+                "const": false
+              },
+              "started_at_utc": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 40,
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,7})?Z$",
+                "format": "date-time"
+              },
+              "stopped_at_utc": {
+                "type": "null"
+              },
+              "disposition_at_utc": {
+                "type": "null"
+              },
+              "percentage": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100
+              },
+              "output_manifest": {
+                "type": "null"
+              },
+              "reason": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "event_type": {
+                "const": "Succeeded"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "never_started": {
+                "const": false
+              },
+              "started_at_utc": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 40,
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,7})?Z$",
+                "format": "date-time"
+              },
+              "stopped_at_utc": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 40,
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,7})?Z$",
+                "format": "date-time"
+              },
+              "disposition_at_utc": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 40,
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,7})?Z$",
+                "format": "date-time"
+              },
+              "percentage": {
+                "type": "null"
+              },
+              "output_manifest": {
+                "$ref": "#/$defs/s3_object"
+              },
+              "reason": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "event_type": {
+                "const": "Failed"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "never_started": {
+                "const": false
+              },
+              "started_at_utc": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 40,
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,7})?Z$",
+                "format": "date-time"
+              },
+              "stopped_at_utc": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 40,
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,7})?Z$",
+                "format": "date-time"
+              },
+              "disposition_at_utc": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 40,
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,7})?Z$",
+                "format": "date-time"
+              },
+              "percentage": {
+                "type": "null"
+              },
+              "output_manifest": {
+                "type": "null"
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "event_type": {
+                "const": "Terminated"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "never_started": {
+                "const": false
+              },
+              "started_at_utc": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 40,
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,7})?Z$",
+                "format": "date-time"
+              },
+              "stopped_at_utc": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 40,
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,7})?Z$",
+                "format": "date-time"
+              },
+              "disposition_at_utc": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 40,
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,7})?Z$",
+                "format": "date-time"
+              },
+              "percentage": {
+                "type": "null"
+              },
+              "output_manifest": {
+                "type": "null"
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "event_type": {
+                "const": "CancelledBeforeStart"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "never_started": {
+                "const": true
+              },
+              "started_at_utc": {
+                "type": "null"
+              },
+              "stopped_at_utc": {
+                "type": "null"
+              },
+              "disposition_at_utc": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 40,
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,7})?Z$",
+                "format": "date-time"
+              },
+              "percentage": {
+                "type": "null"
+              },
+              "output_manifest": {
+                "type": "null"
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              }
+            }
+          }
+        }
+      ]
+    },
+    "query": {
+      "type": "object",
+      "properties": {
+        "contract_version": {
+          "const": "poms-dps/1.0"
+        },
+        "environment": {
+          "enum": [
+            "local",
+            "staging",
+            "production"
+          ]
+        },
+        "dto_id": {
+          "const": 103
+        },
+        "request_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 36,
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "format": "uuid"
+        },
+        "job_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 36,
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "format": "uuid"
+        }
+      },
+      "required": [
+        "contract_version",
+        "environment",
+        "dto_id",
+        "request_id",
+        "job_id"
+      ],
+      "additionalProperties": false
+    },
+    "query_response": {
+      "type": "object",
+      "properties": {
+        "contract_version": {
+          "const": "poms-dps/1.0"
+        },
+        "environment": {
+          "enum": [
+            "local",
+            "staging",
+            "production"
+          ]
+        },
+        "dto_id": {
+          "const": 104
+        },
+        "request_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 36,
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "format": "uuid"
+        },
+        "job_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 36,
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "format": "uuid"
+        },
+        "status": {
+          "enum": [
+            "Found",
+            "NotAccepted",
+            "Unavailable"
+          ]
+        },
+        "event": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/event"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "command_receipts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/command_receipt"
+          },
+          "minItems": 0,
+          "maxItems": 2
+        },
+        "latest_progress": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "percentage": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "sequence": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9223372036854775807
+                },
+                "occurred_at_utc": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 40,
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,7})?Z$",
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "percentage",
+                "sequence",
+                "occurred_at_utc"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "contract_version",
+        "environment",
+        "dto_id",
+        "request_id",
+        "job_id",
+        "status",
+        "event",
+        "command_receipts",
+        "latest_progress",
+        "reason"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "Found"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "event": {
+                "$ref": "#/$defs/event"
+              },
+              "reason": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "enum": [
+                  "NotAccepted",
+                  "Unavailable"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "event": {
+                "type": "null"
+              },
+              "command_receipts": {
+                "maxItems": 0
+              },
+              "latest_progress": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "event_ack": {
+      "type": "object",
+      "properties": {
+        "contract_version": {
+          "const": "poms-dps/1.0"
+        },
+        "environment": {
+          "enum": [
+            "local",
+            "staging",
+            "production"
+          ]
+        },
+        "dto_id": {
+          "const": 105
+        },
+        "event_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 36,
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "format": "uuid"
+        },
+        "job_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 36,
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "format": "uuid"
+        },
+        "status": {
+          "enum": [
+            "received",
+            "committed",
+            "conflict",
+            "rejected"
+          ]
+        },
+        "receipt_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 36,
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "format": "uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "contract_version",
+        "environment",
+        "dto_id",
+        "event_id",
+        "job_id",
+        "status",
+        "receipt_id",
+        "reason"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "committed"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "receipt_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 36,
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                "format": "uuid"
+              },
+              "reason": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "enum": [
+                  "received",
+                  "conflict",
+                  "rejected"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "receipt_id": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "enum": [
+                  "conflict",
+                  "rejected"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "reason": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              }
+            }
+          }
+        }
+      ]
+    },
+    "describe": {
+      "type": "object",
+      "properties": {
+        "contract_version": {
+          "const": "poms-dps/1.0"
+        },
+        "environment": {
+          "enum": [
+            "local",
+            "staging",
+            "production"
+          ]
+        },
+        "dto_id": {
+          "const": 106
+        },
+        "request_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 36,
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "format": "uuid"
+        }
+      },
+      "required": [
+        "contract_version",
+        "environment",
+        "dto_id",
+        "request_id"
+      ],
+      "additionalProperties": false
+    },
+    "capability_recipe": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "parameters_schema": {
+          "type": "object"
+        },
+        "supported_read_layouts": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "PairedEnd",
+              "SingleEnd"
+            ]
+          },
+          "minItems": 1,
+          "maxItems": 2,
+          "uniqueItems": true
+        },
+        "required_output_roles": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "minItems": 1,
+          "maxItems": 64,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "key",
+        "name",
+        "version",
+        "parameters_schema",
+        "supported_read_layouts",
+        "required_output_roles"
+      ],
+      "additionalProperties": false
+    },
+    "capabilities": {
+      "type": "object",
+      "properties": {
+        "contract_version": {
+          "const": "poms-dps/1.0"
+        },
+        "environment": {
+          "enum": [
+            "local",
+            "staging",
+            "production"
+          ]
+        },
+        "dto_id": {
+          "const": 107
+        },
+        "request_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 36,
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "format": "uuid"
+        },
+        "service_key": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "instance_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "available": {
+          "type": "boolean"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "supports_idempotent_start": {
+          "type": "boolean"
+        },
+        "supports_authoritative_query": {
+          "type": "boolean"
+        },
+        "supports_cancellation": {
+          "type": "boolean"
+        },
+        "recipes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/capability_recipe"
+          },
+          "minItems": 0,
+          "maxItems": 100
+        }
+      },
+      "required": [
+        "contract_version",
+        "environment",
+        "dto_id",
+        "request_id",
+        "service_key",
+        "instance_id",
+        "available",
+        "message",
+        "supports_idempotent_start",
+        "supports_authoritative_query",
+        "supports_cancellation",
+        "recipes"
+      ],
+      "additionalProperties": false
+    },
+    "command_receipt": {
+      "type": "object",
+      "properties": {
+        "contract_version": {
+          "const": "poms-dps/1.0"
+        },
+        "environment": {
+          "enum": [
+            "local",
+            "staging",
+            "production"
+          ]
+        },
+        "dto_id": {
+          "const": 108
+        },
+        "receipt_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 36,
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "format": "uuid"
+        },
+        "command_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 36,
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "format": "uuid"
+        },
+        "job_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 36,
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "format": "uuid"
+        },
+        "command_kind": {
+          "enum": [
+            "Start",
+            "Cancel"
+          ]
+        },
+        "outcome": {
+          "enum": [
+            "Accepted",
+            "Rejected",
+            "CannotAct"
+          ]
+        },
+        "provider_job_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "occurred_at_utc": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40,
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,7})?Z$",
+          "format": "date-time"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "contract_version",
+        "environment",
+        "dto_id",
+        "receipt_id",
+        "command_id",
+        "job_id",
+        "command_kind",
+        "outcome",
+        "provider_job_id",
+        "occurred_at_utc",
+        "reason"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "const": "Accepted"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "provider_job_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "reason": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "enum": [
+                  "Rejected",
+                  "CannotAct"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "reason": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

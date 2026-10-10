@@ -1,0 +1,25 @@
+{
+  "contract_version": "poms-dps/1.0",
+  "environment": "local",
+  "dto_id": 102,
+  "event_id": "0a4e9780-efa0-5ae1-bc7e-4a48badfb583",
+  "job_id": "1476fdca-9f62-5779-b160-f4f0465595b0",
+  "provider_job_id": "fixture-execution-01",
+  "sequence": 4,
+  "event_type": "Succeeded",
+  "occurred_at_utc": "2026-10-10T18:02:10Z",
+  "started_at_utc": "2026-10-10T18:01:00Z",
+  "stopped_at_utc": "2026-10-10T18:02:00Z",
+  "disposition_at_utc": "2026-10-10T18:02:10Z",
+  "never_started": false,
+  "percentage": null,
+  "reason": null,
+  "output_manifest": {
+    "bucket": "example-contract-fixture-not-real",
+    "region": "us-east-2",
+    "key": "fixture/assemblies/assembly-1476fdca-9f62-5779-b160-f4f0465595b0/output-manifest.json",
+    "version_id": "fixture-version-not-real",
+    "sha256": "31b404c0eb199a80588e6a6c3a1b89550a24288c9239b580b92b0ff12d0f769a",
+    "size_bytes": 2798
+  }
+}

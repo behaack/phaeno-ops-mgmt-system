@@ -4,7 +4,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
-import { getAssemblyInputs, startAssembly, type AssemblyAvailability, type AssemblyJob } from '#/api/lab-assembly'
+import { assemblyAttemptFromDispatchError, getAssemblyInputs, startAssembly, type AssemblyAvailability, type AssemblyJob } from '#/api/lab-assembly'
 import { getLabOperationsError } from '#/api/lab-operations'
 import { Alert, AlertDescription } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
@@ -40,17 +40,27 @@ export function AssemblyStartDialog({ availability, previous, workOrderId, speci
     if (!sample || value.inputIds.some(id => !selected.some(i => i.id === id))) throw new Error('Choose inputs from the selected sample and run.')
     return startAssembly(sample.labWorkOrderId, { id: requestId, labSpecimenId: sample.labSpecimenId, sequencingRunNumber: sample.sequencingRunNumber,
       recipeKey: value.recipeKey, sequencingOutputIds: value.inputIds, previousJobId: previous?.id, reason: previous ? value.reason : undefined })
+  }, onError: async () => {
+    await client.invalidateQueries({ queryKey: ['assembly-jobs'] })
   }, onSuccess: async job => {
     await client.invalidateQueries({ queryKey: ['assembly-jobs'] })
     dismissal.allowNavigation(); form.reset(form.getValues()); onClose()
     await navigate({ to: '/lab-operations/assembly-jobs/$jobId', params: { jobId: job.id }, search: p => ({ ...p, section: 'assembly', assemblyTab: 'jobs' }) })
   } })
-  const dismissal = useOrderDecisionDismissal(form.formState.isDirty, mutation.isPending, onClose, { scope: 'assembly request', description: 'The unsaved input and recipe selection will be discarded. No assembly will be started.' })
+  const savedAttempt = assemblyAttemptFromDispatchError(mutation.error)
+  const recoveryId = savedAttempt === requestId ? savedAttempt : null
+  const dismissal = useOrderDecisionDismissal(form.formState.isDirty, mutation.isPending, onClose, { scope: 'assembly request', description: 'The unsaved input and recipe selection will be discarded. Any assembly attempt already saved will continue independently.' })
+  const openSavedAttempt = async () => {
+    if (!recoveryId) return
+    dismissal.allowNavigation(); form.reset(form.getValues()); onClose()
+    await navigate({ to: '/lab-operations/assembly-jobs/$jobId', params: { jobId: recoveryId }, search: p => ({ ...p, section: 'assembly', assemblyTab: 'jobs' }) })
+  }
   return <><Dialog open onOpenChange={open => { if (!open && !mutation.isPending) dismissal.close() }}><DialogContent>
     <DialogHeader><DialogTitle>{previous ? 'Repeat assembly' : 'Start assembly'}</DialogTitle><DialogDescription>Choose registered inputs for one sample and sequencing run. Processing continues after you leave this page.</DialogDescription>
       {mutation.error || inputs.error ? <Alert variant="destructive"><AlertDescription>{getLabOperationsError(mutation.error ?? inputs.error, 'Assembly could not be requested.')}</AlertDescription></Alert> : null}
     </DialogHeader>
     <form id="assembly-start" noValidate onSubmit={form.handleSubmit(value => mutation.mutate(value))} className="space-y-4">
+      <fieldset disabled={Boolean(recoveryId)} className="space-y-4"><legend className="sr-only">Assembly selection</legend>
       <div className="space-y-1"><Label htmlFor="assembly-run"><RequiredFieldName>Sample and run</RequiredFieldName></Label>
         <NativeSelect id="assembly-run" {...form.register('selection', { onChange: () => form.setValue('inputIds', []) })} aria-invalid={Boolean(form.formState.errors.selection)} aria-describedby="assembly-run-error">
           <option value="">{inputs.isPending ? 'Loading sequencing inputs…' : 'Choose a sequencing run'}</option>
@@ -70,7 +80,8 @@ export function AssemblyStartDialog({ availability, previous, workOrderId, speci
         </Label>)}<p className="text-sm text-destructive" role="alert">{form.formState.errors.inputIds?.message}</p>
       </fieldset>
       {previous ? <div className="space-y-1"><Label htmlFor="assembly-reason"><RequiredFieldName>Reason for another attempt</RequiredFieldName></Label><Textarea id="assembly-reason" {...form.register('reason')} aria-invalid={Boolean(form.formState.errors.reason)} aria-describedby="assembly-reason-error" /><p id="assembly-reason-error" className="text-sm text-destructive">{form.formState.errors.reason?.message}</p></div> : null}
+      </fieldset>
     </form>
-    <RequiredDialogFooter><Button variant="outline" disabled={mutation.isPending} onClick={dismissal.close}>Cancel</Button><Button type="submit" form="assembly-start" disabled={mutation.isPending || !availability.available}>{mutation.isPending ? 'Requesting…' : 'Start assembly'}</Button></RequiredDialogFooter>
+    <RequiredDialogFooter><Button variant="outline" disabled={mutation.isPending} onClick={dismissal.close}>{recoveryId ? 'Close' : 'Cancel'}</Button>{recoveryId ? <Button type="button" onClick={() => void openSavedAttempt()}>Open saved attempt</Button> : <Button type="submit" form="assembly-start" disabled={mutation.isPending || !availability.available}>{mutation.isPending ? 'Requesting…' : 'Start assembly'}</Button>}</RequiredDialogFooter>
   </DialogContent></Dialog>{dismissal.confirmation}</>
 }

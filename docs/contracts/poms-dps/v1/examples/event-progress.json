@@ -1,0 +1,18 @@
+{
+  "contract_version": "poms-dps/1.0",
+  "environment": "local",
+  "dto_id": 102,
+  "event_id": "d84bd641-f0e4-5a9e-a215-382a698ad945",
+  "job_id": "1476fdca-9f62-5779-b160-f4f0465595b0",
+  "provider_job_id": "fixture-execution-01",
+  "sequence": 3,
+  "event_type": "Progress",
+  "occurred_at_utc": "2026-10-10T18:01:00Z",
+  "started_at_utc": "2026-10-10T18:01:00Z",
+  "stopped_at_utc": null,
+  "disposition_at_utc": null,
+  "never_started": false,
+  "percentage": 40,
+  "reason": null,
+  "output_manifest": null
+}

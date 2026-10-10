@@ -48,7 +48,7 @@ public sealed class LabAssemblyWorker(IServiceScopeFactory scopes, ILabAssemblyP
             {
                 await using var jobScope = scopes.CreateAsyncScope();
                 await jobScope.ServiceProvider.GetRequiredService<LabAssemblyDelivery>().CheckDeadlinesAsync(candidate.Id, ct);
-                if (provider.Availability.Available) await jobScope.ServiceProvider.GetRequiredService<LabAssemblyProcessor>().ProcessAsync(candidate.Id, ct);
+                if (provider.Availability.Available || candidate.State == "Succeeded") await jobScope.ServiceProvider.GetRequiredService<LabAssemblyProcessor>().ProcessAsync(candidate.Id, ct);
             }
             if (!provider.Availability.Available) return;
             var active = await db.Set<LabAssemblyJob>().CountAsync(j => j.State == "Dispatching" || j.State == "Accepted" || j.State == "Running", ct);
@@ -76,24 +76,37 @@ public sealed class LabAssemblyWorker(IServiceScopeFactory scopes, ILabAssemblyP
 }
 
 public sealed class LabAssemblyProcessor(PSeqOperationsDbContext db, LabAssemblyService service,
-    ILabAssemblyProvider provider, LabAssemblyProgress progress, TimeProvider time, LabAssemblyDelivery delivery)
+    ILabAssemblyProvider provider, LabAssemblyProgress progress, TimeProvider time, LabAssemblyDelivery delivery,
+    DpsOutputAdmission? outputAdmission = null, IOptions<DpsOptions>? dpsOptions = null, IOptions<LabAssemblyOptions>? assemblyOptions = null)
 {
-    public async Task ProcessAsync(Guid id, CancellationToken ct)
+    public async Task ProcessAsync(Guid id, CancellationToken ct, bool failInitialDispatch = false, string requiredCommandKind = "Run")
     {
-        if (!provider.Availability.Available) return;
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        timeout.CancelAfter(TimeSpan.FromSeconds(30));
+        timeout.CancelAfter(TimeSpan.FromSeconds(provider.Key == DpsContract.Provider ? Math.Clamp(dpsOptions?.Value.OperationTimeoutSeconds ?? 300, 30, 900) : 30));
         var token = timeout.Token;
         try
         {
             var job = await service.RequireJobAsync(id, token);
+            if (job.State == "Succeeded" && job.ProviderKey == DpsContract.Provider && !job.LabAnalysisRunId.HasValue
+                && job.AttentionReason != LabAssemblyDelivery.ConflictAttention) {
+                if (outputAdmission is null) throw DpsContract.Invalid();
+                await outputAdmission.AdmitAsync(id, token); return;
+            }
             if (job.IsTerminal && job.AttentionReason is null) { progress.Forget(id); return; }
+            if (!provider.Availability.Available) {
+                if (failInitialDispatch) throw DpsMqttClient.Unavailable();
+                return;
+            }
             if (job.ProviderKey != provider.Key) throw LabAssemblyService.Error("This job requires its original processing provider.", 409);
             if (job.State == "Queued")
             {
                 await using var tx = await SampleShippingPackingData.BeginAsync(db, "assembly-job:" + id, token);
                 await db.Entry(job).ReloadAsync(token);
                 if (job.IsTerminal) return;
+                await SampleShippingPackingData.LockAsync(db, "assembly-dispatch-capacity", token);
+                var limit = Math.Clamp(assemblyOptions?.Value.MaximumConcurrentJobs ?? 4, 1, 32);
+                if (await db.Set<LabAssemblyJob>().CountAsync(j => j.State == "Dispatching" || j.State == "Accepted" || j.State == "Running", token) >= limit)
+                    throw new OrderManagementException("assembly_dispatch_capacity", "Assembly dispatch is waiting for a processing slot. The saved request remains queued.", 503);
                 var work = await service.RequireStartableAsync(job.LabWorkOrderId, job.LabSpecimenId, job.RequestedByUserId, token);
                 await VerifyFrozenInputsAsync(job, token);
                 if (job.BeginDispatch(time.GetUtcNow().UtcDateTime)) service.Record(job, "DispatchRequested");
@@ -134,7 +147,11 @@ public sealed class LabAssemblyProcessor(PSeqOperationsDbContext db, LabAssembly
             await using var tx = await SampleShippingPackingData.BeginAsync(db, "assembly-job:" + id, ct);
             var job = await service.RequireJobAsync(id, ct);
             // Fixed, user-safe explanations: provider exceptions can contain URLs or credentials.
-            var message = error is OrderManagementException domain ? domain.Message
+            var confirmed = job.State is "Accepted" or "Running" or "Succeeded" or "Failed" or "Terminated";
+            var message = job.State == "Succeeded" && job.ProviderKey == DpsContract.Provider
+                ? "DPS outputs could not be admitted. The execution outcome remains saved; output admission will retry."
+                : confirmed ? "DPS recovery or command delivery is unavailable. Recorded execution facts remain unchanged; reconciliation will continue."
+                : error is OrderManagementException domain ? domain.Message
                 : error is ArgumentException or InvalidOperationException
                     ? "The processing service returned inconsistent execution evidence. Operations must reconcile this job."
                     : "The processing service could not be reached. The job outcome remains unconfirmed; recovery will retry.";
@@ -144,6 +161,10 @@ public sealed class LabAssemblyProcessor(PSeqOperationsDbContext db, LabAssembly
             await db.SaveChangesAsync(ct);
             if (tx is not null) await tx.CommitAsync(ct);
             progress.Forget(id);
+            if (failInitialDispatch && (requiredCommandKind == "Cancel" || !confirmed || job.AttentionReason == LabAssemblyDelivery.ConflictAttention)) throw new OrderManagementException("assembly_dispatch_failed",
+                $"DPS {requiredCommandKind} dispatch failed or was not confirmed for saved attempt {id:D}. Open this attempt and reconcile its original ID; its recorded execution facts remain unchanged.",
+                error is OrderManagementException rejected && rejected.StatusCode == 502 ? 502 : 503,
+                new { assemblyJobId = id, commandKind = requiredCommandKind, dispatchConfirmed = requiredCommandKind == "Run" && confirmed });
         }
     }
 
@@ -153,6 +174,9 @@ public sealed class LabAssemblyProcessor(PSeqOperationsDbContext db, LabAssembly
         var job = await service.RequireJobAsync(id, ct);
         await db.Entry(job).ReloadAsync(ct);
         if (await delivery.HasConflictAsync(id, ct)) throw LabAssemblyService.Error(LabAssemblyDelivery.ConflictAttention, 409);
+        if (job.ProviderKey == DpsContract.Provider && (snapshot.State is "Accepted" or "Running" or "Succeeded")
+            && await db.Set<LabAssemblyCommand>().AnyAsync(c => c.LabAssemblyJobId == id && c.Kind == "Run" && c.Suppressed, ct))
+            throw DpsContract.Invalid();
         if (job.IsTerminal && snapshot.ProviderJobId == job.ProviderJobId && snapshot.State is "Accepted" or "Running")
         { progress.Forget(id); return; }
         if (snapshot.OutputManifestJson is { } manifest)
@@ -162,6 +186,8 @@ public sealed class LabAssemblyProcessor(PSeqOperationsDbContext db, LabAssembly
         }
         var changed = job.Observe(snapshot.ProviderJobId, snapshot.State, snapshot.StartedAtUtc, snapshot.StoppedAtUtc,
             snapshot.DispositionAtUtc, snapshot.Reason, snapshot.OutputManifestJson, snapshot.NeverStarted, time.GetUtcNow().UtcDateTime);
+        if (job.State == "Succeeded" && job.ProviderKey == DpsContract.Provider && !job.LabAnalysisRunId.HasValue && job.AttentionReason is null)
+            changed |= job.SetAttention(DpsOutputAdmission.Pending);
         await delivery.ConfirmAsync(job, ct);
         if (await delivery.RefreshAttentionAsync(job, ct)) changed = true;
         if (changed)
@@ -178,6 +204,9 @@ public sealed class LabAssemblyProcessor(PSeqOperationsDbContext db, LabAssembly
     private async Task VerifyFrozenInputsAsync(LabAssemblyJob job, CancellationToken ct)
     {
         var frozen = JsonSerializer.Deserialize<AssemblyFrozenInputs>(job.InputsJson, LabAssemblyService.Json)!;
+        if (job.ProviderKey == DpsContract.Provider && !await db.LabWorkOrders.AnyAsync(w => w.Id == job.LabWorkOrderId
+            && w.SubmittingOrganizationId == job.OrganizationId && w.CurrentAuthorizationVersion == frozen.AuthorizationVersion, ct))
+            throw LabAssemblyService.Error("The Lab Job authorization changed after this request. Reconcile its saved assembly scope before dispatch.", 409);
         var ids = frozen.Inputs.Select(i => i.SequencingOutputId).ToArray();
         var inputs = await db.LabSequencingOutputs.AsNoTracking().Where(o => ids.Contains(o.Id)
             && o.LabWorkOrderId == job.LabWorkOrderId && o.LabSpecimenId == job.LabSpecimenId).ToListAsync(ct);
