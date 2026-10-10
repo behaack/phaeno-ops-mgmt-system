@@ -19,12 +19,24 @@ file-service verifier passes storage-area/readback/scan/deletion checks without
 business records. Public API/Portal health is HTTP 200 and direct/proxied anonymous
 laboratory access is HTTP 401.
 
-Four local retained FASTQs are copied to their Customer/Job/sample/library/capture
-paths and full-checksum/length verified. Local originals and database addresses
-remain unchanged while their Visual Studio API runs. Local activation requires its
-operator to stop that process, followed by atomic address conversion, matching S3
-configuration/restart and retained-file access checks. Detailed mappings, protected
-credentials and infrastructure receipts remain outside public source.
+Local activation is complete after the Owner stopped the Visual Studio API. Four
+retained FASTQs (310 bytes) use their Customer/Job/sample/library/capture paths in
+the separate local test bucket. Their addresses were converted atomically, with
+four maintenance audit events. All other scientific receipt fields are unchanged;
+the Local originals remain checksum/length verified. The active Development
+configuration and application storage factory read all four S3 files with matching
+full checksums and lengths. Credentials use the private named profile outside
+source; other Development settings are preserved.
+
+The API and HTTPS frontend are restarted at their existing local addresses. API
+health and proxied health return HTTP 200, the Portal renders with HTTP 200, and
+anonymous protected laboratory requests return HTTP 401. The normal Visual Studio
+API build is refreshed with zero warnings/errors. The temporary published API is
+running on port 44399; stop that process before starting a new Visual Studio debug
+session on the same port. Detailed mappings, encrypted configuration rollback,
+protected credentials and infrastructure receipts remain outside public source.
+No authenticated upload or scientific-workflow mutation was performed during this
+cutover verification.
 
 S3-aware coordinated backup, off-server protection, populated restore rehearsal
 and monitoring remain production requirements. This testing waiver does not waive

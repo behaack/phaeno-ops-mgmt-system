@@ -1,7 +1,6 @@
 # S3 hosted cutover
 
-Status: hosted-test S3 active October 9, 2026; local activation awaits the operator's
-Visual Studio API stop. The Owner moved
+Status: hosted-test and local S3 active October 9, 2026. The Owner moved
 S3-aware backup/restore to the production launch requirements; it no longer
 blocks local or hosted-test S3 use. Preserve existing records and file access.
 No source-object deletion, database reset or commercial production launch is
@@ -118,9 +117,13 @@ kept ClamAV and authentication/worker settings, applied no migrations, and disab
 the Local-only backup timer with `PortalTesting__S3BackupsDeferred=true`. Public
 health/rendering and direct/proxied anonymous authorization checks pass.
 
-Both isolated test buckets and their scoped identities are prepared. Real S3
+Both isolated test buckets and their scoped identities are active. Real S3
 version/read/multipart/overwrite/isolation checks pass. The four local retained
-FASTQs are copied and complete-byte verified at their record-derived destinations;
-Local bytes and existing database references are retained until the old Local-only
-API stops. Coordinate the one-time address conversion and restart, then verify
-access to every retained file. Detailed credentials/mappings/receipts stay private.
+FASTQs are copied and complete-byte verified at their record-derived destinations.
+After the Owner stopped the old API, four addresses were converted atomically with
+maintenance audit events. All other scientific receipt fields and the Local bytes
+are preserved. The active Development storage factory reads every retained file
+with exact checksum/length; API/frontend restart, health/rendering and anonymous
+authorization checks pass. Normal Visual Studio build outputs are refreshed.
+Detailed credentials/mappings/receipts stay private. Authenticated user upload and
+scientific workflow acceptance remain distinct from these cutover checks.

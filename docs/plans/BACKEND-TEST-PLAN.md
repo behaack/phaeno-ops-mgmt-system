@@ -8,6 +8,16 @@ version-delete denial and other-bucket denial. The hosted console verifier check
 both storage areas and ClamAV with no application business writes. Testing backups
 are explicitly deferred by Owner policy; production S3 recovery remains required.
 
+Local activation follow-up: the four retained FASTQ addresses were converted in
+one transaction with four maintenance audit events after the Owner stopped the
+API. Read-only comparison confirms every other scientific receipt field and Local
+checksum/length is preserved. The actual Development configuration and application
+storage factory read all four S3 files with exact checksum/length. API/frontend
+health/rendering return 200; anonymous protected laboratory access returns 401.
+Normal API and isolated verification builds pass with zero warnings/errors. No EF
+migration or authenticated scientific mutation was required; the previously passed
+suites were not repeated for this runtime-only activation.
+
 October 9 release review adds exact sample/library/purchased-run checks when
 original S3 bytes become sequencing evidence, plus rejection of an empty multipart
 upload identity before any part or verified receipt. Full connected verification

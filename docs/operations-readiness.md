@@ -15,8 +15,11 @@ The guarded hosted-test switch is active on source `9a391b3f`, with private vers
 S3 storage, scoped credentials and unchanged ClamAV/authentication/worker settings.
 The Local volume is retained, the Local-only backup timer is disabled and testing
 backup deferral is explicit. Health/rendering/authorization checks pass; no EF
-migration or application data reset occurred. Local file copies are verified, with
-its API restart/address conversion pending the operator's stop.
+migration or application data reset occurred. Local activation is also complete:
+four scientific file addresses were converted atomically after the Owner stopped
+the API, preserving every other receipt field and the Local copies. Configured S3
+readback, API/frontend restart, health/rendering and anonymous authorization checks
+pass. See the [testing cutover receipt](operations/portal-s3-testing-cutover-20261009.md).
 
 ## Scientific storage and progress source release — completed October 9, 2026
 

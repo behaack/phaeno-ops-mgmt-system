@@ -1,9 +1,10 @@
 # S3 storage and scientific file access
 
-Status: hosted-test S3 active October 9, 2026. Private isolated test destinations
+Status: hosted-test and local S3 active October 9, 2026. Private isolated test destinations
 and scoped credentials are configured, and live storage/ClamAV verification passes.
-The local four-file conversion is prepared and awaits stopping its Visual Studio
-API before address conversion/restart. No external scientific originals have been
+The local four-file address conversion and API/frontend restart are complete.
+Actual configured storage readback verifies all retained bytes; scientific receipt
+fields and Local originals are preserved. No external scientific originals have been
 admitted. S3 backup/restore remains a production requirement, deferred for testing.
 
 ## Implementation checkpoint
