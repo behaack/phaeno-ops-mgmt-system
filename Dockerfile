@@ -11,6 +11,7 @@ COPY backend/modules/PSeq.Operations.Laboratory/PSeq.Operations.Laboratory.cspro
 RUN dotnet restore app/PSeq.Operations.Api.csproj
 
 COPY backend/ ./
+COPY docs/contracts/poms-dps/v1/contract.schema.json /src/docs/contracts/poms-dps/v1/contract.schema.json
 
 RUN dotnet publish app/PSeq.Operations.Api.csproj \
     --configuration Release \

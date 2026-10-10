@@ -299,6 +299,7 @@ jobs:
             Dockerfile \
             .dockerignore \
             backend \
+            docs/contracts/poms-dps/v1/contract.schema.json \
             deployment/hetzner/green
 
           (

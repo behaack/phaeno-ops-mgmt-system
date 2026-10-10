@@ -82,3 +82,12 @@ import in DPS output scanning; after correction the full solution builds with
 zero warnings/errors. Frontend TypeScript and production build pass. Regeneration
 corrected a stale help-corpus hash; the API corpus must be generated alongside it.
 Hosted preflight, staged/live acceptance and deployment are not yet complete.
+
+The first protected release run, 38076718961, passed compilation, packaged-help
+checks and hosted file-service preflight, then stopped during container publish:
+the new embedded contract schema was absent from both the deployment archive and
+Docker build stage. No running API image was replaced, and the staged frontend
+was not promoted. Package the exact canonical schema in both paths and retry the
+bounded release. Docker Desktop is not running locally; the protected container
+build must verify this packaging correction before activation. The workflow hold
+was restored and independently read back as disabled_manually.
