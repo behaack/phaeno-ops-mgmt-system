@@ -173,6 +173,21 @@ public sealed class FileStorageTests
     }
 
     [Fact]
+    public void ExplicitMissingS3ProfileDoesNotFallBackToAmbientCredentials()
+    {
+        using var provider = BuildProvider(Environments.Development, new Dictionary<string, string?>
+        {
+            ["FileStorage:Provider"] = FileStorageProviders.S3,
+            ["FileStorage:S3:BucketName"] = "fixture-private-bucket",
+            ["FileStorage:S3:Region"] = "us-east-2",
+            ["FileStorage:S3:CredentialProfile"] = "missing-" + Guid.NewGuid().ToString("N"),
+            ["FileStorage:S3:CredentialProfileFile"] = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + ".ini")
+        });
+        var error = Assert.Throws<InvalidOperationException>(() => provider.GetRequiredService<Amazon.S3.IAmazonS3>());
+        Assert.Equal("The configured S3 credential profile is unavailable.", error.Message);
+    }
+
+    [Fact]
     public void DependencyInjectionRejectsUnconfirmedOrRelativeLocalStorageInProduction()
     {
         using var provider = BuildProvider(

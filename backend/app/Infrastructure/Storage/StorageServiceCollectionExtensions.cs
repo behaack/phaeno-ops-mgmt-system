@@ -2,6 +2,7 @@ namespace PhaenoPortal.App.Infrastructure.Storage;
 
 using Amazon;
 using Amazon.S3;
+using Amazon.Runtime.CredentialManagement;
 using Microsoft.Extensions.Options;
 using PhaenoPortal.App.Features.DataProvisioning.Services;
 using PhaenoPortal.App.Features.OrderManagement.Services;
@@ -55,6 +56,13 @@ public static class StorageServiceCollectionExtensions
                     clientConfiguration.AuthenticationRegion = options.Region;
                 }
 
+                if (!string.IsNullOrWhiteSpace(options.CredentialProfile))
+                {
+                    var profiles = new CredentialProfileStoreChain(string.IsNullOrWhiteSpace(options.CredentialProfileFile) ? null : options.CredentialProfileFile);
+                    if (!profiles.TryGetAWSCredentials(options.CredentialProfile, out var credentials))
+                        throw new InvalidOperationException("The configured S3 credential profile is unavailable.");
+                    return new AmazonS3Client(credentials, clientConfiguration);
+                }
                 return new AmazonS3Client(clientConfiguration);
             });
             services.AddSingleton<IFileStorage, S3FileStorage>();

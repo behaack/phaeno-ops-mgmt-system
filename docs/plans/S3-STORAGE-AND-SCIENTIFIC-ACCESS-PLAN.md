@@ -83,6 +83,12 @@ policy, versioning, IAM, server configuration or deployment was changed.
 
 ## Owner decisions
 
+- October 9 testing policy update: S3-aware coordinated backup/restore is a
+  production launch requirement, not a local/hosted-test activation gate. Retain
+  existing files/recovery copies and verify conversion integrity; original-version
+  protection, scoped access and application admission checks still apply. The
+  Local-only backup timer must be explicitly deferred when testing uses S3.
+
 - Support both Portal uploads stored in S3 and scientific files already in S3.
 - Apply the S3 hierarchy **Customer -> Job -> Sample -> Library -> Sequencing
   run**. The Owner corrected the initial word "Subject" to "Sample"; reuse

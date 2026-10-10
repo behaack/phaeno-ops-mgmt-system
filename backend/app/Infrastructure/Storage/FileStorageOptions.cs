@@ -24,6 +24,10 @@ public sealed class FileStorageOptions
 
 public sealed class S3FileStorageOptions
 {
+    public string CredentialProfile { get; set; } = string.Empty;
+
+    public string CredentialProfileFile { get; set; } = string.Empty;
+
     public string BucketName { get; set; } = string.Empty;
 
     public string Region { get; set; } = string.Empty;

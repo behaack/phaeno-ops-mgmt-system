@@ -1,5 +1,16 @@
 # Operations and production-readiness boundary
 
+## Testing S3 backup policy — October 9, 2026
+
+The Owner defers S3-aware backup/restore until commercial production readiness.
+It does not block local or hosted-test S3 cutover. Existing data/file access,
+verified locator conversion, private scoped credentials, version-pinned originals,
+scanning and authorization remain required. Explicitly mark Local-only backup
+automation deferred when testing switches providers; preserve existing recovery
+copies and do not claim S3 backup coverage. Production still requires implemented
+and rehearsed S3 recovery, scheduled off-server protection and monitoring under
+the [cutover plan](plans/S3-HOSTED-CUTOVER-PLAN.md).
+
 ## Scientific storage and progress source release — completed October 9, 2026
 
 The Owner-authorized matched API/Portal frontend release is active on source

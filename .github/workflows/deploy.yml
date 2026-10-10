@@ -44,6 +44,11 @@ on:
         required: false
         default: ""
         type: string
+      configure_hosted_test_s3:
+        description: Switch the existing empty hosted-test file store to the isolated S3 test bucket; defer testing backups
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -106,8 +111,20 @@ jobs:
           WEBSITE_PREVIEW_SEARCH_URL: ${{ vars.WEBSITE_PREVIEW_SEARCH_URL }}
           WEBSITE_PREVIEW_SEARCH_VERCEL_BYPASS_SECRET: ${{ secrets.WEBSITE_PREVIEW_SEARCH_VERCEL_BYPASS_SECRET }}
           WEBSITE_PREVIEW_SEARCH_PROXY_API_KEY: ${{ secrets.WEBSITE_PREVIEW_SEARCH_PROXY_API_KEY }}
+          CONFIGURE_HOSTED_TEST_S3: ${{ inputs.configure_hosted_test_s3 }}
+          HOSTED_TEST_S3_ACCESS_KEY_ID: ${{ secrets.PORTAL_HOSTED_TEST_S3_ACCESS_KEY_ID }}
+          HOSTED_TEST_S3_SECRET_ACCESS_KEY: ${{ secrets.PORTAL_HOSTED_TEST_S3_SECRET_ACCESS_KEY }}
         run: |
           missing=0
+          if [ "$CONFIGURE_HOSTED_TEST_S3" = true ]; then
+            if [ "$APPLY_MIGRATIONS" = true ] || [ "$CUTOVER_CLERK_IDENTITY" = true ]; then
+              echo '::error::Testing S3 cutover cannot be combined with migrations or identity cutover.'
+              missing=1
+            fi
+            for name in HOSTED_TEST_S3_ACCESS_KEY_ID HOSTED_TEST_S3_SECRET_ACCESS_KEY; do
+              if [ -z "${!name}" ]; then echo "::error::Missing protected testing S3 configuration $name"; missing=1; fi
+            done
+          fi
 
           for name in \
             DEPLOY_HOST \
@@ -348,6 +365,7 @@ jobs:
             "$release_path/deployment/hetzner/green/preflight-file-services.sh" \
             "$release_path/deployment/hetzner/green/install-mailgun-invitation-runtime-config.sh" \
             "$release_path/deployment/hetzner/green/install-s3-runtime-config.sh" \
+            "$release_path/deployment/hetzner/green/configure-hosted-test-s3.sh" \
             "$release_path/deployment/hetzner/green/install-website-preview-search-runtime-config.sh"
           REMOTE
 
@@ -459,7 +477,24 @@ jobs:
             | ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
                 "install -m 600 /dev/stdin '$BACKUP_KEY_PATH'"
 
+      - name: Configure and deploy isolated hosted-test S3
+        if: ${{ inputs.configure_hosted_test_s3 }}
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          RELEASE_PATH: ${{ steps.release.outputs.release_path }}
+          IMAGE_TAG: ${{ steps.release.outputs.image_tag }}
+          HOSTED_TEST_S3_ACCESS_KEY_ID: ${{ secrets.PORTAL_HOSTED_TEST_S3_ACCESS_KEY_ID }}
+          HOSTED_TEST_S3_SECRET_ACCESS_KEY: ${{ secrets.PORTAL_HOSTED_TEST_S3_SECRET_ACCESS_KEY }}
+        run: |
+          set +x
+          printf 'AWS_ACCESS_KEY_ID=%s\nAWS_SECRET_ACCESS_KEY=%s\n' \
+            "$HOSTED_TEST_S3_ACCESS_KEY_ID" "$HOSTED_TEST_S3_SECRET_ACCESS_KEY" \
+            | ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
+                "$RELEASE_PATH/deployment/hetzner/green/configure-hosted-test-s3.sh '$DEPLOY_ROOT' '$GITHUB_SHA' '$IMAGE_TAG'"
+
       - name: Deploy and smoke Portal green
+        if: ${{ !inputs.configure_hosted_test_s3 }}
         env:
           APPLY_MIGRATIONS: ${{ inputs.apply_migrations }}
           BACKUP_KEY_PATH: ${{ steps.release.outputs.backup_key_path }}
@@ -514,6 +549,7 @@ jobs:
           REMOTE
 
       - name: Verify public dial tone remains available
+        if: ${{ !cancelled() }}
         run: |
           curl \
             --fail \

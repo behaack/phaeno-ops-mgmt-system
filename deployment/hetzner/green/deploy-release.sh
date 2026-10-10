@@ -102,8 +102,10 @@ else
     fail "Portal production runtime must configure FileStorage__Provider=Disabled, Local or S3."
 fi
 
-exec 9>"${RUNTIME_DIR}/deploy.lock"
-flock --exclusive 9
+if [[ "${FILE_STORAGE_DEPLOY_LOCK_HELD:-false}" != true ]]; then
+    exec 9>"${RUNTIME_DIR}/deploy.lock"
+    flock --exclusive 9
+fi
 
 readonly OLD_COMPOSE_ENV="$(mktemp "${RUNTIME_DIR}/compose.env.previous.XXXXXX")"
 readonly NEW_COMPOSE_ENV="$(mktemp "${RUNTIME_DIR}/compose.env.next.XXXXXX")"

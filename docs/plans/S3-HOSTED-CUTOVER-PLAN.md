@@ -1,7 +1,10 @@
 # S3 hosted cutover
 
-Status: prepared October 9, 2026; execution is not authorized. This plan does
-not lift the repository deployment holds or authorize source-object changes.
+Status: testing cutover preparation authorized October 9, 2026. The Owner moved
+S3-aware backup/restore to the production launch requirements; it no longer
+blocks local or hosted-test S3 use. Preserve existing records and file access.
+No source-object deletion, database reset or commercial production launch is
+authorized. Restore deployment holds after any bounded testing release.
 The [implementation plan](S3-STORAGE-AND-SCIENTIFIC-ACCESS-PLAN.md) records code,
 local inventory and read-only AWS evidence.
 
@@ -28,26 +31,44 @@ them in source, release archives, browser bundles or logs. Original scientific
 admission requires exact non-null object versions and original-version
 preservation; scope all infrastructure changes explicitly before applying them.
 
-## Recovery and replacement preparation
+Testing infrastructure scope: use new private versioned destinations
+`phaeno-portal-local-test-767828764389-us-east-2` and
+`phaeno-portal-hosted-test-767828764389-us-east-2` in the verified account/region.
+Leave `phaeno-dev-01`, `elasticblast-phaeno` and their existing data/configuration
+untouched. Separate application identities are scoped to their corresponding
+test bucket, with version reads and multipart upload support but no permanent
+version deletion. Keep the supplied administrator credential on the owner's
+machine for provisioning; do not install it in the hosted API.
+
+Local activation must first convert the currently four scientific receipts using
+their existing customer/work/sample/library/FASTQ-set identities, verify complete
+bytes and retain the Local copies. The hosted inventory was empty at the last
+release; recheck it immediately before switching. Nonsecret local profile selection
+belongs in environment-specific configuration; credentials stay outside source.
+Use the existing protected deployment path for hosted configuration and explicitly
+defer its Local-only backup timer. Test resources are not production approval.
+
+## Testing preparation and production recovery requirement
 
 1. Freeze scientific/file writers and acquire the deployment/backup maintenance
    locks. Pin every physical key, object version, receipt, length and full SHA-256.
-2. Produce a coordinated encrypted database/current-file recovery point. Verify
-   off-server export, decryption and a populated isolated restore; old evidence
-   is not proof for this release. Record retained recovery IDs privately.
-3. Prepare a separate restore-rehearsal database and file namespace with network
-   isolation and dispatch/deletion disabled. Restore metadata and bytes and verify
-   all required references. There is no live replacement/reset requirement for
-   this source-only change; any later replacement needs explicit preserved-data
-   scope, destination preparation and Owner approval.
-4. Implement and rehearse S3-aware coordinated backup/restore before activation.
-   The current Local-only backup timer refuses S3 and cannot be accepted as the
-   new recovery mechanism. Include typed managed locators, original bucket/key/
-   version identities and full integrity evidence. Recovery of an original must
-   not silently substitute another version or claim missing original bytes exist.
-5. Back up protected runtime settings and prepare the exact storage-locator
-   conversion/rollback mapping. Keep the previous Local volume and metadata
-   recovery point until acceptance. No destructive remedy is authorized here.
+2. Testing cutover does not require a new backup, populated restore rehearsal or
+   completed S3 backup implementation. Retain existing recovery copies, the Local
+   files and an exact locator conversion/rollback manifest. Verify each copied
+   file's complete checksum and length before changing its provider address.
+3. Keep test storage independent of future production and unrelated bucket data.
+   Use private versioned test buckets and workload credentials scoped to their
+   destinations. Original version pinning, scanning and tenant/file attribution
+   remain testing requirements; the backup deferral does not waive them.
+4. Explicitly defer the Local-only backup timer when testing switches to S3; do
+   not report that it protects S3 objects or allow a failing Local timer to imply
+   current recovery coverage. Preserve its prior settings and existing snapshots.
+5. Before commercial production activation, implement S3-aware coordinated
+   backup/restore, schedule/monitoring and a populated isolated restore rehearsal.
+   Include managed locators, original bucket/key/version identities and complete
+   integrity evidence. Pin production destinations and preserved/reset data,
+   verify off-server recovery, and prepare cutover/rollback acceptance. A testing
+   waiver does not satisfy this production gate.
 
 ## Cutover
 
@@ -60,7 +81,7 @@ metadata switch, new API/scanner configuration and writer restart in one bounded
 maintenance window. Install the explicit empty S3 key prefix for customer-first
 roots and preserve other runtime/worker/retention flags.
 
-Restore normal operation only after recovery, authorization and proxy checks.
+Restore testing operation after integrity, authorization and proxy checks.
 Keep source preservation, byte-deletion activation, real DPS connection and
 Customer scientific approval/publication as separately authorized actions.
 
@@ -80,10 +101,10 @@ versions and diagnostic/recovery evidence; do not delete the target bucket.
 Verify authenticated upload/download, original admission/version pinning,
 scanner failure, source change/deletion, Customer/Job/sample isolation, repeated
 libraries/captures/assemblies, preserved old files, interruption/retry recovery,
-large permitted files through the real proxy and a populated S3 restore. Confirm
-the new backup schedule and monitoring work after activation. Record actual
+large permitted files through the real proxy. Populated S3 restore, backup schedule
+and recovery monitoring are production launch requirements. Record actual
 evidence and restore Git/workflow deployment holds after the authorized release.
 
-This prepared plan leaves target pinning, infrastructure scope, populated recovery
-and S3 backup implementation open. Obtain explicit hosted release authorization
-only after those requirements produce a concrete reviewable release package.
+Testing may proceed after target, scoped access, preserved-file conversion and
+functional acceptance are verified. Backup/restore implementation remains tracked
+for production and must not be represented as complete during testing.
