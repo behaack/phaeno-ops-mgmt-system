@@ -91,3 +91,18 @@ was not promoted. Package the exact canonical schema in both paths and retry the
 bounded release. Docker Desktop is not running locally; the protected container
 build must verify this packaging correction before activation. The workflow hold
 was restored and independently read back as disabled_manually.
+
+## Completed preserving release
+
+Corrected application source `a1d3fbb01747e409a67b99ede1a3ca33063010ab` is active
+on both API and Portal frontend. Protected run 38077216862 succeeded, including
+container publish, scanner checks, API/database and Website smoke. The exact-source
+staged frontend was promoted only after API health/source verification; Vercel
+production metadata confirms the match. No migration, reset, storage conversion,
+identity cutover or DPS activation occurred. Post-release health/rendering and
+anonymous authorization checks pass; the live sign-in form renders. The bounded
+frontend error query returned no entries. The workflow hold and Vercel Git holds
+are restored. Existing encrypted off-server recovery remains available with the
+same verified digest; current S3 recovery remains explicitly deferred for testing.
+See the [completed release receipt](../operations/portal-dps-source-release-20261010.md)
+for evidence and the separate regression, authenticated and real-DPS boundaries.
