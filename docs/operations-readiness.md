@@ -1,5 +1,17 @@
 # Operations and production-readiness boundary
 
+## Portal DPS source release preparation — October 10, 2026
+
+The Owner authorized a matched Portal API/frontend update from main under the
+[preserving release plan](plans/PORTAL-DPS-SOURCE-RELEASE-20261010-PLAN.md).
+Full API Release compilation, frontend TypeScript/production build and the
+regenerated 56-guide API/UI help consistency check pass. Preparation corrected a
+missing DPS scan-status namespace import and a stale generated help checksum.
+Deployment and actual hosted preflight remain pending authenticated workflow access.
+No database reset, migration, identity cutover, storage conversion or DPS activation
+is authorized by this release. Existing hosted-test S3 recovery deferral and
+automatic deployment holds remain in place; real DPS acceptance awaits Chris.
+
 ## Testing S3 backup policy — October 9, 2026
 
 The Owner defers S3-aware backup/restore until commercial production readiness.

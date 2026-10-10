@@ -2,7 +2,8 @@
 
 Version: `poms-dps/1.0`. Owner-directed specification, October 10, 2026.
 
-Status: **POMS implementation written, not built or validated; DPS implementation
+Status: **POMS implementation compiles in the full Release solution; tests and
+connected validation remain deferred; DPS implementation
 and connected acceptance await Chris Yourch**. The existing dummy MQTT probe is
 separate. This document defines the required behavior, rather than
 reverse-engineering that probe. The Owner explicitly deferred validation runs.

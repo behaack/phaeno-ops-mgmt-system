@@ -1,7 +1,8 @@
 # DPS integration configuration
 
-Implementation status, October 10, 2026: POMS source is written; compilation,
-tests and connected validation are deferred at the Owner's request. No connection,
+Implementation status, October 10, 2026: POMS source and regression sources compile
+in the full Release solution with zero warnings/errors during release preparation.
+Tests and connected validation remain deferred at the Owner's request. No connection,
 command, S3 handoff or output-admission operation has been exercised. This guide
 describes the implemented configuration, not evidence of a working deployment.
 
@@ -15,7 +16,9 @@ No Clerk authentication or authorization rule is changed.
 configured. Both must be enabled for the server connection and dispatch worker.
 The shipped DPS host and approved-recipe list are empty; there is no broker
 fallback. Do not enable a hosted environment until Chris's service and the
-contract/access validation are ready. The repository deployment hold still applies.
+contract/access validation are ready. The bounded source release follows the
+[October 10 preserving release plan](../plans/PORTAL-DPS-SOURCE-RELEASE-20261010-PLAN.md);
+automatic deployment holds remain in place.
 
 | Setting | Meaning |
 | --- | --- |

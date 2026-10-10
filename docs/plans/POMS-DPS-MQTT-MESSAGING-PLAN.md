@@ -2,7 +2,9 @@
 
 ## POMS implementation authorized — October 10, 2026
 
-Status: implementation written, compilation/validation deferred. The API now
+Status: implementation written; full Release solution compilation passes during
+October 10 deployment preparation after correcting a missing scan-status namespace
+import. Tests and real-provider validation remain deferred. The API now
 registers DpsAssemblyProvider, a configured MQTT hosted client, schema/recipe
 checks, pinned S3 handoff and parameter objects, scoped command/lifecycle
 receipts/query/ACK mapping, immediate Start/Cancel dispatch errors, saved-request

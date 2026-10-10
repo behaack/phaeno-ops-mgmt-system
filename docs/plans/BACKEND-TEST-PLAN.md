@@ -4,7 +4,11 @@ October 10 POMS DPS implementation: validation is explicitly deferred by the
 Owner. New DpsContractTests sources cover explicit schema/version/object identity,
 unknown and duplicate fields, unsupported/missing/external parameter-schema
 references, progress=100 not establishing completion, broker isolation and
-disabled defaults. No build, test or live validation run was performed. Pending
+disabled defaults. Initial implementation ran no build, test or live validation.
+During the subsequently authorized release preparation, the full Release solution
+and these regression sources compile with zero warnings/errors after a missing
+scan-status namespace import was corrected. No test suite or DPS operation ran.
+Pending
 Chris-dependent acceptance includes correlated dispatch receipts, API errors
 with saved attempt IDs, duplicate/restarted dispatch, command rejection/conflict,
 query replay, cancellation races, commit-only ACKs, output admission recovery,
