@@ -1,0 +1,97 @@
+name: Recover Historical Website Intake
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Preview the two-table candidate or restore missing Website rows while preserving current data
+        required: true
+        type: choice
+        default: preview
+        options: [preview, restore]
+      expected_source_digest:
+        description: Exact source_rows_digest from the successful preview, required for restore
+        required: false
+        type: string
+      confirmation:
+        description: For restore, type RESTORE WEBSITE TABLES
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phaeno-portal-green-production
+  cancel-in-progress: false
+
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: production
+    steps:
+      - uses: actions/checkout@v6
+      - name: Validate scoped operation and protected connection
+        env:
+          MODE: ${{ inputs.mode }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+          EXPECTED_DIGEST: ${{ inputs.expected_source_digest }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          BACKUP_PUBLIC_KEY: ${{ secrets.PORTAL_MIGRATION_BACKUP_PUBLIC_KEY }}
+        run: |
+          set -euo pipefail
+          umask 077
+          [[ "$GITHUB_REF" == refs/heads/main && "$GITHUB_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$GITHUB_RUN_ID" =~ ^[0-9]+$ && "$GITHUB_RUN_ATTEMPT" =~ ^[0-9]+$ ]]
+          [[ "$MODE" == preview || "$MODE" == restore ]]
+          [[ -z "$EXPECTED_DIGEST" || "$EXPECTED_DIGEST" =~ ^[0-9a-f]{64}$ ]]
+          if [[ "$MODE" == restore ]]; then
+            [[ "$CONFIRMATION" == 'RESTORE WEBSITE TABLES' && "$EXPECTED_DIGEST" =~ ^[0-9a-f]{64}$ ]]
+          fi
+          for name in DEPLOY_HOST DEPLOY_USER DEPLOY_SSH_KEY DEPLOY_KNOWN_HOSTS BACKUP_PUBLIC_KEY; do
+            [[ -n "${!name}" ]] || { printf 'Missing protected setting: %s\n' "$name" >&2; exit 1; }
+          done
+          operation="github-actions-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          remote="/opt/phaeno.portal-green/maintenance/website-recovery-$operation"
+          echo "RECOVERY_OPERATION=$operation" >> "$GITHUB_ENV"
+          echo "RECOVERY_REMOTE=$remote" >> "$GITHUB_ENV"
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          printf '%s\n' "$BACKUP_PUBLIC_KEY" > "$RUNNER_TEMP/website-backup-public.pem"
+          chmod 600 ~/.ssh/deploy_key ~/.ssh/known_hosts "$RUNNER_TEMP/website-backup-public.pem"
+      - name: Stage the immutable guarded recovery helper
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          set -euo pipefail
+          ssh -o StrictHostKeyChecking=yes -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" "install -d -m 700 '$RECOVERY_REMOTE'"
+          scp -q -o StrictHostKeyChecking=yes -i ~/.ssh/deploy_key deployment/hetzner/green/recover-website-intake.py "$DEPLOY_USER@$DEPLOY_HOST:$RECOVERY_REMOTE/"
+          scp -q -o StrictHostKeyChecking=yes -i ~/.ssh/deploy_key "$RUNNER_TEMP/website-backup-public.pem" "$DEPLOY_USER@$DEPLOY_HOST:$RECOVERY_REMOTE/backup-public.pem"
+          expected="$(sha256sum deployment/hetzner/green/recover-website-intake.py | cut -d ' ' -f 1)"
+          actual="$(ssh -o StrictHostKeyChecking=yes -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" "sha256sum '$RECOVERY_REMOTE/recover-website-intake.py'" | cut -d ' ' -f 1)"
+          [[ "$actual" == "$expected" ]]
+      - name: Preview or apply the exact two-table recovery
+        env:
+          MODE: ${{ inputs.mode }}
+          EXPECTED_DIGEST: ${{ inputs.expected_source_digest }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          set -euo pipefail
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
+            "flock --exclusive --wait 120 /opt/phaeno.portal-green/runtime/deploy.lock python3 '$RECOVERY_REMOTE/recover-website-intake.py' '$MODE' '$GITHUB_SHA' '$RECOVERY_OPERATION' '${EXPECTED_DIGEST:--}'" \
+            | tee "$RUNNER_TEMP/website-recovery-result.txt"
+          {
+            printf '## Website intake recovery\n\n```json\n'
+            cat "$RUNNER_TEMP/website-recovery-result.txt"
+            printf '\n```\n'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Remove runner connection material
+        if: ${{ always() }}
+        run: rm -f ~/.ssh/deploy_key "$RUNNER_TEMP/website-backup-public.pem"
