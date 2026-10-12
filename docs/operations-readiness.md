@@ -1,5 +1,21 @@
 # Operations and production-readiness boundary
 
+## Portal gap-closure hosted-test release — completed October 11, 2026
+
+The Owner authorized matched API/Portal deployment with commit/push and temporary
+protected-workflow enablement. Source `97da7807c1de86f6d60492a1d2ad825ee533eb7c`
+is live on the preserved hosted test environment under the
+[release plan](plans/PORTAL-GAP-CLOSURE-TEST-RELEASE-20261011-PLAN.md).
+Protected run 38206214665 succeeds; exact-source staged frontend was promoted
+after API source/health checks. No EF migration is needed or ran; no reset,
+identity/storage/provider activation or local test-data import occurred.
+S3/ClamAV and existing recovery/worker settings are preserved. Post-release health,
+scanner, anonymous authorization and authenticated Phaeno work/Lab/help/search
+checks pass. The [release receipt](operations/portal-gap-closure-test-release-20261011.md)
+records actual evidence and remaining acceptance. The Owner permits the bounded
+manual enable/run/disable step whenever requesting deploys; manual and Vercel Git
+holds remain after this run. Customer-only i18n and en-US alone published remain.
+
 ## October 11 gap closure in development
 
 The Owner authorized the ordered application gap-closure implementation with
@@ -11,7 +27,8 @@ Requested local regression execution is recorded in the
 The work dashboard/bell use scoped source facts; read state does not resolve
 work. Recovery preparation is in [S3 recovery preparation](operations/S3-RECOVERY-PREPARATION.md).
 Physical DataMatrix/supplier qualification and the outage/trainer exercise
-remain unaccepted. Existing S3 test deferral and deployment holds are preserved.
+remain unaccepted. Existing S3 test deferral and automatic deployment holds remain;
+the bounded Owner-authorized release above supersedes this earlier task hold.
 
 ## Portal DPS source release — completed October 10, 2026
 

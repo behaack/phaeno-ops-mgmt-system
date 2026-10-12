@@ -2,7 +2,11 @@
 
 Prepared: October 11, 2026.
 Status: implementation authorized October 11, 2026, in the proposed order.
-Customer-only i18n and deployment on hold remain explicit constraints.
+Customer-only i18n remains; automatic deployment and operational activation holds
+remain explicit constraints. The Owner subsequently authorized the preserving
+hosted-test release on October 11: API/Portal source `97da7807` is deployed under
+the [release plan](PORTAL-GAP-CLOSURE-TEST-RELEASE-20261011-PLAN.md). Remaining
+operational/commercial acceptance stays open.
 Implementation and verification evidence is recorded below; operational gates
 are not closed by source changes.
 Product owner: repository Owner. Engineering owner: Codex.

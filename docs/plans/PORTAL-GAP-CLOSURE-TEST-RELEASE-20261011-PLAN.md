@@ -108,3 +108,14 @@ workflow hold, source commit or live application has been changed during preflig
 The Owner's explicit commit/push authorization is recorded. Release activation
 awaits the pinned source, remaining host preflight and staged deployment checks.
 The final API Release solution build passes with zero warnings/errors.
+
+## Completed release
+
+Application source `97da7807c1de86f6d60492a1d2ad825ee533eb7c` is active on both
+API and Portal frontend. Protected run `38206214665` succeeds; staged deployment
+`dpl_JB7682hbDJvSkCvZjCDCjafAWo7x` was promoted only after API source/health checks.
+No migration, reset, identity/storage/provider activation or local data import
+occurred. Post-release health/authorization and authenticated Phaeno work, Lab
+navigation and refreshed help/search pass. The manual workflow is disabled again.
+The Owner explicitly approved this bounded enable/run/disable sequence for future
+requested deploys. See the [completed release receipt](../operations/portal-gap-closure-test-release-20261011.md).
