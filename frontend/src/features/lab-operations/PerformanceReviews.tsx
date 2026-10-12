@@ -1,3 +1,5 @@
+import { NativeSelect } from '#/components/ui/native-select'
+import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRef, useState } from 'react'
@@ -71,6 +73,8 @@ function ProposalDialog({ work, specimen, targets, data, close, refresh }: { wor
     return approved.find(p => approved.every(other => other.basedOnProposalId !== p.id))?.id ?? null
   }
   const form = useForm<z.infer<typeof proposalSchema>>({ resolver: zodResolver(proposalSchema), defaultValues: { target: targets[0]?.recordId ?? '', baseline: baseline(targets[0]?.recordId ?? ''), performerId: '', localTime: '', occurrence: '', reason: '' } })
+  const { isDirty: __formDraftDirty } = form.formState
+
   const request = useRef<{ hash: string; id: string } | null>(null)
   const mutation = useMutation({ mutationFn: async (value: z.infer<typeof proposalSchema>) => {
     const target = targets.find(t => t.recordId === value.target)!
@@ -81,14 +85,14 @@ function ProposalDialog({ work, specimen, targets, data, close, refresh }: { wor
     if (request.current?.hash !== hash) request.current = { hash, id: crypto.randomUUID() }
     return proposePerformance(work, specimen, { ...input, requestId: request.current.id })
   }, onSuccess: async () => { await refresh(); close() } })
-  const safeClose = () => { if (!mutation.isPending && (!form.formState.isDirty || window.confirm('Discard this unsaved performance proposal?'))) close() }
+  const safeClose = async () => { if (!mutation.isPending && (!__formDraftDirty || (await confirmPortal('Discard this unsaved performance proposal?')))) close() }
   const occurrences = localTimeOccurrences(form.watch('localTime'))
   return <Dialog open onOpenChange={open => { if (!open) safeClose() }}><DialogContent className="max-w-2xl"><DialogHeader><DialogTitle>Propose performer/time change</DialogTitle><DialogDescription>Identify the actual work and explain the change. The original entry is retained; another supervisor must approve this proposal.</DialogDescription></DialogHeader>
     <form id="performance-proposal" className="space-y-4" noValidate onSubmit={form.handleSubmit(value => mutation.mutate(value))}>
-      <div className="space-y-1.5"><Label htmlFor="performance-target"><RequiredFieldName>Original step</RequiredFieldName></Label><select id="performance-target" className={selectClass} {...form.register('target', { onChange: event => form.setValue('baseline', baseline(event.target.value)) })}>{targets.map(target => <option key={target.recordId} value={target.recordId}>{target.label}</option>)}</select></div>
+      <div className="space-y-1.5"><Label htmlFor="performance-target"><RequiredFieldName>Original step</RequiredFieldName></Label><NativeSelect id="performance-target" className={selectClass} {...form.register('target', { onChange: event => form.setValue('baseline', baseline(event.target.value)) })}>{targets.map(target => <option key={target.recordId} value={target.recordId}>{target.label}</option>)}</NativeSelect></div>
       <Controller control={form.control} name="performerId" render={({ field }) => <PerformerPicker id="proposal-performer" value={field.value} onChange={field.onChange} error={form.formState.errors.performerId?.message} />} />
       <div className="space-y-1.5"><Label htmlFor="proposal-time"><RequiredFieldName>Actual date and time</RequiredFieldName></Label><p className="text-xs text-muted-foreground">Time zone: {Intl.DateTimeFormat().resolvedOptions().timeZone.replaceAll('_', ' ')}. Recorded to the minute.</p><Input id="proposal-time" type="datetime-local" step={60} {...form.register('localTime')} aria-invalid={Boolean(form.formState.errors.localTime)} aria-describedby="proposal-time-error" /><FieldError id="proposal-time-error">{form.formState.errors.localTime?.message}</FieldError></div>
-      {occurrences.length > 1 ? <div><Label htmlFor="proposal-occurrence"><RequiredFieldName>Which occurrence?</RequiredFieldName></Label><select id="proposal-occurrence" className={selectClass} {...form.register('occurrence')}><option value="">Choose an occurrence</option>{occurrences.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</select><FieldError>{form.formState.errors.occurrence?.message}</FieldError></div> : null}
+      {occurrences.length > 1 ? <div><Label htmlFor="proposal-occurrence"><RequiredFieldName>Which occurrence?</RequiredFieldName></Label><NativeSelect id="proposal-occurrence" className={selectClass} {...form.register('occurrence')}><option value="">Choose an occurrence</option>{occurrences.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</NativeSelect><FieldError>{form.formState.errors.occurrence?.message}</FieldError></div> : null}
       <div className="space-y-1.5"><Label htmlFor="proposal-reason"><RequiredFieldName>Reason and supporting evidence</RequiredFieldName></Label><Textarea id="proposal-reason" maxLength={4000} {...form.register('reason')} aria-invalid={Boolean(form.formState.errors.reason)} aria-describedby="proposal-reason-error" /><FieldError id="proposal-reason-error">{form.formState.errors.reason?.message}</FieldError></div>
       {mutation.isError ? <EvidenceError error={mutation.error} /> : null}
     </form><RequiredDialogFooter><Button variant="outline" disabled={mutation.isPending} onClick={safeClose}>Cancel</Button><Button type="submit" form="performance-proposal" disabled={mutation.isPending}>{mutation.isPending ? 'Submitting…' : 'Submit for review'}</Button></RequiredDialogFooter>
@@ -98,11 +102,13 @@ function ProposalDialog({ work, specimen, targets, data, close, refresh }: { wor
 const reviewSchema = z.object({ outcome: z.enum(['approve', 'reject']), reason: z.string().trim().min(1, 'Explain the review decision.').max(4000) })
 function ReviewDialog({ work, specimen, proposal, close, refresh, people }: { people: ReadonlyMap<string, string>; work: string; specimen: string; proposal: PerformanceProposal; close: () => void; refresh: () => Promise<void> }) {
   const form = useForm<z.infer<typeof reviewSchema>>({ resolver: zodResolver(reviewSchema), defaultValues: { outcome: 'approve', reason: '' } })
+  const { isDirty: __formDraftDirty } = form.formState
+
   const mutation = useMutation({ mutationFn: (value: z.infer<typeof reviewSchema>) => decidePerformance(work, specimen, proposal.id, value.outcome === 'approve', value.reason), onSuccess: async () => { await refresh(); close() } })
-  const safeClose = () => { if (!mutation.isPending && (!form.formState.isDirty || window.confirm('Discard this unsaved review?'))) close() }
+  const safeClose = async () => { if (!mutation.isPending && (!__formDraftDirty || (await confirmPortal('Discard this unsaved review?')))) close() }
   return <Dialog open onOpenChange={open => { if (!open) safeClose() }}><DialogContent className="max-w-2xl"><DialogHeader><DialogTitle>Review performer/time evidence</DialogTitle><DialogDescription>Compare the original entry, proposal and supporting evidence. Your decision is retained and cannot overwrite the original record.</DialogDescription></DialogHeader>
     <div className="grid gap-3 text-sm md:grid-cols-2"><div><h3 className="font-medium">Previous attribution</h3><Attribution json={proposal.originalPerformanceJson} people={people} /></div><div><h3 className="font-medium">Proposed attribution</h3><Attribution json={proposal.performanceJson} people={people} /></div></div><p className="whitespace-pre-wrap text-sm">Reason: {proposal.reason}</p>
-    <form id="performance-review" className="space-y-4" noValidate onSubmit={form.handleSubmit(value => mutation.mutate(value))}><div><Label htmlFor="review-outcome"><RequiredFieldName>Decision</RequiredFieldName></Label><select id="review-outcome" className={selectClass} {...form.register('outcome')}><option value="approve">Approve</option><option value="reject">Reject</option></select></div><div><Label htmlFor="review-reason"><RequiredFieldName>Review explanation</RequiredFieldName></Label><Textarea id="review-reason" maxLength={4000} {...form.register('reason')} aria-invalid={Boolean(form.formState.errors.reason)} aria-describedby="review-reason-error" /><FieldError id="review-reason-error">{form.formState.errors.reason?.message}</FieldError></div>{mutation.isError ? <EvidenceError error={mutation.error} /> : null}</form>
+    <form id="performance-review" className="space-y-4" noValidate onSubmit={form.handleSubmit(value => mutation.mutate(value))}><div><Label htmlFor="review-outcome"><RequiredFieldName>Decision</RequiredFieldName></Label><NativeSelect id="review-outcome" className={selectClass} {...form.register('outcome')}><option value="approve">Approve</option><option value="reject">Reject</option></NativeSelect></div><div><Label htmlFor="review-reason"><RequiredFieldName>Review explanation</RequiredFieldName></Label><Textarea id="review-reason" maxLength={4000} {...form.register('reason')} aria-invalid={Boolean(form.formState.errors.reason)} aria-describedby="review-reason-error" /><FieldError id="review-reason-error">{form.formState.errors.reason?.message}</FieldError></div>{mutation.isError ? <EvidenceError error={mutation.error} /> : null}</form>
     <RequiredDialogFooter><Button variant="outline" disabled={mutation.isPending} onClick={safeClose}>Cancel</Button><Button form="performance-review" type="submit" disabled={mutation.isPending}>{mutation.isPending ? 'Saving…' : 'Save review decision'}</Button></RequiredDialogFooter>
   </DialogContent></Dialog>
 }

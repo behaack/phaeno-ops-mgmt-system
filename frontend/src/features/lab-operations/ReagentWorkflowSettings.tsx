@@ -1,3 +1,5 @@
+import { NativeSelect } from '#/components/ui/native-select'
+import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { useState } from 'react'
 import { useFieldArray, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -85,6 +87,8 @@ function WorkflowEditor({ workflow, definitions, onClose }: { workflow?: Reagent
     name: workflow?.name ?? '', materialDefinitionId: workflow?.materialDefinitionId ?? '', outputUnit: workflow?.outputUnit ?? '',
     steps: workflow?.steps.map(step => ({ stepKey: step.key, name: step.name, instructions: step.instructions })) ?? [{ stepKey: '', name: '', instructions: '' }],
   } })
+  const __modalGuard = useModalDraftGuard(form.formState.isDirty, form.formState.isSubmitting)
+
   const steps = useFieldArray({ control: form.control, name: 'steps' })
   const materialChoice = form.watch('materialDefinitionId')
   const chosenDefinition = definitions.find(item => item.id === materialChoice)
@@ -102,12 +106,14 @@ function WorkflowEditor({ workflow, definitions, onClose }: { workflow?: Reagent
       }
       return workflow ? reviseReagentWorkflow(workflow.id, payload) : createReagentWorkflow(payload)
     },
-    onSuccess: async () => { await Promise.all([client.invalidateQueries({ queryKey: reagentWorkflowsKey }), client.invalidateQueries({ queryKey: ['lab-operations'] })]); onClose() },
+    onSuccess: async () => {
+    __modalGuard.allowNavigation()
+ await Promise.all([client.invalidateQueries({ queryKey: reagentWorkflowsKey }), client.invalidateQueries({ queryKey: ['lab-operations'] })]); onClose() },
   })
-  return <Dialog open onOpenChange={open => { if (!open && !save.isPending) onClose() }}><DialogContent className="max-w-2xl"><form className="contents" noValidate onSubmit={form.handleSubmit(values => save.mutate(values))}>
+  return <Dialog open onOpenChange={open => { if (open) (open => { if (!open && !save.isPending) onClose() })(open); else void __modalGuard.close(() => (open => { if (!open && !save.isPending) onClose() })(false)) }}><DialogContent className="max-w-2xl"><form className="contents" noValidate onSubmit={form.handleSubmit(values => save.mutate(values))}>
     <DialogHeader><DialogTitle>{workflow ? `Revise ${workflow.materialName}` : 'Configure reagent manufacturing'}</DialogTitle><DialogDescription>Choose a Phaeno reagent product and define its ordered, sample-independent procedure. Its product supplies the inventory unit. Each reagent keeps one workflow identity with revisions.</DialogDescription></DialogHeader>
     <div className="max-h-[62vh] space-y-4 overflow-y-auto p-1">
-      <PreparationField id="reagent-workflow-material" label="Reagent product" required error={form.formState.errors.materialDefinitionId?.message}><select id="reagent-workflow-material" className={prepSelectClass} {...form.register('materialDefinitionId', { onChange: event => form.setValue('outputUnit', definitions.find(item => item.id === event.target.value)?.defaultQuantityUnit ?? '') })}><option value="">Select reagent…</option>{availableDefinitions.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></PreparationField>
+      <PreparationField id="reagent-workflow-material" label="Reagent product" required error={form.formState.errors.materialDefinitionId?.message}><NativeSelect id="reagent-workflow-material" className={prepSelectClass} {...form.register('materialDefinitionId', { onChange: event => form.setValue('outputUnit', definitions.find(item => item.id === event.target.value)?.defaultQuantityUnit ?? '') })}><option value="">Select reagent…</option>{availableDefinitions.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</NativeSelect></PreparationField>
       {!availableDefinitions.length ? <p className="text-sm text-muted-foreground">No available Phaeno reagent products. <Link className="text-primary underline" to="/purchasing" search={{ section: 'products' }}>Define one in Purchasing → Products</Link> before creating its workflow.</p> : null}
       <PreparationField id="reagent-workflow-unit" label="Reagent inventory unit" required error={form.formState.errors.outputUnit?.message}><Input id="reagent-workflow-unit" maxLength={50} placeholder="Select a reagent product" readOnly {...form.register('outputUnit')} /></PreparationField>
       <p className="text-xs text-muted-foreground">{chosenDefinition ? `This product is tracked in ${chosenDefinition.defaultQuantityUnit}. Enter the actual amount produced when the run is complete.` : 'The selected Phaeno product sets the unit for every manufactured lot.'}</p>
@@ -115,6 +121,6 @@ function WorkflowEditor({ workflow, definitions, onClose }: { workflow?: Reagent
       <fieldset className="space-y-3"><legend className="text-sm font-medium">Manufacturing steps *</legend>{steps.fields.map((step, index) => <div key={step.id} className="space-y-3 rounded-lg border p-3"><div className="flex items-center justify-between"><p className="text-sm font-medium">Step {index + 1}</p><Button type="button" variant="ghost" size="icon" disabled={steps.fields.length === 1} aria-label={`Remove step ${index + 1}`} onClick={() => steps.remove(index)}><Trash2 aria-hidden="true" /></Button></div><PreparationField id={`reagent-step-${index}-name`} label="Step name" required error={form.formState.errors.steps?.[index]?.name?.message}><Input id={`reagent-step-${index}-name`} maxLength={160} {...form.register(`steps.${index}.name`)} /></PreparationField><PreparationField id={`reagent-step-${index}-instructions`} label="Instructions" required error={form.formState.errors.steps?.[index]?.instructions?.message}><textarea id={`reagent-step-${index}-instructions`} className={`${prepSelectClass} min-h-24 py-2`} maxLength={4000} {...form.register(`steps.${index}.instructions`)} /></PreparationField></div>)}<Button type="button" variant="outline" onClick={() => steps.append({ stepKey: '', name: '', instructions: '' })}><Plus data-icon="inline-start" /> Add step</Button>{form.formState.errors.steps?.root?.message ? <p role="alert" className="text-sm text-destructive">{form.formState.errors.steps.root.message}</p> : null}</fieldset>
       {save.error ? <p role="alert" className="text-sm text-destructive">{getLabOperationsError(save.error, 'The workflow could not be saved.')}</p> : null}
     </div>
-    <RequiredDialogFooter><Button type="button" variant="outline" disabled={save.isPending} onClick={onClose}>Cancel</Button><Button type="submit" disabled={save.isPending}>{save.isPending ? 'Saving…' : workflow ? 'Save new revision' : 'Create draft'}</Button></RequiredDialogFooter>
+    <RequiredDialogFooter><Button type="button" variant="outline" disabled={save.isPending} onClick={() => { void __modalGuard.close(() => (onClose)()) }}>Cancel</Button><Button type="submit" disabled={save.isPending}>{save.isPending ? 'Saving…' : workflow ? 'Save new revision' : 'Create draft'}</Button></RequiredDialogFooter>
   </form></DialogContent></Dialog>
 }

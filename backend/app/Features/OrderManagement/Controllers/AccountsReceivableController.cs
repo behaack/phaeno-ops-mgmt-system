@@ -108,17 +108,20 @@ public sealed partial class AccountsReceivableController(
     }
 
     [HttpGet("invoices")]
-    public async Task<IReadOnlyList<InvoiceReceivableDto>> Invoices(
+    public async Task<DTOs.PagedResult<InvoiceReceivableDto>> Invoices(
         [FromQuery] Guid? organizationId, [FromQuery] bool openOnly = false,
-        CancellationToken cancellationToken = default, [FromQuery] Guid? invoiceId = null)
+        CancellationToken cancellationToken = default, [FromQuery] Guid? invoiceId = null,
+        [FromQuery] int page = 1, [FromQuery] int pageSize = 25, [FromQuery] string? search = null)
     {
         await RequireAsync(BusinessRole.BillingOperator, cancellationToken);
         var query = dbContext.Invoices.AsNoTracking();
         if (invoiceId.HasValue) query = query.Where(item => item.Id == invoiceId);
         if (organizationId.HasValue) query = query.Where(item => item.OrganizationId == organizationId);
         if (openOnly) query = query.Where(item => item.Status == InvoiceStatus.Issued || item.Status == InvoiceStatus.PartiallyPaid);
-        return await query.OrderBy(item => item.DueOn).ThenBy(item => item.InvoiceNumber)
-            .Select(item => MapInvoice(item)).Take(1000).ToListAsync(cancellationToken);
+        if (!string.IsNullOrWhiteSpace(search)) query = query.Where(item => item.InvoiceNumber.Contains(search.Trim())
+            || dbContext.Organizations.Any(org => org.Id == item.OrganizationId && org.Name.Contains(search.Trim())));
+        return await Infrastructure.Api.RecordPage.ReadAsync(query.OrderBy(item => item.DueOn).ThenBy(item => item.InvoiceNumber).ThenBy(item => item.Id)
+            .Select(item => MapInvoice(item)), page, pageSize, cancellationToken);
     }
 
     [HttpGet("aging")]
@@ -147,17 +150,21 @@ public sealed partial class AccountsReceivableController(
     }
 
     [HttpGet("receipts")]
-    public async Task<IReadOnlyList<PaymentReceiptDto>> Receipts(
+    public async Task<DTOs.PagedResult<PaymentReceiptDto>> Receipts(
         [FromQuery] Guid? organizationId, [FromQuery] bool unappliedOnly = false,
-        CancellationToken cancellationToken = default, [FromQuery] Guid? receiptId = null)
+        CancellationToken cancellationToken = default, [FromQuery] Guid? receiptId = null,
+        [FromQuery] int page = 1, [FromQuery] int pageSize = 25, [FromQuery] string? search = null, [FromQuery] bool eligibleOnly = false)
     {
         await RequireAsync(BusinessRole.CashOperator, cancellationToken);
         var query = dbContext.PaymentReceipts.AsNoTracking();
         if (receiptId.HasValue) query = query.Where(item => item.Id == receiptId);
         if (organizationId.HasValue) query = query.Where(item => item.OrganizationId == organizationId);
         if (unappliedOnly) query = query.Where(item => item.UnappliedAmount > 0 && item.Status != PaymentReceiptStatus.Reversed);
-        return await query.OrderByDescending(item => item.ReceivedOn).ThenBy(item => item.ReceiptNumber)
-            .Select(item => MapReceipt(item)).Take(1000).ToListAsync(cancellationToken);
+        if (eligibleOnly) query = query.Where(item => item.Status != PaymentReceiptStatus.Reversed);
+        if (!string.IsNullOrWhiteSpace(search)) query = query.Where(item => item.ReceiptNumber.Contains(search.Trim())
+            || dbContext.Organizations.Any(org => org.Id == item.OrganizationId && org.Name.Contains(search.Trim())));
+        return await Infrastructure.Api.RecordPage.ReadAsync(query.OrderByDescending(item => item.ReceivedOn).ThenBy(item => item.ReceiptNumber).ThenBy(item => item.Id)
+            .Select(item => MapReceipt(item)), page, pageSize, cancellationToken);
     }
 
     [HttpPost("receipts")]
@@ -590,12 +597,12 @@ public sealed partial class AccountsReceivableController(
     }
 
     [HttpGet("reconciliations")]
-    public async Task<IReadOnlyList<ReconciliationBatchDto>> Reconciliations(CancellationToken cancellationToken, [FromQuery] Guid? batchId = null)
+    public async Task<DTOs.PagedResult<ReconciliationBatchDto>> Reconciliations(CancellationToken cancellationToken, [FromQuery] Guid? batchId = null, [FromQuery] int page = 1, [FromQuery] int pageSize = 25)
     {
         await requestContext.RequireAnyBusinessRoleAsync(HttpContext,
             [BusinessRole.CashOperator, BusinessRole.CashReconciler], EnforceRoles, cancellationToken);
-        return await dbContext.ReconciliationBatches.AsNoTracking().Where(item => !batchId.HasValue || item.Id == batchId).OrderByDescending(item => item.PeriodEnd)
-            .Select(item => MapReconciliation(item)).Take(500).ToListAsync(cancellationToken);
+        return await Infrastructure.Api.RecordPage.ReadAsync(dbContext.ReconciliationBatches.AsNoTracking().Where(item => !batchId.HasValue || item.Id == batchId).OrderByDescending(item => item.PeriodEnd).ThenBy(item => item.Id)
+            .Select(item => MapReconciliation(item)), page, pageSize, cancellationToken);
     }
 
     [HttpGet("export")]

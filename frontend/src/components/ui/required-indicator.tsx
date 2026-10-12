@@ -1,3 +1,4 @@
+import { CustomerText } from '#/features/customer-i18n/customer-text'
 import type { ComponentProps, ReactNode } from 'react'
 
 import { cn } from '#/lib/utils'
@@ -30,8 +31,7 @@ function RequiredLegend({
       className={cn('text-xs text-muted-foreground', className)}
       {...props}
     >
-      <RequiredMark /> Required
-    </p>
+      <RequiredMark /> <CustomerText message="m_4850b174b713" /></p>
   )
 }
 

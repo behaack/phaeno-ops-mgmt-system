@@ -1,3 +1,4 @@
+import * as portalConfirmation from '#/components/PortalConfirmation'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ComponentProps, ReactNode } from 'react'
@@ -313,7 +314,7 @@ describe('SampleShippingDetailPage', () => {
   })
 
   it('announces shipment errors and confirms before discarding entered dispatch details', async () => {
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    const confirm = vi.spyOn(portalConfirmation, 'confirmPortal').mockResolvedValue(false)
     try {
       renderPage(undefined, customerSession(), embeddedHost())
       fireEvent.click(await screen.findByRole('button', { name: 'Record shipment' }))
@@ -328,7 +329,7 @@ describe('SampleShippingDetailPage', () => {
       fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }))
       expect(confirm).toHaveBeenCalledWith('Discard the unsaved shipment details?')
       expect(screen.getByRole('dialog', { name: 'Record return shipment' })).toBeTruthy()
-      confirm.mockReturnValue(true)
+      confirm.mockResolvedValue(true)
       fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }))
       await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Record return shipment' })).toBeNull())
       expect(api.recordSampleShipment).not.toHaveBeenCalled()

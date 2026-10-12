@@ -30,6 +30,8 @@ export function VendorBatchDialog({ kind, workspace, onClose, onSaved }: { kind:
     if (kind === 'shipment' && !v.evidence) ctx.addIssue({ code: 'custom', path: ['evidence'], message: 'Record the update evidence or reason.' })
   })
   const form = useForm<z.infer<typeof baseSchema>>({ resolver: zodResolver(schema), defaultValues: { vendorSupplierId: '', vendorProductId: '', vendorShipmentAddressId: '', vendorSupplierVersion: 0, vendorProductVersion: 0, vendorShipmentAddressVersion: 0, carrier: sendout?.carrier ?? '', tracking: sendout?.trackingReference ?? '', providerReference: sendout?.providerReference ?? '', eta: sendout?.expectedCompletionAtUtc ? localTime(sendout.expectedCompletionAtUtc) : '', evidence: '' } })
+  const { isDirty: __formDraftDirty } = form.formState
+
   const canChangeAddress = kind === 'shipment' && batch.sendoutStatus === 'Preparing' && Boolean(sendout?.vendorSupplierId)
   const vendors = useQuery({ queryKey: ['lab-sequencing-vendors'], queryFn: getSequencingVendors, enabled: kind === 'prepare' || canChangeAddress })
   const save = useMutation({ mutationFn: (v: z.infer<typeof baseSchema>) => {
@@ -41,7 +43,7 @@ export function VendorBatchDialog({ kind, workspace, onClose, onSaved }: { kind:
     if (!sendout || batch.sendoutVersion === null) throw new Error('Refresh the saved sendout before continuing.')
     return updateVendorShipment(sendout.id, { ...shipment, version: batch.sendoutVersion, evidence: v.evidence, ...(v.vendorShipmentAddressId ? { vendorShipmentAddressId: v.vendorShipmentAddressId, vendorShipmentAddressVersion: v.vendorShipmentAddressVersion } : {}) })
   }, onSuccess: async () => { await onSaved(); onClose() } })
-  const dismissal = useOrderDecisionDismissal(form.formState.isDirty, save.isPending, onClose, { scope: titles[kind].toLowerCase(), description: `Unsaved entries for ${batch.batchNumber} will be discarded. Saved shipment details will remain unchanged.` })
+  const dismissal = useOrderDecisionDismissal(__formDraftDirty, save.isPending, onClose, { scope: titles[kind].toLowerCase(), description: `Unsaved entries for ${batch.batchNumber} will be discarded. Saved shipment details will remain unchanged.` })
   const input = (key: 'carrier' | 'tracking' | 'providerReference' | 'eta', label: string, type = 'text') => <PreparationField id={`vendor-${key}`} label={label} error={form.formState.errors[key]?.message}><Input id={`vendor-${key}`} {...operationalInputProps} type={type} step={type === 'datetime-local' ? '1' : undefined} disabled={save.isPending} {...form.register(key)} /></PreparationField>
   return <DialogReturnFocus target={null} fallbackId={`sequencing-batch-actions-${batch.id}`}><Dialog open onOpenChange={open => !open && dismissal.close()}><DialogContent onOpenAutoFocus={e => { e.preventDefault(); cancel.current?.focus() }}><form className="contents" noValidate onSubmit={form.handleSubmit(v => save.mutate(v))}>
     <DialogHeader><DialogTitle>{titles[kind]}</DialogTitle><DialogDescription>Review the batch and shipment details before saving.</DialogDescription></DialogHeader>

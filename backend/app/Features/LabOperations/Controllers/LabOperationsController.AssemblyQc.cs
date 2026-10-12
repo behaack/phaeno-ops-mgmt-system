@@ -28,7 +28,7 @@ public sealed partial class LabOperationsController
             join file in dbContext.LabScientificFiles on qc.LabScientificFileId equals file.Id
             where qc.LabAssemblyJobId == jobId orderby qc.RecordedAtUtc descending
             select new { qc.Id, qc.ResultOutputPackageId, qc.ReviewVersion, qc.Decision, qc.Note, qc.MeasurementsJson, qc.InputCoverageJson,
-                qc.RecordedAtUtc, author = user.FirstName + " " + user.LastName, reportFileId = file.Id, reportFileName = file.FileName }).Take(1000).ToListAsync(ct);
+                qc.RecordedAtUtc, author = user.FirstName + " " + user.LastName, reportFileId = file.Id, reportFileName = file.FileName }).ToListAsync(ct);
         var artifacts = await dbContext.ResultArtifacts.AsNoTracking().Where(a => packageIds.Contains(a.ResultOutputPackageId)).ToListAsync(ct);
         return new { jobId, job.LabWorkOrderId, job.LabSpecimenId, job.Version, job.State, job.LabAnalysisRunId,
             canRecord = actor.HasAny(LabRole.Operator, LabRole.Supervisor) && job.State == "Succeeded" && job.LabAnalysisRunId.HasValue && job.AttentionReason == null,

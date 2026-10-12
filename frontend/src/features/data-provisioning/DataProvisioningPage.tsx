@@ -1,3 +1,8 @@
+import { RecordPagination } from '#/components/RecordPagination'
+import { useScopedRecordPage } from '#/components/use-scoped-record-page'
+import { NativeSelect } from '#/components/ui/native-select'
+import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
+import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
@@ -24,8 +29,8 @@ import {
   listDatasets,
   listOrganizationGrants,
   listOrganizations,
-  listProvisioningActivity,
-  listProvisioningRuns,
+  listProvisioningActivityPage,
+  listProvisioningRunsPage,
   listSourceSamples,
   publishDatasetVersion,
   reactivateDataset,
@@ -188,6 +193,8 @@ function SourceRegistryPanel({ apiEnabled }: { apiEnabled: boolean }) {
     resolver: zodResolver(sourceSchema),
     defaultValues: { label: '', isSynthetic: true },
   })
+  const __modalGuard = useModalDraftGuard(form.formState.isDirty, form.formState.isSubmitting)
+
   const createMutation = useMutation({
     mutationFn: createSourceSample,
     onSuccess: async () => {
@@ -256,7 +263,7 @@ function SourceRegistryPanel({ apiEnabled }: { apiEnabled: boolean }) {
         </CardContent>
       </Card>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog open={dialogOpen} onOpenChange={open => { if (open) (setDialogOpen)(open); else void __modalGuard.close(() => (setDialogOpen)(false)) }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Register source sample</DialogTitle>
@@ -554,16 +561,20 @@ function OrganizationGrantsPanel({ apiEnabled }: { apiEnabled: boolean }) {
     queryFn: () => listDepartments(grantOrganizationId, false),
     enabled: apiEnabled && Boolean(grantOrganizationId),
   })
-  const runsQuery = useQuery({
-    queryKey: ['data-provisioning', 'runs', selectedOrganizationId],
-    queryFn: () => listProvisioningRuns(selectedOrganizationId),
+  const runsQuerySelection = useScopedRecordPage(selectedOrganizationId)
+  const runsQueryPage = useQuery({
+    queryKey: ['data-provisioning', 'runs', selectedOrganizationId, selectedOrganizationId, runsQuerySelection.page],
+    queryFn: () => listProvisioningRunsPage(selectedOrganizationId, runsQuerySelection.page),
     enabled: apiEnabled && Boolean(selectedOrganizationId),
   })
-  const activityQuery = useQuery({
-    queryKey: ['data-provisioning', 'activity', selectedOrganizationId],
-    queryFn: () => listProvisioningActivity(selectedOrganizationId),
+  const runsQuery = { ...runsQueryPage, data: runsQueryPage.isError ? undefined : runsQueryPage.data?.items }
+  const activityQuerySelection = useScopedRecordPage(selectedOrganizationId)
+  const activityQueryPage = useQuery({
+    queryKey: ['data-provisioning', 'activity', selectedOrganizationId, selectedOrganizationId, activityQuerySelection.page],
+    queryFn: () => listProvisioningActivityPage(selectedOrganizationId, activityQuerySelection.page),
     enabled: apiEnabled && Boolean(selectedOrganizationId),
   })
+  const activityQuery = { ...activityQueryPage, data: activityQueryPage.isError ? undefined : activityQueryPage.data?.items }
   const upgradeForm = useForm<UpgradeValues>({
     resolver: zodResolver(upgradeSchema),
     defaultValues: { datasetVersionId: '' },
@@ -651,12 +662,12 @@ function OrganizationGrantsPanel({ apiEnabled }: { apiEnabled: boolean }) {
         <CardContent className="space-y-4">
           <div className="grid max-w-md gap-1.5">
             <Label htmlFor="grant-organization-filter">Organization</Label>
-            <select id="grant-organization-filter" className={selectClass} value={selectedOrganizationId} onChange={(event) => setSelectedOrganizationId(event.target.value)} disabled={!apiEnabled}>
+            <NativeSelect id="grant-organization-filter" className={selectClass} value={selectedOrganizationId} onChange={(event) => setSelectedOrganizationId(event.target.value)} disabled={!apiEnabled}>
               <option value="">Select an organization</option>
               {(organizationsQuery.data ?? []).map((organization) => (
                 <option key={organization.id} value={organization.id}>{organization.name} ({organization.kind})</option>
               ))}
-            </select>
+            </NativeSelect>
           </div>
           <QueryError error={organizationsQuery.error ?? grantsQuery.error ?? runsQuery.error ?? activityQuery.error} fallback="Organization provisioning data could not be loaded." />
           {(grantsQuery.data ?? []).map((grant) => (
@@ -690,7 +701,7 @@ function OrganizationGrantsPanel({ apiEnabled }: { apiEnabled: boolean }) {
               <section aria-labelledby="provisioning-runs-heading" className="rounded-lg border p-4">
                 <h3 id="provisioning-runs-heading" className="m-0 font-medium">Provisioning history</h3>
                 <div className="mt-3 space-y-2">
-                  {(runsQuery.data ?? []).slice(0, 20).map((run) => (
+                  {(runsQuery.data ?? []).map((run) => (
                     <div key={run.id} className="rounded-md border p-3 text-sm">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <span className="font-medium">{run.kind}</span>
@@ -705,13 +716,14 @@ function OrganizationGrantsPanel({ apiEnabled }: { apiEnabled: boolean }) {
                       ) : null}
                     </div>
                   ))}
-                  {!runsQuery.isLoading && (runsQuery.data?.length ?? 0) === 0 ? <p className="m-0 text-sm text-muted-foreground">No provisioning attempts recorded.</p> : null}
+                  {!runsQuery.isLoading && !runsQuery.isError && runsQueryPage.data?.totalCount === 0 ? <p className="m-0 text-sm text-muted-foreground">No provisioning attempts recorded.</p> : null}
                 </div>
+              <RecordPagination label={'Provisioning history pages'} data={runsQueryPage.isError ? undefined : runsQueryPage.data} busy={runsQueryPage.isFetching} onPage={runsQuerySelection.setPage} />
               </section>
               <section aria-labelledby="organization-activity-heading" className="rounded-lg border p-4">
                 <h3 id="organization-activity-heading" className="m-0 font-medium">Organization activity</h3>
                 <div className="mt-3 space-y-2">
-                  {(activityQuery.data ?? []).slice(0, 20).map((notice) => (
+                  {(activityQuery.data ?? []).map((notice) => (
                     <div key={notice.id} className="rounded-md border p-3 text-sm">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <span className="font-medium">{notice.subject}</span>
@@ -720,8 +732,9 @@ function OrganizationGrantsPanel({ apiEnabled }: { apiEnabled: boolean }) {
                       <p className="m-0 mt-1 text-muted-foreground">{notice.body}</p>
                     </div>
                   ))}
-                  {!activityQuery.isLoading && (activityQuery.data?.length ?? 0) === 0 ? <p className="m-0 text-sm text-muted-foreground">No organization notices recorded.</p> : null}
+                  {!activityQuery.isLoading && !activityQuery.isError && activityQueryPage.data?.totalCount === 0 ? <p className="m-0 text-sm text-muted-foreground">No organization notices recorded.</p> : null}
                 </div>
+                <RecordPagination label="Organization activity pages" data={activityQueryPage.isError ? undefined : activityQueryPage.data} busy={activityQueryPage.isFetching} onPage={activityQuerySelection.setPage} />
               </section>
             </div>
           ) : null}
@@ -738,9 +751,11 @@ function OrganizationGrantsPanel({ apiEnabled }: { apiEnabled: boolean }) {
 
 // Dialog components keep all data-entry forms out of management lists.
 function DatasetCreateDialog({ open, onOpenChange, form, mutation }: { open: boolean; onOpenChange: (open: boolean) => void; form: ReturnType<typeof useForm<DatasetValues>>; mutation: ReturnType<typeof useMutation<unknown, Error, DatasetValues>> }) {
-  useOrderDraftGuard(open && form.formState.isDirty, open && mutation.isPending)
-  function close() {
-    if (mutation.isPending || (form.formState.isDirty && !window.confirm('Discard unsaved dataset changes?'))) return
+  const { isDirty: __formDraftDirty } = form.formState
+
+  useOrderDraftGuard(open && __formDraftDirty, open && mutation.isPending)
+  async function close() {
+    if (mutation.isPending || (__formDraftDirty && !(await confirmPortal('Discard unsaved dataset changes?')))) return
     form.reset()
     mutation.reset()
     onOpenChange(false)
@@ -761,9 +776,11 @@ function DatasetCreateDialog({ open, onOpenChange, form, mutation }: { open: boo
 }
 
 function DatasetEditDialog({ dataset, onOpenChange, form, mutation }: { dataset: CuratedDataset | null; onOpenChange: (open: boolean) => void; form: ReturnType<typeof useForm<DatasetValues>>; mutation: ReturnType<typeof useMutation<unknown, Error, { dataset: CuratedDataset; values: DatasetValues }>> }) {
-  useOrderDraftGuard(Boolean(dataset) && form.formState.isDirty, Boolean(dataset) && mutation.isPending)
-  function close() {
-    if (mutation.isPending || (form.formState.isDirty && !window.confirm('Discard unsaved dataset changes?'))) return
+  const { isDirty: __formDraftDirty } = form.formState
+
+  useOrderDraftGuard(Boolean(dataset) && __formDraftDirty, Boolean(dataset) && mutation.isPending)
+  async function close() {
+    if (mutation.isPending || (__formDraftDirty && !(await confirmPortal('Discard unsaved dataset changes?')))) return
     form.reset()
     mutation.reset()
     onOpenChange(false)
@@ -778,16 +795,18 @@ function DatasetEditDialog({ dataset, onOpenChange, form, mutation }: { dataset:
           <FormField label="Description" error={form.formState.errors.description?.message} required><textarea className={textareaClass} rows={4} {...form.register('description')} /></FormField>
         </fieldset>
       </form> : null}
-      <RequiredDialogFooter><Button type="button" variant="outline" disabled={mutation.isPending} onClick={close}>Cancel</Button><Button type="submit" form="catalog-edit-dataset-form" disabled={mutation.isPending || !form.formState.isDirty}>{mutation.isPending ? 'Saving' : 'Save details'}</Button></RequiredDialogFooter>
+      <RequiredDialogFooter><Button type="button" variant="outline" disabled={mutation.isPending} onClick={close}>Cancel</Button><Button type="submit" form="catalog-edit-dataset-form" disabled={mutation.isPending || !__formDraftDirty}>{mutation.isPending ? 'Saving' : 'Save details'}</Button></RequiredDialogFooter>
     </DialogContent>
   </Dialog>
 }
 
 function CatalogLifecycleDialog({ action, onOpenChange, form, mutation }: { action: CatalogLifecycleAction | null; onOpenChange: (open: boolean) => void; form: ReturnType<typeof useForm<RevokeValues>>; mutation: ReturnType<typeof useMutation<unknown, Error, { action: CatalogLifecycleAction; reason: string }>> }) {
+  const { isDirty: __formDraftDirty } = form.formState
+
   const isRetirement = action?.kind === 'retire'
-  useOrderDraftGuard(Boolean(action) && form.formState.isDirty, Boolean(action) && mutation.isPending)
-  function close() {
-    if (mutation.isPending || (form.formState.isDirty && !window.confirm('Discard the unsaved lifecycle reason?'))) return
+  useOrderDraftGuard(Boolean(action) && __formDraftDirty, Boolean(action) && mutation.isPending)
+  async function close() {
+    if (mutation.isPending || (__formDraftDirty && !(await confirmPortal('Discard the unsaved lifecycle reason?')))) return
     form.reset()
     mutation.reset()
     onOpenChange(false)
@@ -811,7 +830,7 @@ function EligibilityRemovalDialog({ dataset, onOpenChange, form, mutation }: { d
 }
 
 function VersionCreateDialog({ dataset, onOpenChange, form, readySources, mutation }: { dataset: CuratedDataset | null; onOpenChange: (open: boolean) => void; form: ReturnType<typeof useForm<VersionValues>>; readySources: Awaited<ReturnType<typeof listSourceSamples>>; mutation: ReturnType<typeof useMutation<unknown, Error, { dataset: CuratedDataset; values: VersionValues }>> }) {
-  return <Dialog open={Boolean(dataset)} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>Create immutable-version draft</DialogTitle><DialogDescription>Select one ready source revision. Its metadata, evidence, checksums, and files are snapshotted.</DialogDescription></DialogHeader>{dataset ? <form className="space-y-4" onSubmit={form.handleSubmit((values) => mutation.mutateAsync({ dataset, values }))}><FormField label="Ready source" error={form.formState.errors.sourceSampleId?.message} required><select className={selectClass} {...form.register('sourceSampleId')}><option value="">Select a source</option>{readySources.map((source) => <option key={source.id} value={source.id}>{source.label} · revision {source.revision}</option>)}</select></FormField><FormField label="Release notes" error={form.formState.errors.releaseNotes?.message} required><textarea className={textareaClass} rows={4} {...form.register('releaseNotes')} /></FormField><MutationError error={mutation.error} fallback="The version draft could not be created." /><RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" disabled={mutation.isPending || readySources.length === 0}>{mutation.isPending ? 'Snapshotting' : 'Create version draft'}</Button></RequiredDialogFooter></form> : null}</DialogContent></Dialog>
+  return <Dialog open={Boolean(dataset)} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>Create immutable-version draft</DialogTitle><DialogDescription>Select one ready source revision. Its metadata, evidence, checksums, and files are snapshotted.</DialogDescription></DialogHeader>{dataset ? <form className="space-y-4" onSubmit={form.handleSubmit((values) => mutation.mutateAsync({ dataset, values }))}><FormField label="Ready source" error={form.formState.errors.sourceSampleId?.message} required><NativeSelect className={selectClass} {...form.register('sourceSampleId')}><option value="">Select a source</option>{readySources.map((source) => <option key={source.id} value={source.id}>{source.label} · revision {source.revision}</option>)}</NativeSelect></FormField><FormField label="Release notes" error={form.formState.errors.releaseNotes?.message} required><textarea className={textareaClass} rows={4} {...form.register('releaseNotes')} /></FormField><MutationError error={mutation.error} fallback="The version draft could not be created." /><RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" disabled={mutation.isPending || readySources.length === 0}>{mutation.isPending ? 'Snapshotting' : 'Create version draft'}</Button></RequiredDialogFooter></form> : null}</DialogContent></Dialog>
 }
 
 function PublishDialog({ version, onOpenChange, onConfirm, pending, error }: { version: CuratedDatasetVersion | null; onOpenChange: (open: boolean) => void; onConfirm: () => void; pending: boolean; error: unknown }) {
@@ -820,12 +839,12 @@ function PublishDialog({ version, onOpenChange, onConfirm, pending, error }: { v
 
 function GrantDialog({ open, onOpenChange, form, organizations, departments, eligibleVersions, mutation }: { open: boolean; onOpenChange: (open: boolean) => void; form: ReturnType<typeof useForm<GrantValues>>; organizations: Awaited<ReturnType<typeof listOrganizations>>; departments: Department[]; eligibleVersions: { dataset: CuratedDataset; version: CuratedDatasetVersion }[]; mutation: ReturnType<typeof useMutation<unknown, Error, GrantValues>> }) {
   const organizationField = form.register('organizationId')
-  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>Assign curated sample data</DialogTitle><DialogDescription>Choose whether the exact pinned version is available throughout the organization or only inside one department. Catalog eligibility alone does not grant access.</DialogDescription></DialogHeader><form className="space-y-4" onSubmit={form.handleSubmit((values) => mutation.mutateAsync(values))}><FormField label="Organization" error={form.formState.errors.organizationId?.message} required><select className={selectClass} {...organizationField} onChange={(event) => { void organizationField.onChange(event); form.setValue('departmentId', '') }}><option value="">Select an organization</option>{organizations.map((organization) => <option key={organization.id} value={organization.id}>{organization.name} ({organization.kind})</option>)}</select></FormField><FormField label="Access scope" error={form.formState.errors.departmentId?.message}><select className={selectClass} {...form.register('departmentId')} disabled={!form.watch('organizationId')}><option value="">All departments (organization-wide)</option>{departments.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}</select></FormField><FormField label="Eligible package version" error={form.formState.errors.datasetVersionId?.message} required><select className={selectClass} {...form.register('datasetVersionId')}><option value="">Select a version</option>{eligibleVersions.map(({ dataset, version }) => <option key={version.id} value={version.id}>{dataset.name} · version {version.versionNumber}</option>)}</select></FormField><MutationError error={mutation.error} fallback="The package could not be assigned." /><RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" disabled={mutation.isPending}>{mutation.isPending ? 'Assigning' : 'Assign exact version'}</Button></RequiredDialogFooter></form></DialogContent></Dialog>
+  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>Assign curated sample data</DialogTitle><DialogDescription>Choose whether the exact pinned version is available throughout the organization or only inside one department. Catalog eligibility alone does not grant access.</DialogDescription></DialogHeader><form className="space-y-4" onSubmit={form.handleSubmit((values) => mutation.mutateAsync(values))}><FormField label="Organization" error={form.formState.errors.organizationId?.message} required><NativeSelect className={selectClass} {...organizationField} onChange={(event) => { void organizationField.onChange(event); form.setValue('departmentId', '') }}><option value="">Select an organization</option>{organizations.map((organization) => <option key={organization.id} value={organization.id}>{organization.name} ({organization.kind})</option>)}</NativeSelect></FormField><FormField label="Access scope" error={form.formState.errors.departmentId?.message}><NativeSelect className={selectClass} {...form.register('departmentId')} disabled={!form.watch('organizationId')}><option value="">All departments (organization-wide)</option>{departments.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}</NativeSelect></FormField><FormField label="Eligible package version" error={form.formState.errors.datasetVersionId?.message} required><NativeSelect className={selectClass} {...form.register('datasetVersionId')}><option value="">Select a version</option>{eligibleVersions.map(({ dataset, version }) => <option key={version.id} value={version.id}>{dataset.name} · version {version.versionNumber}</option>)}</NativeSelect></FormField><MutationError error={mutation.error} fallback="The package could not be assigned." /><RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" disabled={mutation.isPending}>{mutation.isPending ? 'Assigning' : 'Assign exact version'}</Button></RequiredDialogFooter></form></DialogContent></Dialog>
 }
 
 function UpgradeDialog({ grant, onOpenChange, form, eligibleVersions, mutation }: { grant: DatasetGrant | null; onOpenChange: (open: boolean) => void; form: ReturnType<typeof useForm<UpgradeValues>>; eligibleVersions: { dataset: CuratedDataset; version: CuratedDatasetVersion }[]; mutation: ReturnType<typeof useMutation<unknown, Error, { grant: DatasetGrant; values: UpgradeValues }>> }) {
   const newerVersions = grant ? eligibleVersions.filter(({ dataset, version }) => dataset.id === grant.curatedDatasetId && version.versionNumber > grant.datasetVersionNumber) : []
-  return <Dialog open={Boolean(grant)} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>Upgrade this organization to a newer exact version?</DialogTitle><DialogDescription>The new version becomes the organization's only active grant for this dataset. The prior grant and its download history remain preserved as superseded evidence.</DialogDescription></DialogHeader>{grant ? <form className="space-y-4" onSubmit={form.handleSubmit((values) => mutation.mutateAsync({ grant, values }))}><FormField label="Newer eligible version" error={form.formState.errors.datasetVersionId?.message} required><select className={selectClass} {...form.register('datasetVersionId')}><option value="">Select a version</option>{newerVersions.map(({ dataset, version }) => <option key={version.id} value={version.id}>{dataset.name} · version {version.versionNumber}</option>)}</select></FormField><MutationError error={mutation.error} fallback="The organization grant could not be upgraded." /><RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" disabled={mutation.isPending || newerVersions.length === 0}>{mutation.isPending ? 'Upgrading' : 'Upgrade exact version'}</Button></RequiredDialogFooter></form> : null}</DialogContent></Dialog>
+  return <Dialog open={Boolean(grant)} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>Upgrade this organization to a newer exact version?</DialogTitle><DialogDescription>The new version becomes the organization's only active grant for this dataset. The prior grant and its download history remain preserved as superseded evidence.</DialogDescription></DialogHeader>{grant ? <form className="space-y-4" onSubmit={form.handleSubmit((values) => mutation.mutateAsync({ grant, values }))}><FormField label="Newer eligible version" error={form.formState.errors.datasetVersionId?.message} required><NativeSelect className={selectClass} {...form.register('datasetVersionId')}><option value="">Select a version</option>{newerVersions.map(({ dataset, version }) => <option key={version.id} value={version.id}>{dataset.name} · version {version.versionNumber}</option>)}</NativeSelect></FormField><MutationError error={mutation.error} fallback="The organization grant could not be upgraded." /><RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" disabled={mutation.isPending || newerVersions.length === 0}>{mutation.isPending ? 'Upgrading' : 'Upgrade exact version'}</Button></RequiredDialogFooter></form> : null}</DialogContent></Dialog>
 }
 
 function RevokeDialog({ grant, onOpenChange, form, mutation }: { grant: DatasetGrant | null; onOpenChange: (open: boolean) => void; form: ReturnType<typeof useForm<RevokeValues>>; mutation: ReturnType<typeof useMutation<unknown, Error, { grant: DatasetGrant; values: RevokeValues }>> }) {

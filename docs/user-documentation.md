@@ -55,6 +55,22 @@ The sidebar is pinned by default on wide screens and can be unpinned to an edge 
 
 The current MDX corpus is compiled into browser assets, so route and navigation filtering is a product-experience boundary, not a confidentiality control. Every bundled guide, including Phaeno guidance, must be safe to distribute and must never contain secrets or restricted internal evidence. If future Phaeno procedures require confidentiality, serve that content through an authenticated, backend-authorized endpoint rather than a public static asset.
 
+Guide bodies load when a guide is opened, while the index, metadata and search
+remain available independently. Loading displays a status message. If a guide
+cannot load, **Reload guide** retries the page without removing its navigation.
+This reduces initial help download size; static guides remain distributable.
+Customer help labels, metadata, search feedback and access messages use the
+Customer catalog. Other audiences remain US English; en-US is the only published
+locale. Body translation, emails and generated-document coverage remain part of
+the Customer localization inventory and are not implied by localized navigation.
+
+The [Customer localization inventory](plans/CUSTOMER-LOCALIZATION-INVENTORY.md)
+now records the complete current-English source boundary: UI/feedback, the eight
+Customer MDX bodies, invitation templates, notices and printed/generated documents.
+The final closure updates safe draft dismissal, assembly discovery and invoice
+pagination in the affected audience guides. Additional-language body/email/document
+translation and human review remain prerequisites for publishing another locale.
+
 ## Authoring profile
 
 MDX is used as a portable Markdown-compatible source format. Content files should contain headings, paragraphs, lists, links, tables, block quotes, and inline or fenced code only when code is genuinely useful to the user.
@@ -72,11 +88,32 @@ This profile keeps the content portable to another MDX renderer or a future stan
 
 ## Internationalization
 
-Prospect, Customer, and Partner documentation is internationalization-enabled. `en-US` is the only initially published locale, and the language selector remains hidden until another locale is complete, reviewed, and tested. The content path and registry locale distinguish translated documents without putting locale-specific metadata in MDX.
+Customer UI messages are maintained in
+`frontend/src/features/customer-i18n/customer-messages.generated.ts`; reachable
+shared controls use the Customer locale context. Other audiences retain US
+English. The development-only `VITE_CUSTOMER_PSEUDOLOCALE=true` review flag
+expands Customer UI text without translating identifiers or entered data.
+Run `node scripts/check-customer-messages.mjs` from `frontend/` after message
+edits. No additional locale is published by this scaffolding or review flag.
 
-Translate the entire guide set and shared help-shell messages for an external audience before advertising a locale. Use locale-aware date formatting, design for text expansion, and include pseudolocalization and long-text checks. Scientific, clinical, financial, and regulatory translations require human review before publication.
+Owner clarification, October 11, 2026: only Customer portal documentation and
+its Customer-facing help shell require internationalization. `en-US` is the
+only initially published locale; hide the language selector until another
+Customer locale is complete, reviewed and tested. Content paths and registry
+locale distinguish translated documents without putting metadata in MDX.
 
-Phaeno documentation is available in the Phaeno organization context and may remain US English. Individual operational actions still require their enforced role; access to a guide does not grant it. Prospect, Customer, and Partner contexts use the localized external corpus and must not treat an unreviewed machine translation as authoritative.
+Translate the complete Customer guide set and Customer-facing shared shell
+messages before advertising a locale. Use locale-aware date formatting, text
+expansion, pseudolocalization and long-text checks. Scientific, clinical,
+financial and regulatory translations require human review before publication.
+
+Prospect, Partner and Phaeno documentation may remain US English. Preserve
+existing locale-qualified Prospect/Partner paths and catalog entries; they do
+not create a requirement to translate those audiences. Each audience remains
+available only in its current organization context. Individual actions still
+require their enforced role; access to a guide grants no permission. Never
+present an unreviewed machine translation as authoritative. The Customer-only
+closure scope is in [System gap closure](plans/SYSTEM-GAP-CLOSURE-PLAN.md).
 
 ## Maintenance workflow
 
@@ -98,7 +135,7 @@ For every new workflow, confirm that the affected audience can answer all of the
 - Which operational, commercial, scan, and release statuses can appear?
 - What can the user correct or retry, and what requires Phaeno support?
 - What references are safe and useful when requesting support?
-- Does the Prospect, Customer, or Partner content require translation before a new locale is considered complete?
+- Is Customer content and its shared shell fully translated and reviewed before a new Customer locale is considered complete?
 
 Phaeno operational documentation may describe roles, queues, configuration, recovery steps, and safe support workflows. While it is browser-bundled, it must not become a credential store or contain confidential internal information.
 
@@ -142,7 +179,7 @@ The future implementation should:
   relevant control or status is not otherwise clear;
 - provide meaningful Markdown alternative text and an adjacent caption, while
   keeping every instruction understandable without the image;
-- keep localized external-audience screenshots aligned with the guide locale
+- keep Customer screenshots aligned with the guide locale; other audiences may remain US English
   when the visible UI contains translatable text;
 - store image assets beside the documentation corpus under a predictable
   audience, locale, guide, and screen-state naming convention;

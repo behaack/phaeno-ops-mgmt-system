@@ -1,3 +1,5 @@
+import { NativeSelect } from '#/components/ui/native-select'
+import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ChevronDown } from "lucide-react";
 import { useState, type ReactNode } from "react";
@@ -96,10 +98,12 @@ function CompanyForm({
     defaultValues: valuesFor(company),
     mode: "onBlur",
   });
+  const { isDirty: __formDraftDirty } = form.formState
 
-  useOrderDraftGuard(form.formState.isDirty, isPending);
-  const close = (nextOpen: boolean) => {
-    if (isPending || (!nextOpen && form.formState.isDirty && !window.confirm("Discard unsaved Company changes?"))) return;
+
+  useOrderDraftGuard(__formDraftDirty, isPending);
+  const close = async (nextOpen: boolean) => {
+    if (isPending || (!nextOpen && __formDraftDirty && !(await confirmPortal("Discard unsaved Company changes?")))) return;
     onOpenChange(nextOpen);
   };
 
@@ -158,9 +162,9 @@ function CompanyForm({
               />
             </Field>
             <Field id={`${formId}-lifecycle`} label="Relationship stage">
-              <select
+              <NativeSelect
                 id={`${formId}-lifecycle`}
-                className="h-9 rounded-md border bg-background px-3 text-sm"
+                className="rounded-md border bg-background px-3 text-sm"
                 {...form.register("lifecycleState")}
               >
                 <option value="Target">Target</option>
@@ -169,7 +173,7 @@ function CompanyForm({
                 <option value="Partner">Partner</option>
                 <option value="FormerRelationship">Former relationship</option>
                 <option value="Other">Other</option>
-              </select>
+              </NativeSelect>
             </Field>
           </div>
           <div className="overflow-hidden rounded-lg border">

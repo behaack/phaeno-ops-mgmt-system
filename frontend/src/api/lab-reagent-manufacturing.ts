@@ -1,4 +1,5 @@
 import { api } from './client'
+import { requireRecordPage } from './record-page'
 
 type Envelope<T> = { data: T }
 const base = '/platform/lab-operations'
@@ -40,6 +41,9 @@ export const approveReagentWorkflow = (workflow: ReagentWorkflow, approvalOverri
 export const retireReagentWorkflow = (workflow: ReagentWorkflow) =>
   post<ReagentWorkflow>(`/reagent-workflows/${workflow.id}/retire`, { version: workflow.version })
 export const listReagentRuns = () => get<ReagentRun[]>('/reagent-runs')
+export async function listReagentRunsPage(search: string, status: string, page: number) {
+  return requireRecordPage((await api.get<Envelope<{ items: ReagentRun[]; page: number; pageSize: number; totalCount: number }>>(`${base}/reagent-runs/page`, { params: { search, status, page } })).data.data)
+}
 export const getReagentRun = (id: string) => get<ReagentRun>(`/reagent-runs/${id}`)
 export const startReagentRun = (input: { materialDefinitionId: string; storageLocationId: string }) =>
   post<ReagentRun>('/reagent-runs', input)

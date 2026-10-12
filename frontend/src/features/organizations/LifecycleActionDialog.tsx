@@ -1,3 +1,5 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
+import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
@@ -62,6 +64,8 @@ export function LifecycleActionDialog({
     mode: 'onBlur',
     resolver: zodResolver(schema),
   })
+  const __modalGuard = useModalDraftGuard(form.formState.isDirty, form.formState.isSubmitting, open)
+
 
   useEffect(() => {
     if (open) form.reset({ reason: '' })
@@ -80,7 +84,7 @@ export function LifecycleActionDialog({
   const requiresReason = action.kind === 'end-entitlement'
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={open => { if (open) (onOpenChange)(open); else void __modalGuard.close(() => (onOpenChange)(false)) }}>
       <DialogContent
         onOpenAutoFocus={() => {
           if (document.activeElement instanceof HTMLElement) {
@@ -114,7 +118,7 @@ export function LifecycleActionDialog({
           {requiresReason ? (
             <div className="grid gap-1.5">
               <Label htmlFor="lifecycle-action-reason">
-                <RequiredFieldName>End reason</RequiredFieldName>
+                <RequiredFieldName><CustomerSourceText source={"End reason"} /></RequiredFieldName>
               </Label>
               <textarea
                 id="lifecycle-action-reason"
@@ -125,7 +129,7 @@ export function LifecycleActionDialog({
               />
               {form.formState.errors.reason ? (
                 <p className="text-sm text-destructive" role="alert">
-                  {form.formState.errors.reason.message}
+                  {<CustomerSourceText source={form.formState.errors.reason.message} />}
                 </p>
               ) : null}
             </div>
@@ -135,7 +139,7 @@ export function LifecycleActionDialog({
           <Button
             type="button"
             variant="outline"
-            onClick={() => onOpenChange(false)}
+            onClick={() => { void __modalGuard.close(() => (() => onOpenChange(false))()) }}
           >
             {content.cancelLabel}
           </Button>
@@ -145,7 +149,7 @@ export function LifecycleActionDialog({
             variant="destructive"
             disabled={isPending}
           >
-            {isPending ? 'Saving…' : content.submitLabel}
+            {isPending ? <CustomerSourceText source={"Saving…"} /> : content.submitLabel}
           </Button>
         </RequiredDialogFooter>
       </DialogContent>

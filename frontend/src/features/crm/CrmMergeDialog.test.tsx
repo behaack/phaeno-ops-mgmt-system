@@ -1,3 +1,4 @@
+import * as portalConfirmation from '#/components/PortalConfirmation'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -59,7 +60,7 @@ describe('CRM merge dialog', () => {
   })
 
   it('preserves a dirty draft after cancelled dismissal, pending work, and a failed merge', async () => {
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    const confirm = vi.spyOn(portalConfirmation, 'confirmPortal').mockResolvedValue(false)
     try {
       const { onClose, update } = setup()
       fireEvent.change(screen.getByRole('textbox', { name: 'Merge reason' }), { target: { value: 'Reviewed the duplicate records.' } })

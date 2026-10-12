@@ -1,3 +1,4 @@
+import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import { Link, useRouterState } from '@tanstack/react-router'
 import { ChevronDown } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
@@ -16,6 +17,8 @@ import {
 } from '#/components/ui/dropdown-menu'
 
 export function MainMenu() {
+  const __customerText = useCustomerText()
+
   const { signedIn, session, selectedOrganizationId } = usePhaenoSession()
   const pathname = useRouterState({ select: state => state.location.pathname })
   const { customers } = useMockAdminData()
@@ -54,8 +57,8 @@ export function MainMenu() {
           key={item.to}
           to={item.to}
           className={`nav-link whitespace-nowrap${isMainMenuRouteActive(pathname, item.to, item.exact) ? ' is-active' : ''}`}
-          aria-current={isMainMenuRouteActive(pathname, item.to, item.exact) ? 'page' : undefined}
-          activeProps={{ className: 'nav-link is-active' }}
+          aria-current={isMainMenuRouteActive(pathname, item.to, item.exact) ? "page" : undefined}
+          activeProps={{ className: "nav-link is-active" }}
           activeOptions={item.exact ? { exact: true } : undefined}
         >
           <item.icon className="size-3.5" />
@@ -67,10 +70,9 @@ export function MainMenu() {
           <DropdownMenuTrigger
             ref={moreTriggerRef}
             className={`nav-link cursor-pointer whitespace-nowrap outline-none focus-visible:ring-3 focus-visible:ring-ring/50${isMoreActive ? ' is-active' : ''}`}
-            aria-label="More workspaces"
+            aria-label={__customerText('m_05f2b4b4faa3')}
           >
-            More
-            <ChevronDown aria-hidden="true" className="size-3.5" />
+            <CustomerText message="m_d47d7cb0e4f8" /><ChevronDown aria-hidden="true" className="size-3.5" />
           </DropdownMenuTrigger>
           {moreOpen ? (
             <DropdownMenuContent
@@ -106,7 +108,7 @@ export function MainMenu() {
                   asChild
                   className={`min-h-10 gap-2.5 px-3${isMainMenuRouteActive(pathname, item.to, item.exact) ? ' bg-secondary text-foreground [&_svg]:text-foreground' : ''}`}
                 >
-                  <Link to={item.to} aria-current={isMainMenuRouteActive(pathname, item.to, item.exact) ? 'page' : undefined}>
+                  <Link to={item.to} aria-current={isMainMenuRouteActive(pathname, item.to, item.exact) ? "page" : undefined}>
                     <item.icon aria-hidden="true" />
                     {item.label}
                   </Link>

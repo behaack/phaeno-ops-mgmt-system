@@ -16,6 +16,9 @@ using PhaenoPortal.App.Features.Accounts.Services;
 /// <summary>One validation boundary shared by staff capture, pipeline capture and result registration.</summary>
 public sealed class LabResultLineageService(PSeqOperationsDbContext db)
 {
+    private readonly bool readOnlyAssessment;
+    private LabResultLineageService(PSeqOperationsDbContext db, bool readOnly) : this(db) => readOnlyAssessment = readOnly;
+    internal static LabResultLineageService ForReadOnlyAssessment(PSeqOperationsDbContext db) => new(db, true);
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     public async Task<LabSequencingOutput> RegisterOutputAsync(RegisterSequencingOutputRequest request,
@@ -247,7 +250,7 @@ public sealed class LabResultLineageService(PSeqOperationsDbContext db)
         }
         await new LabPerformanceReviewService(db).RequireReviewedAsync(attempt.Id, run.RequirementsSnapshotJson is not null, ct);
         // The saved result is immutable; its initial eligibility still participates in concurrency control.
-        db.Entry(attempt).Property(x => x.UpdatedAt).IsModified = true;
+        if (!readOnlyAssessment) db.Entry(attempt).Property(x => x.UpdatedAt).IsModified = true;
         return run;
     }
 
@@ -290,7 +293,8 @@ public sealed class LabResultLineageService(PSeqOperationsDbContext db)
         var sendouts = inputs.Where(i => i.ProviderKey == "vendor-fastq").GroupBy(i => i.LabNgsSendoutId).OrderBy(g => g.Key).ToArray();
         if (sendouts.Length > 0 && db.Database.IsRelational() && db.Database.CurrentTransaction is null)
             throw Invalid("Current FASTQ eligibility must be checked within the operation's transaction.");
-        foreach (var sendout in sendouts) await SampleShippingPackingData.LockAsync(db, "lab-sendout:" + sendout.Key, ct);
+        if (!readOnlyAssessment)
+            foreach (var sendout in sendouts) await SampleShippingPackingData.LockAsync(db, "lab-sendout:" + sendout.Key, ct);
         foreach (var sendout in sendouts) {
             var current = await db.LabVendorResultsVersions.AsNoTracking().Where(v => v.LabNgsSendoutId == sendout.Key)
                 .OrderByDescending(v => v.ResultVersion).FirstOrDefaultAsync(ct);
@@ -315,16 +319,16 @@ public sealed class LabResultLineageService(PSeqOperationsDbContext db)
     {
         var specimen = await db.LabSpecimens.AsNoTracking().SingleOrDefaultAsync(x => x.Id == specimenId && x.LabWorkOrderId == workId, ct)
             ?? throw Invalid("Choose a specimen from this job.");
-        var work = await db.LabWorkOrders.SingleAsync(x => x.Id == workId, ct);
+        var work = await (readOnlyAssessment ? db.LabWorkOrders.AsNoTracking() : db.LabWorkOrders).SingleAsync(x => x.Id == workId, ct);
         if (work.Status is LabWorkOrderStatus.Cancelled or LabWorkOrderStatus.OnHold)
             throw Invalid("Resolve the job hold or cancellation before recording new scientific output.");
-        db.Entry(work).Property(x => x.UpdatedAt).IsModified = true;
+        if (!readOnlyAssessment) db.Entry(work).Property(x => x.UpdatedAt).IsModified = true;
         return specimen;
     }
 
     private async Task<LabSpecimenAttempt> RequireSuccessfulAttemptAsync(Guid attemptId, LabSpecimen specimen, CancellationToken ct)
     {
-        var attempt = await db.LabSpecimenAttempts.SingleOrDefaultAsync(x => x.Id == attemptId
+        var attempt = await (readOnlyAssessment ? db.LabSpecimenAttempts.AsNoTracking() : db.LabSpecimenAttempts).SingleOrDefaultAsync(x => x.Id == attemptId
             && x.LabWorkOrderId == specimen.LabWorkOrderId && x.LabSpecimenId == specimen.Id, ct);
         if (attempt is null || attempt.State != LabSpecimenAttemptState.Succeeded || !attempt.StartedAtUtc.HasValue)
             throw Invalid("Only the explicitly selected successful attempt may produce this result.");

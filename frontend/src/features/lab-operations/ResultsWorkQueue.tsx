@@ -1,13 +1,16 @@
+import { RecordPagination, useRecordListState } from '#/components/RecordPagination'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { getLabOperationsError, getLabScientificReviewQueue, labWorkOrderLabel } from '#/api/lab-operations'
+import { getLabOperationsError, getLabScientificReviewPage, labWorkOrderLabel } from '#/api/lab-operations'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
 
 export function ResultsWorkQueue({ enabled }: { enabled: boolean }) {
-  const query = useQuery({ queryKey: ['lab-scientific-review'], queryFn: getLabScientificReviewQueue, enabled })
+  const list = useRecordListState()
+  const pageQuery = useQuery({ queryKey: ['lab-scientific-review', list.page], queryFn: () => getLabScientificReviewPage(list.page), enabled })
+  const query = { ...pageQuery, data: pageQuery.data?.items }
   return <Card className="gap-0 py-0">
     <CardHeader className="border-b bg-muted/50 p-4">
       <CardTitle>Results &amp; scientific review</CardTitle>
@@ -21,7 +24,8 @@ export function ResultsWorkQueue({ enabled }: { enabled: boolean }) {
           <p className="mt-1 text-xs text-muted-foreground">{pendingPackageCount} {pendingPackageCount === 1 ? 'package' : 'packages'} awaiting review · {item.specimenCount} {item.specimenCount === 1 ? 'specimen' : 'specimens'} · {item.openExceptionCount} open {item.openExceptionCount === 1 ? 'exception' : 'exceptions'}</p>
         </div><Badge variant="outline">Awaiting scientific review</Badge>
       </div>)}
-      {enabled && query.isSuccess && !query.data.length ? <p className="text-sm text-muted-foreground">No completed assembly outputs are awaiting scientific review. Sequencing inputs and assembly work in progress remain in Data assembly.</p> : null}
+      {enabled && query.isSuccess && !query.data?.length ? <p className="text-sm text-muted-foreground">No completed assembly outputs are awaiting scientific review. Sequencing inputs and assembly work in progress remain in Data assembly.</p> : null}
+      <RecordPagination data={pageQuery.data} busy={pageQuery.isFetching} onPage={page => list.change({ listPage: page })} />
     </CardContent>
   </Card>
 }

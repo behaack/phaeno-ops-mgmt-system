@@ -15,6 +15,7 @@ import {
   ShoppingCart,
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { parseDashboardSection, type DashboardSection } from './dashboard-search'
 
 import { ConnectedOperationsSummary } from './ConnectedOperationsSummary'
 import { NeedsAttentionSummary } from './NeedsAttentionSummary'
@@ -132,13 +133,6 @@ const operationsPanels = {
   },
 } as const
 
-export type DashboardSection = 'orders' | 'lab' | 'accounts' | 'webOps'
-
-export function parseDashboardSection(value: unknown): DashboardSection | undefined {
-  return value === 'orders' || value === 'lab' || value === 'accounts' || value === 'webOps'
-    ? value : undefined
-}
-
 const mockMailingListPage: WebOpsPage<WebOpsMailingListContact> = {
   page: 1,
   pageSize: 10,
@@ -189,10 +183,10 @@ const mockDemoRequestPage: WebOpsPage<WebOpsDemoRequest> = {
   ],
 }
 
-export function DashboardPanelSelector() {
+export function DashboardPanelSelector({ webOnly = false }: { webOnly?: boolean }) {
   const search = useSearch({ strict: false })
   const navigate = useNavigate()
-  const section = parseDashboardSection(search.dashboardSection) ?? 'orders'
+  const section = webOnly ? 'webOps' : parseDashboardSection(search.dashboardSection) ?? 'orders'
   const setSection = (dashboardSection: DashboardSection) => {
     void navigate({ to: '/', search: previous => ({ ...previous, dashboardSection }) })
   }
@@ -208,8 +202,8 @@ export function DashboardPanelSelector() {
     enabled: apiEnabled && canViewWebOperations,
   })
   const demoRequests = useQuery({
-    queryKey: ['web-ops', 'demo-requests', demoRequestPage],
-    queryFn: () => getWebOpsDemoRequests(demoRequestPage),
+    queryKey: ['web-ops', 'demo-requests', demoRequestPage, search.requestId],
+    queryFn: () => getWebOpsDemoRequests(search.requestId ? 1 : demoRequestPage, search.requestId),
     enabled: apiEnabled && canViewWebOperations,
   })
   const unsubscribeContact = useMutation({
@@ -283,9 +277,9 @@ export function DashboardPanelSelector() {
     [canViewWebOperations, webOperationsCount, apiEnabled],
   )
 
-  const visibleSections = sections.filter(item => !apiEnabled || (item.value === 'orders' ? (session?.capabilities.canViewAllOperationalOrders || session?.capabilities.canViewTrialProjects) : item.value === 'lab' ? session?.capabilities.canManageLabOperations : item.value === 'accounts' ? session?.capabilities.canManageOrganizations : canViewWebOperations))
+  const visibleSections = sections.filter(item => (!webOnly || item.value === 'webOps') && (!apiEnabled || (item.value === 'orders' ? (session?.capabilities.canViewAllOperationalOrders || session?.capabilities.canViewTrialProjects) : item.value === 'lab' ? session?.capabilities.canManageLabOperations : item.value === 'accounts' ? session?.capabilities.canManageOrganizations : canViewWebOperations)))
   const activeSection = visibleSections.some(item => item.value === section) ? section : visibleSections[0]?.value
-  if (!activeSection) return <main className="page-wrap px-4 py-8"><DashboardHero /><p>No operational workspaces are assigned to your role.</p></main>
+  if (!activeSection) return <main className="page-wrap px-4 py-8">{webOnly ? <h1 className="text-3xl font-semibold">Web Operations</h1> : <DashboardHero />}<p>No operational workspaces are assigned to your role.</p></main>
   return (
     <WorkspaceSidebar
       workspaceLabel="POMS dashboard"
@@ -295,8 +289,8 @@ export function DashboardPanelSelector() {
     >
       <main className="page-wrap px-4 py-8">
         <div className="soft-enter">
-          <DashboardHero />
-          <NeedsAttentionSummary capabilities={session?.capabilities} enabled={apiEnabled} />
+          {webOnly ? <h1 className="text-3xl font-semibold">Web Operations</h1> : <DashboardHero />}
+          {!webOnly ? <NeedsAttentionSummary capabilities={session?.capabilities} enabled={apiEnabled} /> : null}
         </div>
         <div className="soft-enter soft-enter-delay-1">
           {activeSection === 'orders' ? (
@@ -309,7 +303,7 @@ export function DashboardPanelSelector() {
             apiEnabled ? <ConnectedOperationsSummary section="accounts" /> : <AccountsDashboardContent showHeading />
           ) : null}
           {activeSection === 'webOps' ? (
-            <WebOpsDashboardContent
+            <>{search.requestId ? <Button asChild variant="outline" className="mb-3"><Link to="/" search={{ dashboardSection: 'webOps' }}>View all demo requests</Link></Button> : null}<WebOpsDashboardContent
               mailingList={{
                 data: mailingListData,
                 error: apiEnabled ? mailingList.error : null,
@@ -344,7 +338,7 @@ export function DashboardPanelSelector() {
               }}
               notificationPanel={apiEnabled ? <WebOpsDeliveryPanel /> : undefined}
               isMockData={!apiEnabled}
-            />
+            /></>
           ) : null}
         </div>
       </main>

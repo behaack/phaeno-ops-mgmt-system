@@ -1,3 +1,4 @@
+import { confirmPortal } from '#/components/PortalConfirmation'
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { useBlocker } from '@tanstack/react-router'
 import { useForm } from 'react-hook-form'
@@ -51,7 +52,7 @@ export function PreparationTray({ batch, pending, onScan, onTrayScan, onConfirmT
   const values = form.watch()
   const busy = pending || scanning !== null
   const dirty = editable && (Object.values(values.tubes).some(value => Boolean(value?.trim())) || !trayReady && Boolean(values.batchBarcode?.trim()))
-  useBlocker({ shouldBlockFn: () => busy || dirty && !window.confirm('Leave the unsaved barcode entries? Saved tray and tube assignments remain.'), enableBeforeUnload: () => busy || dirty })
+  useBlocker({ shouldBlockFn: async () => busy || dirty && !(await confirmPortal('Leave the unsaved barcode entries? Saved tray and tube assignments remain.')), enableBeforeUnload: () => busy || dirty })
   useEffect(() => {
     if (busy || !focusTarget.current) return
     const target = focusTarget.current

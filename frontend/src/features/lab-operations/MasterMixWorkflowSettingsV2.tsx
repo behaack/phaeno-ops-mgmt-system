@@ -1,3 +1,4 @@
+import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { useRef, useState } from 'react'
 import { useFieldArray, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -109,18 +110,22 @@ function deriveRecipe(steps: MasterMixStep[]): MasterMixRecipeIngredient[] | nul
 function WorkflowEditor({ workflow, onClose }: { workflow?: MasterMixWorkflow; onClose: () => void }) {
   const client = useQueryClient()
   const catalog = useQuery({ queryKey: ['lab-steps'], queryFn: getLabSteps })
-  const [discardOpen, setDiscardOpen] = useState(false)
-  const keepEditing = useRef<HTMLButtonElement>(null)
   const form = useForm<Values>({ resolver: zodResolver(schema), defaultValues: {
     name: workflow?.name ?? '', quantityUnit: workflow?.quantityUnit ?? 'µL',
     steps: workflow?.steps.map(step => ({ versionId: step.labStepVersionId ?? '' })) ?? [{ versionId: '' }],
   } })
+  const { isDirty: __formDraftDirty } = form.formState
+  const __modalGuard = useModalDraftGuard(__formDraftDirty, form.formState.isSubmitting)
+
+
   const steps = useFieldArray({ control: form.control, name: 'steps' })
-  const close = () => { if (form.formState.isDirty) setDiscardOpen(true); else onClose() }
+  const close = () => { void __modalGuard.close(onClose) }
   const save = useMutation({ mutationFn: (values: Values) => {
     const payload = { name: values.name, quantityUnit: values.quantityUnit, stepVersionIds: values.steps.map(step => step.versionId) }
     return workflow ? reviseMasterMixWorkflow(workflow, payload) : createMasterMixWorkflow(payload)
-  }, onSuccess: async () => { await client.invalidateQueries({ queryKey: masterMixWorkflowsKey }); onClose() } })
+  }, onSuccess: async () => {
+    __modalGuard.allowNavigation()
+ await client.invalidateQueries({ queryKey: masterMixWorkflowsKey }); onClose() } })
   const retained = new Set(workflow?.steps.map(step => step.labStepVersionId) ?? [])
   const options = (catalog.data ?? []).flatMap(step => step.versions.flatMap(version => {
     const definition = JSON.parse(version.definitionJson) as { steps?: MasterMixStep[] }
@@ -162,6 +167,5 @@ function WorkflowEditor({ workflow, onClose }: { workflow?: MasterMixWorkflow; o
       </div>
       <RequiredDialogFooter><Button type="button" variant="outline" disabled={save.isPending} onClick={close}>Cancel</Button><Button type="submit" disabled={save.isPending || !catalog.data || selected.length !== steps.fields.length || !recipe?.length}>{save.isPending ? 'Saving…' : workflow ? 'Save new revision' : 'Create draft'}</Button></RequiredDialogFooter>
     </form></DialogContent></Dialog>
-    <Dialog open={discardOpen} onOpenChange={setDiscardOpen}><DialogContent onOpenAutoFocus={event => { event.preventDefault(); keepEditing.current?.focus() }}><DialogHeader><DialogTitle>Discard workflow changes?</DialogTitle></DialogHeader><div><DialogDescription>Your unsaved master-mix workflow changes will be lost.</DialogDescription></div><RequiredDialogFooter><Button type="button" variant="outline" ref={keepEditing} onClick={() => setDiscardOpen(false)}>Keep editing</Button><Button type="button" variant="destructive" onClick={onClose}>Discard changes</Button></RequiredDialogFooter></DialogContent></Dialog>
   </>
 }

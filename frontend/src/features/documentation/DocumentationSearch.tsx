@@ -8,11 +8,10 @@ import { Label } from '#/components/ui/label'
 import { Alert, AlertDescription } from '#/components/ui/alert'
 import { getSelectedMembership, usePhaenoSession } from '#/features/auth/session-context'
 import { documentationCatalog } from './documentation-metadata'
-import { getDocumentationEntries, getDocumentationSearchIdentity, type DocumentationAudience, type DocumentationEntry } from './documentation-registry'
-import { getDocumentationMessages } from './documentation-localization'
+import { useDocumentationEntries, getDocumentationSearchIdentity, type DocumentationAudience, type DocumentationEntry } from './documentation-registry'
+import { useDocumentationMessages } from './documentation-localization'
 import { documentationSearchParams, useDocumentationSearch, type DocumentationSearchParams } from './documentation-search'
 
-const messages = getDocumentationMessages().search
 const linkClass = 'cursor-pointer rounded-sm text-primary underline underline-offset-4 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50'
 const selectClass = 'h-10 w-full cursor-pointer rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50'
 
@@ -21,6 +20,8 @@ function useSearchLocation() {
 }
 
 export function DocumentationSearchBar({ audience }: { audience: DocumentationAudience }) {
+  const messages = useDocumentationMessages().search
+
   const { pathname, params } = useSearchLocation()
   const navigate = useNavigate()
   const [input, setInput] = useState(params.q)
@@ -30,7 +31,7 @@ export function DocumentationSearchBar({ audience }: { audience: DocumentationAu
   const [openFilters, setOpenFilters] = useState(Boolean(params.topic || params.workflow || params.contentType))
   useEffect(() => { clearTimeout(timer.current); setInput(params.q) }, [params.q, pathname])
   useEffect(() => () => clearTimeout(timer.current), [])
-  const entries = getDocumentationEntries(audience)
+  const entries = useDocumentationEntries(audience)
   const facets = useDocumentationSearch(audience, params).data?.metadata
   const go = (patch: Partial<DocumentationSearchParams>, replace = true) => {
     clearTimeout(timer.current)
@@ -90,6 +91,8 @@ export function DocumentationSearchPage() {
 }
 
 function DocumentationSearchResults({ audience }: { audience: DocumentationAudience }) {
+  const messages = useDocumentationMessages().search
+
   const { params } = useSearchLocation()
   const query = useDocumentationSearch(audience, params)
   const navigate = useNavigate()
@@ -131,7 +134,9 @@ function DocumentationSearchResults({ audience }: { audience: DocumentationAudie
 }
 
 export function DocumentationTopics({ audience }: { audience: DocumentationAudience }) {
-  const entries = getDocumentationEntries(audience)
+  const messages = useDocumentationMessages().search
+
+  const entries = useDocumentationEntries(audience)
   return <section aria-labelledby="documentation-browse-title" className="mb-7">
     <h2 id="documentation-browse-title" className="mb-3 text-lg font-semibold">{messages.browse}</h2>
     <div className="flex flex-wrap gap-x-5 gap-y-3">
@@ -141,7 +146,9 @@ export function DocumentationTopics({ audience }: { audience: DocumentationAudie
 }
 
 export function DocumentationRelatedGuides({ entry }: { entry: DocumentationEntry }) {
-  const related = getDocumentationEntries(entry.audience).filter(candidate => entry.relatedGuideIds.includes(getDocumentationSearchIdentity(candidate)))
+  const messages = useDocumentationMessages().search
+
+  const related = useDocumentationEntries(entry.audience).filter(candidate => entry.relatedGuideIds.includes(getDocumentationSearchIdentity(candidate)))
   return <section className="mt-7 border-t pt-5" aria-label={messages.related}>
     <div className="mb-4 flex flex-wrap gap-x-4 gap-y-2 text-sm">
       {entry.workflowIds.map(id => <Link className={linkClass} key={id} to="/docs/search" search={{ q: '', workflow: id, page: 1 }}>{documentationCatalog.taxonomy.workflows[id]['en-US']}</Link>)}

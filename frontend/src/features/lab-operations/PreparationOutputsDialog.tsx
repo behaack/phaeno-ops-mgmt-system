@@ -1,3 +1,4 @@
+import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -33,6 +34,8 @@ export function PreparationOutputsDialog({ members, supported, pending, error, o
   const [previewValid, setPreviewValid] = useState(false)
   const saving = useRef(false)
   const form = useForm<Values>({ resolver: zodResolver(schema), defaultValues: { unit: '', location: '', rows: targets.map(() => ({ quantity: '', unit: '', location: '' })) } })
+  const __modalGuard = useModalDraftGuard(form.formState.isDirty, form.formState.isSubmitting)
+
   const busy = pending || form.formState.isSubmitting
   const sharedUnit = form.watch('unit')
   const sharedLocation = form.watch('location')
@@ -50,7 +53,7 @@ export function PreparationOutputsDialog({ members, supported, pending, error, o
       saving.current = false
     }
   }
-  return <Dialog open onOpenChange={open => { if (!open && !busy) onClose() }}><DialogContent className="sm:max-w-3xl"><form className="contents" onSubmit={form.handleSubmit(submit)} noValidate>
+  return <Dialog open onOpenChange={open => { if (open) (open => { if (!open && !busy) onClose() })(open); else void __modalGuard.close(() => (open => { if (!open && !busy) onClose() })(false)) }}><DialogContent className="sm:max-w-3xl"><form className="contents" onSubmit={form.handleSubmit(submit)} noValidate>
     <DialogHeader><DialogTitle>{preview ? 'Configuration preview · ' : ''}{saved ? 'Library outputs created' : 'Create library outputs'}</DialogTitle><DialogDescription>{preview ? 'Inspect shared defaults and individual output quantities with fictional tubes.' : saved ? 'Each output has its own barcode and remains linked to its source tube. Physical barcode confirmation is still required.' : 'Record prepared library quantities and locations. Assigned library tubes retain their barcodes; POMS assigns a barcode when no library tube was assigned. This does not withdraw source material again.'}</DialogDescription>{preview ? <p className="text-sm">Fictional tubes. No outputs or barcodes will be created.</p> : null}{previewValid ? <p role="status">Example output values are valid. Nothing was saved.</p> : null}</DialogHeader>
     {saved ? <div className="space-y-3">
       <p role="status">Created {saved.length} library outputs. Return to the step to record the output barcodes; confirm physical output identity from each tube when ready.</p>
@@ -76,7 +79,7 @@ export function PreparationOutputsDialog({ members, supported, pending, error, o
       {reviewed.filter(m => !targets.some(t => t.id === m.id)).map(m => <div key={m.id} className={prepRowClass}><h3 className="font-medium">{m.position} · {m.barcode}</h3><p className="break-all text-sm">{m.output ? `Existing output: ${m.output.barcode}` : m.blocker || `Output unavailable: ${m.state}`}</p></div>)}
     </fieldset>}
     <RequiredDialogFooter showLegend={!saved && targets.length > 0}>
-      {saved ? <Button type="button" onClick={onClose}>Done</Button> : <><Button type="button" variant="outline" disabled={busy} onClick={onClose}>Cancel</Button><Button type="submit" disabled={busy || !supported || !targets.length}>{busy ? 'Creating outputs…' : preview ? 'Validate entry' : 'Create library outputs'}</Button></>}
+      {saved ? <Button type="button" onClick={() => { void __modalGuard.close(() => (onClose)()) }}>Done</Button> : <><Button type="button" variant="outline" disabled={busy} onClick={() => { void __modalGuard.close(() => (onClose)()) }}>Cancel</Button><Button type="submit" disabled={busy || !supported || !targets.length}>{busy ? 'Creating outputs…' : preview ? 'Validate entry' : 'Create library outputs'}</Button></>}
     </RequiredDialogFooter>
   </form></DialogContent></Dialog>
 }

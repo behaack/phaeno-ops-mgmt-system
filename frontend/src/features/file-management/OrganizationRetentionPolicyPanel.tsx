@@ -1,6 +1,7 @@
+import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ChevronDown, Pencil, Plus, RotateCcw } from 'lucide-react'
+import { Pencil, Plus, RotateCcw } from 'lucide-react'
 import { useState } from 'react'
 import { useForm, type FieldError, type UseFormRegisterReturn } from 'react-hook-form'
 import { z } from 'zod'
@@ -17,7 +18,7 @@ import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '#/components/ui/dialog'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
+import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/required-field'
@@ -69,11 +70,15 @@ export function OrganizationRetentionPolicyPanel({
     resolver: zodResolver(overrideSchema),
     defaultValues: emptyOverride,
   })
+  const { isDirty: __overrideFormDraftDirty } = overrideForm.formState
+
   const removalForm = useForm<RemovalFormValues>({
     mode: 'onBlur',
     resolver: zodResolver(removalSchema),
     defaultValues: { reason: '' },
   })
+  const { isDirty: __removalFormDraftDirty } = removalForm.formState
+
   const upsert = useMutation({
     mutationFn: (values: OverrideFormValues) => {
       const configuration = editingConfiguration!
@@ -107,12 +112,12 @@ export function OrganizationRetentionPolicyPanel({
     },
   })
 
-  useOrderDraftGuard((editOpen && overrideForm.formState.isDirty) || (removeOpen && removalForm.formState.isDirty), upsert.isPending || remove.isPending)
-  function closeEditor() {
-    if (!upsert.isPending && (!overrideForm.formState.isDirty || window.confirm('Discard unsaved retention changes?'))) setEditOpen(false)
+  useOrderDraftGuard((editOpen && __overrideFormDraftDirty) || (removeOpen && __removalFormDraftDirty), upsert.isPending || remove.isPending)
+  async function closeEditor() {
+    if (!upsert.isPending && (!__overrideFormDraftDirty || (await confirmPortal('Discard unsaved retention changes?')))) setEditOpen(false)
   }
-  function closeRemoval() {
-    if (!remove.isPending && (!removalForm.formState.isDirty || window.confirm('Discard unsaved retention changes?'))) setRemoveOpen(false)
+  async function closeRemoval() {
+    if (!remove.isPending && (!__removalFormDraftDirty || (await confirmPortal('Discard unsaved retention changes?')))) setRemoveOpen(false)
   }
   function saveOverride(values: OverrideFormValues) {
     const configuration = editingConfiguration!
@@ -166,15 +171,15 @@ export function OrganizationRetentionPolicyPanel({
           <p className="mt-1 text-sm text-muted-foreground">The effective values below apply only to future packages released for {organizationName}.</p>
         </div>
         {configuration.override ? (
-          <DropdownMenu modal={false}>
+          <ActionMenu modal={false}>
             <DropdownMenuTrigger asChild>
-              <Button type="button" size="sm" variant="outline">Actions<ChevronDown aria-hidden="true" /></Button>
+              <Button type="button" size="sm" variant="outline">Actions</Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-max min-w-48 max-w-[calc(100vw-2rem)]">
               <DropdownMenuItem onSelect={() => openEditor(configuration)}><Pencil aria-hidden="true" />Edit override</DropdownMenuItem>
               <DropdownMenuItem onSelect={openRemoval}><RotateCcw aria-hidden="true" />Remove override</DropdownMenuItem>
             </DropdownMenuContent>
-          </DropdownMenu>
+          </ActionMenu>
         ) : (
           <Button type="button" size="sm" onClick={() => openEditor(configuration)}><Plus data-icon="inline-start" />Add override</Button>
         )}
@@ -208,7 +213,7 @@ export function OrganizationRetentionPolicyPanel({
             </fieldset>
           </form>
           {upsert.error ? <Alert variant="destructive"><AlertTitle>Override was not saved</AlertTitle><AlertDescription>{fileManagementErrorMessage(upsert.error, 'Reload the account and try again.')}</AlertDescription></Alert> : null}
-          <RequiredDialogFooter><Button type="button" variant="outline" disabled={upsert.isPending} onClick={closeEditor}>Cancel</Button><Button type="submit" form="organization-retention-override-form" disabled={upsert.isPending || (Boolean(reviewedConfiguration.override) && !overrideForm.formState.isDirty)}>{upsert.isPending ? 'Saving…' : 'Save changes'}</Button></RequiredDialogFooter>
+          <RequiredDialogFooter><Button type="button" variant="outline" disabled={upsert.isPending} onClick={closeEditor}>Cancel</Button><Button type="submit" form="organization-retention-override-form" disabled={upsert.isPending || (Boolean(reviewedConfiguration.override) && !__overrideFormDraftDirty)}>{upsert.isPending ? 'Saving…' : 'Save changes'}</Button></RequiredDialogFooter>
         </DialogContent>
       </Dialog>
 

@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '#/test-helpers/render-portal'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import type { CrmCompanyPerson } from '#/api/crm'
 import { CrmPersonInvitationDialog, type PersonInvitationAction } from './CrmPersonInvitationDialog'

@@ -9,7 +9,7 @@ const mocks = vi.hoisted(() => ({ types: vi.fn(), save: vi.fn() }))
 vi.mock('#/api/supplier-catalog', async importOriginal => ({ ...await importOriginal<typeof import('#/api/supplier-catalog')>(), useProductTypes: () => mocks.types(), saveProductType: mocks.save }))
 vi.mock('#/features/auth/session-context', () => ({ usePhaenoSession: () => ({ authProvider: 'clerk', session: { capabilities: { canManageOrderConfiguration: true } } }) }))
 vi.mock('#/features/orders/use-order-draft-guard', () => ({ useOrderDraftGuard: () => vi.fn() }))
-vi.mock('@tanstack/react-router', () => ({ useSearch: () => ({}), Link: ({ children, to, params }: { children: ReactNode; to: string; params?: { productTypeId: string } }) => <a href={to.replace('$productTypeId', params?.productTypeId ?? '')}>{children}</a> }))
+vi.mock('@tanstack/react-router', () => ({ useBlocker: () => ({status: 'idle', reset: vi.fn(), proceed: vi.fn()}), useSearch: () => ({}), Link: ({ children, to, params }: { children: ReactNode; to: string; params?: { productTypeId: string } }) => <a href={to.replace('$productTypeId', params?.productTypeId ?? '')}>{children}</a> }))
 function mount(id?: string) { render(<QueryClientProvider client={new QueryClient({ defaultOptions: { mutations: { retry: false } } })}><ProductTypesPage productTypeId={id} /></QueryClientProvider>) }
 beforeEach(() => { vi.clearAllMocks(); mocks.types.mockReturnValue({ data: [...productTypesFixture, managedTube], isPending: false, isError: false }); mocks.save.mockResolvedValue(productTypesFixture[2]) })
 describe('product type management', () => {

@@ -13,6 +13,7 @@ test('Prospect reviews scope in the dialog, accepts it, and submits coded RNA wi
   if (info.project.name === 'mobile-chrome') await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' })
   await page.route('**/api/trials/**', async route => {
     const path = new URL(route.request().url()).pathname
+    if (path.endsWith('/timeline')) return route.fulfill({ json: { success: true, data: { items: [], totalCount: 0, page: Number(new URL(route.request().url()).searchParams.get('page') ?? 1), pageSize: 25 } } })
     if (path.endsWith('/configuration')) return route.fulfill({ json: { success: true, data: trialConfiguration } })
     if (route.request().method() === 'POST') {
       const payload = route.request().postDataJSON()
@@ -107,6 +108,7 @@ test('Phaeno scopes a Trial using the existing PSeq catalog and explicit materia
   if (info.project.name === 'mobile-chrome') await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' })
   await page.route('**/api/trials/**', async route => {
     const path = new URL(route.request().url()).pathname
+    if (path.endsWith('/timeline')) return route.fulfill({ json: { success: true, data: { items: [], totalCount: 0, page: Number(new URL(route.request().url()).searchParams.get('page') ?? 1), pageSize: 25 } } })
     if (path.endsWith('/configuration')) return route.fulfill({ json: { success: true, data: config } })
     if (path.endsWith('/candidates')) return route.fulfill({ json: { success: true, data: [] } })
     if (route.request().method() === 'POST') {
@@ -165,6 +167,7 @@ for (const role of ['Platform administrator', 'Commercial leadership']) {
     if (info.project.name === 'mobile-chrome') await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' })
     await page.route('**/api/trials/**', async route => {
       const path = new URL(route.request().url()).pathname
+    if (path.endsWith('/timeline')) return route.fulfill({ json: { success: true, data: { items: [], totalCount: 0, page: Number(new URL(route.request().url()).searchParams.get('page') ?? 1), pageSize: 25 } } })
       if (path.endsWith('/configuration')) return route.fulfill({ json: { success: true, data: config } })
       if (path.endsWith('/candidates')) return route.fulfill({ json: { success: true, data: [] } })
       if (route.request().method() === 'POST') {
@@ -196,6 +199,7 @@ test('Changed approved scope reload refreshes visible terms and requires renewed
   const failedReload = new Promise<void>(resolve => { finishFailedReload = resolve })
   await page.route('**/api/trials/**', async route => {
     const path = new URL(route.request().url()).pathname
+    if (path.endsWith('/timeline')) return route.fulfill({ json: { success: true, data: { items: [], totalCount: 0, page: Number(new URL(route.request().url()).searchParams.get('page') ?? 1), pageSize: 25 } } })
     if (path.endsWith('/configuration')) return route.fulfill({ json: { success: true, data: trialConfiguration } })
     if (route.request().method() === 'POST') {
       attempts++
@@ -244,6 +248,7 @@ test('Trial results show superseded and closed history and refresh availability 
   let current = { ...trialDetail, canAccept: false, status: 'Completed', releases: [release, { ...release, id: 'release-closed', releaseVersion: 2, isDownloadAvailable: false, retention, downloadUnavailableReason: 'The download period has ended. Contact Phaeno for an authorized reissue.' }, { ...release, id: 'release-partial', releaseVersion: 1, isCompletePackage: false, isDownloadAvailable: false, downloadUnavailableReason: 'Superseded by the complete Trial package; retained as release history.' }] }
   await page.route('**/api/trials/**', async route => {
     const path = new URL(route.request().url()).pathname
+    if (path.endsWith('/timeline')) return route.fulfill({ json: { success: true, data: { items: [], totalCount: 0, page: Number(new URL(route.request().url()).searchParams.get('page') ?? 1), pageSize: 25 } } })
     if (path.endsWith('/configuration')) return route.fulfill({ json: { success: true, data: trialConfiguration } })
     if (path.endsWith('/download')) {
       current = { ...current, releases: current.releases.map(value => value.id === release.id ? { ...value, isDownloadAvailable: false, downloadUnavailableReason: 'The download period has ended. Contact Phaeno for an authorized reissue.' } : value) }
@@ -269,6 +274,7 @@ test('Business Development creates a Trial directly with Company search and requ
   const writes: string[] = []
   await page.route(/^https:\/\/127\.0\.0\.1:\d+\/api\//, async route => {
     const path = new URL(route.request().url()).pathname
+    if (path.endsWith('/timeline')) return route.fulfill({ json: { success: true, data: { items: [], totalCount: 0, page: Number(new URL(route.request().url()).searchParams.get('page') ?? 1), pageSize: 25 } } })
     if (path.endsWith('/crm/companies')) return route.fulfill({ json: { success: true, data: { items: [{ id: 'company-1', name: 'Synthetic Research', domainName: 'research.example.test' }], totalCount: 1, page: 1, pageSize: 20 } } })
     if (path.endsWith('/departments/opportunity-choices')) return route.fulfill({ json: { success: true, data: [{ id: 'research', name: 'Research' }, { id: 'oncology', name: 'Oncology' }] } })
     if (path.endsWith('/configuration')) return route.fulfill({ json: { success: true, data: trialConfiguration } })
@@ -353,6 +359,7 @@ test('Trial Company choices handle Escape and a Portal confirmation preserves or
   await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' })
   await page.route(/^https:\/\/127\.0\.0\.1:\d+\/api\//, route => {
     const path = new URL(route.request().url()).pathname
+    if (path.endsWith('/timeline')) return route.fulfill({ json: { success: true, data: { items: [], totalCount: 0, page: Number(new URL(route.request().url()).searchParams.get('page') ?? 1), pageSize: 25 } } })
     if (path.endsWith('/crm/companies')) return route.fulfill({ json: { success: true, data: { items: [{ id: 'company-1', name: 'Synthetic Research', domainName: null }] } } })
     if (path.endsWith('/departments/opportunity-choices')) return route.fulfill({ json: { success: true, data: [{ id: 'research', name: 'Research' }] } })
     return route.fulfill({ json: { success: true, data: path.endsWith('/configuration') ? trialConfiguration : [] } })
@@ -388,6 +395,7 @@ test('Trial staff reach configuration in Order settings without broader order co
   if (info.project.name === 'mobile-chrome') await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' })
   await page.route(/^https:\/\/127\.0\.0\.1:\d+\/api\//, route => {
     const path = new URL(route.request().url()).pathname
+    if (path.endsWith('/timeline')) return route.fulfill({ json: { success: true, data: { items: [], totalCount: 0, page: Number(new URL(route.request().url()).searchParams.get('page') ?? 1), pageSize: 25 } } })
     apiPaths.push(path)
     expect(route.request().method()).toBe('GET')
     return route.fulfill({ json: { success: true, data: path.endsWith('/configuration') ? { ...trialConfiguration, canAssignPrimary: true } : [] } })

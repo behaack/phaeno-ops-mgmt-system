@@ -1,3 +1,6 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
+import { useCustomerMessages } from '#/features/customer-i18n/use-customer-messages'
+import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
@@ -9,11 +12,13 @@ import {
 } from '#/api/organization-management'
 import { Alert, AlertDescription } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
+import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '#/components/ui/dialog'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { RequiredFieldName, RequiredLegend } from '#/components/ui/required-field'
-import { departmentErrorMessage, departmentMessages as m } from './department-localization'
+import { departmentErrorMessage, departmentMessages, departmentMessages as m } from './department-localization'
+import { useCustomerSourceText } from '#/features/customer-i18n/customer-text'
 
 const lookupSchema = z.object({ email: z.string().trim().max(255, m.tooLong(255)).email(m.validEmail) })
 type Change = { membershipId: string; active: boolean; admin: boolean; version: number | null; name: string }
@@ -23,9 +28,14 @@ export function DepartmentMembersDialog({ organizationId, department, onOpenChan
   department: Department
   onOpenChange: (open: boolean) => void
 }) {
+  const m = useCustomerMessages(departmentMessages)
+
   const client = useQueryClient()
+  const customerText = useCustomerSourceText()
   const [changeTarget, setChangeTarget] = useState<Change | null>(null)
   const form = useForm({ resolver: zodResolver(lookupSchema), mode: 'onBlur', defaultValues: { email: '' } })
+  const __modalGuard = useModalDraftGuard(form.formState.isDirty, form.formState.isSubmitting)
+
   const members = useQuery({
     queryKey: ['organization-department-members', organizationId, department.id],
     queryFn: () => listDepartmentMembers(organizationId, department.id),
@@ -42,7 +52,7 @@ export function DepartmentMembersDialog({ organizationId, department, onOpenChan
     mutationFn: (target: Change) => target.active
       ? upsertDepartmentMember(organizationId, department.id, target.membershipId, { isDepartmentAdmin: target.admin, version: target.version })
       : deactivateDepartmentMember(organizationId, department.id, target.membershipId, target.version!),
-    onSuccess: async () => { setChangeTarget(null); lookup.reset(); await refresh() },
+    onSuccess: async () => { setChangeTarget(null); lookup.reset(); form.reset(); await refresh() },
     onError: async () => { setChangeTarget(null); lookup.reset(); await refresh() },
   })
   const busy = change.isPending || lookup.isPending
@@ -50,7 +60,7 @@ export function DepartmentMembersDialog({ organizationId, department, onOpenChan
   const activeMembers = (members.data ?? []).filter((member) => member.isActive)
   const choose = (target: Change) => { change.reset(); setChangeTarget(target) }
   const error = members.error ?? lookup.error ?? change.error
-  return <Dialog open onOpenChange={(open) => { if (!busy) onOpenChange(open) }}>
+  return <Dialog open onOpenChange={open => { if (open) ((open) => { if (!busy) onOpenChange(open) })(open); else void __modalGuard.close(() => ((open) => { if (!busy) onOpenChange(open) })(false)) }}>
     <DialogContent className="max-w-2xl" onCloseAutoFocus={(event) => {
       event.preventDefault()
       document.getElementById(`department-actions-${department.id}`)?.focus()
@@ -59,7 +69,7 @@ export function DepartmentMembersDialog({ organizationId, department, onOpenChan
         <DialogTitle>{m.membersTitle(department.name)}</DialogTitle>
         <DialogDescription>{m.membersDescription}</DialogDescription>
       </DialogHeader>
-      {error ? <Alert variant="destructive"><AlertDescription>{departmentErrorMessage(error)}</AlertDescription></Alert> : null}
+      {error ? <Alert variant="destructive"><AlertDescription><CustomerSourceText source={departmentErrorMessage(error)} /></AlertDescription></Alert> : null}
       {changeTarget ? <section className="space-y-3" aria-live="polite">
         <p>{m.confirmAccess(changeTarget.name, changeTarget.active, changeTarget.admin)}</p>
         <div className="flex flex-wrap gap-2">
@@ -75,7 +85,7 @@ export function DepartmentMembersDialog({ organizationId, department, onOpenChan
             aria-invalid={Boolean(form.formState.errors.email)}
             aria-describedby={`department-member-email-description${form.formState.errors.email ? ' department-member-email-error' : ''}`}
             {...form.register('email', { onChange: () => lookup.reset() })} />
-          {form.formState.errors.email ? <p id="department-member-email-error" role="alert" className="text-xs text-destructive">{form.formState.errors.email.message}</p> : null}
+          {form.formState.errors.email ? <p id="department-member-email-error" role="alert" className="text-xs text-destructive">{<CustomerSourceText source={form.formState.errors.email.message} />}</p> : null}
         </div>
         <Button type="submit" variant="outline" disabled={!canChange || Boolean(changeTarget)}>{lookup.isPending ? m.lookingUp : m.lookup}</Button>
       </form>
@@ -92,16 +102,19 @@ export function DepartmentMembersDialog({ organizationId, department, onOpenChan
       <div className="space-y-2" aria-busy={members.isPending}>
         {activeMembers.map((member) => <div key={member.id} className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0 break-words"><p className="font-medium">{member.userName}</p><p className="text-xs text-muted-foreground">{member.userEmail} · {member.isDepartmentAdmin ? m.departmentAdmin : m.member}</p></div>
-          {member.isOrganizationAdmin ? <p className="text-sm">{m.allDepartments}</p> : <div className="flex flex-wrap gap-2">
-            <Button size="sm" variant="outline" disabled={!canChange || Boolean(changeTarget)} onClick={() => choose({ membershipId: member.organizationMembershipId, active: false, admin: false, version: member.version, name: member.userName })}>{m.removeAccess}</Button>
-            <Button size="sm" variant="outline" disabled={!canChange || Boolean(changeTarget)} onClick={() => choose({ membershipId: member.organizationMembershipId, active: true, admin: !member.isDepartmentAdmin, version: member.version, name: member.userName })}>{member.isDepartmentAdmin ? m.makeMember : m.makeAdmin}</Button>
-          </div>}
+          {member.isOrganizationAdmin ? <p className="text-sm">{m.allDepartments}</p> : <ActionMenu>
+            <DropdownMenuTrigger asChild><Button size="sm" variant="outline" disabled={!canChange || Boolean(changeTarget)} aria-label={customerText(m.actionsFor(member.userName))}>{customerText('Actions')}</Button></DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem variant="destructive" onSelect={() => choose({ membershipId: member.organizationMembershipId, active: false, admin: false, version: member.version, name: member.userName })}>{m.removeAccess}</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => choose({ membershipId: member.organizationMembershipId, active: true, admin: !member.isDepartmentAdmin, version: member.version, name: member.userName })}>{member.isDepartmentAdmin ? m.makeMember : m.makeAdmin}</DropdownMenuItem>
+            </DropdownMenuContent>
+          </ActionMenu>}
         </div>)}
       </div>
       {!members.isPending && !members.error && !activeMembers.length ? <p className="text-sm text-muted-foreground">{m.noMembers}</p> : null}
       <DialogFooter>
         <RequiredLegend />
-        <Button variant="outline" disabled={busy} onClick={() => onOpenChange(false)}>{m.done}</Button>
+        <Button variant="outline" disabled={busy} onClick={() => { void __modalGuard.close(() => (() => onOpenChange(false))()) }}>{m.done}</Button>
       </DialogFooter>
     </DialogContent>
   </Dialog>

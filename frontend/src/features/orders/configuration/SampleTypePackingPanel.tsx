@@ -1,3 +1,5 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
+import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { getOrderErrorMessage } from '#/api/order-management'
@@ -11,6 +13,8 @@ import { currentShippingProcedure } from './current-shipping-procedure'
 import { containerDependencyWarnings } from './shipping-dependency-health'
 
 export function SampleTypePackingPanel({ sampleType, configuration }: { sampleType: SampleTypeDefinition; configuration: SampleShippingConfiguration }) {
+  const __customerText = useCustomerText()
+
   const containers = useQuery({ queryKey: ['shipping-container-definitions'], queryFn: getShippingContainerDefinitions })
   const now = Date.now()
   const procedure = currentShippingProcedure(configuration.procedures, sampleType.shippingProcedureId)
@@ -27,27 +31,27 @@ export function SampleTypePackingPanel({ sampleType, configuration }: { sampleTy
 
   return <Card className="gap-0 py-0">
     <CardHeader className="border-b bg-muted/50 p-4">
-      <CardTitle>Shipping &amp; transportation kits</CardTitle>
-      <CardDescription>The selected procedure supplies shared steps. Linked kit specifications supply capacity, temperature control, dry ice, and packing. Each kit workflow defines its components. Issued packets retain their saved instructions.</CardDescription>
+      <CardTitle><CustomerText message="m_becb12c02837" /></CardTitle>
+      <CardDescription><CustomerText message="m_397010f40e40" /></CardDescription>
     </CardHeader>
     <CardContent className="space-y-5 p-4">
       <div className="text-sm">
-        <h3 className="font-medium">Shipping procedure</h3>
-        {procedure ? <Link className={recordLinkClassName} to="/sample-shipping-settings" search={{ shippingSection: 'procedures', procedureId: procedure.id }}>{procedure.name}</Link>
-          : <p role="alert" className="text-warning">No Active procedure is available. New Orders of this Sample type are blocked.</p>}
+        <h3 className="font-medium"><CustomerText message="m_86763155b0e0" /></h3>
+        {procedure ? <Link className={recordLinkClassName} to="/sample-shipping-settings" search={{ shippingSection: "procedures", procedureId: procedure.id }}>{procedure.name}</Link>
+          : <p role="alert" className="text-warning"><CustomerText message="m_5bdbc7cec305" /></p>}
       </div>
-      {containers.isLoading ? <p role="status">Loading transportation kits…</p> : null}
-      {containers.error ? <Alert variant="destructive"><AlertTitle>Transportation kits could not be loaded</AlertTitle><AlertDescription>{getOrderErrorMessage(containers.error, 'Refresh the transportation kits and try again.')} <Button variant="outline" onClick={() => void containers.refetch()}>Retry</Button></AlertDescription></Alert> : null}
+      {containers.isLoading ? <p role="status"><CustomerText message="m_64d3514b35c8" /></p> : null}
+      {containers.error ? <Alert variant="destructive"><AlertTitle><CustomerText message="m_9594df9465cc" /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(containers.error, 'Refresh the transportation kits and try again.')} />} <Button variant="outline" onClick={() => void containers.refetch()}><CustomerText message="m_942087cc2d41" /></Button></AlertDescription></Alert> : null}
       <div className="space-y-3">
-        <h3 className="font-medium">Linked transportation kits</h3>
-        {!linked.length && containers.data ? <p role="alert" className="text-sm text-warning">No kit is linked to this Sample type. It can be saved as a draft, but new Orders are blocked.</p> : null}
-        {linked.length > 0 && current.length === 0 ? <p role="alert" className="text-sm text-warning">No linked kit is currently usable for new Orders. Review its status, product, and temperature instructions.</p> : null}
+        <h3 className="font-medium"><CustomerText message="m_459a1311b7e2" /></h3>
+        {!linked.length && containers.data ? <p role="alert" className="text-sm text-warning"><CustomerText message="m_ad5246311e24" /></p> : null}
+        {linked.length > 0 && current.length === 0 ? <p role="alert" className="text-sm text-warning"><CustomerText message="m_af476bb08848" /></p> : null}
         {linked.map(container => <article key={container.id} className="rounded-lg border p-4 text-sm">
           <Link className={recordLinkClassName} to="/sample-shipping-settings/kit-specifications/$containerId" params={{ containerId: container.id }} search={{}}>{container.commonName}</Link>
-          <p className="mt-1 text-xs text-muted-foreground">Revision {container.revision} · capacity {container.tubeCapacity} tubes · {current.some(item => item.definitionKey === container.definitionKey) ? 'Active revision available' : 'Unavailable for new requests'}</p>
-          {container.temperatureControlInstructions ? <p className="mt-2 whitespace-pre-wrap"><strong>Temperature control:</strong> {container.temperatureControlInstructions}</p> : null}
-          {container.dryIceQuantity != null ? <p className="mt-2"><strong>Dry ice:</strong> {container.dryIceQuantity} {container.dryIceUnit}</p> : null}
-          {containerDependencyWarnings(container, configuration).map(warning => <p key={warning.message} role="alert" className="mt-2 text-warning">{warning.message}</p>)}
+          <p className="mt-1 text-xs text-muted-foreground"><CustomerText message="m_e330d85ff901" />{container.revision} <CustomerText message="m_db0b5773c2f5" />{container.tubeCapacity} <CustomerText message="m_2fb19d7bbf61" />{current.some(item => item.definitionKey === container.definitionKey) ? <CustomerSourceText source={"Active revision available"} /> : __customerText('m_4bfc8b9205c0')}</p>
+          {container.temperatureControlInstructions ? <p className="mt-2 whitespace-pre-wrap"><strong><CustomerText message="m_bd31a088db20" /></strong> {container.temperatureControlInstructions}</p> : null}
+          {container.dryIceQuantity != null ? <p className="mt-2"><strong><CustomerText message="m_8efa701191e4" /></strong> {container.dryIceQuantity} {container.dryIceUnit}</p> : null}
+          {containerDependencyWarnings(container, configuration).map(warning => <p key={warning.message} role="alert" className="mt-2 text-warning">{<CustomerSourceText source={warning.message} />}</p>)}
         </article>)}
       </div>
     </CardContent>

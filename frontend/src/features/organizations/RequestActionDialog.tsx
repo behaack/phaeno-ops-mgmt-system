@@ -1,3 +1,6 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
+import { NativeSelect } from '#/components/ui/native-select'
+import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
@@ -73,6 +76,8 @@ export function RequestActionDialog({
     mode: 'onBlur',
     resolver: zodResolver(schema(optionalExplanation)),
   })
+  const __modalGuard = useModalDraftGuard(form.formState.isDirty, form.formState.isSubmitting, open)
+
 
   useEffect(() => {
     if (open) form.reset({ explanation: '', organizationId: request?.organizationId ?? '' })
@@ -90,27 +95,26 @@ export function RequestActionDialog({
     : actionContent(action, enablesAccessOnApproval)
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={open => { if (open) (onOpenChange)(open); else void __modalGuard.close(() => (onOpenChange)(false)) }}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{content.title}</DialogTitle>
           <DialogDescription>
-            {content.description} Request {request.requestNumber} for{' '}
+            {content.description} <CustomerSourceText source={"Request"} /> {request.requestNumber} <CustomerSourceText source={"for"} />{' '}
             {request.candidateOrganizationName}.
           </DialogDescription>
         </DialogHeader>
         {reuseCandidate ? (
           <Alert>
-            <AlertTitle>Existing access scope found</AlertTitle>
+            <AlertTitle><CustomerSourceText source={"Existing access scope found"} /></AlertTitle>
             <AlertDescription>
-              {reuseCandidate.organizationName} already has an active unlinked{' '}
-              {reuseCandidate.organizationKind} access scope. Confirm reuse to
-              preserve its users, orders, invitations, and history.
+              {reuseCandidate.organizationName} <CustomerSourceText source={"already has an active unlinked"} />{' '}
+              {reuseCandidate.organizationKind} <CustomerSourceText source={"access scope. Confirm reuse to\r\n              preserve its users, orders, invitations, and history."} />
             </AlertDescription>
           </Alert>
         ) : error ? (
           <Alert variant="destructive">
-            <AlertDescription>{apiErrorMessage(error)}</AlertDescription>
+            <AlertDescription>{<CustomerSourceText source={apiErrorMessage(error)} />}</AlertDescription>
           </Alert>
         ) : null}
         <form
@@ -137,15 +141,15 @@ export function RequestActionDialog({
           {action === 'apply' && !request.organizationId ? (
             <div className="mb-3 grid gap-1.5">
               <Label htmlFor="request-action-organization">
-                <RequiredFieldName>Completed organization</RequiredFieldName>
+                <RequiredFieldName><CustomerSourceText source={"Completed organization"} /></RequiredFieldName>
               </Label>
-              <select
+              <NativeSelect
                 id="request-action-organization"
                 className={selectClass}
                 aria-invalid={Boolean(form.formState.errors.organizationId)}
                 {...form.register('organizationId')}
               >
-                <option value="">Select organization</option>
+                <option value=""><CustomerSourceText source={"Select organization"} /></option>
                 {organizations
                   .filter((organization) => organization.isActive && organization.kind !== 'Phaeno')
                   .map((organization) => (
@@ -153,16 +157,16 @@ export function RequestActionDialog({
                       {organization.name} ({organization.kind})
                     </option>
                   ))}
-              </select>
+              </NativeSelect>
               {form.formState.errors.organizationId ? (
                 <p className="text-sm text-destructive" role="alert">
-                  {form.formState.errors.organizationId.message}
+                  {<CustomerSourceText source={form.formState.errors.organizationId.message} />}
                 </p>
               ) : null}
             </div>
           ) : null}
           <Label htmlFor="request-action-explanation">
-            {optionalApprovalNote ? 'Approval note (optional)' : action === 'apply'
+            {optionalApprovalNote ? <CustomerSourceText source={"Approval note (optional)"} /> : action === 'apply'
               ? 'Completed work (optional)' : <RequiredFieldName>{content.label}</RequiredFieldName>}
           </Label>
           <textarea
@@ -177,7 +181,7 @@ export function RequestActionDialog({
           />
           {form.formState.errors.explanation ? (
             <p id="request-action-explanation-error" className="text-sm text-destructive" role="alert">
-              {form.formState.errors.explanation.message}
+              {<CustomerSourceText source={form.formState.errors.explanation.message} />}
             </p>
           ) : null}
         </form>
@@ -185,9 +189,9 @@ export function RequestActionDialog({
           <Button
             type="button"
             variant="outline"
-            onClick={() => onOpenChange(false)}
+            onClick={() => { void __modalGuard.close(() => (() => onOpenChange(false))()) }}
           >
-            Keep unchanged
+            <CustomerSourceText source={"Keep unchanged"} />
           </Button>
           <Button
             type="submit"
@@ -196,7 +200,7 @@ export function RequestActionDialog({
             disabled={isPending}
           >
             {isPending
-              ? 'Saving…'
+              ? <CustomerSourceText source={"Saving…"} />
               : reuseCandidate
                 ? 'Use existing access scope'
                 : content.submitLabel}

@@ -68,14 +68,24 @@ The initial trainer needs to explain the responsibilities and handoffs; they do 
 
 Open **Lab operations**. Its main working sections are:
 
-- **Receipt & accession** — transportation-kit tasks, incoming shipments and tube intake.
+- **Jobs** — active/closed work, phases, deadlines and sample history.
+- **Sample receipt & accession** — incoming shipments and tube intake.
 - **Library prep** — preparation batches and job/specimen history lookup.
 - **Sequencing batches** — eligible libraries, batch membership and external sequencing handoffs.
-- **Results & review** — jobs and their scientific review evidence.
+- **Results & scientific review** — exact output packages awaiting review.
+- **Result release** — separately authorized Customer publication.
+- **Transportation kit requests/inventory** — fulfillment work and physical stock.
 - **Reagent manufacturing** — Phaeno-made reagent runs, between Data assembly and Suppliers & products.
 - **Suppliers & products** — external purchased items and their inventory units; the seeded Phaeno record is marked internal.
 - **Materials** and **Equipment** — purchased stock, finished reagent lots, QC and other resources used during work.
-- **Lab settings** under Administration — Lab steps, Protocols, Workflows, Library tray formats and Storage locations.
+- **Lab settings** under Settings — Lab steps, Protocols, Workflows, Library tray formats and Storage locations.
+
+The work dashboard and header bell surface outstanding authorized actions.
+Phaeno users default to their assigned work plus eligible unassigned work; the
+team view does not expand permissions. Opening a notification does not complete
+work. For outages, use the management-approved
+[worksheet and reconciliation procedure](LAB-OUTAGE-WORKSHEET.md); the current
+draft still requires approval and observed qualification.
 
 **PSeq kits** and **Data assembly** support additional workflows. Leave their detailed training for a later session unless they are the first trainer's immediate responsibility.
 

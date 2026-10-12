@@ -1,24 +1,33 @@
 # Portal feature readiness
 
-Reviewed September 7, 2026. This inventory distinguishes application behavior from production configuration and operational acceptance. A deployed screen does not establish that a populated scientific or financial journey has been accepted.
+Reviewed October 11, 2026. Implementation, local verification, hosted-test
+activation and commercial production acceptance are separate states. The
+runtime named production is currently a hosted test environment.
 
-The completion changes are deployed to the matching API and Portal at `ac0a773e93fe452acc57a47c682d727fc0fadfda`, including the additive draft migration, persistent Local storage and the private ClamAV service. The [release evidence](plans/PORTAL-COMPLETION-IMPLEMENTATION-2026-09-07.md#production-release-evidence) records provider checks, database restoration and health results. The earlier [second consistency review](plans/PORTAL-POMS-CONSISTENCY-SECOND-PASS-2026-09-07.md#production-release-evidence) remains a historical checkpoint.
-
-| Capability | Implemented behavior | Activation and acceptance still required |
+| Capability | Implemented baseline | Remaining acceptance / scope |
 | --- | --- | --- |
-| Companies and CRM | Canonical Companies, Contacts, Leads, Opportunities, activities, tasks, requests and internal relationship history. The completion change adds ordinary Commercial Operator access, exact attention filters and search recovery. | Role-specific signed-in acceptance. Platform administration retains access-changing actions and restricted information. |
-| Order intake | One Customer pricing intake, grouped work stages, quote review and acceptance, followed by sample roster finalization and Lab handoff. Company setup and invoice readiness have separate gates. | Approved operational defaults, scientific definitions and populated Customer acceptance. |
-| Configured PSeq Lab Service | The current Customer service uses the quote workflow. Direct standard purchase by entitled Customers and Partners, immutable offering revisions and the complete processing-plus-assembly bundle are approved roadmap work. | Deliver the entire configured-price commitment, allowed specimen roster, Lab handoff, turnaround promise and billing contract together before exposing direct placement. See the [approved sequence](plans/ORDER-MANAGEMENT-PLAN.md#exact-configured-lab-service-implementation-sequence). |
-| Partner PSeq Kit | Negotiated reagent orders and independent Assembly requests exist. The approved one-assembly-case-per-Kit commercial bundle is not implemented. | Kit-linked case entitlement, shipment and expiration timing, replacement transfer, one billable commitment and historical compatibility. Existing standalone records must remain readable and operable; never infer purchase links. |
-| Trial Projects | Request, configuration, two distinct approval responsibilities, Prospect acceptance, bounded sample submission, Lab execution and governed results. Shared staff scope drafts are deployed independently of approval revisions, with their migration applied. | Staff/Prospect acceptance. Real scientific configurations and shipment handling remain operational responsibilities. |
-| Lab Operations | Internal provider, accession, work assignment, controlled protocol execution, QC evidence, scientific approval and Commercial projections. | Approved scientific definitions, physical bench and label/scanner validation, actual operator execution and scientific signoff. |
-| Scientific processing | Provider-neutral final-result ingestion and governed final packages. POMS does not currently own raw NGS or intermediate artifact storage or pipeline orchestration. | Identify the actual upstream analysis system/team and verify its output contract, provenance and representative deliverables. See the [scientific boundary](plans/FILE-MANAGEMENT-PLAN.md#scientific-pipeline-boundary). |
-| File bytes | Shared injected storage contract for managed and operational files, with private persistent Local, Disabled and optional S3 providers. Production Local is active; both areas passed real write/checksum/readback/scan/deletion checks after an empty-store inventory. | Recurring coordinated file/database backups, populated file restoration, capacity monitoring, and authenticated upload/download evidence. No automatic move between providers. |
-| Malware scanning | Replaceable scanner contract and a ClamAV streaming adapter. The private production service passed current-definition health, clean/EICAR/encrypted/direct-limit checks. | Authenticated approved-format, interrupted/timeout/unavailable-file acceptance and operational monitoring. Provider checks do not establish a populated user journey. |
-| File release and retention | Scientific release, immutable manifests and receipts, retention snapshots, warnings/grace, access cutoff, preservation, revocation and deletion retries are implemented. Trial complete-package release is integrated. | Processing, enforcement and deletion flags are independent. Hosted delivery, stream interruption, provider deletion, restoration and retention acceptance remain separate. |
-| Finance | Native PSeq invoices, receipts, allocation, aging, adjustments and independent reconciliation. Allocation reversal and reconciliation draft correction/cancellation are deployed, with the additive history migration applied. | Role separation and populated Finance reconciliation acceptance. Native PSeq scientific release does not depend on payment. |
-| Help and Word guide | Audience-specific guides, in-Portal documentation search, and the illustrated order-to-cash guide. Search is included in the completed application deployment. | Search corpus agreement and authenticated audience-specific search acceptance for each release. Screenshots of local draft states do not establish production transactions. |
+| CRM and account lifecycle | First-party Company relationships, people, sales, tasks, reporting, requests and tenant access. | Role-specific signed-in acceptance. Connected email/calendar and external CRM adapters remain deferred. |
+| Customer Lab ordering | Configured and negotiated pricing, Sales drafts/quotes, sequential phases, samples/shipping and Lab handoff. | Representative Customer/Sales/Finance acceptance. Multiple distinct services per order remain future scope. |
+| Partner PSeq Kit | Kit bundle purchases, included cases, fulfillment, replacement/credit history and retained standalone records. | Representative Partner/fulfillment acceptance, physical shipment qualification and real processing. |
+| Trial Projects | Direct Company/Department creation, source quantities, leadership approval, Prospect acceptance, bounded submission and Lab/shipping/results. | Representative Trial and bench acceptance. Customer promotional no-charge placement is unimplemented separate scope. |
+| Lab Operations | Receipt/accession, material lineage, preparation, QC, vendor sequencing, scientific review and Commercial projections. | Current DataMatrix/supplier hardware qualification, degraded-mode procedure, operator/vendor and trainer acceptance. |
+| Scientific files and processing | Resumable/ZIP FASTQ intake, exact library/run file sets, versioned S3 originals and POMS-side processing contracts. | Real provider execution/output acceptance. Older raw-files-outside-POMS descriptions are historical. |
+| Storage and scanning | Local/Disabled/S3 providers. Local and hosted-test S3 cutovers recorded October 9; ClamAV remains configured in the hosted receipts. | S3-aware coordinated recovery, scheduled off-server protection and populated restoration remain commercial launch gates. Local-only backups do not protect S3. |
+| Scientific release/retention | Independent QC/approval/publication, immutable manifests, receipts, schedules, full-download evidence, holds and cleanup/reissue controls. | Runtime flags and hosted recovery/cleanup acceptance remain separately evidenced. General folder CRUD/policy inheritance is unimplemented. |
+| Finance | Native phase invoices/PDFs, receipts, allocation, adjustments, aging and reconciliation independently of scientific release. | Separated-role Finance acceptance. QBO remains deferred. |
+| Help and localization | Audience-isolated lazy guides, authenticated packaged search, Customer message/error extraction and current-English document-source inventory are locally verified. | Human scientific/financial translations and full notice/document review before any additional Customer locale. No second locale is advertised; other audiences remain US English. |
+| Work discovery | Shared work dashboard/bell, personal/eligible-unassigned/team views, stable paging, exact links and source recovery facts, with connected local actor/volume/prerequisite checks. | Real Clerk/provider and representative operational-user usefulness/clearance, plus populated strict-scientific tenant cost, remain acceptance gates. |
 
-## Completion standard
+[System gap closure](plans/SYSTEM-GAP-CLOSURE-PLAN.md) owns current implementation
+status and [work dashboard and notifications](plans/WORK-DASHBOARD-AND-NOTIFICATIONS-PLAN.md)
+owns work/count/permission meaning. [Operations readiness](operations-readiness.md)
+owns dated environment evidence. Deployment remains held.
 
-A capability is ready for operational use when its required configuration is approved, its representative populated journey succeeds under the intended roles, its failure and recovery paths work, and its accountable operational owner accepts the result. The owning test plans record software verification; [operations readiness](operations-readiness.md) records environment and provider requirements. The application is not yet feature-complete against the full approved commercial roadmap.
+The [final application closure receipt](testing/runs/2026-10-11-system-gap-closure-final.md)
+records current regression outcomes and supersedes earlier local checkpoint
+counts. Local fixtures do not establish hosted, physical or operational acceptance.
+
+A capability is operationally ready only after approved configuration,
+representative populated role journeys, failure/recovery and accountable
+operational acceptance. Historical September checkpoints remain in dated plans
+and release receipts; deployment or mocked checks do not establish acceptance.

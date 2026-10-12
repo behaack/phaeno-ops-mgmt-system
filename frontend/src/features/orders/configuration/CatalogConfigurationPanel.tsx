@@ -1,3 +1,4 @@
+import { CustomerSourceText, useCustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
@@ -109,6 +110,8 @@ export function CatalogConfigurationPanel({
   catalogItemId?: string;
   apiEnabled?: boolean;
 }) {
+  const __customerSource = useCustomerSourceText()
+
   const client = useQueryClient();
   const navigate = useNavigate();
   const listSearch = parseCatalogListSearch(useSearch({ strict: false }));
@@ -146,6 +149,8 @@ export function CatalogConfigurationPanel({
     resolver: zodResolver(schema),
     defaultValues: empty,
   });
+  const { isDirty: __formDraftDirty } = form.formState
+
   const mutation = useMutation({
     mutationFn: (values: Values) =>
       saveCatalogItem(editing?.id ?? null, {
@@ -173,10 +178,10 @@ export function CatalogConfigurationPanel({
   const isLabService = form.watch('serviceFamily') === 'PSeqLabService';
   const selectedUnit = form.watch('salesUnit');
   const unitOptions = Array.from(new Set([...salesUnits.map(unit => unit.value), ...configuration.catalogItems.map(item => item.salesUnit), selectedUnit])).filter(Boolean);
-  useOrderDraftGuard(editing !== undefined && form.formState.isDirty, mutation.isPending);
+  useOrderDraftGuard(editing !== undefined && __formDraftDirty, mutation.isPending);
   function close() {
     if (mutation.isPending) return;
-    if (form.formState.isDirty) setConfirmDiscard(true);
+    if (__formDraftDirty) setConfirmDiscard(true);
     else setEditing(undefined);
   }
 
@@ -206,28 +211,28 @@ export function CatalogConfigurationPanel({
 
   return (
     <>
-      {catalogItemId ? <div className="mb-4"><Link className="text-sm text-primary underline" to="/order-configuration" search={{ ...listSearch, configurationSection: 'catalog' }}>Back to service catalog</Link></div> : null}
-      {catalogItemId && !selected ? <Alert variant="destructive"><AlertTitle>Service item not found</AlertTitle><AlertDescription>Return to the catalog and select an available item.</AlertDescription></Alert> : selected ? <div className="space-y-5">
+      {catalogItemId ? <div className="mb-4"><Link className="text-sm text-primary underline" to="/order-configuration" search={{ ...listSearch, configurationSection: 'catalog' }}><CustomerSourceText source={"Back to service catalog"} /></Link></div> : null}
+      {catalogItemId && !selected ? <Alert variant="destructive"><AlertTitle><CustomerSourceText source={"Service item not found"} /></AlertTitle><AlertDescription><CustomerSourceText source={"Return to the catalog and select an available item."} /></AlertDescription></Alert> : selected ? <div className="space-y-5">
         <Card className="gap-0 py-0">
           <CardHeader className="grid-cols-[minmax(0,1fr)_auto] gap-x-3 border-b bg-muted/50 p-4">
             <div className="min-w-0 space-y-1">
               <CardTitle>{selected.name}</CardTitle>
-              <CardDescription>Commercial pricing and availability</CardDescription>
+              <CardDescription><CustomerSourceText source={"Commercial pricing and availability"} /></CardDescription>
             </div>
             <CatalogItemActions key={selected.id} item={selected} apiEnabled={apiEnabled} onEdit={trigger => { open(selected); actionRef.current = trigger }} />
           </CardHeader>
           <CardContent className="space-y-3 p-4">
             <p className="text-sm">{selected.description || 'No description provided.'}</p>
             <dl className="grid gap-3 text-sm sm:grid-cols-3">
-              <div><dt className="text-muted-foreground">Base price</dt><dd>{formatMoney(selected.basePrice, selected.currency)}</dd></div>
-              <div><dt className="text-muted-foreground">Sales unit</dt><dd>{salesUnitLabel(selected.salesUnit)}</dd></div>
-              <div><dt className="text-muted-foreground">Status</dt><dd>{selected.isActive ? 'Active' : 'Inactive'}</dd></div>
-              <div><dt className="text-muted-foreground">Service family</dt><dd>{selected.isPSeqLabService ? 'PSeq Lab Service' : 'Other'}</dd></div>
-              {selected.isPSeqLabService ? <div><dt className="text-muted-foreground">Customer sample limit</dt><dd>{selected.maximumCustomerSamples ?? 'Unconfigured — Customer placement unavailable'}</dd></div> : null}
-              {selected.isPSeqLabService ? <div><dt className="text-muted-foreground">Minimum sequencing volume per tube</dt><dd className="font-medium">{selected.minimumSequencingVolumeUlText ? `${selected.minimumSequencingVolumeUlText} µL` : 'Unconfigured — sequencing tube preparation unavailable'}</dd></div> : null}
+              <div><dt className="text-muted-foreground"><CustomerSourceText source={"Base price"} /></dt><dd>{formatMoney(selected.basePrice, selected.currency)}</dd></div>
+              <div><dt className="text-muted-foreground"><CustomerSourceText source={"Sales unit"} /></dt><dd>{salesUnitLabel(selected.salesUnit)}</dd></div>
+              <div><dt className="text-muted-foreground"><CustomerSourceText source={"Status"} /></dt><dd>{selected.isActive ? <CustomerSourceText source={"Active"} /> : <CustomerSourceText source={"Inactive"} />}</dd></div>
+              <div><dt className="text-muted-foreground"><CustomerSourceText source={"Service family"} /></dt><dd>{selected.isPSeqLabService ? <CustomerSourceText source={"PSeq Lab Service"} /> : <CustomerSourceText source={"Other"} />}</dd></div>
+              {selected.isPSeqLabService ? <div><dt className="text-muted-foreground"><CustomerSourceText source={"Customer sample limit"} /></dt><dd>{selected.maximumCustomerSamples ?? 'Unconfigured — Customer placement unavailable'}</dd></div> : null}
+              {selected.isPSeqLabService ? <div><dt className="text-muted-foreground"><CustomerSourceText source={"Minimum sequencing volume per tube"} /></dt><dd className="font-medium">{selected.minimumSequencingVolumeUlText ? `${selected.minimumSequencingVolumeUlText} µL` : <CustomerSourceText source={"Unconfigured — sequencing tube preparation unavailable"} />}</dd></div> : null}
             </dl>
-            {!selected.isActive ? <p className="text-sm text-muted-foreground">Inactive items are excluded from new pricing.</p> : null}
-            <details className="text-sm"><summary className="w-fit cursor-pointer rounded-sm text-primary focus-visible:ring-2 focus-visible:ring-ring">Reference details</summary><p className="mt-2 break-all text-muted-foreground">Item reference: {selected.externalItemId}. This permanent reference links pricing and accounting records and stays the same when the item is renamed.</p></details>
+            {!selected.isActive ? <p className="text-sm text-muted-foreground"><CustomerSourceText source={"Inactive items are excluded from new pricing."} /></p> : null}
+            <details className="text-sm"><summary className="w-fit cursor-pointer rounded-sm text-primary focus-visible:ring-2 focus-visible:ring-ring"><CustomerSourceText source={"Reference details"} /></summary><p className="mt-2 break-all text-muted-foreground"><CustomerSourceText source={"Item reference:"} /> {selected.externalItemId}<CustomerSourceText source={". This permanent reference links pricing and accounting records and stays the same when the item is renamed."} /></p></details>
           </CardContent>
         </Card>
         {selected.isPSeqLabService ? <LabServiceOfferingsPanel configuration={configuration} apiEnabled={apiEnabled} catalogItemId={selected.id} /> : null}
@@ -235,42 +240,42 @@ export function CatalogConfigurationPanel({
       <Card className="gap-0 py-0">
         <CardHeader className="grid-cols-[minmax(0,1fr)_auto] gap-x-3 border-b bg-muted/50 p-4">
           <div className="min-w-0 space-y-1">
-            <CardTitle>Service catalog</CardTitle>
+            <CardTitle><CustomerSourceText source={"Service catalog"} /></CardTitle>
             <CardDescription>
-              Maintain what each price covers, its amount, and whether the item is active for new pricing.
+              <CustomerSourceText source={"Maintain what each price covers, its amount, and whether the item is active for new pricing."} />
             </CardDescription>
           </div>
           <Button className="col-start-2 row-start-1 self-start justify-self-end" type="button" disabled={!apiEnabled} onClick={() => open(null)}>
             <Plus data-icon="inline-start" />
-            Add item
+            <CustomerSourceText source={"Add item"} />
           </Button>
           <div className="col-span-full flex flex-col gap-3 sm:flex-row sm:items-end">
             <SharedField className="min-w-0 flex-1">
-              <Input id="catalog-search" type="search" aria-label="Search service catalog" placeholder="Search by name, description, reference or sales unit" maxLength={255} value={searchInput.text} onChange={event => setSearchInput({ saved: catalogSearch, text: event.target.value })} />
+              <Input id="catalog-search" type="search" aria-label={__customerSource("Search service catalog")} placeholder={__customerSource("Search by name, description, reference or sales unit")} maxLength={255} value={searchInput.text} onChange={event => setSearchInput({ saved: catalogSearch, text: event.target.value })} />
             </SharedField>
             <div className="flex min-h-9 flex-wrap items-center gap-4">
               <div className="flex items-center gap-2">
                 <Checkbox id="catalog-show-inactive" checked={Boolean(listSearch.catalogShowInactive)} onCheckedChange={checked => void navigate({ to: '/order-configuration', search: previous => ({ ...previous, configurationSection: 'catalog', catalogShowInactive: checked === true || undefined }), replace: true, resetScroll: false })} />
-                <Label htmlFor="catalog-show-inactive" className="cursor-pointer">Show inactive</Label>
+                <Label htmlFor="catalog-show-inactive" className="cursor-pointer"><CustomerSourceText source={"Show inactive"} /></Label>
               </div>
-              {hasFilters ? <Button type="button" variant="ghost" size="sm" onClick={() => { setSearchInput({ saved: catalogSearch, text: '' }); void navigate({ to: '/order-configuration', search: previous => ({ ...previous, configurationSection: 'catalog', catalogSearch: undefined, catalogShowInactive: undefined }), replace: true, resetScroll: false }); }}>Clear all</Button> : null}
+              {hasFilters ? <Button type="button" variant="ghost" size="sm" onClick={() => { setSearchInput({ saved: catalogSearch, text: '' }); void navigate({ to: '/order-configuration', search: previous => ({ ...previous, configurationSection: 'catalog', catalogSearch: undefined, catalogShowInactive: undefined }), replace: true, resetScroll: false }); }}><CustomerSourceText source={"Clear all"} /></Button> : null}
             </div>
           </div>
         </CardHeader>
         <CardContent className="p-4">
-          <p role="status" className="sr-only">{visibleItems.length} {visibleItems.length === 1 ? 'catalog item' : 'catalog items'} shown.</p>
+          <p role="status" className="sr-only">{visibleItems.length} {visibleItems.length === 1 ? <CustomerSourceText source={"catalog item"} /> : <CustomerSourceText source={"catalog items"} />} <CustomerSourceText source={"shown."} /></p>
           {visibleItems.length ? (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead className="border-b text-muted-foreground">
                   <tr>
-                    <th className="py-3 pr-3 font-medium">Item</th>
-                    <th className="px-3 py-3 font-medium">Sales unit</th>
+                    <th className="py-3 pr-3 font-medium"><CustomerSourceText source={"Item"} /></th>
+                    <th className="px-3 py-3 font-medium"><CustomerSourceText source={"Sales unit"} /></th>
                     <th className="px-3 py-3 text-right font-medium">
-                      Base price
+                      <CustomerSourceText source={"Base price"} />
                     </th>
-                    <th className="px-3 py-3 text-right font-medium">Status</th>
-                    <th className="py-3 pl-3 text-right font-medium"><span className="sr-only">Actions</span></th>
+                    <th className="px-3 py-3 text-right font-medium"><CustomerSourceText source={"Status"} /></th>
+                    <th className="py-3 pl-3 text-right font-medium"><span className="sr-only"><CustomerSourceText source={"Actions"} /></span></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -294,7 +299,7 @@ export function CatalogConfigurationPanel({
                         <Badge
                           variant={item.isActive ? "secondary" : "outline"}
                         >
-                          {item.isActive ? "Active" : "Inactive"}
+                          {item.isActive ? <CustomerSourceText source={"Active"} /> : <CustomerSourceText source={"Inactive"} />}
                         </Badge>
                       </td>
                       <td className="py-3 pl-3">
@@ -307,7 +312,7 @@ export function CatalogConfigurationPanel({
             </div>
           ) : (
             <p className="py-8 text-center text-sm text-muted-foreground">
-              {!configuration.catalogItems.length ? 'No catalog items configured.' : needle ? 'No catalog items match this search.' : 'No active catalog items. Select Show inactive to review inactive items.'}
+              {!configuration.catalogItems.length ? <CustomerSourceText source={"No catalog items configured."} /> : needle ? 'No catalog items match this search.' : 'No active catalog items. Select Show inactive to review inactive items.'}
             </p>
           )}
         </CardContent>
@@ -330,10 +335,10 @@ export function CatalogConfigurationPanel({
         >
           <DialogHeader>
             <DialogTitle>
-              {editing ? "Edit catalog item" : "Add catalog item"}
+              {editing ? <CustomerSourceText source={"Edit catalog item"} /> : <CustomerSourceText source={"Add catalog item"} />}
             </DialogTitle>
             <DialogDescription>
-              Set the item’s price and status. Active items are available for new pricing; existing orders keep their saved details. Item references are managed automatically.
+              <CustomerSourceText source={"Set the item’s price and status. Active items are available for new pricing; existing orders keep their saved details. Item references are managed automatically."} />
             </DialogDescription>
           </DialogHeader>
           <form
@@ -348,16 +353,16 @@ export function CatalogConfigurationPanel({
                 form.setValue('serviceFamily', lab ? 'PSeqLabService' : 'Other', { shouldDirty: true, shouldValidate: true });
                 form.setValue('salesUnit', lab ? 'specimen' : 'each', { shouldDirty: true, shouldValidate: true });
               }}>
-                <option value="lab">PSeq Lab Service</option>
-                <option value="other">Other</option>
+                <option value="lab"><CustomerSourceText source={"PSeq Lab Service"} /></option>
+                <option value="other"><CustomerSourceText source={"Other"} /></option>
               </NativeSelect>
             </Field>
             <div className="space-y-2">
-              <Label htmlFor="catalog-status"><RequiredFieldName>Status</RequiredFieldName></Label>
+              <Label htmlFor="catalog-status"><RequiredFieldName><CustomerSourceText source={"Status"} /></RequiredFieldName></Label>
               <NativeSelect id="catalog-status" value={form.watch('isActive') ? 'active' : 'inactive'} aria-describedby="catalog-status-help" onChange={event => form.setValue('isActive', event.target.value === 'active', { shouldDirty: true })}>
-                <option value="active">Active</option><option value="inactive">Inactive</option>
+                <option value="active"><CustomerSourceText source={"Active"} /></option><option value="inactive"><CustomerSourceText source={"Inactive"} /></option>
               </NativeSelect>
-              <p id="catalog-status-help" className="text-xs text-muted-foreground">Active makes this item available for new pricing. Inactive keeps it out of new pricing; saved orders retain their details.</p>
+              <p id="catalog-status-help" className="text-xs text-muted-foreground"><CustomerSourceText source={"Active makes this item available for new pricing. Inactive keeps it out of new pricing; saved orders retain their details."} /></p>
             </div>
             <Field
               id="catalog-name"
@@ -371,7 +376,7 @@ export function CatalogConfigurationPanel({
               />
             </Field>
             <div>
-              <Label htmlFor="catalog-description">Description</Label>
+              <Label htmlFor="catalog-description"><CustomerSourceText source={"Description"} /></Label>
               <textarea
                 id="catalog-description"
                 rows={3}
@@ -385,13 +390,13 @@ export function CatalogConfigurationPanel({
               error={form.formState.errors.salesUnit?.message}
             >
               {isLabService ? <>
-                <NativeSelect id="catalog-unit" value="specimen" disabled aria-describedby="catalog-unit-fixed-help"><option value="specimen">Per sample</option></NativeSelect>
-                <p id="catalog-unit-fixed-help" className="mt-1 text-xs text-muted-foreground">The standard price is per sample and includes one library preparation, one sequencing run and data assembly. Additional runs use the prepared library and are priced separately during quote review. The sample unit is fixed automatically.</p>
+                <NativeSelect id="catalog-unit" value="specimen" disabled aria-describedby="catalog-unit-fixed-help"><option value="specimen"><CustomerSourceText source={"Per sample"} /></option></NativeSelect>
+                <p id="catalog-unit-fixed-help" className="mt-1 text-xs text-muted-foreground"><CustomerSourceText source={"The standard price is per sample and includes one library preparation, one sequencing run and data assembly. Additional runs use the prepared library and are priced separately during quote review. The sample unit is fixed automatically."} /></p>
               </> : <>
                 <NativeSelect id="catalog-unit" aria-invalid={Boolean(form.formState.errors.salesUnit)} aria-describedby="catalog-unit-help" {...form.register('salesUnit')}>
                   {unitOptions.map(unit => <option key={unit} value={unit}>{salesUnitLabel(unit)}</option>)}
                 </NativeSelect>
-                <p id="catalog-unit-help" className="mt-1 text-xs text-muted-foreground">Choose what one unit of the base price covers. Existing catalog units remain available.</p>
+                <p id="catalog-unit-help" className="mt-1 text-xs text-muted-foreground"><CustomerSourceText source={"Choose what one unit of the base price covers. Existing catalog units remain available."} /></p>
               </>}
             </Field>
             <Field
@@ -421,41 +426,41 @@ export function CatalogConfigurationPanel({
                 {...form.register("currency")}
               />
             </Field>
-            {isLabService ? <SharedField><Label htmlFor="catalog-customer-limit">Maximum Customer samples</Label><FieldDescription>Set the largest order Customers may place directly. Above this limit, they contact Sales for negotiated pricing. Leave blank to disable Customer standard placement until a limit is configured.</FieldDescription><Input id="catalog-customer-limit" type="number" min={1} max={10000} {...form.register('maximumCustomerSamples')} aria-invalid={Boolean(form.formState.errors.maximumCustomerSamples)} aria-describedby="catalog-customer-limit-error" /><FieldError id="catalog-customer-limit-error">{form.formState.errors.maximumCustomerSamples?.message}</FieldError></SharedField> : null}
-            {isLabService ? <SharedField><Label htmlFor="catalog-sequencing-minimum">Minimum sequencing volume per tube (µL)</Label><FieldDescription id="catalog-sequencing-minimum-help">Required before preparing sequencing tubes. Leave blank to block new tube preparation. Operators cannot change this requirement; each prepared pair retains its saved Catalog version.</FieldDescription><Input id="catalog-sequencing-minimum" inputMode="decimal" maxLength={40} {...form.register('minimumSequencingVolumeUlText')} aria-invalid={Boolean(form.formState.errors.minimumSequencingVolumeUlText)} aria-describedby="catalog-sequencing-minimum-help catalog-sequencing-minimum-error" /><FieldError id="catalog-sequencing-minimum-error">{form.formState.errors.minimumSequencingVolumeUlText?.message}</FieldError></SharedField> : null}
+            {isLabService ? <SharedField><Label htmlFor="catalog-customer-limit"><CustomerSourceText source={"Maximum Customer samples"} /></Label><FieldDescription><CustomerSourceText source={"Set the largest order Customers may place directly. Above this limit, they contact Sales for negotiated pricing. Leave blank to disable Customer standard placement until a limit is configured."} /></FieldDescription><Input id="catalog-customer-limit" type="number" min={1} max={10000} {...form.register('maximumCustomerSamples')} aria-invalid={Boolean(form.formState.errors.maximumCustomerSamples)} aria-describedby="catalog-customer-limit-error" /><FieldError id="catalog-customer-limit-error">{form.formState.errors.maximumCustomerSamples?.message}</FieldError></SharedField> : null}
+            {isLabService ? <SharedField><Label htmlFor="catalog-sequencing-minimum"><CustomerSourceText source={"Minimum sequencing volume per tube (µL)"} /></Label><FieldDescription id="catalog-sequencing-minimum-help"><CustomerSourceText source={"Required before preparing sequencing tubes. Leave blank to block new tube preparation. Operators cannot change this requirement; each prepared pair retains its saved Catalog version."} /></FieldDescription><Input id="catalog-sequencing-minimum" inputMode="decimal" maxLength={40} {...form.register('minimumSequencingVolumeUlText')} aria-invalid={Boolean(form.formState.errors.minimumSequencingVolumeUlText)} aria-describedby="catalog-sequencing-minimum-help catalog-sequencing-minimum-error" /><FieldError id="catalog-sequencing-minimum-error">{form.formState.errors.minimumSequencingVolumeUlText?.message}</FieldError></SharedField> : null}
             </fieldset>
           </form>
           {mutation.error ? (
             <Alert variant="destructive">
-              <AlertTitle>Catalog item was not saved</AlertTitle>
+              <AlertTitle><CustomerSourceText source={"Catalog item was not saved"} /></AlertTitle>
               <AlertDescription>
-                {getOrderErrorMessage(
+                {<CustomerSourceText source={getOrderErrorMessage(
                   mutation.error,
                   "Review the item and try again.",
-                )}
-                {' '}Your edits remain; review them alongside the latest saved values before retrying.
+                )} />}
+                {' '}<CustomerSourceText source={"Your edits remain; review them alongside the latest saved values before retrying."} />
               </AlertDescription>
             </Alert>
           ) : null}
           <RequiredDialogFooter>
               <Button type="button" variant="outline" onClick={close} disabled={mutation.isPending}>
-                Cancel
+                <CustomerSourceText source={"Cancel"} />
               </Button>
             <Button
               type="submit"
               form="catalog-item-form"
-              disabled={mutation.isPending || !apiEnabled || Boolean(editing && !form.formState.isDirty)}
+              disabled={mutation.isPending || !apiEnabled || Boolean(editing && !__formDraftDirty)}
             >
-              {mutation.isPending ? "Saving…" : "Save item"}
+              {mutation.isPending ? <CustomerSourceText source={"Saving…"} /> : <CustomerSourceText source={"Save item"} />}
             </Button>
           </RequiredDialogFooter>
         </DialogContent>
       </Dialog>
       <Dialog open={confirmDiscard} onOpenChange={openState => { if (!openState) setConfirmDiscard(false); }}>
         <DialogContent onOpenAutoFocus={event => { event.preventDefault(); keepEditingRef.current?.focus(); }}>
-          <DialogHeader><DialogTitle>Discard catalog changes?</DialogTitle></DialogHeader>
-          <div><DialogDescription>Unsaved changes to this Catalog item, including its sequencing requirement, will be discarded. Saved items and prepared tube pairs will be retained.</DialogDescription></div>
-          <RequiredDialogFooter showLegend={false}><Button ref={keepEditingRef} type="button" variant="outline" onClick={() => setConfirmDiscard(false)}>Keep editing</Button><Button type="button" variant="destructive" onClick={() => { setConfirmDiscard(false); setEditing(undefined); }}>Discard changes</Button></RequiredDialogFooter>
+          <DialogHeader><DialogTitle><CustomerSourceText source={"Discard catalog changes?"} /></DialogTitle></DialogHeader>
+          <div><DialogDescription><CustomerSourceText source={"Unsaved changes to this Catalog item, including its sequencing requirement, will be discarded. Saved items and prepared tube pairs will be retained."} /></DialogDescription></div>
+          <RequiredDialogFooter showLegend={false}><Button ref={keepEditingRef} type="button" variant="outline" onClick={() => setConfirmDiscard(false)}><CustomerSourceText source={"Keep editing"} /></Button><Button type="button" variant="destructive" onClick={() => { setConfirmDiscard(false); setEditing(undefined); }}><CustomerSourceText source={"Discard changes"} /></Button></RequiredDialogFooter>
         </DialogContent>
       </Dialog>
     </>

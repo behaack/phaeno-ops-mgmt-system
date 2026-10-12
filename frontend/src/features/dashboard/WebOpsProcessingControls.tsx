@@ -1,3 +1,4 @@
+import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRef, useState } from 'react'
@@ -65,7 +66,7 @@ function ProcessingDialog({ initial, onClose, onSaved, onReload }: { initial: We
   const client = useQueryClient()
   const mutation = useMutation({ mutationFn: updateWebOpsNotificationProcessing, onSuccess: () => client.invalidateQueries({ queryKey: ['web-ops'] }) })
   const busy = isSubmitting || reloading
-  function close() { if (!busy && !reloadLock.current && (!isDirty || window.confirm('Discard the unsaved email processing reason?'))) onClose() }
+  async function close() { if (!busy && !reloadLock.current && (!isDirty || (await confirmPortal('Discard the unsaved email processing reason?')))) onClose() }
   async function reload() {
     if (reloadLock.current || isSubmitting) return
     reloadLock.current = true; setReloading(true)

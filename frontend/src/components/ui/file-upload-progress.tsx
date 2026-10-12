@@ -1,3 +1,4 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { useId } from 'react'
 import type { FileUploadProgress as UploadState } from '#/api/file-upload-progress'
 import { ProgressBar } from './progress-bar'
@@ -9,9 +10,9 @@ export function FileUploadProgress({ progress }: { progress: UploadState }) {
   const id = useId()
   const value = progress.percentage === undefined ? undefined : Math.max(0, Math.min(100, progress.percentage))
   return <div className="min-w-0 space-y-1" aria-live="polite">
-    <label id={id + '-label'} htmlFor={id} className="block break-words text-sm">{progress.fileName} · {progress.message}{value === undefined ? '' : ` · ${Math.round(value)}%`}</label>
+    <label id={id + '-label'} htmlFor={id} className="block break-words text-sm">{progress.fileName} · {<CustomerSourceText source={progress.message} />}{value === undefined ? '' : ` · ${Math.round(value)}%`}</label>
     <ProgressBar id={id} value={value} aria-labelledby={id + '-label'} />
-    {progress.phase === 'extracting' && progress.totalItems !== undefined ? <p className="text-xs text-muted-foreground">{progress.completedItems ?? 0} of {progress.totalItems} files verified</p>
-      : progress.phase === 'uploading' || progress.phase === 'complete' ? <p className="text-xs text-muted-foreground">{bytes(progress.transferredBytes)} of {bytes(progress.totalBytes)} transferred</p> : null}
+    {progress.phase === 'extracting' && progress.totalItems !== undefined ? <p className="text-xs text-muted-foreground">{progress.completedItems ?? 0} of {progress.totalItems} <CustomerSourceText source={"files verified"} /></p>
+      : progress.phase === 'uploading' || progress.phase === 'complete' ? <p className="text-xs text-muted-foreground">{bytes(progress.transferredBytes)} of {bytes(progress.totalBytes)} <CustomerSourceText source={"transferred"} /></p> : null}
   </div>
 }

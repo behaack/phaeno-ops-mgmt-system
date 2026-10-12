@@ -53,8 +53,7 @@ public sealed partial class TransportationKitRequestService
         var stockDefinitions = await catalog.ReadStockCompatibleAsync(contexts, stock.Select(k => k.ContainerDefinitionId).Distinct().ToArray(), ct);
         stock = stock.Where(k => TransportationKitInventory.IsPhysicallyUsable(k, DateTime.UtcNow)
             && TransportationKitInventory.HasPreparedTubeRoster(k) && stockDefinitions.Any(d => d.Id == k.ContainerDefinitionId)).ToArray();
-        var covered = allocated.Where(k => k.CustomerReceivedAt.HasValue && TransportationKitInventory.HasPreparedTubeRoster(k)
-                && TransportationKitInventory.IsPhysicallyUsable(k, DateTime.UtcNow))
+        var covered = allocated.Where(k => TransportationKitInventory.IsReadyForSamplePreparation(k, DateTime.UtcNow))
             .Sum(k => selections.Single(s => s.StockKitId == k.Id).FinishedAt.HasValue
                 ? pairs.Count(p => p.StockKitId == k.Id) : k.TubeCapacity);
         var remaining = Math.Max(0, phase.SampleCount - covered);

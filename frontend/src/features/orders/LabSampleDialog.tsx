@@ -1,3 +1,7 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
+import { NativeSelect } from '#/components/ui/native-select'
+import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
+import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, type ReactNode } from 'react'
@@ -68,6 +72,8 @@ export function LabSampleDialog({
   onOpenChange,
   onSaved,
 }: LabSampleDialogProps) {
+  const __customerText = useCustomerText()
+
   const { authProvider, session } = usePhaenoSession()
   const queryClient = useQueryClient()
   const canEdit =
@@ -83,6 +89,8 @@ export function LabSampleDialog({
     })),
     defaultValues: sampleToForm(sample, biologicalSource),
   })
+  const { isDirty: __formDraftDirty } = form.formState
+
   const selectedSource = useWatch({ control: form.control, name: 'biologicalSource' })
   const sourceOptions = getSampleSourceAvailability(order, sample)
   const selectedGroup = sourceOptions.find(group => normalizeBiologicalSource(group.biologicalSource) === normalizeBiologicalSource(selectedSource))
@@ -125,29 +133,28 @@ export function LabSampleDialog({
   })
 
   const editing = Boolean(sample)
-  const isDirty = form.formState.isDirty
+  const isDirty = __formDraftDirty
   const formId = sample ? `lab-sample-${sample.id}` : `lab-sample-new-${order.id}`
 
   return (
     <Dialog open={open} onOpenChange={requestOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{editing ? 'Edit sample details' : 'Add sample'}</DialogTitle>
+          <DialogTitle>{editing ? <CustomerSourceText source={"Edit sample details"} /> : __customerText('m_90d2f8e365a1')}</DialogTitle>
           <DialogDescription>
-            Enter the details for one extracted RNA sample.
-          </DialogDescription>
-          {!editing ? <p className="wrap-anywhere text-sm text-muted-foreground">Biological source: <span className="font-medium text-foreground">{selectedSource || 'No source selected'}</span>{selectedGroup?.remaining === 0 ? ' · Full' : ''}</p> : null}
+            <CustomerText message="m_93e933817d1f" /></DialogDescription>
+          {!editing ? <p className="wrap-anywhere text-sm text-muted-foreground"><CustomerText message="m_9390ba966400" /><span className="font-medium text-foreground">{selectedSource || 'No source selected'}</span>{selectedGroup?.remaining === 0 ? <CustomerSourceText source={" · Full"} /> : ''}</p> : null}
         </DialogHeader>
 
         {mutation.error ? (
           <DialogFeedback>
             <Alert variant="destructive" role="alert">
-              <AlertTitle>Sample was not saved</AlertTitle>
+              <AlertTitle><CustomerText message="m_714be1deddfb" /></AlertTitle>
               <AlertDescription>
-                {getOrderErrorMessage(
+                {<CustomerSourceText source={getOrderErrorMessage(
                   mutation.error,
                   'Review the sample details and try again.',
-                )}
+                )} />}
               </AlertDescription>
             </Alert>
           </DialogFeedback>
@@ -163,9 +170,9 @@ export function LabSampleDialog({
             {!editing ? <FieldError id={`${formId}-source-error`} message={form.formState.errors.biologicalSource?.message} /> : null}
             <div className="space-y-4">
               <Field
-                label="Customer sample ID"
+                label={__customerText('m_8c82df187fe2')}
                 id={`${formId}-identifier`}
-                description="Use an internal ID unique to this Job. Do not enter patient names or direct identifiers."
+                description={__customerText('m_834f37294beb')}
                 required
                 error={form.formState.errors.customerSampleId?.message}
               >
@@ -182,16 +189,16 @@ export function LabSampleDialog({
               </Field>
               {editing ? (
                 <Field
-                  label="Biological source"
+                  label={__customerText('m_62cda8311410')}
                   id={`${formId}-source`}
-                  description="Select one of the biological sources accepted with this Job."
+                  description={__customerText('m_ccafc789d0e9')}
                   required
                   error={form.formState.errors.biologicalSource?.message}
                 >
-                  <select
+                  <NativeSelect
                     id={`${formId}-source`}
                     disabled={mutation.isPending}
-                    className="h-9 w-full cursor-pointer rounded-md border border-input bg-transparent px-3 py-1 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+                    className="w-full cursor-pointer rounded-md border border-input bg-transparent px-3 py-1 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
                     aria-invalid={Boolean(form.formState.errors.biologicalSource)}
                     aria-describedby={fieldDescriptionIds(
                       `${formId}-source`,
@@ -199,27 +206,27 @@ export function LabSampleDialog({
                     )}
                     {...form.register('biologicalSource')}
                   >
-                    <option value="">Select a source</option>
-                    {originalSourceUnknown && sample ? <option value={sample.biologicalSource}>{sample.biologicalSource} · Not in the accepted list</option> : null}
-                    {selectedSource && !selectedSourceKnown && (!sample || normalizeBiologicalSource(selectedSource) !== normalizeBiologicalSource(sample.biologicalSource)) ? <option value={selectedSource}>{selectedSource} · Not in the accepted list</option> : null}
-                    {sourceOptions.map((group) => <option key={group.id} value={normalizeBiologicalSource(group.biologicalSource) === normalizeBiologicalSource(selectedSource) ? selectedSource : group.biologicalSource} disabled={group.remaining === 0 && !group.isOriginalSource}>{group.biologicalSource}{group.remaining === 0 ? ' · Full' : ` · ${group.remaining} sample${group.remaining === 1 ? '' : 's'} remaining`}</option>)}
-                  </select>
+                    <option value=""><CustomerText message="m_76a093e985c3" /></option>
+                    {originalSourceUnknown && sample ? <option value={sample.biologicalSource}>{sample.biologicalSource} <CustomerText message="m_a2e7c0e390e5" /></option> : null}
+                    {selectedSource && !selectedSourceKnown && (!sample || normalizeBiologicalSource(selectedSource) !== normalizeBiologicalSource(sample.biologicalSource)) ? <option value={selectedSource}>{selectedSource} <CustomerText message="m_a2e7c0e390e5" /></option> : null}
+                    {sourceOptions.map((group) => <option key={group.id} value={normalizeBiologicalSource(group.biologicalSource) === normalizeBiologicalSource(selectedSource) ? selectedSource : group.biologicalSource} disabled={group.remaining === 0 && !group.isOriginalSource}>{group.biologicalSource}{group.remaining === 0 ? <CustomerSourceText source={" · Full"} /> : __customerText('m_cbafff5b8c4c', { p0: String(group.remaining), p1: String(group.remaining === 1 ? '' : 's') })}</option>)}
+                  </NativeSelect>
                 </Field>
               ) : null}
               {oneRunPerSample ? <div className="space-y-1">
-                <Label htmlFor={`${formId}-runs`}>Sample-sequencing runs</Label>
+                <Label htmlFor={`${formId}-runs`}><CustomerText message="m_c358e314e75b" /></Label>
                 <output id={`${formId}-runs`} className="block text-sm">1</output>
-                <p className="text-xs text-muted-foreground">Fixed by the accepted pricing: one run per sample.</p>
-              </div> : <Field label="Sample-sequencing runs" id={`${formId}-runs`} required
-                description={`Allocate this sample's runs from the ${order.requestedSequencingRunCount ?? order.requestedSpecimenCount} purchased for this Job.`}
+                <p className="text-xs text-muted-foreground"><CustomerText message="m_f4b6377ae6d2" /></p>
+              </div> : <Field label={__customerText('m_c358e314e75b')} id={`${formId}-runs`} required
+                description={__customerText('m_31e1f7307e62', { p0: String(order.requestedSequencingRunCount ?? order.requestedSpecimenCount) })}
                 error={form.formState.errors.sequencingRunCount?.message}>
                 <Input id={`${formId}-runs`} type="number" min={1} max={10000} step={1} inputMode="numeric" disabled={mutation.isPending}
                   aria-invalid={Boolean(form.formState.errors.sequencingRunCount)} aria-describedby={fieldDescriptionIds(`${formId}-runs`, form.formState.errors.sequencingRunCount?.message)} {...form.register('sequencingRunCount')} />
               </Field>}
               <Field
-                label="Quantity (tubes)"
+                label={__customerText('m_aa1cebf669cf')}
                 id={`${formId}-quantity`}
-                description="You may send extra tubes as reserve material in case of a failure. Extra tubes do not add sequencing runs."
+                description={__customerText('m_5efdd7a7691b')}
                 required
                 error={form.formState.errors.quantity?.message}
               >
@@ -241,9 +248,7 @@ export function LabSampleDialog({
               </Field>
             </div>
             <p className="border-t pt-4 text-xs text-muted-foreground">
-              Storage, safety, and notes are set for the Job. Each sample receives
-              the standard data-file set.
-            </p>
+              <CustomerText message="m_87465a700b26" /></p>
           </form>
         </div>
 
@@ -254,31 +259,30 @@ export function LabSampleDialog({
             disabled={mutation.isPending}
             onClick={() => requestOpenChange(false)}
           >
-            Cancel
-          </Button>
+            <CustomerText message="m_19766ed6ccb2" /></Button>
           <Button
             type="submit"
             form={formId}
             disabled={!apiEnabled || mutation.isPending}
           >
             {mutation.isPending
-              ? 'Saving…'
+              ? <CustomerSourceText source={"Saving…"} />
               : editing
-                ? 'Save sample details'
-                : 'Add sample'}
+                ? "Save sample details"
+                : __customerText('m_90d2f8e365a1')}
           </Button>
         </RequiredDialogFooter>
       </DialogContent>
     </Dialog>
   )
 
-  function requestOpenChange(nextOpen: boolean) {
+  async function requestOpenChange(nextOpen: boolean) {
     if (!nextOpen && mutation.isPending) return
     if (
       !nextOpen &&
       isDirty &&
       !mutation.isPending &&
-      !window.confirm('Discard the unsaved sample details?')
+      !(await confirmPortal('Discard the unsaved sample details?'))
     ) {
       return
     }
@@ -313,6 +317,8 @@ function Field({
   error?: string
   children: ReactNode
 }) {
+
+
   return (
     <div>
       <Label htmlFor={id}>
@@ -337,7 +343,7 @@ function fieldDescriptionIds(id: string, error?: string) {
 function FieldError({ id, message }: { id: string; message?: string }) {
   return message ? (
     <p id={id} className="mt-1 text-sm text-destructive" role="alert">
-      {message}
+      {<CustomerSourceText source={message} />}
     </p>
   ) : null
 }

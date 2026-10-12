@@ -10,6 +10,36 @@ using PSeq.Operations.Laboratory.Domain;
 public partial class SampleShippingPostgresTests
 {
     [PostgreSqlReferenceFact]
+    public async Task AssemblyDiscoveryReachesOlderJobsWithCompleteCountsAndServerSearch()
+    {
+        await using var scope = await ShippingTestScope.CreateAsync();
+        var db = scope.DbContext;
+        await using var transaction = await db.Database.BeginTransactionAsync();
+        try
+        {
+            var order = scope.AddCommercialPhaseOrder("TEST assembly discovery");
+            var sample = scope.AddCommercialPhaseSample(order,"TEST assembly discovery sample");
+            var work = new LabWorkOrder(Guid.NewGuid(),1,LabAuthorizationSource.CommercialOrder,order.Id,scope.CustomerOrganization.Id,"assembly-discovery",1,"test",null);
+            var specimen = new LabSpecimen(work.Id,sample.Id); work.Specimens.Add(specimen); db.Add(work);
+            for (var index=0;index<261;index++) {
+                var job = new LabAssemblyJob(Guid.NewGuid(),work.Id,specimen.Id,scope.CustomerOrganization.Id,1,
+                    scope.PlatformUser.Id,"test-provider","{}","{}",new string('B',64),DateTime.UtcNow.AddMinutes(-index));
+                job.RequestCancellation(scope.PlatformUser.Id,"TEST ONLY cancelled historical attempt",DateTime.UtcNow);
+                db.Add(job);
+            }
+            await db.SaveChangesAsync();
+            var clock = new AssemblyTestClock(DateTime.UtcNow);
+            var service = new LabAssemblyService(db,new AssemblyTestProvider(),new LabAssemblyProgress(clock),Options.Create(new LabAssemblyOptions()),Options.Create(new PSeqOrderToCashOptions()),clock);
+            var last = await service.ListPageAsync("",11,default);
+            Assert.Equal(261,last.TotalCount); Assert.Equal(11,last.Items.Count);
+            Assert.Equal(261,(await service.ListAsync(work.Id,specimen.Id,default)).Count);
+            Assert.Equal(261,(await service.ListPageAsync("cancelledbeforestart",1,default)).TotalCount);
+            Assert.Equal(0,(await service.ListPageAsync("no-matching-sample",1,default)).TotalCount);
+        }
+        finally { await transaction.RollbackAsync(); db.ChangeTracker.Clear(); }
+    }
+
+    [PostgreSqlReferenceFact]
     public async Task AssemblyRecoveryRetainsStartStopAndOutcomeWithoutWritingPercentageHistory()
     {
         await using var scope = await ShippingTestScope.CreateAsync();

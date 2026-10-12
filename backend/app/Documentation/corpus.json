@@ -143,7 +143,7 @@
       "title": "Account and access",
       "summary": "Accept invitations, protect sign-in, select a Department, and manage access within organization and Department roles.",
       "order": 20,
-      "reviewedAt": "2026-09-29",
+      "reviewedAt": "2026-10-11",
       "navigationGroup": "basics",
       "contentType": "guide",
       "topicIds": [
@@ -168,7 +168,7 @@
       "publicationStatus": "published",
       "id": "customer/en-US/account-and-access",
       "route": "/docs/customer/account-and-access",
-      "contentHash": "98bf399c33b0bc9bbe215926a09f477fe47189dd88e8f7cb45116cfb494bcf13",
+      "contentHash": "7d38975f324fd0f1438a3132dfc97eb2002a76cf19154c1af081fccf34fb4e21",
       "sections": [
         {
           "heading": "Account and access",
@@ -188,12 +188,12 @@
         {
           "heading": "Confirm the current organization",
           "anchor": "confirm-the-current-organization",
-          "text": "The header shows the organization active in your current session. That organization scopes every portal read and action. Self-service switching between multiple external organization memberships is not currently available. If the wrong organization is shown, stop before opening a job or Data Library record and contact Phaeno. If an expected record or action is missing, confirm the current organization before reporting a problem."
+          "text": "The header shows the organization active in your current session. That organization scopes every portal read and action. If your account has more than one active organization membership, choose Organization in the user menu to select one of your own organizations. Switching returns to Dashboard and selects an available Department in that organization. Keep editing retains the current organization and draft; Discard changes permits the switch. A save in progress must finish first. If an expected organization is missing, ask its administrator to review your access."
         },
         {
           "heading": "Work within a department",
           "anchor": "work-within-a-department",
-          "text": "The header identifies your current organization and department. If you have access to more than one department, open the user menu and choose Department before opening or creating work. With a single available department, it is selected for you. Changing departments closes the previous workspace; finish or save your work before switching. Your selected department is remembered when you refresh this browser. If that department is no longer available, Portal selects an available department after checking your current access. Signing out clears the remembered selection. Members see only their assigned departments. Organization administrators can select any active department in their organization, but the selected department still determines the records displayed. A department administrator's operational authority applies only to that department; it is not organization-wide access. Organization-wide data grants may be available in each department. If a department is unavailable or an expected Customer record is missing, ask your organization administrator or Phaeno to review the assignment. Do not change URLs to try to access another department. Organization and department administrators can open Customer settings from the user menu to manage the departments within their authority."
+          "text": "The header identifies your current organization and department. If you have access to more than one department, open the user menu and choose Department before opening or creating work. With a single available department, it is selected for you. Changing Departments returns to Dashboard after the same draft check. Keep editing to retain your current scope, or explicitly discard the draft to switch. A save in progress must finish first. Your selected department is remembered when you refresh this browser. If that department is no longer available, Portal selects an available department after checking your current access. Signing out clears the remembered selection. Members see only their assigned departments. Organization administrators can select any active department in their organization, but the selected department still determines the records displayed. A department administrator's operational authority applies only to that department; it is not organization-wide access. Organization-wide data grants may be available in each department. If a department is unavailable or an expected Customer record is missing, ask your organization administrator or Phaeno to review the assignment. Do not change URLs to try to access another department. Organization and department administrators can open Customer settings from the user menu to manage the departments within their authority."
         },
         {
           "heading": "Manage department access and settings",
@@ -224,7 +224,7 @@
       "title": "Data Library and organization access",
       "summary": "Distinguish Job results from curated data, manage organization access, and track transportation kits at delivery locations.",
       "order": 50,
-      "reviewedAt": "2026-09-29",
+      "reviewedAt": "2026-10-11",
       "navigationGroup": "data-and-access",
       "contentType": "guide",
       "topicIds": [
@@ -246,7 +246,7 @@
       "publicationStatus": "published",
       "id": "customer/en-US/data-and-organization",
       "route": "/docs/customer/data-and-organization",
-      "contentHash": "1bbdde092fe0d1685c2f805bd1df4623aa0cb6617a4a65af91dcbab4dd2844a1",
+      "contentHash": "aae95438d5539ec8e8b35635c907251a67932294b03fb29f1fae283b31806d27",
       "sections": [
         {
           "heading": "Data Library and organization access",
@@ -266,7 +266,7 @@
         {
           "heading": "Understand access changes",
           "anchor": "understand-access-changes",
-          "text": "Phaeno may grant, upgrade, revoke, quarantine, or retire a package. Revocation or quarantine blocks new viewing and downloads but cannot recall copies already downloaded. If a prior download needs action, the portal gives organization administrators Customer-safe guidance. Organization and department administrators can review curated download history for the selected department. This includes downloads from packages shared across the organization. Organization administrators can switch departments to review each department's activity. Department administrators see only activity within their assigned departments. Older download records without a recorded department remain available only to organization administrators, for organization-wide grants or grants assigned to the selected department. Changing a person's department assignments does not move or erase their earlier download records."
+          "text": "Phaeno may grant, upgrade, revoke, quarantine, or retire a package. Revocation or quarantine blocks new viewing and downloads but cannot recall copies already downloaded. If a prior download needs action, the portal gives organization administrators Customer-safe guidance. Organization and department administrators can review curated download history for the selected department. This includes downloads from packages shared across the organization. Organization administrators can switch departments to review each department's activity. Department administrators see only activity within their assigned departments. Older download records without a recorded department remain available only to organization administrators, for organization-wide grants or grants assigned to the selected department. Changing a person's department assignments does not move or erase their earlier download records. Download history and data activity show their total count and page controls so you can reach older records. Switching Departments starts from the first page in the new scope. Active governance notices are counted separately from resolved incidents; use their page controls to review all outstanding guidance."
         },
         {
           "heading": "Manage organization members",
@@ -285,9 +285,9 @@
       "locale": "en-US",
       "slug": "getting-started",
       "title": "Getting started",
-      "summary": "Use Department dashboard attention and new-result counts, open Customer Jobs, and find samples, curated data and retained Trials.",
+      "summary": "Find current actions, responsibility and available updates for your Department, then open Customer Jobs, samples, data and retained Trials.",
       "order": 10,
-      "reviewedAt": "2026-10-10",
+      "reviewedAt": "2026-10-11",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [
@@ -306,12 +306,17 @@
       "publicationStatus": "published",
       "id": "customer/en-US/getting-started",
       "route": "/docs/customer/getting-started",
-      "contentHash": "6138d9a67e6812fa8157c993ccace3cc3c51be25ee01a3e12ef4149c402ffbce",
+      "contentHash": "a4b95d285dbff1426a8df8fb5c2a48e4122e46f7818feb0412d7b03a213e16a3",
       "sections": [
         {
           "heading": "Getting started",
           "anchor": "getting-started",
           "text": "Portal keeps your organization’s laboratory requests, sample progress, released results, commercial documents, curated data, and user access in one place."
+        },
+        {
+          "heading": "Find your next action",
+          "anchor": "find-your-next-action",
+          "text": "The dashboard shows My work, actions needing attention, work waiting on your administrator or Phaeno, and available results/updates. Select a work item to open its current record. Only actions allowed in your selected organization and Department appear as your tasks; administrator decisions are shown as waiting context when you cannot perform them. The header bell is available from every workspace. Its badge counts unfinished actions, and its preview shows the first five priority items. View all work opens the full list with area, priority and paging controls. Reading a notification does not complete work or record a successful download. Counts refresh after saved actions and periodically while the page is visible. Unavailable counts are shown as unknown, with retry guidance. For each Job's current phase, shipping attention follows physical facts. Sample preparation requires received, assembled and usable kits. A kit allocation or request marked received does not substitute for physical stock evidence. Review kit supply when stock is unusable; outstanding dispatch and cancellation decisions appear as waiting. Usable stock can allow preparation while Phaeno completes an outstanding partial request. Members see administrator steps as waiting rather than actions they can perform."
         },
         {
           "heading": "Navigate the help center",
@@ -331,12 +336,12 @@
         {
           "heading": "Find your work",
           "anchor": "find-your-work",
-          "text": "At the top of the Customer dashboard, Items requiring attention counts laboratory requests to review, complete or prepare for shipping in your selected Department. New results counts released laboratory result packages still available to download that have not yet been fully downloaded for your Department. A package leaves the count when every file has a completed download; different members may download different files. Partial or failed downloads do not complete a file. A completed Job can still have new results, and one Job can contain several result packages. Select either metric to show its matching Jobs below. All active requests restores the usual request list. Counts include all matching work, even when it spans multiple pages. A dash means the dashboard is loading or unavailable; use Refresh totals to reload the counts and matching Job list. If the request list could not be loaded, select Retry requests. Either retry control reloads both the counts and matching Jobs. The dashboard hides the previous list until it can retrieve current work for the selected Department; an unavailable list does not mean there are no requests. Dashboard lists active laboratory requests for the selected Department by Job name, with a next step and a direct link for each request. Pricing reviews appear first. Select Review pricing to open a Job awaiting your decision; members without decision permission see View pricing and administrator guidance. Work awaiting Phaeno is labeled Waiting for Phaeno. Use the page controls for more requests and View all lab services for history. The list refreshes when you return and while the dashboard is open. Retained Trial history appears below; administrators also have a User management starting point that opens Customer settings. Lab services contains each job from request and pricing through sample preparation, shipping, laboratory progress, and results. Data Library, available through navigation, contains Phaeno-curated packages assigned to your organization or Department. Each lab Job owns its Files and results section. For organization administrators, Customer settings → People and access manages durable invitations, Member or Organization administrator roles, and membership deactivation. Documentation in the user menu opens these guides."
+          "text": "The dashboard separates Needs attention, Waiting on others, and Available results and updates in your selected organization and Department. The header bell counts unfinished actions that you can perform. Opening an item does not complete it; perform the next step in its linked record. Select a category to show its work list. Work area and Work priority narrow that list; the counts at the top retain your overall current scope. View all work opens the complete paged list. If a saved page is beyond the last page, use First page or choose an earlier page; an empty page does not mean there are no outstanding actions. Available updates include released results and assigned curated data. A released package leaves its new-result count after every file has a completed download; partial or failed downloads do not complete a file. Counts stay unknown when a read fails. Retry work refreshes both the summary and current list, including when a filtered list is available but the summary failed. Dashboard shows the next supported actions, who is responsible, and links to the owning records. Work awaiting your administrator or Phaeno appears separately from your own actions. The list refreshes while open and when you return. Lab services contains each job from request and pricing through sample preparation, shipping, laboratory progress, and results. Data Library, available through navigation, contains Phaeno-curated packages assigned to your organization or Department. Each lab Job owns its Files and results section. For organization administrators, Customer settings → People and access manages durable invitations, Member or Organization administrator roles, and membership deactivation. Documentation in the user menu opens these guides."
         },
         {
           "heading": "Keep submissions safe",
           "anchor": "keep-submissions-safe",
-          "text": "The initial laboratory request workflow is not a protected-health-information intake workflow. Do not enter patient names, dates of birth, medical record numbers, or other direct identifiers in request fields, notes, file names, or uploads. Use your organization’s own reference values and follow the instructions attached to the selected analysis."
+          "text": "Forms with unsaved changes ask you to keep editing or discard the draft when you close them, navigate away, or switch organizations or Departments. A save in progress must finish before you leave. Once a form closes after a successful save, it does not block your next navigation. The initial laboratory request workflow is not a protected-health-information intake workflow. Do not enter patient names, dates of birth, medical record numbers, or other direct identifiers in request fields, notes, file names, or uploads. Use your organization’s own reference values and follow the instructions attached to the selected analysis."
         },
         {
           "heading": "Get help",
@@ -489,7 +494,7 @@
       "title": "Results and billing",
       "summary": "Download scientifically released PSeq results, review retention, and find invoices independently of result access.",
       "order": 40,
-      "reviewedAt": "2026-10-06",
+      "reviewedAt": "2026-10-11",
       "navigationGroup": "laboratory-work",
       "contentType": "guide",
       "topicIds": [
@@ -516,7 +521,7 @@
       "publicationStatus": "published",
       "id": "customer/en-US/results-and-billing",
       "route": "/docs/customer/results-and-billing",
-      "contentHash": "3f744f008fd33c3269870607c6fc243a6ecd489ebf0b1d1b1e270f9f6285bdfc",
+      "contentHash": "1ea064f290bb0120640fb657216ebb77b80d47f7212e401a3115db19f27aff79",
       "sections": [
         {
           "heading": "Results and billing",
@@ -541,7 +546,7 @@
         {
           "heading": "Review invoices",
           "anchor": "review-invoices",
-          "text": "At Job completion, Phaeno issues one numbered invoice. If the accepted quote included tax, the invoice preserves that frozen determination. If the quote was labeled Pre-tax total, the Portal calculates applicable tax from the approved billing profile at invoicing. The invoice freezes its billing, tax, currency, and payment terms; its due date is the completion date plus those terms. The immutable invoice PDF is available to your organization. The Portal does not collect payment-card information or provide online payment processing in this release. Receipts may be partially or fully applied to the invoice. Overpayments remain visible as unapplied cash until Finance explicitly allocates or resolves them. Corrections appear as retained credits, debits, or write-offs; an issued invoice is never silently rewritten."
+          "text": "Invoice PDFs retain the saved quantities, prices, tax and total. Long invoices continue across numbered pages, and each continuation identifies the invoice. Names and descriptions retain supported accented and scientific characters. If a character cannot be displayed, contact Phaeno for a copy; the Portal does not silently substitute a different character in the financial record. At Job completion, Phaeno issues one numbered invoice. If the accepted quote included tax, the invoice preserves that frozen determination. If the quote was labeled Pre-tax total, the Portal calculates applicable tax from the approved billing profile at invoicing. The invoice freezes its billing, tax, currency, and payment terms; its due date is the completion date plus those terms. The immutable invoice PDF is available to your organization. The Portal does not collect payment-card information or provide online payment processing in this release. Receipts may be partially or fully applied to the invoice. Overpayments remain visible as unapplied cash until Finance explicitly allocates or resolves them. Corrections appear as retained credits, debits, or write-offs; an issued invoice is never silently rewritten."
         },
         {
           "heading": "Download other laboratory result releases",
@@ -562,7 +567,7 @@
       "title": "Prepare and ship samples",
       "summary": "Request phase kits, confirm receipt, pair samples and tubes, pack and record shipments, and follow each phase.",
       "order": 35,
-      "reviewedAt": "2026-10-05",
+      "reviewedAt": "2026-10-11",
       "navigationGroup": "laboratory-work",
       "contentType": "guide",
       "topicIds": [
@@ -588,12 +593,12 @@
       "publicationStatus": "published",
       "id": "customer/en-US/sample-shipping",
       "route": "/docs/customer/sample-shipping",
-      "contentHash": "f7805021b33a7f797789ea29be33f3bd9b82133cdc9e0db5a276b929553c48af",
+      "contentHash": "aa8a8b02a4c5038f4d48998a15bc2c2c86aba8ff7961179fbfa6e993c6413f08",
       "sections": [
         {
           "heading": "Prepare and ship samples",
           "anchor": "prepare-and-ship-samples",
-          "text": "Each PSeq Job has one confirmed Sample type. Put another type in a separate order with its own kits, shipping packets, and carrier tracking labels. Open the owning Job under Lab services. An organization administrator or an administrator of the selected Department confirms the order, kit receipt and sample preparation. Members can review their Department's work and use permitted print and download actions. Phaeno selects the receiving destination for your samples. A Job starts with Phaeno's default destination, so a kit already at your location can be used without waiting for a separate routing decision. If Phaeno sends a new kit, its fulfillment team may update the destination before the first kit for that Job is dispatched and before sample packing begins. Review the destination in the Job's current instructions before sending samples; an issued shipping insert retains its saved address. Later changes to Phaeno's Sample type or Shipping procedure do not silently replace the instructions selected for a placed Job. If Phaeno applies a safety hold, a new shipping insert cannot be issued until Phaeno resolves it. An insert already issued retains its saved instructions; contact Phaeno if the Job shows a hold or its instructions need review. After acceptance, Shipping shows Request transportation kits, Receive kits, Prepare sample shipment, and Send and record shipments. Request kits when ready; accepting the Job does not order them. Next step identifies the current task. The preparation or shipment area appears beneath it only when needed. Progress shows your progress directly; for multi-phase Jobs, expand a cohort for samples, shipping references, physical receipt, laboratory progress and holds. Released files are in Files and results, with a phase filter."
+          "text": "Use Sample shipping to find shipments in your selected Department. Search by shipment number or Job reference, filter by shipment status, and use the page controls to reach older records. The count covers all matching shipments in that Department. Open a shipment number to review its saved preparation and shipping details; returning to the list preserves its filters and page. Each PSeq Job has one confirmed Sample type. Put another type in a separate order with its own kits, shipping packets, and carrier tracking labels. Open the owning Job under Lab services. An organization administrator or an administrator of the selected Department confirms the order, kit receipt and sample preparation. Members can review their Department's work and use permitted print and download actions. Phaeno selects the receiving destination for your samples. A Job starts with Phaeno's default destination, so a kit already at your location can be used without waiting for a separate routing decision. If Phaeno sends a new kit, its fulfillment team may update the destination before the first kit for that Job is dispatched and before sample packing begins. Review the destination in the Job's current instructions before sending samples; an issued shipping insert retains its saved address. Later changes to Phaeno's Sample type or Shipping procedure do not silently replace the instructions selected for a placed Job. If Phaeno applies a safety hold, a new shipping insert cannot be issued until Phaeno resolves it. An insert already issued retains its saved instructions; contact Phaeno if the Job shows a hold or its instructions need review. After acceptance, Shipping shows Request transportation kits, Receive kits, Prepare sample shipment, and Send and record shipments. Request kits when ready; accepting the Job does not order them. Next step identifies the current task. The preparation or shipment area appears beneath it only when needed. Progress shows your progress directly; for multi-phase Jobs, expand a cohort for samples, shipping references, physical receipt, laboratory progress and holds. Released files are in Files and results, with a phase filter."
         },
         {
           "heading": "Four-stage preparation for a newly confirmed order",
@@ -743,7 +748,7 @@
       "title": "Account and access",
       "summary": "Accept invitations, protect sign-in, select a Department, and manage access within organization and Department roles.",
       "order": 20,
-      "reviewedAt": "2026-09-22",
+      "reviewedAt": "2026-10-11",
       "navigationGroup": "basics",
       "contentType": "guide",
       "topicIds": [
@@ -768,7 +773,7 @@
       "publicationStatus": "published",
       "id": "partner/en-US/account-and-access",
       "route": "/docs/partner/account-and-access",
-      "contentHash": "9772d4100606103bbfe9e7b0bcac7d179df7d237f2aaae5bbe1e799075254dd7",
+      "contentHash": "51d4e77df27e638918c8bc68bd9df5662c29c4489d847bc3a0c54404dce03d5b",
       "sections": [
         {
           "heading": "Account and access",
@@ -788,12 +793,12 @@
         {
           "heading": "Confirm the current Partner organization",
           "anchor": "confirm-the-current-partner-organization",
-          "text": "The header shows the organization active in your current session. That organization controls the offerings, negotiated prices, addresses, orders, assembly requests, data grants, and users you can see. Self-service switching between multiple external organization memberships is not currently available. If the wrong organization is shown, stop before opening or creating work and contact Phaeno. Information and commercial terms never carry from one Partner organization to another."
+          "text": "The header shows the organization active in your current session. That organization controls the offerings, negotiated prices, addresses, orders, assembly requests, data grants, and users you can see. If your account has more than one active organization membership, choose Organization in the user menu to select one of your own organizations. Organization and Department changes return to Dashboard after checking unsaved work. Keep editing retains the current scope and draft; Discard changes permits the switch. A save in progress must finish first. Information and commercial terms never carry from one Partner organization to another."
         },
         {
           "heading": "Work within a department",
           "anchor": "work-within-a-department",
-          "text": "The header identifies your current organization and department. If you have access to more than one department, open the user menu and choose Department before opening or creating work. With a single available department, it is selected for you. Changing departments closes the previous workspace; finish or save your work before switching. Your selected department is remembered when you refresh this browser. If that department is no longer available, Portal selects an available department after checking your current access. Signing out clears the remembered selection. Members see only their assigned departments. Organization administrators can select any active department in their organization, but the selected department still determines the records displayed. A department administrator's operational authority applies only to that department; it is not organization-wide access. Organization-wide data grants may be available in each department. If a department is unavailable or an expected Partner record is missing, ask your organization administrator or Phaeno to review the assignment. Do not change URLs to try to access another department. Organization and department administrators can open Departments from the user menu to manage the departments within their authority."
+          "text": "The header identifies your current organization and department. If you have access to more than one department, open the user menu and choose Department before opening or creating work. With a single available department, it is selected for you. Changing Departments returns to Dashboard after the same draft check. Keep editing to retain your current scope, or explicitly discard the draft to switch. A save in progress must finish first. Your selected department is remembered when you refresh this browser. If that department is no longer available, Portal selects an available department after checking your current access. Signing out clears the remembered selection. Members see only their assigned departments. Organization administrators can select any active department in their organization, but the selected department still determines the records displayed. A department administrator's operational authority applies only to that department; it is not organization-wide access. Organization-wide data grants may be available in each department. If a department is unavailable or an expected Partner record is missing, ask your organization administrator or Phaeno to review the assignment. Do not change URLs to try to access another department. Organization and department administrators can open Departments from the user menu to manage the departments within their authority."
         },
         {
           "heading": "Manage department access and settings",
@@ -829,7 +834,7 @@
       "title": "Data Library, billing, and organization access",
       "summary": "Use curated data, understand commercial records, and manage Partner membership.",
       "order": 50,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-10-11",
       "navigationGroup": "data-and-access",
       "contentType": "guide",
       "topicIds": [
@@ -851,12 +856,12 @@
       "publicationStatus": "published",
       "id": "partner/en-US/data-and-organization",
       "route": "/docs/partner/data-and-organization",
-      "contentHash": "77ea2d53ccb6b8881f5043407b216d72f1834c26845d1986485c783260eecbb3",
+      "contentHash": "920a07989823a971cd9569787c343448e587313404a3177cff6a807572ceacb0",
       "sections": [
         {
           "heading": "Data Library, billing, and organization access",
           "anchor": "data-library-billing-and-organization-access",
-          "text": "Partner access is divided among curated Phaeno data, operational Partner work, commercial records, and organization membership."
+          "text": "Download history, data activity and active governance attention have separate total counts and page controls. Older records remain reachable. Switching the organization or Department starts at the first page in the new scope; existing administrator permissions still govern download history. Partner access is divided among curated Phaeno data, operational Partner work, commercial records, and organization membership."
         },
         {
           "heading": "Use curated data",
@@ -950,7 +955,7 @@
       "title": "Getting started",
       "summary": "Find reagent orders, Assembly requests, curated data, and retained Trials in the selected Department.",
       "order": 10,
-      "reviewedAt": "2026-10-10",
+      "reviewedAt": "2026-10-11",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [
@@ -969,12 +974,17 @@
       "publicationStatus": "published",
       "id": "partner/en-US/getting-started",
       "route": "/docs/partner/getting-started",
-      "contentHash": "76bd8a583f4658d76395adfd6c7f47505360e59bb9a4087d1c4fe544b5f172c1",
+      "contentHash": "f312225b41f29f685d62f69138bdb70a500885824597b099516109d96dae6a16",
       "sections": [
         {
           "heading": "Getting started",
           "anchor": "getting-started",
           "text": "Portal gives Partner organizations a workspace for your Partner organization for PSeq Kit orders, Lab Service Jobs, included assembly cases, released outputs, curated data, and organization access."
+        },
+        {
+          "heading": "Find current work",
+          "anchor": "find-current-work",
+          "text": "The dashboard and header bell show current work in your selected organization and Department. The bell counts unfinished actions; opening an item does not complete it. Available results and work waiting on an administrator or Phaeno are separate from your own actions. Open the linked record to perform the supported next step, or use View all work for the complete filtered list. Unavailable counts remain unknown until they can be refreshed."
         },
         {
           "heading": "Navigate the help center",
@@ -994,7 +1004,7 @@
         {
           "heading": "Find your work",
           "anchor": "find-your-work",
-          "text": "Dashboard summarizes reagent orders and data-assembly requests, assigned data, and any retained Trial history for the selected Department. Follow its links to the owning records; administrators also have a User management starting point. PSeq Kit orders contains the organization’s available products, drafts, placed orders, substitutions, and shipments. Assembly cases contains included input revisions, processing status and outputs, plus historical standalone requests. Lab services contains Lab Jobs, configured offering reviews, samples, shipping and released PSeq results. See Partner Lab services. Data Library contains Phaeno-curated packages explicitly assigned to the Partner. For organization administrators, User management manages durable invitations, Member or Organization administrator roles, and membership deactivation. Documentation in the user menu opens the Partner guides."
+          "text": "Dashboard separates Needs attention, Waiting on others, and Available results and updates for your selected Department. Follow an item's link to its owning record, or use View all work for the complete paged list. Use First page if a saved page is beyond the last page. Retry work recovers unavailable counts and list reads. PSeq Kit orders contains the organization’s available products, drafts, placed orders, substitutions, and shipments. Assembly cases contains included input revisions, processing status and outputs, plus historical standalone requests. Lab services contains Lab Jobs, configured offering reviews, samples, shipping and released PSeq results. See Partner Lab services. Data Library contains Phaeno-curated packages explicitly assigned to the Partner. For organization administrators, User management manages durable invitations, Member or Organization administrator roles, and membership deactivation. Documentation in the user menu opens the Partner guides."
         },
         {
           "heading": "Protect submitted data",
@@ -2018,7 +2028,7 @@
       "title": "Governance and recovery",
       "summary": "Quarantine unsafe content, investigate with purpose, close out incidents, and retry safely.",
       "order": 34,
-      "reviewedAt": "2026-10-03",
+      "reviewedAt": "2026-10-11",
       "navigationGroup": "data-provisioning",
       "contentType": "troubleshooting",
       "topicIds": [
@@ -2048,12 +2058,12 @@
       "publicationStatus": "published",
       "id": "phaeno/data-governance-recovery",
       "route": "/docs/phaeno/data-governance-recovery",
-      "contentHash": "5984da66260997056373296b282472a93b1579428e909277fc2ccb666e54b8f1",
+      "contentHash": "5cc1a5af698fb8efa1fbcb85ac4dfb30fb426ec2c8e1d3126968b0aeb62e88f4",
       "sections": [
         {
           "heading": "Governance and recovery",
           "anchor": "governance-and-recovery",
-          "text": "Governance actions protect every organization using a curated package while preserving evidence, immutable versions, grants, and download history."
+          "text": "The governance history shows its total count and page controls, including older resolved incidents. Use each incident's Actions menu for follow-up, clearance, unsafe-content confirmation and affected-version investigation. An organization awaiting attestation has its own Actions menu for reminders and recording received evidence. Governance actions protect every organization using a curated package while preserving evidence, immutable versions, grants, and download history."
         },
         {
           "heading": "Quarantine immediately",
@@ -2090,7 +2100,7 @@
       "title": "Organization grants",
       "summary": "Grant, upgrade, and revoke exact package versions without implicit access changes.",
       "order": 33,
-      "reviewedAt": "2026-10-03",
+      "reviewedAt": "2026-10-11",
       "navigationGroup": "data-provisioning",
       "contentType": "guide",
       "topicIds": [
@@ -2117,12 +2127,12 @@
       "publicationStatus": "published",
       "id": "phaeno/data-organization-grants",
       "route": "/docs/phaeno/data-organization-grants",
-      "contentHash": "177d6ba72792777381066ac9efbf0d731aa7091473fb0cb89c4f0773c381a2c5",
+      "contentHash": "80dba9c536ebf9eb127a1592934198fa3859407ec38c2cfe3f81d6813bb7eacd",
       "sections": [
         {
           "heading": "Organization grants",
           "anchor": "organization-grants",
-          "text": "An organization grant gives one Prospect, Customer, or Partner organization access to one exact immutable curated-package version. Organization kind, relationship stage, eligibility, or publication never creates access automatically."
+          "text": "Provisioning history and organization activity show exact totals and independent page controls. Use them to reach older attempts and notices. Changing the selected organization resets both histories to their first page. An organization grant gives one Prospect, Customer, or Partner organization access to one exact immutable curated-package version. Organization kind, relationship stage, eligibility, or publication never creates access automatically."
         },
         {
           "heading": "Create the grant",
@@ -2154,7 +2164,7 @@
       "title": "Data provisioning",
       "summary": "Manage Phaeno-owned sources, immutable packages, exact-version grants, and governance events.",
       "order": 30,
-      "reviewedAt": "2026-10-03",
+      "reviewedAt": "2026-10-11",
       "navigationGroup": "data-provisioning",
       "contentType": "overview",
       "topicIds": [
@@ -2183,7 +2193,7 @@
       "publicationStatus": "published",
       "id": "phaeno/data-provisioning-and-accounts",
       "route": "/docs/phaeno/data-provisioning-and-accounts",
-      "contentHash": "cb6081021b5449d55455f875998e30e0635088109d9cca9fc7083f2aa3916bbb",
+      "contentHash": "9782bd5e918f6a523ce64fbe844c73db59f16f264e6fce5dfcc8ce2e350a20bf",
       "sections": [
         {
           "heading": "Data provisioning",
@@ -2203,7 +2213,7 @@
         {
           "heading": "Protect the boundary",
           "anchor": "protect-the-boundary",
-          "text": "Operational Customer or Partner files do not enter the source pool automatically. Every curated package is derived from an approved Phaeno-owned source revision. Keep storage keys, internal evidence, another organization’s grant state, and governance investigation detail out of tenant-facing content."
+          "text": "Governance forms retain unsaved notes when you choose Keep editing after closing or navigating away. Discard changes closes the form and returns focus to its surviving Actions control. A save in progress cannot be discarded. Resolve, quarantine and investigation confirmations identify the affected scope and consequence before the action is submitted. Operational Customer or Partner files do not enter the source pool automatically. Every curated package is derived from an approved Phaeno-owned source revision. Keep storage keys, internal evidence, another organization’s grant state, and governance investigation detail out of tenant-facing content."
         }
       ]
     },
@@ -2275,7 +2285,7 @@
       "title": "Phaeno operations guide",
       "summary": "Find each workflow, its owning workspace, reusable configuration, and the roles needed to act.",
       "order": 10,
-      "reviewedAt": "2026-10-10",
+      "reviewedAt": "2026-10-11",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [
@@ -2294,7 +2304,7 @@
       "publicationStatus": "published",
       "id": "phaeno/getting-started",
       "route": "/docs/phaeno/getting-started",
-      "contentHash": "0de32d1fa8ddd12e2fcb1a7fef53998d5a3606491a43acaa41e69eedd84efcd0",
+      "contentHash": "4f4ea7f92a17ce47f18075b714c528493be4548785386c0106ec2019e2ad97d5",
       "sections": [
         {
           "heading": "Phaeno operations guide",
@@ -2319,7 +2329,7 @@
         {
           "heading": "Find platform work",
           "anchor": "find-platform-work",
-          "text": "Dashboard uses the sidebar to show one Order Operations, Lab Operations, Customer access, or Web Operations panel at a time. The selected panel stays in the page address, so refresh and browser Back retain your place. Counts summarize the work or intake represented by each panel. CRM opens the complete first-party relationship, sales, and customer-access workspace. Its sidebar groups Companies and Contacts under Relationships; Leads and Opportunities under Sales; Tasks and Requests under Follow-up; Reports under Insights. CRM configuration is available from CRM settings in the user menu, immediately below Lab settings. The Company is the canonical Customer, Partner, or Prospect record. Its workspace separates Overview, People, Sales, Departments, Services, Requests, and Activity so you can focus on one kind of work at a time. Creating a Company does not grant access. Use the central Requests queue to review Needs decision, carry out Approved / needs work, and review Completed / history; use People for Company contacts, Portal identities, invitations, and reviewed access, Departments for department settings and delivery locations, and Services for readiness, service entitlements, and retention. Online-access approval creates only the internal tenant scope required for sign-in; product and service entitlements are managed separately, and approval never creates another customer record or a user. Web Operations is a Phaeno-administrator view of active public Website intake. Use Mailing List, Demo Requests, or Email delivery to select one panel at a time. Mailing List shows the newest active signups and identifies technical-brief requests; use Unsubscribe and confirm to remove a contact from that active list. Demo Requests shows the inquiry contact, organization, email, and submitted description; use Mark complete and confirm after the inquiry has been handled. Completed or unsubscribed items leave their active list immediately, but the original Website intake and action audit remain in POMS. Each panel paginates independently in groups of 10; its footer paginator appears only when the list has more than one page. These actions preserve Website intake history; create a CRM Company or Company request separately when commercial follow-up requires one. User management is the durable employee-access workspace. Invite a named Phaeno user with their intended Platform administrator and additive laboratory roles, edit accepted users and their roles, deactivate or reactivate accounts, and manage pending invitations there. Data provisioning manages source samples, curated packages, grants, and governance. Order ops uses CRM-style group headings: LAB SERVICES contains Order intake and Trial projects; PARTNER SERVICES contains PSeq kits and Data assembly. These routes remain beneath /order-operations. Company decisions remain in CRM; execution remains in Lab ops. Needs attention on the Dashboard summarizes unresolved authorized work. View all opens the full assignment and recovery queue. Reading a notification does not resolve an item. Finance and Legacy integrations are under More. Lab operations contains Phaeno-only work orders for receipt, accession, protocol execution, materials and equipment, libraries and batches, outsourced sequencing, exceptions, scientific approval, and governed Result release beside Results & scientific review. Its sidebar contains operational work rather than role administration. Lab execution requires an effective Lab role or platform-administrator bootstrap access. Release Managers can access only their release section without broader Lab access. Order settings in the user menu maintains Quote & workflow settings, the Service catalog, Analyses, PSeq kits, Assembly, Trial configuration, and Legacy links. The next menu item, Lab settings, opens laboratory configuration with its own sidebar. CRM settings follows Lab settings, then Samples & shipping settings provides Sample types, Shipping procedures, Phaeno ship-to destinations, Transportation kits, and order submission guidance. File retention policies follows as a separate page for future-release policies. Menu items follow your access permissions. Trial configuration is reached from the Order settings sidebar and owns Scientific Operations authorities and Trial deliverable definitions. Trial staff can access this section; other Order settings sections remain restricted to Platform administrators. Documentation in the user menu opens the guide set for the current organization."
+          "text": "Dashboard shows your assigned actions plus unassigned work you are authorized to perform. The bell and category counts remain personal when you select Team work or Unassigned work; the list's total and pages describe the selected view. Work area and Work priority narrow the list. View all work opens the full queue. Opening an item does not complete it. Retry work refreshes failed summary and list reads; First page recovers a saved page beyond the last page. CRM opens the complete first-party relationship, sales, and customer-access workspace. Its sidebar groups Companies and Contacts under Relationships; Leads and Opportunities under Sales; Tasks and Requests under Follow-up; Reports under Insights. CRM configuration is available from CRM settings in the user menu, immediately below Lab settings. The Company is the canonical Customer, Partner, or Prospect record. Its workspace separates Overview, People, Sales, Departments, Services, Requests, and Activity so you can focus on one kind of work at a time. Creating a Company does not grant access. Use the central Requests queue to review Needs decision, carry out Approved / needs work, and review Completed / history; use People for Company contacts, Portal identities, invitations, and reviewed access, Departments for department settings and delivery locations, and Services for readiness, service entitlements, and retention. Online-access approval creates only the internal tenant scope required for sign-in; product and service entitlements are managed separately, and approval never creates another customer record or a user. Web Operations is a Phaeno-administrator view of active public Website intake. Use Mailing List, Demo Requests, or Email delivery to select one panel at a time. Mailing List shows the newest active signups and identifies technical-brief requests; use Unsubscribe and confirm to remove a contact from that active list. Demo Requests shows the inquiry contact, organization, email, and submitted description; use Mark complete and confirm after the inquiry has been handled. Completed or unsubscribed items leave their active list immediately, but the original Website intake and action audit remain in POMS. Each panel paginates independently in groups of 10; its footer paginator appears only when the list has more than one page. These actions preserve Website intake history; create a CRM Company or Company request separately when commercial follow-up requires one. User management is the durable employee-access workspace. Invite a named Phaeno user with their intended Platform administrator and additive laboratory roles, edit accepted users and their roles, deactivate or reactivate accounts, and manage pending invitations there. Data provisioning manages source samples, curated packages, grants, and governance. Order ops uses CRM-style group headings: LAB SERVICES contains Order intake and Trial projects; PARTNER SERVICES contains PSeq kits and Data assembly. These routes remain beneath /order-operations. Company decisions remain in CRM; execution remains in Lab ops. Needs attention, Waiting on others, and Available results and updates keep required actions separate from responsibility elsewhere and informational updates. Organization and Department changes return to Dashboard after the draft check; keep editing to retain the current scope, or discard explicitly to switch. A save in progress must finish first. Finance and Legacy integrations are under More. Lab operations contains Phaeno-only work orders for receipt, accession, protocol execution, materials and equipment, libraries and batches, outsourced sequencing, exceptions, scientific approval, and governed Result release beside Results & scientific review. Its sidebar contains operational work rather than role administration. Lab execution requires an effective Lab role or platform-administrator bootstrap access. Release Managers can access only their release section without broader Lab access. Order settings in the user menu maintains Quote & workflow settings, the Service catalog, Analyses, PSeq kits, Assembly, Trial configuration, and Legacy links. The next menu item, Lab settings, opens laboratory configuration with its own sidebar. CRM settings follows Lab settings, then Samples & shipping settings provides Sample types, Shipping procedures, Phaeno ship-to destinations, Transportation kits, and order submission guidance. File retention policies follows as a separate page for future-release policies. Menu items follow your access permissions. Trial configuration is reached from the Order settings sidebar and owns Scientific Operations authorities and Trial deliverable definitions. Trial staff can access this section; other Order settings sections remain restricted to Platform administrators. Documentation in the user menu opens the guide set for the current organization."
         },
         {
           "heading": "Recover Website email",
@@ -2532,7 +2542,7 @@
       "title": "Materials and equipment",
       "summary": "Receive purchased lots, configure Phaeno reagent products and manufacture their lots, qualify stock, and track consumption and storage.",
       "order": 55,
-      "reviewedAt": "2026-10-05",
+      "reviewedAt": "2026-10-11",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -2557,7 +2567,7 @@
       "publicationStatus": "published",
       "id": "phaeno/lab-materials-equipment",
       "route": "/docs/phaeno/lab-materials-equipment",
-      "contentHash": "28f98b1692333901e899fc8775f4e27246b769939de68f64fe23a7902cf16f26",
+      "contentHash": "7a66c0141abe6f644c510d8fbc572655a8dbf37c84f625391f316de8f8b316c0",
       "sections": [
         {
           "heading": "Materials and equipment",
@@ -2600,6 +2610,11 @@
           "text": "When a sample's material amount is recorded as Amount unknown, POMS retains that fact and places the lot's quantity on hold. Known amounts from the same entry are deducted normally. The last recorded balance remains visible, but the lot cannot supply further work, including prepared reagents, until it is reconciled. Passing QC does not clear a quantity hold. A Supervisor or Operations Administrator opens the lot and chooses Reconcile quantity. Verify the physical remaining stock, enter the Counted remaining quantity in the lot's unit, and explain the reconciliation. The balance may be zero and cannot exceed the last recorded balance. Saving retains the before/after quantities, reason, operator and time in Quantity history, then clears the quantity hold. Earlier sample amounts remain unknown; reconciliation does not invent a sample quantity or undo known consumption. If the affected tube is also held, a Supervisor must separately review it and choose Resolve hold from its Library prep actions, with a reason. Reconcile its uncertain lot first. Neither inventory reconciliation nor resolving a hold makes a failed attempt usable again."
         },
         {
+          "heading": "Find reagent manufacturing runs",
+          "anchor": "find-reagent-manufacturing-runs",
+          "text": "The reagent manufacturing list searches the workflow name or produced lot number and filters by run status. Its total and page controls include older runs. Open a run by its primary link; returning to the list preserves its page, search and status selection."
+        },
+        {
           "heading": "Register equipment",
           "anchor": "register-equipment",
           "text": "Open More → Equipment and select New equipment. Enter the equipment name, then select an equipment type and location already used by the laboratory. Protocol equipment requirements also supply type choices, and active material-storage locations are available as location choices. If the required type or location is missing, choose Create a new…, enter its name in the focused modal, and use the returned selection. POMS assigns the immutable asset code when the equipment is created. Record the Last calibration date and Calibration due date when applicable. These are date-only laboratory facts; a time of day is not required. The due date cannot be before the last calibration date, and a last calibration date cannot be in the future. Equipment must be active and calibration-current at the time it is used."
@@ -2624,7 +2639,7 @@
       "title": "Laboratory operations",
       "summary": "Find laboratory work, receive purchased kits and stock, assemble Phaeno kits and reagents, record scientific evidence, and trace result delivery.",
       "order": 50,
-      "reviewedAt": "2026-10-09",
+      "reviewedAt": "2026-10-11",
       "navigationGroup": "laboratory-operations",
       "contentType": "overview",
       "topicIds": [
@@ -2647,12 +2662,12 @@
       "publicationStatus": "published",
       "id": "phaeno/lab-operations",
       "route": "/docs/phaeno/lab-operations",
-      "contentHash": "2075e8402403614692a3b92aefe8b5bae7f7a5ce077fe1cb52b224fe0a2a826a",
+      "contentHash": "f6b7c467cee82c6dd42861e8932455e2b17be5af2d7b98f725b0b3d4d8af2d66",
       "sections": [
         {
           "heading": "Laboratory operations",
           "anchor": "laboratory-operations",
-          "text": "The dashboard's Laboratory work card identifies each job by its Commercial order number, submitted reference, or a unique work-order identifier when neither is available. Select a job to open its record, or use Open Lab operations at the top-right of the card. Use Transportation kit inventory in Lab operations to assemble Phaeno kits and receive purchased complete kits with the exact recorded tube roster. Use Transportation kit requests to dispatch completed kits and review Customer receipt. Use Sample receipt & accession to identify arriving Customer sample packages, compare registered tubes, and see authorized work awaiting specimens. Choose Open receipt to record custody, accession, and intake disposition in the linked Lab work order. Customer quote acceptance opens sample-list preparation; finalizing the exact compliant roster records the Commercial authorization and creates the linked Lab work order and shipment together. Do not create Lab work manually to repair an order. When recording a requested kit shipment, review the Phaeno ship-to destination separately from the Customer delivery location. The Job starts with Phaeno's global default. Before the first kit for that Job is sent, you may select another current Active destination that supports every requested kit, provided the Customer has not begun packing or confirmed a shipping insert. The first kit dispatch fixes the destination for later requests and batches. If that saved destination revision later becomes inactive, confirm with receiving that it can still accept the remaining kits, then check the required confirmation before dispatch. A new default does not redirect the Job, and inactive destinations cannot be selected for new Jobs. Customers using compatible kits already at their location use the default without a separate routing queue. Use Specimens beside Jobs for direct specimen tracing. Search by Customer specimen ID, accession, source or derived tube barcode, Customer, or Job. Filter by processing state, recorded blockers, and Active or Historical Job context. Historical means the Job is completed or cancelled; preparation success alone does not make the Job historical. Open the specimen identifier to follow its saved evidence. Use Jobs at the top of the Lab operations sidebar for the overview of open and closed jobs, delivery deadlines and samples. Jobs opens by default. The remaining sections use four groups: | Group | Sections | | --- | --- | | SAMPLE PROCESSING | Sample receipt & accession; Library prep; Sequencing batches; Data assembly | | RESULTS | Results & scientific review; Result release, when permitted | | LAB PREPARATIONS | Master mixes; Reagent manufacturing | | KITS & FULFILLMENT | Transportation kit requests; Transportation kit inventory; PSeq kit fulfillment | Transportation kit requests contains the existing Kit requests / Fulfilled requests queues, separate from sample receipt. Sample receipt & accession contains Receive shipments / Accession samples, with receiving selected by default. Saved request, inventory and sample bookmarks continue to select the matching task and retain their filters. Sequencing results require verified FASTQ uploads through a batch ZIP or individual-file workspace before successful results save. Data assembly contains separate PSeq Service Sequencing inputs and Sequencing assembly tabs; Partner Assembly cases are accessed through Order ops; completed assembly packages need recorded QC before independent scientific approval and explicit Customer release. PSeq kit fulfillment prepares and ships the commercially accepted kit orders. Scientific review and result publication remain separate responsibilities. Open More → Purchasing for Suppliers, Products, and Purchased materials, and More → Equipment for laboratory assets. Phaeno platform administrators use Purchasing to maintain supplier names, product names, descriptions and product types for reagents and shipping supplies; the seeded Phaeno record is marked as an internal producer. Within Purchasing, use Suppliers for vendors, Products for their catalog, and the Product types tab to manage those categories and their eligibility for transportation kits. Search and Show inactive are in the shaded header of the suppliers, products and product types lists. Open Lab settings from Administration in the user menu for Lab steps, Protocols, Workflows, Stage durations, Holiday calendar, Library tray formats, and Storage locations in its own sidebar. Workflows distinguishes library preparation, sample-independent reagent manufacturing, and physical transportation-kit assembly; tray layouts are managed in Library tray formats and selected when assembling work in Library prep. Library prep opens preparation batches, where accepted tubes from compatible jobs are assembled into a tray and processed together. Open Jobs, the first sidebar entry, for the job and specimen list. Jobs remain open until results for every in-scope sample have been published to the customer Portal. The Active jobs tab is the default. Closed jobs contains fully delivered and cancelled jobs, including cancellations before shipment. A failed sample does not close its job. Scientific approval and Ready for release do not complete delivery. Expand Filters in the list header to search or narrow either jobs tab. The section starts collapsed, shows how many filters are applied, and summarizes the selected criteria in one sentence while closed; collapsing it keeps those filters in effect. Use Clear filters beside the Filters label to reset only the selected tab’s filters, even when the section is collapsed. Typed dates apply when you leave the date field or press Enter, so you can finish entering the year. Each tab retains its own search, date filters and page when switching tabs, refreshing or returning from a job. Results & scientific review lists only Jobs with completed assembly output packages, verified files and latest passing assembly QC awaiting scientific approval. Sequencing-only Jobs and already-approved packages are excluded. Rows show the pending package count; other specimens in the same Job may still be processing. Its return link preserves the section you came from. Specimen, execution, library and exception history remain accessible from either entry point. PSeq kit fulfillment retains its manufacturing workflow. Data assembly is dedicated to PSeq Service: Sequencing inputs lists verified specimen/run FASTQs and offers Start assembly; Sequencing assembly tracks requested processing attempts. Partner Assembly cases are available separately from Order ops > PARTNER SERVICES > Data assembly. Open a case and select Open Lab work for its manufacturing workflow. The sequencing connection currently shows a setup notice until the processing service is configured. Each assembly attempt retains actual start/stop times and final disposition; percentage progress is shown live without a saved update history. The sidebar header identifies Lab operations and, on wider screens, provides the pin or unpin icon. Pointer users can preview an unpinned sidebar by approaching the left edge; keyboard and touch users open it from the edge tab. Choosing a section closes an unpinned sidebar. Use Purchasing → Suppliers → Phaeno to define each named reagent or internally made transportation kit product. Reagents have type Reagent; finished kits have type Transportation kit, a stable SKU, a separate finished-kit name, and inventory unit each. Configure an internal kit's procedure in Lab settings → Workflows. Reagent workflows show their earlier procedure revisions and approval history. In Reagent manufacturing, select the reagent by name, run its approved procedure, record source-lot use as it happens, then enter the actual finished amount for QC. For internally made kits, a shipping specification can become Active and accept orders while its Transportation kit workflow is still pending; the confirmation and order review warn that new physical kits cannot yet be prepared. Before assembly in Transportation kit inventory, approve a reusable workflow with ordered steps and complete the exact products and quantities on each Kit specification Draft. A different administrator approves a revision unless a platform administrator records a reason for approving their own work. Tube and outer shipper products are counted in whole each units. If tube inventory is tracked by material lot, use one source tube lot per kit; its lot number must match the kit record, and every scanned tube ID in that kit traces to that lot. Scan each physical tube ID as it is packed, record component use with its source lot using the scanned tube count, review the exact unique tube roster, print and affix the container label, scan that label, and complete assembly before dispatch. Completing confirms that the recorded contents are packed; there is no mandatory second tube scan. An external supplier may instead provide a complete Transportation kit product. Selecting Transportation kit fills its required inventory unit with read-only each. Create its shipping specification using that supplier and product, then record each received physical kit under Transportation kit inventory → Actions → Receive purchased kit. Record the supplier receipt reference, a catalog tube product for the full specification capacity, one catalog outer shipper product, required expiration dates, and an optional supplier kit lot. The kit receives a Phaeno KIT- barcode and remains unavailable until every required tube is registered and its assembly is complete. A second physical rescan is optional when packing needs review. Deactivating a finished kit product stops new preparation or receipt and removes it from new shipping recommendations. Kit preparation and receipt are separate from sample and tube preparation. Use Purchasing → Purchased materials to receive purchased material lots by supplier product and printed lot number; that workflow does not create a ready complete Transportation kit. Maintain named material and equipment locations under Lab settings → Storage locations. These names do not represent scanned tube or freezer-box positions. Each Lab step list row has an Actions menu for viewing details, editing its name or draft, starting a new version, or retiring the step when permitted. Lab step details and Protocol and Workflow version editors keep the Lab settings header and section sidebar visible. Use Back to Lab steps, Back to protocols, or Back to workflows above the record to return to its list. Returning from a Lab step preserves its search, retired filter, and page. If you have unsaved draft changes, confirm before leaving the editor. Transportation kit workflows offer only current, approved instruction-only Lab step versions. Save and approve a Draft step before expecting it in the workflow picker; steps with sample or preparation-batch captures are excluded. On Lab step details, use the single Actions menu beside the step name for both step and version commands. A step has at most one Draft: edit, approve, or discard it before starting another version. Configuration previews identifies each saved version and its status. Approval and discard confirmations name the affected version. An unconfigured Draft must have its instructions and fields saved before approval; independent approval and the platform-administrator override still apply."
+          "text": "In Data assembly → Sequencing assembly, search across the complete history by sample, run, provider job reference or disposition. Pages show the exact matching count, including older attempts. Opening an attempt and returning keeps the search and page. A failed refresh displays recovery feedback rather than presenting stale rows as a current complete list. Scientific review still requires the exact completed analysis, current input evidence and package-specific passing QC before independent approval and release. The dashboard's Laboratory work card identifies each job by its Commercial order number, submitted reference, or a unique work-order identifier when neither is available. Select a job to open its record, or use Open Lab operations at the top-right of the card. Use Transportation kit inventory in Lab operations to assemble Phaeno kits and receive purchased complete kits with the exact recorded tube roster. Use Transportation kit requests to dispatch completed kits and review Customer receipt. Use Sample receipt & accession to identify arriving Customer sample packages, compare registered tubes, and see authorized work awaiting specimens. Choose Open receipt to record custody, accession, and intake disposition in the linked Lab work order. Customer quote acceptance opens sample-list preparation; finalizing the exact compliant roster records the Commercial authorization and creates the linked Lab work order and shipment together. Do not create Lab work manually to repair an order. When recording a requested kit shipment, review the Phaeno ship-to destination separately from the Customer delivery location. The Job starts with Phaeno's global default. Before the first kit for that Job is sent, you may select another current Active destination that supports every requested kit, provided the Customer has not begun packing or confirmed a shipping insert. The first kit dispatch fixes the destination for later requests and batches. If that saved destination revision later becomes inactive, confirm with receiving that it can still accept the remaining kits, then check the required confirmation before dispatch. A new default does not redirect the Job, and inactive destinations cannot be selected for new Jobs. Customers using compatible kits already at their location use the default without a separate routing queue. Use Specimens beside Jobs for direct specimen tracing. Search by Customer specimen ID, accession, source or derived tube barcode, Customer, or Job. Filter by processing state, recorded blockers, and Active or Historical Job context. Historical means the Job is completed or cancelled; preparation success alone does not make the Job historical. Open the specimen identifier to follow its saved evidence. Use Jobs at the top of the Lab operations sidebar for the overview of open and closed jobs, delivery deadlines and samples. Jobs opens by default. The remaining sections use four groups: | Group | Sections | | --- | --- | | SAMPLE PROCESSING | Sample receipt & accession; Library prep; Sequencing batches; Data assembly | | RESULTS | Results & scientific review; Result release, when permitted | | LAB PREPARATIONS | Master mixes; Reagent manufacturing | | KITS & FULFILLMENT | Transportation kit requests; Transportation kit inventory; PSeq kit fulfillment | Transportation kit requests contains the existing Kit requests / Fulfilled requests queues, separate from sample receipt. Sample receipt & accession contains Receive shipments / Accession samples, with receiving selected by default. Saved request, inventory and sample bookmarks continue to select the matching task and retain their filters. Sequencing results require verified FASTQ uploads through a batch ZIP or individual-file workspace before successful results save. Data assembly contains separate PSeq Service Sequencing inputs and Sequencing assembly tabs; Partner Assembly cases are accessed through Order ops; completed assembly packages need recorded QC before independent scientific approval and explicit Customer release. PSeq kit fulfillment prepares and ships the commercially accepted kit orders. Scientific review and result publication remain separate responsibilities. Open More → Purchasing for Suppliers, Products, and Purchased materials, and More → Equipment for laboratory assets. Phaeno platform administrators use Purchasing to maintain supplier names, product names, descriptions and product types for reagents and shipping supplies; the seeded Phaeno record is marked as an internal producer. Within Purchasing, use Suppliers for vendors, Products for their catalog, and the Product types tab to manage those categories and their eligibility for transportation kits. Search and Show inactive are in the shaded header of the suppliers, products and product types lists. Open Lab settings from Administration in the user menu for Lab steps, Protocols, Workflows, Stage durations, Holiday calendar, Library tray formats, and Storage locations in its own sidebar. Workflows distinguishes library preparation, sample-independent reagent manufacturing, and physical transportation-kit assembly; tray layouts are managed in Library tray formats and selected when assembling work in Library prep. Library prep opens preparation batches, where accepted tubes from compatible jobs are assembled into a tray and processed together. Open Jobs, the first sidebar entry, for the job and specimen list. Jobs remain open until results for every in-scope sample have been published to the customer Portal. The Active jobs tab is the default. Closed jobs contains fully delivered and cancelled jobs, including cancellations before shipment. A failed sample does not close its job. Scientific approval and Ready for release do not complete delivery. Expand Filters in the list header to search or narrow either jobs tab. The section starts collapsed, shows how many filters are applied, and summarizes the selected criteria in one sentence while closed; collapsing it keeps those filters in effect. Use Clear filters beside the Filters label to reset only the selected tab’s filters, even when the section is collapsed. Typed dates apply when you leave the date field or press Enter, so you can finish entering the year. Each tab retains its own search, date filters and page when switching tabs, refreshing or returning from a job. Results & scientific review lists only Jobs with completed assembly output packages, verified files and latest passing assembly QC awaiting scientific approval. Sequencing-only Jobs and already-approved packages are excluded. Rows show the pending package count; other specimens in the same Job may still be processing. Its return link preserves the section you came from. Specimen, execution, library and exception history remain accessible from either entry point. PSeq kit fulfillment retains its manufacturing workflow. Data assembly is dedicated to PSeq Service: Sequencing inputs lists verified specimen/run FASTQs and offers Start assembly; Sequencing assembly tracks requested processing attempts. Partner Assembly cases are available separately from Order ops > PARTNER SERVICES > Data assembly. Open a case and select Open Lab work for its manufacturing workflow. The sequencing connection currently shows a setup notice until the processing service is configured. Each assembly attempt retains actual start/stop times and final disposition; percentage progress is shown live without a saved update history. The sidebar header identifies Lab operations and, on wider screens, provides the pin or unpin icon. Pointer users can preview an unpinned sidebar by approaching the left edge; keyboard and touch users open it from the edge tab. Choosing a section closes an unpinned sidebar. Use Purchasing → Suppliers → Phaeno to define each named reagent or internally made transportation kit product. Reagents have type Reagent; finished kits have type Transportation kit, a stable SKU, a separate finished-kit name, and inventory unit each. Configure an internal kit's procedure in Lab settings → Workflows. Reagent workflows show their earlier procedure revisions and approval history. In Reagent manufacturing, select the reagent by name, run its approved procedure, record source-lot use as it happens, then enter the actual finished amount for QC. For internally made kits, a shipping specification can become Active and accept orders while its Transportation kit workflow is still pending; the confirmation and order review warn that new physical kits cannot yet be prepared. Before assembly in Transportation kit inventory, approve a reusable workflow with ordered steps and complete the exact products and quantities on each Kit specification Draft. A different administrator approves a revision unless a platform administrator records a reason for approving their own work. Tube and outer shipper products are counted in whole each units. If tube inventory is tracked by material lot, use one source tube lot per kit; its lot number must match the kit record, and every scanned tube ID in that kit traces to that lot. Scan each physical tube ID as it is packed, record component use with its source lot using the scanned tube count, review the exact unique tube roster, print and affix the container label, scan that label, and complete assembly before dispatch. Completing confirms that the recorded contents are packed; there is no mandatory second tube scan. An external supplier may instead provide a complete Transportation kit product. Selecting Transportation kit fills its required inventory unit with read-only each. Create its shipping specification using that supplier and product, then record each received physical kit under Transportation kit inventory → Actions → Receive purchased kit. Record the supplier receipt reference, a catalog tube product for the full specification capacity, one catalog outer shipper product, required expiration dates, and an optional supplier kit lot. The kit receives a Phaeno KIT- barcode and remains unavailable until every required tube is registered and its assembly is complete. A second physical rescan is optional when packing needs review. Deactivating a finished kit product stops new preparation or receipt and removes it from new shipping recommendations. Kit preparation and receipt are separate from sample and tube preparation. Use Purchasing → Purchased materials to receive purchased material lots by supplier product and printed lot number; that workflow does not create a ready complete Transportation kit. Maintain named material and equipment locations under Lab settings → Storage locations. These names do not represent scanned tube or freezer-box positions. Each Lab step list row has an Actions menu for viewing details, editing its name or draft, starting a new version, or retiring the step when permitted. Lab step details and Protocol and Workflow version editors keep the Lab settings header and section sidebar visible. Use Back to Lab steps, Back to protocols, or Back to workflows above the record to return to its list. Returning from a Lab step preserves its search, retired filter, and page. If you have unsaved draft changes, confirm before leaving the editor. Transportation kit workflows offer only current, approved instruction-only Lab step versions. Save and approve a Draft step before expecting it in the workflow picker; steps with sample or preparation-batch captures are excluded. On Lab step details, use the single Actions menu beside the step name for both step and version commands. A step has at most one Draft: edit, approve, or discard it before starting another version. Configuration previews identifies each saved version and its status. Approval and discard confirmations name the affected version. An unconfigured Draft must have its instructions and fields saved before approval; independent approval and the platform-administrator override still apply."
         },
         {
           "heading": "Investigation evidence preservation",
@@ -2708,6 +2723,11 @@
           "heading": "Release responsibility",
           "anchor": "release-responsibility",
           "text": "Open Lab ops → Result release to inspect and publish scientifically approved PSeq packages. A Release Manager without a general Lab role sees only Result release. Scientific review remains in Results & scientific review; release permission does not grant Lab execution or Lab settings access. The specimen Libraries tab sits between Processing and Sequencing & analysis. It lists only that specimen’s libraries, with the physical library and source tube, matching preparation attempt/execution, status and expandable recorded QC evidence. Missing attribution remains explicit. Use Manage Job libraries for the existing library creation, QC and batch-assignment actions. Processing retains tubes, attempts and protocol evidence; Sequencing & analysis retains batch/vendor progress, outputs and analysis. Protocol execution opened from specimen Overview, Processing or Libraries provides Back to specimen, restoring that specimen’s originating tab and navigation filters. Execution opened from the Job retains Back to laboratory job. Direct execution links without a specimen origin return to the Job."
+        },
+        {
+          "heading": "Measured output and recovery",
+          "anchor": "measured-output-and-recovery",
+          "text": "New prepared-library outputs retain a measured quantity basis and yield history, independently of source withdrawals. A pending label still needs its ordinary physical verification. Historical missing provenance remains unknown. The deadline editor shows the selected phase’s saved date. Switching phases or leaving a dirty form asks before discarding entries. A conflicting adjustment loads current dates while preserving entered values and requires renewed review."
         }
       ]
     },
@@ -2962,7 +2982,7 @@
       "title": "Scientific approval and release readiness",
       "summary": "Review output packages, source-tube lineage and scientific evidence requirements, resolve performer/time reviews, and record independent scientific approval.",
       "order": 58,
-      "reviewedAt": "2026-10-09",
+      "reviewedAt": "2026-10-11",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -2989,12 +3009,12 @@
       "publicationStatus": "published",
       "id": "phaeno/lab-scientific-approval",
       "route": "/docs/phaeno/lab-scientific-approval",
-      "contentHash": "a028ca4eef04d7b45be52baaf5c1ebcca9d93320f182963067eb0a2e7da3da79",
+      "contentHash": "ad565916506d2b63cd1e4859af6a9aff8e696562db233222af7639517f3fb5e5",
       "sections": [
         {
           "heading": "Scientific approval and release readiness",
           "anchor": "scientific-approval-and-release-readiness",
-          "text": "Open Lab operations → Results & scientific review, then select a job to inspect its scientific review. This list contains Jobs with at least one completed assembly output package whose files are verified, latest assembly QC decision is Pass, and scientific approval is still pending. Sequencing-only work, incomplete or failed assembly, missing/Fail/Hold QC, and already-approved packages are excluded. On-hold and cancelled Jobs are excluded. Each row shows the number of pending packages; it does not mean every specimen in the Job is ready. Scientific approval still applies its independent evidence and reviewer checks. Scientific approval is the final Lab Ops decision. It confirms that the authorized laboratory work satisfied the configured execution and exception gates. It is not a Customer file publication action. When S3 is configured, supporting-file selectors also offer Actions → Choose original S3 file. POMS verifies and scans the original before recording its scientific receipt. This preserves access in place; it does not copy the original into another managed store or satisfy scientific approval by itself. Downloads and assembly inputs recheck the retained checksum and size. Missing or changed source evidence must be investigated before advancing the affected work."
+          "text": "Scientific-review and dashboard obligations appear only after current evidence, exact-package QC, artifact attribution and attempt readiness satisfy the same prerequisites checked by the approval command. Release attention also checks current lineage evidence and configured release readiness. Evidence can change after discovery, so every submission rechecks it; a listed item is not an approval or release. Open Lab operations → Results & scientific review, then select a job to inspect its scientific review. This list contains Jobs with at least one completed assembly output package whose files are verified, latest assembly QC decision is Pass, and scientific approval is still pending. Sequencing-only work, incomplete or failed assembly, missing/Fail/Hold QC, and already-approved packages are excluded. On-hold and cancelled Jobs are excluded. Each row shows the number of pending packages; it does not mean every specimen in the Job is ready. Scientific approval still applies its independent evidence and reviewer checks. Scientific approval is the final Lab Ops decision. It confirms that the authorized laboratory work satisfied the configured execution and exception gates. It is not a Customer file publication action. When S3 is configured, supporting-file selectors also offer Actions → Choose original S3 file. POMS verifies and scans the original before recording its scientific receipt. This preserves access in place; it does not copy the original into another managed store or satisfy scientific approval by itself. Downloads and assembly inputs recheck the retained checksum and size. Missing or changed source evidence must be investigated before advancing the affected work."
         },
         {
           "heading": "Enter scientific review",
@@ -3393,7 +3413,7 @@
       "title": "Order operations",
       "summary": "Use grouped Lab services and Partner services sections in Order Ops, with Dashboard attention, Finance and laboratory release in their owning workspaces.",
       "order": 40,
-      "reviewedAt": "2026-10-03",
+      "reviewedAt": "2026-10-11",
       "navigationGroup": "order-operations",
       "contentType": "overview",
       "topicIds": [
@@ -3417,12 +3437,17 @@
       "publicationStatus": "published",
       "id": "phaeno/order-operations",
       "route": "/docs/phaeno/order-operations",
-      "contentHash": "119a14522a4b1a6fffb808647b53b1cfd07824d49b62e7d41bf13d7908495808",
+      "contentHash": "cc58261d9b4ec7385d6844eff195bf30a6212e684446b00c835b159b0f1ac77c",
       "sections": [
         {
           "heading": "Order operations",
           "anchor": "order-operations",
           "text": "Open Order ops. Its sidebar groups Order intake and Trial projects under LAB SERVICES, and PSeq kits and Data assembly under PARTNER SERVICES, using the same group headings as CRM. Pricing and commercial decisions stay with the owning service. Reusable defaults and scientific offerings are maintained in Order settings. The Dashboard summarizes your assigned service work. Needs attention shows authorized unresolved items and CRM recovery; choose View all to assign or resolve work. More → Finance owns billing and cash. More → Legacy integrations owns retained connector and notification recovery. Lab ops → Result release owns governed PSeq publication, alongside the separate Results & scientific review scientific workspace. When starting a Customer Job, select its Company and Department. A single available Department is selected automatically. The Department owns the Job and determines Customer access and the applicable service rule; a Blocked Department rule cannot be bypassed by a Ready organization default. The Order operations sidebar contains two labeled groups, filtered by your roles. LAB SERVICES contains Order intake and Trial projects. PARTNER SERVICES contains PSeq kits and Data assembly. Order intake covers paid lab-service orders only; kit and Assembly records belong under PARTNER SERVICES. Eligible organizations can place a configured standard Lab Service bundle from their own Job; its accepted commitment appears on the same order. Trial projects handles no-charge evaluations. Prospect, Customer and Partner users retain their audience-specific Trial access. Choose New Order in Commercial order intake to open the order-entry page. Sales selects the active Customer and Department, enters a unique Job name, and chooses the Catalog service for the whole order. The service is optional for an incomplete Draft and required for pricing submission; inactive or unrelated catalog items are unavailable. Save draft retains incomplete entries as Draft without submitting them or making them visible to the Customer. Customer setup can be completed while the Draft is saved. Reopen its record from intake and choose Edit draft. The saved Draft shows bold labels with counts and proposed prices beside them, such as Samples: 5. Handling and notes remain below their labels. For Safety declaration, describe the handling risks or select Insert “No known hazards” beside the guidance above the empty field when that declaration applies. The shortcut fills editable text; review it before saving or submitting. An existing declaration is retained, and the shortcut is available again after clearing the field. The Use different storage requirements checkbox sits beside the Storage requirements heading. Leave it unchecked to use the Sample type default shown below, or check it to enter different requirements. After submission, Commercial scope uses bold labels for specimen counts, biological sources, handling, proposed pricing and the current quote. The default order has one scope. Check Use phases and enter the Phase count when the Customer agrees sequential delivery cohorts. For each phase, enter biological sources, the sample count for each source and sequencing runs per sample. Add source is at the right end of the Biological-source composition heading. Runs per sample can differ between phases. For both single-scope and phased orders, optionally propose a USD price per sample and a separate price per additional sequencing run. The sample price includes one library preparation, one run and data assembly. The additional-run field appears when runs per sample exceed one. The proposed subtotal is the sample count multiplied by the sample price, plus only the runs beyond the first per sample multiplied by the additional-run price. Three samples with three runs each means three standard services and six additional runs. Additional runs use existing prepared-library material while it remains available; the purchased run count does not establish material availability. Add a pricing note when needed. Storage requirements use the selected Sample type's Preservation requirements by default. Shared handling and notes shows that text. Check Use different storage requirements only when this order needs an exception, then edit the requirements. The choice and any entered exception are retained in the Draft. Pricing submission retains the selected requirements on the order. An empty exception blocks submission; clear the checkbox to use the Sample type default. The safety declaration and Job notes apply to the order. Do not enter patient names or identifying information in notes. Clearing Use phases, reducing the count or choosing Remove phase opens a POMS confirmation that explains which scope and proposed prices will be removed. Choose Cancel to retain all entries. Clearing Use phases keeps the first phase's scope and proposed pricing. Submit for pricing saves the entries and validates the complete scope and Customer readiness. The order moves to Submitted for pricing. If readiness blocks submission, the saved Draft remains available with the submission error. The pricing operator retains the selected catalog service, begins quote preparation and reviews each scope's sample price, additional-run price and business-day turnaround before issuing one Customer quote. Amending proposed prices requires a reason. Submission does not authorize laboratory work. Exact Sample IDs and tubes are prepared after Customer acceptance. Lab Service orders in Quote In Preparation show a bold Next step for Phaeno message in the intake list. Open the Job by selecting its name, then select Review and issue quote under Commercial control, or Issue quote if no price was proposed. Review the price and terms and issue the quote for Customer acceptance. Quote Issued means the quote is available for the Customer to review. The Customer dashboard lists each active Lab Service request in its selected Department with a Job name, next step and direct link. Issued quotes have a Review pricing link for administrators; other members see View pricing. Requests still being priced show Waiting for Phaeno. Customers can page through active requests or open View all lab services for history. The Customer dashboard's Items requiring attention and New results metrics cover the selected Department and filter the Jobs below. New results are released, downloadable laboratory result packages without a complete Department download; failed or partial transfers do not clear them. This count can include completed Jobs and can be larger than the number of Jobs containing the results. The sidebar header identifies Order operations and, on wider screens, provides the pin or unpin icon. Pointer users can preview an unpinned sidebar by approaching the left edge; keyboard and touch users open it from the edge tab. Choosing a section closes an unpinned sidebar."
+        },
+        {
+          "heading": "Find assigned and unassigned work",
+          "anchor": "find-assigned-and-unassigned-work",
+          "text": "The work dashboard defaults to your assigned actions plus eligible unassigned work. The authorized Team view does not expand your permissions. The header bell uses the same default work count and previews five priority items. Open a linked record to perform its next action; viewing the bell never resolves work. Use View all work to filter by area, priority and ownership. Counts and pages cover the full authorized source set. Unavailable or disabled sources are explained rather than shown as a trustworthy zero."
         },
         {
           "heading": "Enter and find orders",
@@ -3708,7 +3733,7 @@
       "title": "Trial Projects",
       "summary": "Configure authorities and deliverables, approve scope, oversee samples and Lab work, release results, and close Trials.",
       "order": 26,
-      "reviewedAt": "2026-10-03",
+      "reviewedAt": "2026-10-11",
       "navigationGroup": "trial-project",
       "contentType": "guide",
       "topicIds": [
@@ -3730,7 +3755,7 @@
       "publicationStatus": "published",
       "id": "phaeno/trial-projects",
       "route": "/docs/phaeno/trial-projects",
-      "contentHash": "c93ca10c7d594534023e80d46f2fa9cc31e459878071b92e73d4e1edb7f885db",
+      "contentHash": "19f7b4ab93bd29965b4949e016ff0d1117907a308878bbd2e5311d2f97f11fc3",
       "sections": [
         {
           "heading": "Operate Trial Projects",
@@ -3763,6 +3788,11 @@
           "text": "The governed PSeq pipeline supplies immutable output packages tied to the Trial, submitted sample, and Lab work order. Complete checksums and clean scans precede scientific review. Scientific approval and release retain the existing PSeq separation of duties. A release manager selects one scientifically approved package per sample, with every frozen deliverable and no unapproved output role. Choose Partial when only some approved results are ready. Choose Complete only when the full approved package for every submitted sample, including approved replacements, is available. A complete release closes the Trial and freezes the shared global/organization retention policy. No payment or credit gate applies. The result archive includes a Trial manifest with the exact RUO statement, scope revision, sample/file lineage, and checksums. After complete release, earlier partial archives remain historical and direct members to the current complete package. Download controls show progress and availability, including closed retention access, and refresh after transfer attempts. Internal downloads do not satisfy the organization's retention condition. Retention and receipt supports the shared warning, grace, hold, deletion, and reissue workflow. A complete reissue after byte deletion requires newly transferred, scientifically approved packages for the same Trial samples and retains the original closure/material dates. Release and physical shipping remain subject to configured operational readiness. A visible workflow or a passing software test does not activate real storage, scanning, automated byte deletion, or validate laboratory packing instructions."
         },
         {
+          "heading": "Review the timeline",
+          "anchor": "review-the-timeline",
+          "text": "The Trial timeline has its own total and page controls so older events remain available. Customer and Prospect views exclude internal commercial outcomes before their counts are calculated. If the timeline cannot load, use Retry timeline; the retained Trial itself stays open."
+        },
+        {
           "heading": "Close and follow up",
           "anchor": "close-and-follow-up",
           "text": "Successful completion is recorded by complete result release. Otherwise use Close Trial with the appropriate outcome and a Prospect-safe reason. Closure blocks new submissions and requests cancellation of unfinished Lab authorizations while preserving custody and history. Residual RNA retention starts at terminal closure. Record material disposition records actual exhaustion, return, or destruction once under the frozen terms; a due date does not record physical destruction automatically. A hold blocks disposition. Commercial outcome is separate: schedule owned and dated follow-up, record closed without conversion, or record conversion only after the explicit CRM relationship workflow changes the same organization to Customer or Partner. Conversion never extends Trial file deadlines or starts new Trial work. Use the existing organization closeout workflow for any deliberate deactivation after reviewing other active Trials, grants, and relationships. Trial milestones publish to CRM as relationship-safe summaries and a deep link. Scientific details and sample identifiers stay in the Trial/Lab workspaces. Failed publication retries without blocking Trial operations; the Trial workspace shows pending milestones and provides Retry CRM publication."
@@ -3781,7 +3811,7 @@
       "title": "Account and access",
       "summary": "Accept invitations, protect sign-in, select a Department, and manage access within organization and Department roles.",
       "order": 20,
-      "reviewedAt": "2026-10-03",
+      "reviewedAt": "2026-10-11",
       "navigationGroup": "basics",
       "contentType": "guide",
       "topicIds": [
@@ -3806,7 +3836,7 @@
       "publicationStatus": "published",
       "id": "prospect/en-US/account-and-access",
       "route": "/docs/prospect/account-and-access",
-      "contentHash": "c7ae373a8aac04314e765fcd3480950d2588ea78f8d7a4b80c533c4e8db1c1e0",
+      "contentHash": "0d288c9f8990a8a0e9d55ead43bd785985ea5bc6b5933321820d6b129c43d27f",
       "sections": [
         {
           "heading": "Account and access",
@@ -3826,12 +3856,12 @@
         {
           "heading": "Confirm the current organization",
           "anchor": "confirm-the-current-organization",
-          "text": "The header shows the organization active in your current session. Every package, download, and administrative view is scoped to it. Self-service switching between multiple external organization memberships is not currently available. If the wrong organization is shown, stop and contact Phaeno before opening or downloading data."
+          "text": "The header shows the organization active in your current session. Every package, download, and administrative view is scoped to it. If your account has more than one active organization membership, choose Organization in the user menu to select one of your own organizations. Organization and Department changes return to Dashboard after checking unsaved work. Keep editing retains the current scope and draft; Discard changes permits the switch. A save in progress must finish first. Grants, Trial scope and download permissions remain specific to the selected organization and Department."
         },
         {
           "heading": "Work within a department",
           "anchor": "work-within-a-department",
-          "text": "The header identifies your current organization and department. If you have access to more than one department, open the user menu and choose Department before opening or creating work. With a single available department, it is selected for you. Changing departments closes the previous workspace; finish or save your work before switching. Members see only their assigned departments. Organization administrators can select any active department in their organization, but the selected department still determines the records displayed. A department administrator's operational authority applies only to that department; it is not organization-wide access. Organization-wide data grants may be available in each department. If a department is unavailable or an expected Prospect record is missing, ask your organization administrator or Phaeno to review the assignment. Do not change URLs to try to access another department. Organization and department administrators can open Departments from the user menu to manage the departments within their authority."
+          "text": "The header identifies your current organization and department. If you have access to more than one department, open the user menu and choose Department before opening or creating work. With a single available department, it is selected for you. Changing Departments returns to Dashboard after the same draft check. Keep editing to retain your current scope, or explicitly discard the draft to switch. A save in progress must finish first. Members see only their assigned departments. Organization administrators can select any active department in their organization, but the selected department still determines the records displayed. A department administrator's operational authority applies only to that department; it is not organization-wide access. Organization-wide data grants may be available in each department. If a department is unavailable or an expected Prospect record is missing, ask your organization administrator or Phaeno to review the assignment. Do not change URLs to try to access another department. Organization and department administrators can open Departments from the user menu to manage the departments within their authority."
         },
         {
           "heading": "Manage department access and settings",
@@ -3915,7 +3945,7 @@
       "title": "Use the Data Library",
       "summary": "Review explicitly granted package versions and verify file or archive downloads.",
       "order": 30,
-      "reviewedAt": "2026-10-03",
+      "reviewedAt": "2026-10-11",
       "navigationGroup": "data-access",
       "contentType": "guide",
       "topicIds": [
@@ -3939,12 +3969,12 @@
       "publicationStatus": "published",
       "id": "prospect/en-US/data-library",
       "route": "/docs/prospect/data-library",
-      "contentHash": "0db7ad49e225ffedc82db9fbed915194e668926be3a1e5a39690c99e707c9bc9",
+      "contentHash": "b2ddd833b96aa613d5bba56d6b4eeb856e5bf9af108b69c98df2b8db08b94405",
       "sections": [
         {
           "heading": "Use the Data Library",
           "anchor": "use-the-data-library",
-          "text": "The Data Library is a read-only catalog of Phaeno-owned curated data package versions explicitly granted organization-wide or to your selected Department. A grant applies only to the named package version; access to one version does not automatically include earlier or later versions."
+          "text": "Download history, data activity and active governance attention have separate total counts and page controls. Older records remain reachable. Switching the organization or Department starts at the first page in the new scope; existing administrator permissions still govern download history. The Data Library is a read-only catalog of Phaeno-owned curated data package versions explicitly granted organization-wide or to your selected Department. A grant applies only to the named package version; access to one version does not automatically include earlier or later versions."
         },
         {
           "heading": "Review a granted package",
@@ -3970,7 +4000,7 @@
       "title": "Getting started",
       "summary": "Find approved Trials, authorized shipping, curated data, and access for the selected Department.",
       "order": 10,
-      "reviewedAt": "2026-10-10",
+      "reviewedAt": "2026-10-11",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [
@@ -3989,12 +4019,17 @@
       "publicationStatus": "published",
       "id": "prospect/en-US/getting-started",
       "route": "/docs/prospect/getting-started",
-      "contentHash": "bdea7ba112a794d75335dcc8b59e4a0cb7a84019e0455cd2f79f0e58a46fb8a0",
+      "contentHash": "1debc4715e4bf3275b998ccdf566c9197ce80028d1b63d60e6e50ef7e1cb772e",
       "sections": [
         {
           "heading": "Getting started",
           "anchor": "getting-started",
           "text": "Portal gives a Prospect organization access to explicitly granted Phaeno-owned curated data and approved Trial Projects. Organization and assigned-Department administrators can accept frozen Trial scope and submit coded research RNA under the approved allowance and dates. Prospect access does not include paid laboratory requests, reagent orders, data-assembly requests, or other commercial ordering."
+        },
+        {
+          "heading": "Find current work",
+          "anchor": "find-current-work",
+          "text": "The dashboard and header bell show current work in your selected organization and Department. The bell counts unfinished actions; opening an item does not complete it. Available results and work waiting on an administrator or Phaeno are separate from your own actions. Open the linked record to perform the supported next step, or use View all work for the complete filtered list. Unavailable counts remain unknown until they can be refreshed."
         },
         {
           "heading": "Navigate the help center",
@@ -4014,7 +4049,7 @@
         {
           "heading": "Find your work",
           "anchor": "find-your-work",
-          "text": "Dashboard shows current Trial acceptance or sample-submission attention, Trial history, assigned data, authorized shipments, and administrator user access for the selected Department. Trial Projects opens approved scope, sample submission, laboratory progress, released results, and retention receipts. Read Trial Projects before accepting a scope. Data Library contains curated package versions explicitly granted to the Prospect. Samples & shipping contains authorized Trial Project return kits, tube matching, and shipping packets when Phaeno has prepared a shipment. For organization administrators, User management manages organization invitations, roles, and memberships. Documentation in the user menu opens these Prospect guides. Prospect organizations do not receive order or service workspaces. Phaeno alone can change the organization relationship after business approval."
+          "text": "Dashboard separates Needs attention, Waiting on others, and Available results and updates for your selected Department. Trial acceptance and authorized sample submission appear when their prerequisites are met. Follow an item's link to act, or use View all work for the complete paged list. Use First page if a saved page is beyond the last page. Retry work recovers unavailable counts and list reads. Trial Projects opens approved scope, sample submission, laboratory progress, released results, and retention receipts. Read Trial Projects before accepting a scope. Data Library contains curated package versions explicitly granted to the Prospect. Samples & shipping contains authorized Trial Project return kits, tube matching, and shipping packets when Phaeno has prepared a shipment. For organization administrators, User management manages organization invitations, roles, and memberships. Documentation in the user menu opens these Prospect guides. Prospect organizations do not receive order or service workspaces. Phaeno alone can change the organization relationship after business approval."
         },
         {
           "heading": "Get help safely",
@@ -4261,5 +4296,5 @@
       ]
     }
   ],
-  "corpusHash": "6979ec04038c22d5620251f63c156b6ad2c31026f31105bb01e7c64079e58c12"
+  "corpusHash": "1e888ad8f680af420984002e72745206b392a1be5b5afa02beaa4c56af6ff1de"
 }

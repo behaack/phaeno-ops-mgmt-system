@@ -16,6 +16,14 @@ public sealed partial class LabOperationsController
             jobs = await service.ListAsync(workOrderId, specimenId, ct) };
     }
 
+    [HttpGet("assembly-jobs/page")]
+    public async Task<object> AssemblyJobsPage([FromServices] LabAssemblyService service, CancellationToken ct, [FromQuery] string? search = null, [FromQuery] int page = 1)
+    {
+        var actor = await requestContext.RequireAsync(HttpContext, ct, LabRole.Operator, LabRole.Supervisor, LabRole.ScientificReviewer, LabRole.OperationsAdministrator);
+        var rows = await service.ListPageAsync(search,page,ct);
+        return new { availability = service.Availability, canOperate = actor.HasAny(LabRole.Operator,LabRole.Supervisor), jobs = rows.Items, rows.Page,rows.PageSize,rows.TotalCount };
+    }
+
     [HttpGet("assembly-jobs/inputs")]
     public async Task<object> AssemblyInputs(Guid? workOrderId, Guid? specimenId, CancellationToken ct)
     {
@@ -31,7 +39,7 @@ public sealed partial class LabOperationsController
             select new { output.Id, output.LabWorkOrderId, output.LabSpecimenId, sampleName = sample.AccessionNumber,
                 sequencingRunNumber = output.SequencingRunNumber ?? 1, output.LabSpecimenAttemptId, library.LibraryKey,
                 output.ProviderRunReference, output.SampleMappingReference, output.SizeBytes, output.Sha256,
-                output.ProviderKey, output.ExternalFileReference, output.LabNgsSendoutId }).Take(1000).ToListAsync(ct);
+                output.ProviderKey, output.ExternalFileReference, output.LabNgsSendoutId }).ToListAsync(ct);
         var sendoutIds = candidates.Where(c => c.ProviderKey == "vendor-fastq").Select(c => c.LabNgsSendoutId).Distinct().ToArray();
         var current = await dbContext.LabVendorResultsVersions.AsNoTracking().Where(v => sendoutIds.Contains(v.LabNgsSendoutId)
             && !dbContext.LabVendorResultsVersions.Any(newer => newer.LabNgsSendoutId == v.LabNgsSendoutId && newer.ResultVersion > v.ResultVersion))

@@ -68,9 +68,11 @@ export function ProductTypeDialog({ type, onClose }: { type?: ProductType; onClo
   const id = useId()
   const cache = useQueryClient()
   const form = useForm<Values>({ resolver: zodResolver(schema), defaultValues: { name: type?.name ?? '', description: type?.description ?? '', isActive: type?.isActive ?? true } })
+  const { isDirty: __formDraftDirty } = form.formState
+
   const save = useMutation({ mutationFn: (values: Values) => saveProductType({ ...values, kitUse: type?.kitUse ?? 'Other', version: type?.version }, type?.id), onSuccess: async () => { form.reset(form.getValues()); await Promise.all([cache.invalidateQueries({ queryKey: productTypesKey }), cache.invalidateQueries({ queryKey: supplierCatalogKey })]); onClose() } })
   const errors = form.formState.errors
-  return <CatalogEditor title={type ? 'Edit product type' : 'New product type'} description="Inactive types remain in history but are unavailable for new products and kit selections." formId={id} dirty={form.formState.isDirty} busy={save.isPending} error={save.error} onClose={onClose}>
+  return <CatalogEditor title={type ? 'Edit product type' : 'New product type'} description="Inactive types remain in history but are unavailable for new products and kit selections." formId={id} dirty={__formDraftDirty} busy={save.isPending} error={save.error} onClose={onClose}>
     <form id={id} noValidate className="space-y-4" onSubmit={form.handleSubmit(values => { if (!save.isPending) save.mutate(values) })}>
       <CatalogField id={`${id}-name`} label="Type name" error={errors.name?.message}><Input id={`${id}-name`} disabled={save.isPending} aria-invalid={Boolean(errors.name)} aria-describedby={errors.name ? `${id}-name-error` : undefined} {...form.register('name')} /></CatalogField>
       <CatalogField id={`${id}-description`} label="Description" error={errors.description?.message}><Textarea id={`${id}-description`} disabled={save.isPending} aria-invalid={Boolean(errors.description)} aria-describedby={errors.description ? `${id}-description-error` : undefined} {...form.register('description')} /></CatalogField>

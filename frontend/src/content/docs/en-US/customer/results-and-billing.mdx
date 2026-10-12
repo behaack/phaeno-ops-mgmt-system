@@ -28,6 +28,12 @@ A retention reminder, when enabled for the workflow, is addressed to active Orga
 
 ## Review invoices
 
+Invoice PDFs retain the saved quantities, prices, tax and total. Long invoices
+continue across numbered pages, and each continuation identifies the invoice.
+Names and descriptions retain supported accented and scientific characters. If
+a character cannot be displayed, contact Phaeno for a copy; the Portal does not
+silently substitute a different character in the financial record.
+
 At Job completion, Phaeno issues one numbered invoice. If the accepted quote included tax, the invoice preserves that frozen determination. If the quote was labeled **Pre-tax total**, the Portal calculates applicable tax from the approved billing profile at invoicing. The invoice freezes its billing, tax, currency, and payment terms; its due date is the completion date plus those terms. The immutable invoice PDF is available to your organization. The Portal does not collect payment-card information or provide online payment processing in this release.
 
 Receipts may be partially or fully applied to the invoice. Overpayments remain visible as unapplied cash until Finance explicitly allocates or resolves them. Corrections appear as retained credits, debits, or write-offs; an issued invoice is never silently rewritten.

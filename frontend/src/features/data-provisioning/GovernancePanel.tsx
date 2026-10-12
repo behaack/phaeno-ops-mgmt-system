@@ -1,7 +1,13 @@
+import { GuardedFormDialog, ConfirmationFormContent } from '#/components/GuardedFormDialog'
+import { NativeSelect } from '#/components/ui/native-select'
+import { RecordPagination } from '#/components/RecordPagination'
+import { useScopedRecordPage } from '#/components/use-scoped-record-page'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, Download, Plus, Send, ShieldAlert } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useId, isValidElement, cloneElement } from 'react'
+import { Field, FieldError } from '#/components/ui/field'
+import { Label } from '#/components/ui/label'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
@@ -11,7 +17,7 @@ import {
   downloadGovernanceInvestigationArchive,
   getApiErrorMessage,
   listDatasets,
-  listGovernanceIncidents,
+  listGovernanceIncidentsPage,
   listSourceSamples,
   quarantineSource,
   recordGovernanceAttestation,
@@ -23,6 +29,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
+import { ActionMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '#/components/ui/dropdown-menu'
 import {
   Card,
   CardContent,
@@ -31,7 +38,6 @@ import {
   CardTitle,
 } from '#/components/ui/card'
 import {
-  Dialog,
   DialogClose,
   DialogContent,
   DialogDescription,
@@ -99,11 +105,13 @@ export function GovernancePanel({ apiEnabled }: { apiEnabled: boolean }) {
   const [organizationAction, setOrganizationAction] = useState<OrganizationAction | null>(null)
   const [followUpIncident, setFollowUpIncident] = useState<GovernanceIncident | null>(null)
   const [investigationAction, setInvestigationAction] = useState<InvestigationAction | null>(null)
-  const incidentsQuery = useQuery({
-    queryKey: ['data-provisioning', 'governance-incidents'],
-    queryFn: () => listGovernanceIncidents(),
+  const incidentsQuerySelection = useScopedRecordPage('global-governance')
+  const incidentsQueryPage = useQuery({
+    queryKey: ['data-provisioning', 'governance-incidents', 'global-governance', incidentsQuerySelection.page],
+    queryFn: () => listGovernanceIncidentsPage(incidentsQuerySelection.page),
     enabled: apiEnabled,
   })
+  const incidentsQuery = { ...incidentsQueryPage, data: incidentsQueryPage.isError ? undefined : incidentsQueryPage.data?.items }
   const sourcesQuery = useQuery({
     queryKey: ['data-provisioning', 'source-samples'],
     queryFn: listSourceSamples,
@@ -251,7 +259,7 @@ export function GovernancePanel({ apiEnabled }: { apiEnabled: boolean }) {
                 and document customer remediation.
               </CardDescription>
             </div>
-            <Button type="button" disabled={!apiEnabled} onClick={() => setQuarantineOpen(true)}>
+            <Button type="button" id="governance-start" disabled={!apiEnabled} onClick={() => setQuarantineOpen(true)}>
               <ShieldAlert data-icon="inline-start" />Start quarantine
             </Button>
           </div>
@@ -275,43 +283,38 @@ export function GovernancePanel({ apiEnabled }: { apiEnabled: boolean }) {
                     {formatDate(incident.attestationDueAt)}
                   </p>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button type="button" size="sm" variant="outline" onClick={() => setFollowUpIncident(incident)}>
+                <ActionMenu>
+                  <DropdownMenuTrigger asChild><Button type="button" size="sm" variant="outline" id={`governance-${incident.id}-actions`} aria-label={`Actions for ${incident.sourceSampleLabel}`}>Actions</Button></DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                  <DropdownMenuItem onSelect={() => setFollowUpIncident(incident)}>
                     <Plus data-icon="inline-start" />Follow-up
-                  </Button>
+                  </DropdownMenuItem>
                   {incident.status === 'Open' ? (
                     <>
-                      <Button type="button" size="sm" variant="outline" onClick={() => setResolutionAction({ incident, kind: 'clear' })}>
+                      <DropdownMenuItem onSelect={() => setResolutionAction({ incident, kind: 'clear' })}>
                         Clear unchanged
-                      </Button>
-                      <Button type="button" size="sm" variant="destructive" onClick={() => setResolutionAction({ incident, kind: 'withdraw' })}>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem variant="destructive" onSelect={() => setResolutionAction({ incident, kind: 'withdraw' })}>
                         Confirm unsafe
-                      </Button>
+                      </DropdownMenuItem>
                     </>
                   ) : null}
-                </div>
-              </div>
-
-              {incident.status !== 'Cleared' ? (
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {incident.affectedDatasetVersionIds.map((versionId) => (
-                    <Button
+                  {incident.status !== 'Cleared' ? incident.affectedDatasetVersionIds.map((versionId) => (
+                    <DropdownMenuItem
                       key={versionId}
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setInvestigationAction({
+                      onSelect={() => setInvestigationAction({
                         incident,
                         datasetVersionId: versionId,
                         fileName: `investigation-${versionLabels.get(versionId) ?? versionId}.zip`,
                       })}
                     >
                       <Download data-icon="inline-start" />
-                      {versionLabels.get(versionId) ?? 'Affected version'}
-                    </Button>
-                  ))}
-                </div>
-              ) : null}
+                      Investigate {versionLabels.get(versionId) ?? 'affected version'}
+                    </DropdownMenuItem>
+                  )) : null}
+                  </DropdownMenuContent>
+                </ActionMenu>
+              </div>
 
               <div className="mt-4 space-y-2">
                 {incident.affectedOrganizations.map((organization) => (
@@ -323,27 +326,31 @@ export function GovernancePanel({ apiEnabled }: { apiEnabled: boolean }) {
                       </p>
                     </div>
                     {organization.status === 'AwaitingAttestation' ? (
-                      <div className="flex flex-wrap gap-2">
-                        <Button type="button" size="sm" variant="outline" onClick={() => setOrganizationAction({ incident, organization, kind: 'remind' })}>
+                      <ActionMenu>
+                        <DropdownMenuTrigger asChild><Button type="button" size="sm" variant="outline" id={`governance-${incident.id}-${organization.organizationId}-actions`} aria-label={`Actions for ${organization.organizationName}`}>Actions</Button></DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                        <DropdownMenuItem onSelect={() => setOrganizationAction({ incident, organization, kind: 'remind' })}>
                           <Send data-icon="inline-start" />Remind
-                        </Button>
-                        <Button type="button" size="sm" onClick={() => setOrganizationAction({ incident, organization, kind: 'attest' })}>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => setOrganizationAction({ incident, organization, kind: 'attest' })}>
                           Record attestation
-                        </Button>
-                      </div>
+                        </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </ActionMenu>
                     ) : null}
                   </div>
                 ))}
               </div>
             </article>
           ))}
-          {!incidentsQuery.isLoading && (incidentsQuery.data?.length ?? 0) === 0 ? (
+          {!incidentsQuery.isLoading && !incidentsQuery.isError && incidentsQueryPage.data?.totalCount === 0 ? (
             <div className="rounded-lg border border-dashed p-5 text-sm text-muted-foreground">
               <AlertTriangle aria-hidden="true" className="mb-2 size-5" />
               <p className="m-0 font-medium text-foreground">No governance incidents</p>
-              <p className="m-0 mt-1">No curated source is currently quarantined.</p>
+              <p className="m-0 mt-1">No governance incidents have been recorded.</p>
             </div>
           ) : null}
+        <RecordPagination label={'Governance incident pages'} data={incidentsQueryPage.isError ? undefined : incidentsQueryPage.data} busy={incidentsQueryPage.isFetching} onPage={incidentsQuerySelection.setPage} />
         </CardContent>
       </Card>
 
@@ -357,6 +364,7 @@ export function GovernancePanel({ apiEnabled }: { apiEnabled: boolean }) {
       <ResolutionDialog action={resolutionAction} onOpenChange={(open) => !open && setResolutionAction(null)} form={resolutionForm} mutation={resolutionMutation} />
       <NotesDialog
         title="Add investigation follow-up"
+        returnFocusId={`governance-${followUpIncident?.id}-actions`}
         description="Record a dated internal note without changing the incident status."
         open={Boolean(followUpIncident)}
         onOpenChange={(open) => !open && setFollowUpIncident(null)}
@@ -374,29 +382,32 @@ export function GovernancePanel({ apiEnabled }: { apiEnabled: boolean }) {
 }
 
 function QuarantineDialog({ open, onOpenChange, form, sources, mutation }: { open: boolean; onOpenChange: (open: boolean) => void; form: ReturnType<typeof useForm<QuarantineValues>>; sources: Awaited<ReturnType<typeof listSourceSamples>>; mutation: ReturnType<typeof useMutation<GovernanceIncident, Error, QuarantineValues>> }) {
-  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>Quarantine a source and every derived version?</DialogTitle><DialogDescription>Tenant access is blocked immediately across all active grants. Customer notices receive only the concern category and external guidance; internal notes remain Phaeno-only.</DialogDescription></DialogHeader><form className="space-y-4" onSubmit={form.handleSubmit((values) => mutation.mutateAsync(values))}><FormField label="Source sample" error={form.formState.errors.sourceSampleId?.message} required><select className={selectClass} {...form.register('sourceSampleId')}><option value="">Select a source</option>{sources.map((source) => <option key={source.id} value={source.id}>{source.label} · revision {source.revision}</option>)}</select></FormField><FormField label="Concern category" error={form.formState.errors.category?.message} required><select className={selectClass} {...form.register('category')}><option value="Deidentification">De-identification</option><option value="Ownership">Ownership</option><option value="SharingRights">Sharing rights</option><option value="Other">Other</option></select></FormField><FormField label="Concern summary" error={form.formState.errors.reason?.message} required><textarea className={textareaClass} rows={3} {...form.register('reason')} /></FormField><FormField label="Customer guidance" error={form.formState.errors.externalGuidance?.message} required><textarea className={textareaClass} rows={4} {...form.register('externalGuidance')} /></FormField><FormField label="Internal investigation notes" error={form.formState.errors.internalNotes?.message} required><textarea className={textareaClass} rows={4} {...form.register('internalNotes')} /></FormField><FormField label="Attestation due date if content is withdrawn" error={form.formState.errors.attestationDueAt?.message} required><Input type="date" {...form.register('attestationDueAt')} /></FormField><MutationError error={mutation.error} fallback="The source could not be quarantined." /><RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" variant="destructive" disabled={mutation.isPending}>{mutation.isPending ? 'Quarantining' : 'Quarantine all derived versions'}</Button></RequiredDialogFooter></form></DialogContent></Dialog>
+  return <GuardedFormDialog dirty={form.formState.isDirty} pending={mutation.isPending} returnFocusId={'governance-start'} open={open} onOpenChange={onOpenChange}><ConfirmationFormContent><DialogHeader><DialogTitle>Quarantine a source and every derived version?</DialogTitle><DialogDescription>Tenant access is blocked immediately across all active grants. Customer notices receive only the concern category and external guidance; internal notes remain Phaeno-only.</DialogDescription></DialogHeader><form className="space-y-4" onSubmit={form.handleSubmit((values) => mutation.mutateAsync(values))}><p className="text-sm">Quarantine blocks tenant access to every derived version immediately. It preserves immutable content, grants and download evidence.</p><FormField label="Source sample" error={form.formState.errors.sourceSampleId?.message} required><NativeSelect {...form.register('sourceSampleId')}><option value="">Select a source</option>{sources.map((source) => <option key={source.id} value={source.id}>{source.label} · revision {source.revision}</option>)}</NativeSelect></FormField><FormField label="Concern category" error={form.formState.errors.category?.message} required><NativeSelect {...form.register('category')}><option value="Deidentification">De-identification</option><option value="Ownership">Ownership</option><option value="SharingRights">Sharing rights</option><option value="Other">Other</option></NativeSelect></FormField><FormField label="Concern summary" error={form.formState.errors.reason?.message} required><textarea className={textareaClass} rows={3} {...form.register('reason')} /></FormField><FormField label="Customer guidance" error={form.formState.errors.externalGuidance?.message} required><textarea className={textareaClass} rows={4} {...form.register('externalGuidance')} /></FormField><FormField label="Internal investigation notes" error={form.formState.errors.internalNotes?.message} required><textarea className={textareaClass} rows={4} {...form.register('internalNotes')} /></FormField><FormField label="Attestation due date if content is withdrawn" error={form.formState.errors.attestationDueAt?.message} required><Input type="date" {...form.register('attestationDueAt')} /></FormField><MutationError error={mutation.error} fallback="The source could not be quarantined." /><RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" variant="destructive" disabled={mutation.isPending}>{mutation.isPending ? 'Quarantining' : 'Quarantine all derived versions'}</Button></RequiredDialogFooter></form></ConfirmationFormContent></GuardedFormDialog>
 }
 
 function ResolutionDialog({ action, onOpenChange, form, mutation }: { action: ResolutionAction | null; onOpenChange: (open: boolean) => void; form: ReturnType<typeof useForm<ResolutionValues>>; mutation: ReturnType<typeof useMutation<GovernanceIncident, Error, { action: ResolutionAction; values: ResolutionValues }>> }) {
   const isClear = action?.kind === 'clear'
-  return <Dialog open={Boolean(action)} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>{isClear ? 'Clear quarantine and restore active grants?' : 'Confirm content is unsafe and withdraw it?'}</DialogTitle><DialogDescription>{isClear ? 'Access resumes only for grants that remain active. Eligibility stays off until Phaeno deliberately approves it again.' : 'The affected versions remain preserved as evidence but can never be accessed through tenant grants. Every affected organization must attest to remediation.'}</DialogDescription></DialogHeader>{action ? <form className="space-y-4" onSubmit={form.handleSubmit((values) => mutation.mutateAsync({ action, values }))}><FormField label="Documented investigation outcome" error={form.formState.errors.resolution?.message} required><textarea className={textareaClass} rows={5} {...form.register('resolution')} /></FormField>{isClear ? <label className="flex items-start gap-2 rounded-lg border p-3 text-sm"><input type="checkbox" className="mt-0.5 size-4" {...form.register('immutableContentConfirmedUnchanged')} /><span><span className="font-medium">I confirmed the immutable curated content and checksums are unchanged.</span><span className="mt-1 block text-muted-foreground">This scientific-integrity confirmation is required before suspended grants resume.</span></span></label> : null}<MutationError error={mutation.error} fallback="The incident could not be resolved." /><RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" variant={isClear ? 'default' : 'destructive'} disabled={mutation.isPending || (isClear && !form.watch('immutableContentConfirmedUnchanged'))}>{mutation.isPending ? 'Saving' : isClear ? 'Clear quarantine' : 'Withdraw content'}</Button></RequiredDialogFooter></form> : null}</DialogContent></Dialog>
+  return <GuardedFormDialog dirty={form.formState.isDirty} pending={mutation.isPending} returnFocusId={`governance-${action?.incident.id}-actions`} open={Boolean(action)} onOpenChange={onOpenChange}><ConfirmationFormContent><DialogHeader><DialogTitle>{isClear ? 'Clear quarantine and restore active grants?' : 'Confirm content is unsafe and withdraw it?'}</DialogTitle><DialogDescription>{isClear ? 'Access resumes only for grants that remain active. Eligibility stays off until Phaeno deliberately approves it again.' : 'The affected versions remain preserved as evidence but can never be accessed through tenant grants. Every affected organization must attest to remediation.'}</DialogDescription></DialogHeader>{action ? <form className="space-y-4" onSubmit={form.handleSubmit((values) => mutation.mutateAsync({ action, values }))}><p className="text-sm">{action.incident.sourceSampleLabel}: {isClear ? "Still-active grants resume only after unchanged content is confirmed safe. Revoked grants remain unavailable." : "All affected versions remain evidence and become unavailable to tenants. Every affected organization must attest to remediation."}</p><FormField label="Documented investigation outcome" error={form.formState.errors.resolution?.message} required><textarea className={textareaClass} rows={5} {...form.register('resolution')} /></FormField>{isClear ? <label className="flex items-start gap-2 rounded-lg border p-3 text-sm"><input type="checkbox" className="mt-0.5 size-4" {...form.register('immutableContentConfirmedUnchanged')} /><span><span className="font-medium">I confirmed the immutable curated content and checksums are unchanged.</span><span className="mt-1 block text-muted-foreground">This scientific-integrity confirmation is required before suspended grants resume.</span></span></label> : null}<MutationError error={mutation.error} fallback="The incident could not be resolved." /><RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" variant={isClear ? 'default' : 'destructive'} disabled={mutation.isPending || (isClear && !form.watch('immutableContentConfirmedUnchanged'))}>{mutation.isPending ? 'Saving' : isClear ? 'Clear quarantine' : 'Withdraw content'}</Button></RequiredDialogFooter></form> : null}</ConfirmationFormContent></GuardedFormDialog>
 }
 
-function NotesDialog({ title, description, open, onOpenChange, form, pending, error, onSubmit }: { title: string; description: string; open: boolean; onOpenChange: (open: boolean) => void; form: ReturnType<typeof useForm<NotesValues>>; pending: boolean; error: unknown; onSubmit: (values: NotesValues) => Promise<unknown> | undefined }) {
-  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>{title}</DialogTitle><DialogDescription>{description}</DialogDescription></DialogHeader><form className="space-y-4" onSubmit={form.handleSubmit((values) => onSubmit(values))}><FormField label="Notes" error={form.formState.errors.notes?.message} required><textarea className={textareaClass} rows={5} {...form.register('notes')} /></FormField><MutationError error={error} fallback="The follow-up could not be saved." /><RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" disabled={pending}>{pending ? 'Saving' : 'Save follow-up'}</Button></RequiredDialogFooter></form></DialogContent></Dialog>
+function NotesDialog({ title, description, open, onOpenChange, form, pending, error, onSubmit, returnFocusId }: { title: string; description: string; open: boolean; onOpenChange: (open: boolean) => void; form: ReturnType<typeof useForm<NotesValues>>; pending: boolean; error: unknown; onSubmit: (values: NotesValues) => Promise<unknown> | undefined; returnFocusId?: string }) {
+  return <GuardedFormDialog dirty={form.formState.isDirty} pending={pending} returnFocusId={returnFocusId} open={open} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>{title}</DialogTitle><DialogDescription>{description}</DialogDescription></DialogHeader><form className="space-y-4" onSubmit={form.handleSubmit((values) => onSubmit(values))}><FormField label="Notes" error={form.formState.errors.notes?.message} required><textarea className={textareaClass} rows={5} {...form.register('notes')} /></FormField><MutationError error={error} fallback="The follow-up could not be saved." /><RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" disabled={pending}>{pending ? 'Saving' : 'Save follow-up'}</Button></RequiredDialogFooter></form></DialogContent></GuardedFormDialog>
 }
 
 function OrganizationActionDialog({ action, onOpenChange, notesForm, attestationForm, reminderMutation, attestationMutation }: { action: OrganizationAction | null; onOpenChange: (open: boolean) => void; notesForm: ReturnType<typeof useForm<NotesValues>>; attestationForm: ReturnType<typeof useForm<AttestationValues>>; reminderMutation: ReturnType<typeof useMutation<GovernanceIncident, Error, { action: OrganizationAction; notes: string }>>; attestationMutation: ReturnType<typeof useMutation<GovernanceIncident, Error, { action: OrganizationAction; values: AttestationValues }>> }) {
   const isReminder = action?.kind === 'remind'
-  return <Dialog open={Boolean(action)} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>{isReminder ? 'Send attestation reminder' : 'Record organization attestation'}</DialogTitle><DialogDescription>{action?.organization.organizationName} · {isReminder ? 'A durable portal notice and follow-up record will be created.' : 'Use this only for evidence received outside the portal.'}</DialogDescription></DialogHeader>{action && isReminder ? <form className="space-y-4" onSubmit={notesForm.handleSubmit((values) => reminderMutation.mutateAsync({ action, notes: values.notes }))}><FormField label="Internal reminder notes" error={notesForm.formState.errors.notes?.message} required><textarea className={textareaClass} rows={4} {...notesForm.register('notes')} /></FormField><MutationError error={reminderMutation.error} fallback="The reminder could not be sent." /><RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" disabled={reminderMutation.isPending}>{reminderMutation.isPending ? 'Sending' : 'Send reminder'}</Button></RequiredDialogFooter></form> : null}{action && !isReminder ? <form className="space-y-4" onSubmit={attestationForm.handleSubmit((values) => attestationMutation.mutateAsync({ action, values }))}><FormField label="Organization contact" error={attestationForm.formState.errors.organizationContact?.message} required><Input {...attestationForm.register('organizationContact')} /></FormField><FormField label="Evidence source" error={attestationForm.formState.errors.evidenceSource?.message} required><Input {...attestationForm.register('evidenceSource')} /></FormField><FormField label="Attestation notes" error={attestationForm.formState.errors.notes?.message} required><textarea className={textareaClass} rows={4} {...attestationForm.register('notes')} /></FormField><MutationError error={attestationMutation.error} fallback="The attestation could not be recorded." /><RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" disabled={attestationMutation.isPending}>{attestationMutation.isPending ? 'Recording' : 'Record attestation'}</Button></RequiredDialogFooter></form> : null}</DialogContent></Dialog>
+  return <GuardedFormDialog dirty={isReminder ? notesForm.formState.isDirty : attestationForm.formState.isDirty} pending={isReminder ? reminderMutation.isPending : attestationMutation.isPending} returnFocusId={`governance-${action?.incident.id}-${action?.organization.organizationId}-actions`} open={Boolean(action)} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>{isReminder ? 'Send attestation reminder' : 'Record organization attestation'}</DialogTitle><DialogDescription>{action?.organization.organizationName} · {isReminder ? 'A durable portal notice and follow-up record will be created.' : 'Use this only for evidence received outside the portal.'}</DialogDescription></DialogHeader>{action && isReminder ? <form className="space-y-4" onSubmit={notesForm.handleSubmit((values) => reminderMutation.mutateAsync({ action, notes: values.notes }))}><FormField label="Internal reminder notes" error={notesForm.formState.errors.notes?.message} required><textarea className={textareaClass} rows={4} {...notesForm.register('notes')} /></FormField><MutationError error={reminderMutation.error} fallback="The reminder could not be sent." /><RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" disabled={reminderMutation.isPending}>{reminderMutation.isPending ? 'Sending' : 'Send reminder'}</Button></RequiredDialogFooter></form> : null}{action && !isReminder ? <form className="space-y-4" onSubmit={attestationForm.handleSubmit((values) => attestationMutation.mutateAsync({ action, values }))}><FormField label="Organization contact" error={attestationForm.formState.errors.organizationContact?.message} required><Input {...attestationForm.register('organizationContact')} /></FormField><FormField label="Evidence source" error={attestationForm.formState.errors.evidenceSource?.message} required><Input {...attestationForm.register('evidenceSource')} /></FormField><FormField label="Attestation notes" error={attestationForm.formState.errors.notes?.message} required><textarea className={textareaClass} rows={4} {...attestationForm.register('notes')} /></FormField><MutationError error={attestationMutation.error} fallback="The attestation could not be recorded." /><RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" disabled={attestationMutation.isPending}>{attestationMutation.isPending ? 'Recording' : 'Record attestation'}</Button></RequiredDialogFooter></form> : null}</DialogContent></GuardedFormDialog>
 }
 
 function InvestigationDialog({ action, onOpenChange, form, mutation }: { action: InvestigationAction | null; onOpenChange: (open: boolean) => void; form: ReturnType<typeof useForm<InvestigationValues>>; mutation: ReturnType<typeof useMutation<void, Error, { action: InvestigationAction; reason: string }>> }) {
-  return <Dialog open={Boolean(action)} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>Download quarantined content for investigation?</DialogTitle><DialogDescription>This dedicated Phaeno-only path records the user, incident, version, time, and required purpose. Do not redistribute the archive.</DialogDescription></DialogHeader>{action ? <form className="space-y-4" onSubmit={form.handleSubmit((values) => mutation.mutateAsync({ action, reason: values.reason }))}><FormField label="Investigation purpose" error={form.formState.errors.reason?.message} required><textarea className={textareaClass} rows={4} {...form.register('reason')} /></FormField><MutationError error={mutation.error} fallback="The investigation archive could not be downloaded." /><RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" disabled={mutation.isPending}>{mutation.isPending ? 'Preparing archive' : 'Download audited archive'}</Button></RequiredDialogFooter></form> : null}</DialogContent></Dialog>
+  return <GuardedFormDialog dirty={form.formState.isDirty} pending={mutation.isPending} returnFocusId={`governance-${action?.incident.id}-actions`} open={Boolean(action)} onOpenChange={onOpenChange}><ConfirmationFormContent><DialogHeader><DialogTitle>Download quarantined content for investigation?</DialogTitle><DialogDescription>This dedicated Phaeno-only path records the user, incident, version, time, and required purpose. Do not redistribute the archive.</DialogDescription></DialogHeader>{action ? <form className="space-y-4" onSubmit={form.handleSubmit((values) => mutation.mutateAsync({ action, reason: values.reason }))}><p className="text-sm">{action.fileName}: this audited download is for the named investigation. Do not redistribute the archive.</p><FormField label="Investigation purpose" error={form.formState.errors.reason?.message} required><textarea className={textareaClass} rows={4} {...form.register('reason')} /></FormField><MutationError error={mutation.error} fallback="The investigation archive could not be downloaded." /><RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" disabled={mutation.isPending}>{mutation.isPending ? 'Preparing archive' : 'Download audited archive'}</Button></RequiredDialogFooter></form> : null}</ConfirmationFormContent></GuardedFormDialog>
 }
 
 function FormField({ label, error, required, children }: { label: string; error?: string; required?: boolean; children: React.ReactNode }) {
-  return <label className="grid gap-1.5"><span className="text-sm font-medium">{required ? <RequiredFieldName>{label}</RequiredFieldName> : label}</span>{children}{error ? <span className="text-sm text-destructive" role="alert">{error}</span> : null}</label>
+  const generatedId = useId()
+  const control = isValidElement<{ id?: string }>(children) ? cloneElement(children, { id: children.props.id ?? generatedId }) : children
+  const id = isValidElement<{ id?: string }>(control) ? control.props.id : generatedId
+  return <Field><Label htmlFor={id}>{required ? <RequiredFieldName>{label}</RequiredFieldName> : label}</Label>{control}<FieldError>{error}</FieldError></Field>
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -415,5 +426,4 @@ function formatDate(value: string) {
   return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(value))
 }
 
-const selectClass = 'h-9 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50'
 const textareaClass = 'min-h-20 w-full resize-y rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50'

@@ -110,13 +110,14 @@ public sealed class WebsiteOperationsController(
     [HttpGet("demo-requests")]
     public async Task<WebOpsPageDto<WebOpsDemoRequestDto>> GetDemoRequests(
         [FromQuery] int page = 1,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default, [FromQuery] Guid? requestId = null)
     {
         await RequirePlatformAdministratorAsync(cancellationToken);
 
         var query = dbContext.WebOrders
             .AsNoTracking()
             .Where(order => order.CompletedAtUtc == null);
+        if (requestId.HasValue) query = query.Where(order => order.Id == requestId);
         var totalCount = await query.CountAsync(cancellationToken);
         page = NormalizePage(page, totalCount);
         var items = await query
@@ -201,10 +202,11 @@ public sealed class WebsiteOperationsController(
 
     [HttpGet("notifications")]
     public async Task<WebOpsPageDto<WebOpsNotificationDto>> GetNotifications(
-        [FromQuery] int page = 1, CancellationToken cancellationToken = default, [FromQuery] bool attentionOnly = false)
+        [FromQuery] int page = 1, CancellationToken cancellationToken = default, [FromQuery] bool attentionOnly = false, [FromQuery] Guid? deliveryId = null)
     {
         await RequirePlatformAdministratorAsync(cancellationToken);
         var query = dbContext.Set<WebNotificationDelivery>().AsNoTracking();
+        if (deliveryId.HasValue) query = query.Where(delivery => delivery.Id == deliveryId);
         var now = DateTimeOffset.UtcNow;
         if (attentionOnly) query = query.Where(item => item.State == WebNotificationState.Failed
             || (item.State == WebNotificationState.Processing && item.LeaseExpiresAtUtc <= now));

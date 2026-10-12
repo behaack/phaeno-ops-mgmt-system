@@ -1,3 +1,4 @@
+import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -28,9 +29,11 @@ export function CrmMergeDialog({ recordLabel, source, pending, error, onClose, o
   onSubmit: (targetId: string, reason: string) => void
 }) {
   const form = useForm<Values>({ resolver: zodResolver(schema), mode: 'onSubmit', reValidateMode: 'onChange', defaultValues: { targetId: '', reason: '' } })
-  useOrderDraftGuard(form.formState.isDirty, pending)
-  function close() {
-    if (!pending && (!form.formState.isDirty || window.confirm('Discard unsaved merge choices?'))) onClose()
+  const { isDirty: __formDraftDirty } = form.formState
+
+  useOrderDraftGuard(__formDraftDirty, pending)
+  async function close() {
+    if (!pending && (!__formDraftDirty || (await confirmPortal('Discard unsaved merge choices?')))) onClose()
   }
   const targetError = form.formState.errors.targetId?.message
 

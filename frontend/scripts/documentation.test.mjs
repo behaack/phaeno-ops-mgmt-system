@@ -42,5 +42,10 @@ test('guide extraction rejects executable MDX and raw HTML', async () => {
 
 test('publication refuses a missing or incorrectly mapped guide renderer', async () => {
   const source = await readFile(new URL('../src/features/documentation/documentation-registry.ts', import.meta.url), 'utf8')
-  assert.throws(() => validateComponentMap(catalog, source.replace("'customer/en-US/getting-started': CustomerGettingStarted", "'customer/en-US/getting-started': PartnerGettingStarted")), /incorrect documentation component/)
+  validateComponentMap(catalog, source)
+  const loader = "lazy(() => import('#/content/docs/en-US/customer/getting-started.mdx'))"
+  assert.ok(source.includes(loader))
+  assert.throws(() => validateComponentMap(catalog, source.replace(loader, "lazy(() => import('#/content/docs/en-US/partner/getting-started.mdx'))")), /incorrect documentation component/)
+  assert.throws(() => validateComponentMap(catalog, source.replace(loader, 'lazy(() => import(rendererPath))')), /explicit identities/)
+  assert.throws(() => validateComponentMap(catalog, source.replace(loader, 'otherLoader(() => import(rendererPath))')), /explicit identities/)
 })

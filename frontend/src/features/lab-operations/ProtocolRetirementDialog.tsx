@@ -1,3 +1,4 @@
+import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
@@ -21,10 +22,12 @@ export function ProtocolRetirementDialog({ protocol, pending, error, onClose, on
   onRetire: (reason: string, impactToken: string, confirmImpact: boolean) => void
 }) {
   const form = useForm<z.infer<typeof retirementSchema>>({ resolver: zodResolver(retirementSchema), defaultValues: { reason: '' } })
+  const __modalGuard = useModalDraftGuard(form.formState.isDirty, form.formState.isSubmitting)
+
   const impact = useQuery({ queryKey: ['protocol-retirement-impact', protocol.id], queryFn: () => getProtocolRetirementImpact(protocol.id), staleTime: 0 })
   const affected = Boolean(impact.data && (impact.data.workflows.length || impact.data.queuedWork.length))
   const blocked = !impact.data || impact.isFetching || Boolean(impact.error) || impact.data.activeWork.length > 0
-  return <Dialog open onOpenChange={(open) => { if (!open && !pending) onClose() }}>
+  return <Dialog open onOpenChange={open => { if (open) ((open) => { if (!open && !pending) onClose() })(open); else void __modalGuard.close(() => ((open) => { if (!open && !pending) onClose() })(false)) }}>
     <DialogContent>
       <form noValidate onSubmit={form.handleSubmit(({ reason }) => { if (!pending && !blocked && impact.data) onRetire(reason, impact.data.impactToken, affected) })}>
         <DialogHeader>
@@ -47,7 +50,7 @@ export function ProtocolRetirementDialog({ protocol, pending, error, onClose, on
         </div>
         {error ? <Alert variant="destructive"><AlertTitle>Protocol was not retired</AlertTitle><AlertDescription>{error}</AlertDescription></Alert> : null}
         <RequiredDialogFooter>
-          <Button type="button" variant="outline" disabled={pending} onClick={onClose}>Cancel</Button>
+          <Button type="button" variant="outline" disabled={pending} onClick={() => { void __modalGuard.close(() => (onClose)()) }}>Cancel</Button>
           <Button type="submit" disabled={pending || blocked}>{pending ? 'Retiring…' : affected ? 'Proceed anyway' : 'Retire protocol'}</Button>
         </RequiredDialogFooter>
       </form>

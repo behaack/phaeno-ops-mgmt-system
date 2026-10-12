@@ -1,3 +1,4 @@
+import * as portalConfirmation from '#/components/PortalConfirmation'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
@@ -76,7 +77,7 @@ describe('Customer stock dispatch to the requested location', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Retry request check' })); await waitFor(() => expect((screen.getByRole('button', { name: 'Record dispatch' }) as HTMLButtonElement).disabled).toBe(false)); expect(mocks.dispatch).not.toHaveBeenCalled()
   })
   it('guards dirty dismissal and prevents duplicate dispatch while busy', async () => {
-    const close = vi.fn(); vi.spyOn(window, 'confirm').mockReturnValue(false); mocks.dispatch.mockReturnValue(new Promise(() => {}))
+    const close = vi.fn(); vi.spyOn(portalConfirmation, 'confirmPortal').mockResolvedValue(false); mocks.dispatch.mockReturnValue(new Promise(() => {}))
     mount(<CustomerStockKitDispatchDialog kit={kit} onClose={close} onSaved={vi.fn()} />)
     await selectRequest(); fillDispatch(); fireEvent.click(screen.getByRole('button', { name: 'Cancel' })); expect(close).not.toHaveBeenCalled()
     const save = screen.getByRole('button', { name: 'Record dispatch' }); fireEvent.click(save); fireEvent.click(save); await screen.findByRole('button', { name: 'Recording…' })

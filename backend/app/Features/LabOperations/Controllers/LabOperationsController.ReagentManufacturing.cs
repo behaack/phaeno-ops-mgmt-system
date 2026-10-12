@@ -170,8 +170,32 @@ public sealed partial class LabOperationsController
         await requestContext.RequireAsync(HttpContext, ct, LabRole.Operator, LabRole.Supervisor,
             LabRole.ProtocolAdministrator, LabRole.ScientificReviewer, LabRole.OperationsAdministrator);
         var runs = await dbContext.LabReagentManufacturingRuns.AsNoTracking()
-            .OrderByDescending(item => item.StartedAtUtc).Take(250).ToListAsync(ct);
+            .OrderByDescending(item => item.StartedAtUtc).ThenBy(item => item.Id).ToListAsync(ct);
         return await ReadReagentRunsAsync(runs, ct);
+    }
+
+    [HttpGet("reagent-runs/page")]
+    public async Task<PhaenoPortal.App.Features.OrderManagement.DTOs.PagedResult<LabReagentRunDto>> ReagentRunsPage(CancellationToken ct,
+        [FromQuery] string? search = null, [FromQuery] string? status = null, [FromQuery] int page = 1, [FromQuery] int pageSize = 25)
+    {
+        await requestContext.RequireAsync(HttpContext, ct, LabRole.Operator, LabRole.Supervisor,
+            LabRole.ProtocolAdministrator, LabRole.ScientificReviewer, LabRole.OperationsAdministrator);
+        var query = dbContext.LabReagentManufacturingRuns.AsNoTracking();
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim().ToLowerInvariant();
+            if (term.Length > 255) throw Invalid("reagent_run_search_invalid", "Use 255 characters or fewer.");
+            query = query.Where(run => run.WorkflowName.ToLower().Contains(term)
+                || dbContext.LabMaterialLots.Any(lot => lot.Id == run.MaterialLotId && lot.LotNumber.ToLower().Contains(term)));
+        }
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            if (!Enum.TryParse<LabReagentRunStatus>(status, true, out var parsed) || !Enum.IsDefined(parsed))
+                throw Invalid("reagent_run_status_invalid", "Choose a valid reagent run status.");
+            query = query.Where(run => run.Status == parsed);
+        }
+        var result = await Infrastructure.Api.RecordPage.ReadAsync(query.OrderByDescending(run => run.StartedAtUtc).ThenBy(run => run.Id), page, pageSize, ct);
+        return new(await ReadReagentRunsAsync(result.Items, ct), result.Page, result.PageSize, result.TotalCount);
     }
 
     [HttpGet("reagent-runs/{id:guid}")]

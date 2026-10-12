@@ -1,3 +1,5 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
+import { CustomerText } from '#/features/customer-i18n/customer-text'
 import { useBlocker } from '@tanstack/react-router'
 import { useEffect, useId, useRef, useState } from 'react'
 import { Button } from '#/components/ui/button'
@@ -35,8 +37,8 @@ export function useOrderDecisionDismissal(dirty: boolean, busy: boolean, onClose
   return { close, allowNavigation, confirmation: <Dialog open={discardOpen || blocker.status === 'blocked'} onOpenChange={open => { if (!open) keepEditing() }}>
     <DialogContent onOpenAutoFocus={event => { event.preventDefault(); document.getElementById(keepId)?.focus() }}>
       <DialogHeader><DialogTitle>{busy ? wording.scope === 'quote decision' ? 'Quote decision is being sent' : 'Request is being sent' : `Discard unsaved ${wording.scope}?`}</DialogTitle></DialogHeader>
-      <div><DialogDescription>{busy ? 'Wait for this request to finish before leaving. Your request is still being processed.' : wording.description}</DialogDescription></div>
-      <DialogFooter><Button id={keepId} variant="outline" onClick={keepEditing}>Keep reviewing</Button><Button variant="destructive" disabled={busy} onClick={discard}>Discard changes</Button></DialogFooter>
+      <div><DialogDescription>{busy ? <CustomerSourceText source={"Wait for this request to finish before leaving. Your request is still being processed."} /> : wording.description}</DialogDescription></div>
+      <DialogFooter><Button id={keepId} variant="outline" onClick={keepEditing}><CustomerText message="m_34411a1bde47" /></Button><Button variant="destructive" disabled={busy} onClick={discard}><CustomerText message="m_f9bfa3dc7c8f" /></Button></DialogFooter>
     </DialogContent>
   </Dialog> }
 }

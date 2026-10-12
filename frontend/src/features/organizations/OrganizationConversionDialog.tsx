@@ -1,3 +1,4 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import type { Organization } from '#/api/organization-management'
 import { Alert, AlertDescription } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
@@ -31,11 +32,9 @@ export function OrganizationConversionDialog({
     <Dialog open onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Convert Prospect to {targetKind}</DialogTitle>
+          <DialogTitle><CustomerSourceText source={"Convert Prospect to"} /> {targetKind}</DialogTitle>
           <DialogDescription>
-            Convert {organization.name} in place. Its identifier, request
-            history, invitations, memberships, and explicit data grants remain
-            unchanged.
+            <CustomerSourceText source={"Convert"} /> {organization.name} <CustomerSourceText source={"in place. Its identifier, request\r\n            history, invitations, memberships, and explicit data grants remain\r\n            unchanged."} />
           </DialogDescription>
         </DialogHeader>
         {error ? (
@@ -44,8 +43,7 @@ export function OrganizationConversionDialog({
           </Alert>
         ) : null}
         <div className="rounded-lg border p-4 text-sm text-muted-foreground">
-          Conversion does not grant a service, activate Portal readiness,
-          configure pricing, or place an order. Complete those steps separately.
+          <CustomerSourceText source={"Conversion does not grant a service, activate Portal readiness,\r\n          configure pricing, or place an order. Complete those steps separately."} />
         </div>
         <DialogFooter>
           <Button
@@ -53,10 +51,10 @@ export function OrganizationConversionDialog({
             variant="outline"
             onClick={() => onOpenChange(false)}
           >
-            Keep as Prospect
+            <CustomerSourceText source={"Keep as Prospect"} />
           </Button>
           <Button type="button" disabled={isPending} onClick={onConfirm}>
-            {isPending ? 'Converting…' : `Convert to ${targetKind}`}
+            {isPending ? <CustomerSourceText source={"Converting…"} /> : `Convert to ${targetKind}`}
           </Button>
         </DialogFooter>
       </DialogContent>

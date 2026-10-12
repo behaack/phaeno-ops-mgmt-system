@@ -1,3 +1,4 @@
+import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 import { SequencingBatchList as BatchList } from './SequencingBatchList'
 import { StageDurations } from './StageDurations'
 import { HolidayCalendar } from './HolidayCalendar'
@@ -7,7 +8,7 @@ import { ResultsWorkQueue } from './ResultsWorkQueue'
 import { LabStepList } from './LabSteps'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { CheckCircle2, ChevronDown, FileX, Pencil, Plus, RefreshCw, ShieldCheck, Trash2 } from 'lucide-react'
+import { CheckCircle2, FileX, Pencil, Plus, RefreshCw, ShieldCheck, Trash2 } from 'lucide-react'
 import { useRef, useState, type FormEvent } from 'react'
 import { Archive } from 'lucide-react'
 import { retireLabProtocol } from '#/api/lab-operations'
@@ -32,14 +33,7 @@ import { getLabWorkspaceSections } from './LabOperationsSidebar'
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '#/components/ui/dialog'
-import {
-  ActionMenu as DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '#/components/ui/dropdown-menu'
+
 import { Input } from '#/components/ui/input'
 import { Field as FormField, FieldDescription } from '#/components/ui/field'
 import { Label } from '#/components/ui/label'
@@ -330,10 +324,10 @@ export function ProtocolList({ protocols, canManage, canOverride = false, actorI
                       ) : null}
                     </div>
                     {canManage && !protocol.retiredAtUtc ? (
-                      <DropdownMenu>
+                      <ActionMenu>
                         <DropdownMenuTrigger asChild>
                           <Button type="button" size="sm" variant="outline">
-                            Actions <ChevronDown data-icon="inline-end" />
+                            Actions
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-80 max-w-[calc(100vw-2rem)]">
@@ -409,7 +403,7 @@ export function ProtocolList({ protocols, canManage, canOverride = false, actorI
                             </>
                           ) : null}
                         </DropdownMenuContent>
-                      </DropdownMenu>
+                      </ActionMenu>
                     ) : null}
                   </div>
                   {protocol.retiredAtUtc ? <p className="mt-3 text-sm text-muted-foreground">Retired {formatDate(protocol.retiredAtUtc)} · {protocol.retirementReason}</p> : null}
@@ -850,10 +844,10 @@ export function EquipmentList({ items, canManage, onCreate }: { items: Awaited<R
                 </div>
                 <div className="flex flex-wrap items-center justify-end gap-2">
                   <Status value={item.status} />
-                  {canManage && item.status !== 'Retired' ? <DropdownMenu>
-                    <DropdownMenuTrigger asChild><Button type="button" size="sm" variant="outline" aria-label={`Actions for ${item.name}`}>Actions <ChevronDown data-icon="inline-end" /></Button></DropdownMenuTrigger>
+                  {canManage && item.status !== 'Retired' ? <ActionMenu>
+                    <DropdownMenuTrigger asChild><Button type="button" size="sm" variant="outline" aria-label={`Actions for ${item.name}`}>Actions </Button></DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-48"><DropdownMenuItem onSelect={() => { retirement.reset(); setRetirementTarget(item) }}>Retire equipment</DropdownMenuItem></DropdownMenuContent>
-                  </DropdownMenu> : null}
+                  </ActionMenu> : null}
                 </div>
               </li>
             ))}

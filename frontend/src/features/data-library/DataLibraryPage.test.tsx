@@ -1,8 +1,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { act, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '#/test-helpers/render-portal'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { listDownloadHistory, listTenantDatasets, type DownloadAudit } from '#/api/data-provisioning'
+import { listDownloadHistoryPage, listTenantDatasets, type DownloadAudit } from '#/api/data-provisioning'
 
 import { DataLibraryPage } from './DataLibraryPage'
 import {
@@ -13,14 +13,14 @@ import { noSessionCapabilities } from '#/test-helpers/session'
 
 vi.mock('#/api/data-provisioning', async (importOriginal) => ({
   ...await importOriginal<typeof import('#/api/data-provisioning')>(),
-  listDownloadHistory: vi.fn().mockResolvedValue([]),
+  listDownloadHistoryPage: vi.fn().mockResolvedValue(testRecordPage([])),
   listTenantDatasets: vi.fn().mockResolvedValue([]),
-  listTenantActivity: vi.fn().mockResolvedValue([]),
-  listTenantGovernanceIncidents: vi.fn().mockResolvedValue([]),
+  listTenantActivityPage: vi.fn().mockResolvedValue(testRecordPage([])),
+  listTenantGovernanceIncidentsPage: vi.fn().mockResolvedValue(testRecordPage([])),
 }))
 
 beforeEach(() => {
-  vi.mocked(listDownloadHistory).mockReset().mockResolvedValue([])
+  vi.mocked(listDownloadHistoryPage).mockReset().mockResolvedValue(testRecordPage([]))
   vi.mocked(listTenantDatasets).mockClear()
 })
 
@@ -126,18 +126,30 @@ function historyPage(context: PhaenoSessionContextValue, client: QueryClient) {
 }
 
 describe('department download history', () => {
+  it('makes downloads beyond the former 500-row ceiling reachable with an exact scoped count', async () => {
+    vi.mocked(listDownloadHistoryPage).mockImplementation(async page => ({
+      items: [historyRow(page === 2 ? 'older-501@example.test' : 'recent@example.test')], totalCount: 505, page: page ?? 1, pageSize: 25,
+    }))
+    render(historyPage(connectedContext('research', true), new QueryClient({ defaultOptions: { queries: { retry: false } } })))
+    expect(await screen.findByText('recent@example.test')).toBeTruthy()
+    const pages = screen.getByRole('navigation', { name: 'Download history pages' })
+    expect(pages.textContent).toContain('505 records')
+    fireEvent.click(within(pages).getByRole('button', { name: 'Next' }))
+    expect(await screen.findByText('older-501@example.test')).toBeTruthy()
+    expect(listDownloadHistoryPage).toHaveBeenLastCalledWith(2)
+  })
   it('lets an assigned department admin load history with accurate legacy guidance', async () => {
-    vi.mocked(listDownloadHistory).mockResolvedValue([historyRow('research@example.test')])
+    vi.mocked(listDownloadHistoryPage).mockResolvedValue(testRecordPage([historyRow('research@example.test')]))
     render(historyPage(connectedContext('research', true), new QueryClient({ defaultOptions: { queries: { retry: false } } })))
     expect(await screen.findByText('research@example.test')).toBeTruthy()
     expect(screen.getByText('Department download history')).toBeTruthy()
     expect(screen.getByText(/unknown department are available to organization administrators/)).toBeTruthy()
-    expect(listDownloadHistory).toHaveBeenCalledTimes(1)
+    expect(listDownloadHistoryPage).toHaveBeenCalledTimes(1)
   })
 
   it('keeps organization-admin access and explains legacy records', async () => {
     render(historyPage(connectedContext('research', false, true), new QueryClient({ defaultOptions: { queries: { retry: false } } })))
-    await waitFor(() => expect(listDownloadHistory).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(listDownloadHistoryPage).toHaveBeenCalledTimes(1))
     expect(screen.getByText(/unknown department are also included for grants in this scope/)).toBeTruthy()
   })
 
@@ -145,7 +157,7 @@ describe('department download history', () => {
     render(historyPage(connectedContext('research', false), new QueryClient({ defaultOptions: { queries: { retry: false } } })))
     await waitFor(() => expect(listTenantDatasets).toHaveBeenCalledTimes(1))
     expect(screen.queryByText('Department download history')).toBeNull()
-    expect(listDownloadHistory).not.toHaveBeenCalled()
+    expect(listDownloadHistoryPage).not.toHaveBeenCalled()
   })
 
   it('waits for matching server-confirmed department context during a switch', async () => {
@@ -154,22 +166,22 @@ describe('department download history', () => {
     context.selectedDepartmentId = 'research'
     const page = render(historyPage(context, client))
     expect(screen.queryByText('Department download history')).toBeNull()
-    expect(listDownloadHistory).not.toHaveBeenCalled()
+    expect(listDownloadHistoryPage).not.toHaveBeenCalled()
     expect(listTenantDatasets).not.toHaveBeenCalled()
     page.rerender(historyPage(connectedContext('research', true, true), client))
-    await waitFor(() => expect(listDownloadHistory).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(listDownloadHistoryPage).toHaveBeenCalledTimes(1))
   })
 
   it('removes previous department rows immediately while the next history request is pending', async () => {
     let resolveNext!: (rows: DownloadAudit[]) => void
-    vi.mocked(listDownloadHistory).mockResolvedValueOnce([historyRow('general@example.test')])
-      .mockImplementationOnce(() => new Promise((resolve) => { resolveNext = resolve }))
+    vi.mocked(listDownloadHistoryPage).mockResolvedValueOnce(testRecordPage([historyRow('general@example.test')]))
+      .mockImplementationOnce(() => new Promise((resolve) => { resolveNext = rows => resolve(testRecordPage(rows)) }))
     const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity } } })
     const page = render(historyPage(connectedContext('general', true), client))
     expect(await screen.findByText('general@example.test')).toBeTruthy()
     page.rerender(historyPage(connectedContext('research', true), client))
     expect(screen.queryByText('general@example.test')).toBeNull()
-    await waitFor(() => expect(listDownloadHistory).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(listDownloadHistoryPage).toHaveBeenCalledTimes(2))
     await act(async () => resolveNext([historyRow('research@example.test')]))
     expect(await screen.findByText('research@example.test')).toBeTruthy()
     expect(screen.queryByText('general@example.test')).toBeNull()
@@ -178,3 +190,5 @@ describe('department download history', () => {
     expect(screen.queryByText('research@example.test')).toBeNull()
   })
 })
+
+function testRecordPage<T>(items: T[]) { return { items, totalCount: items.length, page: 1, pageSize: 25 } }

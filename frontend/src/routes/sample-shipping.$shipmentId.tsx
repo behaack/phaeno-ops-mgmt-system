@@ -6,7 +6,7 @@ export const Route = createFileRoute('/sample-shipping/$shipmentId')({ validateS
 
 function SampleShippingDetailRoute() {
   const { shipmentId } = Route.useParams()
-  const { orderKits } = Route.useSearch()
+  const { orderKits, listPage, listSearch, listStatus } = Route.useSearch()
   const isPacketRoute = useRouterState({ select: state => state.matches.some(match => match.routeId === '/sample-shipping/$shipmentId/packet') })
-  return isPacketRoute ? <Outlet /> : <SampleShippingDetailPage shipmentId={shipmentId} autoOpenKitOrder={orderKits} />
+  return isPacketRoute ? <Outlet /> : <SampleShippingDetailPage shipmentId={shipmentId} autoOpenKitOrder={orderKits} returnList={listPage ? { listPage, listSearch, listStatus } : undefined} />
 }

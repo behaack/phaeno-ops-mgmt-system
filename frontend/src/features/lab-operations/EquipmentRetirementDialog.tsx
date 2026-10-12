@@ -1,3 +1,4 @@
+import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -19,7 +20,9 @@ export function EquipmentRetirementDialog({ equipment, pending, error, onClose, 
   onRetire: (reason: string) => void
 }) {
   const form = useForm<z.infer<typeof retirementSchema>>({ resolver: zodResolver(retirementSchema), defaultValues: { reason: '' } })
-  return <Dialog open onOpenChange={(open) => { if (!open && !pending) onClose() }}>
+  const __modalGuard = useModalDraftGuard(form.formState.isDirty, form.formState.isSubmitting)
+
+  return <Dialog open onOpenChange={open => { if (open) ((open) => { if (!open && !pending) onClose() })(open); else void __modalGuard.close(() => ((open) => { if (!open && !pending) onClose() })(false)) }}>
     <DialogContent>
       <form noValidate onSubmit={form.handleSubmit(({ reason }) => { if (!pending) onRetire(reason) })}>
         <DialogHeader>
@@ -36,7 +39,7 @@ export function EquipmentRetirementDialog({ equipment, pending, error, onClose, 
         </div>
         {error ? <Alert variant="destructive"><AlertTitle>Equipment was not retired</AlertTitle><AlertDescription>{error}</AlertDescription></Alert> : null}
         <RequiredDialogFooter>
-          <Button type="button" variant="outline" disabled={pending} onClick={onClose}>Cancel</Button>
+          <Button type="button" variant="outline" disabled={pending} onClick={() => { void __modalGuard.close(() => (onClose)()) }}>Cancel</Button>
           <Button type="submit" disabled={pending}>{pending ? 'Retiring…' : 'Retire equipment'}</Button>
         </RequiredDialogFooter>
       </form>

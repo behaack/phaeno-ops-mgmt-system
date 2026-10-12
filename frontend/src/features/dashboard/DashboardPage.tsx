@@ -1,30 +1,12 @@
-import { DashboardPanelSelector } from './DashboardPanelSelector'
-import { DashboardHero } from './DashboardHero'
-import { ExternalDashboardContent } from './ExternalDashboardContent'
-import {
-  getSelectedMembership,
-  usePhaenoSession,
-} from '#/features/auth/session-context'
-
+import { useSearch } from '@tanstack/react-router'
+import { lazy, Suspense } from 'react'
+import { usePhaenoSession } from '#/features/auth/session-context'
+import { WorkDashboard } from '#/features/work-attention/WorkDashboard'
+const DashboardPanelSelector = lazy(() => import('./DashboardPanelSelector').then(module => ({ default: module.DashboardPanelSelector })))
 export function DashboardPage() {
-  const { session, selectedOrganizationId } = usePhaenoSession()
-  const selectedMembership = getSelectedMembership(
-    session,
-    selectedOrganizationId,
-  )
-
-  if (selectedMembership?.organizationKind === 'Phaeno') {
-    return <DashboardPanelSelector />
-  }
-
-  return (
-    <main className="page-wrap px-4 py-8">
-      <div className="soft-enter">
-        <DashboardHero />
-      </div>
-      <div className="soft-enter soft-enter-delay-1">
-        <ExternalDashboardContent membership={selectedMembership} />
-      </div>
-    </main>
-  )
+  const { session } = usePhaenoSession()
+  const search = useSearch({ strict: false })
+  return session?.isPlatformAdmin && search.dashboardSection === 'webOps'
+    ? <Suspense fallback={<p className="page-wrap py-8" role="status">Loading Web Operations…</p>}><DashboardPanelSelector webOnly /></Suspense>
+    : <WorkDashboard />
 }

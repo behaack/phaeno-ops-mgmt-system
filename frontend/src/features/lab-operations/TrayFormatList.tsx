@@ -9,7 +9,7 @@ import { PreparationActions, PreparationPanel, prepRowClass } from './preparatio
 import { TrayFormatDialog } from './TrayFormatDialog'
 
 export function TrayFormatList() {
-  const query = useQuery({ queryKey: ['lab-preparation'], queryFn: getPreparationIndex })
+  const query = useQuery({ queryKey: ['lab-preparation'], queryFn: () => getPreparationIndex() })
   const [dialog, setDialog] = useState<'create' | TrayFormat | null>(null)
 
   if (query.isPending) return <p role="status">Loading library tray formats…</p>

@@ -1,7 +1,8 @@
+import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 import { WorkflowApprovalOverrideDialog } from './WorkflowApprovalOverrideDialog'
 import { useMutation } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { ChevronDown, Plus, ShieldCheck } from 'lucide-react'
+import { Plus, ShieldCheck } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 
 import {
@@ -16,7 +17,7 @@ import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '#/components/ui/dialog'
-import { ActionMenu as DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
+
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/required-field'
@@ -144,10 +145,10 @@ export function ServiceWorkflowList({
                           {version.invalidationReason ? <p className="mt-1 text-xs text-muted-foreground">{version.invalidationReason}</p> : null}
                         </div>
                         {canManage && ['Draft', 'Invalid', 'Approved'].includes(version.status) ? (
-                          <DropdownMenu>
+                          <ActionMenu>
                             <DropdownMenuTrigger asChild>
                               <Button type="button" size="sm" variant="outline" disabled={transition.isPending}>
-                                Actions <ChevronDown aria-hidden="true" />
+                                Actions
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-80 max-w-[calc(100vw-2rem)]">
@@ -171,7 +172,7 @@ export function ServiceWorkflowList({
                                 </>
                               )}
                             </DropdownMenuContent>
-                          </DropdownMenu>
+                          </ActionMenu>
                         ) : canManage && version.status === 'Production' ? (
                           <Button type="button" size="sm" variant="ghost" disabled={transition.isPending} onClick={() => setConfirmation({ workflow, versionId: version.id, workflowVersion: version.workflowVersion, action: 'retire' })}>Retire</Button>
                         ) : null}

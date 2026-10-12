@@ -7,12 +7,15 @@ import { OperationalAttentionPanel } from './PSeqOrderToCashPanels'
 import { ResultPackageDetailPage, ResultReleasePanel } from './ResultReleasePanel'
 
 const mocks = vi.hoisted(() => ({ attention: vi.fn(), packages: vi.fn(), detail: vi.fn(), orders: vi.fn() }))
-vi.mock('#/api/pseq-order-to-cash', () => ({ listOperationalAttention: mocks.attention, listResultPackages: mocks.packages, getResultPackage: mocks.detail }))
+vi.mock('#/api/pseq-order-to-cash', () => ({ listOperationalAttention: mocks.attention, listResultPackages: mocks.packages, getResultPackage: mocks.detail,
+  listAttentionPage: async (category?: string) => { const items = await mocks.attention(category); return { items, totalCount: items.length, page: 1, pageSize: 25 } },
+  listResultPackagePage: async (state?: string) => { const items = await mocks.packages(state); return { items, totalCount: items.length, page: 1, pageSize: 25 } },
+}))
 vi.mock('#/api/order-management', async importOriginal => ({ ...await importOriginal<typeof import('#/api/order-management')>(), listCommercialOrders: mocks.orders }))
 vi.mock('./FinanceOperationsPanel', () => ({ FinanceOperationsPanel: () => null }))
 vi.mock('#/features/file-management/ReleasedDeliverableDetailPage', () => ({ ReleasedDeliverableDetailPage: () => null }))
 vi.mock('#/features/auth/session-context', () => ({ usePhaenoSession: () => ({ authProvider: 'clerk', session: { capabilities: { canReleasePSeqResults: true } } }) }))
-vi.mock('@tanstack/react-router', () => ({ useSearch: () => ({}), useNavigate: () => vi.fn(), Link: ({ children, to }: { children: ReactNode; to: string }) => <a href={to}>{children}</a> }))
+vi.mock('@tanstack/react-router', () => ({ useRouterState: ({select}: {select: (state: {location: {search: Record<string, unknown>}}) => unknown}) => select({location: {search: {}}}), useBlocker: () => ({status: 'idle', reset: vi.fn(), proceed: vi.fn()}), useSearch: () => ({}), useNavigate: () => vi.fn(), Link: ({ children, to }: { children: ReactNode; to: string }) => <a href={to}>{children}</a> }))
 
 function apiError(code: string, status = 404) { return { isAxiosError: true, response: { status, data: { success: false, error: { code, message: 'Server response' } } } } }
 function view(element: ReactNode, client = new QueryClient({ defaultOptions: { queries: { retry: false } } })) {
@@ -63,7 +66,7 @@ describe('Disabled operational capabilities', () => {
   })
   it('hides stale result rows and filters when a refetch reports disabled', async () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-    client.setQueryData(['pseq-result-packages', 'ReadyForRelease'], [{ id: 'old', state: 'ReadyForRelease', packageVersion: 1, artifacts: [] }])
+    client.setQueryData(['pseq-result-packages', 'ReadyForRelease', 1], { items: [{ id: 'old', state: 'ReadyForRelease', packageVersion: 1, artifacts: [] }], page: 1, pageSize: 25, totalCount: 1 })
     mocks.packages.mockRejectedValue(apiError('governed_results_disabled'))
     view(<ResultReleasePanel apiEnabled />, client)
     expect((await screen.findByRole('status')).textContent).toContain('Result release not enabled')

@@ -18,7 +18,12 @@ using PhaenoPortal.App.Features.OrderManagement.Domain;
 
 public sealed class TrialReader(PSeqOperationsDbContext db, TrialWorkflowService workflow, IOptions<PSeqOrderToCashOptions>? pseq = null, IOptions<OrderManagementOptions>? orders = null)
 {
-    public async Task<IReadOnlyList<TrialListDto>> ListAsync(TrialActor actor, string? search, CancellationToken token, string? status = null, Guid? ownerId = null)
+    public Task<PhaenoPortal.App.Features.OrderManagement.DTOs.PagedResult<TrialTimelineDto>> TimelinePageAsync(TrialProject trial, TrialActor actor, int page, CancellationToken token) =>
+        Infrastructure.Api.RecordPage.ReadAsync(db.TrialEvents.AsNoTracking()
+            .Where(value => value.TrialProjectId == trial.Id && (actor.IsStaff || value.Kind != "commercial-outcome"))
+            .OrderByDescending(value => value.OccurredAtUtc).ThenBy(value => value.Id)
+            .Select(value => new TrialTimelineDto(value.Kind, value.Summary, value.OccurredAtUtc)), page, 25, token);
+    private IQueryable<TrialProject> ListQuery(TrialActor actor, string? search, string? status, Guid? ownerId)
     {
         var query = TrialAccess.Scope(workflow.Query, actor);
         if (!string.IsNullOrWhiteSpace(search)) query = query.Where(value => value.Number.Contains(search.Trim())
@@ -29,7 +34,19 @@ public sealed class TrialReader(PSeqOperationsDbContext db, TrialWorkflowService
             else if (Enum.TryParse<TrialStatus>(status, out var parsed)) query = query.Where(value => value.Status == parsed);
         }
         if (actor.IsStaff && ownerId.HasValue) query = query.Where(value => value.SalesOwnerUserId == ownerId);
-        var projects = await query.OrderByDescending(value => value.UpdatedAt).Take(250).ToListAsync(token);
+        return query;
+    }
+    public async Task<PagedResult<TrialListDto>> ListPageAsync(TrialActor actor, string? search, CancellationToken token, string? status, Guid? ownerId, int page, int pageSize)
+    {
+        page = Math.Clamp(page, 1, 100000); pageSize = Math.Clamp(pageSize, 1, 100);
+        var count = await ListQuery(actor, search, status, ownerId).CountAsync(token);
+        return new(await ListAsync(actor, search, token, status, ownerId, page, pageSize), page, pageSize, count);
+    }
+    public async Task<IReadOnlyList<TrialListDto>> ListAsync(TrialActor actor, string? search, CancellationToken token, string? status = null, Guid? ownerId = null, int page = 1, int pageSize = 25)
+    {
+        var query = ListQuery(actor, search, status, ownerId);
+        var projects = await query.OrderByDescending(value => value.UpdatedAt).ThenBy(value => value.Id)
+            .Skip((Math.Clamp(page, 1, 100000) - 1) * Math.Clamp(pageSize, 1, 100)).Take(Math.Clamp(pageSize, 1, 100)).ToListAsync(token);
         var companyIds = projects.Select(value => value.CompanyId).Distinct().ToArray();
         var names = await db.CrmCompanies.AsNoTracking().Where(value => companyIds.Contains(value.Id)).ToDictionaryAsync(value => value.Id, value => value.Name, token);
         var ownerIds = projects.Select(value => value.SalesOwnerUserId).Distinct().ToList();

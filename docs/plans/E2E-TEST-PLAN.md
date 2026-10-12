@@ -1,5 +1,99 @@
 # Playwright E2E Test Plan
 
+## Error and edge-case review — October 11, 2026
+
+Final relevant browser checkpoint: 40 cases pass, no skips/failures, across
+desktop and phone Chromium. `scope-switch.spec.ts` exercises the real menu/router,
+same-Dashboard changes, Keep editing/Discard changes, pending-save refusal and
+later retry. Phone cases use dark theme and reduced motion; confirmation focus
+and axe AA checks remain. Work Attention adds populated out-of-range page recovery
+and failed-summary/successful-filtered-list retry. Existing organization scope,
+audience help, search and lazy-body recovery cases pass with the updated corpus.
+The [review receipt](../testing/runs/2026-10-11-gap-review.md) records corrections
+and fixture failures; this is deterministic local acceptance, not real Clerk or
+hosted-provider proof.
+
+## Final gap-closure checkpoint — October 11, 2026
+
+Desktop and phone Chromium acceptance is recorded in the
+[final receipt](../testing/runs/2026-10-11-system-gap-closure-final.md): 224 unique
+cases pass across the final full run and affected search rerun; two existing
+skips remain. The full stable run passed 223 and found one early-hydration topic
+click; the final six-case search batch passes with readiness and URL assertions.
+Changed
+fixtures use real Router/Query context and shared PortalConfirmation, exercise
+organization/Department return, current paged history envelopes, safe discard
+and corrected required-field names. Contextual menus remain keyboard accessible;
+laboratory completion must leave its back link usable. Email recovery keeps
+exact recipient review and keyboard tab focus. Browser tests run with fixture
+hot reload disabled in e2e mode, while normal development retains hot reload.
+This avoids fixture remounts when an independent documentation/build check writes
+generated modules. No assertion of tenant scoping, focus, accessibility or
+trigger/clearance is removed. Real Clerk/provider and operational-user acceptance
+remain outside deterministic browser fixture evidence.
+
+## Startup and shipping feedback continuation — October 11, 2026
+
+The 38-case desktop/mobile home/work/preparation batch passes. The final eight
+home cases pass again after Web Operations becomes conditional, covering default
+My work, retained administrator Web Operations, branding and menu/navigation.
+The mock branding expectation now waits for client hydration rather than testing
+the server's pre-session title. These browser fixtures do not establish real
+authenticated scientific/physical source acceptance; the selected PostgreSQL
+shipping journeys provide separate domain evidence. See the
+[receipt](../testing/runs/2026-10-11-shipping-startup-gap-closure.md).
+
+## Retained lists and lazy help continuation — October 11, 2026
+
+The relevant documentation/search/Department/Trial/data-workspace batch has 50
+unique passing desktop/mobile cases across its final runs. `lazy-documentation`
+proves no guide body is fetched on the index, only the opened Customer guide is
+loaded, mobile dark/reduced-motion reflow and axe pass, and a failed module keeps
+the guide heading/navigation and recovers through Reload guide. Data-workspace
+expectations wait for hydration, select the level-one heading and retain the
+desktop pinned/mobile expandable navigation behavior. Trial fixtures provide the
+new timeline page shape. These deterministic sessions/HTTP fixtures do not prove
+authenticated API/database actor acceptance. See the
+[remaining-gap receipt](../testing/runs/2026-10-11-system-gap-closure-remaining.md).
+
+## Requested gap verification continuation — October 11, 2026
+
+The Owner requested relevant browser execution after the initial checkpoint.
+`work-attention.spec` uses real dashboard/bell/refresh/confirmation components,
+Router/Query/session contexts and deterministic HTTP fixtures. It covers exact
+125-item counts/five-item preview, paging, source navigation, completion refresh,
+organization scope change, unknown count/retry, nested discard safe focus and
+draft preservation, Customer-only pseudolocale, axe and narrow/dark reflow.
+Department tests use the shared member Actions menu and verify saved access no
+longer leaves a dirty lookup. Preparation tests use **Go to current step** then
+the sole **Record step** action; isolated invitation fixtures mount real Router
+context and the confirmation host. Desktop/mobile outcomes are recorded in the
+[continuation receipt](../testing/runs/2026-10-11-system-gap-closure-verification.md).
+These fixtures do not establish authenticated source/actor acceptance.
+The relevant 96-case desktop/mobile batch has 94 unique passing cases and two
+existing mobile print skips after the final 8-case home rerun. The initial batch's
+three home failures were old keyboard-order/hydration expectations; the updated
+home verifies the bell before the user menu and retained Web Operations access.
+
+## System-gap implementation checkpoint — October 11, 2026
+
+[System gap closure](SYSTEM-GAP-CLOSURE-PLAN.md) and
+[Work dashboard and notifications](WORK-DASHBOARD-AND-NOTIFICATIONS-PLAN.md)
+define future find -> open -> act -> confirm-clear journeys for Customer
+administrators/members, narrow Phaeno Commercial/Lab/Reviewer/Release/Finance
+roles, platform administrators and Partner/Prospect scopes. Cover bell/queue
+keyboard and focus, phone/themes/reflow, unsaved navigation and scope switching,
+cross-tenant denial, stale revisions, large-volume discovery and partial-source
+failure. Customer screens require pseudolocale/long-text checks; other audiences
+may remain US English. Authenticated acceptance and screen-reader evidence are
+distinct from mocked browser checks. No E2E suite was run. A read-only synthetic
+preview exercised the actual dashboard/bell/deadline components: exact phase
+initialization, Keep/discard behavior, three dialog regions, full bell count,
+five preview links, Escape/focus return and Customer-only pseudolocale phone
+reflow. All writes were blocked. This is not authenticated API/database or role
+acceptance. The [receipt](../testing/runs/2026-10-11-system-gap-closure.md) records
+the boundary and the find -> act -> confirm-clear cases still required.
+
 October 10 POMS DPS implementation: connected validation waits for Chris. Verify
 two ten-file specimen/run attempts, actual configured recipe, manifest/object
 version integrity, correlated Start and Cancel business receipts, visible API
@@ -2057,11 +2151,11 @@ physical acceptance evidence.
 Seven actual recovery-dialog synthetic browser cases passed desktop/phone,
 short-height, light/dark and error presentation, including one original-facts
 adapter submission and dismissal without a write. Evidence:
-[`kit-request-sync/review.json`](../../artifacts/kit-request-sync/review.json).
+`kit-request-sync/review.json` (`../../artifacts/kit-request-sync/review.json`) (historical artifact unavailable in this checkout as of October 11, 2026).
 The Customer supply changes separately passed 28 actual-component synthetic
 browser cases for no-order/cancelled/pending/in-transit/received/partial/unbound
 states at 1280 and 390 pixels, light/dark; evidence:
-[`job-kit-gating-review/review.json`](../../artifacts/job-kit-gating-review/review.json).
+`job-kit-gating-review/review.json` (`../../artifacts/job-kit-gating-review/review.json`) (historical artifact unavailable in this checkout as of October 11, 2026).
 These synthetic cases used no nonlocal requests or real data writes and had no
 page errors. Temporary fixtures and the isolated server were removed.
 
@@ -2111,7 +2205,7 @@ Shipping container, above scanning. Review verified selector order, an unsaved
 scan retained after cancelled navigation, successful subsequent switching, one
 synthetic reset POST returning to the pool, a visible scan-history lock, and no
 horizontal overflow, browser errors or nonlocal network calls. Evidence:
-[`artifacts/container-controls-review/review.json`](../../artifacts/container-controls-review/review.json)
+`artifacts/container-controls-review/review.json` (`../../artifacts/container-controls-review/review.json`) (historical artifact unavailable in this checkout as of October 11, 2026)
 and settled screenshots. These are synthetic component journeys, not signed-in
 Customer or physical-shipment acceptance.
 
@@ -2135,7 +2229,7 @@ testing, preserving the owner's current walkthrough plan.
 
 Final synthetic browser review passed **6/6 cases** at 688×835, 390×835 and
 390×480 in light/dark themes. Evidence is
-[`artifacts/smart-container-review/review.json`](../../artifacts/smart-container-review/review.json).
+`artifacts/smart-container-review/review.json` (`../../artifacts/smart-container-review/review.json`) (historical artifact unavailable in this checkout as of October 11, 2026).
 It verified aligned size/tube controls (0px vertical offset), no overflow,
 keyboard focus and the 3/18/30-tube size-selection edges. The Summary grid had
 0px pending-to-resolved reflow. An immediate actionable shortfall message adds

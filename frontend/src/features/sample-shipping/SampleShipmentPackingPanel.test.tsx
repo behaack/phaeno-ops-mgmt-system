@@ -1,3 +1,4 @@
+import * as portalConfirmation from '#/components/PortalConfirmation'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -363,7 +364,7 @@ describe('individual shipping-container adjustment', () => {
   })
 
   it('retains adjusted rows after a declined discard and exposes the server error with the draft', () => {
-    const discard = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    const discard = vi.spyOn(portalConfirmation, 'confirmPortal').mockResolvedValue(false)
     show(false, new Error('The shipment changed. Review the current tube list.'))
     changeSize(1, 10)
     pack(1, 8)

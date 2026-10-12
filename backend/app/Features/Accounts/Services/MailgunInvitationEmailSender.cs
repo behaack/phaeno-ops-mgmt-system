@@ -37,7 +37,7 @@ public sealed class MailgunInvitationEmailSender(
         {
             ["from"] = options.AccountFrom,
             ["to"] = message.Email,
-            ["subject"] = $"You have been invited to {message.OrganizationName}",
+            ["subject"] = PhaenoPortal.App.Localization.CustomerDocumentText.Format("invitation.subject", message.OrganizationName),
             ["text"] = content.Text,
             ["template"] = "organization-invitation.en-us",
             ["t:variables"] = JsonSerializer.Serialize(new

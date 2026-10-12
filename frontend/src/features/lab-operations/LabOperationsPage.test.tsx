@@ -7,7 +7,7 @@ import { LabOperationsPage } from './LabOperationsPage'
 const api = vi.hoisted(() => ({ dashboard: vi.fn().mockRejectedValue(new Error('Laboratory role required')), createBatch: vi.fn(), transitionBatch: vi.fn(), canOperate: false }))
 vi.mock('#/api/lab-operations', async importOriginal => ({ ...await importOriginal<object>(), getLabOperationsDashboard: api.dashboard, createLabBatch: api.createBatch, transitionLabBatch: api.transitionBatch }))
 vi.mock('#/features/auth/session-context', () => ({ usePhaenoSession: () => ({ authProvider: 'clerk', session: { capabilities: { canManageLabOperations: true, canManageOrderConfiguration: true, canOperateLabWork: api.canOperate } } }) }))
-vi.mock('@tanstack/react-router', () => ({ useNavigate: () => vi.fn(), Link: ({ children }: { children: ReactNode }) => <a href="#test">{children}</a> }))
+vi.mock('@tanstack/react-router', () => ({ useRouterState: ({select}: {select: (state: {location: {search: Record<string, unknown>}}) => unknown}) => select({location: {search: {}}}), useBlocker: () => ({status: 'idle', reset: vi.fn(), proceed: vi.fn()}), useNavigate: () => vi.fn(), Link: ({ children }: { children: ReactNode }) => <a href="#test">{children}</a> }))
 vi.mock('#/components/WorkspaceSidebar', () => ({ WorkspaceSidebar: ({ children }: { children: ReactNode }) => <div>{children}</div> }))
 vi.mock('./LabKitRequestQueues', () => ({ LabKitRequestQueues: ({ apiEnabled }: { apiEnabled: boolean }) => apiEnabled ? <p>Authorized kit queues</p> : null }))
 

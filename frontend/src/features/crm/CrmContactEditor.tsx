@@ -1,3 +1,5 @@
+import { NativeSelect } from '#/components/ui/native-select'
+import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRef } from 'react';
 import { useForm } from 'react-hook-form';
@@ -59,8 +61,8 @@ function ContactEditor({ contact, pending, error, onOpenChange, onSubmit }: Prop
   const email = form.watch('email');
   const { errors, isDirty } = form.formState;
   useOrderDraftGuard(isDirty, pending);
-  const close = (nextOpen: boolean) => {
-    if (pending || (!nextOpen && isDirty && !window.confirm('Discard unsaved contact changes?'))) return;
+  const close = async (nextOpen: boolean) => {
+    if (pending || (!nextOpen && isDirty && !(await confirmPortal('Discard unsaved contact changes?')))) return;
     onOpenChange(nextOpen);
   };
   const field = (name: keyof Values, label: string, control: React.ReactNode, description?: string) => <div className="grid gap-1.5">
@@ -114,15 +116,15 @@ function ContactEditor({ contact, pending, error, onOpenChange, onSubmit }: Prop
             <label className="flex cursor-pointer items-center gap-2 text-sm"><input type="checkbox" {...form.register('recordDecision')}
               aria-describedby="contact-outreach-boundary" className="size-4" />Record or update outreach decision</label>
             {recordDecision ? <div className="grid gap-4">
-              {field('preference', 'Outreach status *', <select {...attributes('preference')} {...form.register('preference')} className={selectClass}>
-                <option value="Unknown">Not established</option><option value="Permitted">Allowed</option><option value="Suppressed">Suppressed</option></select>)}
-              {field('permissionSource', 'Permission source *', <select {...attributes('permissionSource', true)} {...form.register('permissionSource')} className={selectClass}>
-                <option value="">Select source</option>{Object.entries(outreachSources).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>,
+              {field('preference', 'Outreach status *', <NativeSelect {...attributes('preference')} {...form.register('preference')} className={selectClass}>
+                <option value="Unknown">Not established</option><option value="Permitted">Allowed</option><option value="Suppressed">Suppressed</option></NativeSelect>)}
+              {field('permissionSource', 'Permission source *', <NativeSelect {...attributes('permissionSource', true)} {...form.register('permissionSource')} className={selectClass}>
+                <option value="">Select source</option>{Object.entries(outreachSources).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</NativeSelect>,
                 'Record what supports this decision. A requested Portal invitation does not establish permission for sales or marketing.')}
               {field('recordedOn', 'Evidence date *', <Input {...attributes('recordedOn', true)} {...form.register('recordedOn')} type="date" max={new Date().toISOString().slice(0, 10)} />,
                 'When the request, consent or review occurred. No later than today (UTC). Saved history also records who entered it and when.')}
-              {preference === 'Suppressed' ? field('suppressionReason', 'Suppression reason *', <select {...attributes('suppressionReason')} {...form.register('suppressionReason')} className={selectClass}>
-                <option value="">Select reason</option>{Object.entries(suppressionReasons).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>) : null}
+              {preference === 'Suppressed' ? field('suppressionReason', 'Suppression reason *', <NativeSelect {...attributes('suppressionReason')} {...form.register('suppressionReason')} className={selectClass}>
+                <option value="">Select reason</option>{Object.entries(suppressionReasons).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</NativeSelect>) : null}
               {field('explanation', 'Decision explanation and scope *', <Textarea {...attributes('explanation', true)} {...form.register('explanation')} rows={3} maxLength={1000} />,
                 'Describe the evidence and exactly which outreach it covers. Do not include sensitive personal or scientific information.')}
             </div> : null}

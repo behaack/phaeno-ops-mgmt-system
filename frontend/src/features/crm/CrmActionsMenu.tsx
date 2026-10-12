@@ -1,7 +1,7 @@
-import { ChevronDown } from "lucide-react";
+
 import { useRef } from "react";
 import { Button } from "#/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "#/components/ui/dropdown-menu";
+import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "#/components/ui/dropdown-menu"
 
 type CrmAction = {
   label: string;
@@ -17,10 +17,10 @@ export function CrmActionsMenu({ label, items }: { label: string; items: (CrmAct
   const actions = items.filter((item): item is CrmAction => Boolean(item));
   if (actions.length === 0) return null;
   return (
-    <DropdownMenu>
+    <ActionMenu>
       <DropdownMenuTrigger asChild>
         <Button ref={trigger} size="sm" variant="outline" aria-label={label}>
-          Actions <ChevronDown className="size-4" />
+          Actions
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" onCloseAutoFocus={(event) => {
@@ -40,6 +40,6 @@ export function CrmActionsMenu({ label, items }: { label: string; items: (CrmAct
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
-    </DropdownMenu>
+    </ActionMenu>
   );
 }

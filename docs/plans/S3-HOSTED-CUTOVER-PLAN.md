@@ -50,6 +50,12 @@ defer its Local-only backup timer. Test resources are not production approval.
 
 ## Testing preparation and production recovery requirement
 
+October 11 code preparation: [S3 recovery preparation](../operations/S3-RECOVERY-PREPARATION.md)
+records the current-locator dry-run/capture/verify tool and remaining coordinated
+restoration, scheduling, original-provenance and responder gates. It uses existing
+SDK dependencies. No live capture, timer, credentials, provider settings or
+deployment was activated; the testing backup deferral remains in force.
+
 1. Freeze scientific/file writers and acquire the deployment/backup maintenance
    locks. Pin every physical key, object version, receipt, length and full SHA-256.
 2. Testing cutover does not require a new backup, populated restore rehearsal or

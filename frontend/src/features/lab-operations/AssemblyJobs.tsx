@@ -1,10 +1,14 @@
+import { NativeSelect } from '#/components/ui/native-select'
+import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
+import { RecordPagination, useRecordListState } from '#/components/RecordPagination'
+import { useDebouncedSearch } from '#/components/use-debounced-search'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useSearch } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
-import { cancelAssembly, getAssemblyInputs, getAssemblyJob, getAssemblyJobs, linkAssemblyAnalysis, type AssemblyDetail, type AssemblyJob } from '#/api/lab-assembly'
+import { cancelAssembly, getAssemblyInputs, getAssemblyJob, getAssemblyJobs, getAssemblyJobsPage, linkAssemblyAnalysis, type AssemblyDetail, type AssemblyJob } from '#/api/lab-assembly'
 import { getLabOperationsError } from '#/api/lab-operations'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Badge } from '#/components/ui/badge'
@@ -34,7 +38,7 @@ export function DataAssemblyWorkspace({ apiEnabled }: { apiEnabled: boolean }) {
   return <Tabs value={tab} onValueChange={value => void navigate({ to: '/lab-operations', search: p => ({ ...p, section: 'assembly', assemblyTab: value === 'jobs' ? 'jobs' : 'inputs' }), resetScroll: false })}>
     <TabsList aria-label="PSeq Service data assembly" className="grid w-full grid-cols-2"><TabsTrigger value="inputs">Sequencing inputs</TabsTrigger><TabsTrigger value="jobs">Sequencing assembly</TabsTrigger></TabsList>
     <TabsContent value="inputs">{session?.capabilities.canOperateLabWork ? <ReadyAssemblyInputs enabled={apiEnabled} /> : <p className="text-sm text-muted-foreground">Laboratory operator access is required to view and start sequencing inputs.</p>}</TabsContent>
-    <TabsContent value="jobs"><AssemblyJobsList enabled={apiEnabled} search={search.assemblySearch ?? ''} onSearch={value => void navigate({ to: '/lab-operations', search: p => ({ ...p, section: 'assembly', assemblyTab: 'jobs', assemblySearch: value || undefined }), replace: true, resetScroll: false })} /></TabsContent>
+    <TabsContent value="jobs"><AssemblyJobsList enabled={apiEnabled} search={search.assemblySearch ?? ''} onSearch={value => void navigate({ to: '/lab-operations', search: p => ({ ...p, section: 'assembly', assemblyTab: 'jobs', assemblySearch: value || undefined, assemblyPage: 1 }), replace: true, resetScroll: false })} /></TabsContent>
   </Tabs>
 }
 
@@ -68,9 +72,12 @@ export function AssemblyJobsList({ enabled, workOrderId, specimenId, search = ''
   enabled: boolean; workOrderId?: string; specimenId?: string; search?: string; onSearch?: (value: string) => void
 }) {
   const [creating, setCreating] = useState(false)
-  const query = useQuery({ queryKey: ['assembly-jobs', workOrderId, specimenId], queryFn: () => getAssemblyJobs(workOrderId, specimenId), enabled,
+  const list = useRecordListState('assembly')
+  const settled = useDebouncedSearch(search)
+  const global = !workOrderId && !specimenId
+  const query = useQuery({ queryKey: ['assembly-jobs', workOrderId, specimenId, global ? settled : '', global ? list.page : 1], queryFn: () => global ? getAssemblyJobsPage(settled,list.page) : getAssemblyJobs(workOrderId, specimenId), enabled: enabled && (!global || settled === search),
     refetchInterval: q => q.state.data?.jobs.some(j => !j.isTerminal || j.attentionReason) ? 5000 : false })
-  const data = query.data
+  const data = query.isError ? undefined : query.data
   useAssemblyNotifications(data?.jobs.map(job => job.id) ?? [], enabled)
   return <Card><CardHeader><div className="flex flex-wrap items-center justify-between gap-3"><CardTitle>Sequencing assembly</CardTitle>
     {workOrderId && specimenId && data?.canOperate ? <Button onClick={() => setCreating(true)} disabled={!data.availability.available}>Start assembly</Button> : null}</div></CardHeader><CardContent className="space-y-4">
@@ -80,14 +87,15 @@ export function AssemblyJobsList({ enabled, workOrderId, specimenId, search = ''
     {data && !data.availability.available ? <Alert><AlertTitle>Assembly setup required</AlertTitle><AlertDescription>{data.availability.message}</AlertDescription></Alert> : null}
     {onSearch ? <p className="text-sm text-muted-foreground">Track requested PSeq Service assembly attempts here. Start a new assembly from <Link to="/lab-operations" search={p => ({ ...p, section: 'assembly', assemblyTab: 'inputs' })} className={linkStyle}>Sequencing inputs</Link>.</p> : null}
     {onSearch ? <div className="space-y-1"><Label htmlFor="assembly-search">Find assembly jobs</Label><Input id="assembly-search" value={search} onChange={event => onSearch(event.target.value)} placeholder="Sample, run, or disposition" /></div> : null}
-    {data && !data.jobs.length ? <p className="text-sm text-muted-foreground">No assembly jobs have been requested.</p> : null}
-    {data?.jobs.length && !data.jobs.some(j => assemblyMatches(j, search)) ? <p>No assembly jobs match this search.</p> : null}
-    {data?.jobs.filter(j => assemblyMatches(j, search)).map(job => <div key={job.id} className="grid gap-3 rounded-lg border p-4 sm:grid-cols-[minmax(0,1fr)_minmax(10rem,16rem)]">
+    {data && !data.jobs.length ? <p className="text-sm text-muted-foreground">{search ? 'No assembly jobs match this search.' : global && 'totalCount' in data && typeof data.totalCount === 'number' && data.totalCount > 0 ? 'This page has no assembly jobs. Choose an earlier page.' : 'No assembly jobs have been requested.'}</p> : null}
+    {!global && data?.jobs.length && !data.jobs.some(j => assemblyMatches(j, search)) ? <p>No assembly jobs match this search.</p> : null}
+    {data?.jobs.filter(j => global || assemblyMatches(j, search)).map(job => <div key={job.id} className="grid gap-3 rounded-lg border p-4 sm:grid-cols-[minmax(0,1fr)_minmax(10rem,16rem)]">
       <div className="min-w-0"><Link className={`${linkStyle} font-medium`} to="/lab-operations/assembly-jobs/$jobId" params={{ jobId: job.id }} search={p => ({ ...p, section: 'assembly', assemblyTab: 'jobs' })}>{job.sampleName} · Run {job.sequencingRunNumber}</Link>
         <p className="mt-1 text-xs text-muted-foreground">Requested {date(job.requestedAtUtc)}</p><p className="text-xs text-muted-foreground">Start: {date(job.startedAtUtc)} · Stop: {date(job.stoppedAtUtc)}</p>
         {job.attentionReason ? <p className="mt-1 text-sm">{job.attentionReason}</p> : null}</div><AssemblyJobProgress job={job} />
     </div>)}
     <p className="text-xs text-muted-foreground">Percentages are shown live. Job start, stop and final disposition are retained. Assembly completion requires separate scientific QC and customer release.</p>
+    {global ? <RecordPagination label="Assembly job pages" data={query.isError ? undefined : data as { page: number; pageSize: number; totalCount: number } | undefined} busy={query.isFetching} onPage={page => list.change({ listPage:page })} /> : null}
     {creating && data ? <AssemblyStartDialog availability={data.availability} workOrderId={workOrderId} specimenId={specimenId} onClose={() => setCreating(false)} /> : null}
   </CardContent></Card>
 }
@@ -151,15 +159,19 @@ export function AssemblyJobPage({ jobId }: { jobId: string }) {
 function AssemblyActionDialog({ data, action, onClose }: { data: AssemblyDetail; action: 'cancel' | 'analysis'; onClose: () => void }) {
   const client = useQueryClient()
   const form = useForm<{ value: string }>({ resolver: zodResolver(z.object({ value: action === 'cancel' ? z.string().trim().min(1, 'Enter a reason.').max(2000) : z.string().uuid('Select an analysis.') })), defaultValues: { value: '' } })
+  const __modalGuard = useModalDraftGuard(form.formState.isDirty, form.formState.isSubmitting)
+
   const mutation = useMutation({ mutationFn: (value: string) => action === 'cancel' ? cancelAssembly(data.job, value) : linkAssemblyAnalysis(data.job, value),
-    onSuccess: async () => { await Promise.all([client.invalidateQueries({ queryKey: ['assembly-job', data.job.id] }), client.invalidateQueries({ queryKey: ['assembly-jobs'] })]); onClose() } })
-  return <Dialog open onOpenChange={open => { if (!open && !mutation.isPending) onClose() }}><DialogContent>
+    onSuccess: async () => {
+    __modalGuard.allowNavigation()
+ await Promise.all([client.invalidateQueries({ queryKey: ['assembly-job', data.job.id] }), client.invalidateQueries({ queryKey: ['assembly-jobs'] })]); onClose() } })
+  return <Dialog open onOpenChange={open => { if (open) (open => { if (!open && !mutation.isPending) onClose() })(open); else void __modalGuard.close(() => (open => { if (!open && !mutation.isPending) onClose() })(false)) }}><DialogContent>
     <DialogHeader><DialogTitle>{action === 'cancel' ? 'Request cancellation' : 'Link completed analysis'}</DialogTitle><DialogDescription>{action === 'cancel' ? 'The job remains active until the processing service confirms its final disposition.' : 'The analysis must match this execution, its inputs and actual start/stop times. Linking does not approve or release results.'}</DialogDescription>
       {mutation.error ? <Alert variant="destructive"><AlertDescription>{getLabOperationsError(mutation.error, 'The request could not be completed.')}</AlertDescription></Alert> : null}
     </DialogHeader>
     <form id="assembly-action" noValidate onSubmit={form.handleSubmit(v => mutation.mutate(v.value))} className="space-y-2"><Label htmlFor="assembly-action-value"><RequiredFieldName>{action === 'cancel' ? 'Reason' : 'Completed analysis'}</RequiredFieldName></Label>
-      {action === 'cancel' ? <Textarea id="assembly-action-value" {...form.register('value')} aria-invalid={Boolean(form.formState.errors.value)} aria-describedby="assembly-action-error" /> : <select id="assembly-action-value" className="h-9 w-full cursor-pointer rounded-md border border-input bg-background px-3 focus-visible:outline-2 focus-visible:outline-ring" {...form.register('value')} aria-invalid={Boolean(form.formState.errors.value)} aria-describedby="assembly-action-error"><option value="">Choose an analysis</option>{data.analyses.map(a => <option key={a.id} value={a.id}>{a.runReference} · {date(a.recordedAtUtc)}</option>)}</select>}
+      {action === 'cancel' ? <Textarea id="assembly-action-value" {...form.register('value')} aria-invalid={Boolean(form.formState.errors.value)} aria-describedby="assembly-action-error" /> : <NativeSelect id="assembly-action-value" className="w-full cursor-pointer rounded-md border border-input bg-background px-3 focus-visible:outline-2 focus-visible:outline-ring" {...form.register('value')} aria-invalid={Boolean(form.formState.errors.value)} aria-describedby="assembly-action-error"><option value="">Choose an analysis</option>{data.analyses.map(a => <option key={a.id} value={a.id}>{a.runReference} · {date(a.recordedAtUtc)}</option>)}</NativeSelect>}
       <p id="assembly-action-error" className="text-sm text-destructive">{form.formState.errors.value?.message}</p>
-    </form><RequiredDialogFooter><Button variant="outline" onClick={onClose} disabled={mutation.isPending}>Cancel</Button><Button type="submit" form="assembly-action" disabled={mutation.isPending}>{mutation.isPending ? 'Saving…' : action === 'cancel' ? 'Request cancellation' : 'Link analysis'}</Button></RequiredDialogFooter>
+    </form><RequiredDialogFooter><Button variant="outline" onClick={() => { void __modalGuard.close(() => (onClose)()) }} disabled={mutation.isPending}>Cancel</Button><Button type="submit" form="assembly-action" disabled={mutation.isPending}>{mutation.isPending ? 'Saving…' : action === 'cancel' ? 'Request cancellation' : 'Link analysis'}</Button></RequiredDialogFooter>
   </DialogContent></Dialog>
 }

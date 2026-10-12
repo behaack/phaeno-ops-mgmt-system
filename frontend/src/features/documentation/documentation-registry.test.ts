@@ -41,7 +41,7 @@ describe('documentation registry', () => {
       expect(entry.summary).not.toBe('')
       expect(entry.section).not.toBe('')
       expect(entry.reviewedAt).toMatch(/^\d{4}-\d{2}-\d{2}$/)
-      expect(entry.Content).toBeTypeOf('function')
+      expect(entry.Content).toHaveProperty('$$typeof', Symbol.for('react.lazy'))
       expect(entry.locale).toBe(
         entry.audience === 'phaeno' ? null : 'en-US',
       )

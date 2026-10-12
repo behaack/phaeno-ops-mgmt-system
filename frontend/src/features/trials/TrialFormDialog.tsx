@@ -1,3 +1,4 @@
+import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useBlocker } from '@tanstack/react-router'
 import { useRef, useState, type ChangeEvent, type ReactNode } from 'react'
@@ -39,7 +40,7 @@ export function TrialFormDialog({ title, description, fields, children, onClose,
   const { isDirty } = form.formState
   const busy = form.formState.isSubmitting || isReloading
   useBlocker({
-    shouldBlockFn: () => !navigationApproved.current && (busy || reloadPending.current || submitPending.current || (isDirty && !window.confirm('Discard the unsaved Trial changes?'))),
+    shouldBlockFn: async () => !navigationApproved.current && (busy || reloadPending.current || submitPending.current || (isDirty && !(await confirmPortal('Discard the unsaved Trial changes?')))),
     enableBeforeUnload: () => !navigationApproved.current && (isDirty || busy || reloadPending.current || submitPending.current),
   })
   async function submit(values: Record<string, string>) {
@@ -50,7 +51,7 @@ export function TrialFormDialog({ title, description, fields, children, onClose,
     catch (failure) { setError(apiErrorMessage(failure)); setReloaded(null) }
     finally { submitPending.current = false }
   }
-  function close() { if (!reloadPending.current && !submitPending.current && !form.formState.isSubmitting && (!isDirty || window.confirm('Discard the unsaved Trial changes?'))) { navigationApproved.current = true; onClose() } }
+  async function close() { if (!reloadPending.current && !submitPending.current && !form.formState.isSubmitting && (!isDirty || (await confirmPortal('Discard the unsaved Trial changes?')))) { navigationApproved.current = true; onClose() } }
   function updateChoice(name: string, value: string) { form.setValue(name, value, { shouldDirty: true, shouldValidate: Boolean(form.getFieldState(name).error) }) }
   function inputProps(name: string) { return { ...form.register(name), onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => { void form.register(name).onChange(event); if (form.getFieldState(name).error) void form.trigger(name) } } }
   async function reload() {

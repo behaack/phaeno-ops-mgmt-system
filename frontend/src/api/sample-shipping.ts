@@ -1,4 +1,5 @@
 import { api } from './client'
+import { requireRecordPage } from './record-page'
 import type { ContainerRecommendation, ShippingContainerDefinition } from './shipping-containers'
 import type { CustomerDeliveryLocation } from './customer-delivery-locations'
 import type { LocationStockKit } from './transportation-kit-requests'
@@ -447,6 +448,11 @@ export async function scanSampleShippingPacket(barcode: string) {
 export async function getSampleShipments() {
   const response = await api.get<ApiEnvelope<SampleShipmentWorkflow[]>>('/sample-shipping')
   return unwrap(response.data)
+}
+
+export async function getSampleShipmentPage(search: string, status: string, page: number) {
+  const response = await api.get<ApiEnvelope<{ items: SampleShipmentWorkflow[]; totalCount: number; page: number; pageSize: number }>>('/sample-shipping/page', { params: { search, status, page } })
+  return requireRecordPage(unwrap(response.data))
 }
 
 export async function getSourceSampleShipments(sourceId: string, staff = false) {

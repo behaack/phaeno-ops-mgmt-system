@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { PreparationDetail, PreparationStage, PreparationStepInput } from '#/api/lab-preparation'
 import { PreparationStepDialog } from './PreparationStepDialog'
 
-vi.mock('@tanstack/react-router', () => ({
+vi.mock('@tanstack/react-router', () => ({ useBlocker: () => ({status: 'idle', reset: vi.fn(), proceed: vi.fn()}),
   Link: ({ children, params, target }: AnchorHTMLAttributes<HTMLAnchorElement> & { children: ReactNode; params: { specimenId: string } }) =>
     <a href={`/specimens/${params.specimenId}`} target={target}>{children}</a>,
 }))

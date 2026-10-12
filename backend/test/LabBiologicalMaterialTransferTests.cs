@@ -8,6 +8,23 @@ public sealed class LabBiologicalMaterialTransferTests
     private static readonly Guid Actor = Guid.NewGuid();
     private static readonly DateTime Now = new(2026, 9, 23, 12, 0, 0, DateTimeKind.Utc);
 
+    [Fact]
+    public void New_output_measurement_preserves_pending_label_and_records_yield_without_a_transfer()
+    {
+        var output = new LabContainer(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), LabContainerKind.Library,
+            "PH-L-TEST", "Prepared library", "Tray A1", null, null, null, labelVerificationRequired: true);
+        var request = Guid.NewGuid();
+        output.RecordPreparedQuantity(20, "uL", request, Actor, Now);
+        Assert.Equal(LabContainerStatus.LabelPending, output.Status);
+        Assert.Equal(20m, output.InitialQuantity);
+        Assert.Equal("Measured", output.QuantityBasis);
+        using var history = JsonDocument.Parse(output.QuantityHistoryJson);
+        Assert.Equal("prepared-yield", history.RootElement[0].GetProperty("action").GetString());
+        Assert.Equal(JsonValueKind.Null, history.RootElement[0].GetProperty("transferred").ValueKind);
+        Assert.Equal(request, history.RootElement[0].GetProperty("recordId").GetGuid());
+        Assert.Throws<InvalidOperationException>(() => output.RecordPreparedQuantity(25, "uL", Guid.NewGuid(), Actor, Now));
+    }
+
     private static (LabContainer Source, LabContainer Destination, LabSpecimenAttempt Attempt) Material(decimal? quantity = 100)
     {
         var work = Guid.NewGuid(); var specimen = Guid.NewGuid();

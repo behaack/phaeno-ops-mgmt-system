@@ -1,3 +1,4 @@
+import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CheckCircle2, Printer, XCircle } from 'lucide-react'
@@ -64,6 +65,8 @@ export function LabLabelDialog({
     resolver: zodResolver(schema),
     defaultValues: { reason: container?.labelPrintCount === 0 ? 'Initial container label' : '', outcome: '', failureDetails: '', scannedBarcode: '' },
   })
+  const __modalGuard = useModalDraftGuard(form.formState.isDirty, form.formState.isSubmitting)
+
   const reason = useWatch({ control: form.control, name: 'reason' })
   const outcome = useWatch({ control: form.control, name: 'outcome' })
   const scannedBarcode = useWatch({ control: form.control, name: 'scannedBarcode' })
@@ -78,6 +81,8 @@ export function LabLabelDialog({
         scannedBarcode: outcome === 'Succeeded' ? scannedBarcode : null,
       }),
     onSuccess: async (_, { outcome }) => {
+    __modalGuard.allowNavigation()
+
       await client.invalidateQueries({ queryKey: ['lab-container-label', container?.id] })
       await onRecorded()
       if (outcome === 'Succeeded') {
@@ -120,7 +125,7 @@ export function LabLabelDialog({
 
   return (
     <DialogReturnFocus target={null} fallbackId={returnFocusId}>
-    <Dialog open={container !== null} onOpenChange={(open) => !open && !printDialogClosed && !record.isPending && onClose()}>
+    <Dialog open={container !== null} onOpenChange={open => { if (open) ((open) => !open && !printDialogClosed && !record.isPending && onClose())(open); else void __modalGuard.close(() => ((open) => !open && !printDialogClosed && !record.isPending && onClose())(false)) }}>
       <DialogContent className="lab-label-print-dialog max-w-2xl" showCloseButton={!printDialogClosed}>
         {/* Use one page type for the entire print document, including its portal ancestors. */}
         <style media="print">{'@media print { @page { size: 50mm 25mm; margin: 0; } }'}</style>

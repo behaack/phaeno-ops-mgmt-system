@@ -1,3 +1,6 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
+import { NativeSelect } from '#/components/ui/native-select'
+import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
@@ -58,6 +61,8 @@ export function EditEntitlementDialog({
     defaultValues: defaults(entitlement),
     mode: 'onBlur',
   })
+  const __modalGuard = useModalDraftGuard(form.formState.isDirty, form.formState.isSubmitting, open)
+
 
   useEffect(() => {
     if (entitlement) form.reset(defaults(entitlement))
@@ -73,14 +78,12 @@ export function EditEntitlementDialog({
   )
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={open => { if (open) (onOpenChange)(open); else void __modalGuard.close(() => (onOpenChange)(false)) }}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Edit service entitlement</DialogTitle>
+          <DialogTitle><CustomerSourceText source={"Edit service entitlement"} /></DialogTitle>
           <DialogDescription>
-            Update the existing dated permission. The service itself cannot be
-            changed; create a separate non-overlapping entitlement for another
-            service.
+            <CustomerSourceText source={"Update the existing dated permission. The service itself cannot be\r\n            changed; create a separate non-overlapping entitlement for another\r\n            service."} />
           </DialogDescription>
         </DialogHeader>
         {error ? (
@@ -95,7 +98,7 @@ export function EditEntitlementDialog({
           onSubmit={form.handleSubmit(onSubmit)}
         >
           <div className="grid gap-1.5">
-            <Label htmlFor="edit-entitlement-service">Service</Label>
+            <Label htmlFor="edit-entitlement-service"><CustomerSourceText source={"Service"} /></Label>
             <Input
               id="edit-entitlement-service"
               value={serviceLabel(entitlement.service)}
@@ -105,7 +108,7 @@ export function EditEntitlementDialog({
           </div>
           <div className="grid gap-1.5">
             <Label htmlFor="edit-entitlement-from">
-              <RequiredFieldName>Effective from</RequiredFieldName>
+              <RequiredFieldName><CustomerSourceText source={"Effective from"} /></RequiredFieldName>
             </Label>
             <Input
               id="edit-entitlement-from"
@@ -114,7 +117,7 @@ export function EditEntitlementDialog({
             />
           </div>
           <div className="grid gap-1.5">
-            <Label htmlFor="edit-entitlement-to">Effective to</Label>
+            <Label htmlFor="edit-entitlement-to"><CustomerSourceText source={"Effective to"} /></Label>
             <Input
               id="edit-entitlement-to"
               type="datetime-local"
@@ -123,40 +126,40 @@ export function EditEntitlementDialog({
           </div>
           <div className="grid gap-1.5">
             <Label htmlFor="edit-entitlement-status">
-              <RequiredFieldName>Service configuration</RequiredFieldName>
+              <RequiredFieldName><CustomerSourceText source={"Service configuration"} /></RequiredFieldName>
             </Label>
-            <select
+            <NativeSelect
               id="edit-entitlement-status"
               className={selectClass}
               {...form.register('configurationStatus')}
             >
-              <option value="Pending">Pending</option>
-              <option value="Ready">Ready</option>
-              <option value="Blocked">Blocked</option>
-            </select>
+              <option value="Pending"><CustomerSourceText source={"Pending"} /></option>
+              <option value="Ready"><CustomerSourceText source={"Ready"} /></option>
+              <option value="Blocked"><CustomerSourceText source={"Blocked"} /></option>
+            </NativeSelect>
           </div>
           <div className="grid gap-1.5">
             <Label htmlFor="edit-entitlement-source">
-              Approved source request
+              <CustomerSourceText source={"Approved source request"} />
             </Label>
-            <select
+            <NativeSelect
               id="edit-entitlement-source"
               className={selectClass}
               {...form.register('sourceRequestId')}
             >
-              <option value="">No linked request</option>
+              <option value=""><CustomerSourceText source={"No linked request"} /></option>
               {eligibleRequests.map((request) => (
                 <option key={request.id} value={request.id}>
                   {request.requestNumber} · {request.status} · {request.summary}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
             <p className="text-xs text-muted-foreground">
-              Only approved or applied requests for this service are available.
+              <CustomerSourceText source={"Only approved or applied requests for this service are available."} />
             </p>
           </div>
           <div className="grid gap-1.5">
-            <Label htmlFor="edit-entitlement-notes">Internal notes</Label>
+            <Label htmlFor="edit-entitlement-notes"><CustomerSourceText source={"Internal notes"} /></Label>
             <textarea
               id="edit-entitlement-notes"
               className={textareaClass}
@@ -166,15 +169,15 @@ export function EditEntitlementDialog({
           </div>
         </form>
         <RequiredDialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+          <Button type="button" variant="outline" onClick={() => { void __modalGuard.close(() => (() => onOpenChange(false))()) }}>
+            <CustomerSourceText source={"Cancel"} />
           </Button>
           <Button
             type="submit"
             form="edit-entitlement-form"
             disabled={isPending}
           >
-            {isPending ? 'Saving…' : 'Save entitlement'}
+            {isPending ? <CustomerSourceText source={"Saving…"} /> : <CustomerSourceText source={"Save entitlement"} />}
           </Button>
         </RequiredDialogFooter>
       </DialogContent>

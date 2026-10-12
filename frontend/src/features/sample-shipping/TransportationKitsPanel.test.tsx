@@ -1,3 +1,4 @@
+import * as portalConfirmation from '#/components/PortalConfirmation'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
@@ -315,7 +316,7 @@ describe('customer transportation kits', () => {
   })
 
   it('acknowledges only selected physically arrived kits, retaining the selection after error and declined discard', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(false)
+    vi.spyOn(portalConfirmation, 'confirmPortal').mockResolvedValue(false)
     render(provider(<KitReceiptDialog request={dispatched} busy={false} error={new Error('Receipt could not be recorded.')} onClose={mocks.close} onConfirm={mocks.confirm} />))
     fireEvent.click(screen.getByRole('button', { name: 'Confirm received kits' }))
     expect(await screen.findByText('Select the kits that have arrived.')).toBeTruthy()

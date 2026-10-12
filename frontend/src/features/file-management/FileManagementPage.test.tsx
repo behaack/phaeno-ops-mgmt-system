@@ -1,3 +1,4 @@
+import * as portalConfirmation from '#/components/PortalConfirmation'
 import type { ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
@@ -75,7 +76,7 @@ describe('FileRetentionPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Edit global policy' }))
     fireEvent.change(screen.getByLabelText(/Standard retention/), { target: { value: '45' } })
     fireEvent.change(screen.getByLabelText(/Change reason/), { target: { value: 'Reviewed retention change.' } })
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    const confirm = vi.spyOn(portalConfirmation, 'confirmPortal').mockResolvedValue(false)
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
     expect(screen.getByRole('dialog')).toBeTruthy()
     expect(confirm).toHaveBeenCalledOnce()

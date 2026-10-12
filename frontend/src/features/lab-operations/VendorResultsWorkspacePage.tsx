@@ -84,6 +84,8 @@ function VendorResultsForm({ workspace, intake, refreshFiles, onRestarted, close
   const draftShape = valuesSchema.extend({ jobReference: z.string(), exceptions: z.array(z.object({ memberId: z.string(), reason: z.string() })) })
   const parsedDraft = draftShape.safeParse(intake.draft?.payload)
   const form = useForm<Values>({ resolver: zodResolver(schema), defaultValues: parsedDraft.success ? parsedDraft.data : initial, mode: 'onBlur' })
+  const { isDirty: __formDraftDirty } = form.formState
+
   useEffect(() => { if (focusOnRecovery) form.setFocus('jobReference') }, [focusOnRecovery, form])
   const exceptions = useFieldArray({ control: form.control, name: 'exceptions' })
   const selectedFiles = form.watch('files')
@@ -121,7 +123,7 @@ function VendorResultsForm({ workspace, intake, refreshFiles, onRestarted, close
     return restartResultsDraft(sendout.id, restartCommand.current)
   }, onSuccess: onRestarted })
   const busy = pendingUploads || save.isPending || draftSave.isPending || restart.isPending
-  const dismissal = useOrderDecisionDismissal(form.formState.isDirty, busy, close, { scope: 'results changes', description: 'Unsaved form changes will be discarded. Saved drafts and verified uploaded files are retained.' })
+  const dismissal = useOrderDecisionDismissal(__formDraftDirty, busy, close, { scope: 'results changes', description: 'Unsaved form changes will be discarded. Saved drafts and verified uploaded files are retained.' })
   const clock = (key: 'start' | 'end' | 'receipt', label: string) => <PreparationField id={`results-${key}`} label={label} required error={form.formState.errors[key]?.message}><Input id={`results-${key}`} type="datetime-local" step="1" disabled={busy} {...form.register(key)} /></PreparationField>
   return <main className="page-wrap space-y-5 px-4 py-8">
     <button className="cursor-pointer text-sm text-primary underline focus-visible:outline-ring" onClick={dismissal.close}>← Back to batch</button>

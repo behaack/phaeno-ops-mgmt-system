@@ -17,6 +17,7 @@ using PSeq.Operations.Commercial.Accounts.Domain;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PhaenoPortal.App.Features.Accounts.Services;
 using PhaenoPortal.App.Features.FileManagement.Services;
+using PhaenoPortal.App.Infrastructure.Persistence;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.Services;
 using PhaenoPortal.App.Features.Trials.Controllers;
@@ -56,7 +57,7 @@ public sealed partial class TrialProjectPostgresTests
                 var context = new OrderRequestContext(db, identity);
                 return new(db, new TrialAccess(db, identity, context), fixture.Workflow, fixture.Reader, fixture.Results,
                     context, null!, Options.Create(new PSeqOrderToCashOptions()), options, storage,
-                    new(db, options, NullLogger<ReleasedDeliverableDownloadAttemptService>.Instance),
+                    new(db, options, NullLogger<ReleasedDeliverableDownloadAttemptService>.Instance, new SimulatedCommitEvidence(db)),
                     NullLogger<CompletionTrackedFileStreamResult>.Instance, NullLogger<CompletionTrackedArchiveResult>.Instance)
                     { ControllerContext = new() { HttpContext = http } };
             }
@@ -120,6 +121,19 @@ public sealed partial class TrialProjectPostgresTests
             if (!System.Text.RegularExpressions.Regex.IsMatch(name, "^pseq_trial_preparation_test_[0-9a-f]{32}$")) throw new InvalidOperationException("Unsafe cleanup target.");
             await using var drop = new NpgsqlCommand($"DROP DATABASE {name} WITH (FORCE)", admin); await drop.ExecuteNonQueryAsync();
         }
+    }
+
+    // This fixture tests byte transfer, credit and authorization with explicit synthetic
+    // evidence. Real commit-timing availability/fail-closed behavior has separate tests.
+    private sealed class SimulatedCommitEvidence : DownloadCommitEvidenceService
+    {
+        private readonly PSeqOperationsDbContext db;
+        public SimulatedCommitEvidence(PSeqOperationsDbContext context) : base(context) => db = context;
+        public override Task EnsureTransferReadyAsync(CancellationToken token) => Task.CompletedTask;
+        public override async Task ResolveAsync(IReadOnlyCollection<Guid> evidenceIds, CancellationToken token)
+            => await db.OperationalDownloadCommitEvidence.Where(value => evidenceIds.Contains(value.Id) && value.CommittedAtUtc == null)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(value => value.CommittedAtUtc, value => value.RecordedAtUtc)
+                    .SetProperty(value => value.ObservedAtUtc, value => value.RecordedAtUtc), token);
     }
 
     private sealed class SimulatedDownloadIdentity(ExternalIdentity identity) : IExternalIdentityContext

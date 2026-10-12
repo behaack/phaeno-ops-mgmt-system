@@ -668,12 +668,13 @@ public sealed partial class DepartmentAccessPostgresTests
         public IExternalIdentityContext Identity { get; private set; } = null!;
         public OrderRequestContext Context => new(db, Identity);
 
-        public static async Task<Scope> Create()
+        public static async Task<Scope> Create(Microsoft.EntityFrameworkCore.Diagnostics.DbCommandInterceptor? commands = null)
         {
             var connection = Environment.GetEnvironmentVariable("PSEQ_OPERATIONS_REFERENCE_CONNECTION")!;
-            var options = new DbContextOptionsBuilder<PSeqOperationsDbContext>().UseNpgsql(connection)
-                .AddInterceptors(new AuditSaveChangesInterceptor(new AuditContext())).Options;
-            var db = new PSeqOperationsDbContext(options, Options.Create(new PersistenceOptions()));
+            var builder = new DbContextOptionsBuilder<PSeqOperationsDbContext>().UseNpgsql(connection)
+                .AddInterceptors(new AuditSaveChangesInterceptor(new AuditContext()));
+            if (commands is not null) builder.AddInterceptors(commands);
+            var db = new PSeqOperationsDbContext(builder.Options, Options.Create(new PersistenceOptions()));
             var scope = new Scope(db, await db.Database.BeginTransactionAsync());
             var external = new ExternalIdentity("test", Guid.NewGuid().ToString("N"), $"review-{Guid.NewGuid():N}@example.com", true);
             scope.Actor = new User(external.Email, "Department", "Administrator");

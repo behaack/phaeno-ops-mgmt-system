@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Link, useSearch } from '@tanstack/react-router'
 import { useRef, useState } from 'react'
 import { getWebOpsErrorMessage, getWebOpsNotificationAttempts, getWebOpsNotifications, resendWebOpsNotification, type WebOpsNotification } from '#/api/web-ops'
 import { Alert, AlertDescription } from '#/components/ui/alert'
@@ -13,6 +14,7 @@ const stateLabels = { Pending: 'Queued', Processing: 'Sending', Accepted: 'Accep
 const formatTime = (value: string) => new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
 
 export function WebOpsDeliveryPanel() {
+  const { deliveryId } = useSearch({ strict: false })
   const [page, setPage] = useState(1)
   const [attentionOnly, setAttentionOnly] = useState(false)
   const [selected, setSelected] = useState<WebOpsNotification>()
@@ -20,7 +22,7 @@ export function WebOpsDeliveryPanel() {
   const actionButton = useRef<HTMLButtonElement | null>(null)
   const heading = useRef<HTMLHeadingElement | null>(null)
   const client = useQueryClient()
-  const query = useQuery({ queryKey: ['web-ops', 'notifications', page, attentionOnly], queryFn: () => getWebOpsNotifications(page, attentionOnly), refetchInterval: 30_000 })
+  const query = useQuery({ queryKey: ['web-ops', 'notifications', page, attentionOnly, deliveryId], queryFn: () => getWebOpsNotifications(deliveryId ? 1 : page, attentionOnly, deliveryId), refetchInterval: 30_000 })
   const resend = useMutation({ mutationFn: resendWebOpsNotification, onSuccess: async () => { await client.invalidateQueries({ queryKey: ['web-ops'] }) } })
   function closeDialog() {
     setSelected(undefined)
@@ -39,6 +41,7 @@ export function WebOpsDeliveryPanel() {
       <CardDescription>Failed messages retry automatically up to five attempts. Provider acceptance does not confirm inbox delivery. An interrupted attempt may already have sent email; review history before resending.</CardDescription>
     </CardHeader>
     <CardContent className="space-y-4" aria-busy={query.isFetching}>
+      {deliveryId ? <Button asChild variant="outline"><Link to="/" search={{ dashboardSection: 'webOps' }}>View all email deliveries</Link></Button> : null}
       <WebOpsProcessingControls attentionOnly={attentionOnly} onAttentionChange={value => { setAttentionOnly(value); setPage(1) }} />
       {success && <p role="status" className="text-sm">{success}</p>}
       {query.isError && <Alert variant="destructive"><AlertDescription className="flex flex-wrap items-center gap-2">{getWebOpsErrorMessage(query.error, 'Email delivery could not be loaded.')}<Button variant="outline" size="sm" onClick={() => void query.refetch()}>Retry email delivery</Button></AlertDescription></Alert>}

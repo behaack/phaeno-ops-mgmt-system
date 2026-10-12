@@ -142,10 +142,10 @@ rejects synthetic sources and starts without speculative approved scientific
 file kinds; Phaeno must configure actual profile/file policy before publishing
 real packages.
 
-The EF mappings for this slice are included in the clean
-`20260716220428_InitialPSeqOperations` baseline applied to the configured
-Development database on 2026-07-16. Other environments retain their normal
-explicit deployment and migration boundary.
+The current clean baseline is `20260928192920_InitialCleanPortal`, followed by
+feature migrations. July migration checkpoints are historical. The complete
+current model is in `docs/database-erd.md`; each environment retains its explicit
+release and migration boundary.
 
 `backend/tools/PSeq.Operations.ReferenceJourney` verifies the first slice against
 PostgreSQL with authenticated application identities, request-scope tracking
@@ -159,8 +159,9 @@ Phaeno Portal is the operational source of truth for Customer laboratory work,
 Partner reagent fulfillment, and Partner data assembly. There is no connected
 ERP, accounting provider, or third-party LIMS in the implemented architecture.
 QuickBooks Online is deferred. POMS owns its manual commercial catalog, quotes,
-credit rules, and stable invoice-source records; Finance uses a Phaeno-only CSV
-to prepare manual journal entries and invoices outside POMS.
+credit rules, native phase invoices/PDFs, receipts, adjustments and reconciliation.
+The separate manual accounting-source CSV serves its remaining commercial scope;
+it does not replace native PSeq invoicing.
 
 Order aggregates retain immutable input, quote, price, profile, result/output,
 shipment, and commercial snapshots. Operational state, accounting-source state,
@@ -170,15 +171,12 @@ The dormant QuickBooks types and persisted compatibility names do not activate
 the provider, worker, webhook, or retry path.
 
 Curated-data and order-management file ports now adapt to the shared
-`IFileStorage` contract. Development uses local storage, and the production
-runtime currently uses a non-persisting `Disabled` adapter so storage readiness
-does not block API startup. File operations return service unavailable while it
-is selected. The S3 adapter is implemented, but the production bucket,
-credential path, permissions, encryption, monitoring, and runtime download proof
-are not configured or validated. Production malware scanning, scientific
-analysis definitions, assembly profiles, Partner shipping rules, manual
-accounting ownership, and notification configuration remain explicit
-production-activation inputs rather than source-controlled defaults.
+`IFileStorage` contract. Local, Disabled and S3 providers are implemented.
+October 9 release receipts record local and hosted-test S3 activation and preserved
+ClamAV settings. Disabled remains a fail-closed configuration option, not the
+current hosted-test provider. The named production runtime is a hosted test
+environment; commercial S3 recovery, monitoring, scientific configuration and
+real provider acceptance remain explicit gates in operations readiness.
 
 ## Frontend
 
@@ -252,15 +250,9 @@ Generated `dist`, `.astro`, and `node_modules` content is not canonical source.
   `lab_ops`; Website intake entities target `website`; no default schema is
   used.
 - EF migration history: `public.__ef_migrations_history`.
-- Migration checkpoint: the disposable Development database was rebuilt on
-  2026-07-16 from `20260716220428_InitialPSeqOperations`, renamed to
-  `phaeno_ops`, and extended by `20260716223048_AddLabOperationsFoundation`,
-  `20260716225818_AddLabProviderCommandReceipts`,
-  `20260716234233_CompleteLabOperations`,
-  `20260716235343_AddLabQcProjection`, and
-  `20260717000026_EnforceLabLibraryLineage`; `AddWebsiteApi` is generated but
-  has not been applied as part of the code-consolidation work. The model
-  contains no `portal` schema.
+- Migration checkpoint: the September clean baseline and subsequent feature
+  migrations are authoritative; earlier reset histories remain in dated receipts.
+  No `portal` schema is used. See the current ERD and migration source.
 - External identity: `Clerk` configuration.
 - Invitation delivery: Mailgun when configured; logging sender only in
   Development/Test. Locale-named HTML/text templates are embedded under
@@ -297,9 +289,9 @@ Generated `dist`, `.astro`, and `node_modules` content is not canonical source.
 - Public Website deployment: the static output under `website/` is a separate
   Vercel deployment unit; adding it to this repository does not merge it into
   the Portal frontend deployment.
-- Deployment is not yet an established production path. Current operational and
-  activation boundaries are recorded in `docs/operations-readiness.md`; do not
-  infer a target from the Phaeno Website or another repository.
+- Protected Portal Green deployment and separate Vercel frontend hosting are
+  established in the deployment runbooks and release receipts. Automatic releases
+  remain held. Hosted-test deployment is not commercial production acceptance.
 
 ## Authoritative references
 

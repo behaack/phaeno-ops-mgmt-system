@@ -1,3 +1,5 @@
+import { act } from '@testing-library/react'
+import * as portalConfirmation from '#/components/PortalConfirmation'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -28,16 +30,16 @@ function show(existing: LabSample | null) {
 }
 
 describe.each([{ mode: 'Add', existing: null }, { mode: 'Edit', existing: sample }])('$mode sample discard protection', ({ existing }) => {
-  it('retains an edited identifier after declined Cancel, Close and Escape, then closes only after confirmed discard', () => {
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+  it('retains an edited identifier after declined Cancel, Close and Escape, then closes only after confirmed discard', async () => {
+    const confirm = vi.spyOn(portalConfirmation, 'confirmPortal').mockResolvedValue(false)
     const dialog = show(existing)
     const identifier = within(dialog).getByLabelText(/Customer sample ID/)
     expect(identifier).toHaveProperty('value', existing?.customerSampleId ?? '')
     fireEvent.change(identifier, { target: { value: 'RNA-CHANGED' } })
 
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }))
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Close' }))
-    fireEvent.keyDown(dialog, { key: 'Escape' })
+    await act(async () => { fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' })) })
+    await act(async () => { fireEvent.click(within(dialog).getByRole('button', { name: 'Close' })) })
+    await act(async () => { fireEvent.keyDown(dialog, { key: 'Escape' }) })
 
     expect(confirm).toHaveBeenCalledTimes(3)
     expect(confirm).toHaveBeenCalledWith('Discard the unsaved sample details?')
@@ -45,18 +47,18 @@ describe.each([{ mode: 'Add', existing: null }, { mode: 'Edit', existing: sample
     expect(identifier).toHaveProperty('value', 'RNA-CHANGED')
     expect(screen.getByRole('dialog')).toBe(dialog)
 
-    confirm.mockReturnValue(true)
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }))
+    confirm.mockResolvedValue(true)
+    await act(async () => { fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' })) })
     expect(mocks.close).toHaveBeenCalledExactlyOnceWith(false)
     expect(mocks.add).not.toHaveBeenCalled()
     expect(mocks.update).not.toHaveBeenCalled()
     expect(mocks.saved).not.toHaveBeenCalled()
   })
 
-  it('closes untouched sample details without a discard warning', () => {
-    const confirm = vi.spyOn(window, 'confirm')
+  it('closes untouched sample details without a discard warning', async () => {
+    const confirm = vi.spyOn(portalConfirmation, 'confirmPortal')
     const dialog = show(existing)
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }))
+    await act(async () => { fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' })) })
     expect(mocks.close).toHaveBeenCalledExactlyOnceWith(false)
     expect(confirm).not.toHaveBeenCalled()
     expect(mocks.add).not.toHaveBeenCalled()
@@ -85,7 +87,7 @@ describe('sample source capacity in Add and Edit', () => {
     expect(screen.getByText('fgjh')).toBeTruthy()
     fireEvent.change(screen.getByLabelText(/Customer sample ID/), { target: { value: 'RNA-NEW' } })
     mocks.add.mockResolvedValueOnce(groupedOrder)
-    fireEvent.click(screen.getByRole('button', { name: 'Add sample' }))
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Add sample' })) })
     await waitFor(() => expect(mocks.add).toHaveBeenCalledWith(groupedOrder.id, expect.objectContaining({ customerSampleId: 'RNA-NEW', biologicalSource: 'fgjh', tubeCount: 1, orderVersion: groupedOrder.version })))
   })
 
@@ -93,7 +95,7 @@ describe('sample source capacity in Add and Edit', () => {
     showCapacity(groupedOrder, null, 'fghj')
     fireEvent.change(screen.getByLabelText(/Customer sample ID/), { target: { value: 'RNA-NEW' } })
     expect(screen.queryByRole('combobox')).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: 'Add sample' }))
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Add sample' })) })
     expect(await screen.findByText(/fghj is full \(1 of 1 samples\)/)).toBeTruthy()
     expect(mocks.add).not.toHaveBeenCalled()
     expect(screen.getByLabelText(/Customer sample ID/)).toHaveProperty('value', 'RNA-NEW')
@@ -103,7 +105,7 @@ describe('sample source capacity in Add and Edit', () => {
     showCapacity({ ...groupedOrder, sourceGroups: [groupedOrder.sourceGroups[0]] }, null, 'fghj')
     fireEvent.change(screen.getByLabelText(/Customer sample ID/), { target: { value: 'RNA-NEW' } })
     expect(screen.getByText('fghj').parentElement?.textContent).toContain('fghj · Full')
-    fireEvent.click(screen.getByRole('button', { name: 'Add sample' }))
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Add sample' })) })
     expect(await screen.findByText(/fghj is full/)).toBeTruthy()
     expect(mocks.add).not.toHaveBeenCalled()
   })
@@ -111,7 +113,7 @@ describe('sample source capacity in Add and Edit', () => {
   it.each([undefined, 'Unknown source'])('blocks Add with missing or unaccepted source context (%s)', async (biologicalSource) => {
     showCapacity(groupedOrder, null, biologicalSource)
     fireEvent.change(screen.getByLabelText(/Customer sample ID/), { target: { value: 'RNA-NEW' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Add sample' }))
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Add sample' })) })
     expect(await screen.findByRole('alert')).toHaveProperty('textContent', biologicalSource ? 'Select a biological source accepted with this Job.' : 'Biological source is required.')
     expect(mocks.add).not.toHaveBeenCalled()
     expect(screen.queryByRole('combobox')).toBeNull()
@@ -125,7 +127,7 @@ describe('sample source capacity in Add and Edit', () => {
     expect(within(source).getByRole('option', { name: 'fghj · Full' })).toHaveProperty('disabled', false)
     fireEvent.change(screen.getByLabelText(/Quantity/), { target: { value: 3 } })
     mocks.update.mockResolvedValueOnce(overfull)
-    fireEvent.click(screen.getByRole('button', { name: 'Save sample details' }))
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Save sample details' })) })
     await waitFor(() => expect(mocks.update).toHaveBeenCalledWith(overfull.id, existing.id, expect.objectContaining({ biologicalSource: 'fghj', tubeCount: 3, version: existing.version })))
   })
 
@@ -140,7 +142,7 @@ describe('sample source capacity in Add and Edit', () => {
     fireEvent.change(screen.getByRole('combobox', { name: /Biological source/ }), { target: { value: 'Legacy source' } })
     fireEvent.change(screen.getByLabelText(/Customer sample ID/), { target: { value: 'RNA-REPAIRED' } })
     mocks.update.mockResolvedValueOnce(model)
-    fireEvent.click(screen.getByRole('button', { name: 'Save sample details' }))
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Save sample details' })) })
     await waitFor(() => expect(mocks.update).toHaveBeenCalledWith(model.id, existing.id, expect.objectContaining({ customerSampleId: 'RNA-REPAIRED', biologicalSource: 'Legacy source' })))
   })
 
@@ -150,7 +152,7 @@ describe('sample source capacity in Add and Edit', () => {
     expect(screen.getByRole('option', { name: 'fghj · 1 sample remaining' })).toHaveProperty('disabled', false)
     fireEvent.change(screen.getByRole('combobox', { name: /Biological source/ }), { target: { value: 'fgjh' } })
     mocks.update.mockResolvedValueOnce(groupedOrder)
-    fireEvent.click(screen.getByRole('button', { name: 'Save sample details' }))
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Save sample details' })) })
     await waitFor(() => expect(mocks.update).toHaveBeenCalledWith(groupedOrder.id, existing.id, expect.objectContaining({ biologicalSource: 'fgjh', tubeCount: 20 })))
   })
 
@@ -160,7 +162,7 @@ describe('sample source capacity in Add and Edit', () => {
     showCapacity(model, existing)
     expect(screen.getByRole('option', { name: 'fghj · Full' })).toHaveProperty('disabled', true)
     fireEvent.change(screen.getByRole('combobox', { name: /Biological source/ }), { target: { value: 'fghj' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Save sample details' }))
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Save sample details' })) })
     await screen.findByText(/fghj is full/)
     expect(mocks.update).not.toHaveBeenCalled()
   })
@@ -175,11 +177,11 @@ describe('sample source capacity in Add and Edit', () => {
     expect(screen.getByLabelText(/Quantity/)).toHaveProperty('value', '4')
     expect(screen.getByText('fgjh').parentElement?.textContent).toContain('fgjh · Full')
     expect(screen.queryByRole('combobox')).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: 'Add sample' }))
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Add sample' })) })
     await screen.findByText(/fgjh is full \(2 of 2 samples\)/)
     expect(mocks.add).not.toHaveBeenCalled()
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+    const confirm = vi.spyOn(portalConfirmation, 'confirmPortal').mockResolvedValue(false)
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Cancel' })) })
     expect(confirm).toHaveBeenCalledWith('Discard the unsaved sample details?')
     expect(mocks.close).not.toHaveBeenCalled()
   })

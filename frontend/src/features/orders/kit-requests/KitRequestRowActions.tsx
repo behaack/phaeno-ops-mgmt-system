@@ -1,3 +1,4 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useSearch } from '@tanstack/react-router'
 import { useRef } from 'react'
@@ -21,11 +22,11 @@ export function KitRequestRowActions({ request, disabled, onAction }: { request:
   const trigger = useRef<HTMLButtonElement>(null)
   const active = ['Pending', 'PartiallyDispatched'].includes(request.status)
   const open = (kind: KitRequestAction['kind']) => onAction({ request, kind, opener: trigger.current })
-  return <ActionMenu modal={false}><DropdownMenuTrigger asChild><Button ref={trigger} size="sm" variant="outline" disabled={disabled} aria-label={`Actions for ${kitRequestReference(request)}`}>Actions</Button></DropdownMenuTrigger>
+  return <ActionMenu modal={false}><DropdownMenuTrigger asChild><Button ref={trigger} size="sm" variant="outline" disabled={disabled} aria-label={`Actions for ${kitRequestReference(request)}`}><CustomerSourceText source={"Actions"} /></Button></DropdownMenuTrigger>
     <DropdownMenuContent align="end" className="w-max min-w-48 max-w-[calc(100vw-2rem)]">
-      {active ? <><DropdownMenuItem onSelect={() => open('prepare')}>Prepare kits</DropdownMenuItem><DropdownMenuItem onSelect={() => open('dispatch')}>Record kit shipment</DropdownMenuItem></> : null}
-      {request.canCancel ? <DropdownMenuItem variant="destructive" onSelect={() => open('cancel')}>Cancel request</DropdownMenuItem> : null}
-      <DropdownMenuItem asChild><Link to="/lab-operations/kit-requests/$requestId" params={{ requestId: request.id }} search={{ ...search, kitQueue: 'requests', section: 'kit-requests', receiptTab: undefined }}>View request</Link></DropdownMenuItem>
+      {active ? <><DropdownMenuItem onSelect={() => open('prepare')}><CustomerSourceText source={"Prepare kits"} /></DropdownMenuItem><DropdownMenuItem onSelect={() => open('dispatch')}><CustomerSourceText source={"Record kit shipment"} /></DropdownMenuItem></> : null}
+      {request.canCancel ? <DropdownMenuItem variant="destructive" onSelect={() => open('cancel')}><CustomerSourceText source={"Cancel request"} /></DropdownMenuItem> : null}
+      <DropdownMenuItem asChild><Link to="/lab-operations/kit-requests/$requestId" params={{ requestId: request.id }} search={{ ...search, kitQueue: 'requests', section: 'kit-requests', receiptTab: undefined }}><CustomerSourceText source={"View request"} /></Link></DropdownMenuItem>
     </DropdownMenuContent>
   </ActionMenu>
 }
@@ -50,8 +51,8 @@ export function KitRequestListActionDialog({ action, onClose }: { action: KitReq
   const title = action.kind === 'cancel' ? 'Cancel kit request' : action.kind === 'prepare' ? 'Prepare kits' : 'Record kit shipment'
   const blocked = !active ? 'This request no longer has kits awaiting dispatch.' : action.kind === 'prepare' ? 'The requested kits are already ready. Use Record kit shipment after carrier handoff.' : detail?.dispatchBlockedReason ?? 'Prepare fully registered kits before recording this shipment.'
   return <Dialog open onOpenChange={open => { if (!open) onClose() }}><DialogContent onOpenAutoFocus={event => { event.preventDefault(); closeRef.current?.focus() }}>
-    <DialogHeader><DialogTitle>{title}</DialogTitle><DialogDescription>{kitRequestReference(action.request)} · Job {action.request.jobNumber}</DialogDescription></DialogHeader>
-    <div>{query.error ? <Alert variant="destructive"><AlertTitle>Request could not be refreshed</AlertTitle><AlertDescription>{getOrderErrorMessage(query.error, 'Try again before making changes.')}</AlertDescription></Alert> : !refreshed ? <p role="status">Checking the current request and available kits…</p> : <p>{action.kind === 'cancel' ? 'This request can no longer be cancelled. Cancellation is available only before dispatch.' : blocked}</p>}</div>
-    <DialogFooter><Button ref={closeRef} variant="outline" onClick={onClose}>Close</Button>{query.error ? <Button onClick={() => void query.refetch()}>Retry</Button> : null}</DialogFooter>
+    <DialogHeader><DialogTitle>{title}</DialogTitle><DialogDescription>{kitRequestReference(action.request)} <CustomerSourceText source={"· Job"} /> {action.request.jobNumber}</DialogDescription></DialogHeader>
+    <div>{query.error ? <Alert variant="destructive"><AlertTitle><CustomerSourceText source={"Request could not be refreshed"} /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(query.error, 'Try again before making changes.')} />}</AlertDescription></Alert> : !refreshed ? <p role="status"><CustomerSourceText source={"Checking the current request and available kits…"} /></p> : <p>{action.kind === 'cancel' ? <CustomerSourceText source={"This request can no longer be cancelled. Cancellation is available only before dispatch."} /> : blocked}</p>}</div>
+    <DialogFooter><Button ref={closeRef} variant="outline" onClick={onClose}><CustomerSourceText source={"Close"} /></Button>{query.error ? <Button onClick={() => void query.refetch()}><CustomerSourceText source={"Retry"} /></Button> : null}</DialogFooter>
   </DialogContent></Dialog>
 }

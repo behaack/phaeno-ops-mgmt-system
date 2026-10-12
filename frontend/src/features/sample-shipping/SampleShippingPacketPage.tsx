@@ -1,3 +1,5 @@
+import { CustomerSourceText, useCustomerSourceText } from '#/features/customer-i18n/customer-text'
+import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { ArrowLeft, Printer } from 'lucide-react'
@@ -26,6 +28,10 @@ type FrozenSample = {
 }
 
 export function SampleShippingPacketPage({ shipmentId, autoPrint = false, onAutoPrint, onFailure, embedded = false, packingOnly = false, expectedInsert }: { shipmentId: string; autoPrint?: boolean; onAutoPrint?: (insert: ShippingInsertIdentity) => void; onFailure?: (message: string) => void; embedded?: boolean; packingOnly?: boolean; expectedInsert?: ShippingInsertIdentity }) {
+  const __customerSource = useCustomerSourceText()
+
+  const __customerText = useCustomerText()
+
   const Page = packingOnly ? 'div' : 'main'
   const autoPrintHandled = useRef(false)
   const [manifestPage, setManifestPage] = useState<{ revisionKey: string; page: number } | null>(null)
@@ -56,11 +62,11 @@ export function SampleShippingPacketPage({ shipmentId, autoPrint = false, onAuto
   }, [autoPrint, currentPacket, onAutoPrint, printable])
 
   if (query.isLoading || query.isFetching) {
-    return <Page className="page-wrap space-y-5 px-4 py-8">{!packingOnly ? <PacketReturnLink shipmentId={shipmentId} /> : null}<p role="status">Checking the current shipping insert…</p></Page>
+    return <Page className="page-wrap space-y-5 px-4 py-8">{!packingOnly ? <PacketReturnLink shipmentId={shipmentId} /> : null}<p role="status"><CustomerText message="m_762477bd629b" /></p></Page>
   }
 
   if (query.fetchStatus === 'paused') {
-    return <Page className="page-wrap space-y-5 px-4 py-8">{!packingOnly ? <PacketReturnLink shipmentId={shipmentId} /> : null}<Alert><AlertTitle>Connection needed</AlertTitle><AlertDescription>Reconnect so the Portal can check the current shipping insert revision before printing.</AlertDescription></Alert></Page>
+    return <Page className="page-wrap space-y-5 px-4 py-8">{!packingOnly ? <PacketReturnLink shipmentId={shipmentId} /> : null}<Alert><AlertTitle><CustomerText message="m_c2d745d71c8a" /></AlertTitle><AlertDescription><CustomerText message="m_bef475f94fd9" /></AlertDescription></Alert></Page>
   }
 
   if (query.error || !query.data) {
@@ -68,20 +74,20 @@ export function SampleShippingPacketPage({ shipmentId, autoPrint = false, onAuto
       <Page className="page-wrap space-y-5 px-4 py-8">
         {!packingOnly ? <PacketReturnLink shipmentId={shipmentId} /> : null}
         <Alert variant="destructive">
-          <AlertTitle>Shipping insert unavailable</AlertTitle>
+          <AlertTitle><CustomerText message="m_7585977e794c" /></AlertTitle>
           <AlertDescription>
-            {query.error ? apiErrorMessage(query.error) : 'The shipping insert was not found.'}
+            {query.error ? apiErrorMessage(query.error) : __customerText('m_66c91b7d865e')}
           </AlertDescription>
         </Alert>
-        <Button variant="outline" onClick={() => void query.refetch()}>Try again</Button>
+        <Button variant="outline" onClick={() => void query.refetch()}><CustomerText message="m_d8b8392e2c54" /></Button>
       </Page>
     )
   }
 
   const { shipment } = query.data
   const packet = shipment.currentPacket
-  if (!packet || packet.isVoided) return <Page className="page-wrap space-y-5 px-4 py-8">{!packingOnly ? <PacketReturnLink shipmentId={shipmentId} /> : null}<Alert><AlertTitle>Shipping insert no longer current</AlertTitle><AlertDescription>Return to the shipment to review its current contents and shipping insert revision before printing.</AlertDescription></Alert><Button variant="outline" onClick={() => void query.refetch()}>Try again</Button></Page>
-  if (expectedInsert && (packet.id !== expectedInsert.id || packet.revision !== expectedInsert.revision)) return <Alert variant="destructive"><AlertTitle>Shipping insert has changed</AlertTitle><AlertDescription>Close this confirmation and print the current shipping insert before packing its container.</AlertDescription></Alert>
+  if (!packet || packet.isVoided) return <Page className="page-wrap space-y-5 px-4 py-8">{!packingOnly ? <PacketReturnLink shipmentId={shipmentId} /> : null}<Alert><AlertTitle><CustomerText message="m_f33e8d1fbe2c" /></AlertTitle><AlertDescription><CustomerText message="m_ab73b62901f0" /></AlertDescription></Alert><Button variant="outline" onClick={() => void query.refetch()}><CustomerText message="m_d8b8392e2c54" /></Button></Page>
+  if (expectedInsert && (packet.id !== expectedInsert.id || packet.revision !== expectedInsert.revision)) return <Alert variant="destructive"><AlertTitle><CustomerText message="m_bbfeca2a3f76" /></AlertTitle><AlertDescription><CustomerText message="m_dedf42b4b591" /></AlertDescription></Alert>
   const destination = parseObject(query.data.destinationSnapshotJson)
   const instructions = parseObject(query.data.instructionSnapshotJson)
   const manifest = parseObject(query.data.manifestSnapshotJson)
@@ -92,94 +98,91 @@ export function SampleShippingPacketPage({ shipmentId, autoPrint = false, onAuto
   const visibleSamples = frozenSamples.slice(page * manifestPageSize, (page + 1) * manifestPageSize)
 
   if (packingOnly) return <div className="space-y-6 wrap-anywhere" data-packet-id={packet.id} data-packet-revision={packet.revision}>
-    <p className="text-sm text-muted-foreground">Shipment {shipment.shipmentNumber} · Shipping insert {packet.packetNumber} · revision {packet.revision}</p>
+    <p className="text-sm text-muted-foreground"><CustomerText message="m_0e7049acc0d7" />{shipment.shipmentNumber} <CustomerText message="m_d393cbdae650" />{packet.packetNumber} <CustomerText message="m_3b0e4579f573" />{packet.revision}</p>
     <FrozenPackingInstructions destination={destination} instructions={instructions} />
   </div>
 
   return (
     <Page className="shipping-packet-page page-wrap px-4 py-8 print:max-w-none print:px-0 print:py-0">
-      <style>{`@media print { @page { margin: 10mm 12mm 15mm !important; @bottom-left { content: ${JSON.stringify(`Shipping insert ${packet.packetNumber} · Barcode ${packet.barcode} · Shipment ${shipment.shipmentNumber}`)}; font: 8pt Arial, sans-serif; color: black; } } }`}</style>
+      <style>{__customerText('m_e3fb25f248a0', { p0: String(JSON.stringify(`Shipping insert ${packet.packetNumber} · Barcode ${packet.barcode} · Shipment ${shipment.shipmentNumber}`)) })}</style>
       {!embedded ? <div className="mb-6 flex items-center justify-between gap-3 print:hidden">
         {!packingOnly ? <PacketReturnLink shipmentId={shipmentId} /> : null}
         <Button onClick={() => window.print()}>
           <Printer data-icon="inline-start" />
-          Print shipping insert
-        </Button>
+          <CustomerText message="m_84eeca69e626" /></Button>
       </div> : null}
 
       <article data-packet-id={packet.id} data-packet-revision={packet.revision} className="shipping-packet mx-auto max-w-4xl space-y-8 bg-background pb-16 text-foreground print:max-w-none print:bg-white print:text-black">
         <header className="packet-header break-inside-avoid border-b pb-5">
-          <div className="flex items-center justify-between gap-4"><img src="/phaeno124x40.webp" alt="Phaeno" width={124} height={40} /><p className="text-sm font-medium uppercase tracking-wide">Shipping insert</p></div>
+          <div className="flex items-center justify-between gap-4"><img src="/phaeno124x40.webp" alt={__customerSource("Phaeno")} width={124} height={40} /><p className="text-sm font-medium uppercase tracking-wide"><CustomerText message="m_388945d1466a" /></p></div>
           <h1 className="mt-2 text-3xl font-semibold">{packet?.packetNumber}</h1>
-          <p className="mt-3 text-sm">Revision {packet.revision} · Place inside this container</p>
+          <p className="mt-3 text-sm"><CustomerText message="m_e330d85ff901" />{packet.revision} <CustomerText message="m_6192d81774e7" /></p>
         </header>
 
-        <section aria-label="Receiving summary" className="packet-summary grid gap-3 text-sm sm:grid-cols-2">
-          <p><strong>Customer</strong><br />{shipment.organizationName}</p>
-          <p><strong>Job / Trial</strong><br />{text(manifest.authorizationReference) || shipment.authorizationReference}</p>
-          <p><strong>Shipment</strong><br />{text(manifest.shipmentNumber) || shipment.shipmentNumber}</p>
-          <p><strong>Contents in this container</strong><br />{frozenSamples.length} {frozenSamples.length === 1 ? 'sample' : 'samples'} · {frozenSamples.reduce((count, sample) => count + sample.tubes.length, 0)} tubes</p>
-          {text(asObject(manifest.container).commonName) ? <p className="sm:col-span-2"><strong>Container</strong><br />{text(asObject(manifest.container).commonName)} · SKU {text(asObject(manifest.container).sku)}</p> : null}
+        <section aria-label={__customerText('m_2b2174b49e78')} className="packet-summary grid gap-3 text-sm sm:grid-cols-2">
+          <p><strong><CustomerText message="m_bf3763383aaf" /></strong><br />{shipment.organizationName}</p>
+          <p><strong><CustomerText message="m_92a6fe8fa823" /></strong><br />{text(manifest.authorizationReference) || shipment.authorizationReference}</p>
+          <p><strong><CustomerText message="m_dfee01bfef72" /></strong><br />{text(manifest.shipmentNumber) || shipment.shipmentNumber}</p>
+          <p><strong><CustomerText message="m_129eced24674" /></strong><br />{frozenSamples.length} {frozenSamples.length === 1 ? <CustomerSourceText source={"sample"} /> : __customerText('m_24baa7a731ce')} · {frozenSamples.reduce((count, sample) => count + sample.tubes.length, 0)} <CustomerText message="m_0f4552851513" /></p>
+          {text(asObject(manifest.container).commonName) ? <p className="sm:col-span-2"><strong><CustomerText message="m_0c7823e8c759" /></strong><br />{text(asObject(manifest.container).commonName)} <CustomerText message="m_ce92c91a9097" />{text(asObject(manifest.container).sku)}</p> : null}
         </section>
 
-        <section aria-label="Receiving barcodes" className="packet-scan-targets">
+        <section aria-label={__customerText('m_f63ad974321d')} className="packet-scan-targets">
           <div className="packet-scan-target">
-            <h2 className="font-semibold">Scan to receive this shipment</h2>
-            <p className="text-sm">Shipping insert QR code · current revision</p>
-            <ShippingBarcode value={packet.barcode} label="Shipping insert revision barcode" size="receiving" />
+            <h2 className="font-semibold"><CustomerText message="m_beaa603e5f5f" /></h2>
+            <p className="text-sm"><CustomerText message="m_4e23a11b74dc" /></p>
+            <ShippingBarcode value={packet.barcode} label={__customerText('m_5a8201861367')} size="receiving" />
           </div>
           {text(asObject(manifest.containerKit).barcode) ? <div className="packet-scan-target">
-            <h2 className="font-semibold">Physical container reference</h2>
-            <p className="text-sm">Match to the barcode on the container</p>
-            <ShippingBarcode value={text(asObject(manifest.containerKit).barcode)} label="Container barcode" size="receiving" />
+            <h2 className="font-semibold"><CustomerText message="m_2cb662cf936c" /></h2>
+            <p className="text-sm"><CustomerText message="m_67725fad67bb" /></p>
+            <ShippingBarcode value={text(asObject(manifest.containerKit).barcode)} label={__customerText('m_690050a9e7ce')} size="receiving" />
           </div> : null}
         </section>
 
         <section className="packet-receiving-notes space-y-3 text-sm">
-          <h2 className="font-semibold">Receiving notes</h2>
+          <h2 className="font-semibold"><CustomerText message="m_2862d64c92bd" /></h2>
           {receivingInstructions(instructions).map(value => <p key={value}>{value}</p>)}
-          <p>Open the shipment in POMS for the complete sample and tube list. Accession each physical tube separately.</p>
-          <p><strong>Missing, damaged or unexpected contents?</strong> Record the discrepancy before proceeding.{text(destination.receivingEmail) ? ` Contact: ${text(destination.receivingEmail)}.` : ''}{text(destination.receivingPhone) ? ` Phone: ${text(destination.receivingPhone)}.` : ''}</p>
+          <p><CustomerText message="m_9390ab697c32" /></p>
+          <p><strong><CustomerText message="m_46e50529a18a" /></strong> <CustomerText message="m_b6448e54b59f" />{text(destination.receivingEmail) ? __customerText('m_10a020fe3787', { p0: String(text(destination.receivingEmail)) }) : ''}{text(destination.receivingPhone) ? __customerText('m_f0df88f05670', { p0: String(text(destination.receivingPhone)) }) : ''}</p>
         </section>
 
         <details className="packet-full-details print:hidden">
-          <summary className="cursor-pointer rounded-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-4">Full packing instructions and sample / tube list</summary>
-          <p className="mt-3 text-sm text-muted-foreground">Review these instructions before shipping. Printing produces the receiving sheet above; retain the full tube list using Download tube list (CSV) on the shipment.</p>
+          <summary className="cursor-pointer rounded-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-4"><CustomerText message="m_475ce374a5e5" /></summary>
+          <p className="mt-3 text-sm text-muted-foreground"><CustomerText message="m_98d8b9aca5a3" /></p>
           <div className="mt-6 space-y-8">
-          {text(manifest.orderBarcode) ? <ShippingBarcode value={text(manifest.orderBarcode)} label="Order barcode" /> : null}
-          {text(manifest.shipmentBarcode) ? <ShippingBarcode value={text(manifest.shipmentBarcode)} label="Shipment barcode" /> : null}
+          {text(manifest.orderBarcode) ? <ShippingBarcode value={text(manifest.orderBarcode)} label={__customerText('m_33f88e33bf17')} /> : null}
+          {text(manifest.shipmentBarcode) ? <ShippingBarcode value={text(manifest.shipmentBarcode)} label={__customerText('m_26e9c817e485')} /> : null}
 
         <FrozenPackingInstructions destination={destination} instructions={instructions} />
 
         <section className="packet-manifest">
-          <h2 className="text-xl font-semibold">Sample and tube list</h2>
+          <h2 className="text-xl font-semibold"><CustomerText message="m_22e92249f63b" /></h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            This confirmed manifest lists only the physical contents of this container. Retain the tube list for your records.
-          </p>
-          {manifestPages > 1 ? <nav aria-label="Manifest sample pages" className="mt-4 flex flex-wrap items-center justify-between gap-3">
-            <p aria-live="polite" aria-atomic="true" className="text-sm text-muted-foreground">Samples {page * manifestPageSize + 1}–{Math.min((page + 1) * manifestPageSize, frozenSamples.length)} of {frozenSamples.length}</p>
-            <div className="flex gap-2"><Button variant="outline" size="sm" disabled={page === 0} onClick={() => setManifestPage({ revisionKey, page: page - 1 })}>Previous samples</Button><Button variant="outline" size="sm" disabled={page === manifestPages - 1} onClick={() => setManifestPage({ revisionKey, page: page + 1 })}>Next samples</Button></div>
+            <CustomerText message="m_7563ee586a3f" /></p>
+          {manifestPages > 1 ? <nav aria-label={__customerText('m_26f81af559cf')} className="mt-4 flex flex-wrap items-center justify-between gap-3">
+            <p aria-live="polite" aria-atomic="true" className="text-sm text-muted-foreground"><CustomerText message="m_25d51a4ef1d2" />{page * manifestPageSize + 1}–{Math.min((page + 1) * manifestPageSize, frozenSamples.length)} of {frozenSamples.length}</p>
+            <div className="flex gap-2"><Button variant="outline" size="sm" disabled={page === 0} onClick={() => setManifestPage({ revisionKey, page: page - 1 })}><CustomerText message="m_e4c4ce3e9fa8" /></Button><Button variant="outline" size="sm" disabled={page === manifestPages - 1} onClick={() => setManifestPage({ revisionKey, page: page + 1 })}><CustomerText message="m_49c7f8cb9ceb" /></Button></div>
           </nav> : null}
           <div className="packet-samples mt-4 space-y-5">{visibleSamples.map(item => <article key={item.id} className="packet-sample rounded-md border p-4">
-            <header className="break-inside-avoid space-y-2"><h3 className="wrap-anywhere font-semibold">{item.customerSampleId}</h3><p className="text-sm">{item.sampleName}{item.sampleTypeName ? ` · ${item.sampleTypeName}` : ''}</p><p className="text-sm font-medium">{item.tubes.length} of {item.totalTubeCount} tubes in this shipment</p>{item.sampleBarcode ? <div className="max-w-2xl"><ShippingBarcode value={item.sampleBarcode} label="Sample barcode" /></div> : null}</header>
-            <h4 className="mt-4 text-sm font-semibold">Physical tubes in this container</h4>
-            <ul className="mt-2 divide-y">{item.tubes.map((tube, index) => <li key={`${tube.barcode}-${index}`} className="packet-tube break-inside-avoid space-y-2 py-3"><p className="text-sm"><span className="hidden wrap-anywhere font-medium print:block">{item.customerSampleId}</span>Tube {tube.ordinal || index + 1}{tube.quantity ? ` · Customer-declared material: ${tube.quantity} ${tube.quantityUnit}` : ' · Customer-declared material: unknown'}</p>{tube.barcode ? <div className="max-w-2xl"><ShippingBarcode value={tube.barcode} label="Permanent tube barcode" /></div> : <p className="text-sm">No tube barcode recorded in this revision.</p>}</li>)}</ul>
-            {item.otherShipments.length || item.unallocatedTubeCount > 0 ? <aside className="mt-3 break-inside-avoid border-t pt-3 text-sm"><h4 className="font-semibold">Other tubes for this sample — not in this container</h4><ul className="mt-2 space-y-1">{item.otherShipments.map(other => <li key={other.shipmentNumber}>{other.tubeCount} {other.tubeCount === 1 ? 'tube' : 'tubes'} in shipment {other.shipmentNumber}</li>)}{item.unallocatedTubeCount > 0 ? <li>{item.unallocatedTubeCount} {item.unallocatedTubeCount === 1 ? 'tube is' : 'tubes are'} not yet allocated to a shipment.</li> : null}</ul><p className="mt-2 text-xs">These references reflect this confirmed manifest revision. Check the Portal for current progress.</p></aside> : null}
+            <header className="break-inside-avoid space-y-2"><h3 className="wrap-anywhere font-semibold">{item.customerSampleId}</h3><p className="text-sm">{item.sampleName}{item.sampleTypeName ? ` · ${item.sampleTypeName}` : ''}</p><p className="text-sm font-medium">{item.tubes.length} of {item.totalTubeCount} <CustomerText message="m_6f8b3af8dca6" /></p>{item.sampleBarcode ? <div className="max-w-2xl"><ShippingBarcode value={item.sampleBarcode} label={__customerText('m_6500d1c034ff')} /></div> : null}</header>
+            <h4 className="mt-4 text-sm font-semibold"><CustomerText message="m_a9eba104ca62" /></h4>
+            <ul className="mt-2 divide-y">{item.tubes.map((tube, index) => <li key={`${tube.barcode}-${index}`} className="packet-tube break-inside-avoid space-y-2 py-3"><p className="text-sm"><span className="hidden wrap-anywhere font-medium print:block">{item.customerSampleId}</span><CustomerText message="m_a04259785d8e" />{tube.ordinal || index + 1}{tube.quantity ? __customerText('m_e4c039943946', { p0: String(tube.quantity), p1: String(tube.quantityUnit) }) : __customerText('m_d03caacd8c85')}</p>{tube.barcode ? <div className="max-w-2xl"><ShippingBarcode value={tube.barcode} label={__customerText('m_c8cc24fb143d')} /></div> : <p className="text-sm"><CustomerText message="m_6d0540a7fb0e" /></p>}</li>)}</ul>
+            {item.otherShipments.length || item.unallocatedTubeCount > 0 ? <aside className="mt-3 break-inside-avoid border-t pt-3 text-sm"><h4 className="font-semibold"><CustomerText message="m_83c72c329c0d" /></h4><ul className="mt-2 space-y-1">{item.otherShipments.map(other => <li key={other.shipmentNumber}>{other.tubeCount} {other.tubeCount === 1 ? <CustomerSourceText source={"tube"} /> : __customerText('m_cc169e248ff2')} <CustomerText message="m_fe0a0957f844" />{other.shipmentNumber}</li>)}{item.unallocatedTubeCount > 0 ? <li>{item.unallocatedTubeCount} {item.unallocatedTubeCount === 1 ? <CustomerSourceText source={"tube is"} /> : __customerText('m_fb12a3d0225a')} <CustomerText message="m_5432b5fa4b8f" /></li> : null}</ul><p className="mt-2 text-xs"><CustomerText message="m_5804504237d1" /></p></aside> : null}
           </article>)}</div>
         </section>
 
         <section className="packet-privacy break-inside-avoid border p-4 text-sm">
-          <h2 className="font-semibold">Identity and privacy</h2>
+          <h2 className="font-semibold"><CustomerText message="m_b6627676269a" /></h2>
           <p className="mt-2">
-            The order, shipment and sample barcodes identify their records. The shipping insert barcode identifies this confirmed revision. The container barcode identifies the physical container, and each permanent tube barcode identifies one physical tube. Scanning an identifier does not confirm receipt of material. Do not place patient names, dates of birth, medical record numbers, or other PHI on the shipping insert or tubes.
-          </p>
+            <CustomerText message="m_e17d60800818" /></p>
         </section>
 
           </div>
         </details>
 
         <footer className="border-t bg-background pt-4 text-xs print:fixed print:inset-x-0 print:bottom-0 print:px-4 print:pb-2">
-          <p>Shipping insert {packet?.packetNumber} · Barcode {packet?.barcode} · Shipment {shipment.shipmentNumber}</p>
+          <p><CustomerText message="m_a74dbd1de303" />{packet?.packetNumber} <CustomerText message="m_c781d4dff0da" />{packet?.barcode} <CustomerText message="m_973e93882711" />{shipment.shipmentNumber}</p>
         </footer>
       </article>
     </Page>
@@ -187,11 +190,13 @@ export function SampleShippingPacketPage({ shipmentId, autoPrint = false, onAuto
 }
 
 function FrozenPackingInstructions({ destination, instructions }: { destination: JsonObject; instructions: JsonObject }) {
+  const __customerText = useCustomerText()
+
   const containerPacking = asObject(instructions.containerPacking)
   const sharedProcedures = [...new Map(asObjects(instructions.samples).map(entry => asObject(entry.procedure)).filter(rule => rule.shippingProcedureId).map(rule => [text(rule.shippingProcedureId), rule])).values()]
   return <div className="space-y-8">
         <section className="packet-destination break-inside-avoid">
-          <h2 className="text-xl font-semibold">Ship to</h2>
+          <h2 className="text-xl font-semibold"><CustomerText message="m_9d4604b03cdc" /></h2>
           <div className="mt-3 text-sm leading-6">
             <p className="font-medium">{text(destination.recipientName)}</p>
             <p>{text(destination.organizationName)}</p>
@@ -201,23 +206,22 @@ function FrozenPackingInstructions({ destination, instructions }: { destination:
               {text(destination.city)}, {text(destination.stateOrProvince)} {text(destination.postalCode)}
             </p>
             <p>{text(destination.countryCode)}</p>
-            {destination.receivingPhone ? <p>Phone: {text(destination.receivingPhone)}</p> : null}
-            {destination.receivingEmail ? <p>Email: {text(destination.receivingEmail)}</p> : null}
+            {destination.receivingPhone ? <p><CustomerText message="m_b8e5921a04f7" />{text(destination.receivingPhone)}</p> : null}
+            {destination.receivingEmail ? <p><CustomerText message="m_620b685b667f" />{text(destination.receivingEmail)}</p> : null}
           </div>
-          <Instruction label="Receiving hours" value={[text(destination.receivingHours), text(destination.timeZoneId)].filter(Boolean).join(' · ')} />
-          <Instruction label="Closure guidance" value={destination.closureInstructions} />
-          <Instruction label="Delivery directions" value={destination.deliveryInstructions} />
-          <Instruction label="Carrier restrictions" value={destination.carrierRestrictions} />
+          <Instruction label={__customerText('m_cbc9319052d8')} value={[text(destination.receivingHours), text(destination.timeZoneId)].filter(Boolean).join(' · ')} />
+          <Instruction label={__customerText('m_749cd8a1a01e')} value={destination.closureInstructions} />
+          <Instruction label={__customerText('m_0d47a57b5032')} value={destination.deliveryInstructions} />
+          <Instruction label={__customerText('m_a13344e5100f')} value={destination.carrierRestrictions} />
         </section>
 
         <section className="packet-instructions">
-          <h2 className="text-xl font-semibold">Preparation, packing, and delivery instructions</h2>
+          <h2 className="text-xl font-semibold"><CustomerText message="m_227f771bd4b8" /></h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Follow the instructions for this Order's Sample type and Transportation kit. Contact Phaeno before shipping if any requirement cannot be met.
-          </p>
+            <CustomerText message="m_6a39dace3da3" /></p>
           <div className="mt-5 space-y-6">
-            {sharedProcedures.map((rule, index) => <article key={text(rule.shippingProcedureId)} className="rounded-lg border p-4"><h3 className="font-semibold">Common shipping steps{sharedProcedures.length > 1 ? ` ${index + 1}` : ''}</h3><p className="mt-1 text-sm text-muted-foreground">Applies to: {[...new Set(asObjects(instructions.samples).filter(entry => asObject(entry.procedure).shippingProcedureId === rule.shippingProcedureId).map(entry => text(asObject(entry.sampleType).name)).filter(Boolean))].join(', ')}</p><ShippingSteps rule={rule} /></article>)}
-            {containerPacking.temperatureControlInstructions ? <article className="rounded-lg border p-4"><h3 className="font-semibold">Temperature control for this container</h3><p className="mt-1 text-sm">{text(containerPacking.commonName)} · revision {text(containerPacking.revision)}</p><Instruction label="Approved method" value={containerPacking.temperatureControlInstructions} /><Instruction label="Dry ice per kit" value={containerPacking.dryIceQuantity ? `${text(containerPacking.dryIceQuantity)} ${text(containerPacking.dryIceUnit)}` : 'None'} /><Instruction label="Container notes" value={containerPacking.packingInstructions} /></article> : null}
+            {sharedProcedures.map((rule, index) => <article key={text(rule.shippingProcedureId)} className="rounded-lg border p-4"><h3 className="font-semibold"><CustomerText message="m_3615e4f5f591" />{sharedProcedures.length > 1 ? ` ${index + 1}` : ''}</h3><p className="mt-1 text-sm text-muted-foreground"><CustomerText message="m_aadcbe973c99" />{[...new Set(asObjects(instructions.samples).filter(entry => asObject(entry.procedure).shippingProcedureId === rule.shippingProcedureId).map(entry => text(asObject(entry.sampleType).name)).filter(Boolean))].join(', ')}</p><ShippingSteps rule={rule} /></article>)}
+            {containerPacking.temperatureControlInstructions ? <article className="rounded-lg border p-4"><h3 className="font-semibold"><CustomerText message="m_6b333d4fd405" /></h3><p className="mt-1 text-sm">{text(containerPacking.commonName)} <CustomerText message="m_3b0e4579f573" />{text(containerPacking.revision)}</p><Instruction label={__customerText('m_78a36a4738a8')} value={containerPacking.temperatureControlInstructions} /><Instruction label={__customerText('m_cc6ae75f7d94')} value={containerPacking.dryIceQuantity ? `${text(containerPacking.dryIceQuantity)} ${text(containerPacking.dryIceUnit)}` : "None"} /><Instruction label={__customerText('m_e9cce7d8bcf6')} value={containerPacking.packingInstructions} /></article> : null}
             {asObjects(instructions.samples).map((entry, index) => (
               <SampleInstructions entry={entry} index={index} key={index} packing={asObjects(containerPacking.samples).find(pair => pair.sampleTypeId === asObject(entry.sampleType).id)} />
             ))}
@@ -243,33 +247,37 @@ function receivingInstructions(instructions: JsonObject): string[] {
 }
 
 function SampleInstructions({ entry, index, packing }: { entry: JsonObject; index: number; packing?: JsonObject }) {
+  const __customerText = useCustomerText()
+
   const sampleType = asObject(entry.sampleType)
   const rule = asObject(entry.procedure)
   return (
     <article className="border-t pt-4">
       <h3 className="font-semibold">{text(sampleType.name) || `Sample type ${index + 1}`}</h3>
       <div className="packet-instruction-fields">
-        <Instruction label="Material" value={materialClassLabel(sampleType.materialClass)} />
-        <Instruction label="Required quantity" value={quantityRange(sampleType)} />
-        <Instruction label="Sample tube or vessel" value={sampleType.primaryContainerRequirements} />
-        <Instruction label="Preservation requirements" value={sampleType.temperatureRequirements} />
-        <Instruction label="Stabilizer" value={sampleType.stabilizerRequirements} />
-        <Instruction label="Maximum transit time" value={text(sampleType.maximumTransitHours) ? `${text(sampleType.maximumTransitHours)} hours` : ''} />
-        {!rule.shippingProcedureId ? <Instruction label="Sample preparation and packaging" value={sampleType.packagingInstructions} /> : null}
-        <Instruction label="Customer labeling" value={sampleType.labelingInstructions} />
-        <Instruction label="Prohibited identifiers" value={sampleType.prohibitedIdentifiers} />
-        <Instruction label="Safety" value={sampleType.safetyRequirements} />
-        <Instruction label="Packing steps for this sample and container" value={packing?.packingInstructions} />
-        {!rule.shippingProcedureId ? <><Instruction label="Sample carrier restrictions" value={sampleType.carrierRestrictions} /><ShippingSteps rule={rule} /></> : null}
-        <Instruction label="Destination-specific additions" value={rule.destinationInstructions} />
-        <Instruction label="Delivery" value={rule.deliveryInstructions} />
+        <Instruction label={__customerText('m_616cb218a65b')} value={materialClassLabel(sampleType.materialClass)} />
+        <Instruction label={__customerText('m_d841f514dcdc')} value={quantityRange(sampleType)} />
+        <Instruction label={__customerText('m_55bc530e6fda')} value={sampleType.primaryContainerRequirements} />
+        <Instruction label={__customerText('m_d8c56cf2a5ac')} value={sampleType.temperatureRequirements} />
+        <Instruction label={__customerText('m_e70ba4b02564')} value={sampleType.stabilizerRequirements} />
+        <Instruction label={__customerText('m_0db092f918e9')} value={text(sampleType.maximumTransitHours) ? `${text(sampleType.maximumTransitHours)} hours` : ''} />
+        {!rule.shippingProcedureId ? <Instruction label={__customerText('m_249f4c00218f')} value={sampleType.packagingInstructions} /> : null}
+        <Instruction label={__customerText('m_f94379a379e4')} value={sampleType.labelingInstructions} />
+        <Instruction label={__customerText('m_8269b760353a')} value={sampleType.prohibitedIdentifiers} />
+        <Instruction label={__customerText('m_726d11bd5b23')} value={sampleType.safetyRequirements} />
+        <Instruction label={__customerText('m_a00980d4046a')} value={packing?.packingInstructions} />
+        {!rule.shippingProcedureId ? <><Instruction label={__customerText('m_fa1992a6b49d')} value={sampleType.carrierRestrictions} /><ShippingSteps rule={rule} /></> : null}
+        <Instruction label={__customerText('m_d681a19929b7')} value={rule.destinationInstructions} />
+        <Instruction label={__customerText('m_52bfe584a5fc')} value={rule.deliveryInstructions} />
       </div>
     </article>
   )
 }
 
 function ShippingSteps({ rule }: { rule: JsonObject }) {
-  return <><Instruction label="Packing" value={rule.packingInstructions} /><Instruction label="Transit handling" value={rule.temperatureInstructions} /><Instruction label="Carrier" value={rule.carrierInstructions} /><Instruction label="Dispatch timing" value={rule.dispatchInstructions} /><Instruction label="Documents to include" value={rule.requiredDocuments} /><Instruction label="Exceptions" value={rule.exceptionInstructions} /><Instruction label="International customs" value={rule.internationalCustomsInstructions} /></>
+  const __customerText = useCustomerText()
+
+  return <><Instruction label={__customerText('m_e14fc9d661dc')} value={rule.packingInstructions} /><Instruction label={__customerText('m_6f5671989f9c')} value={rule.temperatureInstructions} /><Instruction label={__customerText('m_271c535631ff')} value={rule.carrierInstructions} /><Instruction label={__customerText('m_783eaac18d95')} value={rule.dispatchInstructions} /><Instruction label={__customerText('m_b389f62a42cd')} value={rule.requiredDocuments} /><Instruction label={__customerText('m_a0c002f91bf9')} value={rule.exceptionInstructions} /><Instruction label={__customerText('m_ed01dad7b410')} value={rule.internationalCustomsInstructions} /></>
 }
 
 function readFrozenSamples(manifest: JsonObject): FrozenSample[] {
@@ -324,7 +332,7 @@ function text(value: unknown) {
 }
 
 function PacketReturnLink({ shipmentId }: { shipmentId: string }) {
-  return <Link to="/sample-shipping/$shipmentId" params={{ shipmentId }} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft aria-hidden="true" className="size-4" />Back to shipment</Link>
+  return <Link to="/sample-shipping/$shipmentId" params={{ shipmentId }} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft aria-hidden="true" className="size-4" /><CustomerText message="m_e482a83daa99" /></Link>
 }
 
 function Instruction({ label, value }: { label: string; value: unknown }) {

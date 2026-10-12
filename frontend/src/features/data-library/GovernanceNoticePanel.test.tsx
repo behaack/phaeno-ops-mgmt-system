@@ -1,27 +1,27 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '#/test-helpers/render-portal'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { GovernanceNoticePanel } from './GovernanceNoticePanel'
 
 const mocks = vi.hoisted(() => ({
-  listTenantActivity: vi.fn(),
-  listTenantGovernanceIncidents: vi.fn(),
+  listTenantActivityPage: vi.fn(),
+  listTenantGovernanceIncidentsPage: vi.fn(),
   submitTenantGovernanceAttestation: vi.fn(),
 }))
 
 vi.mock('#/api/data-provisioning', () => ({
   getApiErrorMessage: (_error: unknown, fallback: string) => fallback,
-  listTenantActivity: mocks.listTenantActivity,
-  listTenantGovernanceIncidents: mocks.listTenantGovernanceIncidents,
+  listTenantActivityPage: mocks.listTenantActivityPage,
+  listTenantGovernanceIncidentsPage: mocks.listTenantGovernanceIncidentsPage,
   submitTenantGovernanceAttestation: mocks.submitTenantGovernanceAttestation,
 }))
 
 describe('GovernanceNoticePanel', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mocks.listTenantActivity.mockResolvedValue([])
-    mocks.listTenantGovernanceIncidents.mockResolvedValue([
+    mocks.listTenantActivityPage.mockResolvedValue(testRecordPage([]))
+    mocks.listTenantGovernanceIncidentsPage.mockResolvedValue(testRecordPage([
       {
         id: 'incident-1',
         category: 'Deidentification',
@@ -35,7 +35,7 @@ describe('GovernanceNoticePanel', () => {
         createdAt: '2026-07-14T12:00:00Z',
         version: 4,
       },
-    ])
+    ]))
     mocks.submitTenantGovernanceAttestation.mockResolvedValue({})
   })
 
@@ -82,3 +82,5 @@ function renderPanel() {
     </QueryClientProvider>,
   )
 }
+
+function testRecordPage<T>(items: T[]) { return { items, totalCount: items.length, page: 1, pageSize: 25 } }

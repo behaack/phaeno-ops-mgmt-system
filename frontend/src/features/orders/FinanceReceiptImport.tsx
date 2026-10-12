@@ -1,3 +1,4 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
 import { useRef, useState, type ChangeEvent } from 'react'
@@ -19,6 +20,8 @@ const money = (value: number) => new Intl.NumberFormat('en-US', { style: 'curren
 
 export function FinanceReceiptImport({ apiEnabled, customerId, customers, onSaved }: { apiEnabled: boolean; customerId: string; customers: finance.AccountsReceivableCustomer[]; onSaved: () => Promise<void> }) {
   const form = useForm<InputValues>({ resolver: zodResolver(importSchema.refine(values => customers.some(customer => customer.organizationId === values.organizationId), { path: ['organizationId'], message: 'Select an available Customer.' })), mode: 'onBlur', reValidateMode: 'onChange', defaultValues: { organizationId: customerId, source: '', csvText: '' } })
+  const { isDirty: __formDraftDirty } = form.formState
+
   const revision = useRef(0)
   const fileRead = useRef(0)
   const [readingFile, setReadingFile] = useState(false)
@@ -29,7 +32,7 @@ export function FinanceReceiptImport({ apiEnabled, customerId, customers, onSave
     if (!review || review.revision !== revision.current) throw new Error('Preview the current input before confirming.')
     return finance.confirmPaymentImport(review.batch.id, review.batch.version)
   }, onSuccess: async () => { const organizationId = form.getValues('organizationId'); setReview(null); revision.current += 1; form.reset({ organizationId, source: '', csvText: '' }); setCompleted(true); await onSaved() } })
-  useOrderDraftGuard(form.formState.isDirty || Boolean(review), confirm.isPending)
+  useOrderDraftGuard(__formDraftDirty || Boolean(review), confirm.isPending)
   function invalidateReview() { revision.current += 1; setReview(null); setCompleted(false); preview.reset(); confirm.reset() }
   const register = (name: keyof InputValues) => {
     const field = form.register(name)
@@ -37,12 +40,12 @@ export function FinanceReceiptImport({ apiEnabled, customerId, customers, onSave
   }
   const errors = Object.entries(form.formState.errors).flatMap(([name, error]) => error.message ? [{ name, message: error.message }] : [])
   const failure = preview.error ?? confirm.error
-  return <Card><CardHeader><CardTitle>{review ? 'Review receipt import' : 'Import receipts'}</CardTitle><CardDescription>Preview the complete file, then confirm unapplied receipts for the selected Customer.</CardDescription></CardHeader><CardContent className="space-y-4">
-    {failure ? <Alert variant="destructive"><AlertTitle>Import was not completed</AlertTitle><AlertDescription>{getOrderErrorMessage(failure, 'Try again. Your entered values are retained.')}</AlertDescription></Alert> : null}
-    {completed ? <p role="status">Receipts imported. Open Receipts to allocate cash.</p> : null}
-    {review ? <><dl className="grid gap-4 sm:grid-cols-2">{[['Customer', customers.find(value => value.organizationId === review.input.organizationId)?.organizationName ?? 'Customer unavailable'], ['Source', review.input.source], ['Rows', String(review.batch.rowCount)], ['Total', money(review.batch.totalAmount)]].map(([label, value]) => <div key={label}><dt className="text-xs text-muted-foreground">{label}</dt><dd className="mt-1 break-words font-medium">{value}</dd></div>)}</dl><ImportPreview json={review.batch.previewJson} /><p className="text-sm text-muted-foreground">Confirming creates unapplied receipts. It does not allocate cash.</p><div className="flex flex-wrap gap-2"><Button variant="outline" disabled={confirm.isPending} onClick={invalidateReview}>Change input</Button><Button disabled={confirm.isPending} onClick={() => confirm.mutate()}>{confirm.isPending ? 'Importing…' : `Confirm ${review.batch.rowCount} receipts`}</Button></div></> : <form noValidate className="space-y-4" onSubmit={form.handleSubmit(input => preview.mutate({ input, revision: revision.current }))}>
+  return <Card><CardHeader><CardTitle>{review ? <CustomerSourceText source={"Review receipt import"} /> : <CustomerSourceText source={"Import receipts"} />}</CardTitle><CardDescription><CustomerSourceText source={"Preview the complete file, then confirm unapplied receipts for the selected Customer."} /></CardDescription></CardHeader><CardContent className="space-y-4">
+    {failure ? <Alert variant="destructive"><AlertTitle><CustomerSourceText source={"Import was not completed"} /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(failure, 'Try again. Your entered values are retained.')} />}</AlertDescription></Alert> : null}
+    {completed ? <p role="status"><CustomerSourceText source={"Receipts imported. Open Receipts to allocate cash."} /></p> : null}
+    {review ? <><dl className="grid gap-4 sm:grid-cols-2">{[['Customer', customers.find(value => value.organizationId === review.input.organizationId)?.organizationName ?? 'Customer unavailable'], ['Source', review.input.source], ['Rows', String(review.batch.rowCount)], ['Total', money(review.batch.totalAmount)]].map(([label, value]) => <div key={label}><dt className="text-xs text-muted-foreground">{label}</dt><dd className="mt-1 break-words font-medium">{value}</dd></div>)}</dl><ImportPreview json={review.batch.previewJson} /><p className="text-sm text-muted-foreground"><CustomerSourceText source={"Confirming creates unapplied receipts. It does not allocate cash."} /></p><div className="flex flex-wrap gap-2"><Button variant="outline" disabled={confirm.isPending} onClick={invalidateReview}><CustomerSourceText source={"Change input"} /></Button><Button disabled={confirm.isPending} onClick={() => confirm.mutate()}>{confirm.isPending ? <CustomerSourceText source={"Importing…"} /> : `Confirm ${review.batch.rowCount} receipts`}</Button></div></> : <form noValidate className="space-y-4" onSubmit={form.handleSubmit(input => preview.mutate({ input, revision: revision.current }))}>
       <FinanceValidationSummary errors={errors} focus={name => form.setFocus(name as keyof InputValues)} />
-      <div className="grid gap-4 sm:grid-cols-2"><FinanceField id="import-organization" label="Customer" required error={form.formState.errors.organizationId?.message}><select required className={financeSelectClass} {...register('organizationId')}><option value="">Select Customer</option>{customers.map(item => <option key={item.organizationId} value={item.organizationId}>{item.organizationName}</option>)}</select></FinanceField><FinanceField id="import-source" label="Source" required error={form.formState.errors.source?.message}><Input required {...register('source')} /></FinanceField></div>
+      <div className="grid gap-4 sm:grid-cols-2"><FinanceField id="import-organization" label="Customer" required error={form.formState.errors.organizationId?.message}><select required className={financeSelectClass} {...register('organizationId')}><option value=""><CustomerSourceText source={"Select Customer"} /></option>{customers.map(item => <option key={item.organizationId} value={item.organizationId}>{item.organizationName}</option>)}</select></FinanceField><FinanceField id="import-source" label="Source" required error={form.formState.errors.source?.message}><Input required {...register('source')} /></FinanceField></div>
       <FinanceField id="import-file" label="CSV file"><Input type="file" accept=".csv,text/csv" onChange={async event => {
         const file = event.target.files?.[0]
         if (!file) return
@@ -55,7 +58,7 @@ export function FinanceReceiptImport({ apiEnabled, customerId, customers, onSave
         finally { if (reading === fileRead.current) setReadingFile(false) }
       }} /></FinanceField>
       <FinanceField id="import-csv" label="CSV content" required error={form.formState.errors.csvText?.message}><textarea required className={financeTextareaClass} {...register('csvText')} /></FinanceField>
-      <p className="text-sm text-muted-foreground">Required headers: source, external_id, date, amount, currency, payer, reference, memo.</p><RequiredLegend /><Button disabled={!apiEnabled || preview.isPending || readingFile}>{preview.isPending ? 'Checking…' : readingFile ? 'Reading file…' : 'Preview import'}</Button>
+      <p className="text-sm text-muted-foreground"><CustomerSourceText source={"Required headers: source, external_id, date, amount, currency, payer, reference, memo."} /></p><RequiredLegend /><Button disabled={!apiEnabled || preview.isPending || readingFile}>{preview.isPending ? <CustomerSourceText source={"Checking…"} /> : readingFile ? 'Reading file…' : 'Preview import'}</Button>
     </form>}
   </CardContent></Card>
 }
@@ -63,5 +66,5 @@ export function FinanceReceiptImport({ apiEnabled, customerId, customers, onSave
 function ImportPreview({ json }: { json: string }) {
   let rows: Array<Record<string, unknown>> = []
   try { const value: unknown = JSON.parse(json); rows = Array.isArray(value) ? value : [] } catch { /* Older previews may contain summary-only information. */ }
-  return rows.length ? <div className="overflow-x-auto"><table className="w-full text-left text-sm"><caption className="mb-2 text-left font-medium">Receipts to import</caption><thead><tr>{['External reference', 'Payer', 'Date', 'Amount', 'Reference'].map(label => <th key={label} className="p-2">{label}</th>)}</tr></thead><tbody>{rows.map((row, index) => <tr key={index} className="border-t">{['externalId', 'payer', 'receivedOn', 'amount', 'reference'].map(key => <td key={key} className="p-2">{String(row[key] ?? row[key[0].toUpperCase() + key.slice(1)] ?? '')}</td>)}</tr>)}</tbody></table></div> : <p className="text-sm">The batch passed duplicate, currency and required-field validation.</p>
+  return rows.length ? <div className="overflow-x-auto"><table className="w-full text-left text-sm"><caption className="mb-2 text-left font-medium"><CustomerSourceText source={"Receipts to import"} /></caption><thead><tr>{['External reference', 'Payer', 'Date', 'Amount', 'Reference'].map(label => <th key={label} className="p-2">{label}</th>)}</tr></thead><tbody>{rows.map((row, index) => <tr key={index} className="border-t">{['externalId', 'payer', 'receivedOn', 'amount', 'reference'].map(key => <td key={key} className="p-2">{String(row[key] ?? row[key[0].toUpperCase() + key.slice(1)] ?? '')}</td>)}</tr>)}</tbody></table></div> : <p className="text-sm"><CustomerSourceText source={"The batch passed duplicate, currency and required-field validation."} /></p>
 }

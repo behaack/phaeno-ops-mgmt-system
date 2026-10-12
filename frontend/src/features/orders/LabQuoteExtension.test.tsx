@@ -1,3 +1,4 @@
+import * as portalConfirmation from '#/components/PortalConfirmation'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
@@ -242,7 +243,7 @@ describe('Lab quote acceptance and extensions', () => {
     show()
     const dialog = await requestDialog()
     fireEvent.change(within(dialog).getByLabelText('Reason (optional)'), { target: { value: 'Waiting for approval' } })
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    const confirm = vi.spyOn(portalConfirmation, 'confirmPortal').mockResolvedValue(false)
     if (method === 'Escape') fireEvent.keyDown(dialog, { key: 'Escape' })
     else fireEvent.click(within(dialog).getByRole('button', { name: method }))
     expect(confirm).toHaveBeenCalledWith('Discard the unsaved extension request?')

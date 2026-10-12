@@ -2,6 +2,12 @@
 
 Status: initial plan and management manual drafted; management review and trainer walkthrough not yet performed.
 
+October 11 preparation: navigation/work discovery and current DataMatrix scope
+are reconciled in the management material. The
+[outage worksheet draft](../training/LAB-OUTAGE-WORKSHEET.md) supplies the
+interruption/reconciliation exercise. Management approval, observed bench work,
+teach-back, first-trainer designation and the operator lesson remain incomplete.
+
 Prepared: September 11, 2026.
 
 ## Product need and first audience

@@ -1,3 +1,5 @@
+import { CustomerSourceText, useCustomerSourceText } from '#/features/customer-i18n/customer-text'
+import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import {
   ClerkProvider,
   SignIn,
@@ -51,6 +53,8 @@ export const PhaenoSessionContext =
 type SessionProviderProps = { children: ReactNode; isPreSessionRoute?: boolean }
 
 export function AuthProvider({ children, isPreSessionRoute = false }: SessionProviderProps) {
+  const __customerText = useCustomerText()
+
   const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as
     | string
     | undefined
@@ -68,52 +72,52 @@ export function AuthProvider({ children, isPreSessionRoute = false }: SessionPro
   return (
     <ClerkProvider
       publishableKey={publishableKey}
-      taskUrls={{ 'setup-mfa': '/session-tasks/setup-mfa' }}
+      taskUrls={{ "setup-mfa": '/session-tasks/setup-mfa' }}
       appearance={{
         variables: {
-          colorPrimary: 'var(--primary)',
-          colorForeground: 'var(--foreground)',
-          colorBackground: 'var(--card)',
-          colorMutedForeground: 'var(--muted-foreground)',
-          colorInput: 'var(--background)',
-          colorInputForeground: 'var(--foreground)',
-          borderRadius: 'var(--radius)',
-          fontFamily: '"Geist Variable", ui-sans-serif, system-ui, sans-serif',
+          colorPrimary: "var(--primary)",
+          colorForeground: "var(--foreground)",
+          colorBackground: "var(--card)",
+          colorMutedForeground: "var(--muted-foreground)",
+          colorInput: "var(--background)",
+          colorInputForeground: "var(--foreground)",
+          borderRadius: "var(--radius)",
+          fontFamily: "\"Geist Variable\", ui-sans-serif, system-ui, sans-serif",
         },
         elements: {
-          footer: { display: 'none' },
-          footerAction: { display: 'none' },
-          headerTitle: { display: 'none' },
-          headerSubtitle: { display: 'none' },
+          footer: { display: "none" },
+          footerAction: { display: "none" },
+          headerTitle: { display: "none" },
+          headerSubtitle: { display: "none" },
           rootBox: { width: '100%' },
           cardBox: {
             width: '100%',
             border: '0',
             borderRadius: '0',
-            background: 'transparent',
-            boxShadow: 'none',
+            background: "transparent",
+            boxShadow: "none",
           },
           card: {
             paddingTop: '0',
             borderRadius: '0',
-            background: 'transparent',
-            boxShadow: 'none',
+            background: "transparent",
+            boxShadow: "none",
           },
           formFieldInput: {
-            borderColor: 'var(--input)',
-            background: 'var(--background)',
+            borderColor: "var(--input)",
+            background: "var(--background)",
           },
           formButtonPrimary: {
-            background: 'var(--primary)',
-            color: 'var(--primary-foreground)',
+            background: "var(--primary)",
+            color: "var(--primary-foreground)",
           },
         },
       }}
       localization={{
         signIn: {
           start: {
-            title: 'Sign in',
-            titleCombined: 'Sign in',
+            title: __customerText('m_bfd402b2f6f3'),
+            titleCombined: "Sign in",
           },
         },
       }}
@@ -282,6 +286,8 @@ export function PhaenoSessionProvider({ children, isPreSessionRoute = false }: S
 }
 
 export function AuthGate({ children }: { children: ReactNode }) {
+  const __customerText = useCustomerText()
+
   const { authConfigured, clerkLoaded, signedIn, session, isLoading, error } =
     usePhaenoSession()
 
@@ -290,14 +296,14 @@ export function AuthGate({ children }: { children: ReactNode }) {
   }
 
   if (isLoading) {
-    return <AccessState title="Loading access" description="Checking session." />
+    return <AccessState title={__customerText('m_b04d59113584')} description={__customerText('m_e5aa5d48ba36')} />
   }
 
   if (error && !signedIn) {
     return (
       <AccessState
-        title="Authentication is not configured"
-        description="Set VITE_CLERK_PUBLISHABLE_KEY to enable Clerk sign-in."
+        title={__customerText('m_9ab13475b948')}
+        description={__customerText('m_a470ad1cc20a')}
       />
     )
   }
@@ -309,8 +315,8 @@ export function AuthGate({ children }: { children: ReactNode }) {
   if (error) {
     return (
       <AccessState
-        title="Access check failed"
-        description="The portal could not verify local access."
+        title={__customerText('m_302bc4e861ba')}
+        description={__customerText('m_89ef119b274c')}
       />
     )
   }
@@ -329,14 +335,13 @@ export function AuthGate({ children }: { children: ReactNode }) {
         <div className="flex flex-wrap gap-2">
           {hasPendingInvitation && session?.state !== 'disabled' ? (
             <Button asChild>
-              <a href="/accept-invite">Continue invitation</a>
+              <a href="/accept-invite"><CustomerText message="m_44982691bdcd" /></a>
             </Button>
           ) : null}
           <SignOutButton redirectUrl="/">
             <Button type="button" variant="outline">
               <LogOut aria-hidden="true" />
-              Sign out
-            </Button>
+              <CustomerText message="m_48f0d3d397d4" /></Button>
           </SignOutButton>
         </div>
       }
@@ -381,11 +386,13 @@ export function getSelectedMembership(
 }
 
 function AuthConfigurationMissing({ children }: { children: ReactNode }) {
+
+
   return (
     <PhaenoSessionContext.Provider
       value={{
         authConfigured: false,
-        authProvider: 'none',
+        authProvider: "none",
         clerkLoaded: true,
         signedIn: false,
         session: null,
@@ -434,18 +441,19 @@ function AuthBootstrapState() {
       aria-busy="true"
     >
       <span className="sr-only" role="status">
-        Checking sign-in status.
-      </span>
+        <CustomerText message="m_83aa85323acb" /></span>
     </main>
   )
 }
 
 function SignInAccessState() {
+  const __customerText = useCustomerText()
+
   return (
     <AuthenticationPanel
       ariaLabel="Phaeno Portal sign in"
-      title="Sign in"
-      description="Secure, invitation-only access for Phaeno customers, partners, and staff."
+      title={__customerText('m_bfd402b2f6f3')}
+      description={__customerText('m_596e14f4a7b8')}
     >
       <div className="phaeno-sign-in-form flex w-full justify-center">
         <SignIn routing="hash" fallbackRedirectUrl="/" withSignUp={false} />
@@ -455,11 +463,13 @@ function SignInAccessState() {
 }
 
 export function MfaSetupAccessState() {
+  const __customerText = useCustomerText()
+
   return (
     <AuthenticationPanel
       ariaLabel="Phaeno Portal multi-factor authentication setup"
-      title="Secure your Portal account"
-      description="Connect an authenticator app, then save your one-time backup codes somewhere safe."
+      title={__customerText('m_9f92782e3940')}
+      description={__customerText('m_b6d80a71cd31')}
     >
       <div className="phaeno-mfa-setup flex w-full justify-center">
         <TaskSetupMFA redirectUrlComplete={getInvitationReturnPath()} />
@@ -479,6 +489,10 @@ function AuthenticationPanel({
   description: string
   children: ReactNode
 }) {
+  const __customerSource = useCustomerSourceText()
+
+
+
   return (
     <main className="page-wrap flex flex-1 items-center justify-center px-4 py-8">
       <section
@@ -489,19 +503,19 @@ function AuthenticationPanel({
           className="w-full overflow-hidden rounded-xl border bg-card"
           style={{
             boxShadow:
-              '0 18px 50px color-mix(in oklab, var(--foreground) 10%, transparent)',
+              "0 18px 50px color-mix(in oklab, var(--foreground) 10%, transparent)",
           }}
         >
           <div className="flex flex-col items-center px-8 pt-8 text-center">
             <img
               src="/phaeno124x40.webp"
-              alt="Phaeno"
+              alt={__customerSource("Phaeno")}
               width={124}
               height={40}
               className="h-10 w-[124px] object-contain"
             />
             <p className="mt-2 text-xs font-semibold tracking-[0.28em] text-foreground uppercase">
-              Portal
+              <CustomerSourceText source={"Portal"} />
             </p>
             <h1 className="mt-6 text-xl font-semibold text-foreground">
               {title}

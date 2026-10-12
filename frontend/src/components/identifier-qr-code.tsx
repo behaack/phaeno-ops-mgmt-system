@@ -1,3 +1,4 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { QRCodeSVG } from 'qrcode.react'
 
 // Encode the exact scanner value, never a URL, normalized value or patient data.
@@ -7,7 +8,7 @@ export function IdentifierQrCode({ value, label = 'QR code', size = 'standard' }
   size?: 'standard' | 'receiving' | 'label' | 'compact'
 }) {
   if (!value || value.length > 255 || [...value].some(character => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127)) {
-    return <p className="text-sm text-destructive">The QR code is unavailable. Contact Phaeno with this identifier: {value}</p>
+    return <p className="text-sm text-destructive"><CustomerSourceText source={"The QR code is unavailable. Contact Phaeno with this identifier:"} /> {value}</p>
   }
   const side = size === 'receiving' ? '32mm' : size === 'label' ? '18mm' : size === 'compact' ? '21mm' : '28mm'
   return <figure className={`shipping-barcode identifier-qr-code min-w-0 text-center ${size === 'compact' ? 'space-y-0' : 'space-y-1'}`}>

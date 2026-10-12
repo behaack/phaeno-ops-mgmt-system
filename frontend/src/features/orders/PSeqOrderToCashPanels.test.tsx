@@ -1,6 +1,7 @@
+import * as portalConfirmation from '#/components/PortalConfirmation'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import type { ReactNode } from 'react'
+import type { ComponentProps, ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
@@ -45,15 +46,25 @@ const mocks = vi.hoisted(() => ({
 }))
 
 const router = vi.hoisted(() => ({ search: {} as Record<string, string | number>, navigate: vi.fn() }))
-vi.mock('@tanstack/react-router', () => ({
+vi.mock('@tanstack/react-router', () => ({ useRouterState: ({select}: {select: (state: {location: {search: Record<string, unknown>}}) => unknown}) => select({location: {search: {}}}),
   useSearch: () => router.search,
   useBlocker: vi.fn(),
   useNavigate: () => router.navigate,
-  Link: ({ children, to, params }: { children: ReactNode; to: string; params?: Record<string, string> }) =>
-    <a href={Object.entries(params ?? {}).reduce((path, [key, value]) => path.replace(`$${key}`, value), to)}>{children}</a>,
+  Link: ({ children, to, params, search, ...props }: ComponentProps<'a'> & { to: string; params?: Record<string, string>; search?: unknown }) => {
+    void search
+    return <a {...props} href={Object.entries(params ?? {}).reduce((path, [key, value]) => path.replace(`$${key}`, value), to)}>{children}</a>
+  },
 }))
 
-vi.mock('#/api/pseq-order-to-cash', () => mocks)
+// Preserve domain fixtures while supplying the current paged API contracts.
+const fixturePage = (items: unknown[]) => ({ items, totalCount: items.length, page: 1, pageSize: 25 })
+vi.mock('#/api/pseq-order-to-cash', () => ({ ...mocks,
+  listInvoicePage: async (open: boolean, id?: string, organization?: string) => fixturePage(await mocks.listInvoices(open, id, organization)),
+  listReceiptPage: async (open: boolean, id?: string, organization?: string) => fixturePage(await mocks.listPaymentReceipts(open, id, organization)),
+  listReconciliationPage: async (id?: string) => fixturePage(await mocks.listReconciliations(id)),
+  listAttentionPage: async (category?: string) => fixturePage(await mocks.listOperationalAttention(category)),
+  listResultPackagePage: async (state?: string) => fixturePage(await mocks.listResultPackages(state)),
+}))
 
 vi.mock('#/api/order-management', async (importOriginal) => ({
   ...await importOriginal<typeof import('#/api/order-management')>(),
@@ -99,9 +110,15 @@ describe('PSeq order-to-cash panels', () => {
     renderPanel(<OperationalAttentionPanel apiEnabled userId="operator-user" {...capabilities} />)
     await screen.findByRole('heading', { name: 'Bank difference' })
     for (const kind of ['invoice', 'receipt', 'reconciliation']) {
-      const link = screen.queryByRole('link', { name: `Open ${kind}` })
+      const title = { invoice: 'Overdue invoice', receipt: 'Unapplied receipt', reconciliation: 'Bank difference' }[kind]!
+      const row = screen.getByRole('heading', { name: title }).closest('article')!
+      fireEvent.keyDown(within(row).getByRole('button', { name: 'Actions' }), { key: 'ArrowDown' })
+      await screen.findByRole('menu')
+      const link = screen.queryByRole('menuitem', { name: `Open ${kind}` })
       if (permitted.includes(kind)) expect(link?.getAttribute('href')).toBe(`/finance/${kind}/${kind}-1`)
       else expect(link).toBeNull()
+      fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' })
+      await waitFor(() => expect(screen.queryByRole('menu')).toBeNull())
     }
     expect(mocks.allocatePayment).not.toHaveBeenCalled()
     expect(mocks.resolveOperationalAttention).not.toHaveBeenCalled()
@@ -135,7 +152,7 @@ describe('PSeq order-to-cash panels', () => {
     expect(await screen.findByText('Ari Finance')).toBeTruthy()
     expect(screen.queryByRole('textbox', { name: /Billing contact name/ })).toBeNull()
     expect(screen.getByRole('link', { name: 'Back to Finance' }).getAttribute('href')).toBe('/finance')
-    fireEvent.click(screen.getByRole('button', { name: 'Edit billing and tax' }))
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Edit billing and tax' })) })
     const dialog = within(screen.getByRole('dialog'))
     expect(dialog.getByDisplayValue('Ari Finance')).toBeTruthy()
     expect(dialog.getByText('Finance approval required')).toBeTruthy()
@@ -163,7 +180,7 @@ describe('PSeq order-to-cash panels', () => {
     expect(screen.queryByRole('link', { name: 'Other Laboratory' })).toBeNull()
     expect(screen.getByRole('textbox', { name: 'Search customers' })).toHaveProperty('value', '  ATLAS  ')
     expect(screen.getByRole('region', { name: 'Customer billing' })).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'Clear filter' }))
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Clear filter' })) })
     expect(router.navigate.mock.calls.at(-1)?.[0].search(router.search)).toMatchObject({ financeSection: 'customers', financeSearch: undefined, financeCustomer: undefined })
   })
 
@@ -173,7 +190,7 @@ describe('PSeq order-to-cash panels', () => {
 
     expect(await screen.findByText(batch.batchNumber)).toBeTruthy()
     expect(mocks.listReconciliations).toHaveBeenCalledWith(batch.id)
-    fireEvent.click(screen.getByRole('button', { name: 'Approve independently' }))
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Approve independently' })) })
     await waitFor(() => expect(mocks.approveReconciliation).toHaveBeenCalledWith(batch.id, batch.version))
     expect(screen.queryByRole('button', { name: 'New reconciliation' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Submit balanced batch' })).toBeNull()
@@ -191,11 +208,11 @@ describe('PSeq order-to-cash panels', () => {
     mocks.listInvoices.mockResolvedValue([invoice])
     mocks.adjustInvoice.mockRejectedValue(new Error('Invoice changed'))
     renderPanel(<FinanceOperationsPanel apiEnabled canBill canManageCash={false} canReconcile={false} record={{ kind: 'invoice', id: invoice.id }} />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Record adjustment' }))
+    await act(async () => { fireEvent.click(await screen.findByRole('button', { name: 'Record adjustment' })) })
     expect(mocks.listInvoices).toHaveBeenCalledWith(false, invoice.id, undefined)
     fireEvent.change(screen.getByLabelText(/Amount \(USD\)/), { target: { value: '35.50' } })
     fireEvent.change(screen.getByLabelText(/Reason/), { target: { value: 'Correct duplicate charge' } })
-    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Record adjustment' }))
+    await act(async () => { fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Record adjustment' })) })
 
     expect(await screen.findByText('Action was not saved')).toBeTruthy()
     expect(screen.getByRole('dialog')).toBeTruthy()
@@ -208,12 +225,12 @@ describe('PSeq order-to-cash panels', () => {
     mocks.listInvoices.mockResolvedValue([invoice])
     mocks.adjustInvoice.mockRejectedValue(new Error('Not saved'))
     const client = renderPanel(<FinanceOperationsPanel apiEnabled canBill canManageCash={false} canReconcile={false} record={{ kind: 'invoice', id: invoice.id }} />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Record adjustment' }))
+    await act(async () => { fireEvent.click(await screen.findByRole('button', { name: 'Record adjustment' })) })
     fireEvent.change(screen.getByLabelText(/Amount \(USD\)/), { target: { value: '25' } })
     fireEvent.change(screen.getByLabelText(/Reason/), { target: { value: 'Reviewed original invoice' } })
     mocks.listInvoices.mockResolvedValue([{ ...invoice, version: 4, balance: 75 }])
     await act(async () => { await client.invalidateQueries({ queryKey: ['accounts-receivable', 'invoices'] }) })
-    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Record adjustment' }))
+    await act(async () => { fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Record adjustment' })) })
     await waitFor(() => expect(mocks.adjustInvoice).toHaveBeenCalledWith(invoice.id, expect.objectContaining({ invoiceVersion: 3, reason: 'Reviewed original invoice' })))
   })
 
@@ -221,19 +238,19 @@ describe('PSeq order-to-cash panels', () => {
     mocks.listInvoices.mockResolvedValue([invoice])
     mocks.adjustInvoice.mockRejectedValueOnce({ code: 'concurrency_conflict' }).mockResolvedValue({})
     renderPanel(<FinanceOperationsPanel apiEnabled canBill canManageCash={false} canReconcile={false} record={{ kind: 'invoice', id: invoice.id }} />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Record adjustment' }))
+    await act(async () => { fireEvent.click(await screen.findByRole('button', { name: 'Record adjustment' })) })
     fireEvent.change(screen.getByLabelText(/Amount \(USD\)/), { target: { value: '25' } })
     fireEvent.change(screen.getByLabelText(/Reason/), { target: { value: 'Retain this explanation' } })
     mocks.listInvoices.mockResolvedValue([{ ...invoice, version: 4, balance: 75 }])
     const save = within(screen.getByRole('dialog')).getByRole('button', { name: 'Record adjustment' })
-    fireEvent.click(save)
+    await act(async () => { fireEvent.click(save) })
     const review = await screen.findByRole('button', { name: 'Use reviewed record' })
     expect(screen.getByText('Current invoice: Issued · $75.00 outstanding.')).toBeTruthy()
     expect(save).toHaveProperty('disabled', true)
     expect(mocks.adjustInvoice).toHaveBeenCalledOnce()
     expect(screen.getByLabelText(/Reason/)).toHaveProperty('value', 'Retain this explanation')
-    fireEvent.click(review)
-    fireEvent.click(save)
+    await act(async () => { fireEvent.click(review) })
+    await act(async () => { fireEvent.click(save) })
     await waitFor(() => expect(mocks.adjustInvoice).toHaveBeenLastCalledWith(invoice.id, { kind: 'Credit', amount: 25, reason: 'Retain this explanation', invoiceVersion: 4 }))
   })
 
@@ -241,11 +258,11 @@ describe('PSeq order-to-cash panels', () => {
     mocks.listInvoices.mockResolvedValueOnce([invoice]).mockRejectedValueOnce(new Error('Offline')).mockResolvedValue([{ ...invoice, version: 4 }])
     mocks.adjustInvoice.mockRejectedValue({ code: 'concurrency_conflict' })
     renderPanel(<FinanceOperationsPanel apiEnabled canBill canManageCash={false} canReconcile={false} record={{ kind: 'invoice', id: invoice.id }} />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Record adjustment' }))
+    await act(async () => { fireEvent.click(await screen.findByRole('button', { name: 'Record adjustment' })) })
     fireEvent.change(screen.getByLabelText(/Amount \(USD\)/), { target: { value: '25' } })
     fireEvent.change(screen.getByLabelText(/Reason/), { target: { value: 'Keep after failed reload' } })
-    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Record adjustment' }))
-    fireEvent.click(await screen.findByRole('button', { name: 'Retry current record' }))
+    await act(async () => { fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Record adjustment' })) })
+    await act(async () => { fireEvent.click(await screen.findByRole('button', { name: 'Retry current record' })) })
     await screen.findByRole('button', { name: 'Use reviewed record' })
     expect(screen.getByLabelText(/Amount \(USD\)/)).toHaveProperty('value', '25')
     expect(screen.getByLabelText(/Reason/)).toHaveProperty('value', 'Keep after failed reload')
@@ -282,12 +299,12 @@ describe('PSeq order-to-cash panels', () => {
     expect(await screen.findByText('PAY-100')).toBeTruthy()
     expect(mocks.listPaymentReceipts).toHaveBeenCalledWith(false, 'receipt-id', undefined)
     expect(screen.queryByLabelText(/Invoice/)).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: 'Allocate to invoice' }))
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Allocate to invoice' })) })
     await screen.findByRole('option', { name: /INV-100/ })
     expect(mocks.listMatchingInvoices).toHaveBeenCalledWith('receipt-id', '', 0)
     fireEvent.change(screen.getByLabelText(/Invoice/), { target: { value: invoice.id } })
     fireEvent.change(screen.getByLabelText(/Amount \(USD\)/), { target: { value: '25' } })
-    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Allocate payment' }))
+    await act(async () => { fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Allocate payment' })) })
     expect(await screen.findByText('Action was not saved')).toBeTruthy()
     expect(screen.getByLabelText(/Invoice/)).toHaveProperty('value', invoice.id)
     expect(screen.getByLabelText(/Amount \(USD\)/)).toHaveProperty('value', '25')
@@ -307,24 +324,24 @@ describe('PSeq order-to-cash panels', () => {
     const receipt = { id: 'receipt-id', organizationId: customer.organizationId, receiptNumber: 'PAY-100', source: 'Bank', externalId: 'EXT-1', payer: 'Atlas', amount: 100, appliedAmount: 0, unappliedAmount: 100, currency: 'USD', receivedOn: '2026-09-01', method: 'Wire', bankReference: 'BANK-1', status: 'Recorded', version: 7 }
     mocks.listPaymentReceipts.mockResolvedValue([receipt]); mocks.listMatchingInvoices.mockResolvedValue([invoice]); mocks.allocatePayment.mockRejectedValue(new Error('Not saved'))
     const client = renderPanel(<FinanceOperationsPanel apiEnabled canBill={false} canManageCash canReconcile={false} record={{ kind: 'receipt', id: receipt.id }} />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Allocate to invoice' }))
+    await act(async () => { fireEvent.click(await screen.findByRole('button', { name: 'Allocate to invoice' })) })
     await screen.findByRole('option', { name: /INV-100/ })
     fireEvent.change(screen.getByLabelText(/Invoice/), { target: { value: invoice.id } })
     fireEvent.change(screen.getByLabelText(/Amount \(USD\)/), { target: { value: '25' } })
     mocks.listPaymentReceipts.mockResolvedValue([{ ...receipt, version: 8, unappliedAmount: 75 }]); mocks.listMatchingInvoices.mockResolvedValue([{ ...invoice, version: 4, balance: 75 }])
     await act(async () => { await client.invalidateQueries({ queryKey: ['accounts-receivable'] }) })
     expect(screen.getByRole('option', { name: 'INV-100 · $100.00' })).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'Allocate payment' }))
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Allocate payment' })) })
     await waitFor(() => expect(mocks.allocatePayment).toHaveBeenCalledWith(receipt.id, { invoiceId: invoice.id, amount: 25, receiptVersion: 7, invoiceVersion: 3 }))
   })
 
   it('validates an adjustment inline and focuses the first issue without sending a request', async () => {
     mocks.listInvoices.mockResolvedValue([invoice])
     renderPanel(<FinanceOperationsPanel apiEnabled canBill canManageCash={false} canReconcile={false} record={{ kind: 'invoice', id: invoice.id }} />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Record adjustment' }))
+    await act(async () => { fireEvent.click(await screen.findByRole('button', { name: 'Record adjustment' })) })
     const dialog = within(screen.getByRole('dialog'))
     expect(dialog.getByRole('button', { name: 'Record adjustment' })).toHaveProperty('disabled', false)
-    fireEvent.click(dialog.getByRole('button', { name: 'Record adjustment' }))
+    await act(async () => { fireEvent.click(dialog.getByRole('button', { name: 'Record adjustment' })) })
     const amount = screen.getByLabelText(/Amount \(USD\)/)
     await waitFor(() => expect(amount.getAttribute('aria-invalid')).toBe('true'))
     expect(amount.getAttribute('aria-describedby')).toBe('finance-amount-error')
@@ -335,17 +352,17 @@ describe('PSeq order-to-cash panels', () => {
   })
 
   it('warns before discarding a dirty Finance action and restores its trigger after Escape', async () => {
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValueOnce(true)
+    const confirm = vi.spyOn(portalConfirmation, 'confirmPortal').mockResolvedValueOnce(false).mockResolvedValueOnce(true)
     mocks.listInvoices.mockResolvedValue([invoice])
     renderPanel(<FinanceOperationsPanel apiEnabled canBill canManageCash={false} canReconcile={false} record={{ kind: 'invoice', id: invoice.id }} />)
     const opener = await screen.findByRole('button', { name: 'Record adjustment' })
     opener.focus()
-    fireEvent.click(opener)
+    await act(async () => { fireEvent.click(opener) })
     fireEvent.change(screen.getByLabelText(/Reason/), { target: { value: 'Keep my explanation' } })
-    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
+    await act(async () => { fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' }) })
     expect(confirm).toHaveBeenCalledWith('Discard unsaved Finance changes?')
     expect(screen.getByLabelText(/Reason/)).toHaveProperty('value', 'Keep my explanation')
-    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
+    await act(async () => { fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' }) })
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
     await waitFor(() => expect(document.activeElement).toBe(opener))
     expect(mocks.adjustInvoice).not.toHaveBeenCalled()
@@ -355,10 +372,10 @@ describe('PSeq order-to-cash panels', () => {
     mocks.listAccountsReceivableCustomers.mockResolvedValue([customer])
     mocks.updateBillingProfile.mockRejectedValue(new Error('Profile changed'))
     renderPanel(<FinanceOperationsPanel apiEnabled canBill canManageCash={false} canReconcile={false} record={{ kind: 'customer', id: customer.organizationId }} />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Edit billing and tax' }))
+    await act(async () => { fireEvent.click(await screen.findByRole('button', { name: 'Edit billing and tax' })) })
     const name = screen.getByLabelText(/Billing contact name/)
     fireEvent.change(name, { target: { value: 'New Finance Contact' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Save changes' })) })
     expect(await screen.findByText('Billing configuration was not updated')).toBeTruthy()
     expect(name).toHaveProperty('value', 'New Finance Contact')
     expect(screen.getByRole('button', { name: 'Approve current tax decision' })).toHaveProperty('disabled', true)
@@ -378,13 +395,13 @@ describe('PSeq order-to-cash panels', () => {
       return profile
     })
     renderPanel(<FinanceOperationsPanel apiEnabled canBill canManageCash={false} canReconcile={false} record={{ kind: 'customer', id: customer.organizationId }} />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Edit billing and tax' }))
+    await act(async () => { fireEvent.click(await screen.findByRole('button', { name: 'Edit billing and tax' })) })
     const dialog = within(screen.getByRole('dialog'))
     fireEvent.change(dialog.getByLabelText(/Billing contact name/), { target: { value: 'Reviewed billing contact' } })
-    fireEvent.click(dialog.getByRole('button', { name: 'Save changes' }))
+    await act(async () => { fireEvent.click(dialog.getByRole('button', { name: 'Save changes' })) })
     expect(await dialog.findByText('Billing changes saved. Review and approve the current tax decision.')).toBeTruthy()
     fireEvent.change(dialog.getByLabelText(/Finance approval notes/), { target: { value: 'Approved reviewed billing configuration' } })
-    fireEvent.click(dialog.getByRole('button', { name: 'Approve current tax decision' }))
+    await act(async () => { fireEvent.click(dialog.getByRole('button', { name: 'Approve current tax decision' })) })
     expect(await dialog.findByText('Finance approved')).toBeTruthy()
     expect(dialog.queryByText('Billing changes saved. Review and approve the current tax decision.')).toBeNull()
   })
@@ -392,8 +409,8 @@ describe('PSeq order-to-cash panels', () => {
   it('validates Finance approval notes instead of silently disabling the action', async () => {
     mocks.listAccountsReceivableCustomers.mockResolvedValue([customer])
     renderPanel(<FinanceOperationsPanel apiEnabled canBill canManageCash={false} canReconcile={false} record={{ kind: 'customer', id: customer.organizationId }} />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Edit billing and tax' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Approve current tax decision' }))
+    await act(async () => { fireEvent.click(await screen.findByRole('button', { name: 'Edit billing and tax' })) })
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Approve current tax decision' })) })
     const notes = screen.getByLabelText(/Finance approval notes/)
     await waitFor(() => expect(notes.getAttribute('aria-invalid')).toBe('true'))
     expect(document.activeElement).toBe(notes)
@@ -406,7 +423,7 @@ describe('PSeq order-to-cash panels', () => {
     renderPanel(<FinanceOperationsPanel apiEnabled canBill={false} canManageCash canReconcile={false} />)
     await screen.findByRole('option', { name: customer.organizationName })
     expect(screen.getByRole('button', { name: 'Preview import' })).toHaveProperty('disabled', false)
-    fireEvent.click(screen.getByRole('button', { name: 'Preview import' }))
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Preview import' })) })
     const customerControl = screen.getByLabelText(/Customer/)
     await waitFor(() => expect(customerControl.getAttribute('aria-invalid')).toBe('true'))
     expect(document.activeElement).toBe(customerControl)
@@ -420,7 +437,7 @@ describe('PSeq order-to-cash panels', () => {
     expect(await screen.findByText('Finance information is unavailable')).toBeTruthy()
     expect(screen.queryByText('No invoices match this view.')).toBeNull()
     mocks.listInvoices.mockResolvedValue([invoice])
-    fireEvent.click(screen.getByRole('button', { name: 'Retry' }))
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Retry' })) })
     await screen.findByRole('link', { name: invoice.invoiceNumber })
     expect(screen.queryByText('Finance information is unavailable')).toBeNull()
   })
@@ -428,10 +445,10 @@ describe('PSeq order-to-cash panels', () => {
   it('requires another preview after changing the reviewed import input', async () => {
     await renderImport()
     mocks.previewPaymentImport.mockResolvedValue(importBatch)
-    fireEvent.click(screen.getByRole('button', { name: 'Preview import' }))
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Preview import' })) })
     expect(await screen.findByRole('button', { name: 'Confirm 1 receipts' })).toBeTruthy()
     expect(mocks.confirmPaymentImport).not.toHaveBeenCalled()
-    fireEvent.click(screen.getByRole('button', { name: 'Change input' }))
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Change input' })) })
     fireEvent.change(screen.getByLabelText(/CSV content/), { target: { value: 'replacement csv' } })
     expect(screen.queryByRole('button', { name: 'Confirm 1 receipts' })).toBeNull()
     expect(screen.getByLabelText(/CSV content/)).toHaveProperty('value', 'replacement csv')
@@ -442,7 +459,7 @@ describe('PSeq order-to-cash panels', () => {
     let completePreview!: (value: PaymentImportBatch) => void
     mocks.previewPaymentImport.mockReturnValue(new Promise<PaymentImportBatch>(resolve => { completePreview = resolve }))
     await renderImport()
-    fireEvent.click(screen.getByRole('button', { name: 'Preview import' }))
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Preview import' })) })
     await waitFor(() => expect(mocks.previewPaymentImport).toHaveBeenCalledOnce())
     fireEvent.change(screen.getByLabelText(/Source/), { target: { value: 'Corrected source' } })
     await act(async () => { completePreview(importBatch) })
@@ -457,10 +474,10 @@ describe('PSeq order-to-cash panels', () => {
     mocks.previewPaymentImport.mockResolvedValue(importBatch)
     mocks.confirmPaymentImport.mockRejectedValueOnce(new Error('Temporary failure')).mockResolvedValue({ ...importBatch, status: 'Confirmed' })
     await renderImport()
-    fireEvent.click(screen.getByRole('button', { name: 'Preview import' }))
-    fireEvent.click(await screen.findByRole('button', { name: 'Confirm 1 receipts' }))
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Preview import' })) })
+    await act(async () => { fireEvent.click(await screen.findByRole('button', { name: 'Confirm 1 receipts' })) })
     expect(await screen.findByText('Import was not completed')).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'Confirm 1 receipts' }))
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Confirm 1 receipts' })) })
     await waitFor(() => expect(mocks.confirmPaymentImport).toHaveBeenCalledTimes(2))
     for (const call of mocks.confirmPaymentImport.mock.calls) expect(call.slice(0, 2)).toEqual([importBatch.id, importBatch.version])
     expect(mocks.previewPaymentImport).toHaveBeenCalledOnce()

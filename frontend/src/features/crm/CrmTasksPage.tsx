@@ -29,10 +29,12 @@ export function CrmTasksPage() {
   const [status, setStatus] = useCrmState<CrmTaskStatus | "">("status", "");
   const [overdue, setOverdue] = useCrmState<boolean>("overdue", false);
   const [dueSoon, setDueSoon] = useCrmState<boolean>("dueSoon", false);
+  const [taskId] = useCrmState<string>("taskId", "");
   const query = useQuery({
-    queryKey: ["crm-tasks", status, overdue, dueSoon, page, search],
+    queryKey: ["crm-tasks", status, overdue, dueSoon, page, search, taskId],
     queryFn: () =>
       listCrmTasks({
+        taskId: taskId || undefined,
         search,
         status: status || undefined,
         overdueOnly: overdue,

@@ -1,3 +1,4 @@
+import { confirmPortal } from '#/components/PortalConfirmation'
 import { parseLabSection } from './lab-sections'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -62,10 +63,12 @@ const moveSchema = z.object({ scannedContainerBarcode: z.string().trim().min(1, 
 
 function MoveContainerDialog({ tube, onClose, onSaved }: { tube: LabContainer; onClose: () => void; onSaved: () => Promise<void> }) {
   const form = useForm<z.infer<typeof moveSchema>>({ resolver: zodResolver(moveSchema), defaultValues: { scannedContainerBarcode: '', scannedDestinationBarcode: '', confirmed: false } })
+  const { isDirty: __formDraftDirty } = form.formState
+
   const save = useMutation({ mutationFn: (value: z.infer<typeof moveSchema>) => moveLabContainer(tube.id, { version: tube.version, ...value }), onSuccess: onSaved })
-  const dirty = form.formState.isDirty
-  const close = () => { if (!save.isPending && (!dirty || window.confirm('Discard the unsaved move?'))) onClose() }
-  useBlocker({ shouldBlockFn: () => save.isPending || dirty && !window.confirm('Discard the unsaved move?'), enableBeforeUnload: () => save.isPending || dirty })
+  const dirty = __formDraftDirty
+  const close = async () => { if (!save.isPending && (!dirty || (await confirmPortal('Discard the unsaved move?')))) onClose() }
+  useBlocker({ shouldBlockFn: async () => save.isPending || dirty && !(await confirmPortal('Discard the unsaved move?')), enableBeforeUnload: () => save.isPending || dirty })
   return <Dialog open onOpenChange={open => { if (!open) close() }}><DialogContent><DialogHeader><DialogTitle>Move container</DialogTitle><DialogDescription>Scan the physical container, then the destination freezer box or storage location barcode. Confirm both scans to record its new location.</DialogDescription></DialogHeader>
     <form id="move-container" className="space-y-4" noValidate onSubmit={form.handleSubmit(value => save.mutate(value))}>
       <div><Label htmlFor="move-container-scan"><RequiredFieldName>Scan container</RequiredFieldName></Label><Input id="move-container-scan" className="mt-2" autoComplete="off" spellCheck={false} aria-invalid={Boolean(form.formState.errors.scannedContainerBarcode)} {...form.register('scannedContainerBarcode')} />{form.formState.errors.scannedContainerBarcode ? <p role="alert" className="mt-1 text-sm text-destructive">{form.formState.errors.scannedContainerBarcode.message}</p> : null}</div>
@@ -81,10 +84,12 @@ function IntakeCorrectionDialog({ tube, workOrderId, onClose, onSaved }: { tube:
   const [original] = useState(tube)
   const [intake, setIntake] = useState({ disposition: tube.intakeDisposition ?? 'Accepted', reasonCode: tube.intakeReasonCode ?? '', notes: '' })
   const form = useForm<{ location: string }>({ resolver: zodResolver(correctionSchema.superRefine((v, ctx) => { if (!original.location && intake.disposition !== 'Rejected' && !v.location) ctx.addIssue({ code: 'custom', path: ['location'], message: 'Record where the retained material is stored.' }) })), defaultValues: { location: '' } })
+  const { isDirty: __formDraftDirty } = form.formState
+
   const save = useMutation({ mutationFn: (values: { location: string }) => reviewLabTubeIntake(workOrderId, original.id, { disposition: intake.disposition, reasonCode: intake.reasonCode || null, notes: intake.notes, version: original.version, retainedStorageLocation: values.location || null }), retry: false, onSuccess: onSaved })
-  const dirty = form.formState.isDirty || intake.notes !== '' || intake.disposition !== (original.intakeDisposition ?? 'Accepted') || intake.reasonCode !== (original.intakeReasonCode ?? '')
-  const confirmLeave = () => !dirty || window.confirm('Discard this unsaved intake correction?')
-  useBlocker({ shouldBlockFn: () => save.isPending || !confirmLeave(), enableBeforeUnload: () => dirty || save.isPending })
-  const close = () => { if (!save.isPending && confirmLeave()) onClose() }
+  const dirty = __formDraftDirty || intake.notes !== '' || intake.disposition !== (original.intakeDisposition ?? 'Accepted') || intake.reasonCode !== (original.intakeReasonCode ?? '')
+  const confirmLeave = async () => !dirty || (await confirmPortal('Discard this unsaved intake correction?'))
+  useBlocker({ shouldBlockFn: async () => save.isPending || !await confirmLeave(), enableBeforeUnload: () => dirty || save.isPending })
+  const close = async () => { if (!save.isPending && await confirmLeave()) onClose() }
   return <Dialog open onOpenChange={open => { if (!open) close() }}><DialogContent><DialogHeader><DialogTitle>Correct intake decision</DialogTitle><DialogDescription>{original.barcode}. Explain the correction. This does not record a later processing failure or move stored material.</DialogDescription></DialogHeader><form id="intake-correction" className="space-y-4" onSubmit={form.handleSubmit(v => { if (!save.isPending) save.mutate(v) })}><IntakeReviewFields value={intake} onChange={setIntake} previousDisposition={original.intakeDisposition} correction disabled={save.isPending} />{!original.location && intake.disposition !== 'Rejected' ? <div><Label htmlFor="correction-location"><RequiredFieldName>Retained material storage location</RequiredFieldName></Label><Input id="correction-location" className="mt-2" required {...form.register('location')} disabled={save.isPending} /><p className="mt-2 text-xs text-muted-foreground">Only restore acceptance if material actually exists and is suitable for use. A destroyed tube cannot be restored.</p>{form.formState.errors.location ? <p role="alert" className="text-sm text-destructive">{form.formState.errors.location.message}</p> : null}</div> : null}</form>{save.error ? <Alert variant="destructive"><AlertTitle>Correction was not saved</AlertTitle><AlertDescription>{getLabOperationsError(save.error, 'Your entries are preserved. Review the latest tube record before retrying.')}</AlertDescription></Alert> : null}<RequiredDialogFooter><Button variant="outline" disabled={save.isPending} onClick={close}>Cancel</Button><Button type="submit" form="intake-correction" disabled={save.isPending || !intake.notes.trim()}>{save.isPending ? 'Saving…' : 'Save correction'}</Button></RequiredDialogFooter></DialogContent></Dialog>
 }

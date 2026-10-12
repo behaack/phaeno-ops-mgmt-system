@@ -1,3 +1,5 @@
+import { NativeSelect } from '#/components/ui/native-select'
+import { RecordPagination, useRecordListState } from '#/components/RecordPagination'
 import { submissionDateLabel } from './trial-submission-dates'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
@@ -18,7 +20,8 @@ export function TrialProjectsPage({ search, status, owner, fromCompanyId, onFilt
     const timer = setTimeout(() => setSettledSearch(search), 250)
     return () => clearTimeout(timer)
   }, [search])
-  const queries = useTrialQueries(undefined, settledSearch, status, owner)
+  const listState = useRecordListState()
+  const queries = useTrialQueries(undefined, settledSearch, status, owner, listState.page)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const hasFilters = Boolean(search || status || owner)
   const updating = search !== settledSearch || queries.list.isFetching
@@ -43,10 +46,10 @@ export function TrialProjectsPage({ search, status, owner, fromCompanyId, onFilt
         </div>
         <div className="min-w-0 space-y-2">
           <Label htmlFor="trial-status-filter">Status</Label>
-          <select id="trial-status-filter" className="h-8 w-full cursor-pointer rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50" value={status} onChange={event => onFilter({ status: event.target.value })}>
+          <NativeSelect id="trial-status-filter" className="w-full cursor-pointer rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50" value={status} onChange={event => onFilter({ status: event.target.value })}>
             <option value="">All statuses</option>
             {['Requested', 'UnderReview', 'AwaitingAcceptance', 'AwaitingSamples', 'InProgress', 'OnHold', 'Completed', 'ClosedIncomplete', 'Declined', 'Expired', 'Cancelled'].map(value => <option key={value} value={value}>{trialLabel(value)}</option>)}
-          </select>
+          </NativeSelect>
         </div>
         {queries.staff ? <div className="min-w-0 space-y-2">
           <Label htmlFor="trial-owner-filter">Sales owner</Label>
@@ -62,10 +65,9 @@ export function TrialProjectsPage({ search, status, owner, fromCompanyId, onFilt
       </div> : null}
     </section>
     {updating && !queries.list.isPending ? <p role="status" className="text-sm text-muted-foreground">Updating Trial projects…</p> : null}
-    {queries.list.data?.length === 250 ? <p className="text-sm text-muted-foreground">Showing the latest 250 matching Trials. Narrow the search or filters to find older work.</p> : null}
     <section aria-label="Trial project results" aria-busy={updating}>
     {queries.list.error ? <div role="alert"><p>{apiErrorMessage(queries.list.error)}</p><Button variant="outline" onClick={() => { void queries.list.refetch() }}>Retry Trials</Button></div> : queries.list.isPending ? <p role="status">Loading Trials…</p> : queries.list.data?.length ?
-      <div className="overflow-x-auto rounded-lg border"><table className="w-full text-left text-sm"><caption className="sr-only">Trial projects in the selected organization and department</caption><thead className="bg-muted"><tr>{['Trial', 'Company', 'Status', 'Samples', 'Submission closes', ...(queries.staff ? ['Sales owner', 'Requested', 'Next due'] : [])].map(label => <th key={label} className="p-3 font-medium">{label}</th>)}</tr></thead><tbody>{queries.list.data.map(trial => <tr key={trial.id} className="border-t"><td className="p-3"><Link to="/order-operations/lab-services/trials/$trialId" params={{ trialId: trial.id }} search={{ q: search, status, owner, fromCompanyId }} className="font-medium text-primary underline underline-offset-4">{trial.number}</Link><p className="text-muted-foreground">{trial.name}</p></td><td className="p-3">{trial.companyName}</td><td className="p-3">{trialLabel(trial.status)}{trial.isOnHold ? ' · On hold' : ''}</td><td className="p-3">{trial.sampleCount} submitted · {trial.sampleAllowance ?? 'Unapproved'} allowance</td><td className="p-3">{submissionDateLabel(trial.submissionClosesAtUtc, true)}</td>{queries.staff ? <><td className="p-3">{trial.salesOwnerName}</td><td className="p-3">{trialDate(trial.requestedAtUtc)}</td><td className="p-3">{trialDate(trial.dueAtUtc)}</td></> : null}</tr>)}</tbody></table></div>
+      <div className="overflow-x-auto rounded-lg border"><table className="w-full text-left text-sm"><caption className="sr-only">Trial projects in the selected organization and department</caption><thead className="bg-muted"><tr>{['Trial', 'Company', 'Status', 'Samples', 'Submission closes', ...(queries.staff ? ['Sales owner', 'Requested', 'Next due'] : [])].map(label => <th key={label} className="p-3 font-medium">{label}</th>)}</tr></thead><tbody>{queries.list.data.map(trial => <tr key={trial.id} className="border-t"><td className="p-3"><Link to="/order-operations/lab-services/trials/$trialId" params={{ trialId: trial.id }} search={{ q: search, status, owner, fromCompanyId, listPage: listState.page }} className="font-medium text-primary underline underline-offset-4">{trial.number}</Link><p className="text-muted-foreground">{trial.name}</p></td><td className="p-3">{trial.companyName}</td><td className="p-3">{trialLabel(trial.status)}{trial.isOnHold ? ' · On hold' : ''}</td><td className="p-3">{trial.sampleCount} submitted · {trial.sampleAllowance ?? 'Unapproved'} allowance</td><td className="p-3">{submissionDateLabel(trial.submissionClosesAtUtc, true)}</td>{queries.staff ? <><td className="p-3">{trial.salesOwnerName}</td><td className="p-3">{trialDate(trial.requestedAtUtc)}</td><td className="p-3">{trialDate(trial.dueAtUtc)}</td></> : null}</tr>)}</tbody></table></div>
       : <div role="status" className="flex flex-col items-center rounded-xl border bg-card px-4 py-10 text-center">
           <FlaskConical aria-hidden="true" className="mb-3 size-6 text-muted-foreground" />
           <h2 className="text-base font-semibold">{hasFilters ? 'No matching Trial projects' : 'No Trial projects yet'}</h2>
@@ -74,6 +76,7 @@ export function TrialProjectsPage({ search, status, owner, fromCompanyId, onFilt
             : queries.staff ? queries.canCreate ? 'Create a Trial directly for a Company and Department.' : 'Business Development, Commercial leadership or a Platform administrator can create a Trial for a Company and Department.' : 'Trial projects shared with your organization will appear here.'}</p>
           {!hasFilters && queries.staff ? <Button asChild variant="outline" className="mt-4"><Link to="/crm/companies">View CRM companies</Link></Button> : null}
         </div>}
+    <RecordPagination data={queries.pagination} busy={queries.list.isFetching} onPage={page => listState.change({ listPage: page })} />
     </section>
     {creating && queries.canCreate ? <TrialCreateDialog fromCompanyId={fromCompanyId} onClose={() => { setCreating(false); if (createdTrialId.current) { void navigate({ to: '/order-operations/lab-services/trials/$trialId', params: { trialId: createdTrialId.current }, search: { q: search, status, owner, fromCompanyId } }); createdTrialId.current = null } }} onSubmit={async (values, key) => { const created = await mutation.mutateAsync({ path: '', payload: values, key }); createdTrialId.current = created.id }} /> : null}
   </main>

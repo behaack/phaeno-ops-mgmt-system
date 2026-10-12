@@ -1,3 +1,4 @@
+import * as portalConfirmation from '#/components/PortalConfirmation'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
@@ -81,12 +82,12 @@ describe.each(cases)('$name decision dialog', ({ name, page, field, open, keep, 
 
   async function openDialog() {
     render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}>{page}</QueryClientProvider>)
-    fireEvent.click(await headerAction(open))
+    await act(async () => { fireEvent.click(await headerAction(open)) })
     return await screen.findByRole('dialog')
   }
 
   it('retains edited entries after declined Close, footer, Escape and navigation, and resets after a confirmed discard', async () => {
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    const confirm = vi.spyOn(portalConfirmation, 'confirmPortal').mockResolvedValue(false)
     const dialog = await openDialog()
     expect(within(dialog).getByRole('button', { name: save }).matches(':disabled')).toBe(true)
     fireEvent.change(within(dialog).getByLabelText(field), { target: { value: 'Keep this entry' } })
@@ -94,27 +95,27 @@ describe.each(cases)('$name decision dialog', ({ name, page, field, open, keep, 
     const keepUnsaved = async () => {
       if (isLab) {
         const confirmation = screen.getByRole('dialog', { name: 'Discard unsaved order changes?' })
-        fireEvent.click(within(confirmation).getByRole('button', { name: 'Keep reviewing' }))
+        await act(async () => { fireEvent.click(within(confirmation).getByRole('button', { name: 'Keep reviewing' })) })
         await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Discard unsaved order changes?' })).toBeNull())
       }
     }
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Close' }))
+    await act(async () => { fireEvent.click(within(dialog).getByRole('button', { name: 'Close' })) })
     await keepUnsaved()
-    fireEvent.click(within(dialog).getByRole('button', { name: keep }))
+    await act(async () => { fireEvent.click(within(dialog).getByRole('button', { name: keep })) })
     await keepUnsaved()
-    fireEvent.keyDown(dialog, { key: 'Escape' })
+    await act(async () => { fireEvent.keyDown(dialog, { key: 'Escape' }) })
     await keepUnsaved()
     expect(screen.getByRole('dialog')).toBe(dialog)
     expect(within(dialog).getByLabelText(field)).toHaveProperty('value', 'Keep this entry')
-    expect(decisionBlocker().shouldBlockFn()).toBe(true)
+    expect(await decisionBlocker().shouldBlockFn()).toBe(true)
     expect(decisionBlocker().enableBeforeUnload()).toBe(true)
     if (isLab) expect(confirm).not.toHaveBeenCalled()
     else expect(confirm).toHaveBeenCalled()
-    confirm.mockReturnValue(true)
-    fireEvent.click(within(dialog).getByRole('button', { name: keep }))
-    if (isLab) fireEvent.click(within(screen.getByRole('dialog', { name: 'Discard unsaved order changes?' })).getByRole('button', { name: 'Discard changes' }))
+    confirm.mockResolvedValue(true)
+    await act(async () => { fireEvent.click(within(dialog).getByRole('button', { name: keep })) })
+    if (isLab) await act(async () => { fireEvent.click(within(screen.getByRole('dialog', { name: 'Discard unsaved order changes?' })).getByRole('button', { name: 'Discard changes' })) })
     expect(screen.queryByRole('dialog')).toBeNull()
-    fireEvent.click(await headerAction(open))
+    await act(async () => { fireEvent.click(await headerAction(open)) })
     expect(within(screen.getByRole('dialog')).getByLabelText(field)).toHaveProperty('value', '')
     expect(decisionBlocker().enableBeforeUnload()).toBe(false)
   })
@@ -132,20 +133,20 @@ describe.each(cases)('$name decision dialog', ({ name, page, field, open, keep, 
       expect(input).toHaveProperty('value', 'Reviewed entry')
       expect(within(dialog).queryByRole('combobox', { name: /Ship Transportation kits to/ })).toBeNull()
       const sampleTypeConfirmation = within(dialog).getByRole('checkbox', { name: /I confirm this is the Sample type/ })
-      fireEvent.click(sampleTypeConfirmation.closest('label') as HTMLLabelElement)
+      await act(async () => { fireEvent.click(sampleTypeConfirmation.closest('label') as HTMLLabelElement) })
       expect(sampleTypeConfirmation).toHaveProperty('checked', true)
     }
     await waitFor(() => expect(within(dialog).getByRole('button', { name: save }).matches(':disabled')).toBe(false))
-    fireEvent.click(within(dialog).getByRole('button', { name: save }))
+    await act(async () => { fireEvent.click(within(dialog).getByRole('button', { name: save })) })
     await waitFor(() => expect(mocks.save).toHaveBeenCalledOnce())
     expect(input.matches(':disabled')).toBe(true)
     expect(within(dialog).getByRole('button', { name: keep }).matches(':disabled')).toBe(true)
     expect(within(dialog).queryByRole('button', { name: 'Close' })).toBeNull()
     expect(within(dialog).getAllByRole('button').every(button => button.matches(':disabled'))).toBe(true)
-    fireEvent.keyDown(dialog, { key: 'Escape' })
-    fireEvent.keyDown(input, { key: 'Enter' })
+    await act(async () => { fireEvent.keyDown(dialog, { key: 'Escape' }) })
+    await act(async () => { fireEvent.keyDown(input, { key: 'Enter' }) })
     expect(screen.getByRole('dialog')).toBe(dialog)
-    expect(decisionBlocker().shouldBlockFn()).toBe(true)
+    expect(await decisionBlocker().shouldBlockFn()).toBe(true)
     expect(decisionBlocker().enableBeforeUnload()).toBe(true)
     expect(mocks.save).toHaveBeenCalledOnce()
     await act(async () => rejectSave(new Error('The request failed.')))
@@ -153,7 +154,7 @@ describe.each(cases)('$name decision dialog', ({ name, page, field, open, keep, 
     expect(input).toHaveProperty('value', 'Reviewed entry')
     expect(input.matches(':disabled')).toBe(false)
     mocks.save.mockResolvedValueOnce(record)
-    fireEvent.click(within(dialog).getByRole('button', { name: save }))
+    await act(async () => { fireEvent.click(within(dialog).getByRole('button', { name: save })) })
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
     expect(mocks.save).toHaveBeenCalledTimes(2)
     expect(decisionBlocker().enableBeforeUnload()).toBe(false)

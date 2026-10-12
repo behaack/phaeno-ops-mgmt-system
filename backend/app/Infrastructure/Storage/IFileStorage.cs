@@ -57,7 +57,7 @@ public static class FileStorageAreas
     public const string OrderManagement = "order-files";
 }
 
-internal static class FileStorageKeys
+public static class FileStorageKeys
 {
     public static string Create(string fileExtension)
     {

@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '#/test-helpers/render-portal'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { WebOpsDeliveryPanel } from './WebOpsDeliveryPanel'
 import { getWebOpsNotifications, getWebOpsNotificationAttempts, getWebOpsNotificationSummary, updateWebOpsNotificationProcessing, resendWebOpsNotification, type WebOpsNotification, type WebOpsNotificationSummary } from '#/api/web-ops'
@@ -38,7 +38,7 @@ describe('WebOpsDeliveryPanel', () => {
     expect(screen.getByText('Sending').nextElementSibling?.textContent).toBe('0')
     expect(await screen.findByText('Interrupted')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Needs attention (2)' }))
-    await waitFor(() => expect(getWebOpsNotifications).toHaveBeenLastCalledWith(1, true))
+    await waitFor(() => expect(getWebOpsNotifications).toHaveBeenLastCalledWith(1, true, undefined))
     expect(screen.getByRole('button', { name: 'Needs attention (2)' }).getAttribute('aria-pressed')).toBe('true')
   })
 
@@ -126,3 +126,4 @@ describe('WebOpsDeliveryPanel', () => {
     expect(getWebOpsNotificationAttempts).toHaveBeenCalledWith(failed.id)
   })
 })
+vi.mock('@tanstack/react-router', async original => ({ ...await original<typeof import('@tanstack/react-router')>(), useSearch: () => ({}) }))

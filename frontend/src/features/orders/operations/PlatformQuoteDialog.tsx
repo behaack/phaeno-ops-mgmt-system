@@ -1,3 +1,6 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
+import { NativeSelect } from '#/components/ui/native-select'
+import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { Plus, Trash2 } from "lucide-react";
@@ -19,7 +22,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFeedback,
   DialogHeader,
   DialogTitle,
 } from "#/components/ui/dialog";
@@ -109,10 +111,11 @@ export function PlatformQuoteDialog({
     resolver: zodResolver(schema),
     defaultValues,
   });
+  const { isDirty: __formDraftDirty } = form.formState
+  const __modalGuard = useModalDraftGuard(__formDraftDirty, form.formState.isSubmitting, open)
+
+
   const [recordRefreshed, setRecordRefreshed] = useState(false);
-  const [confirmDiscard, setConfirmDiscard] = useState(false);
-  const keepEditingRef = useRef<HTMLButtonElement>(null);
-  const dismissSourceRef = useRef<HTMLElement | null>(null);
   const openerRef = useRef<HTMLElement | null>(null);
   const lines = useFieldArray({ control: form.control, name: "lines" });
   const watchedLines = form.watch("lines");
@@ -167,6 +170,7 @@ export function PlatformQuoteDialog({
       });
     },
     onSuccess: async () => {
+      __modalGuard.allowNavigation();
       await onSaved();
       close();
     },
@@ -179,17 +183,14 @@ export function PlatformQuoteDialog({
 
   const isSubmitting = mutation.isPending || form.formState.isSubmitting;
 
-  useEffect(() => {
-    if (confirmDiscard) keepEditingRef.current?.focus();
-  }, [confirmDiscard]);
 
   useEffect(() => {
-    if (!open || form.formState.isDirty) return;
+    if (!open || __formDraftDirty) return;
     form.reset(createDefaultValues(workflow, defaultQuantity, defaultLabItem, proposedUnitPrice, sourceQuote));
   }, [
     defaultQuantity,
     form,
-    form.formState.isDirty,
+    __formDraftDirty,
     open,
     proposedUnitPrice,
     defaultLabItem,
@@ -217,33 +218,18 @@ export function PlatformQuoteDialog({
 
   function close() {
     mutation.reset();
-    setConfirmDiscard(false);
     setRecordRefreshed(false);
     form.reset(createDefaultValues(workflow, defaultQuantity, defaultLabItem, proposedUnitPrice, sourceQuote));
     onOpenChange(false);
   }
 
-  function keepEditing() {
-    setConfirmDiscard(false);
-    dismissSourceRef.current?.focus();
-  }
-
   function requestClose() {
     if (isSubmitting) return;
-    if (confirmDiscard) {
-      keepEditing();
-      return;
-    }
-    if (form.formState.isDirty) {
-      dismissSourceRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-      setConfirmDiscard(true);
-      return;
-    }
-    close();
+    void __modalGuard.close(close);
   }
 
   function submit(values: Values) {
-    if (mutation.isPending || confirmDiscard || savedQuoteUnavailable) return;
+    if (mutation.isPending || savedQuoteUnavailable) return;
     setRecordRefreshed(false);
     form.clearErrors("root");
     if (sourceQuote && !values.expiresAt) {
@@ -299,7 +285,7 @@ export function PlatformQuoteDialog({
   return (
     <Dialog
       open={open}
-      onOpenChange={(nextOpen) => (nextOpen ? onOpenChange(true) : requestClose())}
+      onOpenChange={nextOpen => nextOpen ? onOpenChange(true) : requestClose()}
     >
       <DialogContent
         className="sm:max-w-5xl"
@@ -317,7 +303,7 @@ export function PlatformQuoteDialog({
         <DialogHeader>
           <DialogTitle>
             {sourceQuote
-              ? "Reissue laboratory quote"
+              ? <CustomerSourceText source={"Reissue laboratory quote"} />
               : workflow === "lab" && proposedUnitPrice !== undefined
               ? "Review proposed laboratory price"
               : `Issue ${workflow === "lab" ? "laboratory" : "data-assembly"} quote`}
@@ -330,23 +316,12 @@ export function PlatformQuoteDialog({
               : "Use active Phaeno commercial catalog items, then set the job-specific quantities and prices. Issuing the quote makes it available to the Customer immediately."}
           </DialogDescription>
         </DialogHeader>
-        {confirmDiscard ? (
-          <DialogFeedback>
-            <section role="alert" className="space-y-3">
-              <p>Discard your unsaved quote changes?</p>
-              <div className="flex flex-wrap gap-2">
-                <Button ref={keepEditingRef} type="button" variant="outline" onClick={keepEditing}>Keep editing</Button>
-                <Button type="button" variant="destructive" disabled={isSubmitting} onClick={close}>Discard changes</Button>
-              </div>
-            </section>
-          </DialogFeedback>
-        ) : null}
-        {savedQuoteUnavailable ? <Alert variant="destructive"><AlertTitle>Saved quote lines could not be loaded</AlertTitle><AlertDescription>Reload the Job before reissuing this quote. The stored prices must be available for review.</AlertDescription></Alert> : null}
+        {savedQuoteUnavailable ? <Alert variant="destructive"><AlertTitle><CustomerSourceText source={"Saved quote lines could not be loaded"} /></AlertTitle><AlertDescription><CustomerSourceText source={"Reload the Job before reissuing this quote. The stored prices must be available for review."} /></AlertDescription></Alert> : null}
         {workflow === "lab" && labItems.length === 0 ? (
           <Alert variant="destructive">
-            <AlertTitle>PSeq Lab Service item is not ready</AlertTitle>
+            <AlertTitle><CustomerSourceText source={"PSeq Lab Service item is not ready"} /></AlertTitle>
             <AlertDescription>
-              Activate at least one approved offering in the PSeq Lab Service family with the Per sample-sequencing run sales unit before issuing a quote.
+              <CustomerSourceText source={"Activate at least one approved offering in the PSeq Lab Service family with the Per sample-sequencing run sales unit before issuing a quote."} />
             </AlertDescription>
           </Alert>
         ) : null}
@@ -361,48 +336,48 @@ export function PlatformQuoteDialog({
             <section className="rounded-lg border bg-muted/30 p-4">
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Proposed price</p>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground"><CustomerSourceText source={"Proposed price"} /></p>
                   <p className="mt-1 text-lg font-semibold">{formatMoney(proposedUnitPrice, priceProposal?.currency ?? "USD")}</p>
-                  <p className="text-xs text-muted-foreground">per sample-sequencing run</p>
+                  <p className="text-xs text-muted-foreground"><CustomerSourceText source={"per sample-sequencing run"} /></p>
                 </div>
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Catalog price</p>
-                  <p className="mt-1 text-lg font-semibold">{requiredLabItem ? formatMoney(requiredLabItem.basePrice, requiredLabItem.currency) : 'Select offering'}</p>
-                  <p className="text-xs text-muted-foreground">per sample-sequencing run</p>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground"><CustomerSourceText source={"Catalog price"} /></p>
+                  <p className="mt-1 text-lg font-semibold">{requiredLabItem ? formatMoney(requiredLabItem.basePrice, requiredLabItem.currency) : <CustomerSourceText source={"Select offering"} />}</p>
+                  <p className="text-xs text-muted-foreground"><CustomerSourceText source={"per sample-sequencing run"} /></p>
                 </div>
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Difference</p>
-                  <p className="mt-1 text-lg font-semibold">{requiredLabItem ? formatSignedMoney(proposedUnitPrice - requiredLabItem.basePrice, priceProposal?.currency ?? "USD") : 'Select offering'}</p>
-                  <p className="text-xs text-muted-foreground">from catalog</p>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground"><CustomerSourceText source={"Difference"} /></p>
+                  <p className="mt-1 text-lg font-semibold">{requiredLabItem ? formatSignedMoney(proposedUnitPrice - requiredLabItem.basePrice, priceProposal?.currency ?? "USD") : <CustomerSourceText source={"Select offering"} />}</p>
+                  <p className="text-xs text-muted-foreground"><CustomerSourceText source={"from catalog"} /></p>
                 </div>
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Quantity</p>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground"><CustomerSourceText source={"Quantity"} /></p>
                   <p className="mt-1 text-lg font-semibold">{defaultQuantity ?? 1}</p>
-                  <p className="text-xs text-muted-foreground">sample-sequencing runs</p>
+                  <p className="text-xs text-muted-foreground"><CustomerSourceText source={"sample-sequencing runs"} /></p>
                 </div>
                 <div className="sm:col-span-2 lg:col-span-4">
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Proposed subtotal</p>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground"><CustomerSourceText source={"Proposed subtotal"} /></p>
                   <p className="mt-1 text-lg font-semibold">{formatMoney(proposedUnitPrice * (defaultQuantity ?? 1), priceProposal?.currency ?? "USD")}</p>
-                  <p className="text-xs text-muted-foreground">before tax</p>
+                  <p className="text-xs text-muted-foreground"><CustomerSourceText source={"before tax"} /></p>
                 </div>
               </div>
-              {priceProposal?.note ? <p className="mt-3 border-t pt-3 text-sm"><span className="font-medium">Pricing note:</span> {priceProposal.note}</p> : null}
+              {priceProposal?.note ? <p className="mt-3 border-t pt-3 text-sm"><span className="font-medium"><CustomerSourceText source={"Pricing note:"} /></span> {priceProposal.note}</p> : null}
             </section>
           ) : null}
           <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
             <div>
-              <Label htmlFor="quotePurpose">Purpose *</Label>
-              {sourceQuote ? <><Input id="quotePurpose" className="mt-2 h-9 bg-muted/30" readOnly value={sourceQuote.purpose === "Change" ? "Scope change" : "Initial"} /><input type="hidden" {...form.register("purpose")} /></> : <select
+              <Label htmlFor="quotePurpose"><CustomerSourceText source={"Purpose *"} /></Label>
+              {sourceQuote ? <><Input id="quotePurpose" className="mt-2 h-9 bg-muted/30" readOnly value={sourceQuote.purpose === "Change" ? "Scope change" : "Initial"} /><input type="hidden" {...form.register("purpose")} /></> : <NativeSelect
                 id="quotePurpose"
                 {...form.register("purpose")}
-                className="mt-2 h-9 w-full rounded-lg border border-input bg-background px-3 text-sm"
+                className="mt-2 w-full rounded-lg border border-input bg-background px-3 text-sm"
               >
-                <option value="Initial">Initial</option>
-                {workflow !== 'lab' ? <option value="Change">Scope change</option> : null}
-              </select>}
+                <option value="Initial"><CustomerSourceText source={"Initial"} /></option>
+                {workflow !== 'lab' ? <option value="Change"><CustomerSourceText source={"Scope change"} /></option> : null}
+              </NativeSelect>}
             </div>
             <div>
-              <Label htmlFor="quoteCurrency">Currency *</Label>
+              <Label htmlFor="quoteCurrency"><CustomerSourceText source={"Currency *"} /></Label>
               <Input
                 id="quoteCurrency"
                 maxLength={3}
@@ -416,7 +391,7 @@ export function PlatformQuoteDialog({
                   id="quoteTaxLabel"
                   className="flex items-center gap-2 text-sm leading-none font-medium"
                 >
-                  Tax
+                  <CustomerSourceText source={"Tax"} />
                 </p>
                 <output
                   id="quoteTaxStatus"
@@ -424,18 +399,18 @@ export function PlatformQuoteDialog({
                   aria-describedby="quoteTaxDescription"
                   className="mt-2 flex h-9 w-full items-center rounded-lg border border-input bg-muted/30 px-2.5 text-base md:text-sm"
                 >
-                  Calculated automatically
+                  <CustomerSourceText source={"Calculated automatically"} />
                 </output>
                 <p
                   id="quoteTaxDescription"
                   className="mt-1 text-xs text-muted-foreground"
                 >
-                  Included when approved tax information is available; otherwise calculated at invoicing.
+                  <CustomerSourceText source={"Included when approved tax information is available; otherwise calculated at invoicing."} />
                 </p>
               </div>
             ) : (
               <div>
-                <Label htmlFor="quoteTax">Tax</Label>
+                <Label htmlFor="quoteTax"><CustomerSourceText source={"Tax"} /></Label>
                 <Input
                   id="quoteTax"
                   type="number"
@@ -447,7 +422,7 @@ export function PlatformQuoteDialog({
               </div>
             )}
             <div>
-              <Label htmlFor="quoteExpiresAt">{sourceQuote ? <RequiredFieldName>Expiration date</RequiredFieldName> : "Expiration override"}</Label>
+              <Label htmlFor="quoteExpiresAt">{sourceQuote ? <RequiredFieldName><CustomerSourceText source={"Expiration date"} /></RequiredFieldName> : <CustomerSourceText source={"Expiration override"} />}</Label>
               <Input
                 id="quoteExpiresAt"
                 type="date"
@@ -458,30 +433,30 @@ export function PlatformQuoteDialog({
                 {...form.register("expiresAt")}
               />
               <p id="quote-expiration-help" className="mt-1 text-xs text-muted-foreground">
-                {sourceQuote ? "Required for the new revision. The original expiration is preserved." : "Leave blank to use the configured default validity."}
+                {sourceQuote ? <CustomerSourceText source={"Required for the new revision. The original expiration is preserved."} /> : <CustomerSourceText source={"Leave blank to use the configured default validity."} />}
               </p>
               <FieldError id="quote-expiration-error">{form.formState.errors.expiresAt?.message}</FieldError>
             </div>
           </div>
           {workflow === "lab" && form.watch("purpose") === "Initial" ? <div className="space-y-1">
-            <Label htmlFor="quote-delivery-target"><RequiredFieldName>Delivery target (business days)</RequiredFieldName></Label>
+            <Label htmlFor="quote-delivery-target"><RequiredFieldName><CustomerSourceText source={"Delivery target (business days)"} /></RequiredFieldName></Label>
             <Input id="quote-delivery-target" type="number" min={1} max={365} step={1} className="max-w-40" {...form.register("deliveryTargetBusinessDays", { valueAsNumber: true })} aria-invalid={Boolean(form.formState.errors.deliveryTargetBusinessDays)} />
-            <p className="text-xs text-muted-foreground">Starts when Phaeno physically receives every required tube for all samples. Monday–Friday, excluding Phaeno holidays.</p>
+            <p className="text-xs text-muted-foreground"><CustomerSourceText source={"Starts when Phaeno physically receives every required tube for all samples. Monday–Friday, excluding Phaeno holidays."} /></p>
             <FieldError>{form.formState.errors.deliveryTargetBusinessDays?.message}</FieldError>
           </div> : null}
           <fieldset>
             <legend className="text-sm font-medium">
-              <RequiredFieldName>Itemized quote</RequiredFieldName>
+              <RequiredFieldName><CustomerSourceText source={"Itemized quote"} /></RequiredFieldName>
             </legend>
             <div
               aria-hidden="true"
               className="mt-3 hidden gap-3 px-0 text-sm font-medium lg:grid lg:grid-cols-[minmax(12rem,0.85fr)_minmax(14rem,1.35fr)_5rem_6rem_2rem]"
             >
-              <RequiredFieldName>Commercial catalog item</RequiredFieldName>
-              <RequiredFieldName>Description</RequiredFieldName>
-              <RequiredFieldName>Quantity</RequiredFieldName>
-              <RequiredFieldName>Unit price</RequiredFieldName>
-              <span className="sr-only">Actions</span>
+              <RequiredFieldName><CustomerSourceText source={"Commercial catalog item"} /></RequiredFieldName>
+              <RequiredFieldName><CustomerSourceText source={"Description"} /></RequiredFieldName>
+              <RequiredFieldName><CustomerSourceText source={"Quantity"} /></RequiredFieldName>
+              <RequiredFieldName><CustomerSourceText source={"Unit price"} /></RequiredFieldName>
+              <span className="sr-only"><CustomerSourceText source={"Actions"} /></span>
             </div>
             <div className="mt-3 space-y-3 lg:mt-1 lg:space-y-0 lg:divide-y">
               {lines.fields.map((field, index) => {
@@ -507,10 +482,10 @@ export function PlatformQuoteDialog({
                         className="lg:sr-only"
                       >
                         <RequiredFieldName>
-                          Commercial catalog item
+                          <CustomerSourceText source={"Commercial catalog item"} />
                         </RequiredFieldName>
                       </Label>
-                      <select
+                      <NativeSelect
                         id={`quoteItem-${index}`}
                         value={selectedItemId}
                         onChange={(event) =>
@@ -521,10 +496,10 @@ export function PlatformQuoteDialog({
                             ? `quoteItem-${index}-description`
                             : undefined
                         }
-                        className="mt-2 h-9 w-full rounded-lg border border-input bg-background px-3 text-sm lg:mt-0"
+                        className="mt-2 w-full rounded-lg border border-input bg-background px-3 text-sm lg:mt-0"
                       >
-                        <option value="">Select item</option>
-                        {selectedItem && !selectedItem.isActive ? <option value={selectedItem.id} disabled>{selectedItem.name} · Inactive</option> : null}
+                        <option value=""><CustomerSourceText source={"Select item"} /></option>
+                        {selectedItem && !selectedItem.isActive ? <option value={selectedItem.id} disabled>{selectedItem.name} <CustomerSourceText source={"· Inactive"} /></option> : null}
                         {catalogItems
                           .filter((item) => item.isActive && (!isLockedRequiredLabLine || labItems.some(lab => lab.id === item.id)))
                           .map((item) => (
@@ -539,11 +514,11 @@ export function PlatformQuoteDialog({
                             >
                               {item.name}
                               {item.isPSeqLabService
-                                ? " · PSeq Lab Service"
+                                ? <CustomerSourceText source={" · PSeq Lab Service"} />
                                 : ""}
                             </option>
                           ))}
-                      </select>
+                      </NativeSelect>
                     </div>
                     {selectedItem ? (
                       <p
@@ -551,8 +526,8 @@ export function PlatformQuoteDialog({
                         className="-mt-2 text-xs text-muted-foreground md:col-span-5 md:col-start-1 md:row-start-2"
                       >
                         {isRequiredLabLine
-                          ? "Priced per sample-sequencing run · quantity set from the requested sample-sequencing run count"
-                          : "Priced per unit · set the quantity for this quote"}
+                          ? <CustomerSourceText source={"Priced per sample-sequencing run · quantity set from the requested sample-sequencing run count"} />
+                          : <CustomerSourceText source={"Priced per unit · set the quantity for this quote"} />}
                       </p>
                     ) : null}
                     <div className="min-w-0 md:col-start-2 md:row-start-1">
@@ -560,7 +535,7 @@ export function PlatformQuoteDialog({
                         htmlFor={`quoteDescription-${index}`}
                         className="lg:sr-only"
                       >
-                        <RequiredFieldName>Description</RequiredFieldName>
+                        <RequiredFieldName><CustomerSourceText source={"Description"} /></RequiredFieldName>
                       </Label>
                       <Input
                         id={`quoteDescription-${index}`}
@@ -573,7 +548,7 @@ export function PlatformQuoteDialog({
                         htmlFor={`quoteQuantity-${index}`}
                         className="lg:sr-only"
                       >
-                        <RequiredFieldName>Quantity</RequiredFieldName>
+                        <RequiredFieldName><CustomerSourceText source={"Quantity"} /></RequiredFieldName>
                       </Label>
                       <Input
                         id={`quoteQuantity-${index}`}
@@ -590,7 +565,7 @@ export function PlatformQuoteDialog({
                         htmlFor={`quotePrice-${index}`}
                         className="lg:sr-only"
                       >
-                        <RequiredFieldName>Unit price</RequiredFieldName>
+                        <RequiredFieldName><CustomerSourceText source={"Unit price"} /></RequiredFieldName>
                       </Label>
                       <Input
                         id={`quotePrice-${index}`}
@@ -632,14 +607,14 @@ export function PlatformQuoteDialog({
                 }
               >
                 <Plus data-icon="inline-start" />
-                Add quote line
+                <CustomerSourceText source={"Add quote line"} />
               </Button>
               <div className="sm:text-right">
                 <p
                   id="currentQuoteTotalLabel"
                   className="text-xs font-medium uppercase tracking-wide text-muted-foreground"
                 >
-                  {workflow === "lab" ? "Current pre-tax total" : "Current quote total"}
+                  {workflow === "lab" ? <CustomerSourceText source={"Current pre-tax total"} /> : <CustomerSourceText source={"Current quote total"} />}
                 </p>
                 <output
                   aria-labelledby="currentQuoteTotalLabel"
@@ -650,7 +625,7 @@ export function PlatformQuoteDialog({
                 </output>
                 {workflow === "lab" ? (
                   <p className="mt-1 text-xs text-muted-foreground">
-                    The issued quote includes tax when POMS can calculate it.
+                    <CustomerSourceText source={"The issued quote includes tax when POMS can calculate it."} />
                   </p>
                 ) : null}
               </div>
@@ -659,10 +634,10 @@ export function PlatformQuoteDialog({
           {workflow === "lab" && amendsProposedPrice ? (
             <div>
               <Label htmlFor="pricingDecisionReason">
-                <RequiredFieldName>Amendment reason</RequiredFieldName>
+                <RequiredFieldName><CustomerSourceText source={"Amendment reason"} /></RequiredFieldName>
               </Label>
               <FieldDescription id="pricingDecisionReason-help">
-                Required because the final unit price differs from the proposal. This internal audit note is not shown to the Customer.
+                <CustomerSourceText source={"Required because the final unit price differs from the proposal. This internal audit note is not shown to the Customer."} />
               </FieldDescription>
               <Textarea
                 id="pricingDecisionReason"
@@ -679,15 +654,15 @@ export function PlatformQuoteDialog({
           </fieldset>
           {form.formState.errors.root?.message ? (
             <Alert variant="destructive" role="alert">
-              <AlertTitle>Quote needs attention</AlertTitle>
+              <AlertTitle><CustomerSourceText source={"Quote needs attention"} /></AlertTitle>
               <AlertDescription>
-                {form.formState.errors.root.message}
+                {<CustomerSourceText source={form.formState.errors.root.message} />}
               </AlertDescription>
             </Alert>
           ) : null}
           {mutation.error ? (
             <Alert variant="destructive">
-              <AlertTitle>Quote was not issued</AlertTitle>
+              <AlertTitle><CustomerSourceText source={"Quote was not issued"} /></AlertTitle>
               <AlertDescription>
                 {recordRefreshed && isOrderConcurrencyError(mutation.error)
                   ? `The latest ${workflow === "lab" ? "Job" : "request"} was loaded and your quote entries were preserved. Review them, then issue the quote again.`
@@ -701,17 +676,17 @@ export function PlatformQuoteDialog({
         </form>
         <DialogFooter>
           <Button type="button" variant="outline" disabled={isSubmitting} onClick={requestClose}>
-            Cancel
+            <CustomerSourceText source={"Cancel"} />
           </Button>
           <Button
             type="submit"
             form="platform-quote-form"
             disabled={
-              isSubmitting || confirmDiscard || (workflow === "lab" && !requiredLabItem) || savedQuoteUnavailable
+              isSubmitting || (workflow === "lab" && !requiredLabItem) || savedQuoteUnavailable
             }
           >
             {mutation.isPending
-              ? "Issuing…"
+              ? <CustomerSourceText source={"Issuing…"} />
               : sourceQuote
                 ? "Issue new revision"
                 : workflow === "lab" && proposedUnitPrice !== undefined

@@ -26,6 +26,7 @@ import { Route as LabConfigurationRouteImport } from './routes/lab-configuration
 import { Route as LabOperationsRouteImport } from './routes/lab-operations'
 import { Route as LabServicesRouteImport } from './routes/lab-services'
 import { Route as LegacyIntegrationsRouteImport } from './routes/legacy-integrations'
+import { Route as OperationsRecoveryRouteImport } from './routes/operations-recovery'
 import { Route as OrderConfigurationRouteImport } from './routes/order-configuration'
 import { Route as OrderOperationsRouteImport } from './routes/order-operations'
 import { Route as PhaenoUsersRouteImport } from './routes/phaeno-users'
@@ -205,6 +206,11 @@ const LabServicesRoute = LabServicesRouteImport.update({
 const LegacyIntegrationsRoute = LegacyIntegrationsRouteImport.update({
   id: '/legacy-integrations',
   path: '/legacy-integrations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OperationsRecoveryRoute = OperationsRecoveryRouteImport.update({
+  id: '/operations-recovery',
+  path: '/operations-recovery',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OrderConfigurationRoute = OrderConfigurationRouteImport.update({
@@ -762,6 +768,7 @@ export interface FileRoutesByFullPath {
   '/lab-operations': typeof LabOperationsRouteWithChildren
   '/lab-services': typeof LabServicesRouteWithChildren
   '/legacy-integrations': typeof LegacyIntegrationsRoute
+  '/operations-recovery': typeof OperationsRecoveryRoute
   '/order-configuration': typeof OrderConfigurationRouteWithChildren
   '/order-operations': typeof OrderOperationsRouteWithChildren
   '/phaeno-users': typeof PhaenoUsersRoute
@@ -876,6 +883,7 @@ export interface FileRoutesByTo {
   '/lab-operations': typeof LabOperationsRouteWithChildren
   '/lab-services': typeof LabServicesRouteWithChildren
   '/legacy-integrations': typeof LegacyIntegrationsRoute
+  '/operations-recovery': typeof OperationsRecoveryRoute
   '/order-configuration': typeof OrderConfigurationRouteWithChildren
   '/order-operations': typeof OrderOperationsRouteWithChildren
   '/phaeno-users': typeof PhaenoUsersRoute
@@ -991,6 +999,7 @@ export interface FileRoutesById {
   '/lab-operations': typeof LabOperationsRouteWithChildren
   '/lab-services': typeof LabServicesRouteWithChildren
   '/legacy-integrations': typeof LegacyIntegrationsRoute
+  '/operations-recovery': typeof OperationsRecoveryRoute
   '/order-configuration': typeof OrderConfigurationRouteWithChildren
   '/order-operations': typeof OrderOperationsRouteWithChildren
   '/phaeno-users': typeof PhaenoUsersRoute
@@ -1107,6 +1116,7 @@ export interface FileRouteTypes {
     | '/lab-operations'
     | '/lab-services'
     | '/legacy-integrations'
+    | '/operations-recovery'
     | '/order-configuration'
     | '/order-operations'
     | '/phaeno-users'
@@ -1221,6 +1231,7 @@ export interface FileRouteTypes {
     | '/lab-operations'
     | '/lab-services'
     | '/legacy-integrations'
+    | '/operations-recovery'
     | '/order-configuration'
     | '/order-operations'
     | '/phaeno-users'
@@ -1335,6 +1346,7 @@ export interface FileRouteTypes {
     | '/lab-operations'
     | '/lab-services'
     | '/legacy-integrations'
+    | '/operations-recovery'
     | '/order-configuration'
     | '/order-operations'
     | '/phaeno-users'
@@ -1450,6 +1462,7 @@ export interface RootRouteChildren {
   LabOperationsRoute: typeof LabOperationsRouteWithChildren
   LabServicesRoute: typeof LabServicesRouteWithChildren
   LegacyIntegrationsRoute: typeof LegacyIntegrationsRoute
+  OperationsRecoveryRoute: typeof OperationsRecoveryRoute
   OrderConfigurationRoute: typeof OrderConfigurationRouteWithChildren
   OrderOperationsRoute: typeof OrderOperationsRouteWithChildren
   PhaenoUsersRoute: typeof PhaenoUsersRoute
@@ -1584,6 +1597,13 @@ declare module '@tanstack/react-router' {
       path: '/legacy-integrations'
       fullPath: '/legacy-integrations'
       preLoaderRoute: typeof LegacyIntegrationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/operations-recovery': {
+      id: '/operations-recovery'
+      path: '/operations-recovery'
+      fullPath: '/operations-recovery'
+      preLoaderRoute: typeof OperationsRecoveryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/order-configuration': {
@@ -2729,6 +2749,7 @@ const rootRouteChildren: RootRouteChildren = {
   LabOperationsRoute: LabOperationsRouteWithChildren,
   LabServicesRoute: LabServicesRouteWithChildren,
   LegacyIntegrationsRoute: LegacyIntegrationsRoute,
+  OperationsRecoveryRoute: OperationsRecoveryRoute,
   OrderConfigurationRoute: OrderConfigurationRouteWithChildren,
   OrderOperationsRoute: OrderOperationsRouteWithChildren,
   PhaenoUsersRoute: PhaenoUsersRoute,

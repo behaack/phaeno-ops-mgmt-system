@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { requireRecordPage } from './record-page'
 
 import { api } from './client'
 import type { OrganizationKind } from './session'
@@ -691,6 +692,18 @@ export async function listDownloadHistory() {
   )
   return unwrap(response.data)
 }
+
+export type DataRecordPage<T> = { items: T[]; page: number; pageSize: number; totalCount: number }
+async function readDataPage<T>(path: string, params: Record<string, unknown>) {
+  const response = await api.get<ApiEnvelope<DataRecordPage<T>>>(path, { params })
+  return requireRecordPage(unwrap(response.data))
+}
+export const listDownloadHistoryPage = (page = 1) => readDataPage<DownloadAudit>('/curated-data/downloads/page', { page })
+export const listTenantActivityPage = (page = 1) => readDataPage<ProvisioningNotice>('/curated-data/activity/page', { page, pageSize: 20 })
+export const listTenantGovernanceIncidentsPage = (page = 1) => readDataPage<TenantGovernanceIncident>('/curated-data/governance-incidents/page', { page, activeOnly: true })
+export const listProvisioningRunsPage = (organizationId?: string, page = 1) => readDataPage<ProvisioningRun>('/data-provisioning/provisioning-runs/page', { organizationId, page, pageSize: 20 })
+export const listProvisioningActivityPage = (organizationId?: string, page = 1) => readDataPage<ProvisioningNotice>('/data-provisioning/activity/page', { organizationId, page, pageSize: 20 })
+export const listGovernanceIncidentsPage = (page = 1) => readDataPage<GovernanceIncident>('/data-provisioning/governance/incidents/page', { page })
 
 export async function listTenantActivity() {
   const response = await api.get<ApiEnvelope<ProvisioningNotice[]>>(

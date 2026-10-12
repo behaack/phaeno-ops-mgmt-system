@@ -1,3 +1,4 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { Badge } from '#/components/ui/badge'
 import { Checkbox } from '#/components/ui/checkbox'
 import { Label } from '#/components/ui/label'
@@ -28,15 +29,14 @@ export function OrderingAuthorizationField({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <Label htmlFor={id} className="cursor-pointer">
-              Ordering authorized
+              <CustomerSourceText source={"Ordering authorized"} />
             </Label>
             <Badge variant={checked ? 'secondary' : 'outline'}>
-              {checked ? 'On' : 'Off'}
+              {checked ? 'On' : <CustomerSourceText source={"Off"} />}
             </Badge>
           </div>
           <p id={descriptionId} className="mt-1 text-sm text-muted-foreground">
-            When on, account creation adds a ready PSeq Lab Service entitlement.
-            Turn off to create the account without ordering access.
+            <CustomerSourceText source={"When on, account creation adds a ready PSeq Lab Service entitlement.\r\n            Turn off to create the account without ordering access."} />
           </p>
         </div>
       </div>

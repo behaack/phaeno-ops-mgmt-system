@@ -1,3 +1,4 @@
+import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useBlocker } from '@tanstack/react-router'
 import { useForm } from 'react-hook-form'
@@ -46,9 +47,9 @@ export function ProtocolApprovalDialog({
   const [confirmed, setConfirmed] = useState(false)
   const form = useForm<{ reason: string }>({ resolver: zodResolver(z.object({ reason: z.string().trim().min(1, 'Enter a reason for bypassing independent review.').max(2000) })), defaultValues: { reason: '' } })
   const { isDirty } = form.formState
-  const confirmLeave = () => !override || !isDirty || window.confirm('Discard the unsaved approval override reason?')
-  const close = () => { if (!isPending && confirmLeave()) onOpenChange(false) }
-  useBlocker({ shouldBlockFn: () => isPending || !confirmLeave(), enableBeforeUnload: () => isPending || override && isDirty })
+  const confirmLeave = async () => !override || !isDirty || (await confirmPortal('Discard the unsaved approval override reason?'))
+  const close = async () => { if (!isPending && await confirmLeave()) onOpenChange(false) }
+  useBlocker({ shouldBlockFn: async () => isPending || !await confirmLeave(), enableBeforeUnload: () => isPending || override && isDirty })
   const Footer = override ? RequiredDialogFooter : DialogFooter
   const definition = useMemo(
     () => {

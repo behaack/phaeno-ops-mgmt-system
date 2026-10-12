@@ -1,3 +1,5 @@
+import { useCustomerMessages } from '#/features/customer-i18n/use-customer-messages'
+
 export const externalDocumentationLocales = ['en-US'] as const
 
 export type ExternalDocumentationLocale =
@@ -71,4 +73,8 @@ export function getDocumentationMessages(
   locale: ExternalDocumentationLocale = defaultExternalDocumentationLocale,
 ) {
   return documentationMessagesByLocale[locale]
+}
+
+export function useDocumentationMessages() {
+  return useCustomerMessages(getDocumentationMessages())
 }

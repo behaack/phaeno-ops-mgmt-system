@@ -1,3 +1,4 @@
+import { PortalRouterContext } from './portal-router-context'
 // Browser-only test entry, never imported by the application bundle.
 import { useState } from 'react'
 import { createRoot } from 'react-dom/client'
@@ -34,7 +35,7 @@ function Fixture() {
       <button type="button" className="cursor-pointer rounded border p-2 focus-visible:ring" onClick={() => { requestDepartment = 'research'; setDepartment('research') }}>Switch to Research</button>
       <button type="button" className="cursor-pointer rounded border p-2 focus-visible:ring" onClick={() => setAdmin(false)}>Use member rights</button>
     </nav>
-    <DataLibraryPage />
+    <PortalRouterContext><DataLibraryPage /></PortalRouterContext>
   </PhaenoSessionContext.Provider></QueryClientProvider>
 }
 createRoot(document.getElementById('root')!).render(<Fixture />)

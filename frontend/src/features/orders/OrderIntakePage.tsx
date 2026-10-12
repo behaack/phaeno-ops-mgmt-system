@@ -1,3 +1,4 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { useQuery } from '@tanstack/react-query'
 import { Navigate } from '@tanstack/react-router'
 
@@ -11,13 +12,13 @@ export function OrderIntakePage({ orderId }: { orderId: string }) {
   })
 
   if (intake.isLoading) {
-    return <main className="page-wrap px-4 py-8"><p role="status">Opening Lab work…</p></main>
+    return <main className="page-wrap px-4 py-8"><p role="status"><CustomerSourceText source={"Opening Lab work…"} /></p></main>
   }
   if (intake.error || !intake.data) {
     return (
       <main className="page-wrap px-4 py-8">
         <Alert variant="destructive">
-          <AlertTitle>Lab work could not be opened</AlertTitle>
+          <AlertTitle><CustomerSourceText source={"Lab work could not be opened"} /></AlertTitle>
           <AlertDescription>
             {getLabOperationsError(intake.error, 'Return to Lab operations and try again.')}
           </AlertDescription>

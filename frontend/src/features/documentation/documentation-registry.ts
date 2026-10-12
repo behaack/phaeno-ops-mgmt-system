@@ -1,62 +1,7 @@
 import { documentationCatalog, type DocumentationMetadata } from './documentation-metadata'
-import PhaenoTrialProjects from '#/content/docs/phaeno/trial-projects.mdx'
-import PartnerTrialHistory from '#/content/docs/en-US/partner/trial-history.mdx'
-import CustomerTrialHistory from '#/content/docs/en-US/customer/trial-history.mdx'
-import ProspectTrialProjects from '#/content/docs/en-US/prospect/trial-projects.mdx'
-import type { ComponentType, ElementType } from 'react'
+import { lazy, type ComponentType, type ElementType } from 'react'
+import { useCustomerSourceText } from '#/features/customer-i18n/customer-text'
 
-import CustomerAccountAndAccess from '#/content/docs/en-US/customer/account-and-access.mdx'
-import CustomerDataAndOrganization from '#/content/docs/en-US/customer/data-and-organization.mdx'
-import CustomerGettingStarted from '#/content/docs/en-US/customer/getting-started.mdx'
-import CustomerLabServices from '#/content/docs/en-US/customer/lab-services.mdx'
-import CustomerResultsAndBilling from '#/content/docs/en-US/customer/results-and-billing.mdx'
-import CustomerSampleShipping from '#/content/docs/en-US/customer/sample-shipping.mdx'
-import CustomerStatusesAndTroubleshooting from '#/content/docs/en-US/customer/statuses-and-troubleshooting.mdx'
-import ProspectAccountAndAccess from '#/content/docs/en-US/prospect/account-and-access.mdx'
-import ProspectDataGovernanceAndDownloads from '#/content/docs/en-US/prospect/data-governance-and-downloads.mdx'
-import ProspectDataLibrary from '#/content/docs/en-US/prospect/data-library.mdx'
-import ProspectGettingStarted from '#/content/docs/en-US/prospect/getting-started.mdx'
-import ProspectOrganizationAndTransition from '#/content/docs/en-US/prospect/organization-and-transition.mdx'
-import ProspectSampleShipping from '#/content/docs/en-US/prospect/sample-shipping.mdx'
-import ProspectStatusesAndTroubleshooting from '#/content/docs/en-US/prospect/statuses-and-troubleshooting.mdx'
-import PartnerAccountAndAccess from '#/content/docs/en-US/partner/account-and-access.mdx'
-import PartnerDataAndOrganization from '#/content/docs/en-US/partner/data-and-organization.mdx'
-import PartnerLabServices from '#/content/docs/en-US/partner/lab-services.mdx'
-import PartnerDataAssembly from '#/content/docs/en-US/partner/data-assembly.mdx'
-import PartnerGettingStarted from '#/content/docs/en-US/partner/getting-started.mdx'
-import PartnerReagentOrders from '#/content/docs/en-US/partner/reagent-orders.mdx'
-import PartnerStatusesAndTroubleshooting from '#/content/docs/en-US/partner/statuses-and-troubleshooting.mdx'
-import PhaenoConfigurationAndRecovery from '#/content/docs/phaeno/configuration-and-recovery.mdx'
-import PhaenoCrm from '#/content/docs/phaeno/crm.mdx'
-import PhaenoCrmActivitiesTasks from '#/content/docs/phaeno/crm-activities-tasks.mdx'
-import PhaenoCrmCompaniesContacts from '#/content/docs/phaeno/crm-companies-contacts.mdx'
-import PhaenoCrmLeadsConversion from '#/content/docs/phaeno/crm-leads-conversion.mdx'
-import PhaenoCrmOpportunitiesPipelines from '#/content/docs/phaeno/crm-opportunities-pipelines.mdx'
-import PhaenoCrmPortalHandoffs from '#/content/docs/phaeno/crm-portal-handoffs.mdx'
-import PhaenoCrmReportsAdministration from '#/content/docs/phaeno/crm-reports-administration.mdx'
-import PhaenoCrmTroubleshooting from '#/content/docs/phaeno/crm-troubleshooting.mdx'
-import PhaenoDataCuratedPublishing from '#/content/docs/phaeno/data-curated-publishing.mdx'
-import PhaenoDataGovernanceRecovery from '#/content/docs/phaeno/data-governance-recovery.mdx'
-import PhaenoDataOrganizationGrants from '#/content/docs/phaeno/data-organization-grants.mdx'
-import PhaenoDataProvisioningAndAccounts from '#/content/docs/phaeno/data-provisioning-and-accounts.mdx'
-import PhaenoDataSourceRegistry from '#/content/docs/phaeno/data-source-registry.mdx'
-import PhaenoGettingStarted from '#/content/docs/phaeno/getting-started.mdx'
-import PhaenoLabExceptionsRework from '#/content/docs/phaeno/lab-exceptions-rework.mdx'
-import PhaenoLabLibrariesBatchesSequencing from '#/content/docs/phaeno/lab-libraries-batches-sequencing.mdx'
-import PhaenoLabMaterialsEquipment from '#/content/docs/phaeno/lab-materials-equipment.mdx'
-import PhaenoLabOperations from '#/content/docs/phaeno/lab-operations.mdx'
-import PhaenoLabProtocolExecution from '#/content/docs/phaeno/lab-protocol-execution.mdx'
-import PhaenoLabReceiptAccession from '#/content/docs/phaeno/lab-receipt-accession.mdx'
-import PhaenoLabScientificApproval from '#/content/docs/phaeno/lab-scientific-approval.mdx'
-import PhaenoOrderBillingPaymentRelease from '#/content/docs/phaeno/order-billing-payment-release.mdx'
-import PhaenoOrderCustomerLabAuthorization from '#/content/docs/phaeno/order-customer-lab-authorization.mdx'
-import PhaenoOrderDataAssembly from '#/content/docs/phaeno/order-data-assembly.mdx'
-import PhaenoOrderHoldsCancellationsAdjustments from '#/content/docs/phaeno/order-holds-cancellations-adjustments.mdx'
-import PhaenoOrderIntegrationRecovery from '#/content/docs/phaeno/order-integration-recovery.mdx'
-import PhaenoOrderOperations from '#/content/docs/phaeno/order-operations.mdx'
-import PhaenoOrderReagentFulfillment from '#/content/docs/phaeno/order-reagent-fulfillment.mdx'
-import PhaenoOrganizationAndUserAdministration from '#/content/docs/phaeno/organization-and-user-administration.mdx'
-import PhaenoStatusesAndRecovery from '#/content/docs/phaeno/statuses-and-recovery.mdx'
 import {
   defaultExternalDocumentationLocale,
   type ExternalDocumentationLocale,
@@ -81,62 +26,62 @@ export type DocumentationEntry = DocumentationMetadata & {
 }
 
 const documentationComponents: Record<string, DocumentationContent> = {
-  'phaeno/trial-projects': PhaenoTrialProjects,
-  'partner/en-US/trial-history': PartnerTrialHistory,
-  'customer/en-US/trial-history': CustomerTrialHistory,
-  'prospect/en-US/trial-projects': ProspectTrialProjects,
-  'prospect/en-US/getting-started': ProspectGettingStarted,
-  'prospect/en-US/account-and-access': ProspectAccountAndAccess,
-  'prospect/en-US/sample-shipping': ProspectSampleShipping,
-  'prospect/en-US/data-library': ProspectDataLibrary,
-  'prospect/en-US/data-governance-and-downloads': ProspectDataGovernanceAndDownloads,
-  'prospect/en-US/organization-and-transition': ProspectOrganizationAndTransition,
-  'prospect/en-US/statuses-and-troubleshooting': ProspectStatusesAndTroubleshooting,
-  'customer/en-US/getting-started': CustomerGettingStarted,
-  'customer/en-US/account-and-access': CustomerAccountAndAccess,
-  'customer/en-US/lab-services': CustomerLabServices,
-  'customer/en-US/sample-shipping': CustomerSampleShipping,
-  'customer/en-US/results-and-billing': CustomerResultsAndBilling,
-  'customer/en-US/data-and-organization': CustomerDataAndOrganization,
-  'customer/en-US/statuses-and-troubleshooting': CustomerStatusesAndTroubleshooting,
-  'partner/en-US/getting-started': PartnerGettingStarted,
-  'partner/en-US/account-and-access': PartnerAccountAndAccess,
-  'partner/en-US/lab-services': PartnerLabServices,
-  'partner/en-US/reagent-orders': PartnerReagentOrders,
-  'partner/en-US/data-assembly': PartnerDataAssembly,
-  'partner/en-US/data-and-organization': PartnerDataAndOrganization,
-  'partner/en-US/statuses-and-troubleshooting': PartnerStatusesAndTroubleshooting,
-  'phaeno/getting-started': PhaenoGettingStarted,
-  'phaeno/crm': PhaenoCrm,
-  'phaeno/crm-companies-contacts': PhaenoCrmCompaniesContacts,
-  'phaeno/crm-leads-conversion': PhaenoCrmLeadsConversion,
-  'phaeno/crm-opportunities-pipelines': PhaenoCrmOpportunitiesPipelines,
-  'phaeno/crm-activities-tasks': PhaenoCrmActivitiesTasks,
-  'phaeno/crm-reports-administration': PhaenoCrmReportsAdministration,
-  'phaeno/crm-portal-handoffs': PhaenoCrmPortalHandoffs,
-  'phaeno/crm-troubleshooting': PhaenoCrmTroubleshooting,
-  'phaeno/organization-and-user-administration': PhaenoOrganizationAndUserAdministration,
-  'phaeno/data-provisioning-and-accounts': PhaenoDataProvisioningAndAccounts,
-  'phaeno/data-source-registry': PhaenoDataSourceRegistry,
-  'phaeno/data-curated-publishing': PhaenoDataCuratedPublishing,
-  'phaeno/data-organization-grants': PhaenoDataOrganizationGrants,
-  'phaeno/data-governance-recovery': PhaenoDataGovernanceRecovery,
-  'phaeno/order-operations': PhaenoOrderOperations,
-  'phaeno/order-customer-lab-authorization': PhaenoOrderCustomerLabAuthorization,
-  'phaeno/order-reagent-fulfillment': PhaenoOrderReagentFulfillment,
-  'phaeno/order-data-assembly': PhaenoOrderDataAssembly,
-  'phaeno/order-holds-cancellations-adjustments': PhaenoOrderHoldsCancellationsAdjustments,
-  'phaeno/order-billing-payment-release': PhaenoOrderBillingPaymentRelease,
-  'phaeno/order-integration-recovery': PhaenoOrderIntegrationRecovery,
-  'phaeno/lab-operations': PhaenoLabOperations,
-  'phaeno/lab-receipt-accession': PhaenoLabReceiptAccession,
-  'phaeno/lab-protocol-execution': PhaenoLabProtocolExecution,
-  'phaeno/lab-materials-equipment': PhaenoLabMaterialsEquipment,
-  'phaeno/lab-libraries-batches-sequencing': PhaenoLabLibrariesBatchesSequencing,
-  'phaeno/lab-exceptions-rework': PhaenoLabExceptionsRework,
-  'phaeno/lab-scientific-approval': PhaenoLabScientificApproval,
-  'phaeno/configuration-and-recovery': PhaenoConfigurationAndRecovery,
-  'phaeno/statuses-and-recovery': PhaenoStatusesAndRecovery,
+  'phaeno/trial-projects': lazy(() => import('#/content/docs/phaeno/trial-projects.mdx')),
+  'partner/en-US/trial-history': lazy(() => import('#/content/docs/en-US/partner/trial-history.mdx')),
+  'customer/en-US/trial-history': lazy(() => import('#/content/docs/en-US/customer/trial-history.mdx')),
+  'prospect/en-US/trial-projects': lazy(() => import('#/content/docs/en-US/prospect/trial-projects.mdx')),
+  'prospect/en-US/getting-started': lazy(() => import('#/content/docs/en-US/prospect/getting-started.mdx')),
+  'prospect/en-US/account-and-access': lazy(() => import('#/content/docs/en-US/prospect/account-and-access.mdx')),
+  'prospect/en-US/sample-shipping': lazy(() => import('#/content/docs/en-US/prospect/sample-shipping.mdx')),
+  'prospect/en-US/data-library': lazy(() => import('#/content/docs/en-US/prospect/data-library.mdx')),
+  'prospect/en-US/data-governance-and-downloads': lazy(() => import('#/content/docs/en-US/prospect/data-governance-and-downloads.mdx')),
+  'prospect/en-US/organization-and-transition': lazy(() => import('#/content/docs/en-US/prospect/organization-and-transition.mdx')),
+  'prospect/en-US/statuses-and-troubleshooting': lazy(() => import('#/content/docs/en-US/prospect/statuses-and-troubleshooting.mdx')),
+  'customer/en-US/getting-started': lazy(() => import('#/content/docs/en-US/customer/getting-started.mdx')),
+  'customer/en-US/account-and-access': lazy(() => import('#/content/docs/en-US/customer/account-and-access.mdx')),
+  'customer/en-US/lab-services': lazy(() => import('#/content/docs/en-US/customer/lab-services.mdx')),
+  'customer/en-US/sample-shipping': lazy(() => import('#/content/docs/en-US/customer/sample-shipping.mdx')),
+  'customer/en-US/results-and-billing': lazy(() => import('#/content/docs/en-US/customer/results-and-billing.mdx')),
+  'customer/en-US/data-and-organization': lazy(() => import('#/content/docs/en-US/customer/data-and-organization.mdx')),
+  'customer/en-US/statuses-and-troubleshooting': lazy(() => import('#/content/docs/en-US/customer/statuses-and-troubleshooting.mdx')),
+  'partner/en-US/getting-started': lazy(() => import('#/content/docs/en-US/partner/getting-started.mdx')),
+  'partner/en-US/account-and-access': lazy(() => import('#/content/docs/en-US/partner/account-and-access.mdx')),
+  'partner/en-US/lab-services': lazy(() => import('#/content/docs/en-US/partner/lab-services.mdx')),
+  'partner/en-US/reagent-orders': lazy(() => import('#/content/docs/en-US/partner/reagent-orders.mdx')),
+  'partner/en-US/data-assembly': lazy(() => import('#/content/docs/en-US/partner/data-assembly.mdx')),
+  'partner/en-US/data-and-organization': lazy(() => import('#/content/docs/en-US/partner/data-and-organization.mdx')),
+  'partner/en-US/statuses-and-troubleshooting': lazy(() => import('#/content/docs/en-US/partner/statuses-and-troubleshooting.mdx')),
+  'phaeno/getting-started': lazy(() => import('#/content/docs/phaeno/getting-started.mdx')),
+  'phaeno/crm': lazy(() => import('#/content/docs/phaeno/crm.mdx')),
+  'phaeno/crm-companies-contacts': lazy(() => import('#/content/docs/phaeno/crm-companies-contacts.mdx')),
+  'phaeno/crm-leads-conversion': lazy(() => import('#/content/docs/phaeno/crm-leads-conversion.mdx')),
+  'phaeno/crm-opportunities-pipelines': lazy(() => import('#/content/docs/phaeno/crm-opportunities-pipelines.mdx')),
+  'phaeno/crm-activities-tasks': lazy(() => import('#/content/docs/phaeno/crm-activities-tasks.mdx')),
+  'phaeno/crm-reports-administration': lazy(() => import('#/content/docs/phaeno/crm-reports-administration.mdx')),
+  'phaeno/crm-portal-handoffs': lazy(() => import('#/content/docs/phaeno/crm-portal-handoffs.mdx')),
+  'phaeno/crm-troubleshooting': lazy(() => import('#/content/docs/phaeno/crm-troubleshooting.mdx')),
+  'phaeno/organization-and-user-administration': lazy(() => import('#/content/docs/phaeno/organization-and-user-administration.mdx')),
+  'phaeno/data-provisioning-and-accounts': lazy(() => import('#/content/docs/phaeno/data-provisioning-and-accounts.mdx')),
+  'phaeno/data-source-registry': lazy(() => import('#/content/docs/phaeno/data-source-registry.mdx')),
+  'phaeno/data-curated-publishing': lazy(() => import('#/content/docs/phaeno/data-curated-publishing.mdx')),
+  'phaeno/data-organization-grants': lazy(() => import('#/content/docs/phaeno/data-organization-grants.mdx')),
+  'phaeno/data-governance-recovery': lazy(() => import('#/content/docs/phaeno/data-governance-recovery.mdx')),
+  'phaeno/order-operations': lazy(() => import('#/content/docs/phaeno/order-operations.mdx')),
+  'phaeno/order-customer-lab-authorization': lazy(() => import('#/content/docs/phaeno/order-customer-lab-authorization.mdx')),
+  'phaeno/order-reagent-fulfillment': lazy(() => import('#/content/docs/phaeno/order-reagent-fulfillment.mdx')),
+  'phaeno/order-data-assembly': lazy(() => import('#/content/docs/phaeno/order-data-assembly.mdx')),
+  'phaeno/order-holds-cancellations-adjustments': lazy(() => import('#/content/docs/phaeno/order-holds-cancellations-adjustments.mdx')),
+  'phaeno/order-billing-payment-release': lazy(() => import('#/content/docs/phaeno/order-billing-payment-release.mdx')),
+  'phaeno/order-integration-recovery': lazy(() => import('#/content/docs/phaeno/order-integration-recovery.mdx')),
+  'phaeno/lab-operations': lazy(() => import('#/content/docs/phaeno/lab-operations.mdx')),
+  'phaeno/lab-receipt-accession': lazy(() => import('#/content/docs/phaeno/lab-receipt-accession.mdx')),
+  'phaeno/lab-protocol-execution': lazy(() => import('#/content/docs/phaeno/lab-protocol-execution.mdx')),
+  'phaeno/lab-materials-equipment': lazy(() => import('#/content/docs/phaeno/lab-materials-equipment.mdx')),
+  'phaeno/lab-libraries-batches-sequencing': lazy(() => import('#/content/docs/phaeno/lab-libraries-batches-sequencing.mdx')),
+  'phaeno/lab-exceptions-rework': lazy(() => import('#/content/docs/phaeno/lab-exceptions-rework.mdx')),
+  'phaeno/lab-scientific-approval': lazy(() => import('#/content/docs/phaeno/lab-scientific-approval.mdx')),
+  'phaeno/configuration-and-recovery': lazy(() => import('#/content/docs/phaeno/configuration-and-recovery.mdx')),
+  'phaeno/statuses-and-recovery': lazy(() => import('#/content/docs/phaeno/statuses-and-recovery.mdx')),
 }
 
 export const documentationEntries: readonly DocumentationEntry[] = documentationCatalog.guides
@@ -183,4 +128,10 @@ export function getDocumentationSearchIdentity(entry: Pick<DocumentationMetadata
   return entry.locale
     ? `${entry.audience}/${entry.locale}/${entry.slug}`
     : `${entry.audience}/${entry.slug}`
+}
+
+export function useDocumentationEntries(audience: DocumentationAudience | null | undefined) {
+  const text = useCustomerSourceText()
+  return (audience ? getDocumentationEntries(audience) : []).map(entry => ({ ...entry, title: text(entry.title),
+    summary: text(entry.summary), section: text(entry.section), overviewTitle: entry.overviewTitle ? text(entry.overviewTitle) : undefined }))
 }

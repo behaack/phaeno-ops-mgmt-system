@@ -1,5 +1,14 @@
 # Lab Operations Bench Validation
 
+## October 11 current qualification scope
+
+Current POMS-generated labels use DataMatrix; supplier labels retain their
+recorded symbology/namespace. Historical Code 39 and QR evidence below remains
+dated history and does not qualify today's printer/stock/scanner combination.
+Use [the outage worksheet draft](../training/LAB-OUTAGE-WORKSHEET.md) for the
+management-approved degraded-mode exercise and reconciliation record. Physical
+qualification, procedure approval and named participants remain open.
+
 This record separates database-backed workflow verification from physical
 bench acceptance for the initial PSeq Lab Operations workflow. It does not
 authorize production activation, select barcode hardware, or approve a
@@ -98,7 +107,7 @@ observed result, defects, corrective action, and retest result.
 The barcode software gaps found during preflight are closed. These remaining
 items require representative hardware, operating procedures, or both:
 
-1. Qualify the rendered 50 mm by 25 mm Code 39 label against the approved
+1. Qualify the current DataMatrix label and supported supplier labels against the approved
    printer, driver, stock, containers, handling, storage, and scanner.
 2. Verify the chosen scanner's interface mode, character handling, terminator,
    focus behavior, and sustained repeated-scan accuracy at the bench.

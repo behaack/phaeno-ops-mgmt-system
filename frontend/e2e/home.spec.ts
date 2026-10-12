@@ -21,70 +21,27 @@ test('moves workspace navigation into the user menu at tablet widths', async ({ 
   }
 })
 
-test('uses POMS branding in the internal Phaeno context', async ({ page }) => {
+test('uses POMS branding with the work dashboard in the internal Phaeno context', async ({ page }) => {
   await page.goto('/')
-
+  await page.waitForLoadState('networkidle')
   await expect(page).toHaveTitle('POMS')
-  await expect(
-    page.getByRole('heading', {
-      name: 'Phaeno Operations Management System',
-    }),
-  ).toBeVisible()
-  await expect(page.getByText('Phaeno operations', { exact: true })).toBeVisible()
   await expect(page.getByRole('link', { name: 'POMS home' })).toBeVisible()
-  let dashboardSelector = await openDashboardNavigation(page)
-  const orderButton = dashboardSelector.getByRole('button', {
-    name: /Order Operations/,
-  })
-  const labButton = dashboardSelector.getByRole('button', {
-    name: /Lab Operations/,
-  })
-  await expect(orderButton).toHaveAttribute('aria-current', 'page')
-  await expect(
-    page.getByRole('heading', { name: 'Order Operations', level: 2 }),
-  ).toBeVisible()
-  await labButton.click()
-  await expect(
-    page.getByRole('heading', { name: 'Lab Operations', level: 2 }),
-  ).toBeVisible()
-  await expect(
-    page.getByRole('heading', { name: 'Order Operations', level: 2 }),
-  ).toHaveCount(0)
-
-  dashboardSelector = await openDashboardNavigation(page)
-  const accountsButton = dashboardSelector.getByRole('button', {
-    name: /Customer access/,
-  })
-  await accountsButton.click()
-  await expect(
-    page.getByRole('heading', {
-      name: 'Customer access',
-      level: 2,
-    }),
-  ).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Preview invite' })).toBeVisible()
-
-  dashboardSelector = await openDashboardNavigation(page)
-  await dashboardSelector.getByRole('button', {
-    name: /Web Operations/,
-  }).click()
-  await expect(
-    page.getByRole('heading', { name: 'Web Operations', level: 2 }),
-  ).toBeVisible()
-  await expect(
-    page.getByRole('region', { name: 'Mailing List' }),
-  ).toBeVisible()
-  await expect(page.getByText('Morgan Lee')).toBeVisible()
-  await expect(
-    page.getByRole('region', { name: 'Demo Requests' }),
-  ).not.toBeVisible()
+  await expect(page.getByRole('heading', { name: 'My work', exact: true })).toBeVisible()
+  await expect(page.getByText('Connected work is paused in mock-session mode.')).toBeVisible()
+  await expect(page.getByRole('navigation', { name: 'POMS dashboard sections' })).toHaveCount(0)
+  const bell = page.getByRole('button', { name: 'Notifications, Work count unavailable' })
+  await bell.click()
+  const notifications = page.getByRole('dialog', { name: 'Notifications' })
+  await expect(notifications.getByText('Connected work is paused in mock-session mode.')).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(bell).toBeFocused()
+  await page.goto('/?dashboardSection=webOps')
+  await page.waitForLoadState('networkidle')
+  await expect(page.getByRole('heading', { name: 'Web Operations', level: 2 })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Mailing List' })).toBeVisible()
   await page.getByRole('tab', { name: /Demo Requests/ }).click()
-  await expect(
-    page.getByRole('region', { name: 'Demo Requests' }),
-  ).toBeVisible()
-  await expect(page.getByText('Atlas Bioanalytics')).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Demo Requests' })).toBeVisible()
 })
-
 test('uses Portal branding in an external organization context', async ({ page }) => {
   await page.addInitScript(() => {
     window.localStorage.setItem(
@@ -95,7 +52,7 @@ test('uses Portal branding in an external organization context', async ({ page }
   await page.goto('/')
 
   await expect(page).toHaveTitle('Portal')
-  await expect(page.getByRole('heading', { name: 'Portal' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'My work', exact: true })).toBeVisible()
   await expect(page.getByRole('link', { name: 'Portal home' })).toBeVisible()
   await expect(
     page.getByText(/Copyright © \d{4} Phaeno Inc\./),
@@ -115,10 +72,10 @@ test('uses Portal branding in an external organization context', async ({ page }
     name: /Open POMS dashboard navigation/,
   })).toHaveCount(0)
   await expect(
-    page.getByRole('heading', { name: 'Your work', level: 2 }),
+    page.getByRole('heading', { name: 'My work', level: 1 }),
   ).toBeVisible()
   await expect(
-    page.getByText('Connected summaries are paused in mock-session mode'),
+    page.getByText('Connected work is paused in mock-session mode.'),
   ).toBeVisible()
   await expect(page.getByText('Organizations', { exact: true })).toHaveCount(0)
   await expect(page.getByText('Active users', { exact: true })).toHaveCount(0)
@@ -128,7 +85,7 @@ test('uses Portal branding in an external organization context', async ({ page }
     page.getByRole('link', { name: 'Open Data Library' }),
   ).toHaveCount(0)
   await expect(
-    page.getByRole('link', { name: 'View all lab services' }),
+    page.getByRole('link', { name: 'View all work' }),
   ).toBeVisible()
   await expect(
     page.getByRole('link', { name: 'Open sample shipping' }),
@@ -183,7 +140,7 @@ test('keeps workspace navigation concise and groups the user menu', async ({
       await page.getByRole('menuitem', { name: label, exact: true }).focus()
       await page.keyboard.press('Tab')
       await expect(page.getByRole('menu')).toHaveCount(0)
-      await expect(header.getByRole('button', { name: 'Open user menu', exact: true })).toBeFocused()
+      await expect(header.getByRole('button', { name: 'Notifications, Work count unavailable', exact: true })).toBeFocused()
       await moreTrigger.press('Enter')
       await page.getByRole('menuitem', { name: label, exact: true }).focus()
       await page.keyboard.press('Shift+Tab')
@@ -194,6 +151,8 @@ test('keeps workspace navigation concise and groups the user menu', async ({
     await page.keyboard.press('Escape')
     await expect(moreTrigger).toBeFocused()
     await expect(page.getByRole('menu')).toHaveCount(0)
+    await page.keyboard.press('Tab')
+    await expect(header.getByRole('button', { name: 'Notifications, Work count unavailable', exact: true })).toBeFocused()
     await page.keyboard.press('Tab')
     await expect(header.getByRole('button', { name: 'Open user menu', exact: true })).toBeFocused()
   }
@@ -389,24 +348,4 @@ async function verifyMobileNavigationTray(page: Page) {
   await tray.getByRole('link', { name: 'Purchasing', exact: true }).click()
   await expect(tray).toHaveCount(0)
   await expect(page).toHaveURL(/\/purchasing(?:\?|$)/)
-}
-
-async function openDashboardNavigation(page: Page) {
-  const navigation = page.getByRole('navigation', {
-    name: 'POMS dashboard sections',
-  })
-  if ((page.viewportSize()?.width ?? 1280) < 1024) {
-    const trigger = page.getByRole('button', {
-      name: /(?:Open|Close) POMS dashboard navigation/,
-    })
-    await expect(trigger).toBeVisible()
-    await expect(async () => {
-      if (await trigger.getAttribute('aria-expanded') !== 'true') {
-        await trigger.click()
-      }
-      await expect(trigger).toHaveAttribute('aria-expanded', 'true')
-    }).toPass()
-  }
-  await expect(navigation).toBeVisible()
-  return navigation
 }

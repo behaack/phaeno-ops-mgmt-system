@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "#/test-helpers/render-portal";
 import { useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -240,26 +240,26 @@ describe("PlatformQuoteDialog", () => {
     if (action === "Escape") fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
     else fireEvent.click(screen.getByRole("button", { name: new RegExp(`^${action}$`) }));
 
-    expect(await screen.findByText("Discard your unsaved quote changes?")).toBeTruthy();
+    const confirmation = await screen.findByRole('dialog', { name: 'Discard unsaved changes?' });
+    expect(confirmation.querySelector('[data-slot="dialog-body"]')?.textContent).toContain('Discard unsaved changes to');
     expect(onOpenChange).not.toHaveBeenCalled();
     expect(document.activeElement).toBe(screen.getByRole("button", { name: "Keep editing" }));
     expect(screen.getByLabelText(/Unit price/)).toHaveProperty("value", "150");
-    expect(screen.getByRole("button", { name: "Issue quote" })).toHaveProperty("disabled", true);
     fireEvent.click(screen.getByRole("button", { name: "Keep editing" }));
-    expect(screen.queryByText("Discard your unsaved quote changes?")).toBeNull();
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Discard unsaved changes?' })).toBeNull());
     expect(screen.getByLabelText(/Unit price/)).toHaveProperty("value", "150");
 
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-    fireEvent.click(screen.getByRole("button", { name: "Discard changes" }));
-    expect(onOpenChange).toHaveBeenCalledWith(false);
+    fireEvent.click(await screen.findByRole("button", { name: "Discard changes" }));
+    await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
     expect(api.issuePlatformQuote).not.toHaveBeenCalled();
   });
 
-  it("closes an untouched quote without a discard prompt", () => {
+  it("closes an untouched quote without a discard prompt", async () => {
     const onOpenChange = vi.fn();
     renderDialog([canonicalItem], undefined, undefined, onOpenChange);
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-    expect(onOpenChange).toHaveBeenCalledWith(false);
+    await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
     expect(screen.queryByText("Discard your unsaved quote changes?")).toBeNull();
   });
 
@@ -303,7 +303,7 @@ describe("PlatformQuoteDialog", () => {
     fireEvent.click(opener);
     fireEvent.change(screen.getByLabelText(/Unit price/), { target: { value: "150" } });
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-    fireEvent.click(screen.getByRole("button", { name: "Discard changes" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Discard changes" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     await waitFor(() => expect(document.activeElement).toBe(opener));
   });

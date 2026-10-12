@@ -1,5 +1,98 @@
 # Backend Test Plan
 
+## Error and edge-case review boundary — October 11, 2026
+
+The post-closure pass reviewed authorization/scoping, read-only scientific
+eligibility, complete paging and live work-source predicates. It identified no
+additional confirmed backend defect in those reviewed paths. Fixes are in menu,
+work feedback and guide behavior; the generated help corpus changed and receives
+a solution build check. Backend suites are not repeated for these frontend/help
+changes. Prior executed actor/scientific matrices and remaining populated/hosted
+acceptance retain their meaning. See the
+[review receipt](../testing/runs/2026-10-11-gap-review.md).
+
+## Final gap-closure checkpoint — October 11, 2026
+
+The [final receipt](../testing/runs/2026-10-11-system-gap-closure-final.md) supersedes
+earlier no-execution statements for this scope. Full suite: 900 passed, 409
+environment-gated skips, no failures. Connected local actor/scientific matrix:
+67 passed, including Work Attention/Department histories, Trial timelines,
+strict lineage/profile/QC/current-input gates and 261 assembly attempts. Five
+additional reagent/phase-kit cases pass, including 262 reagent runs and physical
+receipt/current-phase prerequisites. Invoice/quote checkpoint: 18 passed; the
+gated quote role cases also execute in the connected matrix.
+
+New assembly discovery tests cover exact totals, the older page, server search
+and complete per-record reads. Invoice rendering tests use another machine
+culture, Unicode names, long descriptions, multipage output and frozen amounts.
+The simulated Trial download fixture injects explicit synthetic commit evidence;
+it does not verify PostgreSQL commit tracking or alter production admission.
+No test is counted as executed when its filter matched zero cases. Real provider,
+mailbox, hosted commit tracking, recovery and bench acceptance remain separate.
+
+## Shipping attention and query-volume continuation — October 11, 2026
+
+The final solution build passes without warnings/errors; the full unconnected
+run passes 899 tests with 408 gated skips. Five selected local PostgreSQL cases
+pass: query counts at one and 1,005 scoped Jobs, physical receipt/stock usability,
+pending/declined cancellation, outstanding kit requests and prepared-phase
+dispatch attention. Existing `OnDemandPhaseKitPostgresTests` assertions compare
+the actual pairing/supply API with work-read predicates and exclude expired stock.
+`WorkShippingPagingPostgresTests` counts reads with a fixture-only interceptor,
+checks hidden Department and capability denial, member waiting and no tracked
+writes. It observes 10 queries at both sizes and a 55 ms final synthetic read;
+the volume fixture does not contain populated scientific/stock histories.
+Fixture writes roll back or clean their own synthetic identities. This is not
+the complete Clerk/JWT actor matrix or production performance acceptance. See the
+[receipt](../testing/runs/2026-10-11-shipping-startup-gap-closure.md).
+
+## Scientific and retained-history continuation — October 11, 2026
+
+The final full solution run passes 899 tests; 407 configured-connection or
+platform-gated cases skip, with no failures. Five selected PostgreSQL cases pass
+on the verified loopback Development database, using synthetic rollback fixtures:
+lineage/read-only eligibility and missing-profile exclusion, scientific approval,
+manufacturing consumption plus 262-run discovery, 505-row scoped data history
+and older active governance attention, and 120-event Trial history with external
+commercial-outcome filtering before totals. `LabSpecimenReviewReadinessTests`
+covers whole-work and exact-sample readiness, failed-only/empty/incomplete cases
+and cancellation exclusion. Commands retain their concurrency stamping/locks;
+read assessment leaves tracked state unchanged. This is selected connected
+evidence, not execution of the full PostgreSQL or authenticated actor matrix.
+See the [remaining-gap receipt](../testing/runs/2026-10-11-system-gap-closure-remaining.md).
+
+## Requested gap verification continuation — October 11, 2026
+
+The [continuation receipt](../testing/runs/2026-10-11-system-gap-closure-verification.md)
+supersedes the no-execution boundary of the initial checkpoint below. The
+non-PostgreSQL suite passes 892 cases with one existing platform file-link skip.
+Five focused PostgreSQL cases pass against the configured loopback development
+database: work counts beyond 1,000 and scoped paging, failure source discovery
+and clearance without summaries, revoked Department access, exact dashboard
+metrics and 261-shipment discovery/filtering/tenant denial. The latter extends
+`ContainerShipmentSourceListingIncludesAllPackagesAndRetainsMemberReadOnlyScope`.
+`WorkAttentionPostgresTests` owns the new work cases. Fixtures roll back or clean
+only synthetic identities. Complete source/actor/scientific eligibility acceptance
+and hosted/physical evidence remain open; this is not full PostgreSQL suite execution.
+
+## System-gap implementation checkpoint — October 11, 2026
+
+[System gap closure](SYSTEM-GAP-CLOSURE-PLAN.md) and
+[Work dashboard and notifications](WORK-DASHBOARD-AND-NOTIFICATIONS-PLAN.md)
+define future regression scope: exact phase deadline selection/conflicts,
+measured output provenance without source re-consumption, records beyond
+250/1,000, complete authorized aggregate counts, stable obligation identity,
+source clearance and role/organization/Department isolation. Include partial
+source failure, due-time changes, revoked access, overlapping conditions and
+Finance/scientific separation. Production recovery and physical acceptance
+need their separate evidence. New sources in `LabBiologicalMaterialTransferTests`
+cover generated measured yield with pending label identity and no second source
+transfer; `WorkAttentionSqlTests` covers translation of the staff source union
+with paging beyond the old controller caps. The solution compiles these sources.
+No automated suite has been executed for this change. Connected permission,
+large-volume, source-trigger/clearance, phase save/notice and populated recovery
+acceptance remain pending; see the [receipt](../testing/runs/2026-10-11-system-gap-closure.md).
+
 October 10 POMS DPS implementation: validation is explicitly deferred by the
 Owner. New DpsContractTests sources cover explicit schema/version/object identity,
 unknown and duplicate fields, unsupported/missing/external parameter-schema
@@ -1108,7 +1201,7 @@ Added LabEquipmentRetirementTests for required/limited reasons, actor requiremen
 
 ## Customer laboratory stages — September 10, 2026
 
-**Local checkpoint: 4/4 cases passed; 0 skipped.** See the [stage verification record](../testing/runs/2026-09-10-customer-laboratory-stages.md) and [TRX evidence](../../artifacts/customer-progress-test-results/customer-progress.trx). This is a focused run, not a full backend-suite result.
+**Local checkpoint: 4/4 cases passed; 0 skipped.** See the [stage verification record](../testing/runs/2026-09-10-customer-laboratory-stages.md) and TRX evidence (`../../artifacts/customer-progress-test-results/customer-progress.trx`) (historical artifact unavailable in this checkout as of October 11, 2026). This is a focused run, not a full backend-suite result.
 
 | Coverage | Evidence and result |
 | --- | --- |

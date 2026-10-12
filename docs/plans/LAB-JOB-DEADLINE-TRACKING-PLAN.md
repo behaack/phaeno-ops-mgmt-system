@@ -1,5 +1,16 @@
 # Jobs workspace and deadline tracking
 
+## October 11 exact-phase adjustment
+
+The local adjustment dialog now initializes phase and date from the same phase,
+keeps an undated phase unknown, protects changed phase/date/reason drafts and
+preserves the exact saved timestamp when only the reason changes. A version
+conflict refreshes the saved record without replacing entries and requires
+deliberate review before retry. Original targets/history/notice scope remain owned
+by the existing command. Regression sources and synthetic UI are in the
+[gap receipt](../testing/runs/2026-10-11-system-gap-closure.md); real save/conflict/
+notification acceptance is pending. No deployment or database change.
+
 ## October 3, 2026 card clarity
 
 Show the operational status once under **Current status**. Omit a deadline badge when its label repeats that status, and remove the appended phase lifecycle from this summary. A homogeneous sample cohort shows **Samples: N**; a mixed or distinct stage breakdown retains its positive counts with readable sentence-case labels, including camel-case dictionary keys such as `awaitingReceipt`. Preserve distinct deadline warnings, overlapping holds/review counts, physical receipt, forecast coverage, freezer boxes and Portal delivery. Use bold field labels and regular-weight values throughout the card, including Containers, Tubes and optional sample targets. This is local presentation only; no API, filtering, deadline, persisted-model or release-semantics change.

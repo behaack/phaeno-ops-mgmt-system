@@ -32,7 +32,7 @@ public sealed partial class LabOperationsController(
             LabRole.ScientificReviewer, LabRole.OperationsAdministrator);
 
         var workOrders = await dbContext.LabWorkOrders.AsNoTracking()
-            .OrderByDescending(item => item.UpdatedAt).Take(250).ToListAsync(cancellationToken);
+            .OrderByDescending(item => item.UpdatedAt).ThenBy(item => item.Id).ToListAsync(cancellationToken);
         var authorizations = await dbContext.CommercialLabAuthorizations.AsNoTracking()
             .Where(item => workOrders.Select(work => work.AuthorizationId).Contains(item.AuthorizationId))
             .ToDictionaryAsync(item => item.AuthorizationId, cancellationToken);

@@ -2,6 +2,17 @@
 
 Approved October 3, 2026. The Product Owner approved separating commercial service work by subject domain, moving cross-workflow attention to the Dashboard, and placing release work with the laboratory. The follow-up explicitly requires domain routes for lists and records.
 
+## October 11 planned work dashboard and header bell
+
+The Owner selected a useful work dashboard plus a header bell backed by the
+same authorized work list, with assigned plus eligible unassigned work as the
+Phaeno default and a separate authorized team view. The
+[new owning plan](WORK-DASHBOARD-AND-NOTIFICATIONS-PLAN.md) broadens the narrow
+Dashboard attention experience while preserving domain record routes, recovery
+actions and role isolation. This supersedes the former home-panel direction
+for future implementation; it does not claim that the new dashboard/bell has
+shipped. Customer-only localization is confirmed in the UI principles.
+
 ## Final navigation decision
 
 The Product Owner refined the approved structure: retain one **Order Ops** main-menu destination and one **Order operations** sidebar, using the same grouped heading presentation as CRM. **LAB SERVICES** contains **Order intake** and **Trial projects**. **PARTNER SERVICES** contains **PSeq kits** and **Data assembly**. All four sections and record/create/edit pages use routes beneath `/order-operations`. Finance, Legacy integrations, Dashboard attention and Lab result release retain their separately approved placements.

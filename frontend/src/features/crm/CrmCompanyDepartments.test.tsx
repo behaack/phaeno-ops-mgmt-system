@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '#/test-helpers/render-portal'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { createCrmCompanyDepartment, type CrmCompany } from '#/api/crm'
 import { CrmCompanyDepartments } from './CrmCompanyDepartments'
@@ -25,13 +25,13 @@ function mount(value = company) {
 beforeEach(() => vi.resetAllMocks())
 afterEach(cleanup)
 
-it('offers Add department directly and opening or cancelling does not write anything', () => {
+it('offers Add department directly and opening or cancelling does not write anything', async () => {
   mount()
   expect(screen.queryByRole('button', { name: 'Open Company requests' })).toBeNull()
   fireEvent.click(screen.getByRole('button', { name: 'Add department' }))
   expect(screen.getByRole('dialog')).toBeTruthy()
   fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
-  expect(screen.queryByRole('dialog')).toBeNull()
+  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
   expect(createCrmCompanyDepartment).not.toHaveBeenCalled()
 })
 

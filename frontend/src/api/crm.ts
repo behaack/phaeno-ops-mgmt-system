@@ -1099,6 +1099,7 @@ export async function createCrmActivity(input: {
   return unwrap(response.data);
 }
 export async function listCrmTasks(input: {
+  taskId?: string;
   dueSoonOnly?: boolean;
   search?: string;
   status?: CrmTaskStatus;

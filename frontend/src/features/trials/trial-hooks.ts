@@ -1,22 +1,24 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { usePhaenoSession } from '#/features/auth/session-context'
-import { changeTrial, getTrial, getTrialConfiguration, getTrialOutputPackages, listTrials } from '#/api/trials'
+import { changeTrial, getTrial, getTrialConfiguration, getTrialOutputPackages, getTrialTimeline, listTrialPage } from '#/api/trials'
 
-export function useTrialQueries(id?: string, search = '', status = '', ownerId = '') {
+export function useTrialQueries(id?: string, search = '', status = '', ownerId = '', page = 1, timelinePage = 1) {
   const { session, selectedOrganizationId, selectedDepartmentId, authProvider } = usePhaenoSession()
   const allowed = Boolean(session?.capabilities.canViewTrialProjects)
   const staff = Boolean(session?.capabilities.canManageTrialProjects)
   const canCreate = Boolean(session?.capabilities.canCreateTrialProjects)
   const enabled = allowed && authProvider !== 'mock'
   const scope = [selectedOrganizationId, selectedDepartmentId]
-  const list = useQuery({ queryKey: ['trials', ...scope, search, status, ownerId], queryFn: () => listTrials(search, status, ownerId), enabled: enabled && !id })
+  const pageQuery = useQuery({ queryKey: ['trials', ...scope, search, status, ownerId, page], queryFn: () => listTrialPage(search, status, ownerId, page), enabled: enabled && !id })
+  const list = { ...pageQuery, data: pageQuery.data?.items }
   const detail = useQuery({ queryKey: ['trial', ...scope, id], queryFn: () => getTrial(id!), enabled: enabled && Boolean(id) })
   const config = useQuery({ queryKey: ['trial-configuration', ...scope, detail.data?.companyId], queryFn: () => getTrialConfiguration(staff ? detail.data?.companyId : undefined), enabled })
   const packages = useQuery({ queryKey: ['trial-packages', ...scope, id], queryFn: () => getTrialOutputPackages(id!), enabled: enabled && staff && Boolean(id) })
-  return { allowed, staff, canCreate, enabled, list, detail, config, packages }
+  const timeline = useQuery({ queryKey: ['trial-timeline', ...scope, id, timelinePage], queryFn: () => getTrialTimeline(id!, timelinePage), enabled: enabled && Boolean(id) })
+  return { allowed, staff, canCreate, enabled, list, pagination: pageQuery.data, detail, config, packages, timeline }
 }
 export function useTrialMutation<T>() {
   const cache = useQueryClient()
   return useMutation({ mutationFn: ({ path, payload, key }: { path: string; payload: unknown; key: string }) => changeTrial<T>(path, payload, key),
-    onSuccess: async () => { await Promise.all(['trials', 'trial', 'trial-configuration', 'trial-packages', 'trial-requests', 'crm-handoffs', 'crm-activities', 'sample-shipments'].map(key => cache.invalidateQueries({ queryKey: [key] }))) } })
+    onSuccess: async () => { await Promise.all(['trials', 'trial', 'trial-timeline', 'trial-configuration', 'trial-packages', 'trial-requests', 'crm-handoffs', 'crm-activities', 'sample-shipments'].map(key => cache.invalidateQueries({ queryKey: [key] }))) } })
 }

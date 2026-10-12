@@ -1,3 +1,4 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useRef, useState } from 'react'
 import { getOrderErrorMessage } from '#/api/order-management'
@@ -18,13 +19,13 @@ export function StockKitRequestRecovery({ kit, onSaved }: { kit: ShippingStockKi
   const requests = useQuery({ queryKey: ['platform-transportation-kit-requests'], queryFn: () => getPlatformTransportationKitRequests() })
   const request = requests.data ? matchingUnlinkedKitRequest(kit, requests.data) : null
   const error = requests.error
-  if (error && !review) return <Alert variant="destructive" className="mb-5"><AlertTitle>Kit request could not be checked</AlertTitle><AlertDescription>{getOrderErrorMessage(error, 'Try again before updating its request.')}<Button variant="outline" size="sm" onClick={() => { void requests.refetch() }}>Retry kit request</Button></AlertDescription></Alert>
-  if (requests.isPending) return <p role="status" className="mb-5 text-sm text-muted-foreground">Checking the kit request…</p>
+  if (error && !review) return <Alert variant="destructive" className="mb-5"><AlertTitle><CustomerSourceText source={"Kit request could not be checked"} /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(error, 'Try again before updating its request.')} />}<Button variant="outline" size="sm" onClick={() => { void requests.refetch() }}><CustomerSourceText source={"Retry kit request"} /></Button></AlertDescription></Alert>
+  if (requests.isPending) return <p role="status" className="mb-5 text-sm text-muted-foreground"><CustomerSourceText source={"Checking the kit request…"} /></p>
   if (!request && !review) return null
   return <>
-    {request ? <Alert className="mb-5"><AlertTitle>Update the matching kit request</AlertTitle><AlertDescription>
-      <p>{kitRequestReference(request)} for {request.deliveryAddress.label} does not yet include this kit's saved dispatch.</p>
-      <Button variant="outline" size="sm" onClick={() => setReview({ kit, request })}>Update kit request</Button>
+    {request ? <Alert className="mb-5"><AlertTitle><CustomerSourceText source={"Update the matching kit request"} /></AlertTitle><AlertDescription>
+      <p>{kitRequestReference(request)} <CustomerSourceText source={"for"} /> {request.deliveryAddress.label} <CustomerSourceText source={"does not yet include this kit's saved dispatch."} /></p>
+      <Button variant="outline" size="sm" onClick={() => setReview({ kit, request })}><CustomerSourceText source={"Update kit request"} /></Button>
     </AlertDescription></Alert> : null}
     {review ? <UpdateKitRequestDialog {...review} onClose={() => setReview(null)} onSaved={async () => { await onSaved(); setReview(null) }} /> : null}
   </>
@@ -40,9 +41,9 @@ export function UpdateKitRequestDialog({ kit, request, onClose, onSaved }: Recov
   function close() { if (!submitting.current) onClose() }
   function confirm() { if (!submitting.current) { submitting.current = true; mutation.mutate() } }
   return <Dialog open onOpenChange={open => { if (!open) close() }}><DialogContent showCloseButton={!mutation.isPending} onEscapeKeyDown={event => { if (submitting.current) event.preventDefault() }}>
-    <DialogHeader className="pr-[var(--dialog-inset)]"><DialogTitle className="pr-8">Update kit request</DialogTitle><DialogDescription className="pr-8">Link {kit.kitNumber}'s recorded dispatch to {kitRequestReference(request)} at {request.deliveryAddress.label}. Originating Job: {request.jobNumber}.</DialogDescription></DialogHeader>
-    {mutation.error ? <Alert variant="destructive" className="min-w-0 self-stretch"><AlertTitle>Kit request was not updated</AlertTitle><AlertDescription className="min-w-0 wrap-anywhere">{getOrderErrorMessage(mutation.error, 'The saved dispatch could not be linked. Review the request and try again.')}</AlertDescription></Alert> : null}
-    <div className="space-y-3 text-sm"><p>This uses the existing dispatch. It does not send another kit or confirm Customer receipt.</p>
+    <DialogHeader className="pr-[var(--dialog-inset)]"><DialogTitle className="pr-8"><CustomerSourceText source={"Update kit request"} /></DialogTitle><DialogDescription className="pr-8"><CustomerSourceText source={"Link"} /> {kit.kitNumber}<CustomerSourceText source={"'s recorded dispatch to"} /> {kitRequestReference(request)} at {request.deliveryAddress.label}<CustomerSourceText source={". Originating Job:"} /> {request.jobNumber}.</DialogDescription></DialogHeader>
+    {mutation.error ? <Alert variant="destructive" className="min-w-0 self-stretch"><AlertTitle><CustomerSourceText source={"Kit request was not updated"} /></AlertTitle><AlertDescription className="min-w-0 wrap-anywhere">{<CustomerSourceText source={getOrderErrorMessage(mutation.error, 'The saved dispatch could not be linked. Review the request and try again.')} />}</AlertDescription></Alert> : null}
+    <div className="space-y-3 text-sm"><p><CustomerSourceText source={"This uses the existing dispatch. It does not send another kit or confirm Customer receipt."} /></p>
       <dl className="space-y-3 rounded-md border bg-muted/30 p-3">
         <DispatchFact label="Kit" value={`${kit.kitNumber} · ${kit.container.commonName} · SKU ${kit.container.sku}`} />
         <DispatchFact label="Carrier" value={kit.outboundCarrier!} />
@@ -50,7 +51,7 @@ export function UpdateKitRequestDialog({ kit, request, onClose, onSaved }: Recov
         <DispatchFact label="Dispatched at" value={containerDateTime(kit.fulfilledAt!)} />
       </dl>
     </div>
-    <DialogFooter><Button variant="outline" disabled={mutation.isPending} onClick={close}>Keep reviewing</Button><Button disabled={mutation.isPending} onClick={confirm}>{mutation.isPending ? 'Updating…' : 'Update kit request'}</Button></DialogFooter>
+    <DialogFooter><Button variant="outline" disabled={mutation.isPending} onClick={close}><CustomerSourceText source={"Keep reviewing"} /></Button><Button disabled={mutation.isPending} onClick={confirm}>{mutation.isPending ? <CustomerSourceText source={"Updating…"} /> : <CustomerSourceText source={"Update kit request"} />}</Button></DialogFooter>
   </DialogContent></Dialog>
 }
 

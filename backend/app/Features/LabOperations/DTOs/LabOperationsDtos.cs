@@ -115,6 +115,19 @@ public sealed record LabContainerDto(
 {
     public string? QuantityText => Quantity?.ToString(System.Globalization.CultureInfo.InvariantCulture);
     public string? InitialQuantityText => InitialQuantity?.ToString(System.Globalization.CultureInfo.InvariantCulture);
+    public IReadOnlyList<LabQuantityMeasurementDto> QuantityMeasurements => LabQuantityMeasurementDto.Read(QuantityHistoryJson);
+}
+
+public sealed record LabQuantityMeasurementDto(Guid RecordId, Guid ActorId, DateTime RecordedAtUtc, string? BeforeText, string AfterText, string Unit)
+{
+    public static IReadOnlyList<LabQuantityMeasurementDto> Read(string json)
+    {
+        using var document = System.Text.Json.JsonDocument.Parse(json);
+        return document.RootElement.EnumerateArray().Where(item => item.GetProperty("action").GetString() == "prepared-yield")
+            .Select(item => new LabQuantityMeasurementDto(item.GetProperty("recordId").GetGuid(), item.GetProperty("actorId").GetGuid(),
+                item.GetProperty("recordedAtUtc").GetDateTime(), item.GetProperty("before").ValueKind == System.Text.Json.JsonValueKind.Null ? null : item.GetProperty("before").GetRawText(),
+                item.GetProperty("after").GetRawText(), item.GetProperty("unit").GetString()!)).ToArray();
+    }
 }
 
 public sealed record LabContainerScanDto(

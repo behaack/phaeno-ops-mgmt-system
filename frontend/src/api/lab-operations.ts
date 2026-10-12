@@ -1,3 +1,4 @@
+import { requireRecordPage } from './record-page'
 import type { SequencingTubeWorkspace } from './lab-material-transfers'
 import axios from 'axios'
 
@@ -50,7 +51,7 @@ export type CreateLabMaterialLotInput = {
 export type LabSpecimen = { id: string; submittedSpecimenId: string; accessionNumber: string | null; receivedAtUtc: string | null; intakeDisposition: string; receiptCondition: string | null; intakeReasonCode: string | null; currentLocation: string | null; version: number }
 export type LabAccessionedSample = { id: string; labWorkOrderId: string; customerSampleId: string; accessionNumber: string | null; processingState?: string | null; jobStatus?: string; historical?: boolean; blocked?: boolean; nextAction?: string | null; organizationName: string; jobReference: string; intakeDisposition: string; receivedAtUtc: string | null; useStatus: 'Used' | 'NotUsed'; tubes: { id: string; barcode: string; location: string | null; intakeDisposition: string | null; status: string; useStatus: 'Used' | 'NotUsed' | 'Unknown' }[] }
 export type LabAccessionedSamplePage = { items: LabAccessionedSample[]; page: number; pageSize: number; totalCount: number }
-export type LabContainer = { id: string; labSpecimenId: string | null; parentContainerId: string | null; kind: string; barcode: string; barcodeNamespace?: string; barcodeSource: 'PhaenoGenerated' | 'RegisteredSupplier' | 'Manufacturer'; externalBarcodeReferenceId: string | null; label: string; labelPrintCount: number; location: string | null; quantity: number | null; quantityText?: string | null; quantityUnit: string | null; status: string; retainUntilUtc: string | null; version: number; intakeDisposition?: string | null; intakeReasonCode?: string | null; intakeNotes?: string | null; intakeReviewedAtUtc?: string | null; intakeReviewedByUserId?: string | null; initialQuantity?: number | null; initialQuantityText?: string | null; initialQuantityUnit?: string | null; quantityBasis?: string | null; quantityHistoryJson?: string }
+export type LabContainer = { id: string; labSpecimenId: string | null; parentContainerId: string | null; kind: string; barcode: string; barcodeNamespace?: string; barcodeSource: 'PhaenoGenerated' | 'RegisteredSupplier' | 'Manufacturer'; externalBarcodeReferenceId: string | null; label: string; labelPrintCount: number; location: string | null; quantity: number | null; quantityText?: string | null; quantityUnit: string | null; status: string; retainUntilUtc: string | null; version: number; intakeDisposition?: string | null; intakeReasonCode?: string | null; intakeNotes?: string | null; intakeReviewedAtUtc?: string | null; intakeReviewedByUserId?: string | null; initialQuantity?: number | null; initialQuantityText?: string | null; initialQuantityUnit?: string | null; quantityBasis?: string | null; quantityHistoryJson?: string; quantityMeasurements?: { recordId: string; actorId: string; recordedAtUtc: string; beforeText: string | null; afterText: string; unit: string }[] }
 export type LabContainerScan = { labWorkOrderId: string; commercialOrderNumber: string | null; accessionNumber: string | null; parentBarcode: string | null; labLibraryId: string | null; libraryStatus: string | null; container: LabContainer }
 export type LabLabelPrintEvent = { id: string; labContainerId: string; outcome: string; reason: string; failureDetails: string | null; printNumber: number | null; actorUserId: string | null; occurredAtUtc: string }
 export type LabContainerLabel = { labWorkOrderId: string; commercialOrderNumber: string | null; accessionNumber: string | null; parentBarcode: string | null; container: LabContainer; printHistory: LabLabelPrintEvent[] }
@@ -98,7 +99,8 @@ export type LabReviewPackage = { id: string; sampleName: string; packageVersion:
 export type LabPSeqKitOffering = { id: string; partnerOrganizationId: string; itemName: string }
 
 export type LabScientificReviewQueueItem = { workOrder: LabWorkOrderSummary; pendingPackageCount: number }
-export const getLabScientificReviewQueue = () => get<LabScientificReviewQueueItem[]>('/platform/lab-operations/scientific-review-queue')
+export const getLabScientificReviewPage = (page = 1) => get<{ items: LabScientificReviewQueueItem[]; page: number; pageSize: number; totalCount: number }>(`/platform/lab-operations/scientific-review-queue?page=${page}`).then(requireRecordPage)
+export const getLabScientificReviewQueue = async () => (await getLabScientificReviewPage()).items
 
 export const getLabOperationsDashboard = () => get<LabOperationsDashboard>('/platform/lab-operations')
 export type LabPurchasedService = { currentServiceKey: string; purchasedServiceKey: string; purchasedServiceName: string; workVersion: number; canCorrect: boolean }

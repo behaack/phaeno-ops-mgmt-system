@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '#/test-helpers/render-portal'
 import { describe, expect, it, vi } from 'vitest'
 import { ConfigurationPreview, createPreviewBatch } from './ConfigurationPreview'
 import { PreparationOutputsDialog } from './PreparationOutputsDialog'

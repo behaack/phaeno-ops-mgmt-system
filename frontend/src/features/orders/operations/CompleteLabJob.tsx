@@ -1,3 +1,4 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { useLabPhasePlan } from '../use-lab-phases'
 import { useMutation } from '@tanstack/react-query'
 import { useRef, useState, type ReactNode } from 'react'
@@ -35,24 +36,24 @@ export function CompleteLabJob({ order, authorized, onSaved, renderActions, onCl
     reload.reset(); setOpen(true)
   }
   return <>
-    {renderActions ? renderActions(openCompletion, open) : <Button type="button" variant="outline" onClick={openCompletion}>Complete Job</Button>}
+    {renderActions ? renderActions(openCompletion, open) : <Button type="button" variant="outline" onClick={openCompletion}><CustomerSourceText source={"Complete Job"} /></Button>}
     <Dialog open={open} onOpenChange={value => { if (!pending) setOpen(value) }}>
       <DialogContent className="sm:max-w-lg" onCloseAutoFocus={onCloseAutoFocus}>
         <DialogHeader>
-          <DialogTitle>Complete Job {order.orderNumber}</DialogTitle>
-          <DialogDescription>Close this Job after every non-cancelled phase delivers all its required results through the Portal. Finance chooses invoice timing and portions separately.</DialogDescription>
+          <DialogTitle><CustomerSourceText source={"Complete Job"} /> {order.orderNumber}</DialogTitle>
+          <DialogDescription><CustomerSourceText source={"Close this Job after every non-cancelled phase delivers all its required results through the Portal. Finance chooses invoice timing and portions separately."} /></DialogDescription>
         </DialogHeader>
         <div className="space-y-3 text-sm">
-          <p>{order.customerReference} · {order.samples.length} samples</p>
-          {!ready ? <p role="status">Every non-cancelled phase must deliver all required outputs, and cancellation requests must be resolved.</p> : <p>Every phase is delivered or approved cancelled. Review cancelled scope before confirming.</p>}
-          <p>Approved cancelled scope remains recorded and is not successful delivery. Issued invoices and adjustments remain with Finance.</p>
-          {conflict ? <p role="alert">The Job changed after you reviewed it. Reload, review its current outcomes, then open completion again.</p> : null}
+          <p>{order.customerReference} · {order.samples.length} <CustomerSourceText source={"samples"} /></p>
+          {!ready ? <p role="status"><CustomerSourceText source={"Every non-cancelled phase must deliver all required outputs, and cancellation requests must be resolved."} /></p> : <p><CustomerSourceText source={"Every phase is delivered or approved cancelled. Review cancelled scope before confirming."} /></p>}
+          <p><CustomerSourceText source={"Approved cancelled scope remains recorded and is not successful delivery. Issued invoices and adjustments remain with Finance."} /></p>
+          {conflict ? <p role="alert"><CustomerSourceText source={"The Job changed after you reviewed it. Reload, review its current outcomes, then open completion again."} /></p> : null}
         </div>
-        {mutation.error || reload.error ? <DialogFeedback><p role="alert">{getOrderErrorMessage(reload.error ?? mutation.error, 'Completion could not be confirmed. Retry to recover the same operation.')}</p></DialogFeedback> : null}
+        {mutation.error || reload.error ? <DialogFeedback><p role="alert">{<CustomerSourceText source={getOrderErrorMessage(reload.error ?? mutation.error, 'Completion could not be confirmed. Retry to recover the same operation.')} />}</p></DialogFeedback> : null}
         <DialogFooter>
-          <Button type="button" variant="outline" disabled={pending} onClick={() => setOpen(false)}>Cancel</Button>
-          {conflict ? <Button type="button" disabled={pending} onClick={() => reload.mutate()}>Reload Job</Button>
-            : <Button type="button" disabled={!ready || pending} onClick={() => mutation.mutate()}>{mutation.isPending ? 'Completing…' : 'Confirm completion'}</Button>}
+          <Button type="button" variant="outline" disabled={pending} onClick={() => setOpen(false)}><CustomerSourceText source={"Cancel"} /></Button>
+          {conflict ? <Button type="button" disabled={pending} onClick={() => reload.mutate()}><CustomerSourceText source={"Reload Job"} /></Button>
+            : <Button type="button" disabled={!ready || pending} onClick={() => mutation.mutate()}>{mutation.isPending ? <CustomerSourceText source={"Completing…"} /> : <CustomerSourceText source={"Confirm completion"} />}</Button>}
         </DialogFooter>
       </DialogContent>
     </Dialog>

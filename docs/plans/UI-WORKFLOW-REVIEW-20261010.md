@@ -1,5 +1,15 @@
 # UI workflow review October 10 2026
 
+October 11 closure follow-up: open-scoped modal guards prevent a closed saved
+form from blocking later navigation. Governance notes/confirmations use shared
+discard, meaningful body regions, safe Cancel focus and surviving Actions focus
+return. Touched contextual controls use shared ActionMenu and its single-action
+behavior; Customer/Partner cancellation keeps its documented neutral-menu
+exception. Nonmodal contextual menus avoid pointer-lock leakage when an action
+opens a dialog and available actions change. Browser/keyboard, draft recovery,
+accessibility and responsive evidence is in the
+[final receipt](../testing/runs/2026-10-11-system-gap-closure-final.md).
+
 Scope: the Owner's local synthetic single-phase order 739XKNR4, two samples,
 laboratory processing through sequencing completion, and ten FASTQ files per
 sample. Application records are created and advanced through the UI. Synthetic

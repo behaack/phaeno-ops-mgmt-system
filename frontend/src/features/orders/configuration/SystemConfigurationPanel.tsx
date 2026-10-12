@@ -1,3 +1,5 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
+import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
@@ -44,6 +46,8 @@ export function SystemConfigurationPanel({ configuration }: { configuration: Ord
   const form = useForm<FormValues, unknown, Values>({ resolver: zodResolver(schema), mode: 'onBlur', reValidateMode: 'onChange', defaultValues: {
     quoteValidityDays: system.quoteValidityDays,
   } })
+  const { isDirty: __formDraftDirty } = form.formState
+
   const mutation = useMutation({
     mutationFn: (values: Values) => updateOrderSystemConfiguration({
       ...editSnapshot.current, quoteValidityDays: values.quoteValidityDays,
@@ -61,9 +65,9 @@ export function SystemConfigurationPanel({ configuration }: { configuration: Ord
       ])
     },
   })
-  useOrderDraftGuard(open && form.formState.isDirty, open && mutation.isPending)
-  function requestClose() {
-    if (mutation.isPending || (form.formState.isDirty && !window.confirm('Discard unsaved quote and workflow settings?'))) return
+  useOrderDraftGuard(open && __formDraftDirty, open && mutation.isPending)
+  async function requestClose() {
+    if (mutation.isPending || (__formDraftDirty && !(await confirmPortal('Discard unsaved quote and workflow settings?')))) return
     setOpen(false)
   }
   function edit() {
@@ -75,24 +79,24 @@ export function SystemConfigurationPanel({ configuration }: { configuration: Ord
   }
   return <>
     <Card className="gap-0 py-0">
-      <CardHeader className="border-b bg-muted/50 p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><CardTitle>Quote & workflow</CardTitle><CardDescription className="mt-2">Set quote validity and review the supported sample and result workflows.</CardDescription></div><Button ref={opener} onClick={edit}>Edit settings</Button></div></CardHeader>
+      <CardHeader className="border-b bg-muted/50 p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><CardTitle><CustomerSourceText source={"Quote & workflow"} /></CardTitle><CardDescription className="mt-2"><CustomerSourceText source={"Set quote validity and review the supported sample and result workflows."} /></CardDescription></div><Button ref={opener} onClick={edit}><CustomerSourceText source={"Edit settings"} /></Button></div></CardHeader>
       <CardContent className="space-y-5 p-4">
-        <dl className="grid gap-4 sm:grid-cols-3"><div><dt className="text-sm text-muted-foreground">Quote validity</dt><dd>{system.quoteValidityDays} calendar days</dd></div><div><dt className="text-sm text-muted-foreground">Sample workflow</dt><dd>{samplesReady ? 'Exact sample roster' : 'Review and save settings'}</dd></div><div><dt className="text-sm text-muted-foreground">Result destination</dt><dd>{destinationReady ? 'Governed Portal delivery' : 'Review and save settings'}</dd></div></dl>
-        <p className="text-sm text-muted-foreground">Maintain accepted materials in <Link className="underline" to="/sample-shipping-settings" search={{ shippingSection: 'sample-types' }}>Sample types</Link> and destinations and packaging rules in <Link className="underline" to="/sample-shipping-settings" search={{ shippingSection: 'destinations' }}>Sample Shipping Settings</Link>. Readiness checks the currently effective definitions. Each shipment also validates its particular samples and destination.</p>
-        {!samplesReady || !destinationReady ? <Alert><AlertTitle>Review the supported workflow</AlertTitle><AlertDescription>Earlier free-form settings do not establish readiness. Review and save the sample and result workflow below. Existing orders and historical configuration are preserved until you save.</AlertDescription></Alert> : null}
+        <dl className="grid gap-4 sm:grid-cols-3"><div><dt className="text-sm text-muted-foreground"><CustomerSourceText source={"Quote validity"} /></dt><dd>{system.quoteValidityDays} <CustomerSourceText source={"calendar days"} /></dd></div><div><dt className="text-sm text-muted-foreground"><CustomerSourceText source={"Sample workflow"} /></dt><dd>{samplesReady ? <CustomerSourceText source={"Exact sample roster"} /> : <CustomerSourceText source={"Review and save settings"} />}</dd></div><div><dt className="text-sm text-muted-foreground"><CustomerSourceText source={"Result destination"} /></dt><dd>{destinationReady ? <CustomerSourceText source={"Governed Portal delivery"} /> : <CustomerSourceText source={"Review and save settings"} />}</dd></div></dl>
+        <p className="text-sm text-muted-foreground"><CustomerSourceText source={"Maintain accepted materials in"} /> <Link className="underline" to="/sample-shipping-settings" search={{ shippingSection: 'sample-types' }}><CustomerSourceText source={"Sample types"} /></Link> <CustomerSourceText source={"and destinations and packaging rules in"} /> <Link className="underline" to="/sample-shipping-settings" search={{ shippingSection: 'destinations' }}><CustomerSourceText source={"Sample Shipping Settings"} /></Link><CustomerSourceText source={". Readiness checks the currently effective definitions. Each shipment also validates its particular samples and destination."} /></p>
+        {!samplesReady || !destinationReady ? <Alert><AlertTitle><CustomerSourceText source={"Review the supported workflow"} /></AlertTitle><AlertDescription><CustomerSourceText source={"Earlier free-form settings do not establish readiness. Review and save the sample and result workflow below. Existing orders and historical configuration are preserved until you save."} /></AlertDescription></Alert> : null}
       </CardContent>
     </Card>
-    <Dialog open={open} onOpenChange={value => { if (!value) requestClose() }}><DialogContent className="max-w-2xl" onCloseAutoFocus={event => { event.preventDefault(); opener.current?.focus() }}><DialogHeader><DialogTitle>Edit quote and workflow settings</DialogTitle><DialogDescription>Sample validation, scientific approval and result release remain enforced throughout the order.</DialogDescription></DialogHeader>
-      {mutation.error ? <Alert variant="destructive"><AlertTitle>Settings were not saved</AlertTitle><AlertDescription>{getOrderErrorMessage(mutation.error, 'Review the values and try again.')}</AlertDescription></Alert> : null}
+    <Dialog open={open} onOpenChange={value => { if (!value) requestClose() }}><DialogContent className="max-w-2xl" onCloseAutoFocus={event => { event.preventDefault(); opener.current?.focus() }}><DialogHeader><DialogTitle><CustomerSourceText source={"Edit quote and workflow settings"} /></DialogTitle><DialogDescription><CustomerSourceText source={"Sample validation, scientific approval and result release remain enforced throughout the order."} /></DialogDescription></DialogHeader>
+      {mutation.error ? <Alert variant="destructive"><AlertTitle><CustomerSourceText source={"Settings were not saved"} /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(mutation.error, 'Review the values and try again.')} />}</AlertDescription></Alert> : null}
       <form id="order-defaults" noValidate className="space-y-5" onSubmit={form.handleSubmit(values => mutation.mutate(values))}>
         <fieldset className="space-y-5" disabled={mutation.isPending}>
-          <div><Label htmlFor="quoteValidityDays"><RequiredFieldName>Default quote validity (days)</RequiredFieldName></Label><Input id="quoteValidityDays" required type="number" min="1" max="365" step="1" aria-invalid={Boolean(form.formState.errors.quoteValidityDays)} aria-describedby={form.formState.errors.quoteValidityDays ? 'quoteValidityDays-error' : undefined} className="mt-2 max-w-40" {...form.register('quoteValidityDays', { valueAsNumber: true, onChange: () => { if (form.formState.errors.quoteValidityDays) void form.trigger('quoteValidityDays') } })} /><FieldError id="quoteValidityDays-error">{form.formState.errors.quoteValidityDays?.message}</FieldError></div>
-          <div><h3 className="text-sm font-medium">Sample workflow: Exact sample roster</h3><FieldDescription>Customers enter the exact specimens after accepting the quote, then finalize the roster before preparing a shipment. Shipping setup defines the accepted material and packaging requirements.</FieldDescription></div>
-          <div><h3 className="text-sm font-medium">Result destination: Governed Portal delivery</h3><FieldDescription>Scientifically approved files are released through the Portal with download and retention tracking.</FieldDescription></div>
-          {conversionRequired ? <p role="status" className="text-sm text-muted-foreground">Saving applies these supported sample and result workflows to replace the earlier settings.</p> : null}
+          <div><Label htmlFor="quoteValidityDays"><RequiredFieldName><CustomerSourceText source={"Default quote validity (days)"} /></RequiredFieldName></Label><Input id="quoteValidityDays" required type="number" min="1" max="365" step="1" aria-invalid={Boolean(form.formState.errors.quoteValidityDays)} aria-describedby={form.formState.errors.quoteValidityDays ? 'quoteValidityDays-error' : undefined} className="mt-2 max-w-40" {...form.register('quoteValidityDays', { valueAsNumber: true, onChange: () => { if (form.formState.errors.quoteValidityDays) void form.trigger('quoteValidityDays') } })} /><FieldError id="quoteValidityDays-error">{form.formState.errors.quoteValidityDays?.message}</FieldError></div>
+          <div><h3 className="text-sm font-medium"><CustomerSourceText source={"Sample workflow: Exact sample roster"} /></h3><FieldDescription><CustomerSourceText source={"Customers enter the exact specimens after accepting the quote, then finalize the roster before preparing a shipment. Shipping setup defines the accepted material and packaging requirements."} /></FieldDescription></div>
+          <div><h3 className="text-sm font-medium"><CustomerSourceText source={"Result destination: Governed Portal delivery"} /></h3><FieldDescription><CustomerSourceText source={"Scientifically approved files are released through the Portal with download and retention tracking."} /></FieldDescription></div>
+          {conversionRequired ? <p role="status" className="text-sm text-muted-foreground"><CustomerSourceText source={"Saving applies these supported sample and result workflows to replace the earlier settings."} /></p> : null}
         </fieldset>
       </form>
-      <RequiredDialogFooter><Button variant="outline" disabled={mutation.isPending} onClick={requestClose}>Cancel</Button><Button type="submit" form="order-defaults" disabled={mutation.isPending || (!form.formState.isDirty && !conversionRequired)}>{mutation.isPending ? 'Saving…' : 'Save changes'}</Button></RequiredDialogFooter>
+      <RequiredDialogFooter><Button variant="outline" disabled={mutation.isPending} onClick={requestClose}><CustomerSourceText source={"Cancel"} /></Button><Button type="submit" form="order-defaults" disabled={mutation.isPending || (!__formDraftDirty && !conversionRequired)}>{mutation.isPending ? <CustomerSourceText source={"Saving…"} /> : <CustomerSourceText source={"Save changes"} />}</Button></RequiredDialogFooter>
     </DialogContent></Dialog>
   </>
 }

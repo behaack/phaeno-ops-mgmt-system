@@ -62,10 +62,10 @@ function ActionMenu({ keepSingleActionInMenu = false, ...props }: React.Componen
           children: <>{button.props.children}{hasActionMenuIndicator(button.props.children) ? null : <ChevronDownIcon aria-hidden="true" data-icon="inline-end" data-slot="action-menu-indicator" />}</>,
         }),
       })
-      return <DropdownMenu {...props}>{children.map(child => child === trigger ? dropdownTrigger : child)}</DropdownMenu>
+      return <DropdownMenu modal={false} {...props}>{children.map(child => child === trigger ? dropdownTrigger : child)}</DropdownMenu>
     }
   }
-  return <DropdownMenu {...props} />
+  return <DropdownMenu modal={false} {...props} />
 }
 
 function hasActionMenuIndicator(children: React.ReactNode): boolean {

@@ -1,3 +1,4 @@
+import { CustomerText } from '#/features/customer-i18n/customer-text'
 import { Check, type LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { cn } from '#/lib/utils'
@@ -19,14 +20,16 @@ export function WorkflowProgress({ label, steps, horizontalAt = 'lg' }: {
   steps: WorkflowProgressStep[]
   horizontalAt?: 'md' | 'lg'
 }) {
+
+
   const large = horizontalAt === 'lg'
   return <div className="space-y-4">
-    <p className="text-xs text-muted-foreground">{steps.filter(step => step.complete).length} of {steps.length} steps complete</p>
+    <p className="text-xs text-muted-foreground">{steps.filter(step => step.complete).length} of {steps.length} <CustomerText message="m_39904c2697d5" /></p>
     <ol aria-label={label} className={cn('flex flex-col', large ? 'lg:flex-row' : 'md:flex-row')}>
       {steps.map((step, index) => {
         const Icon = step.icon
         const status = step.complete ? 'Complete' : step.status ?? (step.current ? 'Next step' : 'Upcoming')
-        return <li key={step.id} aria-current={step.current ? 'step' : undefined} className={cn('relative flex min-w-0 flex-1 items-start gap-3 pb-6 last:pb-0', large ? 'lg:flex-col lg:items-center lg:gap-2 lg:pb-0 lg:text-center' : 'md:flex-col md:items-center md:gap-2 md:pb-0 md:text-center')}>
+        return <li key={step.id} aria-current={step.current ? "step" : undefined} className={cn('relative flex min-w-0 flex-1 items-start gap-3 pb-6 last:pb-0', large ? 'lg:flex-col lg:items-center lg:gap-2 lg:pb-0 lg:text-center' : 'md:flex-col md:items-center md:gap-2 md:pb-0 md:text-center')}>
           {index < steps.length - 1 ? <span aria-hidden="true" className={cn('absolute bottom-0 left-5 top-10 w-px', large ? 'lg:bottom-auto lg:left-[calc(50%+1.25rem)] lg:top-5 lg:h-px lg:w-[calc(100%-2.5rem)]' : 'md:bottom-auto md:left-[calc(50%+1.25rem)] md:top-5 md:h-px md:w-[calc(100%-2.5rem)]', step.complete && steps[index + 1].complete ? 'bg-accent-foreground/40' : 'bg-border')} /> : null}
           <span aria-hidden="true" className={cn('relative z-10 flex size-10 shrink-0 items-center justify-center rounded-full border-2', step.complete ? 'border-accent-foreground/30 bg-accent text-accent-foreground' : step.current ? 'border-primary bg-primary/10 text-primary ring-2 ring-primary/10' : 'border-border bg-muted text-muted-foreground')}>
             <Icon className="size-4" />

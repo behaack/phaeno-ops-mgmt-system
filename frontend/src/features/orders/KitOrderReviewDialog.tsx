@@ -1,3 +1,4 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import type { ReagentOffering, ShippingAddress } from '#/api/order-management'
 import { getOrderErrorMessage } from '#/api/order-management'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
@@ -54,20 +55,18 @@ export function KitOrderReviewDialog({
     >
       <DialogContent showCloseButton={!pending} aria-busy={pending}>
         <DialogHeader>
-          <DialogTitle>Review PSeq Kit order</DialogTitle>
+          <DialogTitle><CustomerSourceText source={"Review PSeq Kit order"} /></DialogTitle>
           <DialogDescription>
-            Each kit unit includes one assembly case. Placing this order commits
-            the complete bundle; submitting the included data later does not
-            create a second purchase.
+            <CustomerSourceText source={"Each kit unit includes one assembly case. Placing this order commits\r\n            the complete bundle; submitting the included data later does not\r\n            create a second purchase."} />
           </DialogDescription>
         </DialogHeader>
         {error ? (
           <Alert variant="destructive">
-            <AlertTitle>Kit order was not placed</AlertTitle>
+            <AlertTitle><CustomerSourceText source={"Kit order was not placed"} /></AlertTitle>
             <AlertDescription>
-              {getOrderErrorMessage(error, 'Review the details and try again.')}{' '}
+              {<CustomerSourceText source={getOrderErrorMessage(error, 'Review the details and try again.')} />}{' '}
               <Button variant="outline" disabled={pending} onClick={onRefresh}>
-                Refresh offerings and review again
+                <CustomerSourceText source={"Refresh offerings and review again"} />
               </Button>
             </AlertDescription>
           </Alert>
@@ -86,16 +85,16 @@ export function KitOrderReviewDialog({
                     </p>
                     <p>
                       {money(offering.negotiatedUnitPrice, offering.currency)}{' '}
-                      per kit ·{' '}
+                      <CustomerSourceText source={"per kit ·"} />{' '}
                       {money(
                         offering.negotiatedUnitPrice * line.quantity,
                         offering.currency,
                       )}
                     </p>
                     <p>
-                      Includes {line.quantity} assembly case
+                      <CustomerSourceText source={"Includes"} /> {line.quantity} <CustomerSourceText source={"assembly case"} />
                       {line.quantity === 1 ? '' : 's'} ·{' '}
-                      {offering.includedAssemblyProfileName} version{' '}
+                      {offering.includedAssemblyProfileName} <CustomerSourceText source={"version"} />{' '}
                       {offering.includedAssemblyProfileVersion}
                     </p>
                   </li>
@@ -104,7 +103,7 @@ export function KitOrderReviewDialog({
             </ul>
             {currencies.map((currency) => (
               <p key={currency} className="text-lg font-semibold">
-                Bundle price:{' '}
+                <CustomerSourceText source={"Bundle price:"} />{' '}
                 {money(
                   review.values.lines.reduce((sum, line) => {
                     const item = review.offerings.find(
@@ -137,18 +136,13 @@ export function KitOrderReviewDialog({
               {review.address.postalCode} · {review.address.countryCode}
             </address>
             {review.values.requestedDeliveryDate ? (
-              <p>Requested delivery: {review.values.requestedDeliveryDate}</p>
+              <p><CustomerSourceText source={"Requested delivery:"} /> {review.values.requestedDeliveryDate}</p>
             ) : null}
             <p>
-              Unused cases expire 90 days after each kit’s labeled expiration.
-              If no expiration is recorded, the deadline is 12 months after
-              shipment. The actual deadline appears with each shipped kit.
-              Unused or expired cases do not automatically create a refund.
+              <CustomerSourceText source={"Unused cases expire 90 days after each kit’s labeled expiration.\r\n              If no expiration is recorded, the deadline is 12 months after\r\n              shipment. The actual deadline appears with each shipped kit.\r\n              Unused or expired cases do not automatically create a refund."} />
             </p>
             <p>
-              Each partial shipment creates a billing source only for shipped
-              units. Assembly submission and completion do not create another
-              billing source.
+              <CustomerSourceText source={"Each partial shipment creates a billing source only for shipped\r\n              units. Assembly submission and completion do not create another\r\n              billing source."} />
             </p>
           </div>
         ) : null}
@@ -159,14 +153,14 @@ export function KitOrderReviewDialog({
             disabled={pending}
             onClick={onClose}
           >
-            Keep editing
+            <CustomerSourceText source={"Keep editing"} />
           </Button>
           <Button
             type="button"
             disabled={pending || !review}
             onClick={onConfirm}
           >
-            {pending ? 'Placing order…' : 'Place PSeq Kit order'}
+            {pending ? <CustomerSourceText source={"Placing order…"} /> : <CustomerSourceText source={"Place PSeq Kit order"} />}
           </Button>
         </DialogFooter>
       </DialogContent>

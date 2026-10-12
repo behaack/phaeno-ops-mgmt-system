@@ -1,3 +1,4 @@
+import { confirmPortal } from '#/components/PortalConfirmation'
 import { Link } from '@tanstack/react-router'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -67,6 +68,8 @@ export function FileRetentionPanel() {
       reason: '',
     },
   })
+  const { isDirty: __formDraftDirty } = form.formState
+
   const mutation = useMutation({
     mutationFn: (values: PolicyFormValues) => updateReleasedDeliverablePolicy({
       ...values,
@@ -80,9 +83,9 @@ export function FileRetentionPanel() {
     },
   })
 
-  useOrderDraftGuard(editOpen && form.formState.isDirty, editOpen && mutation.isPending)
-  function closeEditor() {
-    if (!mutation.isPending && (!form.formState.isDirty || window.confirm('Discard unsaved retention changes?'))) setEditOpen(false)
+  useOrderDraftGuard(editOpen && __formDraftDirty, editOpen && mutation.isPending)
+  async function closeEditor() {
+    if (!mutation.isPending && (!__formDraftDirty || (await confirmPortal('Discard unsaved retention changes?')))) setEditOpen(false)
   }
 
   function openEditor(configuration: ReleasedDeliverablePolicyConfiguration) {
@@ -227,7 +230,7 @@ export function FileRetentionPanel() {
           ) : null}
           <RequiredDialogFooter>
             <Button type="button" variant="outline" disabled={mutation.isPending} onClick={closeEditor}>Cancel</Button>
-            <Button type="submit" form="global-retention-policy-form" disabled={!form.formState.isDirty || mutation.isPending}>
+            <Button type="submit" form="global-retention-policy-form" disabled={!__formDraftDirty || mutation.isPending}>
               {mutation.isPending ? 'Saving…' : 'Save changes'}
             </Button>
           </RequiredDialogFooter>

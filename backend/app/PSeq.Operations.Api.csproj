@@ -51,6 +51,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Update="Documentation/corpus.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <EmbeddedResource Include="Localization/customer-documents.en-US.json" LogicalName="Localization/customer-documents.en-US.json" WithCulture="false" />
   </ItemGroup>
   <ItemGroup>
     <Content Update="appsettings.Development.json" CopyToPublishDirectory="Never" />

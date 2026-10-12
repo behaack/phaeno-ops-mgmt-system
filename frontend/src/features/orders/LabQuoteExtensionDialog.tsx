@@ -1,3 +1,6 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
+import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
+import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useId, useRef, useState } from 'react'
@@ -17,12 +20,16 @@ import { currentLabQuote } from './use-quote-status'
 const schema = z.object({ reason: z.string().trim().max(2000, 'Use 2,000 characters or fewer.') })
 
 export function LabQuoteExtensionDialog({ order, quote, onClose, onCloseFocus }: { order: LabServiceOrder; quote: Quote; onClose: () => void; onCloseFocus?: () => void }) {
+  const __customerText = useCustomerText()
+
   const queryClient = useQueryClient()
   const formId = useId()
   const reasonId = useId()
   const [reviewedVersion, setReviewedVersion] = useState(order.version)
   const attempt = useRef<{ payload: string; key: string } | null>(null)
   const form = useForm<z.infer<typeof schema>>({ resolver: zodResolver(schema), mode: 'onBlur', reValidateMode: 'onChange', defaultValues: { reason: '' } })
+  const { isDirty: __formDraftDirty } = form.formState
+
   const current = currentLabQuote(order.quotes)
   const requestPending = current?.id === quote.id && current.extensionRequest?.status === 'Pending'
   const eligible = current?.id === quote.id && order.canRequestQuoteExtension === true && !requestPending
@@ -46,30 +53,30 @@ export function LabQuoteExtensionDialog({ order, quote, onClose, onCloseFocus }:
       if (isOrderConcurrencyError(error)) await queryClient.invalidateQueries({ queryKey: ['lab-service-order', order.id] })
     },
   })
-  useOrderDraftGuard(form.formState.isDirty, mutation.isPending)
-  function close() {
-    if (!mutation.isPending && (!form.formState.isDirty || window.confirm('Discard the unsaved extension request?'))) onClose()
+  useOrderDraftGuard(__formDraftDirty, mutation.isPending)
+  async function close() {
+    if (!mutation.isPending && (!__formDraftDirty || (await confirmPortal('Discard the unsaved extension request?')))) onClose()
   }
   return <Dialog open onOpenChange={open => { if (!open) close() }}>
     <DialogContent showCloseButton={!mutation.isPending} aria-busy={mutation.isPending} onCloseAutoFocus={event => { if (onCloseFocus) { event.preventDefault(); onCloseFocus() } }}>
       <DialogHeader>
-        <DialogTitle>Request quote extension</DialogTitle>
-        <DialogDescription>Ask Phaeno to review revision {quote.revision} for {order.orderNumber}. If approved, Phaeno will issue a new quote revision with a new expiration date. This request does not accept the quote.</DialogDescription>
+        <DialogTitle><CustomerText message="m_b28bda20ef31" /></DialogTitle>
+        <DialogDescription><CustomerText message="m_34ec0efbddd7" />{quote.revision} <CustomerText message="m_ccb2f8fb3cff" />{order.orderNumber}<CustomerText message="m_9170a3ae4826" /></DialogDescription>
       </DialogHeader>
       <DialogFeedback>
-        {!eligible ? <Alert><AlertTitle>{requestPending ? 'Extension already requested' : 'This quote is no longer available for an extension request'}</AlertTitle><AlertDescription>{requestPending ? 'Phaeno is reviewing this request. You do not need to send it again.' : 'Close this dialog and review the current quote.'}</AlertDescription></Alert>
-          : changed ? <Alert><AlertTitle>The Job changed</AlertTitle><AlertDescription><p>Your reason is retained. Revision {current?.revision} is still available for an extension request. Review the current Job before continuing.</p><Button type="button" variant="outline" disabled={mutation.isPending} onClick={() => { setReviewedVersion(order.version); mutation.reset() }}>Use current quote</Button></AlertDescription></Alert>
-            : mutation.error ? <Alert variant="destructive"><AlertTitle>Extension request was not sent</AlertTitle><AlertDescription>{getOrderErrorMessage(mutation.error, 'Try again. Your reason has been kept.')}</AlertDescription></Alert> : null}
+        {!eligible ? <Alert><AlertTitle>{requestPending ? <CustomerSourceText source={"Extension already requested"} /> : __customerText('m_183c0680c0bc')}</AlertTitle><AlertDescription>{requestPending ? <CustomerSourceText source={"Phaeno is reviewing this request. You do not need to send it again."} /> : __customerText('m_d2cbd90e2028')}</AlertDescription></Alert>
+          : changed ? <Alert><AlertTitle><CustomerText message="m_272735810802" /></AlertTitle><AlertDescription><p><CustomerText message="m_b5fc085ab424" />{current?.revision} <CustomerText message="m_4514e104f24f" /></p><Button type="button" variant="outline" disabled={mutation.isPending} onClick={() => { setReviewedVersion(order.version); mutation.reset() }}><CustomerText message="m_ae7928ce80e4" /></Button></AlertDescription></Alert>
+            : mutation.error ? <Alert variant="destructive"><AlertTitle><CustomerText message="m_30eada853234" /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(mutation.error, 'Try again. Your reason has been kept.')} />}</AlertDescription></Alert> : null}
       </DialogFeedback>
       <form id={formId} noValidate onSubmit={form.handleSubmit(values => { if (!mutation.isPending && eligible && !changed) mutation.mutate(values) })}>
-        <Label htmlFor={reasonId}>Reason (optional)</Label>
-        <FieldDescription id={`${reasonId}-hint`}>Include any timing details that would help Phaeno review your request.</FieldDescription>
+        <Label htmlFor={reasonId}><CustomerText message="m_0f7d4664a9bc" /></Label>
+        <FieldDescription id={`${reasonId}-hint`}><CustomerText message="m_e503fe81810c" /></FieldDescription>
         <Textarea id={reasonId} className="mt-2 min-h-24" disabled={mutation.isPending} aria-describedby={`${reasonId}-hint${form.formState.errors.reason ? ` ${reasonId}-error` : ''}`} aria-invalid={Boolean(form.formState.errors.reason)} {...form.register('reason', { onChange: () => { if (form.formState.errors.reason) void form.trigger('reason') } })} />
         <FieldError id={`${reasonId}-error`}>{form.formState.errors.reason?.message}</FieldError>
       </form>
       <RequiredDialogFooter showLegend={false}>
-        <Button type="button" variant="outline" disabled={mutation.isPending} onClick={close}>Cancel</Button>
-        <Button type="submit" form={formId} disabled={mutation.isPending || !eligible || changed}>{mutation.isPending ? 'Sending request…' : 'Request extension'}</Button>
+        <Button type="button" variant="outline" disabled={mutation.isPending} onClick={close}><CustomerText message="m_19766ed6ccb2" /></Button>
+        <Button type="submit" form={formId} disabled={mutation.isPending || !eligible || changed}>{mutation.isPending ? <CustomerSourceText source={"Sending request…"} /> : __customerText('m_171d13d4d582')}</Button>
       </RequiredDialogFooter>
     </DialogContent>
   </Dialog>

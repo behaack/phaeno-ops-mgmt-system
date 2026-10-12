@@ -1,3 +1,4 @@
+import { useCustomerText } from '#/features/customer-i18n/customer-text'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
@@ -7,6 +8,8 @@ import type { ShippingInsertIdentity } from './shipping-insert-acknowledgement'
 const frameDocument = '<!doctype html><html><head><meta charset="utf-8"><title>Shipping insert</title></head><body></body></html>'
 
 export function ShippingInsertPrintFrame({ shipmentId, onFinished, onFailure }: { shipmentId: string; onFinished: (insert: ShippingInsertIdentity) => void; onFailure: (message: string) => void }) {
+  const __customerText = useCustomerText()
+
   const iframe = useRef<HTMLIFrameElement>(null)
   const [body, setBody] = useState<HTMLElement | null>(null)
   const stylesReady = useRef<Promise<unknown>>(Promise.resolve())
@@ -69,6 +72,6 @@ export function ShippingInsertPrintFrame({ shipmentId, onFinished, onFailure }: 
   return <>
     {/* Remove the portal before its iframe, whose removal disposes the target document. */}
     {body ? createPortal(<SampleShippingPacketPage shipmentId={shipmentId} autoPrint embedded onAutoPrint={print} onFailure={onFailure} />, body) : null}
-    <iframe ref={iframe} title="Shipping insert print document" aria-hidden="true" tabIndex={-1} srcDoc={frameDocument} onLoad={prepareFrame} className="pointer-events-none fixed top-0 -left-[10000px] h-[1056px] w-[816px] border-0" />
+    <iframe ref={iframe} title={__customerText('m_fba2d2e60830')} aria-hidden="true" tabIndex={-1} srcDoc={frameDocument} onLoad={prepareFrame} className="pointer-events-none fixed top-0 -left-[10000px] h-[1056px] w-[816px] border-0" />
   </>
 }

@@ -1,3 +1,5 @@
+import { NativeSelect } from '#/components/ui/native-select'
+import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
@@ -32,7 +34,7 @@ export function StageDurations() {
       { label: policy ? 'Edit durations' : 'Configure durations', onClick: () => setEdit('durations'), disabled: !calendar },
       ...(policy ? [{ label: 'Preview and apply to jobs', onClick: () => setEdit('apply') }] : []),
     ]} /> : undefined} headerContent={<>
-      <div className="space-y-1"><Label htmlFor="timing-workflow">Workflow version</Label><select id="timing-workflow" className={prepSelectClass} value={workflow?.id ?? ''} onChange={e => setWorkflowId(e.target.value)}>{workflows.map(w => <option key={w.id} value={w.id}>{w.name} · v{w.workflowVersion} · {w.status}</option>)}</select></div>
+      <div className="space-y-1"><Label htmlFor="timing-workflow">Workflow version</Label><NativeSelect id="timing-workflow" className={prepSelectClass} value={workflow?.id ?? ''} onChange={e => setWorkflowId(e.target.value)}>{workflows.map(w => <option key={w.id} value={w.id}>{w.name} · v{w.workflowVersion} · {w.status}</option>)}</NativeSelect></div>
       {!calendar ? <p className="text-sm">Configure a calendar in the Holiday calendar tab before setting stage durations.</p> : null}
       {workflow ? <p className="text-sm text-muted-foreground">{policy ? `Timing revision ${policy.revision} · Calendar revision ${activeCalendar?.revision ?? 'unknown'}` : 'No timing policy configured.'}</p> : null}
     </>}>
@@ -54,15 +56,19 @@ const policySchema = z.object({ calendarId: z.string().min(1), requiresSequencin
 function DurationDialog({ workflow, calendars, onClose }: { workflow: TimingWorkflow; calendars: ForecastCalendar[]; onClose: () => void }) {
   const policy = workflow.policies[0]; const client = useQueryClient()
   const form = useForm<z.infer<typeof policySchema>>({ resolver: zodResolver(policySchema), defaultValues: { calendarId: policy?.labBusinessCalendarId ?? calendars[0].id, requiresSequencing: policy?.requiresSequencing ?? true, reason: '', rows: workflow.stages.map(s => { const d = policy?.durations.find(x => x.stageKey === s.key); return { key: s.key, days: d ? String(d.days) : '', basis: d?.dayBasis ?? 'Calendar' } }) } })
-  const save = useMutation({ mutationFn: (v: z.infer<typeof policySchema>) => saveTimingPolicy(workflow.id, { previousId: policy?.id ?? null, calendarId: v.calendarId, requiresSequencing: v.requiresSequencing, reason: v.reason, durations: v.rows.filter(r => r.days !== '').map(r => ({ stageKey: r.key, days: Number(r.days), dayBasis: r.basis })) }), onSuccess: async () => { await client.invalidateQueries({ queryKey: ['lab-forecast-configuration'] }); onClose() } })
-  return <Dialog open onOpenChange={v => { if (!v && !save.isPending) onClose() }}><DialogContent className="sm:max-w-2xl"><form className="contents" noValidate onSubmit={form.handleSubmit(v => save.mutate(v))}>
+  const __modalGuard = useModalDraftGuard(form.formState.isDirty, form.formState.isSubmitting)
+
+  const save = useMutation({ mutationFn: (v: z.infer<typeof policySchema>) => saveTimingPolicy(workflow.id, { previousId: policy?.id ?? null, calendarId: v.calendarId, requiresSequencing: v.requiresSequencing, reason: v.reason, durations: v.rows.filter(r => r.days !== '').map(r => ({ stageKey: r.key, days: Number(r.days), dayBasis: r.basis })) }), onSuccess: async () => {
+    __modalGuard.allowNavigation()
+ await client.invalidateQueries({ queryKey: ['lab-forecast-configuration'] }); onClose() } })
+  return <Dialog open onOpenChange={open => { if (open) (v => { if (!v && !save.isPending) onClose() })(open); else void __modalGuard.close(() => (v => { if (!v && !save.isPending) onClose() })(false)) }}><DialogContent className="sm:max-w-2xl"><form className="contents" noValidate onSubmit={form.handleSubmit(v => save.mutate(v))}>
     <DialogHeader><DialogTitle>Stage durations · {workflow.name} v{workflow.workflowVersion}</DialogTitle><DialogDescription>Blank means not configured; zero means immediate. Include normal waiting time. Existing jobs change only after preview and explicit application.</DialogDescription></DialogHeader>
     <div className="max-h-[60vh] space-y-4 overflow-y-auto p-1"><Failure error={save.error} />
-      <PreparationField id="policy-calendar" label="Holiday calendar" required><select id="policy-calendar" className={prepSelectClass} {...form.register('calendarId')}>{calendars.map(c => <option key={c.id} value={c.id}>Revision {c.revision} · {formatCalendarDate(c.coverageFrom)} – {formatCalendarDate(c.coverageTo)}</option>)}</select></PreparationField>
+      <PreparationField id="policy-calendar" label="Holiday calendar" required><NativeSelect id="policy-calendar" className={prepSelectClass} {...form.register('calendarId')}>{calendars.map(c => <option key={c.id} value={c.id}>Revision {c.revision} · {formatCalendarDate(c.coverageFrom)} – {formatCalendarDate(c.coverageTo)}</option>)}</NativeSelect></PreparationField>
       <label className="flex cursor-pointer items-center gap-2 text-sm"><input type="checkbox" {...form.register('requiresSequencing')} />This workflow requires library QC and external sequencing after its protocol stages.</label>
-      {workflow.stages.map((stage, i) => <fieldset key={stage.key} className="rounded-md border p-3"><legend className="px-1 text-sm font-medium">{stage.name}</legend><div className="grid gap-3 sm:grid-cols-2"><PreparationField id={`duration-${i}`} label="Estimated days" error={form.formState.errors.rows?.[i]?.days?.message}><Input id={`duration-${i}`} type="number" min="0" max="365" step="0.01" {...form.register(`rows.${i}.days`)} /></PreparationField><PreparationField id={`basis-${i}`} label="Day basis" required><select id={`basis-${i}`} className={prepSelectClass} {...form.register(`rows.${i}.basis`)}><option value="Calendar">Calendar days</option><option value="Business">Business days</option></select></PreparationField></div></fieldset>)}
+      {workflow.stages.map((stage, i) => <fieldset key={stage.key} className="rounded-md border p-3"><legend className="px-1 text-sm font-medium">{stage.name}</legend><div className="grid gap-3 sm:grid-cols-2"><PreparationField id={`duration-${i}`} label="Estimated days" error={form.formState.errors.rows?.[i]?.days?.message}><Input id={`duration-${i}`} type="number" min="0" max="365" step="0.01" {...form.register(`rows.${i}.days`)} /></PreparationField><PreparationField id={`basis-${i}`} label="Day basis" required><NativeSelect id={`basis-${i}`} className={prepSelectClass} {...form.register(`rows.${i}.basis`)}><option value="Calendar">Calendar days</option><option value="Business">Business days</option></NativeSelect></PreparationField></div></fieldset>)}
       <PreparationField id="policy-reason" label="Reason for this revision" required error={form.formState.errors.reason?.message}><Input id="policy-reason" {...form.register('reason')} /></PreparationField>
-    </div><RequiredDialogFooter><Button type="button" variant="outline" disabled={save.isPending} onClick={onClose}>Cancel</Button><Button disabled={save.isPending}>Save durations</Button></RequiredDialogFooter>
+    </div><RequiredDialogFooter><Button type="button" variant="outline" disabled={save.isPending} onClick={() => { void __modalGuard.close(() => (onClose)()) }}>Cancel</Button><Button disabled={save.isPending}>Save durations</Button></RequiredDialogFooter>
   </form></DialogContent></Dialog>
 }
 
@@ -71,14 +77,18 @@ function ApplyDialog({ policyId, onClose }: { policyId: string; onClose: () => v
   const [page, setPage] = useState(1); const [selected, setSelected] = useState<ForecastPreviewJob[]>([]); const client = useQueryClient()
   const preview = useQuery({ queryKey: ['lab-forecast-preview', policyId, page], queryFn: () => previewTimingPolicy(policyId, page) })
   const form = useForm<z.infer<typeof applySchema>>({ resolver: zodResolver(applySchema), defaultValues: { reason: '' } })
-  const save = useMutation({ mutationFn: (v: z.infer<typeof applySchema>) => applyTimingPolicy({ policyId, reason: v.reason, jobs: selected.map(j => ({ jobId: j.id, version: j.version, previousPolicyId: j.currentPolicyId })) }), onSuccess: async () => { await Promise.all([client.invalidateQueries({ queryKey: ['lab-jobs'] }), client.invalidateQueries({ queryKey: ['lab-job-deadline'] }), client.invalidateQueries({ queryKey: ['lab-completion-forecast'] })]); onClose() } })
-  return <Dialog open onOpenChange={v => { if (!v && !save.isPending) onClose() }}><DialogContent className="sm:max-w-2xl"><form className="contents" noValidate onSubmit={form.handleSubmit(v => save.mutate(v))}>
+  const __modalGuard = useModalDraftGuard(form.formState.isDirty, form.formState.isSubmitting)
+
+  const save = useMutation({ mutationFn: (v: z.infer<typeof applySchema>) => applyTimingPolicy({ policyId, reason: v.reason, jobs: selected.map(j => ({ jobId: j.id, version: j.version, previousPolicyId: j.currentPolicyId })) }), onSuccess: async () => {
+    __modalGuard.allowNavigation()
+ await Promise.all([client.invalidateQueries({ queryKey: ['lab-jobs'] }), client.invalidateQueries({ queryKey: ['lab-job-deadline'] }), client.invalidateQueries({ queryKey: ['lab-completion-forecast'] })]); onClose() } })
+  return <Dialog open onOpenChange={open => { if (open) (v => { if (!v && !save.isPending) onClose() })(open); else void __modalGuard.close(() => (v => { if (!v && !save.isPending) onClose() })(false)) }}><DialogContent className="sm:max-w-2xl"><form className="contents" noValidate onSubmit={form.handleSubmit(v => save.mutate(v))}>
     <DialogHeader><DialogTitle>Preview timing changes</DialogTitle><DialogDescription>Select jobs to apply this revision. Delivery commitments and customer notifications are unchanged.</DialogDescription></DialogHeader>
     <div className="max-h-[60vh] space-y-3 overflow-y-auto p-1"><Failure error={preview.error ?? save.error} />{preview.isPending ? <p role="status">Calculating preview…</p> : null}
       {preview.data?.jobs.map(j => <label key={j.id} aria-label={`Apply timing policy to ${j.name}`} htmlFor={`forecast-job-${j.id}`} className={`${prepRowClass} flex cursor-pointer items-start gap-3`}><input id={`forecast-job-${j.id}`} type="checkbox" className="mt-1" checked={selected.some(s => s.id === j.id)} onChange={e => setSelected(old => e.target.checked ? [...old, j] : old.filter(s => s.id !== j.id))} /><span className="space-y-1 text-sm"><span className="block font-medium">{j.name}</span><span className="block">Current: {dateLabel(j.current.expectedAtUtc)}</span><span className="block">Proposed: {dateLabel(j.proposed.expectedAtUtc)}</span><span className="block text-muted-foreground">{j.proposed.reason}</span></span></label>)}
       {preview.data?.total === 0 ? <p>No unfinished jobs use this workflow.</p> : null}
       <div className="flex items-center justify-between gap-3"><Button type="button" variant="outline" disabled={page === 1 || save.isPending} onClick={() => { setSelected([]); setPage(p => p - 1) }}>Previous</Button><span className="text-sm">Page {page}</span><Button type="button" variant="outline" disabled={!preview.data || page * 25 >= preview.data.total || save.isPending} onClick={() => { setSelected([]); setPage(p => p + 1) }}>Next</Button></div>
       <PreparationField id="apply-reason" label="Reason" required error={form.formState.errors.reason?.message}><Input id="apply-reason" {...form.register('reason')} /></PreparationField>
-    </div><RequiredDialogFooter><Button type="button" variant="outline" disabled={save.isPending} onClick={onClose}>Cancel</Button><Button disabled={save.isPending || selected.length === 0}>Apply to {selected.length} jobs</Button></RequiredDialogFooter>
+    </div><RequiredDialogFooter><Button type="button" variant="outline" disabled={save.isPending} onClick={() => { void __modalGuard.close(() => (onClose)()) }}>Cancel</Button><Button disabled={save.isPending || selected.length === 0}>Apply to {selected.length} jobs</Button></RequiredDialogFooter>
   </form></DialogContent></Dialog>
 }

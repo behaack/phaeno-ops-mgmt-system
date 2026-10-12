@@ -1,6 +1,7 @@
 namespace PhaenoPortal.App.Features.OrderManagement.Services;
 
 using System.Globalization;
+using PhaenoPortal.App.Localization;
 using System.Text;
 using UglyToad.PdfPig.Core;
 using UglyToad.PdfPig.Fonts.TrueType;
@@ -215,7 +216,7 @@ public static class QuotePdfRenderer
                 while (offset < rows)
                 {
                     if (offset > 0) NewPage();
-                    var sourceHeading = details.FindIndex(row => row.Text == "Biological source" && row.RightValue == "Samples");
+                    var sourceHeading = details.FindIndex(row => row.Text == CustomerDocumentText.Format("quote.biologicalSource") && row.RightValue == CustomerDocumentText.Format("quote.samples"));
                     var repeatedDetails = offset > 0 && sourceHeading >= 0 ? sourceHeading + 1 : 0;
                     var remainingHeight = PhaseHeadingHeight(phase, offset > 0) + (rows - offset + repeatedDetails) * Leading + 16 + finalReserve;
                     if (remainingHeight <= 640 - Bottom) Ensure(remainingHeight);
@@ -278,7 +279,7 @@ public static class QuotePdfRenderer
                     : new($"{phase.TurnaroundBusinessDays} business days", Label: "TAT:"));
                 if (RunBreakdown(phase) is { AdditionalRuns: > 0, AdditionalRunsPerSample: { } additional })
                     result.Add(new($"1 included + {additional} additional per sample", Muted: true, Size: 10));
-                result.Add(new("Biological source", "Samples", Strong: true, Size: 9.5));
+                result.Add(new(CustomerDocumentText.Format("quote.biologicalSource"), CustomerDocumentText.Format("quote.samples"), Strong: true, Size: 9.5));
                 foreach (var source in scope.Sources)
                 {
                     var wrapped = Wrap(source.BiologicalSource, DetailsWidth - 54, 10.5);
@@ -348,7 +349,7 @@ public static class QuotePdfRenderer
             {
                 Text(line, Left + 8, top, 11, strong: true); top -= Leading;
             }
-            Text("Pricing", PricingLeft + 8, y - 12, 11, strong: true);
+            Text(CustomerDocumentText.Format("quote.pricing"), PricingLeft + 8, y - 12, 11, strong: true);
             y -= height;
         }
 
@@ -422,8 +423,8 @@ public static class QuotePdfRenderer
             page.DrawRectangle(new PdfPoint(Left, y - 18), Right - Left, 29, 0, true);
             Text($"Sample scope · {Number(total)} samples · {Number(document.SampleScope?.RequestedSequencingRunCount ?? total)} sample-sequencing runs", Left + 10, y - 6, 11, strong: true);
             y -= 37;
-            Text("Biological source", Left + 10, y, 9, strong: true);
-            RightText("Samples", Right - 10, y, 9, strong: true);
+            Text(CustomerDocumentText.Format("quote.biologicalSource"), Left + 10, y, 9, strong: true);
+            RightText(CustomerDocumentText.Format("quote.samples"), Right - 10, y, 9, strong: true);
             Rule(Left, Right, y - 10);
             y -= 28;
         }
@@ -434,10 +435,10 @@ public static class QuotePdfRenderer
             page.SetTextAndFillColor(0, 48, 87);
             page.SetStrokeColor(0, 48, 87);
             page.DrawRectangle(new PdfPoint(Left, y - 24), Right - Left, 27, 0, true);
-            Text("Description", Left + 10, y - 14, 9, strong: true, white: true);
-            RightText("Quantity", 369, y - 14, 9, strong: true, white: true);
-            RightText("Unit price", 453, y - 14, 9, strong: true, white: true);
-            RightText("Amount", Right - 10, y - 14, 9, strong: true, white: true);
+            Text(CustomerDocumentText.Format("quote.description"), Left + 10, y - 14, 9, strong: true, white: true);
+            RightText(CustomerDocumentText.Format("quote.quantity"), 369, y - 14, 9, strong: true, white: true);
+            RightText(CustomerDocumentText.Format("quote.unitPrice"), 453, y - 14, 9, strong: true, white: true);
+            RightText(CustomerDocumentText.Format("quote.amount"), Right - 10, y - 14, 9, strong: true, white: true);
             y -= 43;
         }
 
@@ -506,11 +507,11 @@ public static class QuotePdfRenderer
             y = top - 17;
             RightText($"Currency: {document.Currency}", Right - 12, y, 9, muted: true);
             y -= 22;
-            TotalRow("Subtotal", document.Subtotal);
-            if (document.TaxDetermined) TotalRow("Tax", document.Tax);
+            TotalRow(CustomerDocumentText.Format("quote.subtotal"), document.Subtotal);
+            if (document.TaxDetermined) TotalRow(CustomerDocumentText.Format("quote.tax"), document.Tax);
             Rule(PricingLeft + 12, Right - 12, y + 9);
             y -= 8;
-            TotalRow(document.TaxDetermined ? "Total" : "Pre-tax total", document.Total, true);
+            TotalRow(document.TaxDetermined ? CustomerDocumentText.Format("quote.total") : CustomerDocumentText.Format("quote.preTaxTotal"), document.Total, true);
             y = top - FooterHeight - 14;
         }
 

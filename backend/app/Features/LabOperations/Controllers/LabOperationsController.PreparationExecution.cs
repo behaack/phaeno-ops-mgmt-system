@@ -166,8 +166,9 @@ public sealed partial class LabOperationsController
         {
             var barcode = await LabBarcodeService.AllocateAsync(dbContext, LabContainerKind.Library, ct);
             output = new(attempt.LabWorkOrderId, attempt.LabSpecimenId, attempt.SourceContainerId, LabContainerKind.Library, barcode,
-                $"Prepared library · {member.Position}", request.Location, request.Quantity, request.QuantityUnit, null,
+                $"Prepared library · {member.Position}", request.Location, null, null, null,
                 labelVerificationRequired: true);
+            output.RecordPreparedQuantity(request.Quantity.Value, request.QuantityUnit, request.RequestId, actorId, LabEvidenceTime.UtcNow);
             output.AttachAttempt(attempt); dbContext.LabContainers.Add(output); member.SetOutput(output.Id);
         }
         return output;

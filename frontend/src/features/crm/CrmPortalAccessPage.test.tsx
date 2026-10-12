@@ -7,7 +7,7 @@ import { CrmPortalAccessPage } from './CrmPortalAccessPage'
 const api = vi.hoisted(() => ({ listRelationshipRequests: vi.fn(), listRelationshipRequestHistory: vi.fn(), listOrganizations: vi.fn(), applyRelationshipRequest: vi.fn(), getOrganizationSummary: vi.fn().mockResolvedValue({ isActive: true }), listDepartments: vi.fn().mockResolvedValue([]), listEntitlements: vi.fn().mockResolvedValue([]), getRequestCompletionReadiness: vi.fn().mockResolvedValue({ canComplete: true, blockers: [] }) }))
 vi.mock('#/api/organization-management', async original => ({ ...await original<typeof import('#/api/organization-management')>(), ...api }))
 vi.mock('#/api/crm', () => ({ listCrmHandoffs: vi.fn().mockResolvedValue([]) }))
-vi.mock('@tanstack/react-router', () => ({ Link: ({ children, ...props }: ComponentProps<'a'>) => <a {...props} href="/company">{children}</a> }))
+vi.mock('@tanstack/react-router', () => ({ useRouterState: ({select}: {select: (state: {location: {search: Record<string, unknown>}}) => unknown}) => select({location: {search: {}}}), useBlocker: () => ({status: 'idle', reset: vi.fn(), proceed: vi.fn()}), Link: ({ children, ...props }: ComponentProps<'a'>) => <a {...props} href="/company">{children}</a> }))
 vi.mock('./CrmListNavigation', async original => {
   const actual = await original<typeof import('./CrmListNavigation')>()
   const { useState } = await import('react')

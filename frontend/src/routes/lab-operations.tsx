@@ -1,3 +1,4 @@
+import { parseRecordListSearch, type RecordListSearch } from '#/components/RecordPagination'
 import { parseSpecimenSearch, type SpecimenSearch } from '#/features/lab-operations/specimen-navigation'
 import { parseJobListSearch, type JobListSearch } from '#/features/lab-operations/job-deadlines'
 import { Navigate, Outlet, createFileRoute, useNavigate, useRouterState } from '@tanstack/react-router'
@@ -13,9 +14,14 @@ import { parseShipmentHistorySearch, type ShipmentHistorySearch } from '#/featur
 import { parseAccessionSearch, type AccessionSearch } from '#/features/lab-operations/lab-accession-search'
 
 export const Route = createFileRoute('/lab-operations')({
-  validateSearch: (search: Record<string, unknown>): SpecimenSearch & StockKitListSearch & KitRequestListSearch & JobListSearch & ShipmentHistorySearch & AccessionSearch & { section?: LabSection; resultState?: string; assemblyTab?: 'inputs' | 'jobs'; assemblySearch?: string; shipmentId?: string; receiptTab?: LabReceiptTab; labStepSearch?: string; labStepRetired?: boolean; labStepPage?: number; returnKitRequestId?: string } => ({
+  validateSearch: (search: Record<string, unknown>): RecordListSearch & SpecimenSearch & StockKitListSearch & KitRequestListSearch & JobListSearch & ShipmentHistorySearch & AccessionSearch & { reagentPage?: number; reagentSearch?: string; reagentStatus?: string; section?: LabSection; resultState?: string; assemblyTab?: 'inputs' | 'jobs'; assemblySearch?: string; assemblyPage?: number; shipmentId?: string; receiptTab?: LabReceiptTab; labStepSearch?: string; labStepRetired?: boolean; labStepPage?: number; returnKitRequestId?: string } => ({
+    ...parseRecordListSearch(search),
+    reagentPage: parseRecordListSearch({ listPage: search.reagentPage }).listPage,
+    reagentSearch: typeof search.reagentSearch === 'string' ? search.reagentSearch.slice(0, 255) : undefined,
+    reagentStatus: typeof search.reagentStatus === 'string' ? search.reagentStatus : undefined,
     resultState: typeof search.resultState === 'string' ? search.resultState : undefined,
     assemblyTab: search.assemblyTab === 'jobs' ? 'jobs' : 'inputs',
+    assemblyPage: parseRecordListSearch({ listPage: search.assemblyPage }).listPage,
     assemblySearch: typeof search.assemblySearch === 'string' ? search.assemblySearch.slice(0, 255) : undefined,
     labStepSearch: typeof search.labStepSearch === 'string' ? search.labStepSearch.slice(0, 255) : undefined,
     labStepRetired: search.labStepRetired === true || search.labStepRetired === 'true' ? true : undefined,

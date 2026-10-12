@@ -1,3 +1,5 @@
+import { act } from '@testing-library/react'
+import * as portalConfirmation from '#/components/PortalConfirmation'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -33,7 +35,7 @@ describe('task editing', () => {
     const { close, invalidations } = mount()
     expect(screen.getByRole('button', { name: 'Save changes' })).toHaveProperty('disabled', true)
     fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Revised follow-up' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Save changes' })) })
     await waitFor(() => expect(api.updateCrmTask).toHaveBeenCalledWith(task.id, expect.objectContaining({ description: 'Revised follow-up', dueAt: task.dueAt, reminderAt: task.reminderAt, companyId: task.companyId, recurrenceRule: 'WEEKLY', version: 3 })))
     await waitFor(() => expect(close).toHaveBeenCalledOnce())
     for (const key of ['crm-tasks', 'crm-record-tasks', 'crm-dashboard', 'crm-activities', 'crm-reports']) expect(invalidations).toHaveBeenCalledWith({ queryKey: [key] })
@@ -43,7 +45,7 @@ describe('task editing', () => {
     mount()
     const newDate = '2026-09-20T15:30'
     fireEvent.change(screen.getByLabelText(/^Due/), { target: { value: newDate } })
-    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Save changes' })) })
     await waitFor(() => expect(api.updateCrmTask).toHaveBeenCalledWith(task.id, expect.objectContaining({ dueAt: new Date(newDate).toISOString(), reminderAt: task.reminderAt })))
     expect(screen.getByText(/Rescheduling shifts that next occurrence too/)).toBeTruthy()
   })
@@ -52,7 +54,7 @@ describe('task editing', () => {
     mount()
     fireEvent.change(screen.getByLabelText(/^Due/), { target: { value: '2026-09-18T10:00' } })
     fireEvent.change(screen.getByLabelText('Reminder'), { target: { value: '2026-09-18T11:00' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Save changes' })) })
     await screen.findByText('The reminder cannot occur after the due date.')
     expect(api.updateCrmTask).not.toHaveBeenCalled()
     expect(screen.getByLabelText('Reminder')).toHaveProperty('value', '2026-09-18T11:00')
@@ -64,14 +66,14 @@ describe('task editing', () => {
     vi.mocked(api.getCrmTask).mockResolvedValue({ ...task, priority: 'High', version: 4 })
     mount()
     fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Keep my draft' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Save changes' })) })
     const review = await screen.findByRole('button', { name: 'I have reviewed the changes' })
     expect(screen.getByLabelText('Description')).toHaveProperty('value', 'Keep my draft')
     expect(screen.getByLabelText(/^Priority/)).toHaveProperty('value', 'High')
     expect(screen.getByRole('button', { name: 'Save changes' })).toHaveProperty('disabled', true)
     await waitFor(() => expect(review).toHaveProperty('disabled', false))
-    fireEvent.click(review)
-    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+    await act(async () => { fireEvent.click(review) })
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Save changes' })) })
     await waitFor(() => expect(api.updateCrmTask).toHaveBeenLastCalledWith(task.id, expect.objectContaining({ description: 'Keep my draft', priority: 'High', version: 4 })))
   })
 
@@ -80,7 +82,7 @@ describe('task editing', () => {
     vi.mocked(api.getCrmTask).mockResolvedValue({ ...task, status: 'Completed', version: 4 })
     mount()
     fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Retain this draft' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Save changes' })) })
     await screen.findByText(/This task is now completed and cannot be edited/)
     expect(screen.getByLabelText('Description')).toHaveProperty('value', 'Retain this draft')
     expect(screen.getByRole('button', { name: 'Save changes' })).toHaveProperty('disabled', true)
@@ -89,15 +91,15 @@ describe('task editing', () => {
 
   it('keeps the draft after failure and asks before discarding it', async () => {
     vi.mocked(api.updateCrmTask).mockRejectedValueOnce(new Error('Save unavailable'))
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValueOnce(true)
+    const confirm = vi.spyOn(portalConfirmation, 'confirmPortal').mockResolvedValueOnce(false).mockResolvedValueOnce(true)
     const { close } = mount()
     fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Unsent details' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Save changes' })) })
     await screen.findByText('Save unavailable')
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Cancel' })) })
     expect(close).not.toHaveBeenCalled()
     expect(screen.getByLabelText('Description')).toHaveProperty('value', 'Unsent details')
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Cancel' })) })
     expect(close).toHaveBeenCalledOnce()
     confirm.mockRestore()
   })

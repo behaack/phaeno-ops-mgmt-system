@@ -1,3 +1,4 @@
+import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { isAxiosError } from 'axios'
@@ -37,6 +38,10 @@ export function InvitationAccessDialog({ invitation, onClose, onSaved, returnFoc
   const [conflict, setConflict] = useState(false)
   const departments = useQuery({ queryKey: ['organization-departments', source.organizationId, false], queryFn: () => listDepartments(source.organizationId, false) })
   const form = useForm<Values>({ resolver: zodResolver(schema), defaultValues: valuesFor(source) })
+  const { isDirty: __formDraftDirty } = form.formState
+  const __modalGuard = useModalDraftGuard(__formDraftDirty, form.formState.isSubmitting)
+
+
   const role = form.watch('role')
   const selected = form.watch('departments')
   const active = (departments.data ?? []).filter(value => value.isActive)
@@ -50,12 +55,16 @@ export function InvitationAccessDialog({ invitation, onClose, onSaved, returnFoc
       version: source.version, isOrganizationAdmin: values.role === 'Administrator',
       departments: values.role === 'Administrator' ? [] : values.departments,
     }),
-    onSuccess: async () => { await onSaved(); onClose() },
+    onSuccess: async () => {
+    __modalGuard.allowNavigation()
+ await onSaved(); onClose() },
     onError: error => { if (isAxiosError(error) && error.response?.status === 409) setConflict(true) },
   })
   const reload = useMutation({
     mutationFn: () => listInvitations(source.organizationId),
     onSuccess: values => {
+    __modalGuard.allowNavigation()
+
       const latest = values.find(value => value.id === source.id)
       if (!latest) { onClose(); return }
       setSource(latest); form.reset(valuesFor(latest)); setConflict(false); save.reset()
@@ -69,8 +78,8 @@ export function InvitationAccessDialog({ invitation, onClose, onSaved, returnFoc
   useEffect(() => {
     if (reload.isSuccess && !conflict) roleField.current?.querySelector<HTMLInputElement>('input')?.focus()
   }, [reload.isSuccess, conflict])
-  const close = () => { if (pending) return; if (form.formState.isDirty) setDiscard(true); else onClose() }
-  return <Dialog open onOpenChange={open => { if (!open) close() }}>
+  const close = () => { if (pending) return; if (__formDraftDirty) setDiscard(true); else onClose() }
+  return <Dialog open onOpenChange={open => { if (open) (open => { if (!open) close() })(open); else void __modalGuard.close(() => (open => { if (!open) close() })(false)) }}>
     <DialogContent className="max-w-2xl" onCloseAutoFocus={event => { if (returnFocusTo?.isConnected) { event.preventDefault(); returnFocusTo.focus() } }}>
       <form className="space-y-4" onSubmit={form.handleSubmit(values => { if (!accessError && !conflict) save.mutate(values) })}>
         <DialogHeader>
@@ -82,7 +91,7 @@ export function InvitationAccessDialog({ invitation, onClose, onSaved, returnFoc
         {conflict ? <Alert variant="destructive"><AlertDescription>The invitation changed while you were editing. Your selections are preserved. Reload to replace them with the latest saved access before editing again.<Button ref={reloadButton} type="button" variant="outline" className="mt-2" disabled={pending} onClick={() => reload.mutate()}>Reload invitation</Button></AlertDescription></Alert>
           : save.error ? <Alert variant="destructive"><AlertDescription>{apiErrorMessage(save.error)}</AlertDescription></Alert> : null}
         {reload.error || departments.error ? <Alert variant="destructive"><AlertDescription>{apiErrorMessage(reload.error ?? departments.error)}{departments.error ? <Button type="button" variant="outline" onClick={() => void departments.refetch()}>Retry departments</Button> : null}</AlertDescription></Alert> : null}
-        {discard ? <section role="alert" className="space-y-2"><p>Discard your unsaved invitation changes?</p><div className="flex gap-2"><Button ref={keepEditingButton} type="button" variant="outline" onClick={() => setDiscard(false)}>Keep editing</Button><Button type="button" variant="destructive" onClick={onClose}>Discard changes</Button></div></section> : null}
+        {discard ? <section role="alert" className="space-y-2"><p>Discard your unsaved invitation changes?</p><div className="flex gap-2"><Button ref={keepEditingButton} type="button" variant="outline" onClick={() => setDiscard(false)}>Keep editing</Button><Button type="button" variant="destructive" onClick={() => { void __modalGuard.close(() => (onClose)()) }}>Discard changes</Button></div></section> : null}
         <fieldset disabled={pending || source.status !== 'Pending'} className="space-y-4">
           <fieldset ref={roleField} className="space-y-2"><legend className="mb-2 text-sm font-medium"><RequiredFieldName>Access after acceptance</RequiredFieldName></legend>
             <label className="flex cursor-pointer items-center gap-2 text-sm"><input type="radio" value="Member" {...form.register('role')} />Member — assigned departments only</label>
@@ -106,7 +115,7 @@ export function InvitationAccessDialog({ invitation, onClose, onSaved, returnFoc
         </fieldset>
         <RequiredDialogFooter>
           <Button type="button" variant="outline" disabled={pending} onClick={close}>Cancel</Button>
-          <Button type="submit" disabled={pending || !form.formState.isDirty || Boolean(accessError) || conflict || departments.isPending || Boolean(departments.error) || source.status !== 'Pending'}>{save.isPending ? 'Saving…' : 'Save invited access'}</Button>
+          <Button type="submit" disabled={pending || !__formDraftDirty || Boolean(accessError) || conflict || departments.isPending || Boolean(departments.error) || source.status !== 'Pending'}>{save.isPending ? 'Saving…' : 'Save invited access'}</Button>
         </RequiredDialogFooter>
       </form>
     </DialogContent>

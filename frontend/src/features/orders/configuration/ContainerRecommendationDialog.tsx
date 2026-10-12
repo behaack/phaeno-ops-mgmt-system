@@ -1,3 +1,7 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
+import { NativeSelect } from '#/components/ui/native-select'
+import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
+import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
@@ -29,6 +33,8 @@ export function ContainerRecommendationDialog({ definitions, configuration, draf
   draftDefinition?: ShippingContainerDefinition
   onClose: () => void
 }) {
+  const __customerText = useCustomerText()
+
   const includeDraft = Boolean(draftDefinition && !draftDefinition.isActive && !draftDefinition.deactivatedAt && (!draftDefinition.effectiveTo || new Date(draftDefinition.effectiveTo).getTime() > Date.now()))
   const allCandidates = definitions.filter(item => containerEffectiveState(item) === 'Active now' || includeDraft && item.id === draftDefinition?.id)
   if (includeDraft && draftDefinition && !allCandidates.some(item => item.id === draftDefinition.id)) allCandidates.push(draftDefinition)
@@ -38,6 +44,8 @@ export function ContainerRecommendationDialog({ definitions, configuration, draf
     resolver: zodResolver(previewSchema),
     defaultValues: { tubeCount: '', sampleTypeId: draftDefinition?.sampleTypeAnchorId ?? '', availability: Object.fromEntries(allCandidates.map(item => [item.id, ''])) },
   })
+  const __modalGuard = useModalDraftGuard(form.formState.isDirty, form.formState.isSubmitting)
+
   const preview = useMutation({
     mutationFn: (values: Values) => {
       const availability = Object.entries(values.availability).filter(([, value]) => value !== '').map(([containerDefinitionId, quantity]) => ({ containerDefinitionId, quantity: Number(quantity) }))
@@ -54,28 +62,30 @@ export function ContainerRecommendationDialog({ definitions, configuration, draf
   const selectedAnchorId = selectedType && configuration.sampleTypes.find(item => item.definitionKey === selectedType.definitionKey && item.revision === 1)?.id
   const candidates = allCandidates.filter(item => selectedAnchorId && item.sampleTypeAnchorId === selectedAnchorId)
   const errors = form.formState.errors
-  return <Dialog open onOpenChange={open => { if (!open && !preview.isPending) onClose() }}><DialogContent className="max-w-2xl">
-    <DialogHeader><DialogTitle>Preview recommendation</DialogTitle><DialogDescription>Compare Transportation kits compatible with one Sample type and tube count. This preview does not create kits, reserve stock, or create shipments.</DialogDescription></DialogHeader>
-    {preview.error ? <Alert variant="destructive"><AlertTitle>Recommendation unavailable</AlertTitle><AlertDescription>{getOrderErrorMessage(preview.error, 'Review the context and available quantities, then try again.')}</AlertDescription></Alert> : null}
+  return <Dialog open onOpenChange={open => { if (open) (open => { if (!open && !preview.isPending) onClose() })(open); else void __modalGuard.close(() => (open => { if (!open && !preview.isPending) onClose() })(false)) }}><DialogContent className="max-w-2xl">
+    <DialogHeader><DialogTitle><CustomerText message="m_83efd961fce9" /></DialogTitle><DialogDescription><CustomerText message="m_fb9ba0d4e78b" /></DialogDescription></DialogHeader>
+    {preview.error ? <Alert variant="destructive"><AlertTitle><CustomerText message="m_92c2635cb7b0" /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(preview.error, 'Review the context and available quantities, then try again.')} />}</AlertDescription></Alert> : null}
     <form id="container-recommendation-preview" className="space-y-5" noValidate onChangeCapture={() => preview.reset()} onSubmit={form.handleSubmit(values => { if (!preview.isPending) preview.mutate(values) })}>
-      {draftDefinition ? <p className="rounded-md border bg-muted/40 p-3 text-sm">{includeDraft ? 'Including draft' : 'Using'} {draftDefinition.commonName} · SKU {draftDefinition.sku} · revision {draftDefinition.revision} for this preview only.</p> : null}
-      <ContainerField id="container-preview-tubes" label="Tubes to ship" required error={errors.tubeCount?.message}><Input id="container-preview-tubes" type="number" min={1} step={1} className="max-w-32" disabled={preview.isPending} aria-invalid={Boolean(errors.tubeCount)} aria-describedby={errors.tubeCount ? 'container-preview-tubes-error' : undefined} {...form.register('tubeCount')} /></ContainerField>
-      <ContainerField id="container-preview-sample-type" label="Sample type" required error={errors.sampleTypeId?.message}><select id="container-preview-sample-type" className="h-9 w-full cursor-pointer rounded-md border border-input bg-background px-3 text-sm" disabled={preview.isPending} {...form.register('sampleTypeId')}><option value="">Choose a Sample type…</option>{sampleTypes.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></ContainerField>
-      <fieldset><legend className="text-sm font-medium">Available containers</legend><p className="mt-1 text-xs text-muted-foreground">Optional upper limits for this preview. Leave blank when availability is unknown; enter zero to exclude a size.</p>
-        <div className="mt-2 divide-y rounded-md border px-3">{candidates.map(item => <div key={item.id} className="py-3"><div className="flex flex-wrap items-start justify-between gap-3"><Label htmlFor={`available-${item.id}`} className="block min-w-0 flex-1 wrap-anywhere">{item.commonName}<span className="mt-1 block text-xs font-normal text-muted-foreground">SKU {item.sku} · {item.tubeCapacity} tubes each</span></Label><Input id={`available-${item.id}`} type="number" min={0} step={1} className="w-24" placeholder="Unknown" disabled={preview.isPending} aria-label={`Available quantity of ${item.commonName} (${item.sku})`} aria-invalid={Boolean(errors.availability?.[item.id])} aria-describedby={errors.availability?.[item.id] ? `available-${item.id}-error` : undefined} {...form.register(`availability.${item.id}`)} /></div><ContainerFieldError id={`available-${item.id}-error`} message={errors.availability?.[item.id]?.message} /></div>)}{!candidates.length ? <p className="py-4 text-sm text-muted-foreground">No active kit specifications are effective now. An inactive revision can be previewed from its detail page.</p> : null}</div>
+      {draftDefinition ? <p className="rounded-md border bg-muted/40 p-3 text-sm">{includeDraft ? <CustomerSourceText source={"Including draft"} /> : __customerText('m_afe773e42fa0')} {draftDefinition.commonName} <CustomerText message="m_ce92c91a9097" />{draftDefinition.sku} <CustomerText message="m_3b0e4579f573" />{draftDefinition.revision} <CustomerText message="m_4341fd3d93d3" /></p> : null}
+      <ContainerField id="container-preview-tubes" label={__customerText('m_4720e14cbe0a')} required error={errors.tubeCount?.message}><Input id="container-preview-tubes" type="number" min={1} step={1} className="max-w-32" disabled={preview.isPending} aria-invalid={Boolean(errors.tubeCount)} aria-describedby={errors.tubeCount ? "container-preview-tubes-error" : undefined} {...form.register('tubeCount')} /></ContainerField>
+      <ContainerField id="container-preview-sample-type" label={__customerText('m_1e3f2e3f87c9')} required error={errors.sampleTypeId?.message}><NativeSelect id="container-preview-sample-type" className="w-full cursor-pointer rounded-md border border-input bg-background px-3 text-sm" disabled={preview.isPending} {...form.register('sampleTypeId')}><option value=""><CustomerText message="m_823d33011757" /></option>{sampleTypes.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</NativeSelect></ContainerField>
+      <fieldset><legend className="text-sm font-medium"><CustomerText message="m_087de845c155" /></legend><p className="mt-1 text-xs text-muted-foreground"><CustomerText message="m_b113fa70a16b" /></p>
+        <div className="mt-2 divide-y rounded-md border px-3">{candidates.map(item => <div key={item.id} className="py-3"><div className="flex flex-wrap items-start justify-between gap-3"><Label htmlFor={`available-${item.id}`} className="block min-w-0 flex-1 wrap-anywhere">{item.commonName}<span className="mt-1 block text-xs font-normal text-muted-foreground"><CustomerText message="m_7370f6c81297" />{item.sku} · {item.tubeCapacity} <CustomerText message="m_4395a5c8bfad" /></span></Label><Input id={`available-${item.id}`} type="number" min={0} step={1} className="w-24" placeholder={__customerText('m_b764cdc0eab7')} disabled={preview.isPending} aria-label={__customerText('m_710ee61f7202', { p0: String(item.commonName), p1: String(item.sku) })} aria-invalid={Boolean(errors.availability?.[item.id])} aria-describedby={errors.availability?.[item.id] ? `available-${item.id}-error` : undefined} {...form.register(`availability.${item.id}`)} /></div><ContainerFieldError id={`available-${item.id}-error`} message={errors.availability?.[item.id]?.message} /></div>)}{!candidates.length ? <p className="py-4 text-sm text-muted-foreground"><CustomerText message="m_acd9d901ee99" /></p> : null}</div>
       </fieldset>
       {preview.data ? <ContainerRecommendationResult result={preview.data} /> : null}
     </form>
-    <RequiredDialogFooter><Button variant="outline" disabled={preview.isPending} onClick={onClose}>Close</Button><Button type="submit" form="container-recommendation-preview" disabled={preview.isPending}>{preview.isPending ? 'Calculating…' : 'Calculate recommendation'}</Button></RequiredDialogFooter>
+    <RequiredDialogFooter><Button variant="outline" disabled={preview.isPending} onClick={() => { void __modalGuard.close(() => (onClose)()) }}><CustomerText message="m_7d9eb7acb13e" /></Button><Button type="submit" form="container-recommendation-preview" disabled={preview.isPending}>{preview.isPending ? <CustomerSourceText source={"Calculating…"} /> : __customerText('m_c59e912c5d19')}</Button></RequiredDialogFooter>
   </DialogContent></Dialog>
 }
 
 export function ContainerRecommendationResult({ result }: { result: ContainerRecommendation }) {
-  return <section className="space-y-3 border-t pt-4" aria-label="Container recommendation" aria-live="polite">
-    <div className="flex flex-wrap items-center gap-2"><h3 className="font-medium">Recommended containers</h3><Badge variant={result.isComplete ? 'secondary' : 'destructive'}>{result.isComplete ? 'All tubes fit' : `${result.unallocatedTubes} tubes unallocated`}</Badge></div>
-    <p className="text-sm">{result.tubeCount} tubes · {result.containerCount} containers · {result.totalCapacity} usable slots · {result.unusedCapacity} unused slots</p>
-    {result.containers.length ? <ul className="divide-y">{result.containers.map(item => <li key={item.containerDefinitionId} className="py-2 text-sm"><p className="font-medium">{item.quantity} × {item.commonName}</p><p className="mt-1 text-xs text-muted-foreground">SKU {item.sku} · {item.capacity} tubes per container</p><p className="mt-1">{item.assignedTubes} tubes assigned · {item.unusedCapacity} unused slots</p></li>)}</ul> : null}
+  const __customerText = useCustomerText()
+
+  return <section className="space-y-3 border-t pt-4" aria-label={__customerText('m_e382350decc1')} aria-live="polite">
+    <div className="flex flex-wrap items-center gap-2"><h3 className="font-medium"><CustomerText message="m_10d622c1aade" /></h3><Badge variant={result.isComplete ? "secondary" : "destructive"}>{result.isComplete ? <CustomerSourceText source={"All tubes fit"} /> : __customerText('m_419d64afa56c', { p0: String(result.unallocatedTubes) })}</Badge></div>
+    <p className="text-sm">{result.tubeCount} <CustomerText message="m_2fb19d7bbf61" />{result.containerCount} <CustomerText message="m_0dbf35257d8c" />{result.totalCapacity} <CustomerText message="m_74077fee9b7f" />{result.unusedCapacity} <CustomerText message="m_a3577cbf87fa" /></p>
+    {result.containers.length ? <ul className="divide-y">{result.containers.map(item => <li key={item.containerDefinitionId} className="py-2 text-sm"><p className="font-medium">{item.quantity} × {item.commonName}</p><p className="mt-1 text-xs text-muted-foreground"><CustomerText message="m_7370f6c81297" />{item.sku} · {item.capacity} <CustomerText message="m_7db6aec8f0ba" /></p><p className="mt-1">{item.assignedTubes} <CustomerText message="m_e1b9cdb88511" />{item.unusedCapacity} <CustomerText message="m_a3577cbf87fa" /></p></li>)}</ul> : null}
     <p className="text-sm text-muted-foreground">{result.explanation}</p>
-    <p className="text-xs text-muted-foreground">This recommendation prioritizes fewer containers, then less unused capacity. It does not estimate shipping cost or verify stock.</p>
+    <p className="text-xs text-muted-foreground"><CustomerText message="m_6104dee85fb8" /></p>
   </section>
 }

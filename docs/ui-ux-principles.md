@@ -49,19 +49,23 @@ Use task-oriented entry points with record-centered workspaces.
 - User dropdown labels use sentence case: capitalize only the first word, preserving acronyms and product names such as CRM and PSeq (for example, Order settings, Sample shipping settings, and Sign out).
 
 - The home experience should answer, "What needs my attention?"
-- The POMS home uses the shared far-left sidebar as one **Order Operations / Lab
-  Operations / Customer access / Web Operations** panel selector so internal users can
-  move among the two primary operational queues, CRM-owned Customer, Partner,
-  and Prospect access administration, and public Website intake without
-  stacking the dashboards. Show one panel at a time, emphasize attention or intake counts
-  and representative priority work, and route users to the full owning
-  workspace when one exists. Web Operations shows mailing-list signups, demo
-  requests, and email delivery to Phaeno platform administrators. Intake records
-  remain view-first; bounded unsubscribe, completion, email resend actions require explicit confirmation with the affected recipient
-  or intake identified. Show queued work, provider acceptance, and failed attempts
-  distinctly; provider acceptance does not establish inbox delivery. External
-  organization dashboards do not expose this internal
-  selector.
+- Owner-approved direction, October 11, 2026: replace the current dashboard
+  panel experience with a useful role-aware work dashboard and a header bell
+  backed by the same authorized work list. Phaeno staff default to assigned
+  work plus eligible unassigned work, with a separate authorized team view.
+  The bell counts unresolved actionable obligations; viewing an item does not
+  complete it. Keep available results and other informational updates distinct
+  from required actions. Customer home distinguishes the user's actions from
+  work awaiting their administrator or Phaeno. Complete counts, exact record
+  links, priority, ownership, freshness and unavailable states are required.
+  This direction supersedes the former four-panel home policy; implementation
+  is tracked in [Work dashboard and notifications](plans/WORK-DASHBOARD-AND-NOTIFICATIONS-PLAN.md), including local implementation and remaining acceptance.
+- Preserve Web Operations' platform-administrator-only mailing-list, demo and
+  email-recovery workflows when moving their full management tools out of the
+  home preview. Intake remains view-first; bounded unsubscribe, completion and
+  resend actions require explicit confirmation identifying the recipient or
+  intake. Show queued work, provider acceptance and failed attempts distinctly;
+  provider acceptance does not establish inbox delivery.
 - Work queues surface pending tasks, exceptions, recent activity, and important status changes.
 - **Lab ops** keeps **Jobs** first as the ungrouped work overview. Use CRM-style **SAMPLE PROCESSING**, **RESULTS**, **LAB PREPARATIONS**, and **KITS & FULFILLMENT** headings. Sample receipt and accession contain incoming work; transportation kit requests are a separate destination beside kit inventory. Keep Results & scientific review separate from permission-controlled Result release, and label physical PSeq work **PSeq kit fulfillment**.
 - Primary navigation uses recognizable business and scientific areas rather than technical modules. Phaeno **Order Ops** retains one sidebar with CRM-style **LAB SERVICES** and **PARTNER SERVICES** group headings. The first contains **Order intake** and **Trial projects**; the second contains **PSeq kits** and **Data assembly**. These section and record routes remain beneath `/order-operations`, with subject-domain segments. **Lab ops** owns execution, scientific review and a separately authorized Result release section. **Dashboard → Needs attention** summarizes cross-workflow blockers and opens their full queue through View all. Finance and Legacy integrations belong in More. Routes and record links reflect these subject domains; retained bookmarks redirect to the canonical destination.
@@ -77,6 +81,11 @@ Use task-oriented entry points with record-centered workspaces.
   membership. This Owner-approved October 10, 2026 decision supersedes the earlier
   prohibition on membership switching. It does not introduce organization search,
   impersonation, or access through a Phaeno administrative role alone.
+  Organization and Department changes both return to Dashboard only after the
+  current draft guards permit navigation, including when Dashboard is already
+  open. Keeping a draft retains the current scope; pending saves block switching.
+  Cancelling or blocking an attempt must still permit a later attempt. The
+  narrow-screen menu closes before a scope-discard confirmation opens.
 - Present CRM as a first-class POMS workspace for Companies, Contacts, Leads,
   Opportunities, Activities, Tasks, relationship reporting, and Company
   requests.
@@ -291,14 +300,22 @@ When a customer or procurement context adds requirements such as U.S. Section 50
 
 ## Internationalization
 
-Internationalization is enabled with `en-US` as the only initially supported locale.
+Owner clarification, October 11, 2026: internationalization applies only to the
+Customer portal. This supersedes the former all-external-audience requirement.
+`en-US` is the only initially supported Customer locale. Full implementation
+coverage is tracked in [System gap closure](plans/SYSTEM-GAP-CLOSURE-PLAN.md);
+the policy is not a claim that every Customer surface already meets it.
 
-- System-owner-only surfaces may remain US English and do not require translation catalogs.
-- Prospect-, customer-, and partner-facing surfaces are fully internationalization-enabled even while `en-US` is their only translation.
-- If any external role can access a surface, treat the entire surface as internationalized.
-- Components shared between internal and external surfaces are internationalized.
-- External labels, validation, errors, toasts, accessibility text, notifications, reports, and exports are included.
-- Server failures use stable identities and parameters that external UIs map to localized messages.
+- Phaeno POMS, Prospect and Partner surfaces may remain US English and do not
+  require translation catalogs. Public Website localization is separate scope.
+- Every Customer-accessible surface is in scope, including shared controls,
+  authentication/access feedback, work dashboard/bell, forms and help.
+- Shared components localize their Customer-facing presentation; other
+  audience presentations may use US English.
+- Customer labels, validation, errors, toasts, accessibility text,
+  notifications, reports and exports are included.
+- Server failures use stable identities and parameters that the Customer UI
+  maps to localized messages.
 - Hide the language selector until a second locale is supported.
 - Do not advertise a locale until its critical workflows are completely translated, reviewed, and tested.
 - Support grammatical pluralization, parameterized messages, locale-aware dates, times, numbers, currency, and units.

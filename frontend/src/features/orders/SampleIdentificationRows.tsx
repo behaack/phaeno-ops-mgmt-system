@@ -1,3 +1,5 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
+import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
 import { useId, useRef } from 'react'
@@ -28,6 +30,8 @@ export function SampleIdentificationRows({ order, source, expectedCount, savedCo
   onBusyChange: (busy: boolean) => void
   onSaved: (order: LabServiceOrder) => Promise<void>
 }) {
+  const __customerText = useCustomerText()
+
   const { authProvider } = usePhaenoSession()
   const oneRunPerSample = (order.requestedSequencingRunCount ?? order.requestedSpecimenCount) === order.requestedSpecimenCount
   const remaining = Math.max(0, expectedCount - savedCount)
@@ -103,44 +107,44 @@ export function SampleIdentificationRows({ order, source, expectedCount, savedCo
     save.mutate(values)
   }
   if (!rowCount) return null
-  return <form aria-label={`Identify ${source} samples`} noValidate className="space-y-3 px-3 py-3"
+  return <form aria-label={__customerText('m_43fa3442e6ec', { p0: String(source) })} noValidate className="space-y-3 px-3 py-3"
     onChange={() => onDirtyChange(form.getValues('rows').some(hasDraft))} onSubmit={form.handleSubmit(submit)}>
-    <p className="text-xs text-muted-foreground">Enter a unique ID for each sample. {oneRunPerSample ? 'Accepted pricing includes one sequencing run per sample; this count is fixed.' : 'Allocate the purchased runs independently of submitted tubes.'} You may send additional tubes as reserve material in case of a failure; extra tubes do not add runs. Do not enter patient names or identifiers.</p>
+    <p className="text-xs text-muted-foreground"><CustomerText message="m_eacf8bd3561b" />{oneRunPerSample ? <CustomerSourceText source={"Accepted pricing includes one sequencing run per sample; this count is fixed."} /> : __customerText('m_4b7076c9e11c')} <CustomerText message="m_e2ec07a945ff" /></p>
     {Array.from({ length: rowCount }, (_, index) => {
       const idError = form.formState.errors.rows?.[index]?.customerSampleId?.message
       const tubeError = form.formState.errors.rows?.[index]?.tubeCount?.message
       const runError = form.formState.errors.rows?.[index]?.sequencingRunCount?.message
       const id = `${prefix}-${index}`
       return <div key={index} className="grid grid-cols-[2rem_minmax(0,1fr)] sm:grid-cols-[2rem_minmax(0,1fr)_5rem_6rem] items-start gap-3 border-b pb-3 last:border-0">
-        <span className="pt-7 text-sm text-muted-foreground" aria-label={`Sample ${savedCount + index + 1}`}>{savedCount + index + 1}</span>
-        <div className="space-y-1"><Label htmlFor={`${id}-sample`}><RequiredFieldName>Sample ID</RequiredFieldName></Label>
-          <Input id={`${id}-sample`} aria-label={`Sample ID ${savedCount + index + 1} for ${source}`} maxLength={255} defaultValue="" aria-required="true"
+        <span className="pt-7 text-sm text-muted-foreground" aria-label={__customerText('m_bfa208f40cee', { p0: String(savedCount + index + 1) })}>{savedCount + index + 1}</span>
+        <div className="space-y-1"><Label htmlFor={`${id}-sample`}><RequiredFieldName><CustomerText message="m_1860caa4e4b3" /></RequiredFieldName></Label>
+          <Input id={`${id}-sample`} aria-label={__customerText('m_4c2ba4cbae1f', { p0: String(savedCount + index + 1), p1: String(source) })} maxLength={255} defaultValue="" aria-required="true"
             disabled={disabled || save.isPending} aria-invalid={Boolean(idError)} aria-describedby={idError ? `${id}-error` : undefined}
             {...form.register(`rows.${index}.customerSampleId`)} />
           {idError ? <p id={`${id}-error`} className="text-xs text-destructive">{idError}</p> : null}</div>
-        <div className="space-y-1"><Label htmlFor={`${id}-tubes`}><RequiredFieldName>Tubes</RequiredFieldName></Label>
-          <Input id={`${id}-tubes`} aria-label={`Tube count ${savedCount + index + 1} for ${source}`} type="number" min={1} step={1} defaultValue="1" aria-required="true"
+        <div className="space-y-1"><Label htmlFor={`${id}-tubes`}><RequiredFieldName><CustomerText message="m_9896e020cb56" /></RequiredFieldName></Label>
+          <Input id={`${id}-tubes`} aria-label={__customerText('m_c7fa813872d1', { p0: String(savedCount + index + 1), p1: String(source) })} type="number" min={1} step={1} defaultValue="1" aria-required="true"
             disabled={disabled || save.isPending} aria-invalid={Boolean(tubeError)} aria-describedby={tubeError ? `${id}-tube-error` : undefined}
             {...form.register(`rows.${index}.tubeCount`)} />
           {tubeError ? <p id={`${id}-tube-error`} className="text-xs text-destructive">{tubeError}</p> : null}</div>
-        {oneRunPerSample ? <div className="space-y-1"><Label htmlFor={`${id}-runs`}>Runs</Label>
-          <output id={`${id}-runs`} aria-label={`Sequencing runs ${savedCount + index + 1} for ${source}`} className="block py-2 text-sm">1</output>
-        </div> : <div className="space-y-1"><Label htmlFor={`${id}-runs`}><RequiredFieldName>Runs</RequiredFieldName></Label>
-          <Input id={`${id}-runs`} aria-label={`Sequencing runs ${savedCount + index + 1} for ${source}`} type="number" min={1} max={10000} step={1} defaultValue="1" aria-required="true"
+        {oneRunPerSample ? <div className="space-y-1"><Label htmlFor={`${id}-runs`}><CustomerText message="m_848f54e89660" /></Label>
+          <output id={`${id}-runs`} aria-label={__customerText('m_59baa6992064', { p0: String(savedCount + index + 1), p1: String(source) })} className="block py-2 text-sm">1</output>
+        </div> : <div className="space-y-1"><Label htmlFor={`${id}-runs`}><RequiredFieldName><CustomerText message="m_848f54e89660" /></RequiredFieldName></Label>
+          <Input id={`${id}-runs`} aria-label={__customerText('m_59baa6992064', { p0: String(savedCount + index + 1), p1: String(source) })} type="number" min={1} max={10000} step={1} defaultValue="1" aria-required="true"
             disabled={disabled || save.isPending} aria-invalid={Boolean(runError)} aria-describedby={runError ? `${id}-run-error` : undefined} {...form.register(`rows.${index}.sequencingRunCount`)} />
           {runError ? <p id={`${id}-run-error`} className="text-xs text-destructive">{runError}</p> : null}</div>}
       </div>
     })}
-    {entered > capacity ? <p role="alert" className="text-sm text-destructive">The accepted scope has room for {capacity} more samples. Review these entries before saving.</p> : null}
-    {save.error ? <Alert variant="destructive"><AlertDescription>{getOrderErrorMessage(save.error, 'Some sample IDs could not be saved. Saved rows are retained; review the remaining entries and try again.')}</AlertDescription></Alert> : null}
+    {entered > capacity ? <p role="alert" className="text-sm text-destructive"><CustomerText message="m_62bde862e229" />{capacity} <CustomerText message="m_823465a77ee4" /></p> : null}
+    {save.error ? <Alert variant="destructive"><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(save.error, 'Some sample IDs could not be saved. Saved rows are retained; review the remaining entries and try again.')} />}</AlertDescription></Alert> : null}
     <div className="flex flex-wrap items-center justify-between gap-3"><RequiredLegend /><div className="flex flex-wrap gap-2">
       {lastEnteredIndex >= 0 ? <Button type="button" variant="outline" disabled={disabled || save.isPending} onClick={() => {
         form.reset({ rows: Array.from({ length: remaining }, blankRow) }); onDirtyChange(false); save.reset()
-      }}>Discard unsaved entries</Button> : null}
+      }}><CustomerText message="m_cdbf3158063c" /></Button> : null}
       <Button type="submit" disabled={disabled || save.isPending || !entered || entered > capacity || authProvider === 'mock'}>
-        {save.isPending ? 'Saving samples…' : 'Save sample IDs'}
+        {save.isPending ? <CustomerSourceText source={"Saving samples…"} /> : __customerText('m_476e38b21b33')}
       </Button>
     </div></div>
-    <p className="text-xs text-muted-foreground">{entered} of {remaining} remaining sample IDs entered. Blank rows are not saved.</p>
+    <p className="text-xs text-muted-foreground">{entered} of {remaining} <CustomerText message="m_13c5f3cd8c1f" /></p>
   </form>
 }

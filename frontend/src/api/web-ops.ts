@@ -61,8 +61,8 @@ export function getWebOpsMailingList(page: number) {
   return getWebOpsPage<WebOpsMailingListContact>('/web-ops/mailing-list', page)
 }
 
-export function getWebOpsDemoRequests(page: number) {
-  return getWebOpsPage<WebOpsDemoRequest>('/web-ops/demo-requests', page)
+export function getWebOpsDemoRequests(page: number, requestId?: string) {
+  return getWebOpsPage<WebOpsDemoRequest>('/web-ops/demo-requests', page, { requestId })
 }
 
 export async function unsubscribeWebOpsMailingListContact(id: string) {
@@ -81,7 +81,7 @@ export function getWebOpsErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback
 }
 
-async function getWebOpsPage<T>(url: string, page: number, filters?: { attentionOnly: boolean }) {
+async function getWebOpsPage<T>(url: string, page: number, filters?: { attentionOnly?: boolean; requestId?: string; deliveryId?: string }) {
   const response = await api.get<ApiEnvelope<WebOpsPage<T>>>(url, {
     params: { page, ...filters },
   })
@@ -125,8 +125,8 @@ export type WebOpsNotificationAttempt = {
   staffRequested: boolean
 }
 
-export function getWebOpsNotifications(page: number, attentionOnly = false) {
-  return getWebOpsPage<WebOpsNotification>('/web-ops/notifications', page, { attentionOnly })
+export function getWebOpsNotifications(page: number, attentionOnly = false, deliveryId?: string) {
+  return getWebOpsPage<WebOpsNotification>('/web-ops/notifications', page, { attentionOnly, deliveryId })
 }
 
 export type WebOpsNotificationSummary = {

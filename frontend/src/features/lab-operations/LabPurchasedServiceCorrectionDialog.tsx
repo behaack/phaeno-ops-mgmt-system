@@ -1,3 +1,4 @@
+import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
 import { useRef } from 'react'
@@ -20,15 +21,19 @@ export function LabPurchasedServiceCorrectionDialog({ workOrderId, jobLabel, ser
   const cancel = useRef<HTMLButtonElement>(null)
   const request = useRef<{ reason: string; id: string } | null>(null)
   const form = useForm<z.infer<typeof schema>>({ resolver: zodResolver(schema), defaultValues: { reason: '' } })
+  const __modalGuard = useModalDraftGuard(form.formState.isDirty, form.formState.isSubmitting)
+
   const mutation = useMutation({
     mutationFn: (reason: string) => {
       if (request.current?.reason !== reason) request.current = { reason, id: crypto.randomUUID() }
       return correctLabPurchasedService(workOrderId, { reason, version: service.workVersion, requestId: request.current.id })
     },
-    onSuccess: async () => { await onSaved(); onClose() },
+    onSuccess: async () => {
+    __modalGuard.allowNavigation()
+ await onSaved(); onClose() },
   })
   const close = () => { if (!mutation.isPending) onClose() }
-  return <DialogReturnFocus target={null} fallbackId="lab-work-actions"><Dialog open onOpenChange={open => { if (!open) close() }}>
+  return <DialogReturnFocus target={null} fallbackId="lab-work-actions"><Dialog open onOpenChange={open => { if (open) (open => { if (!open) close() })(open); else void __modalGuard.close(() => (open => { if (!open) close() })(false)) }}>
     <DialogContent showCloseButton={!mutation.isPending} onOpenAutoFocus={event => { event.preventDefault(); cancel.current?.focus() }}>
       <DialogHeader><DialogTitle>Correct purchased service</DialogTitle><DialogDescription>{jobLabel}</DialogDescription></DialogHeader>
       <div className="space-y-4">

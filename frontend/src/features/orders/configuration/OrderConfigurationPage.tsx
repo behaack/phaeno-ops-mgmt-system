@@ -1,3 +1,4 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Boxes,
@@ -83,7 +84,7 @@ export function OrderConfigurationPage({ catalogItemId }: { catalogItemId?: stri
   const configuration = useQuery({ queryKey: ['order-configuration'], queryFn: getOrderConfiguration, enabled: apiEnabled })
   const sync = useMutation({ mutationFn: syncQuickBooksCatalog, onSuccess: async () => queryClient.invalidateQueries({ queryKey: ['order-configuration'] }) })
 
-  if (!sections.length) return <main className="page-wrap px-4 py-8"><Alert variant="destructive"><AlertTitle>Order Settings unavailable</AlertTitle><AlertDescription>A Phaeno platform administrator or Trial staff access is required.</AlertDescription></Alert></main>
+  if (!sections.length) return <main className="page-wrap px-4 py-8"><Alert variant="destructive"><AlertTitle><CustomerSourceText source={"Order Settings unavailable"} /></AlertTitle><AlertDescription><CustomerSourceText source={"A Phaeno platform administrator or Trial staff access is required."} /></AlertDescription></Alert></main>
   return (
     <main className="py-8">
       <WorkspaceSidebar
@@ -95,33 +96,31 @@ export function OrderConfigurationPage({ catalogItemId }: { catalogItemId?: stri
         <div className="page-wrap px-4 pt-6 lg:pt-0">
           <section className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h1 className="text-3xl font-semibold">Order Settings</h1>
+              <h1 className="text-3xl font-semibold"><CustomerSourceText source={"Order Settings"} /></h1>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
-                Maintain quote validity, order workflows, scientific service definitions,
-                Partner-negotiated reagent prices, assembly profiles, Trial configuration, and legacy
-                accounting links. Customer billing and tax approval live in Finance.
+                <CustomerSourceText source={"Maintain quote validity, order workflows, scientific service definitions,\r\n                Partner-negotiated reagent prices, assembly profiles, Trial configuration, and legacy\r\n                accounting links. Customer billing and tax approval live in Finance."} />
               </p>
             </div>
           </section>
           {authProvider === 'mock' ? (
             <Alert className="mb-5">
-              <AlertTitle>Connected configuration is paused in mock-session mode</AlertTitle>
+              <AlertTitle><CustomerSourceText source={"Connected configuration is paused in mock-session mode"} /></AlertTitle>
               <AlertDescription>
-                Use a real Phaeno session to load and change order configuration.
+                <CustomerSourceText source={"Use a real Phaeno session to load and change order configuration."} />
               </AlertDescription>
             </Alert>
           ) : null}
           {section === 'trials' && authProvider !== 'mock' ? <TrialConfigurationPanel /> : null}
           {showingOrders && configuration.error ? (
             <Alert variant="destructive" className="mb-5">
-              <AlertTitle>Configuration could not be loaded</AlertTitle>
+              <AlertTitle><CustomerSourceText source={"Configuration could not be loaded"} /></AlertTitle>
               <AlertDescription>
-                {getOrderErrorMessage(configuration.error, 'Try refreshing this page.')}
+                {<CustomerSourceText source={getOrderErrorMessage(configuration.error, 'Try refreshing this page.')} />}
               </AlertDescription>
             </Alert>
           ) : null}
-          {showingOrders && configuration.isLoading ? <p role="status">Loading order configuration…</p> : null}
-          {section === 'commercial' ? <div className="mb-5 space-y-3 rounded-lg border p-4"><p className="text-sm text-muted-foreground">Historical accounting mappings and connector recovery. The service catalog is maintained in Service catalog.</p><Button variant="outline" disabled={!apiEnabled || sync.isPending} onClick={() => sync.mutate()}><RefreshCw data-icon="inline-start" />{sync.isPending ? 'Queueing…' : 'Queue QuickBooks catalog recovery'}</Button>{sync.error ? <p role="alert">{getOrderErrorMessage(sync.error, 'Connector recovery is unavailable.')}</p> : null}{sync.isSuccess ? <p role="status">Catalog recovery queued.</p> : null}</div> : null}
+          {showingOrders && configuration.isLoading ? <p role="status"><CustomerSourceText source={"Loading order configuration…"} /></p> : null}
+          {section === 'commercial' ? <div className="mb-5 space-y-3 rounded-lg border p-4"><p className="text-sm text-muted-foreground"><CustomerSourceText source={"Historical accounting mappings and connector recovery. The service catalog is maintained in Service catalog."} /></p><Button variant="outline" disabled={!apiEnabled || sync.isPending} onClick={() => sync.mutate()}><RefreshCw data-icon="inline-start" />{sync.isPending ? <CustomerSourceText source={"Queueing…"} /> : <CustomerSourceText source={"Queue QuickBooks catalog recovery"} />}</Button>{sync.error ? <p role="alert">{<CustomerSourceText source={getOrderErrorMessage(sync.error, 'Connector recovery is unavailable.')} />}</p> : null}{sync.isSuccess ? <p role="status"><CustomerSourceText source={"Catalog recovery queued."} /></p> : null}</div> : null}
           {configuration.data && section === 'catalog' ? <CatalogConfigurationPanel configuration={configuration.data} catalogItemId={catalogItemId} apiEnabled={apiEnabled} /> : null}
           {configuration.data && section === 'system' ? <SystemConfigurationPanel configuration={configuration.data} /> : null}
           {configuration.data && section === 'analyses' ? <AnalysisConfigurationPanel configuration={configuration.data} /> : null}

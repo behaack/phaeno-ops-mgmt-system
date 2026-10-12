@@ -1,3 +1,4 @@
+import * as portalConfirmation from '#/components/PortalConfirmation'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { ProtocolApprovalDialog } from './ProtocolApprovalDialog'
@@ -67,7 +68,7 @@ it('requires an override reason and retains entries after a rejected save', asyn
   await waitFor(() => expect(approve).toHaveBeenCalledWith('TEST ONLY — administrator reviewed'))
   view.rerender(<ProtocolApprovalDialog {...props} error="Version changed; reload before approving." />)
   expect(screen.getByLabelText(/Override reason/)).toHaveProperty('value', '  TEST ONLY — administrator reviewed  ')
-  const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+  const confirm = vi.spyOn(portalConfirmation, 'confirmPortal').mockResolvedValue(false)
   fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
   expect(close).not.toHaveBeenCalled()
   confirm.mockRestore()

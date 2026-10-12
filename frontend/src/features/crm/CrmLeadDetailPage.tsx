@@ -1,3 +1,5 @@
+import { NativeSelect } from '#/components/ui/native-select'
+import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
@@ -394,11 +396,13 @@ function ConfirmConvert({
     mode: "onBlur",
     reValidateMode: "onChange",
   });
+  const __modalGuard = useModalDraftGuard(form.formState.isDirty, form.formState.isSubmitting)
+
   const companyAvailable = Boolean(existingCompanyId) || createCompany;
   const hasConversionOutput =
     companyAvailable || createContact || createOpportunity;
   return (
-    <Dialog open onOpenChange={onOpenChange}>
+    <Dialog open onOpenChange={open => { if (open) (onOpenChange)(open); else void __modalGuard.close(() => (onOpenChange)(false)) }}>
       <DialogContent className="max-w-2xl">
         <form
           noValidate
@@ -430,14 +434,14 @@ function ConfirmConvert({
           <div className="grid gap-4">
             <div className="grid gap-1.5">
               <Label htmlFor="lead-company">Company</Label>
-              <select
+              <NativeSelect
                 id="lead-company"
                 value={companySelection}
                 onChange={(event) => setCompanySelection(event.target.value)}
                 aria-describedby={
                   createCompany && !needsCompanyName ? "lead-company-description" : undefined
                 }
-                className="h-9 rounded-md border bg-background px-3 text-sm"
+                className="rounded-md border bg-background px-3 text-sm"
               >
                 <option value="">No company</option>
                 <option value="create">Create company</option>
@@ -446,7 +450,7 @@ function ConfirmConvert({
                     {company.name}
                   </option>
                 ))}
-              </select>
+              </NativeSelect>
               {createCompany && !needsCompanyName ? (
                 <p
                   id="lead-company-description"
@@ -499,10 +503,10 @@ function ConfirmConvert({
                 </div>
                 <div className="grid gap-1.5">
                   <Label htmlFor="lead-pipeline">Pipeline</Label>
-                  <select
+                  <NativeSelect
                     id="lead-pipeline"
                     {...form.register("pipelineId")}
-                    className="h-9 rounded-md border bg-background px-3 text-sm"
+                    className="rounded-md border bg-background px-3 text-sm"
                   >
                     <option value="">Default pipeline</option>
                     {pipelines.map((pipeline) => (
@@ -510,7 +514,7 @@ function ConfirmConvert({
                         {pipeline.name}
                       </option>
                     ))}
-                  </select>
+                  </NativeSelect>
                 </div>
               </div>
             ) : null}
@@ -536,7 +540,7 @@ function ConfirmConvert({
             <Button
               type="button"
               variant="outline"
-              onClick={() => onOpenChange(false)}
+              onClick={() => { void __modalGuard.close(() => (() => onOpenChange(false))()) }}
             >
               Cancel
             </Button>

@@ -1,3 +1,4 @@
+import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 import { useSpecimenHolds } from '#/features/orders/use-specimen-holds'
 import { DeadlineBadge } from './JobsList'
 import { deadlineDate } from './job-deadlines'
@@ -9,7 +10,7 @@ import { IntakeReviewFields } from './IntakeReviewFields'
 import { LabSpecimenList } from './LabSpecimenPage'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { ChevronDown, Plus } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 
 import {
@@ -47,7 +48,7 @@ import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '#/components/ui/dialog'
-import { ActionMenu as DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
+
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { RequiredDialogFooter as DialogFooter, RequiredFieldName } from '#/components/ui/required-field'
@@ -128,7 +129,7 @@ export function LabWorkOrderPage({ workOrderId, packetBarcode, supplierTubeBarco
           {deadline.data && ['Overdue', 'AtRisk'].includes(deadline.data.summary.deadlineStatus) ? <p className="mt-2 text-sm text-destructive">{deadline.data.summary.reason}</p> : null}
         </div>
         {canOperate || canRecordApproval || purchasedService.data?.canCorrect ? (
-          <DropdownMenu>
+          <ActionMenu>
             <DropdownMenuTrigger asChild>
               <Button id="lab-work-actions" type="button" variant="outline">Actions</Button>
             </DropdownMenuTrigger>
@@ -145,7 +146,7 @@ export function LabWorkOrderPage({ workOrderId, packetBarcode, supplierTubeBarco
               {canRecordApproval ? <DropdownMenuItem onSelect={() => setAction({ kind: 'approval' })}>Record scientific approval</DropdownMenuItem> : null}
               {purchasedService.data?.canCorrect ? <DropdownMenuItem onSelect={() => setCorrectingService(true)}>Correct purchased service</DropdownMenuItem> : null}
             </DropdownMenuContent>
-          </DropdownMenu>
+          </ActionMenu>
         ) : null}
       </section>
       <Tabs value={selectedTab} onValueChange={(tab) => void navigate({ to: '/lab-operations/$workOrderId', params: { workOrderId }, search: (previous) => ({ ...previous, section: parseLabSection(previous.section), tab: tab as typeof selectedTab }), replace: true })}>
@@ -218,7 +219,7 @@ function Executions({ workOrderId, items, canOperate, onAction }: { workOrderId:
     const attempt = specimen?.attempts.find(a => a.executionIds.includes(item.id))
     return `${stage?.name ?? 'Protocol execution'}${specimen ? ` · ${specimen.name}` : ''}${attempt ? ` · Attempt ${attempt.sequence} · ${attempt.sourceBarcode}` : ''}`
   }
-  return <Card className="gap-0 py-0"><CardHeader className="border-b bg-muted/50 p-4"><CardTitle>Protocol execution</CardTitle><CardDescription>Open an execution to follow its pinned procedure, record steps, and review evidence.</CardDescription></CardHeader><CardContent className="p-4"><div className="space-y-3">{items.map(item => <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/30 p-4 shadow-xs"><div><Link className="font-medium text-primary underline underline-offset-4" to="/lab-operations/executions/$executionId" params={{ executionId: item.id }} search={previous => ({ ...previous, section: parseLabSection(previous.section) ?? 'jobs', shipmentId: previous.shipmentId, returnSpecimenId: undefined, returnSpecimenTab: undefined })}>{executionLabel(item)}</Link>{item.deviationNote ? <p className="mt-1 text-sm text-muted-foreground">{item.deviationNote}</p> : null}</div><div className="flex flex-wrap items-center gap-2"><Status value={item.status} />{canOperate && ['InProgress', 'Blocked'].includes(item.status) ? <DropdownMenu><DropdownMenuTrigger asChild><Button size="sm" variant="outline">Actions <ChevronDown aria-hidden="true" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-max min-w-48 max-w-[calc(100vw-2rem)]"><DropdownMenuItem onSelect={() => onAction({ kind: 'material', execution: item })}>Record material use</DropdownMenuItem><DropdownMenuItem onSelect={() => onAction({ kind: 'equipment', execution: item })}>Record equipment use</DropdownMenuItem></DropdownMenuContent></DropdownMenu> : null}</div></div>)}</div>{items.length === 0 ? <Empty>No protocols assigned.</Empty> : null}</CardContent></Card>
+  return <Card className="gap-0 py-0"><CardHeader className="border-b bg-muted/50 p-4"><CardTitle>Protocol execution</CardTitle><CardDescription>Open an execution to follow its pinned procedure, record steps, and review evidence.</CardDescription></CardHeader><CardContent className="p-4"><div className="space-y-3">{items.map(item => <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/30 p-4 shadow-xs"><div><Link className="font-medium text-primary underline underline-offset-4" to="/lab-operations/executions/$executionId" params={{ executionId: item.id }} search={previous => ({ ...previous, section: parseLabSection(previous.section) ?? 'jobs', shipmentId: previous.shipmentId, returnSpecimenId: undefined, returnSpecimenTab: undefined })}>{executionLabel(item)}</Link>{item.deviationNote ? <p className="mt-1 text-sm text-muted-foreground">{item.deviationNote}</p> : null}</div><div className="flex flex-wrap items-center gap-2"><Status value={item.status} />{canOperate && ['InProgress', 'Blocked'].includes(item.status) ? <ActionMenu><DropdownMenuTrigger asChild><Button size="sm" variant="outline">Actions </Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-max min-w-48 max-w-[calc(100vw-2rem)]"><DropdownMenuItem onSelect={() => onAction({ kind: 'material', execution: item })}>Record material use</DropdownMenuItem><DropdownMenuItem onSelect={() => onAction({ kind: 'equipment', execution: item })}>Record equipment use</DropdownMenuItem></DropdownMenuContent></ActionMenu> : null}</div></div>)}</div>{items.length === 0 ? <Empty>No protocols assigned.</Empty> : null}</CardContent></Card>
 }
 function Containers({ workOrderId, items }: { workOrderId: string; items: LabContainer[] }) {
   const groups = [{ title: 'Received tubes', description: 'Intake decisions and storage recorded during accessioning. Open a tube for its receipt details and lineage.', items: items.filter(t => t.kind === 'SubmittedSpecimen') }, { title: 'Derived containers', description: 'Material created during processing. Open a container to follow its lineage.', items: items.filter(t => t.kind !== 'SubmittedSpecimen') }]

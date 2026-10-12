@@ -63,12 +63,14 @@ export function ShipmentAddressDialog({ supplier, address, onClose }: { supplier
     label: address?.label ?? '', recipient: address?.recipient ?? '', addressLine1: address?.addressLine1 ?? '', addressLine2: address?.addressLine2 ?? '',
     city: address?.city ?? '', region: address?.region ?? '', postalCode: address?.postalCode ?? '', countryCode: address?.countryCode ?? '', phone: address?.phone ?? '', instructions: address?.instructions ?? '',
   } })
+  const { isDirty: __formDraftDirty } = form.formState
+
   const save = useMutation({ mutationFn: (values: Values) => saveSupplierShipmentAddress(supplier.id, { ...values, countryCode: values.countryCode.toUpperCase(), isActive: address?.isActive ?? true, version: address?.version }, address?.id), onSuccess: async () => {
     form.reset(form.getValues())
     await Promise.all([cache.invalidateQueries({ queryKey: supplierCatalogKey }), cache.invalidateQueries({ queryKey: ['lab-sequencing-vendors'] })])
     onClose()
   } })
-  return <DialogReturnFocus target={null} fallbackId={address ? `supplier-address-actions-${address.id}` : `supplier-address-new-${supplier.id}`}><CatalogEditor title={address ? 'Edit shipment address' : 'New shipment address'} description={`${supplier.name}. Address changes apply to future selections. Saved shipments keep their reviewed address.`} formId={id} dirty={form.formState.isDirty} busy={save.isPending} error={save.error} onClose={onClose}>
+  return <DialogReturnFocus target={null} fallbackId={address ? `supplier-address-actions-${address.id}` : `supplier-address-new-${supplier.id}`}><CatalogEditor title={address ? 'Edit shipment address' : 'New shipment address'} description={`${supplier.name}. Address changes apply to future selections. Saved shipments keep their reviewed address.`} formId={id} dirty={__formDraftDirty} busy={save.isPending} error={save.error} onClose={onClose}>
     <form id={id} noValidate className="space-y-4" onSubmit={form.handleSubmit(values => { if (!save.isPending) save.mutate(values) })}>
       {fields.map(([key, label, required, maxLength, autoComplete]) => <PreparationField key={key} id={`${id}-${key}`} label={label} required={required} error={form.formState.errors[key]?.message}><Input id={`${id}-${key}`} maxLength={maxLength} autoComplete={autoComplete || 'off'} disabled={save.isPending} {...form.register(key)} />{key === 'label' ? <p className="text-xs text-muted-foreground">For example, Boston sequencing laboratory.</p> : key === 'countryCode' ? <p className="text-xs text-muted-foreground">Two-letter country code, for example US or GB.</p> : null}</PreparationField>)}
       <PreparationField id={`${id}-instructions`} label="Delivery instructions (optional)" error={form.formState.errors.instructions?.message}><Textarea id={`${id}-instructions`} maxLength={500} disabled={save.isPending} {...form.register('instructions')} /></PreparationField>

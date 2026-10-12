@@ -1,3 +1,5 @@
+import { NativeSelect } from '#/components/ui/native-select'
+import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useBlocker } from '@tanstack/react-router'
 import { Controller, useForm } from 'react-hook-form'
@@ -32,13 +34,15 @@ export function ExecutionStepDialog({ step, action, version, error, pending, onC
     resolver: zodResolver(stepFormSchema(definition, action)),
     defaultValues: stepFormDefaults(step, action), mode: 'onBlur', reValidateMode: 'onChange',
   })
-  const dirty = form.formState.isDirty
+  const { isDirty: __formDraftDirty } = form.formState
+
+  const dirty = __formDraftDirty
   useBlocker({
-    shouldBlockFn: () => pending || dirty && !window.confirm('Discard the unsaved step values?'),
+    shouldBlockFn: async () => pending || dirty && !(await confirmPortal('Discard the unsaved step values?')),
     enableBeforeUnload: () => dirty || pending,
   })
-  const close = () => {
-    if (!pending && (!dirty || window.confirm('Discard the unsaved step values?'))) onClose()
+  const close = async () => {
+    if (!pending && (!dirty || (await confirmPortal('Discard the unsaved step values?')))) onClose()
   }
   const outcome = form.watch('outcome')
   const qcOutcome = form.watch('qcOutcome')
@@ -64,7 +68,7 @@ export function ExecutionStepDialog({ step, action, version, error, pending, onC
         })}>
           <p className="whitespace-pre-wrap text-sm leading-6">{definition.instructions}</p>
           {definition.condition ? <p className="rounded-lg bg-muted p-3 text-sm"><strong>Condition:</strong> {definition.condition}</p> : null}
-          {canSkip ? <div className="space-y-1.5"><Label htmlFor="step-outcome"><RequiredFieldName>Step decision</RequiredFieldName></Label><select id="step-outcome" className={selectClass} {...form.register('outcome')}><option value="recorded">Record performed step</option><option value="skipped">Skip with reason</option></select></div> : null}
+          {canSkip ? <div className="space-y-1.5"><Label htmlFor="step-outcome"><RequiredFieldName>Step decision</RequiredFieldName></Label><NativeSelect id="step-outcome" className={selectClass} {...form.register('outcome')}><option value="recorded">Record performed step</option><option value="skipped">Skip with reason</option></NativeSelect></div> : null}
           {!skipped ? <>
             {action === 'correct' ? <p className="text-sm text-muted-foreground">This correction preserves the earlier performer and performed time, including any unknowns. It does not record new work.</p> : <Controller name="timing" control={form.control} render={({ field }) => <StepTimingFields value={field.value} onChange={field.onChange} onBlur={field.onBlur} inputRef={field.ref} errors={errors.timing} />} />}
             {definition.captures.map(capture => {
@@ -74,7 +78,7 @@ export function ExecutionStepDialog({ step, action, version, error, pending, onC
               return <div key={capture.key} className="space-y-1.5">
                 <Label htmlFor={id}>{capture.required ? <RequiredFieldName>{capture.label}</RequiredFieldName> : capture.label}</Label>
                 {capture.unit || capture.type === 'fileReference' ? <FieldDescription id={`${id}-help`}>{capture.unit ? `Unit: ${capture.unit}` : 'Enter the approved file identifier or reference. This records a reference; it does not upload a file.'}</FieldDescription> : null}
-                {capture.type === 'choice' ? <select {...inputProps} className={selectClass}><option value="">Choose a value</option>{capture.options?.map(option => <option key={option} value={option}>{option}</option>)}</select>
+                {capture.type === 'choice' ? <NativeSelect {...inputProps} className={selectClass}><option value="">Choose a value</option>{capture.options?.map(option => <option key={option} value={option}>{option}</option>)}</NativeSelect>
                   : <Input {...inputProps} type={capture.type === 'date' ? 'date' : 'text'} inputMode={capture.type === 'number' ? 'decimal' : undefined} autoComplete="off" maxLength={capture.type === 'barcode' ? 200 : 4000} />}
                 <FieldError id={`${id}-error`}>{message}</FieldError>
               </div>
@@ -87,7 +91,7 @@ export function ExecutionStepDialog({ step, action, version, error, pending, onC
               <FieldError id="step-resources-error">{errors.resourcesConfirmed?.message}</FieldError>
             </fieldset> : null}
             {definition.qcGate ? <fieldset className="rounded-lg border p-3"><legend className="px-1 text-sm font-medium">QC gate</legend><div className="space-y-3"><p className="text-sm whitespace-pre-wrap">{definition.qcGate.criteria}</p>
-              <div className="space-y-1.5"><Label htmlFor="step-qc"><RequiredFieldName>QC outcome</RequiredFieldName></Label><select id="step-qc" className={selectClass} aria-invalid={Boolean(errors.qcOutcome)} aria-describedby="step-qc-error" {...form.register('qcOutcome')}><option value="">Choose an outcome</option><option value="pass">Pass</option><option value="fail">Fail</option><option value="hold">Hold</option></select>
+              <div className="space-y-1.5"><Label htmlFor="step-qc"><RequiredFieldName>QC outcome</RequiredFieldName></Label><NativeSelect id="step-qc" className={selectClass} aria-invalid={Boolean(errors.qcOutcome)} aria-describedby="step-qc-error" {...form.register('qcOutcome')}><option value="">Choose an outcome</option><option value="pass">Pass</option><option value="fail">Fail</option><option value="hold">Hold</option></NativeSelect>
               <FieldError id="step-qc-error">{errors.qcOutcome?.message}</FieldError><p className="text-xs text-muted-foreground">Fail or Hold is saved as evidence and blocks later steps and completion.</p></div></div>
             </fieldset> : null}
             {action !== 'correct' || definition.operatorConfirmation ? <div><Label className="items-start gap-2 leading-snug" htmlFor="step-confirmation"><input type="checkbox" id="step-confirmation" className="mt-0.5 size-4 shrink-0 cursor-pointer accent-primary" aria-required aria-invalid={Boolean(errors.operatorConfirmed)} aria-describedby="step-confirmation-error" {...form.register('operatorConfirmed')} /><RequiredFieldName>{action === 'correct' ? 'I reviewed this correction against the pinned instructions.' : form.watch('timing.otherPerformer') ? 'I confirm this entry identifies the actual performer and time.' : definition.operatorConfirmation ? 'I performed this step according to the pinned instructions.' : 'I performed this step at the time selected above.'}</RequiredFieldName></Label><FieldError id="step-confirmation-error">{errors.operatorConfirmed?.message}</FieldError></div> : null}

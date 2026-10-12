@@ -35,9 +35,26 @@ public sealed class DataGovernanceAdminController(
 
         var incidents = await query
             .OrderByDescending(incident => incident.CreatedAt)
-            .Take(500)
             .ToListAsync(cancellationToken);
         return incidents.Select(DataProvisioningMappings.ToDto).ToList();
+    }
+
+    [HttpGet("incidents/page")]
+    public async Task<PhaenoPortal.App.Features.OrderManagement.DTOs.PagedResult<DataGovernanceIncidentDto>> ListIncidentsPage(
+        [FromQuery] DataGovernanceIncidentStatus? status,
+        CancellationToken cancellationToken, [FromQuery] int page = 1, [FromQuery] int pageSize = 25)
+    {
+        await RequirePlatformAdminAsync(cancellationToken);
+        var query = IncidentQuery(tracking: false);
+        if (status.HasValue)
+        {
+            query = query.Where(incident => incident.Status == status.Value);
+        }
+
+        var pageRows = await PhaenoPortal.App.Infrastructure.Api.RecordPage.ReadAsync(query
+            .OrderByDescending(incident => incident.CreatedAt)
+            .ThenBy(item => item.Id), page, pageSize, cancellationToken);
+        return new(pageRows.Items.Select(DataProvisioningMappings.ToDto).ToList(), pageRows.Page, pageRows.PageSize, pageRows.TotalCount);
     }
 
     [HttpGet("incidents/{id:guid}")]

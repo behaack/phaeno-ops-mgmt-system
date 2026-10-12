@@ -13,11 +13,20 @@ using PhaenoPortal.App.Features.OrderManagement.Services;
 public sealed partial class LabOperationsController
 {
     [HttpGet("preparation")]
-    public async Task<object> PreparationIndex(CancellationToken ct)
+    public async Task<object> PreparationIndex(CancellationToken ct, [FromQuery] string? search = null,
+        [FromQuery] string? status = null, [FromQuery] int page = 1, [FromQuery] int pageSize = 25)
     {
         var actor = await requestContext.RequireAsync(HttpContext, ct, Enum.GetValues<LabRole>());
         var formats = await dbContext.LabTrayFormats.AsNoTracking().OrderBy(f => f.CreatedAt).ToListAsync(ct);
-        var batches = await dbContext.LabPreparationBatches.AsNoTracking().OrderByDescending(b => b.CreatedAt).Take(250).ToListAsync(ct);
+        var batchQuery = dbContext.LabPreparationBatches.AsNoTracking();
+        if (!string.IsNullOrWhiteSpace(search)) batchQuery = batchQuery.Where(b => b.Name.Contains(search.Trim()));
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            if (status == "active") batchQuery = batchQuery.Where(b => b.Status == LabBatchStatus.Draft || b.Status == LabBatchStatus.InProgress);
+            else if (status == "closed") batchQuery = batchQuery.Where(b => b.Status != LabBatchStatus.Draft && b.Status != LabBatchStatus.InProgress);
+        }
+        var batchPage = await Infrastructure.Api.RecordPage.ReadAsync(batchQuery.OrderByDescending(b => b.CreatedAt).ThenBy(b => b.Id), page, pageSize, ct);
+        var batches = batchPage.Items;
         var workflows = await ReadServiceWorkflowsAsync(ct);
         var serviceNames = await ReadPreparationServiceNamesAsync(batches.Select(b => b.LabServiceWorkflowVersionId), ct);
         var versions = await dbContext.LabProtocolVersions.AsNoTracking().ToListAsync(ct);
@@ -39,6 +48,7 @@ public sealed partial class LabOperationsController
         }) && g.Any(s => LabProtocolDefinition.Parse(versions.Single(v => v.Id == s.LabProtocolVersionId).DefinitionJson).Steps.Any(step => step.QcGate is not null))).Select(g => g.Key).ToHashSet();
         return new { formats = formats.Select(f => new { f.Id, f.Version, f.IsActive, layout = LabTrayLayout.Read(f.LayoutJson) }),
             batches = batches.Select(b => new { b.Id, b.Name, serviceName = serviceNames[b.LabServiceWorkflowVersionId], displayName = PreparationDisplayName(b, serviceNames[b.LabServiceWorkflowVersionId]), status = b.Status.ToString(), b.Version, b.StartedAtUtc, b.CompletedAtUtc }),
+            batchPage.TotalCount, batchPage.Page, batchPage.PageSize,
             workflows, compatibleWorkflowVersionIds = compatible, canOperate = actor.HasAny(LabRole.Operator, LabRole.Supervisor),
             canConfigure = actor.HasAny(LabRole.Supervisor, LabRole.ProtocolAdministrator) };
     }
@@ -231,7 +241,7 @@ public sealed partial class LabOperationsController
             orderby t.Barcode, t.Id
             select new { t.Id, t.Barcode, t.Location, specimenId = s.Id, specimenName = s.AccessionNumber, jobName = w.OpaqueSubmitterReference };
         // Keep the original array contract for callers that do not request a page.
-        if (page is null) return await candidates.Take(200).ToListAsync(ct);
+        if (page is null) return await candidates.ToListAsync(ct);
         pageSize = Math.Clamp(pageSize, 1, 50);
         var totalCount = await candidates.CountAsync(ct);
         var totalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));

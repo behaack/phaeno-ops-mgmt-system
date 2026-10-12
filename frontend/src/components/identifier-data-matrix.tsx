@@ -1,3 +1,4 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { datamatrix, drawingSVG } from '@bwip-js/browser'
 
 export function createDataMatrixSource(value: string): string | null {
@@ -17,7 +18,7 @@ export function createDataMatrixSource(value: string): string | null {
 
 export function IdentifierDataMatrix({ value, label, source }: { value: string; label: string; source: string | null }) {
   if (!source) {
-    return <p role="alert">The DataMatrix for {value} could not be prepared. Do not print this label.</p>
+    return <p role="alert"><CustomerSourceText source={"The DataMatrix for"} /> {value} <CustomerSourceText source={"could not be prepared. Do not print this label."} /></p>
   }
 
   return (

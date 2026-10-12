@@ -35,6 +35,14 @@ public sealed class SampleShippingWorkflowController(
         return await reader.ReadAsync(shipmentId, tenant.Organization.Id, tenant.Department.Id, cancellationToken);
     }
 
+    [HttpGet("page")]
+    public async Task<PagedResult<SampleShipmentWorkflowDto>> ShipmentPage(CancellationToken cancellationToken,
+        [FromQuery] string? search = null, [FromQuery] string? status = null, [FromQuery] int page = 1, [FromQuery] int pageSize = 25)
+    {
+        var tenant = await requestContext.RequireSampleShippingTenantAsync(HttpContext, false, cancellationToken);
+        return await reader.ListPageAsync(tenant.Organization.Id, tenant.Department.Id, search, status, page, pageSize, cancellationToken);
+    }
+
     [HttpPut("{shipmentId:guid}/items/{shipmentItemId:guid}/tube")]
     public async Task<SampleShipmentWorkflowDto> AssignTube(
         Guid shipmentId,

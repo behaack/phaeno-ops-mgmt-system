@@ -98,8 +98,7 @@ public sealed partial class LabServiceOrdersController
                 var item = stock.Single(kit => kit.Id == selection.StockKitId);
                 var product = item.TubeSupplierProductId.HasValue
                     ? tubeProducts.GetValueOrDefault(item.TubeSupplierProductId.Value) : null;
-                var usable = item.CustomerReceivedAt.HasValue && TransportationKitInventory.HasPreparedTubeRoster(item)
-                    && TransportationKitInventory.IsPhysicallyUsable(item, DateTime.UtcNow);
+                var usable = TransportationKitInventory.IsReadyForSamplePreparation(item, DateTime.UtcNow);
                 return new LabSampleTubeKitOptionDto(item.Id, item.KitNumber, item.TubeCapacity,
                     usable ? item.Tubes.Count(tube => !usedIds.Contains(tube.Id)) : 0, selection.FinishedAt,
                     product?.MaximumSampleAmount, product?.SampleAmountUnit, selection.LabJobPhaseId,
@@ -138,9 +137,8 @@ public sealed partial class LabServiceOrdersController
         await SampleShippingPackingData.LockAsync(dbContext, $"stock-kit:{kitId.Value}", cancellationToken);
         var kit = await dbContext.SampleShippingStockKits.AsNoTracking().Include(item => item.Tubes)
             .SingleAsync(item => item.Id == kitId.Value, cancellationToken);
-        if (!kit.CustomerReceivedAt.HasValue || kit.BoundSampleShipmentId.HasValue || kit.ReservedSampleShipmentId.HasValue
-            || !TransportationKitInventory.HasPreparedTubeRoster(kit)
-            || !TransportationKitInventory.IsPhysicallyUsable(kit, DateTime.UtcNow))
+        if (kit.BoundSampleShipmentId.HasValue || kit.ReservedSampleShipmentId.HasValue
+            || !TransportationKitInventory.IsReadyForSamplePreparation(kit, DateTime.UtcNow))
             throw Conflict("kit_unavailable", "This physical kit is not received and available for sample preparation.");
         var alreadySelected = await dbContext.LabSampleTubeKitSelections
             .SingleOrDefaultAsync(item => item.StockKitId == kit.Id, cancellationToken);
@@ -289,8 +287,8 @@ public sealed partial class LabServiceOrdersController
             .SingleOrDefaultAsync(item => item.Id == request.StockKitId && item.OrganizationId == order.OrganizationId
                 && item.DepartmentId == order.DepartmentId,
                 cancellationToken) ?? throw Conflict("kit_not_for_order", "Select a received kit at this Job's confirmed delivery location.");
-        if (!kit.CustomerReceivedAt.HasValue || kit.BoundSampleShipmentId.HasValue || kit.ReservedSampleShipmentId.HasValue
-            || !TransportationKitInventory.HasPreparedTubeRoster(kit) || !TransportationKitInventory.IsPhysicallyUsable(kit, DateTime.UtcNow))
+        if (kit.BoundSampleShipmentId.HasValue || kit.ReservedSampleShipmentId.HasValue
+            || !TransportationKitInventory.IsReadyForSamplePreparation(kit, DateTime.UtcNow))
             throw Conflict("kit_unavailable", "This kit is not physically received and available for this Job.");
         var compatible = await new SampleShippingContainerCatalogService(dbContext).ReadStockCompatibleAsync(
             [new ContainerSampleTypeContext(order.SampleTypeDefinitionId!.Value)], [kit.ContainerDefinitionId], cancellationToken);

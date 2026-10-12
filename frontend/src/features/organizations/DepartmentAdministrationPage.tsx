@@ -1,3 +1,7 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
+import { useCustomerMessages } from '#/features/customer-i18n/use-customer-messages'
+import { NativeSelect } from '#/components/ui/native-select'
+import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useSearch } from '@tanstack/react-router'
 import { Plus } from 'lucide-react'
@@ -16,10 +20,14 @@ import { getSelectedMembership, usePhaenoSession } from '#/features/auth/session
 import { DeliveryLocationEditor } from './delivery-locations/DeliveryLocationEditor'
 import { OrganizationDefaultsPanel } from './OrganizationDefaultsPanel'
 import { OrganizationDepartmentsPanel } from './OrganizationDepartmentsPanel'
-import { departmentErrorMessage, departmentMessages as m } from './department-localization'
+import { departmentErrorMessage, departmentMessages } from './department-localization'
 import type { CustomerSettingsSearch, CustomerSettingsTab } from './customer-settings-navigation'
 
 export function DepartmentAdministrationPage() {
+  const m = useCustomerMessages(departmentMessages)
+
+  const __customerText = useCustomerText()
+
   const { authProvider, session, selectedOrganizationId, selectedDepartmentId } = usePhaenoSession()
   const search = useSearch({ from: '/departments' })
   const navigate = useNavigate()
@@ -36,21 +44,21 @@ export function DepartmentAdministrationPage() {
   }
   return <main className="page-wrap space-y-6 px-4 py-8">
     <section>
-      <h1 className="text-3xl font-semibold">{customerSettings ? 'Customer settings' : allowed && membership ? m.pageTitle(membership.organizationName) : m.unavailable}</h1>
+      <h1 className="text-3xl font-semibold">{customerSettings ? <CustomerSourceText source={"Customer settings"} /> : allowed && membership ? m.pageTitle(membership.organizationName) : m.unavailable}</h1>
       {customerSettings ? <p className="mt-1 text-sm text-muted-foreground">{membership.organizationName}</p> : null}
       {!allowed ? <p className="mt-3 text-sm text-muted-foreground">{m.unavailableDescription}</p> : null}
     </section>
     {customerSettings && selectedOrganizationId ? <Tabs value={activeTab} onValueChange={value => changeSearch({ settingsTab: value as CustomerSettingsTab })}>
-      <TabsList aria-label="Customer settings sections" className="flex w-full flex-wrap justify-start">
-        <TabsTrigger className="min-w-fit flex-none" value="delivery">Transportation-kit delivery</TabsTrigger>
-        <TabsTrigger className="min-w-fit flex-none" value="departments">Departments</TabsTrigger>
-        {membership.isOrganizationAdmin ? <TabsTrigger className="min-w-fit flex-none" value="defaults">Organization defaults</TabsTrigger> : null}
-        {canManageUsers ? <TabsTrigger className="min-w-fit flex-none" value="people">People and access</TabsTrigger> : null}
+      <TabsList aria-label={__customerText('m_8041fa57023e')} className="flex w-full flex-wrap justify-start">
+        <TabsTrigger className="min-w-fit flex-none" value="delivery"><CustomerText message="m_e94bd442fd6a" /></TabsTrigger>
+        <TabsTrigger className="min-w-fit flex-none" value="departments"><CustomerText message="m_5f9494c4d217" /></TabsTrigger>
+        {membership.isOrganizationAdmin ? <TabsTrigger className="min-w-fit flex-none" value="defaults"><CustomerText message="m_ab4302311bc1" /></TabsTrigger> : null}
+        {canManageUsers ? <TabsTrigger className="min-w-fit flex-none" value="people"><CustomerText message="m_1e133caaec46" /></TabsTrigger> : null}
       </TabsList>
       <TabsContent value="delivery" className="mt-4"><CustomerDeliverySettings organizationId={selectedOrganizationId} organizationAdmin={Boolean(membership.isOrganizationAdmin)} managedDepartmentIds={managedDepartmentIds} currentDepartmentId={selectedDepartmentId ?? null} settingsDepartmentId={search.settingsDepartmentId} onDepartmentChange={departmentId => changeSearch({ settingsDepartmentId: departmentId })} /></TabsContent>
       <TabsContent value="departments" className="mt-4"><OrganizationDepartmentsPanel key={selectedOrganizationId} organizationId={selectedOrganizationId} organizationAdmin={Boolean(membership.isOrganizationAdmin)} managedDepartmentIds={managedDepartmentIds} showOrganizationDefaults={false} /></TabsContent>
       {membership.isOrganizationAdmin ? <TabsContent value="defaults" className="mt-4"><OrganizationDefaultsPanel organizationId={selectedOrganizationId} /></TabsContent> : null}
-      {canManageUsers ? <TabsContent value="people" className="mt-4">{authProvider === 'mock' || !session?.user ? <Alert><AlertDescription>Connected sign-in is required to manage Customer users.</AlertDescription></Alert> : <OrganizationUserManagementPanel currentUserId={session.user.id} organizationId={selectedOrganizationId} organizationName={membership.organizationName} />}</TabsContent> : null}
+      {canManageUsers ? <TabsContent value="people" className="mt-4">{authProvider === 'mock' || !session?.user ? <Alert><AlertDescription><CustomerText message="m_f585d64c8dc3" /></AlertDescription></Alert> : <OrganizationUserManagementPanel currentUserId={session.user.id} organizationId={selectedOrganizationId} organizationName={membership.organizationName} />}</TabsContent> : null}
     </Tabs> : allowed && selectedOrganizationId ? <OrganizationDepartmentsPanel
       key={selectedOrganizationId}
       organizationId={selectedOrganizationId}
@@ -68,6 +76,8 @@ function CustomerDeliverySettings({ organizationId, organizationAdmin, managedDe
   settingsDepartmentId?: string
   onDepartmentChange: (departmentId: string) => void
 }) {
+
+
   const [adding, setAdding] = useState(false)
   const client = useQueryClient()
   const navigate = useNavigate()
@@ -86,20 +96,20 @@ function CustomerDeliverySettings({ organizationId, organizationAdmin, managedDe
 
   return <Card className="gap-0 py-0">
     <CardHeader className="border-b bg-muted/50 p-4">
-      <CardTitle>Transportation-kit delivery</CardTitle>
-      <CardDescription>Saved receiving addresses for this Department. Existing kit requests keep their confirmed address.</CardDescription>
-      {department ? <CardAction><Button size="sm" disabled={locations.isLoading || Boolean(locations.error)} onClick={() => setAdding(true)}><Plus aria-hidden="true" />Add delivery location</Button></CardAction> : null}
+      <CardTitle><CustomerText message="m_e94bd442fd6a" /></CardTitle>
+      <CardDescription><CustomerText message="m_bda4b1201955" /></CardDescription>
+      {department ? <CardAction><Button size="sm" disabled={locations.isLoading || Boolean(locations.error)} onClick={() => setAdding(true)}><Plus aria-hidden="true" /><CustomerText message="m_119e50923ce6" /></Button></CardAction> : null}
     </CardHeader>
     <CardContent className="space-y-4 p-4">
-      {departments.isLoading ? <p role="status" className="text-sm text-muted-foreground">Loading Departments…</p> : null}
-      {departments.error ? <Alert variant="destructive"><AlertDescription>{departmentErrorMessage(departments.error)}</AlertDescription></Alert> : null}
-      {!departments.isLoading && !departments.error && !available.length ? <p className="text-sm text-muted-foreground">No active Departments are available to manage.</p> : null}
-      {department ? <div className="max-w-sm space-y-2"><label htmlFor="delivery-settings-department" className="text-sm font-medium">Department</label><select id="delivery-settings-department" className="h-10 w-full cursor-pointer rounded-md border bg-background px-3 text-sm" value={departmentId} onChange={event => onDepartmentChange(event.target.value)}>{available.map(value => <option key={value.id} value={value.id}>{value.name}</option>)}</select></div> : null}
-      {locations.isLoading ? <p role="status" className="text-sm text-muted-foreground">Loading delivery locations…</p> : null}
-      {locations.error ? <Alert variant="destructive"><AlertDescription>{getOrderErrorMessage(locations.error, 'Delivery locations could not be loaded.')} <Button variant="link" onClick={() => void locations.refetch()}>Retry</Button></AlertDescription></Alert> : null}
-      {locations.data && !locations.data.length ? <p className="py-3 text-sm text-muted-foreground">No delivery locations have been added for this Department.</p> : null}
+      {departments.isLoading ? <p role="status" className="text-sm text-muted-foreground"><CustomerText message="m_4480f335645b" /></p> : null}
+      {departments.error ? <Alert variant="destructive"><AlertDescription><CustomerSourceText source={departmentErrorMessage(departments.error)} /></AlertDescription></Alert> : null}
+      {!departments.isLoading && !departments.error && !available.length ? <p className="text-sm text-muted-foreground"><CustomerText message="m_f2a5ef358626" /></p> : null}
+      {department ? <div className="max-w-sm space-y-2"><label htmlFor="delivery-settings-department" className="text-sm font-medium"><CustomerText message="m_5304ab98e581" /></label><NativeSelect id="delivery-settings-department" className="w-full cursor-pointer rounded-md border bg-background px-3 text-sm" value={departmentId} onChange={event => onDepartmentChange(event.target.value)}>{available.map(value => <option key={value.id} value={value.id}>{value.name}</option>)}</NativeSelect></div> : null}
+      {locations.isLoading ? <p role="status" className="text-sm text-muted-foreground"><CustomerText message="m_89353834ce2d" /></p> : null}
+      {locations.error ? <Alert variant="destructive"><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(locations.error, 'Delivery locations could not be loaded.')} />} <Button variant="link" onClick={() => void locations.refetch()}><CustomerText message="m_942087cc2d41" /></Button></AlertDescription></Alert> : null}
+      {locations.data && !locations.data.length ? <p className="py-3 text-sm text-muted-foreground"><CustomerText message="m_094e1e57c71a" /></p> : null}
       {locations.data?.length ? <div className="divide-y">{locations.data.map(location => <article key={location.id} className="py-3 first:pt-0 last:pb-0">
-        <div className="flex flex-wrap items-center gap-2"><Link className="font-medium text-primary hover:underline focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-ring" to="/delivery-locations/$locationId" params={{ locationId: location.id }} search={{ organizationId, departmentId, returnToSettings: true }}>{location.label}</Link>{location.isDefault ? <Badge variant="outline">Default</Badge> : null}</div>
+        <div className="flex flex-wrap items-center gap-2"><Link className="font-medium text-primary hover:underline focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-ring" to="/delivery-locations/$locationId" params={{ locationId: location.id }} search={{ organizationId, departmentId, returnToSettings: true }}>{location.label}</Link>{location.isDefault ? <Badge variant="outline"><CustomerText message="m_21b111cbfe6e" /></Badge> : null}</div>
         <p className="mt-1 text-sm">{location.recipient}</p>
         <p className="mt-1 text-sm text-muted-foreground">{location.line1}{location.line2 ? `, ${location.line2}` : ''} · {location.city}, {location.region} {location.postalCode}</p>
       </article>)}</div> : null}

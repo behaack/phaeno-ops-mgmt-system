@@ -1,3 +1,5 @@
+import { NativeSelect } from '#/components/ui/native-select'
+import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, type ReactNode, type RefObject } from 'react'
 import { useForm } from 'react-hook-form'
@@ -55,6 +57,8 @@ export function CustomerFormDialog({
     reValidateMode: 'onChange',
     resolver: zodResolver(customerFormSchema),
   })
+  const { isDirty: __formDraftDirty } = form.formState
+
   const isEditing = customer !== null
   const formId = isEditing
     ? `edit-customer-${customer.id}`
@@ -66,11 +70,11 @@ export function CustomerFormDialog({
     }
   }, [customer, form, open])
 
-  function changeOpen(nextOpen: boolean) {
+  async function changeOpen(nextOpen: boolean) {
     if (
       !nextOpen &&
-      form.formState.isDirty &&
-      !window.confirm('Discard your unsaved customer changes?')
+      __formDraftDirty &&
+      !(await confirmPortal('Discard your unsaved customer changes?'))
     ) {
       return
     }
@@ -131,15 +135,15 @@ export function CustomerFormDialog({
             />
           </Field>
           <Field id={`${formId}-status`} label="Status">
-            <select
+            <NativeSelect
               id={`${formId}-status`}
-              className="h-8 w-full cursor-pointer rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              className="w-full cursor-pointer rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
               {...form.register('status')}
             >
               <option value="Active">Active</option>
               <option value="Review">Review</option>
               <option value="Inactive">Inactive</option>
-            </select>
+            </NativeSelect>
           </Field>
           <Field
             error={form.formState.errors.users?.message}
@@ -191,7 +195,7 @@ export function CustomerFormDialog({
           <Button
             type="submit"
             form={formId}
-            disabled={isEditing && !form.formState.isDirty}
+            disabled={isEditing && !__formDraftDirty}
           >
             {isEditing ? 'Save changes' : 'Create customer'}
           </Button>

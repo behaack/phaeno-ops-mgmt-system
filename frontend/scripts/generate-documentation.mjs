@@ -63,16 +63,34 @@ export async function extractSections(source, sourcePath = 'guide.mdx') {
 export function validateComponentMap(catalog, source) {
   const ast = ts.createSourceFile('documentation-registry.ts', source, ts.ScriptTarget.Latest, true)
   const imports = new Map()
+  const lazyImports = new Set()
   for (const node of ast.statements) if (ts.isImportDeclaration(node) && node.importClause?.name)
     imports.set(node.importClause.name.text, node.moduleSpecifier.text.replace('#/', 'src/'))
+  for (const node of ast.statements) if (ts.isImportDeclaration(node) && node.moduleSpecifier.text === 'react'
+    && node.importClause?.namedBindings && ts.isNamedImports(node.importClause.namedBindings)) {
+    for (const binding of node.importClause.namedBindings.elements)
+      if ((binding.propertyName?.text ?? binding.name.text) === 'lazy') lazyImports.add(binding.name.text)
+  }
+  function componentSource(initializer) {
+    if (ts.isIdentifier(initializer)) return imports.get(initializer.text)
+    if (!ts.isCallExpression(initializer) || !ts.isIdentifier(initializer.expression)
+      || !lazyImports.has(initializer.expression.text) || initializer.arguments.length !== 1) return undefined
+    const loader = initializer.arguments[0]
+    if (!ts.isArrowFunction(loader) || loader.parameters.length !== 0 || !ts.isCallExpression(loader.body)
+      || loader.body.expression.kind !== ts.SyntaxKind.ImportKeyword || loader.body.arguments.length !== 1
+      || !ts.isStringLiteral(loader.body.arguments[0])) return undefined
+    return loader.body.arguments[0].text.replace('#/', 'src/')
+  }
   const mappings = new Map()
   function visit(node) {
     if (ts.isVariableDeclaration(node) && node.name.getText(ast) === 'documentationComponents' && node.initializer && ts.isObjectLiteralExpression(node.initializer)) {
       for (const property of node.initializer.properties) {
-        if (!ts.isPropertyAssignment(property) || !ts.isStringLiteral(property.name) || !ts.isIdentifier(property.initializer))
+        if (!ts.isPropertyAssignment(property) || !ts.isStringLiteral(property.name))
           throw new Error('Documentation component map must use explicit identities and MDX imports.')
+        const sourcePath = componentSource(property.initializer)
+        if (!sourcePath?.endsWith('.mdx')) throw new Error('Documentation component map must use explicit identities and MDX imports.')
         if (mappings.has(property.name.text)) throw new Error('Duplicate documentation component mapping.')
-        mappings.set(property.name.text, imports.get(property.initializer.text))
+        mappings.set(property.name.text, sourcePath)
       }
     }
     ts.forEachChild(node, visit)

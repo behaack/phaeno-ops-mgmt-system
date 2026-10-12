@@ -1,3 +1,5 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
+import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useId, useRef, useState } from 'react'
@@ -19,6 +21,8 @@ const schema = z.object({ reason: z.string().trim().min(1, 'Describe the changes
 export function LabQuoteProposalDialog({ order, quote, onClose, onCloseFocus }: {
   order: LabServiceOrder; quote: Quote; onClose: () => void; onCloseFocus: () => void
 }) {
+  const __customerText = useCustomerText()
+
   const queryClient = useQueryClient()
   const formId = useId()
   const reasonId = useId()
@@ -26,6 +30,8 @@ export function LabQuoteProposalDialog({ order, quote, onClose, onCloseFocus }: 
   const [reviewedVersion, setReviewedVersion] = useState(order.version)
   const attempt = useRef<{ payload: string; key: string } | null>(null)
   const form = useForm<z.infer<typeof schema>>({ resolver: zodResolver(schema), mode: 'onBlur', reValidateMode: 'onChange', defaultValues: { reason: '' } })
+  const { isDirty: __formDraftDirty } = form.formState
+
   const current = currentLabQuote(order.quotes)
   const eligible = current?.id === quote.id && order.canProposeQuoteChanges === true
   const changed = reviewedVersion !== order.version
@@ -42,24 +48,24 @@ export function LabQuoteProposalDialog({ order, quote, onClose, onCloseFocus }: 
     },
     onError: async error => { if (isOrderConcurrencyError(error)) await queryClient.invalidateQueries({ queryKey: ['lab-service-order', order.id] }) },
   })
-  const dismissal = useOrderDecisionDismissal(form.formState.isDirty, mutation.isPending, onClose)
+  const dismissal = useOrderDecisionDismissal(__formDraftDirty, mutation.isPending, onClose)
   return <><Dialog open onOpenChange={open => { if (!open) dismissal.close() }}>
     <DialogContent showCloseButton={!mutation.isPending} aria-busy={mutation.isPending}
       onOpenAutoFocus={event => { event.preventDefault(); cancelRef.current?.focus() }}
       onCloseAutoFocus={event => { event.preventDefault(); onCloseFocus() }}>
-      <DialogHeader><DialogTitle>Propose changes</DialogTitle><DialogDescription>Quote revision {quote.revision} for {order.orderNumber}</DialogDescription></DialogHeader>
-      <DialogFeedback>{!eligible ? <Alert><AlertTitle>This quote is no longer available for a proposal</AlertTitle><AlertDescription>Close this dialog and review the current quote. Your explanation has been kept.</AlertDescription></Alert>
-        : changed ? <Alert><AlertTitle>The order changed</AlertTitle><AlertDescription><p>Your explanation has been kept. Review the current quote before continuing.</p><Button variant="outline" disabled={mutation.isPending} onClick={() => { setReviewedVersion(order.version); mutation.reset() }}>Use current quote</Button></AlertDescription></Alert>
-          : mutation.error ? <Alert variant="destructive"><AlertTitle>Proposal was not sent</AlertTitle><AlertDescription>{getOrderErrorMessage(mutation.error, 'Try again. Your explanation has been kept.')}</AlertDescription></Alert> : null}</DialogFeedback>
+      <DialogHeader><DialogTitle><CustomerText message="m_73eeb5083986" /></DialogTitle><DialogDescription><CustomerText message="m_dc6044766f60" />{quote.revision} <CustomerText message="m_ccb2f8fb3cff" />{order.orderNumber}</DialogDescription></DialogHeader>
+      <DialogFeedback>{!eligible ? <Alert><AlertTitle><CustomerText message="m_cf5daefc0cf4" /></AlertTitle><AlertDescription><CustomerText message="m_a4ff48b82aa3" /></AlertDescription></Alert>
+        : changed ? <Alert><AlertTitle><CustomerText message="m_45650ce905dd" /></AlertTitle><AlertDescription><p><CustomerText message="m_8f183e93bda5" /></p><Button variant="outline" disabled={mutation.isPending} onClick={() => { setReviewedVersion(order.version); mutation.reset() }}><CustomerText message="m_ae7928ce80e4" /></Button></AlertDescription></Alert>
+          : mutation.error ? <Alert variant="destructive"><AlertTitle><CustomerText message="m_1ca9d8495620" /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(mutation.error, 'Try again. Your explanation has been kept.')} />}</AlertDescription></Alert> : null}</DialogFeedback>
       <form id={formId} noValidate className="space-y-4" onSubmit={form.handleSubmit(values => { if (!mutation.isPending && eligible && !changed) mutation.mutate(values) })}>
-        <p className="text-sm">Your request will stay open for Phaeno to review. Sending a proposal pauses acceptance until Phaeno issues a revised quote.</p>
-        <Field><Label htmlFor={reasonId}><RequiredFieldName>Proposed changes</RequiredFieldName></Label>
+        <p className="text-sm"><CustomerText message="m_67bb95548e9a" /></p>
+        <Field><Label htmlFor={reasonId}><RequiredFieldName><CustomerText message="m_486f49f03bf7" /></RequiredFieldName></Label>
           <Textarea id={reasonId} required className="min-h-32" disabled={mutation.isPending} aria-invalid={Boolean(form.formState.errors.reason)} aria-describedby={`${reasonId}-hint${form.formState.errors.reason ? ` ${reasonId}-error` : ''}`} {...form.register('reason', { onChange: () => { if (form.formState.errors.reason) void form.trigger('reason') } })} />
-          <FieldDescription id={`${reasonId}-hint`}>Describe the pricing, phase, service or timing changes you would like reviewed. Include phase names where applicable. Up to 2,000 characters.</FieldDescription>
+          <FieldDescription id={`${reasonId}-hint`}><CustomerText message="m_88004a26933a" /></FieldDescription>
           <FieldError id={`${reasonId}-error`}>{form.formState.errors.reason?.message}</FieldError>
         </Field>
       </form>
-      <RequiredDialogFooter><Button ref={cancelRef} variant="outline" disabled={mutation.isPending} onClick={dismissal.close}>Keep reviewing</Button><Button type="submit" form={formId} disabled={mutation.isPending || !eligible || changed}>{mutation.isPending ? 'Sending proposal…' : 'Send proposal'}</Button></RequiredDialogFooter>
+      <RequiredDialogFooter><Button ref={cancelRef} variant="outline" disabled={mutation.isPending} onClick={dismissal.close}><CustomerText message="m_34411a1bde47" /></Button><Button type="submit" form={formId} disabled={mutation.isPending || !eligible || changed}>{mutation.isPending ? <CustomerSourceText source={"Sending proposal…"} /> : __customerText('m_5bfc78c4f892')}</Button></RequiredDialogFooter>
     </DialogContent>
   </Dialog>{dismissal.confirmation}</>
 }

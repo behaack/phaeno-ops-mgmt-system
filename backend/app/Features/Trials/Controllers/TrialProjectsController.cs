@@ -15,14 +15,18 @@ public sealed class TrialProjectsController(PSeqOperationsDbContext db, TrialAcc
     TrialReader reader, OrderIdempotencyService idempotency) : ControllerBase
 {
     [HttpGet]
-    public async Task<IReadOnlyList<TrialListDto>> List([FromQuery] string? search, CancellationToken token, [FromQuery] string? status = null, [FromQuery] Guid? ownerId = null) =>
-        await reader.ListAsync(await access.ReadAsync(HttpContext, token), search, token, status, ownerId);
+    public async Task<PhaenoPortal.App.Features.OrderManagement.DTOs.PagedResult<TrialListDto>> List([FromQuery] string? search, CancellationToken token, [FromQuery] string? status = null, [FromQuery] Guid? ownerId = null, [FromQuery] int page = 1, [FromQuery] int pageSize = 25) =>
+        await reader.ListPageAsync(await access.ReadAsync(HttpContext, token), search, token, status, ownerId, page, pageSize);
     [HttpGet("configuration")]
     public async Task<TrialConfigurationDto> Configuration([FromQuery] Guid? companyId, CancellationToken token) =>
         await reader.ConfigurationAsync(await access.ReadAsync(HttpContext, token), companyId, token);
     [HttpGet("{id:guid}")]
     public async Task<TrialDetailDto> Detail(Guid id, CancellationToken token)
     { var actor = await access.ReadAsync(HttpContext, token); return await reader.DetailAsync(await workflow.ReadAsync(id, actor, token), actor, token); }
+
+    [HttpGet("{id:guid}/timeline")]
+    public async Task<PhaenoPortal.App.Features.OrderManagement.DTOs.PagedResult<TrialTimelineDto>> Timeline(Guid id, CancellationToken token, [FromQuery] int page = 1)
+    { var actor = await access.ReadAsync(HttpContext, token); return await reader.TimelinePageAsync(await workflow.ReadAsync(id, actor, token), actor, page, token); }
 
     [HttpPost]
     public async Task<TrialDetailDto> Create([FromBody] TrialCreateRequest request, CancellationToken token)

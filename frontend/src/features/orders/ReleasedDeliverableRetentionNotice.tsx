@@ -1,3 +1,5 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
+import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import { Link } from '@tanstack/react-router'
 import { CalendarClock } from 'lucide-react'
 
@@ -8,6 +10,8 @@ export function ReleasedDeliverableRetentionNotice({
 }: {
   retention: ReleasedDeliverableRetention | null
 }) {
+  const __customerText = useCustomerText()
+
   if (!retention) return null
 
   const downloadSummary = formatDownloadSummary(retention)
@@ -24,7 +28,7 @@ export function ReleasedDeliverableRetentionNotice({
 
   return (
     <aside
-      aria-label="Retention schedule"
+      aria-label={__customerText('m_c58dd29bad83')}
       className="mt-3 rounded-lg border border-border bg-muted/35 p-3"
     >
       <div className="flex items-start gap-3">
@@ -33,11 +37,10 @@ export function ReleasedDeliverableRetentionNotice({
           <div>
             <p className="font-medium">{heading}</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              This release keeps the retention dates that were set when it was released.
-            </p>
+              <CustomerText message="m_01adf60de3ab" /></p>
           </div>
 
-          {retention.snapshotId ? <Link to="/released-deliverables/$snapshotId" params={{ snapshotId: retention.snapshotId }} search={{ q: '', page: 0 }} className="text-sm text-primary underline print:hidden">View retained package receipt</Link> : null}
+          {retention.snapshotId ? <Link to="/released-deliverables/$snapshotId" params={{ snapshotId: retention.snapshotId }} search={{ q: '', page: 0 }} className="text-sm text-primary underline print:hidden"><CustomerText message="m_1e75f4e233be" /></Link> : null}
 
           {downloadSummary ? (
             <p aria-live="polite" className="text-sm font-medium text-foreground">
@@ -47,7 +50,7 @@ export function ReleasedDeliverableRetentionNotice({
 
           <dl className="grid gap-3 text-sm sm:grid-cols-2">
             <div>
-              <dt className="font-medium text-muted-foreground">Standard deletion</dt>
+              <dt className="font-medium text-muted-foreground"><CustomerText message="m_74d0313faaee" /></dt>
               <dd className="mt-1">
                 <time dateTime={retention.standardDeletionAtUtc}>
                   {formatRetentionDateTime(retention.standardDeletionAtUtc)}
@@ -56,7 +59,7 @@ export function ReleasedDeliverableRetentionNotice({
             </div>
             <div>
               <dt className="font-medium text-muted-foreground">
-                {graceIsActive ? 'Final deletion' : 'Conditional grace through'}
+                {graceIsActive ? <CustomerSourceText source={"Final deletion"} /> : __customerText('m_dc399fdb6927')}
               </dt>
               <dd className="mt-1">
                 <time dateTime={retention.potentialFinalDeletionAtUtc}>
@@ -68,7 +71,7 @@ export function ReleasedDeliverableRetentionNotice({
 
           {bytesAreDeleted ? (
             <p className="text-sm">
-              File bytes were deleted{' '}
+              <CustomerText message="m_ac3326b460d7" />{' '}
               <time dateTime={retention.byteDeletedAtUtc!}>
                 {formatRetentionDateTime(retention.byteDeletedAtUtc!)}
               </time>
@@ -76,7 +79,7 @@ export function ReleasedDeliverableRetentionNotice({
             </p>
           ) : downloadsAreClosed ? (
             <p className="text-sm">
-              New downloads closed{' '}
+              <CustomerText message="m_620c46de4481" />{' '}
               <time dateTime={retention.downloadAccessClosedAtUtc!}>
                 {formatRetentionDateTime(retention.downloadAccessClosedAtUtc!)}
               </time>
@@ -84,14 +87,12 @@ export function ReleasedDeliverableRetentionNotice({
             </p>
           ) : graceIsActive ? (
             <p className="text-sm">
-              The grace period remains in effect through the final deletion time, even if every file is
-              downloaded during grace.
-            </p>
+              <CustomerText message="m_1fcc351a551c" /></p>
           ) : (
             <p className="text-sm">
               {retention.download?.status === 'Downloaded'
-                ? 'Every file has completed download, so deletion remains scheduled for the standard time.'
-                : 'If every file has been downloaded, deletion occurs at the standard time. If any file remains undownloaded then, the whole release receives grace through the conditional date.'}
+                ? <CustomerSourceText source={"Every file has completed download, so deletion remains scheduled for the standard time."} />
+                : __customerText('m_1bd06d3a5571')}
             </p>
           )}
         </div>

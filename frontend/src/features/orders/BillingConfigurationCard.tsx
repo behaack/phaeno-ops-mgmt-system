@@ -1,3 +1,6 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
+import { NativeSelect } from '#/components/ui/native-select'
+import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, useState, type ChangeEvent } from 'react'
@@ -38,7 +41,11 @@ export function BillingConfigurationCard({ apiEnabled, customers, customersLoadi
   const selected = customers.find(customer => customer.organizationId === organizationId)
   const version = useRef(selected?.profileVersion ?? 0)
   const form = useForm<Values>({ resolver: zodResolver(schema), mode: 'onBlur', reValidateMode: 'onChange', defaultValues: toValues(selected) })
+  const { isDirty: __formDraftDirty } = form.formState
+
   const approval = useForm<z.infer<typeof approvalSchema>>({ resolver: zodResolver(approvalSchema), mode: 'onBlur', reValidateMode: 'onChange', defaultValues: { notes: '' } })
+  const { isDirty: __approvalDraftDirty } = approval.formState
+
   const refresh = () => Promise.all([
     client.invalidateQueries({ queryKey: ['accounts-receivable', 'customers'] }),
     client.invalidateQueries({ queryKey: ['organization-operational-readiness'] }),
@@ -53,15 +60,15 @@ export function BillingConfigurationCard({ apiEnabled, customers, customersLoadi
   }), onSuccess: async (_result, values) => { await refresh(); form.reset(values) } })
   const approve = useMutation({ mutationFn: (values: z.infer<typeof approvalSchema>) => approveTaxDecision(organizationId, selected!.profileVersion!, values.notes), onSuccess: async () => { approval.reset(); await refresh() } })
   const busy = save.isPending || approve.isPending
-  const dirty = form.formState.isDirty || approval.formState.isDirty
+  const dirty = __formDraftDirty || __approvalDraftDirty
   useEffect(() => {
-    onSaveStateChange?.({ canSave: apiEnabled && form.formState.isDirty && !busy, isSaving: save.isPending })
-  }, [apiEnabled, form.formState.isDirty, busy, save.isPending, onSaveStateChange])
+    onSaveStateChange?.({ canSave: apiEnabled && __formDraftDirty && !busy, isSaving: save.isPending })
+  }, [apiEnabled, __formDraftDirty, busy, save.isPending, onSaveStateChange])
   useEffect(() => { onDirtyChange?.(dirty) }, [dirty, onDirtyChange])
   useEffect(() => { onBusyChange?.(busy) }, [busy, onBusyChange])
   useEffect(() => {
-    if (!form.formState.isDirty && !busy && version.current !== (selected?.profileVersion ?? 0)) { version.current = selected?.profileVersion ?? 0; form.reset(toValues(selected)) }
-  }, [selected, form, form.formState.isDirty, busy])
+    if (!__formDraftDirty && !busy && version.current !== (selected?.profileVersion ?? 0)) { version.current = selected?.profileVersion ?? 0; form.reset(toValues(selected)) }
+  }, [selected, form, __formDraftDirty, busy])
   const taxDecision = form.watch('taxDecision')
   const error = save.error ?? approve.error
   const register = (name: keyof Values) => {
@@ -69,36 +76,36 @@ export function BillingConfigurationCard({ apiEnabled, customers, customersLoadi
     return { ...field, onChange: (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => { void field.onChange(event); if (form.getFieldState(name).error) void form.trigger(name); if (name === 'taxDecision') { form.clearErrors(['taxRatePercent', 'exemptionEvidence']) } } }
   }
   const errors = Object.entries(form.formState.errors).flatMap(([name, value]) => value.message ? [{ name, message: value.message }] : [])
-  function selectCustomer(id: string) {
-    if (busy || (dirty && !window.confirm('Discard unsaved billing changes?'))) return
+  async function selectCustomer(id: string) {
+    if (busy || (dirty && !(await confirmPortal('Discard unsaved billing changes?')))) return
     const next = customers.find(customer => customer.organizationId === id)
     version.current = next?.profileVersion ?? 0
     setOrganizationId(id); form.reset(toValues(next)); approval.reset(); save.reset(); approve.reset()
   }
   const content = <>
-    {error ? <Alert variant="destructive"><AlertTitle>Billing configuration was not updated</AlertTitle><AlertDescription>{getOrderErrorMessage(error, 'Review the current Customer profile and try again. Your entered values are retained.')}</AlertDescription></Alert> : null}
-    {customersLoading ? <p role="status" className="text-sm text-muted-foreground">Loading Customer billing profiles…</p> : null}
-    {!initialOrganizationId ? <FinanceField id="billing-customer" label="Customer" required><select required className={financeSelectClass} value={organizationId} disabled={busy} onChange={event => selectCustomer(event.target.value)}><option value="">Select a Customer</option>{customers.map(customer => <option key={customer.organizationId} value={customer.organizationId}>{customer.organizationName}</option>)}</select></FinanceField> : <p className="font-medium">{selected?.organizationName}</p>}
-    {selected ? <><div className="flex flex-wrap items-center gap-2"><Badge variant={selected.financeApprovedAtUtc ? 'secondary' : 'outline'}>{selected.financeApprovedAtUtc ? 'Finance approved' : 'Finance approval required'}</Badge><span className="text-xs text-muted-foreground">Configuration version {selected.configurationVersion || 'not configured'}</span></div>
+    {error ? <Alert variant="destructive"><AlertTitle><CustomerSourceText source={"Billing configuration was not updated"} /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(error, 'Review the current Customer profile and try again. Your entered values are retained.')} />}</AlertDescription></Alert> : null}
+    {customersLoading ? <p role="status" className="text-sm text-muted-foreground"><CustomerSourceText source={"Loading Customer billing profiles…"} /></p> : null}
+    {!initialOrganizationId ? <FinanceField id="billing-customer" label="Customer" required><NativeSelect required className={financeSelectClass} value={organizationId} disabled={busy} onChange={event => selectCustomer(event.target.value)}><option value=""><CustomerSourceText source={"Select a Customer"} /></option>{customers.map(customer => <option key={customer.organizationId} value={customer.organizationId}>{customer.organizationName}</option>)}</NativeSelect></FinanceField> : <p className="font-medium">{selected?.organizationName}</p>}
+    {selected ? <><div className="flex flex-wrap items-center gap-2"><Badge variant={selected.financeApprovedAtUtc ? 'secondary' : 'outline'}>{selected.financeApprovedAtUtc ? <CustomerSourceText source={"Finance approved"} /> : <CustomerSourceText source={"Finance approval required"} />}</Badge><span className="text-xs text-muted-foreground"><CustomerSourceText source={"Configuration version"} /> {selected.configurationVersion || 'not configured'}</span></div>
       <form id={billingFormId} noValidate className="space-y-4" onSubmit={form.handleSubmit(values => save.mutate(values))}>
         <FinanceValidationSummary errors={errors} focus={name => form.setFocus(name as keyof Values)} />
         <fieldset disabled={busy} className="grid gap-4 sm:grid-cols-2">{fields.map(field => <FinanceField key={field.name} id={`billing-${field.name}`} label={field.label} required={field.name !== 'line2'} error={form.formState.errors[field.name]?.message}><Input required={field.name !== 'line2'} type={'type' in field ? field.type : 'text'} maxLength={field.name === 'countryCode' ? 2 : undefined} {...register(field.name)} /></FinanceField>)}
-          <FinanceField id="billing-tax-decision" label="Tax decision" required error={form.formState.errors.taxDecision?.message}><select required className={financeSelectClass} {...register('taxDecision')}><option value="Taxable">Taxable</option><option value="Exempt">Exempt</option><option value="NonTaxable">Non-taxable</option></select></FinanceField>
+          <FinanceField id="billing-tax-decision" label="Tax decision" required error={form.formState.errors.taxDecision?.message}><NativeSelect required className={financeSelectClass} {...register('taxDecision')}><option value="Taxable"><CustomerSourceText source={"Taxable"} /></option><option value="Exempt"><CustomerSourceText source={"Exempt"} /></option><option value="NonTaxable"><CustomerSourceText source={"Non-taxable"} /></option></NativeSelect></FinanceField>
           {taxDecision === 'Taxable' ? <FinanceField id="billing-tax-rate" label="Approved tax rate (%)" required error={form.formState.errors.taxRatePercent?.message}><Input required type="number" min="0" max="100" step="0.0001" {...register('taxRatePercent')} /></FinanceField> : null}
           {taxDecision === 'Exempt' ? <FinanceField id="billing-exemption" label="Exemption evidence" required error={form.formState.errors.exemptionEvidence?.message}><Input required {...register('exemptionEvidence')} /></FinanceField> : null}
         </fieldset>
-        {!modal ? <RequiredLegend /> : null}{!billingFormId ? <Button type="submit" disabled={!apiEnabled || !form.formState.isDirty || busy}>{save.isPending ? 'Saving changes…' : 'Save changes'}</Button> : null}
-        {save.isSuccess && !form.formState.isDirty && !selected.financeApprovedAtUtc ? <p role="status" className="text-sm">Billing changes saved. Review and approve the current tax decision.</p> : null}
+        {!modal ? <RequiredLegend /> : null}{!billingFormId ? <Button type="submit" disabled={!apiEnabled || !__formDraftDirty || busy}>{save.isPending ? <CustomerSourceText source={"Saving changes…"} /> : <CustomerSourceText source={"Save changes"} />}</Button> : null}
+        {save.isSuccess && !__formDraftDirty && !selected.financeApprovedAtUtc ? <p role="status" className="text-sm"><CustomerSourceText source={"Billing changes saved. Review and approve the current tax decision."} /></p> : null}
       </form>
-      <form noValidate className="space-y-3 border-t pt-4" onSubmit={approval.handleSubmit(values => { if (!form.formState.isDirty) approve.mutate(values) })}>
+      <form noValidate className="space-y-3 border-t pt-4" onSubmit={approval.handleSubmit(values => { if (!__formDraftDirty) approve.mutate(values) })}>
         <FinanceField id="billing-approval-notes" label="Finance approval notes" required error={approval.formState.errors.notes?.message}><Input required disabled={busy} {...approval.register('notes', { onChange: () => { if (approval.formState.errors.notes) void approval.trigger('notes') } })} /></FinanceField>
-        {!modal ? <RequiredLegend /> : null}<Button type="submit" variant="outline" disabled={!apiEnabled || !selected.profileVersion || !selected.taxDecision || form.formState.isDirty || busy}>{approve.isPending ? 'Approving…' : 'Approve current tax decision'}</Button>
-        {form.formState.isDirty ? <p className="text-sm text-muted-foreground">Save billing changes before approving the current tax decision.</p> : null}
-        {selected.financeApprovedAtUtc ? <p className="text-xs text-muted-foreground">Approved {new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(selected.financeApprovedAtUtc))}. Any billing or tax change requires a new approval.</p> : null}
+        {!modal ? <RequiredLegend /> : null}<Button type="submit" variant="outline" disabled={!apiEnabled || !selected.profileVersion || !selected.taxDecision || __formDraftDirty || busy}>{approve.isPending ? <CustomerSourceText source={"Approving…"} /> : <CustomerSourceText source={"Approve current tax decision"} />}</Button>
+        {__formDraftDirty ? <p className="text-sm text-muted-foreground"><CustomerSourceText source={"Save billing changes before approving the current tax decision."} /></p> : null}
+        {selected.financeApprovedAtUtc ? <p className="text-xs text-muted-foreground"><CustomerSourceText source={"Approved"} /> {new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(selected.financeApprovedAtUtc))}<CustomerSourceText source={". Any billing or tax change requires a new approval."} /></p> : null}
       </form>
-    </> : !customersLoading ? <p className="text-sm text-muted-foreground">Select a Customer to configure PSeq billing.</p> : null}
+    </> : !customersLoading ? <p className="text-sm text-muted-foreground"><CustomerSourceText source={"Select a Customer to configure PSeq billing."} /></p> : null}
   </>
-  return modal ? <div className="space-y-5">{content}</div> : <Card><CardHeader><CardTitle>Customer billing and tax configuration</CardTitle><CardDescription>Finance owns the billing contact, address, payment terms, and effective tax decision. Saving resets Finance approval. Approval is required to include tax in a quote and must be complete before invoice issuance.</CardDescription></CardHeader><CardContent className="space-y-5">{content}</CardContent></Card>
+  return modal ? <div className="space-y-5">{content}</div> : <Card><CardHeader><CardTitle><CustomerSourceText source={"Customer billing and tax configuration"} /></CardTitle><CardDescription><CustomerSourceText source={"Finance owns the billing contact, address, payment terms, and effective tax decision. Saving resets Finance approval. Approval is required to include tax in a quote and must be complete before invoice issuance."} /></CardDescription></CardHeader><CardContent className="space-y-5">{content}</CardContent></Card>
 }
 
 function toValues(customer?: AccountsReceivableCustomer): Values {

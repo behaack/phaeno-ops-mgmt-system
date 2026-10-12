@@ -36,6 +36,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { DocumentationSearchBar, DocumentationTopics, DocumentationRelatedGuides } from './DocumentationSearch'
+import { GuideContent } from './GuideContent'
 
 import type { OrganizationKind } from '#/api/session'
 import { Alert, AlertDescription } from '#/components/ui/alert'
@@ -53,7 +54,7 @@ import {
   usePhaenoSession,
 } from '#/features/auth/session-context'
 import {
-  getDocumentationEntries,
+  useDocumentationEntries,
   getDocumentationEntry,
   isDocumentationAudience,
   type DocumentationAudience,
@@ -61,13 +62,12 @@ import {
 } from './documentation-registry'
 import {
   defaultExternalDocumentationLocale,
-  getDocumentationMessages,
+  useDocumentationMessages,
 } from './documentation-localization'
 import { documentationMdxComponents } from './mdx-components'
 import { cn } from '#/lib/utils'
 
 const documentationLocale = defaultExternalDocumentationLocale
-const messages = getDocumentationMessages(documentationLocale)
 
 type DocumentationPageProps = {
   audience?: string
@@ -75,12 +75,15 @@ type DocumentationPageProps = {
 }
 
 export function DocumentationLayout({ children }: { children: ReactNode }) {
+  const messages = useDocumentationMessages()
+
   const { session, selectedOrganizationId, selectedDepartmentId } = usePhaenoSession()
   const audience = getAudienceForOrganization(getSelectedMembership(session, selectedOrganizationId)?.organizationKind)
+  const entries = useDocumentationEntries(audience)
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   if (!audience) return <DocumentationUnavailable />
   const activeSlug = pathname.split('/')[3]
-  const entry = activeSlug ? getDocumentationEntry(audience, activeSlug) : undefined
+  const entry = entries.find(candidate => candidate.slug === activeSlug)
   return (
     <main className="py-8">
       <ResponsiveSidebar workspaceLabel={messages.documentation} activeLabel={entry?.title ?? messages.guides}
@@ -138,7 +141,9 @@ export function DocumentationPage({ audience, slug }: DocumentationPageProps) {
 }
 
 function DocumentationIndex({ audience }: { audience: DocumentationAudience }) {
-  const entries = getDocumentationEntries(audience, documentationLocale)
+  const messages = useDocumentationMessages()
+
+  const entries = useDocumentationEntries(audience)
     .filter((entry) => !entry.parentSlug)
   const audienceDetails = messages.audiences[audience]
 
@@ -202,7 +207,9 @@ function DocumentationArticle({
   audience: DocumentationAudience
   slug: string
 }) {
-  const entries = getDocumentationEntries(audience, documentationLocale)
+  const messages = useDocumentationMessages()
+
+  const entries = useDocumentationEntries(audience)
   const entryIndex = entries.findIndex((candidate) => candidate.slug === slug)
   const entry = entries[entryIndex]
   const previousEntry = entries[entryIndex - 1]
@@ -232,7 +239,7 @@ function DocumentationArticle({
             </div>
 
             <div className="prose prose-neutral max-w-none dark:prose-invert prose-headings:scroll-mt-[calc(var(--portal-header-height,5.25rem)+1rem)] prose-a:text-primary prose-code:text-foreground">
-              <Content components={documentationMdxComponents} />
+              <GuideContent identity={`${entry.audience}/${entry.slug}`} title={entry.title}><Content components={documentationMdxComponents} /></GuideContent>
             </div>
 
             <DocumentationRelatedGuides entry={entry} />
@@ -275,7 +282,9 @@ function DocumentationNavigation({
   activeSlug?: string
   onNavigate: () => void
 }) {
-  const entries = getDocumentationEntries(audience, documentationLocale)
+  const messages = useDocumentationMessages()
+
+  const entries = useDocumentationEntries(audience)
   const topLevelEntries = entries.filter((entry) => !entry.parentSlug)
   const activeEntry = entries.find((entry) => entry.slug === activeSlug)
   const activeGroupSlug = activeEntry?.parentSlug
@@ -451,6 +460,8 @@ function GuideSequenceLink({
 }
 
 function DocumentationUnavailable({ missingGuide = false }: { missingGuide?: boolean }) {
+  const messages = useDocumentationMessages()
+
   return (
     <main className="page-wrap px-4 py-8">
       <Alert className="max-w-2xl">

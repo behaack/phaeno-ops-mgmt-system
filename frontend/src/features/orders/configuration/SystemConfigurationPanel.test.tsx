@@ -1,3 +1,4 @@
+import * as portalConfirmation from '#/components/PortalConfirmation'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
@@ -58,7 +59,7 @@ describe('Quote and workflow editor', () => {
 
   it('keeps failed values and warns before Escape discards them, then restores the opener', async () => {
     api.save.mockRejectedValue(new Error('Settings changed'))
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValueOnce(true)
+    const confirm = vi.spyOn(portalConfirmation, 'confirmPortal').mockResolvedValueOnce(false).mockResolvedValueOnce(true)
     renderDefaults()
     const opener = screen.getByRole('button', { name: 'Edit settings' })
     opener.focus()

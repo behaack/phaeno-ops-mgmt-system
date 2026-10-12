@@ -13,13 +13,13 @@ test('department history renders and clears across context and role changes', as
   await page.route(/^https:\/\/127\.0\.0\.1:\d+\/api\//, async (route) => {
     const path = new URL(route.request().url()).pathname
     const department = route.request().headers()['x-department-id']
-    if (path.endsWith('/curated-data/downloads')) {
+    if (path.endsWith('/curated-data/downloads/page')) {
       historyScopes.push(department)
       if (department === 'research') await researchReady
-      return route.fulfill({ contentType: 'application/json', body: JSON.stringify({ success: true, data: [{
+      return route.fulfill({ contentType: 'application/json', body: JSON.stringify({ success: true, data: { page:1,pageSize:25,totalCount:1,items:[{
         id: department, userId: 'user', userEmail: `${department}@example.test`, datasetVersionId: 'version',
         kind: 'File', managedFileId: 'file', downloadedAt: '2026-09-04T12:00:00Z',
-      }] }) })
+      }] } }) })
     }
     return route.fulfill({ contentType: 'application/json', body: JSON.stringify({ success: true, data: [] }) })
   })

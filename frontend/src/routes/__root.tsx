@@ -8,6 +8,9 @@ import {
 import { useEffect } from 'react'
 import Footer from '../components/Footer'
 import Header from '../components/Header'
+import { PortalConfirmation } from '#/components/PortalConfirmation'
+import { CustomerLocaleProvider } from '#/features/customer-i18n/CustomerLocaleProvider'
+import { WorkAttentionRefresh } from '#/features/work-attention/WorkAttentionRefresh'
 import { useApplicationBranding } from '#/components/application-branding'
 import { MockAdminDataProvider } from '#/features/admin/mock-admin-data'
 import {
@@ -62,8 +65,11 @@ function RootLayout() {
 
   return (
     <AuthProvider isPreSessionRoute={isPreSessionRoute}>
+      <CustomerLocaleProvider>
       <MockAdminDataProvider>
         <ContextualDocumentTitle />
+        <WorkAttentionRefresh />
+        <PortalConfirmation />
         <div data-portal-shell className="flex min-h-screen flex-col">
           <AuthenticatedHeader />
           <div className="flex flex-1 flex-col">
@@ -78,6 +84,7 @@ function RootLayout() {
           <Footer />
         </div>
       </MockAdminDataProvider>
+      </CustomerLocaleProvider>
     </AuthProvider>
   )
 }

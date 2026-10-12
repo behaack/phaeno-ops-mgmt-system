@@ -25,8 +25,10 @@ export function TubeIntakeExceptionDialog({ row, packet, existing, pendingBox, a
   const form = useForm<ExceptionValues>({ resolver: zodResolver(exceptionSchema.superRefine((v, ctx) => {
     if (intake.disposition !== 'Rejected' && !v.freezerBoxBarcode) ctx.addIssue({ code: 'custom', path: ['freezerBoxBarcode'], message: 'Record the real storage location for the retained tube.' })
   })), defaultValues: { freezerBoxBarcode: existing?.location ?? '', confirmed: false } })
+  const { isDirty: __formDraftDirty } = form.formState
+
   const save = useMutation({ mutationFn: (values: ExceptionValues) => accessionShipmentTube(packet.labWorkOrderId, packet.shipmentId, { packetBarcode: packet.barcode, supplierTubeBarcode: row.supplierTubeBarcode!, freezerBoxBarcode: values.freezerBoxBarcode || null, intakeDisposition: intake.disposition, intakeReasonCode: intake.reasonCode || null, intakeNotes: intake.notes || null }), retry: false, onSuccess: onSaved })
-  const dirty = form.formState.isDirty || intake !== initialException
+  const dirty = __formDraftDirty || intake !== initialException
   const dismissal = useOrderDecisionDismissal(dirty, save.isPending, onClose, { scope: 'intake exception', description: 'This unsaved intake exception will be discarded. Previously saved decisions and storage records will be kept.' })
   const close = () => dismissal.close()
   return <><Dialog open onOpenChange={open => { if (!open) close() }}><DialogContent onCloseAutoFocus={event => event.preventDefault()}>

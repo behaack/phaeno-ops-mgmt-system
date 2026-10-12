@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '#/test-helpers/render-portal'
 import { describe, expect, it, vi } from 'vitest'
 import type { PreparationDetail, PreparationMember } from '#/api/lab-preparation'
 import { PreparationOutputsDialog } from './PreparationOutputsDialog'
@@ -57,12 +57,12 @@ describe('shared library outputs', () => {
     expect(screen.getByText('Output unavailable: Failed')).toBeTruthy()
   })
 
-  it('does not submit on cancel or when the API has not enabled bulk outputs', () => {
+  it('does not submit on cancel or when the API has not enabled bulk outputs', async () => {
     const submit = vi.fn(), close = vi.fn()
     show(submit, { supported: false, onClose: close })
     expect(screen.getByRole('button', { name: 'Create library outputs' })).toHaveProperty('disabled', true)
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
-    expect(close).toHaveBeenCalledOnce()
+    await waitFor(() => expect(close).toHaveBeenCalledOnce())
     expect(submit).not.toHaveBeenCalled()
   })
 })

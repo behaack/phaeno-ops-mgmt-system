@@ -1,3 +1,5 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
+import { useCustomerMessages } from '#/features/customer-i18n/use-customer-messages'
 import { useQuery } from '@tanstack/react-query'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
@@ -10,7 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/required-field'
-import { departmentErrorMessage, departmentMessages as m } from '#/features/organizations/department-localization'
+import { departmentErrorMessage, departmentMessages, departmentMessages as m } from '#/features/organizations/department-localization'
 
 const schema = z.object({
   firstName: z.string().trim().min(1, m.firstNameRequired).max(100, m.tooLong(100)),
@@ -32,6 +34,8 @@ export function OrganizationInvitationDialog({ organizationId, organizationName,
   onSubmit: (values: OrganizationInviteValues) => Promise<unknown>
   contact?: { firstName: string; lastName: string; email: string }
 }) {
+  const m = useCustomerMessages(departmentMessages)
+
   const departments = useQuery({
     queryKey: ['organization-departments', organizationId, false],
     queryFn: () => listDepartments(organizationId, false),
@@ -47,7 +51,7 @@ export function OrganizationInvitationDialog({ organizationId, organizationName,
       if (trigger?.isConnected) { event.preventDefault(); trigger.focus() }
     }}>
       <DialogHeader><DialogTitle>{contact ? m.inviteContactTitle(`${contact.firstName} ${contact.lastName}`.trim()) : m.inviteTitle}</DialogTitle><DialogDescription>{m.inviteDescription}</DialogDescription></DialogHeader>
-      {error || departments.error ? <Alert variant="destructive"><AlertDescription>{departmentErrorMessage(error ?? departments.error)}</AlertDescription></Alert> : null}
+      {error || departments.error ? <Alert variant="destructive"><AlertDescription><CustomerSourceText source={departmentErrorMessage(error ?? departments.error)} /></AlertDescription></Alert> : null}
       {discard ? <section role="alert" className="space-y-3">
         <p>{m.discardInvitation}</p><div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => setDiscard(false)}>{m.keepEditing}</Button>
@@ -78,6 +82,8 @@ function InvitationForm({ departments, pending, onDirty, onSubmit, contact, orga
   contact?: { firstName: string; lastName: string; email: string }
   organizationName?: string
 }) {
+  const m = useCustomerMessages(departmentMessages)
+
   const defaultDepartment = departments.find((department) => department.isDefault && department.isActive)
   const form = useForm<OrganizationInviteValues>({ resolver: zodResolver(schema), mode: 'onBlur', defaultValues: {
     firstName: contact?.firstName ?? '', lastName: contact?.lastName ?? '', email: contact?.email ?? '', role: 'Member',

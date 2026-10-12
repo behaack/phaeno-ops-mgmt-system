@@ -124,13 +124,6 @@ public sealed partial class LabOperationsController
             throw Conflict("preparation_workspace_required", "Open this tube's preparation batch to record work, resources, outputs or failure. Its tray membership and shared evidence must stay connected.");
     }
 
-    private async Task RequireSpecimenReviewReadinessAsync(LabWorkOrder work, CancellationToken ct, Guid? submittedSpecimenId = null)
-    {
-        if (work.TubeUsePolicyKey is null) return;
-        var specimens = await dbContext.LabSpecimens.Where(s => s.LabWorkOrderId == work.Id && s.IntakeDisposition != LabSpecimenIntakeDisposition.Cancelled).ToListAsync(ct);
-        if (submittedSpecimenId.HasValue) specimens = specimens.Where(s => s.SubmittedSpecimenId == submittedSpecimenId).ToList();
-        if (specimens.Count == 0 || specimens.Any(s => s.ProcessingState is not (LabSpecimenProcessingState.Succeeded or LabSpecimenProcessingState.Failed))
-            || specimens.All(s => s.ProcessingState != LabSpecimenProcessingState.Succeeded))
-            throw Conflict("specimen_attempts_incomplete", "Resolve every affected specimen attempt before review. Only successful specimen outputs may be approved for release.");
-    }
+    private Task RequireSpecimenReviewReadinessAsync(LabWorkOrder work, CancellationToken ct, Guid? submittedSpecimenId = null) =>
+        Services.LabSpecimenReviewReadiness.RequireAsync(dbContext, work, ct, submittedSpecimenId);
 }

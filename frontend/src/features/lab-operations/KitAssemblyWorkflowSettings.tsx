@@ -1,3 +1,5 @@
+import { NativeSelect } from '#/components/ui/native-select'
+import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
@@ -104,9 +106,13 @@ function WorkflowEditor({ workflow, onClose }: { workflow?: KitAssemblyWorkflow;
   const latest = workflow?.revisions[0]
   const source = latest?.status === 'Discarded' ? workflow?.revisions.find(revision => revision.status === 'Approved') ?? latest : latest
   const form = useForm<Values>({ resolver: zodResolver(schema), mode: 'onTouched', defaultValues: { name: workflow?.name ?? '', stepVersionId: source?.steps.length === 1 ? source.steps[0].labStepVersionId : '' } })
-  const save = useMutation({ mutationFn: (value: Values) => saveKitAssemblyWorkflow({ name: value.name, stepVersionIds: [value.stepVersionId], workflowId: workflow?.id, workflowVersion: workflow?.version }), onSuccess: async () => { await client.invalidateQueries({ queryKey: kitAssemblyWorkflowsKey }); onClose() } })
+  const __modalGuard = useModalDraftGuard(form.formState.isDirty, form.formState.isSubmitting)
+
+  const save = useMutation({ mutationFn: (value: Values) => saveKitAssemblyWorkflow({ name: value.name, stepVersionIds: [value.stepVersionId], workflowId: workflow?.id, workflowVersion: workflow?.version }), onSuccess: async () => {
+    __modalGuard.allowNavigation()
+ await client.invalidateQueries({ queryKey: kitAssemblyWorkflowsKey }); onClose() } })
   const errors = form.formState.errors
-  return <Dialog open onOpenChange={open => { if (!open && !save.isPending) onClose() }}><DialogContent className="max-w-2xl"><DialogHeader><DialogTitle>{workflow ? latest?.status === 'Draft' ? 'Edit kit workflow draft' : 'New kit workflow version' : 'New Transportation kit workflow'}</DialogTitle><DialogDescription>Choose one approved Lab step for a reusable assembly method. A different administrator approves this revision.</DialogDescription></DialogHeader>
+  return <Dialog open onOpenChange={open => { if (open) (open => { if (!open && !save.isPending) onClose() })(open); else void __modalGuard.close(() => (open => { if (!open && !save.isPending) onClose() })(false)) }}><DialogContent className="max-w-2xl"><DialogHeader><DialogTitle>{workflow ? latest?.status === 'Draft' ? 'Edit kit workflow draft' : 'New kit workflow version' : 'New Transportation kit workflow'}</DialogTitle><DialogDescription>Choose one approved Lab step for a reusable assembly method. A different administrator approves this revision.</DialogDescription></DialogHeader>
     {save.error ? <Alert variant="destructive"><AlertTitle>Workflow was not saved</AlertTitle><AlertDescription>{getLabOperationsError(save.error, 'Review the entries and try again.')}</AlertDescription></Alert> : null}
     <form id="kit-workflow-editor" className="space-y-5" noValidate onSubmit={form.handleSubmit(value => save.mutate(value))}>
       {!workflow ? <div><Label htmlFor="kit-workflow-name"><RequiredFieldName>Workflow name</RequiredFieldName></Label><Input id="kit-workflow-name" className="mt-2" maxLength={160} disabled={save.isPending} {...form.register('name')} />{errors.name ? <p role="alert" className="text-sm text-destructive">{errors.name.message}</p> : null}</div> : <input type="hidden" {...form.register('name')} />}
@@ -114,33 +120,37 @@ function WorkflowEditor({ workflow, onClose }: { workflow?: KitAssemblyWorkflow;
         <Label htmlFor="kit-workflow-step"><RequiredFieldName>Assembly step</RequiredFieldName></Label>
         <p id="kit-workflow-step-help" className="text-xs text-muted-foreground">Choose exactly one approved instruction-only Lab step. Sample and preparation-batch captures are excluded.</p>
         {labSteps.isPending ? <p role="status" className="text-sm text-muted-foreground">Loading Lab steps…</p> : labSteps.error ? <p role="alert" className="text-sm text-destructive">{getLabOperationsError(labSteps.error, 'Lab steps could not be loaded. Refresh and try again.')}</p> : !eligibleSteps.length ? <p role="status" className="text-sm text-muted-foreground">No approved instruction-only Lab steps are available. Save and approve a Lab step before selecting it; Draft steps cannot be selected.</p> : null}
-        <select id="kit-workflow-step" required disabled={save.isPending || labSteps.isPending || labSteps.isError}
+        <NativeSelect id="kit-workflow-step" required disabled={save.isPending || labSteps.isPending || labSteps.isError}
           aria-invalid={Boolean(errors.stepVersionId)} aria-describedby={'kit-workflow-step-help' + (errors.stepVersionId ? ' kit-workflow-step-error' : '')}
-          className="h-9 w-full cursor-pointer rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-2 focus-visible:outline-ring" {...form.register('stepVersionId')}>
+          className="w-full cursor-pointer rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-2 focus-visible:outline-ring" {...form.register('stepVersionId')}>
           <option value="">Select approved step</option>
           {eligibleSteps.map(step => <option key={step.id} value={step.id}>{step.label}</option>)}
-        </select>
+        </NativeSelect>
         {errors.stepVersionId ? <p id="kit-workflow-step-error" role="alert" className="text-sm text-destructive">{errors.stepVersionId.message}</p> : null}
       </div>
-    </form><RequiredDialogFooter><Button variant="outline" disabled={save.isPending} onClick={onClose}>Cancel</Button><Button type="submit" form="kit-workflow-editor" disabled={save.isPending || labSteps.isPending || labSteps.isError}>{save.isPending ? 'Saving…' : 'Save draft'}</Button></RequiredDialogFooter>
+    </form><RequiredDialogFooter><Button variant="outline" disabled={save.isPending} onClick={() => { void __modalGuard.close(() => (onClose)()) }}>Cancel</Button><Button type="submit" form="kit-workflow-editor" disabled={save.isPending || labSteps.isPending || labSteps.isError}>{save.isPending ? 'Saving…' : 'Save draft'}</Button></RequiredDialogFooter>
   </DialogContent></Dialog>
 }
 
 function WorkflowTitleDialog({ workflow, onClose }: { workflow: KitAssemblyWorkflow; onClose: () => void }) {
   const client = useQueryClient()
   const form = useForm<TitleValues>({ resolver: zodResolver(titleSchema), defaultValues: { name: workflow.name } })
+  const __modalGuard = useModalDraftGuard(form.formState.isDirty, form.formState.isSubmitting)
+
   const rename = useMutation({
     mutationFn: (value: TitleValues) => renameKitAssemblyWorkflow(workflow.id, value.name, workflow.version),
-    onSuccess: async () => { await client.invalidateQueries({ queryKey: kitAssemblyWorkflowsKey }); onClose() },
+    onSuccess: async () => {
+    __modalGuard.allowNavigation()
+ await client.invalidateQueries({ queryKey: kitAssemblyWorkflowsKey }); onClose() },
   })
-  return <Dialog open onOpenChange={open => { if (!open && !rename.isPending) onClose() }}><DialogContent><DialogHeader><DialogTitle>Edit workflow title</DialogTitle><DialogDescription>Change the staff-facing workflow name without adding a revision or changing its assembly step.</DialogDescription></DialogHeader>
+  return <Dialog open onOpenChange={open => { if (open) (open => { if (!open && !rename.isPending) onClose() })(open); else void __modalGuard.close(() => (open => { if (!open && !rename.isPending) onClose() })(false)) }}><DialogContent><DialogHeader><DialogTitle>Edit workflow title</DialogTitle><DialogDescription>Change the staff-facing workflow name without adding a revision or changing its assembly step.</DialogDescription></DialogHeader>
     {rename.error ? <Alert variant="destructive"><AlertTitle>Title was not saved</AlertTitle><AlertDescription>{getLabOperationsError(rename.error, 'Refresh the workflow and try again.')}</AlertDescription></Alert> : null}
     <form id="kit-workflow-title-editor" noValidate onSubmit={form.handleSubmit(value => rename.mutate(value))}>
       <Label htmlFor="kit-workflow-title"><RequiredFieldName>Workflow name</RequiredFieldName></Label>
       <Input id="kit-workflow-title" className="mt-2" maxLength={160} disabled={rename.isPending} {...form.register('name')} />
       {form.formState.errors.name ? <p role="alert" className="mt-2 text-sm text-destructive">{form.formState.errors.name.message}</p> : null}
     </form>
-    <RequiredDialogFooter><Button type="button" variant="outline" disabled={rename.isPending} onClick={onClose}>Cancel</Button><Button type="submit" form="kit-workflow-title-editor" disabled={rename.isPending}>{rename.isPending ? 'Saving…' : 'Save title'}</Button></RequiredDialogFooter>
+    <RequiredDialogFooter><Button type="button" variant="outline" disabled={rename.isPending} onClick={() => { void __modalGuard.close(() => (onClose)()) }}>Cancel</Button><Button type="submit" form="kit-workflow-title-editor" disabled={rename.isPending}>{rename.isPending ? 'Saving…' : 'Save title'}</Button></RequiredDialogFooter>
   </DialogContent></Dialog>
 }
 

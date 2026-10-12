@@ -1,3 +1,5 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
+import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import { SignOutButton } from '@clerk/react'
 import { Link } from '@tanstack/react-router'
 import { Building2, ChevronDown, Ellipsis, LogOut, Menu, Monitor, Moon, Settings, Sun, UsersRound, X } from 'lucide-react'
@@ -49,6 +51,8 @@ export function MobileUserMenu({
   showUserManagement, departments, selectedDepartmentId, onDepartmentChange,
   memberships, selectedOrganizationId, onOrganizationChange,
 }: MobileUserMenuProps) {
+  const __customerText = useCustomerText()
+
   const [open, setOpen] = useState(false)
   const [expandedSection, setExpandedSection] = useState<'more' | 'settings' | null>(null)
   const themeGroupId = useId()
@@ -76,7 +80,7 @@ export function MobileUserMenu({
       if (!nextOpen) setExpandedSection(null)
     }}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="icon" className="size-11 lg:hidden" aria-label="Open user menu">
+        <Button variant="outline" size="icon" className="size-11 lg:hidden" aria-label={__customerText('m_19941a66df23')}>
           <Menu aria-hidden="true" className="size-5" />
         </Button>
       </DialogTrigger>
@@ -85,13 +89,12 @@ export function MobileUserMenu({
         className="inset-0 top-0 left-0 h-dvh max-h-dvh w-full max-w-none translate-x-0 translate-y-0 rounded-none border-0 duration-200 data-[state=open]:slide-in-from-right-full data-[state=closed]:slide-out-to-right-full data-[state=open]:zoom-in-100 data-[state=closed]:zoom-out-100 motion-reduce:animate-none [&_[data-slot=dialog-body]]:block [&_[data-slot=dialog-body]]:pb-[max(1rem,env(safe-area-inset-bottom))]"
       >
         <DialogHeader className="flex-row items-center justify-between gap-3 pt-[max(1rem,env(safe-area-inset-top))] pr-4">
-          <DialogTitle>Menu</DialogTitle>
-          <DialogDescription className="sr-only">Account preferences and navigation.</DialogDescription>
+          <DialogTitle><CustomerText message="m_99af6606ff9d" /></DialogTitle>
+          <DialogDescription className="sr-only"><CustomerText message="m_45bbd1966e17" /></DialogDescription>
           <DialogClose asChild>
-            <Button variant="ghost" className="min-h-11" aria-label="Close user menu">
+            <Button variant="ghost" className="min-h-11" aria-label={__customerText('m_e82d6d8850d6')}>
               <X aria-hidden="true" />
-              Close
-            </Button>
+              <CustomerText message="m_7d9eb7acb13e" /></Button>
           </DialogClose>
         </DialogHeader>
         <div className="space-y-3">
@@ -100,15 +103,15 @@ export function MobileUserMenu({
               <AvatarFallback className="bg-secondary font-semibold text-foreground">{initials}</AvatarFallback>
             </Avatar>
             <div className="min-w-0">
-              <p className="text-base font-semibold break-words">{user ? `${user.firstName} ${user.lastName}` : 'Signed in'}</p>
+              <p className="text-base font-semibold break-words">{user ? `${user.firstName} ${user.lastName}` : __customerText('m_ca566c8968e7')}</p>
               <p className="text-sm break-all text-muted-foreground">{user?.email}</p>
             </div>
           </div>
           <fieldset className="grid grid-cols-3 gap-1 rounded-lg bg-muted/70 p-1">
-            <legend className="sr-only">Display theme</legend>
+            <legend className="sr-only"><CustomerText message="m_82b0f8d517f7" /></legend>
             {themeChoices.map(choice => (
               <label key={choice.value} className={cn('flex min-h-11 cursor-pointer items-center justify-center gap-1.5 rounded-md px-2 text-xs has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring has-[:focus-visible]:ring-inset', mode === choice.value && 'bg-background font-semibold shadow-sm ring-1 ring-border')}>
-                <input type="radio" name={themeGroupId} value={choice.value} checked={mode === choice.value} onChange={() => onModeChange(choice.value)} aria-label={`Use ${choice.label.toLowerCase()} theme`} className="sr-only" />
+                <input type="radio" name={themeGroupId} value={choice.value} checked={mode === choice.value} onChange={() => onModeChange(choice.value)} aria-label={__customerText('m_052abb0e744f', { p0: String(choice.label.toLowerCase()) })} className="sr-only" />
                 <choice.icon aria-hidden="true" className="size-4" />
                 {choice.label}
               </label>
@@ -117,40 +120,40 @@ export function MobileUserMenu({
           {(memberships?.length ?? 0) > 1 ? (
             <div className="flex items-center gap-2 border-t border-border px-3 pt-3">
               <Building2 aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
-              <NativeSelect aria-label="Organization" value={selectedOrganizationId ?? ''} onChange={event => { close(); onOrganizationChange?.(event.target.value) }}>
+              <NativeSelect aria-label={__customerText('m_d764d42592fc')} value={selectedOrganizationId ?? ''} onChange={event => { close(); onOrganizationChange?.(event.target.value) }}>
                 {memberships?.map(membership => <option key={membership.organizationId} value={membership.organizationId}>{membership.organizationName}</option>)}
               </NativeSelect>
             </div>
           ) : null}
           {(departments?.length ?? 0) > 1 ? (
             <Field className="border-t border-border pt-3">
-              <Label htmlFor={departmentId}>Department</Label>
-              <NativeSelect id={departmentId} value={selectedDepartmentId ?? ''} onChange={event => onDepartmentChange?.(event.target.value)}>
-                {departments?.map(department => <option key={department.departmentId} value={department.departmentId}>{department.departmentName}{department.isDepartmentAdmin ? ' · Admin' : ''}</option>)}
+              <Label htmlFor={departmentId}><CustomerText message="m_5304ab98e581" /></Label>
+              <NativeSelect id={departmentId} value={selectedDepartmentId ?? ''} onChange={event => { close(); onDepartmentChange?.(event.target.value) }}>
+                {departments?.map(department => <option key={department.departmentId} value={department.departmentId}>{department.departmentName}{department.isDepartmentAdmin ? <CustomerSourceText source={" · Admin"} /> : ''}</option>)}
               </NativeSelect>
             </Field>
           ) : null}
-          <nav aria-label="Mobile navigation" data-mobile-navigation className="border-t border-border pt-3">
+          <nav aria-label={__customerText('m_806f228ffbd4')} data-mobile-navigation className="border-t border-border pt-3">
             <MobileNavigationLinks items={workspaceItems} currentPath={currentPath} onNavigate={close} />
             {moreItems.length > 0 ? (
-              <MobileNavigationSection label="More" icon={Ellipsis} items={moreItems} currentPath={currentPath} expanded={expandedSection === 'more'} onToggle={() => setExpandedSection(section => section === 'more' ? null : 'more')} onNavigate={close} />
+              <MobileNavigationSection label={__customerText('m_d47d7cb0e4f8')} icon={Ellipsis} items={moreItems} currentPath={currentPath} expanded={expandedSection === 'more'} onToggle={() => setExpandedSection(section => section === 'more' ? null : 'more')} onNavigate={close} />
             ) : null}
             {settingsItems.length > 0 ? (
               <div className="mt-3 border-t border-border pt-3">
-                <MobileNavigationSection label="Settings" icon={Settings} items={settingsItems} currentPath={currentPath} expanded={expandedSection === 'settings'} onToggle={() => setExpandedSection(section => section === 'settings' ? null : 'settings')} onNavigate={close} />
+                <MobileNavigationSection label={__customerText('m_74a883a037bc')} icon={Settings} items={settingsItems} currentPath={currentPath} expanded={expandedSection === 'settings'} onToggle={() => setExpandedSection(section => section === 'settings' ? null : 'settings')} onNavigate={close} />
               </div>
             ) : null}
             {resourceItems.length > 0 || showUserManagement ? (
               <div className="mt-3 border-t border-border pt-3">
                 <MobileNavigationLinks items={resourceItems} currentPath={currentPath} onNavigate={close} />
-                {showUserManagement ? <Link to="/phaeno-users" onKeyDown={moveNavigationFocus} onClick={close} aria-current={currentPath === '/phaeno-users' ? 'page' : undefined} className={cn(navigationRowClass, currentPath === '/phaeno-users' && activeNavigationClass)}><UsersRound aria-hidden="true" className="size-4 shrink-0" />User management</Link> : null}
+                {showUserManagement ? <Link to="/phaeno-users" onKeyDown={moveNavigationFocus} onClick={close} aria-current={currentPath === '/phaeno-users' ? "page" : undefined} className={cn(navigationRowClass, currentPath === '/phaeno-users' && activeNavigationClass)}><UsersRound aria-hidden="true" className="size-4 shrink-0" /><CustomerText message="m_5a35ce25a2bd" /></Link> : null}
               </div>
             ) : null}
           </nav>
           <div className="border-t border-border pt-3">
             {authProvider === 'clerk' ? (
-              <SignOutButton redirectUrl="/"><button type="button" className={navigationRowClass}><LogOut aria-hidden="true" className="size-4" />Sign out</button></SignOutButton>
-            ) : <button type="button" className={navigationRowClass}><LogOut aria-hidden="true" className="size-4" />End mock session</button>}
+              <SignOutButton redirectUrl="/"><button type="button" className={navigationRowClass}><LogOut aria-hidden="true" className="size-4" /><CustomerText message="m_48f0d3d397d4" /></button></SignOutButton>
+            ) : <button type="button" className={navigationRowClass}><LogOut aria-hidden="true" className="size-4" /><CustomerText message="m_77c04ff6e3f5" /></button>}
           </div>
         </div>
       </DialogContent>
@@ -159,6 +162,8 @@ export function MobileUserMenu({
 }
 
 function MobileNavigationLinks({ items, currentPath, onNavigate, nested = false }: { items: NavigationItems; currentPath: string; onNavigate: () => void; nested?: boolean }) {
+
+
   return items.map(item => {
     const active = isMainMenuRouteActive(currentPath, item.to, item.exact)
     return (
@@ -167,7 +172,7 @@ function MobileNavigationLinks({ items, currentPath, onNavigate, nested = false 
         to={item.to}
         onKeyDown={moveNavigationFocus}
         onClick={onNavigate}
-        aria-current={active ? 'page' : undefined}
+        aria-current={active ? "page" : undefined}
         className={cn(navigationRowClass, nested && 'rounded-md', active && activeNavigationClass)}
       >
         {nested ? null : <item.icon aria-hidden="true" className="size-4 shrink-0" />}

@@ -1,3 +1,4 @@
+import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import { Fragment, useRef, type ReactNode } from 'react'
 import { Controller, type Control, type FieldPathByValue, type FieldValues } from 'react-hook-form'
 import { Button } from '#/components/ui/button'
@@ -44,6 +45,8 @@ export function ScientificTextField<T extends FieldValues>({ control, name, id, 
   describedBy?: string
   supportingText?: ReactNode
 }) {
+  const __customerText = useCustomerText()
+
   const input = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null)
   const selection = useRef<{ start: number; end: number } | null>(null)
   const insertedAt = useRef<number | null>(null)
@@ -70,10 +73,10 @@ export function ScientificTextField<T extends FieldValues>({ control, name, id, 
     }
     return <div className={showSymbols && !insertUnits ? "min-w-0 space-y-[3px]" : "min-w-0 space-y-0"}>
       {multiline ? <textarea {...props} rows={rows} className="block min-h-24 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring" /> : <Input {...props} />}
-      <div className={supportingText ? (showSymbols && !insertUnits ? 'flex items-start gap-2' : 'mt-1.5 flex items-start gap-2') : 'flex flex-wrap items-center justify-between gap-2'}>
-        {supportingText ? <div className="min-w-0 flex-1">{supportingText}</div> : unit && showSymbols && !insertUnits ? <span className="text-xs text-muted-foreground">Choose a common unit or type your own.</span> : null}
+      <div className={supportingText ? (showSymbols && !insertUnits ? "flex items-start gap-2" : "mt-1.5 flex items-start gap-2") : "flex flex-wrap items-center justify-between gap-2"}>
+        {supportingText ? <div className="min-w-0 flex-1">{supportingText}</div> : unit && showSymbols && !insertUnits ? <span className="text-xs text-muted-foreground"><CustomerText message="m_d56ffc56110f" /></span> : null}
         <DropdownMenu>
-          <DropdownMenuTrigger asChild><Button type="button" disabled={disabled} variant="ghost" size="sm" className="ml-auto h-6 px-1 text-xs underline underline-offset-2" aria-label={`${unit ? (showSymbols ? 'Units and symbols for' : 'Units for') : 'Insert symbol in'} ${label}`}>{unit ? (showSymbols ? 'Units and symbols' : 'Units') : 'Insert symbol'}</Button></DropdownMenuTrigger>
+          <DropdownMenuTrigger asChild><Button type="button" disabled={disabled} variant="ghost" size="sm" className="ml-auto h-6 px-1 text-xs underline underline-offset-2" aria-label={`${unit ? (showSymbols ? "Units and symbols for" : __customerText('m_c61e305d7ce2')) : __customerText('m_de10bd59c9c5')} ${label}`}>{unit ? (showSymbols ? "Units and symbols" : __customerText('m_9fb6669a77ea')) : __customerText('m_b2627eb5609a')}</Button></DropdownMenuTrigger>
           <DropdownMenuContent align="end" className={showSymbols ? "max-h-80 w-64" : "w-40"} onCloseAutoFocus={event => {
             if (insertedAt.current === null) return
             event.preventDefault()
@@ -82,7 +85,7 @@ export function ScientificTextField<T extends FieldValues>({ control, name, id, 
             selection.current = { start: insertedAt.current, end: insertedAt.current }
             insertedAt.current = null
           }}>
-            {unit ? <><DropdownMenuLabel>Common units</DropdownMenuLabel>{Array.from(new Set([...additionalUnits, ...unitOptions])).map(value => <DropdownMenuItem key={value} onSelect={() => insert(value, !insertUnits)}>{value}</DropdownMenuItem>)}{showSymbols ? <DropdownMenuSeparator /> : null}</> : null}
+            {unit ? <><DropdownMenuLabel><CustomerText message="m_c100dfc7b620" /></DropdownMenuLabel>{Array.from(new Set([...additionalUnits, ...unitOptions])).map(value => <DropdownMenuItem key={value} onSelect={() => insert(value, !insertUnits)}>{value}</DropdownMenuItem>)}{showSymbols ? <DropdownMenuSeparator /> : null}</> : null}
             {showSymbols ? symbolOptions.map(([symbol, description, group], index) => <Fragment key={symbol}>
               {index === 0 || group !== symbolOptions[index - 1][2] ? <DropdownMenuLabel>{group ?? 'Insert at cursor'}</DropdownMenuLabel> : null}
               <DropdownMenuItem aria-label={`${symbol} ${description}`} onSelect={() => insert(symbol)}><span className="w-5 text-center">{symbol}</span>{description}</DropdownMenuItem>

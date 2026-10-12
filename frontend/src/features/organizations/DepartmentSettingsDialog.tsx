@@ -1,8 +1,11 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
+import { useCustomerMessages } from '#/features/customer-i18n/use-customer-messages'
+import { NativeSelect } from '#/components/ui/native-select'
+import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
-import { departmentErrorMessage as apiErrorMessage, departmentMessages as m } from './department-localization'
+import { departmentErrorMessage as apiErrorMessage, departmentMessages, departmentMessages as m } from './department-localization'
 
 import { type Department, type DepartmentInput } from '#/api/organization-management'
 import { Alert, AlertDescription } from '#/components/ui/alert'
@@ -34,7 +37,8 @@ export function DepartmentSettingsDialog({ target, pending, error, onClose, onSu
   onClose: () => void
   onSubmit: (input: DepartmentInput) => void
 }) {
-  const [confirmDiscard, setConfirmDiscard] = useState(false)
+  const m = useCustomerMessages(departmentMessages)
+
   const department = target === 'new' ? null : target
   const form = useForm<Values>({ resolver: zodResolver(schema), mode: 'onBlur', defaultValues: {
     name: department?.name ?? '', description: department?.description ?? '',
@@ -42,20 +46,18 @@ export function DepartmentSettingsDialog({ target, pending, error, onClose, onSu
     billingContactEmail: department?.billingContactEmail ?? '', notificationEmail: department?.notificationEmail ?? '',
     shippingInstructions: department?.shippingInstructions ?? '', resultDeliveryInstructions: department?.resultDeliveryInstructions ?? '',
   } })
+  const __modalGuard = useModalDraftGuard(form.formState.isDirty, pending)
+
   // Subscribe even for a new record, where the submit button does not read it.
   const { isDirty } = form.formState
-  const close = () => {
-    if (pending) return
-    if (isDirty) setConfirmDiscard(true)
-    else onClose()
-  }
+  const close = () => { void __modalGuard.close(onClose) }
   const fields = [
     ['name', m.name, 150], ['description', m.description, 1000],
     ['billingContactEmail', m.billingContactEmail, 255], ['notificationEmail', m.notificationEmail, 255],
     ['shippingInstructions', m.shippingInstructions, 2000], ['resultDeliveryInstructions', m.resultDeliveryInstructions, 2000],
   ] as const
   return (
-    <Dialog open onOpenChange={(open) => { if (!open) close() }}>
+    <Dialog open onOpenChange={open => { if (!open) close() }}>
       <DialogContent className="max-w-2xl" onCloseAutoFocus={(event) => {
         event.preventDefault()
         document.getElementById(department ? `department-actions-${department.id}` : 'add-department')?.focus()
@@ -74,16 +76,7 @@ export function DepartmentSettingsDialog({ target, pending, error, onClose, onSu
               {department ? <>{m.reference}: <span className="font-medium text-foreground">{department.code}</span>. {m.referencePermanent}</> : m.referenceAssignedOnSave}
             </p>
           </DialogHeader>
-          {error ? <Alert variant="destructive"><AlertDescription>{apiErrorMessage(error)}</AlertDescription></Alert> : null}
-          {confirmDiscard ? (
-            <div className="space-y-3" role="alert">
-              <p>{m.discardQuestion}</p>
-              <div className="flex flex-wrap gap-2">
-                <Button type="button" variant="outline" onClick={() => setConfirmDiscard(false)}>{m.keepEditing}</Button>
-                <Button type="button" variant="destructive" onClick={onClose}>{m.discard}</Button>
-              </div>
-            </div>
-          ) : null}
+          {error ? <Alert variant="destructive"><AlertDescription><CustomerSourceText source={apiErrorMessage(error)} /></AlertDescription></Alert> : null}
           <fieldset disabled={pending} className="grid gap-4">
             {fields.map(([name, label, maxLength]) => {
               const required = name === 'name'
@@ -103,15 +96,15 @@ export function DepartmentSettingsDialog({ target, pending, error, onClose, onSu
             })}
             <div className="grid gap-1.5">
               <Label htmlFor="department-po">{m.purchaseOrderRule}</Label>
-              <select id="department-po" className="h-9 w-full cursor-pointer rounded-lg border border-input bg-background px-3 text-sm" {...form.register('purchaseOrderRequired')}>
+              <NativeSelect id="department-po" className="w-full cursor-pointer rounded-lg border border-input bg-background px-3 text-sm" {...form.register('purchaseOrderRequired')}>
                 <option value="inherit">{m.inheritPo}</option>
                 <option value="required">{m.required}</option><option value="optional">{m.optional}</option>
-              </select>
+              </NativeSelect>
             </div>
           </fieldset>
           <RequiredDialogFooter>
             <Button type="button" variant="outline" disabled={pending} onClick={close}>{m.cancel}</Button>
-            <Button type="submit" disabled={pending || (target !== 'new' && !isDirty)}>{pending ? 'Saving…' : target === 'new' ? 'Add department' : 'Save changes'}</Button>
+            <Button type="submit" disabled={pending || (target !== 'new' && !isDirty)}>{pending ? <CustomerSourceText source={"Saving…"} /> : target === 'new' ? 'Add department' : 'Save changes'}</Button>
           </RequiredDialogFooter>
         </form>
       </DialogContent>

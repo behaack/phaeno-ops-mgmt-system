@@ -1,3 +1,4 @@
+import { confirmPortal } from '#/components/PortalConfirmation'
 import { useCrmPermissions } from './use-crm-permissions';
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -395,7 +396,7 @@ function ContactCompanyAssociationDialog({
   const [primary, setPrimary] = useState(false);
   const [dirty, setDirty] = useState(false);
   useOrderDraftGuard(dirty, pending);
-  function close() { if (!pending && (!dirty || window.confirm("Discard unsaved Company association changes?"))) onOpenChange(false); }
+  async function close() { if (!pending && (!dirty || (await confirmPortal("Discard unsaved Company association changes?")))) onOpenChange(false); }
   return (
     <Dialog open onOpenChange={open => { if (!open) close(); }}>
       <DialogContent>

@@ -8,7 +8,7 @@ import { CrmRequestCard } from './CrmRequestCard'
 const api = vi.hoisted(() => ({ getOrganizationSummary: vi.fn(), getRequestCompletionReadiness: vi.fn(), reconcileOnlineAccessRequest: vi.fn() }))
 vi.mock('#/api/organization-management', async original => ({ ...await original<typeof import('#/api/organization-management')>(), ...api }))
 vi.mock('#/api/crm', () => ({ listCrmHandoffs: vi.fn().mockResolvedValue([]) }))
-vi.mock('@tanstack/react-router', () => ({ Link: ({ children, ...props }: ComponentProps<'a'>) => <a {...props} href="/company">{children}</a> }))
+vi.mock('@tanstack/react-router', () => ({ useBlocker: () => ({status: 'idle', reset: vi.fn(), proceed: vi.fn()}), Link: ({ children, ...props }: ComponentProps<'a'>) => <a {...props} href="/company">{children}</a> }))
 
 const request: RelationshipRequest = { id: 'request-1', requestNumber: 'REQ-1', candidateOrganizationName: 'Example Company',
   companyId: 'company-1', organizationId: 'org-1', requestType: 'Onboarding', requestedOrganizationKind: 'Customer',

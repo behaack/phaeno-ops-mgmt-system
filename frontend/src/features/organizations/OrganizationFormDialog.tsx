@@ -1,3 +1,6 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
+import { NativeSelect } from '#/components/ui/native-select'
+import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, type ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
@@ -50,6 +53,8 @@ export function OrganizationFormDialog({
     defaultValues: valuesFor(organization),
     mode: 'onBlur',
   })
+  const __modalGuard = useModalDraftGuard(form.formState.isDirty, form.formState.isSubmitting, open)
+
 
   useEffect(() => {
     if (open) form.reset(valuesFor(organization))
@@ -59,12 +64,12 @@ export function OrganizationFormDialog({
   const formId = editing ? 'edit-organization' : 'create-organization'
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={open => { if (open) (onOpenChange)(open); else void __modalGuard.close(() => (onOpenChange)(false)) }}>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>{editing ? 'Edit organization' : 'New organization'}</DialogTitle>
+          <DialogTitle>{editing ? <CustomerSourceText source={"Edit organization"} /> : <CustomerSourceText source={"New organization"} />}</DialogTitle>
           <DialogDescription>
-            Relationship type and Portal readiness are separate. Readiness never grants access or services.
+            <CustomerSourceText source={"Relationship type and Portal readiness are separate. Readiness never grants access or services."} />
           </DialogDescription>
         </DialogHeader>
         {error ? (
@@ -78,27 +83,27 @@ export function OrganizationFormDialog({
             <textarea id={`${formId}-description`} className={textareaClass} rows={3} {...form.register('description')} />
           </Field>
           <Field id={`${formId}-kind`} label="Relationship type" required>
-            <select id={`${formId}-kind`} className={selectClass} disabled={editing} {...form.register('kind')}>
-              <option value="Prospect">Prospect</option>
-              <option value="Customer">Customer</option>
-              <option value="Partner">Partner</option>
-            </select>
-            {editing ? <p className="text-xs text-muted-foreground">Prospect conversion is handled as a separate reviewed action.</p> : null}
+            <NativeSelect id={`${formId}-kind`} className={selectClass} disabled={editing} {...form.register('kind')}>
+              <option value="Prospect"><CustomerSourceText source={"Prospect"} /></option>
+              <option value="Customer"><CustomerSourceText source={"Customer"} /></option>
+              <option value="Partner"><CustomerSourceText source={"Partner"} /></option>
+            </NativeSelect>
+            {editing ? <p className="text-xs text-muted-foreground"><CustomerSourceText source={"Prospect conversion is handled as a separate reviewed action."} /></p> : null}
           </Field>
           <Field id={`${formId}-readiness`} label="Portal readiness" required>
-            <select id={`${formId}-readiness`} className={selectClass} {...form.register('portalReadiness')}>
+            <NativeSelect id={`${formId}-readiness`} className={selectClass} {...form.register('portalReadiness')}>
               {(['NotReviewed', 'Pending', 'Ready', 'Blocked'] satisfies PortalReadinessStatus[]).map((value) => (
                 <option key={value} value={value}>{readinessLabel(value)}</option>
               ))}
-            </select>
+            </NativeSelect>
           </Field>
           <Field id={`${formId}-readiness-note`} label="Readiness note" error={form.formState.errors.portalReadinessNote?.message}>
             <textarea id={`${formId}-readiness-note`} className={textareaClass} rows={3} {...form.register('portalReadinessNote')} />
           </Field>
         </form>
         <RequiredDialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button type="submit" form={formId} disabled={isPending}>{isPending ? 'Saving…' : editing ? 'Save changes' : 'Create organization'}</Button>
+          <Button type="button" variant="outline" onClick={() => { void __modalGuard.close(() => (() => onOpenChange(false))()) }}><CustomerSourceText source={"Cancel"} /></Button>
+          <Button type="submit" form={formId} disabled={isPending}>{isPending ? <CustomerSourceText source={"Saving…"} /> : editing ? 'Save changes' : 'Create organization'}</Button>
         </RequiredDialogFooter>
       </DialogContent>
     </Dialog>

@@ -41,10 +41,24 @@ public sealed class LabAssemblyService(PSeqOperationsDbContext db, ILabAssemblyP
         var query = db.Set<LabAssemblyJob>().AsNoTracking();
         if (workId.HasValue) query = query.Where(j => j.LabWorkOrderId == workId);
         if (specimenId.HasValue) query = query.Where(j => j.LabSpecimenId == specimenId);
-        var jobs = await query.OrderByDescending(j => j.RequestedAtUtc).Take(250).ToListAsync(ct);
+        var jobs = await query.OrderByDescending(j => j.RequestedAtUtc).ThenBy(j => j.Id).ToListAsync(ct);
         var ids = jobs.Select(j => j.LabSpecimenId).ToArray();
         var names = await db.LabSpecimens.AsNoTracking().Where(s => ids.Contains(s.Id)).ToDictionaryAsync(s => s.Id, s => s.AccessionNumber, ct);
         return jobs.Select(j => Map(j, names.GetValueOrDefault(j.LabSpecimenId))).ToArray();
+    }
+
+    public async Task<PhaenoPortal.App.Features.OrderManagement.DTOs.PagedResult<AssemblyJobDto>> ListPageAsync(string? search, int page, CancellationToken ct)
+    {
+        var term = search?.Trim().ToLowerInvariant() ?? "";
+        if (term.Length > 255) throw Error("Use no more than 255 characters to find assembly jobs.");
+        var query = db.Set<LabAssemblyJob>().AsNoTracking();
+        if (term.Length > 0) query = query.Where(job => ((db.LabSpecimens.Where(specimen => specimen.Id == job.LabSpecimenId)
+                .Select(specimen => specimen.AccessionNumber).FirstOrDefault() ?? "Unaccessioned sample") + " " + job.SequencingRunNumber
+                + " " + job.State + " " + (job.ProviderJobId ?? "")).ToLower().Contains(term));
+        var rows = await PhaenoPortal.App.Infrastructure.Api.RecordPage.ReadAsync(query.OrderByDescending(job => job.RequestedAtUtc).ThenBy(job => job.Id), page, 25, ct);
+        var ids = rows.Items.Select(job => job.LabSpecimenId).ToArray();
+        var names = await db.LabSpecimens.AsNoTracking().Where(specimen => ids.Contains(specimen.Id)).ToDictionaryAsync(specimen => specimen.Id, specimen => specimen.AccessionNumber, ct);
+        return new(rows.Items.Select(job => Map(job,names.GetValueOrDefault(job.LabSpecimenId))).ToArray(),rows.Page,rows.PageSize,rows.TotalCount);
     }
 
     public async Task<LabAssemblyJob> RequireJobAsync(Guid id, CancellationToken ct) =>

@@ -25,8 +25,6 @@ public sealed class SampleShippingWorkflowReader(PSeqOperationsDbContext dbConte
             query = query.Where(item => item.DepartmentId == departmentId.Value);
         if (sourceId.HasValue)
             query = query.Where(item => item.AuthorizationSourceId == sourceId.Value);
-        else
-            query = query.OrderByDescending(item => item.CreatedAt).Take(250);
 
         var shipments = await query
             .Include(item => item.Items)
@@ -35,8 +33,31 @@ public sealed class SampleShippingWorkflowReader(PSeqOperationsDbContext dbConte
             .Include(item => item.ReturnKit)
                 .ThenInclude(item => item!.Tubes)
             .OrderByDescending(item => item.CreatedAt)
+            .ThenBy(item => item.Id)
             .ToListAsync(cancellationToken);
         return await MapAsync(shipments, cancellationToken);
+    }
+
+    public async Task<PagedResult<SampleShipmentWorkflowDto>> ListPageAsync(Guid organizationId, Guid departmentId,
+        string? search, string? status, int page, int pageSize, CancellationToken token)
+    {
+        var query = dbContext.SampleShipments.AsNoTracking().Where(item => item.OrganizationId == organizationId && item.DepartmentId == departmentId);
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim().ToLowerInvariant();
+            if (term.Length > 255) throw new OrderManagementException("shipment_search_too_long", "Shipment search must be 255 characters or fewer.");
+            query = query.Where(item => item.ShipmentNumber.ToLower().Contains(term) || item.AuthorizationReference.ToLower().Contains(term));
+        }
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            if (!Enum.TryParse<SampleShipmentStatus>(status, true, out var parsed) || !Enum.IsDefined(parsed))
+                throw new OrderManagementException("shipment_status_invalid", "Choose a valid shipment status.");
+            query = query.Where(item => item.Status == parsed);
+        }
+        var result = await Infrastructure.Api.RecordPage.ReadAsync(query.OrderByDescending(item => item.CreatedAt).ThenBy(item => item.Id)
+            .Include(item => item.Items).ThenInclude(item => item.TubeSlots)
+            .Include(item => item.PacketRevisions).Include(item => item.ReturnKit).ThenInclude(item => item!.Tubes), page, pageSize, token);
+        return new(await MapAsync(result.Items, token), result.Page, result.PageSize, result.TotalCount);
     }
 
     public async Task<SampleShipmentWorkflowDto> ReadAsync(

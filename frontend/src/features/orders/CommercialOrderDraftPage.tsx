@@ -1,3 +1,4 @@
+import { CustomerSourceText, useCustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { useRef, useState } from 'react'
@@ -36,15 +37,17 @@ export function CommercialOrderDraftPage({ orderId, organizationId = '', sourceR
   const { session, authProvider } = usePhaenoSession()
   const enabled = authProvider !== 'mock' && Boolean(session?.capabilities.canQuoteLabServiceWork)
   const data = useCommercialDraftData(orderId, '', '', enabled)
-  if (!enabled) return <main className="page-wrap px-4 py-8"><Alert><AlertTitle>Draft entry unavailable</AlertTitle><AlertDescription>A real Phaeno session with Commercial Operator access is required.</AlertDescription></Alert></main>
-  if (orderId && data.order.isLoading) return <main className="page-wrap px-4 py-8"><p role="status">Loading Draft…</p></main>
-  if (orderId && (data.order.error || !data.order.data)) return <main className="page-wrap px-4 py-8"><Alert variant="destructive"><AlertTitle>Draft unavailable</AlertTitle><AlertDescription>{getOrderErrorMessage(data.order.error, 'Reload the order and try again.')} <Button variant="outline" onClick={() => void data.order.refetch()}>Retry</Button></AlertDescription></Alert></main>
+  if (!enabled) return <main className="page-wrap px-4 py-8"><Alert><AlertTitle><CustomerSourceText source={"Draft entry unavailable"} /></AlertTitle><AlertDescription><CustomerSourceText source={"A real Phaeno session with Commercial Operator access is required."} /></AlertDescription></Alert></main>
+  if (orderId && data.order.isLoading) return <main className="page-wrap px-4 py-8"><p role="status"><CustomerSourceText source={"Loading Draft…"} /></p></main>
+  if (orderId && (data.order.error || !data.order.data)) return <main className="page-wrap px-4 py-8"><Alert variant="destructive"><AlertTitle><CustomerSourceText source={"Draft unavailable"} /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(data.order.error, 'Reload the order and try again.')} />} <Button variant="outline" onClick={() => void data.order.refetch()}><CustomerSourceText source={"Retry"} /></Button></AlertDescription></Alert></main>
   const order = data.order.data && 'samples' in data.order.data ? data.order.data as LabServiceOrder : undefined
-  if (orderId && !order?.commercialDraft) return <main className="page-wrap px-4 py-8"><p>This order has already been submitted for pricing.</p><Button asChild variant="outline"><Link to="/order-operations/lab-services/orders/$orderId" params={{ orderId }}>Open order</Link></Button></main>
+  if (orderId && !order?.commercialDraft) return <main className="page-wrap px-4 py-8"><p><CustomerSourceText source={"This order has already been submitted for pricing."} /></p><Button asChild variant="outline"><Link to="/order-operations/lab-services/orders/$orderId" params={{ orderId }}><CustomerSourceText source={"Open order"} /></Link></Button></main>
   return <DraftEditor key={orderId ?? 'new'} order={order} initialOrganizationId={organizationId} sourceRequestId={sourceRequestId} />
 }
 
 function DraftEditor({ order, initialOrganizationId, sourceRequestId }: { order?: LabServiceOrder; initialOrganizationId: string; sourceRequestId?: string }) {
+  const __customerSource = useCustomerSourceText()
+
   const navigate = useNavigate()
   const [organizationId, setOrganizationId] = useState(order?.organizationId ?? initialOrganizationId)
   const [departmentId, setDepartmentId] = useState(order?.departmentId ?? '')
@@ -62,11 +65,13 @@ function DraftEditor({ order, initialOrganizationId, sourceRequestId }: { order?
   const form = useForm<CommercialDraftForm>({ resolver: zodResolver(commercialDraftSchema), mode: 'onBlur', defaultValues: order?.commercialDraft ?? {
     jobName: '', sampleTypeDefinitionId: null, catalogItemId: null, storageRequirements: null, safetyDeclaration: '', notes: '', usesPhases: false, phases: [newDraftPhase(1)],
   } })
+  const { isDirty: __formDraftDirty } = form.formState
+
   const phases = useFieldArray({ control: form.control, name: 'phases' })
   const values = form.watch()
   const totals = draftTotals(values)
   const services = (data.pricingCatalog.data?.catalogItems ?? []).filter(item => item.isActive && item.isPSeqLabService && item.salesUnit.toLowerCase() === 'specimen')
-  const approveNavigation = useOrderDraftGuard(form.formState.isDirty || ownerDirty, mutation.isPending)
+  const approveNavigation = useOrderDraftGuard(__formDraftDirty || ownerDirty, mutation.isPending)
   const [issueSummary, setIssueSummary] = useState<Array<{ path: string; message: string }>>([])
   function requestPhaseConfirmation(confirmation: PhaseConfirmation) {
     phaseConfirmationFocusSelector.current = confirmation.returnFocusSelector
@@ -126,71 +131,71 @@ function DraftEditor({ order, initialOrganizationId, sourceRequestId }: { order?
   }
   const busy = mutation.isPending
   return <main className="page-wrap px-4 py-8">
-    <header className="mb-6"><Link to="/order-operations/lab-services" search={previous => ({ ...previous })} className="text-sm text-primary hover:underline">Order intake</Link><h1 className="mt-2 text-3xl font-semibold">{savedOrder ? `Edit Draft · ${savedOrder.orderNumber}` : 'New Customer order'}</h1><p className="mt-2 text-sm text-muted-foreground">Record the Customer’s scope and optional proposed prices. Save a Draft, then submit the completed order for pricing.</p></header>
-    {ownerError || mutation.error || submissionError || issueSummary.length ? <Alert variant="destructive" className="mb-5" role="alert"><AlertTitle>{submissionError ? 'Draft saved; pricing submission needs attention' : 'Review the order entries'}</AlertTitle><AlertDescription>{ownerError || getOrderErrorMessage(submissionError ?? mutation.error, '')}{issueSummary.length ? <ul className="list-disc space-y-1 pl-5">{issueSummary.map((issue, index) => <li key={`${issue.path}-${index}`}><button type="button" className="cursor-pointer text-left underline" onClick={() => form.setFocus(issue.path as FieldPath<CommercialDraftForm>)}>{issue.message}</button></li>)}</ul> : null}<p>Your entries are retained. If another user changed the Draft, reopen its saved details before reconciling your changes.</p></AlertDescription></Alert> : null}
+    <header className="mb-6"><Link to="/order-operations/lab-services" search={previous => ({ ...previous })} className="text-sm text-primary hover:underline"><CustomerSourceText source={"Order intake"} /></Link><h1 className="mt-2 text-3xl font-semibold">{savedOrder ? `Edit Draft · ${savedOrder.orderNumber}` : <CustomerSourceText source={"New Customer order"} />}</h1><p className="mt-2 text-sm text-muted-foreground"><CustomerSourceText source={"Record the Customer’s scope and optional proposed prices. Save a Draft, then submit the completed order for pricing."} /></p></header>
+    {ownerError || mutation.error || submissionError || issueSummary.length ? <Alert variant="destructive" className="mb-5" role="alert"><AlertTitle>{submissionError ? <CustomerSourceText source={"Draft saved; pricing submission needs attention"} /> : <CustomerSourceText source={"Review the order entries"} />}</AlertTitle><AlertDescription>{ownerError || getOrderErrorMessage(submissionError ?? mutation.error, '')}{issueSummary.length ? <ul className="list-disc space-y-1 pl-5">{issueSummary.map((issue, index) => <li key={`${issue.path}-${index}`}><button type="button" className="cursor-pointer text-left underline" onClick={() => form.setFocus(issue.path as FieldPath<CommercialDraftForm>)}>{<CustomerSourceText source={issue.message} />}</button></li>)}</ul> : null}<p><CustomerSourceText source={"Your entries are retained. If another user changed the Draft, reopen its saved details before reconciling your changes."} /></p></AlertDescription></Alert> : null}
     <form noValidate onSubmit={event => { event.preventDefault(); void save(false) }} className="space-y-5">
       <fieldset disabled={busy} className="space-y-5">
-        <Card><CardHeader><CardTitle>Customer and Job</CardTitle></CardHeader><CardContent className="grid gap-4 md:grid-cols-2">
+        <Card><CardHeader><CardTitle><CustomerSourceText source={"Customer and Job"} /></CardTitle></CardHeader><CardContent className="grid gap-4 md:grid-cols-2">
           <Field>
-            <Label htmlFor="draft-customer"><RequiredFieldName>Customer</RequiredFieldName></Label>
-            <SearchableSelect id="draft-customer" options={(data.customers.data ?? []).map(c => ({ value: c.id, label: c.name }))} value={organizationId} onValueChange={value => { setOrganizationId(value); setDepartmentId(''); setOwnerDirty(true) }} disabled={Boolean(savedOrder || sourceRequestId)} placeholder="Search Customers" emptyMessage="No active Customers are available." />
+            <Label htmlFor="draft-customer"><RequiredFieldName><CustomerSourceText source={"Customer"} /></RequiredFieldName></Label>
+            <SearchableSelect id="draft-customer" options={(data.customers.data ?? []).map(c => ({ value: c.id, label: c.name }))} value={organizationId} onValueChange={value => { setOrganizationId(value); setDepartmentId(''); setOwnerDirty(true) }} disabled={Boolean(savedOrder || sourceRequestId)} placeholder={__customerSource("Search Customers")} emptyMessage="No active Customers are available." />
           </Field>
           <Field>
-            <Label htmlFor="draft-department"><RequiredFieldName>Department</RequiredFieldName></Label>
-            <NativeSelect id="draft-department" value={data.selectedDepartmentId} onChange={event => { setDepartmentId(event.target.value); setOwnerDirty(true) }} disabled={Boolean(savedOrder)}><option value="">Select Department</option>{data.departments.data?.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}</NativeSelect>
+            <Label htmlFor="draft-department"><RequiredFieldName><CustomerSourceText source={"Department"} /></RequiredFieldName></Label>
+            <NativeSelect id="draft-department" value={data.selectedDepartmentId} onChange={event => { setDepartmentId(event.target.value); setOwnerDirty(true) }} disabled={Boolean(savedOrder)}><option value=""><CustomerSourceText source={"Select Department"} /></option>{data.departments.data?.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}</NativeSelect>
           </Field>
           <Field className="md:col-span-2">
-            <Label htmlFor="draft-name"><RequiredFieldName>Job name</RequiredFieldName></Label>
+            <Label htmlFor="draft-name"><RequiredFieldName><CustomerSourceText source={"Job name"} /></RequiredFieldName></Label>
             <Input id="draft-name" {...form.register('jobName')} aria-invalid={Boolean(form.formState.errors.jobName)} aria-describedby="draft-name-error" />
             <FieldError id="draft-name-error">{form.formState.errors.jobName?.message}</FieldError>
           </Field>
           <Field>
-            <Label htmlFor="draft-service"><RequiredFieldName>Catalog service</RequiredFieldName> · required for pricing</Label>
+            <Label htmlFor="draft-service"><RequiredFieldName><CustomerSourceText source={"Catalog service"} /></RequiredFieldName> <CustomerSourceText source={"· required for pricing"} /></Label>
             <NativeSelect id="draft-service" value={values.catalogItemId ?? ''} onChange={event => form.setValue('catalogItemId', event.target.value || null, { shouldDirty: true, shouldValidate: true })} aria-invalid={Boolean(form.formState.errors.catalogItemId)} aria-describedby="draft-service-help draft-service-error" disabled={data.pricingCatalog.isLoading}>
-              <option value="">{data.pricingCatalog.isLoading ? 'Loading services…' : 'Select catalog service'}</option>
-              {values.catalogItemId && !services.some(service => service.id === values.catalogItemId) ? <option value={values.catalogItemId} disabled>Unavailable service — select another</option> : null}
+              <option value="">{data.pricingCatalog.isLoading ? <CustomerSourceText source={"Loading services…"} /> : <CustomerSourceText source={"Select catalog service"} />}</option>
+              {values.catalogItemId && !services.some(service => service.id === values.catalogItemId) ? <option value={values.catalogItemId} disabled><CustomerSourceText source={"Unavailable service — select another"} /></option> : null}
               {services.map(service => <option key={service.id} value={service.id}>{service.name}</option>)}
             </NativeSelect>
-            <p id="draft-service-help" className="text-xs text-muted-foreground">This service applies to the whole order. Its final prices are reviewed before the quote is issued.</p>
+            <p id="draft-service-help" className="text-xs text-muted-foreground"><CustomerSourceText source={"This service applies to the whole order. Its final prices are reviewed before the quote is issued."} /></p>
             <FieldError id="draft-service-error">{form.formState.errors.catalogItemId?.message}</FieldError>
-            {data.pricingCatalog.error ? <p className="text-sm text-destructive">Services could not be loaded. <Button type="button" variant="link" onClick={() => void data.pricingCatalog.refetch()}>Retry</Button></p> : !data.pricingCatalog.isLoading && services.length === 0 ? <p className="text-sm text-muted-foreground">No active PSeq laboratory catalog services are available. Save a Draft and configure the service before submission.</p> : null}
+            {data.pricingCatalog.error ? <p className="text-sm text-destructive"><CustomerSourceText source={"Services could not be loaded."} /> <Button type="button" variant="link" onClick={() => void data.pricingCatalog.refetch()}><CustomerSourceText source={"Retry"} /></Button></p> : !data.pricingCatalog.isLoading && services.length === 0 ? <p className="text-sm text-muted-foreground"><CustomerSourceText source={"No active PSeq laboratory catalog services are available. Save a Draft and configure the service before submission."} /></p> : null}
           </Field>
           <Field>
-            <Label htmlFor="draft-sample-type"><RequiredFieldName>Sample type</RequiredFieldName> · required for pricing</Label>
-            <NativeSelect id="draft-sample-type" aria-invalid={Boolean(form.formState.errors.sampleTypeDefinitionId)} aria-describedby="draft-sample-type-error" value={values.sampleTypeDefinitionId ?? ''} onChange={event => form.setValue('sampleTypeDefinitionId', event.target.value || null, { shouldDirty: true })}><option value="">Select Sample type</option>{data.sampleTypes.data?.map(type => <option key={type.id} value={type.id}>{type.name}</option>)}</NativeSelect>
+            <Label htmlFor="draft-sample-type"><RequiredFieldName><CustomerSourceText source={"Sample type"} /></RequiredFieldName> <CustomerSourceText source={"· required for pricing"} /></Label>
+            <NativeSelect id="draft-sample-type" aria-invalid={Boolean(form.formState.errors.sampleTypeDefinitionId)} aria-describedby="draft-sample-type-error" value={values.sampleTypeDefinitionId ?? ''} onChange={event => form.setValue('sampleTypeDefinitionId', event.target.value || null, { shouldDirty: true })}><option value=""><CustomerSourceText source={"Select Sample type"} /></option>{data.sampleTypes.data?.map(type => <option key={type.id} value={type.id}>{type.name}</option>)}</NativeSelect>
             <FieldError id="draft-sample-type-error">{form.formState.errors.sampleTypeDefinitionId?.message}</FieldError>
           </Field>
-          {data.customers.error || data.departments.error || data.sampleTypes.error ? <Alert variant="destructive" className="md:col-span-2"><AlertDescription>{getOrderErrorMessage(data.customers.error ?? data.departments.error ?? data.sampleTypes.error, 'Some choices could not be loaded. Reload and try again.')}</AlertDescription></Alert> : null}
-          <div className="md:col-span-2">{data.readiness.data ? <CustomerOrderReadiness readiness={data.readiness.data} refreshing={data.readiness.isFetching} onRefresh={() => void data.readiness.refetch()} /> : null}{data.readiness.error ? <Alert variant="destructive"><AlertDescription>Customer readiness could not be loaded. Save a Draft and retry before submission.<Button type="button" variant="outline" onClick={() => void data.readiness.refetch()}>Retry</Button></AlertDescription></Alert> : null}<p className="mt-2 text-xs text-muted-foreground">Customer readiness applies when submitting for pricing. It does not block saving a Draft.</p></div>
+          {data.customers.error || data.departments.error || data.sampleTypes.error ? <Alert variant="destructive" className="md:col-span-2"><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(data.customers.error ?? data.departments.error ?? data.sampleTypes.error, 'Some choices could not be loaded. Reload and try again.')} />}</AlertDescription></Alert> : null}
+          <div className="md:col-span-2">{data.readiness.data ? <CustomerOrderReadiness readiness={data.readiness.data} refreshing={data.readiness.isFetching} onRefresh={() => void data.readiness.refetch()} /> : null}{data.readiness.error ? <Alert variant="destructive"><AlertDescription><CustomerSourceText source={"Customer readiness could not be loaded. Save a Draft and retry before submission."} /><Button type="button" variant="outline" onClick={() => void data.readiness.refetch()}><CustomerSourceText source={"Retry"} /></Button></AlertDescription></Alert> : null}<p className="mt-2 text-xs text-muted-foreground"><CustomerSourceText source={"Customer readiness applies when submitting for pricing. It does not block saving a Draft."} /></p></div>
         </CardContent></Card>
         <Card size="sm">
-          <CardHeader><CardTitle>Order scope</CardTitle></CardHeader>
+          <CardHeader><CardTitle><CustomerSourceText source={"Order scope"} /></CardTitle></CardHeader>
           <CardContent className="space-y-2">
             <div className="flex flex-wrap items-start gap-x-6 gap-y-3">
-              <label htmlFor="draft-use-phases" className="flex min-h-8 cursor-pointer items-center gap-2"><Checkbox id="draft-use-phases" checked={values.usesPhases} onCheckedChange={value => togglePhases(value === true)} /><span>Use phases</span></label>
+              <label htmlFor="draft-use-phases" className="flex min-h-8 cursor-pointer items-center gap-2"><Checkbox id="draft-use-phases" checked={values.usesPhases} onCheckedChange={value => togglePhases(value === true)} /><span><CustomerSourceText source={"Use phases"} /></span></label>
               {values.usesPhases ? <Field className="min-w-0">
                 <div className="flex min-h-8 items-center gap-2">
-                  <Label htmlFor="draft-phase-count" className="shrink-0">Phase count</Label>
+                  <Label htmlFor="draft-phase-count" className="shrink-0"><CustomerSourceText source={"Phase count"} /></Label>
                   <Input id="draft-phase-count" className="w-24 shrink-0" type="number" min={2} max={100} value={phaseCountInput ?? phases.fields.length} onChange={event => setPhaseCountInput(event.target.value)} onBlur={event => resizePhases(Number(event.target.value))} aria-invalid={Boolean(phaseCountError)} aria-describedby="draft-phase-count-error" />
                 </div>
                 <FieldError id="draft-phase-count-error">{phaseCountError}</FieldError>
               </Field> : null}
             </div>
-            <p className="text-xs text-muted-foreground">{values.usesPhases ? 'Each phase delivers its results before the next begins.' : 'Use phases for sequential delivery cohorts.'} Samples and sequencing runs are counted separately.</p>
+            <p className="text-xs text-muted-foreground">{values.usesPhases ? <CustomerSourceText source={"Each phase delivers its results before the next begins."} /> : <CustomerSourceText source={"Use phases for sequential delivery cohorts."} />} <CustomerSourceText source={"Samples and sequencing runs are counted separately."} /></p>
           </CardContent>
         </Card>
-        {phases.fields.map((phase, index) => <CommercialDraftPhaseFields key={`${phase.id}-${index}`} index={index} form={form} phased={values.usesPhases} actions={values.usesPhases ? <ActionMenu><DropdownMenuTrigger asChild><Button data-phase-actions-id={phase.id} type="button" variant="outline">Actions</Button></DropdownMenuTrigger><DropdownMenuContent><DropdownMenuItem disabled={index === 0} onSelect={() => phases.move(index, index - 1)}>Move earlier</DropdownMenuItem><DropdownMenuItem disabled={index === phases.fields.length - 1} onSelect={() => phases.move(index, index + 1)}>Move later</DropdownMenuItem><DropdownMenuItem variant="destructive" disabled={phases.fields.length <= 2} onSelect={() => removePhase(index)}>Remove phase</DropdownMenuItem></DropdownMenuContent></ActionMenu> : null} />)}
+        {phases.fields.map((phase, index) => <CommercialDraftPhaseFields key={`${phase.id}-${index}`} index={index} form={form} phased={values.usesPhases} actions={values.usesPhases ? <ActionMenu><DropdownMenuTrigger asChild><Button data-phase-actions-id={phase.id} type="button" variant="outline"><CustomerSourceText source={"Actions"} /></Button></DropdownMenuTrigger><DropdownMenuContent><DropdownMenuItem disabled={index === 0} onSelect={() => phases.move(index, index - 1)}><CustomerSourceText source={"Move earlier"} /></DropdownMenuItem><DropdownMenuItem disabled={index === phases.fields.length - 1} onSelect={() => phases.move(index, index + 1)}><CustomerSourceText source={"Move later"} /></DropdownMenuItem><DropdownMenuItem variant="destructive" disabled={phases.fields.length <= 2} onSelect={() => removePhase(index)}><CustomerSourceText source={"Remove phase"} /></DropdownMenuItem></DropdownMenuContent></ActionMenu> : null} />)}
         <CommercialDraftHandlingFields form={form} sampleType={data.sampleTypes.data?.find(type => type.id === values.sampleTypeDefinitionId)} />
       </fieldset>
-      <Card><CardHeader><CardTitle>Order summary</CardTitle></CardHeader><CardContent><p>{totals.samples} samples · {totals.runs} sequencing runs{values.usesPhases ? ` · ${phases.fields.length} phases` : ''}</p><p className="mt-2 font-medium">Proposed subtotal: {totals.pricedPhases ? money(totals.proposed) : 'No price proposed'}{totals.pricedPhases > 0 && totals.pricedPhases < phases.fields.length ? ' · Some phases have no proposed price' : ''}</p><p className="mt-1 text-xs text-muted-foreground">Formal quote prices are reviewed by phase. Saving a Draft does not submit it for pricing or authorize laboratory work.</p></CardContent></Card>
-      <footer className="flex flex-wrap items-center justify-between gap-3 border-t pt-4"><div><RequiredLegend /><p className="mt-1 text-xs text-muted-foreground">Customer, Department and Job name are required to save. Complete the remaining required fields before submitting for pricing.</p></div><div className="flex flex-wrap gap-2"><Button asChild type="button" variant="outline"><Link to="/order-operations/lab-services" search={previous => ({ ...previous })}>Cancel</Link></Button><Button type="submit" variant="outline" disabled={busy}>{busy ? 'Saving…' : 'Save draft'}</Button><Button type="button" disabled={busy} onClick={() => void save(true)}>Submit for pricing</Button></div></footer>
+      <Card><CardHeader><CardTitle><CustomerSourceText source={"Order summary"} /></CardTitle></CardHeader><CardContent><p>{totals.samples} <CustomerSourceText source={"samples ·"} /> {totals.runs} <CustomerSourceText source={"sequencing runs"} />{values.usesPhases ? ` · ${phases.fields.length} phases` : ''}</p><p className="mt-2 font-medium"><CustomerSourceText source={"Proposed subtotal:"} /> {totals.pricedPhases ? money(totals.proposed) : <CustomerSourceText source={"No price proposed"} />}{totals.pricedPhases > 0 && totals.pricedPhases < phases.fields.length ? <CustomerSourceText source={" · Some phases have no proposed price"} /> : ''}</p><p className="mt-1 text-xs text-muted-foreground"><CustomerSourceText source={"Formal quote prices are reviewed by phase. Saving a Draft does not submit it for pricing or authorize laboratory work."} /></p></CardContent></Card>
+      <footer className="flex flex-wrap items-center justify-between gap-3 border-t pt-4"><div><RequiredLegend /><p className="mt-1 text-xs text-muted-foreground"><CustomerSourceText source={"Customer, Department and Job name are required to save. Complete the remaining required fields before submitting for pricing."} /></p></div><div className="flex flex-wrap gap-2"><Button asChild type="button" variant="outline"><Link to="/order-operations/lab-services" search={previous => ({ ...previous })}><CustomerSourceText source={"Cancel"} /></Link></Button><Button type="submit" variant="outline" disabled={busy}>{busy ? <CustomerSourceText source={"Saving…"} /> : <CustomerSourceText source={"Save draft"} />}</Button><Button type="button" disabled={busy} onClick={() => void save(true)}><CustomerSourceText source={"Submit for pricing"} /></Button></div></footer>
     </form>
     <Dialog open={Boolean(phaseConfirmation)} onOpenChange={open => { if (!open) setPhaseConfirmation(null) }}>
       <DialogContent onOpenAutoFocus={event => { event.preventDefault(); cancelPhaseConfirmation.current?.focus() }} onCloseAutoFocus={event => { event.preventDefault(); document.querySelector<HTMLElement>(phaseConfirmationFocusSelector.current)?.focus() }}>
         <DialogHeader><DialogTitle>{phaseConfirmation?.title}</DialogTitle></DialogHeader>
         <div><DialogDescription className="pr-0 text-foreground">{phaseConfirmation?.description}</DialogDescription></div>
         <DialogFooter>
-          <Button ref={cancelPhaseConfirmation} type="button" variant="outline" onClick={() => setPhaseConfirmation(null)}>Cancel</Button>
+          <Button ref={cancelPhaseConfirmation} type="button" variant="outline" onClick={() => setPhaseConfirmation(null)}><CustomerSourceText source={"Cancel"} /></Button>
           <Button type="button" variant="destructive" disabled={busy} onClick={() => {
             if (!phaseConfirmation || busy) return
             phaseConfirmationFocusSelector.current = phaseConfirmation.confirmedFocusSelector ?? phaseConfirmation.returnFocusSelector

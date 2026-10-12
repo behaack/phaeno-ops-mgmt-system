@@ -8,6 +8,9 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 
 public static class TransportationKitInventory
 {
+    public static bool IsReadyForSamplePreparation(SampleShippingStockKit kit, DateTime at)
+        => kit.CustomerReceivedAt.HasValue && HasPreparedTubeRoster(kit) && IsPhysicallyUsable(kit, at);
+
     public static bool HasPreparedTubeRoster(SampleShippingStockKit kit)
     {
         if (!kit.AssemblyWorkflowRevisionId.HasValue || !kit.AssemblyCompletedAt.HasValue) return false;

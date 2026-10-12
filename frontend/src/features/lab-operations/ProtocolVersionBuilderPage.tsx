@@ -1,3 +1,4 @@
+import { confirmPortal } from '#/components/PortalConfirmation'
 import { getLabSteps } from '#/api/lab-steps'
 import { ConfigurationPreview } from './ConfigurationPreview'
 import { LabStepPicker, PinnedLabStep } from './PinnedLabStep'
@@ -88,6 +89,8 @@ export function ProtocolVersionBuilderPage({
     resolver: zodResolver(protocolDefinitionFormSchema),
     defaultValues: { preparationBatchEnabled: true, steps: [createEmptyProtocolStep()] },
   })
+  const { isDirty: __formDraftDirty } = form.formState
+
   const steps = useFieldArray({ control: form.control, name: 'steps' })
   const watchedValues = form.watch()
   const preview = protocolDefinitionFormSchema.safeParse(watchedValues)
@@ -112,7 +115,7 @@ export function ProtocolVersionBuilderPage({
     },
   })
 
-  useBlocker({ shouldBlockFn: () => !leaveApproved.current && (mutation.isPending || form.formState.isDirty && !window.confirm('Discard unsaved protocol changes?')), enableBeforeUnload: false })
+  useBlocker({ shouldBlockFn: async () => !leaveApproved.current && (mutation.isPending || __formDraftDirty && !(await confirmPortal('Discard unsaved protocol changes?'))), enableBeforeUnload: false })
 
   useEffect(() => {
     if (!protocol || formReady || definitionLoadError) return
@@ -147,13 +150,13 @@ export function ProtocolVersionBuilderPage({
 
   useEffect(() => {
     const warnBeforeUnload = (event: BeforeUnloadEvent) => {
-      if (!form.formState.isDirty || mutation.isSuccess) return
+      if (!__formDraftDirty || mutation.isSuccess) return
       event.preventDefault()
       event.returnValue = ''
     }
     window.addEventListener('beforeunload', warnBeforeUnload)
     return () => window.removeEventListener('beforeunload', warnBeforeUnload)
-  }, [form.formState.isDirty, mutation.isSuccess])
+  }, [__formDraftDirty, mutation.isSuccess])
 
   const showPreview = (index = 0) => setCapturePreview({ definition: JSON.parse(serializeProtocolDefinition(form.getValues())) as ProtocolDefinition, index })
 
@@ -327,7 +330,7 @@ export function ProtocolVersionBuilderPage({
             <CardDescription>
               Build the procedure in execution order. Use the example only as a starting point and replace it with the approved laboratory procedure.
             </CardDescription>
-            {!isEditing && !controlledSource && !form.formState.isDirty ? (
+            {!isEditing && !controlledSource && !__formDraftDirty ? (
               <CardAction>
                 <Button
                   type="button"
@@ -398,7 +401,7 @@ export function ProtocolVersionBuilderPage({
           <Button
             type="button"
             variant="outline"
-            onClick={() => form.formState.isDirty ? setDiscardOpen(true) : void leaveBuilder()}
+            onClick={() => __formDraftDirty ? setDiscardOpen(true) : void leaveBuilder()}
           >
             Cancel
           </Button>

@@ -1,3 +1,7 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
+import { useCustomerMessages } from '#/features/customer-i18n/use-customer-messages'
+import { NativeSelect } from '#/components/ui/native-select'
+import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { isAxiosError } from 'axios'
 import { useState } from 'react'
@@ -12,7 +16,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '#/components/ui/input'
 import { Textarea } from '#/components/ui/textarea'
 import { Label } from '#/components/ui/label'
-import { departmentErrorMessage, departmentMessages as m } from './department-localization'
+import { departmentErrorMessage, departmentMessages, departmentMessages as m } from './department-localization'
 
 const email = z.string().trim().max(255, m.tooLong(255)).refine((value) => !value || z.email().safeParse(value).success, m.validEmail)
 const schema = z.object({
@@ -25,6 +29,8 @@ type Values = z.infer<typeof schema>
 const textFields = ['billingContactEmail', 'notificationEmail', 'shippingInstructions', 'resultDeliveryInstructions'] as const
 
 export function OrganizationDefaultsPanel({ organizationId }: { organizationId: string }) {
+  const m = useCustomerMessages(departmentMessages)
+
   const client = useQueryClient()
   const [target, setTarget] = useState<OrganizationConfiguration | null>(null)
   const [conflict, setConflict] = useState<string | null>(null)
@@ -52,7 +58,7 @@ export function OrganizationDefaultsPanel({ organizationId }: { organizationId: 
       </CardHeader>
       <CardContent>
         {query.isPending ? <p role="status">{m.loadingDefaults}</p> : null}
-        {query.error ? <Alert variant="destructive"><AlertDescription>{departmentErrorMessage(query.error)} <Button variant="link" onClick={() => void query.refetch()}>{m.retry}</Button></AlertDescription></Alert> : null}
+        {query.error ? <Alert variant="destructive"><AlertDescription><CustomerSourceText source={departmentErrorMessage(query.error)} /> <Button variant="link" onClick={() => void query.refetch()}>{m.retry}</Button></AlertDescription></Alert> : null}
         {query.data ? <dl className="grid gap-3 text-sm sm:grid-cols-2">
           <div><dt className="font-medium">{m.purchaseOrderRule}</dt><dd>{query.data.purchaseOrderRequired == null ? m.systemDefault : query.data.purchaseOrderRequired ? m.required : m.optional}</dd></div>
           {textFields.map((field) => <div key={field} className="min-w-0 break-words"><dt className="font-medium">{m[field]}</dt><dd className="whitespace-pre-wrap text-muted-foreground">{query.data?.[field] || m.systemDefault}</dd></div>)}
@@ -71,15 +77,19 @@ function OrganizationDefaultsDialog({ target, pending, error, onClose, onSubmit 
   onClose: () => void
   onSubmit: (values: Omit<OrganizationConfiguration, 'organizationId' | 'version'>) => void
 }) {
+  const m = useCustomerMessages(departmentMessages)
+
   const [discard, setDiscard] = useState(false)
   const form = useForm<Values>({ resolver: zodResolver(schema), mode: 'onBlur', defaultValues: {
     purchaseOrderRequired: target.purchaseOrderRequired == null ? 'inherit' : target.purchaseOrderRequired ? 'required' : 'optional',
     billingContactEmail: target.billingContactEmail ?? '', notificationEmail: target.notificationEmail ?? '',
     shippingInstructions: target.shippingInstructions ?? '', resultDeliveryInstructions: target.resultDeliveryInstructions ?? '',
   } })
+  const __modalGuard = useModalDraftGuard(form.formState.isDirty, form.formState.isSubmitting)
+
   const { isDirty } = form.formState
   const close = () => { if (!pending) { if (isDirty) setDiscard(true); else onClose() } }
-  return <Dialog open onOpenChange={(open) => { if (!open) close() }}>
+  return <Dialog open onOpenChange={open => { if (open) ((open) => { if (!open) close() })(open); else void __modalGuard.close(() => ((open) => { if (!open) close() })(false)) }}>
     <DialogContent className="max-w-2xl" onCloseAutoFocus={(event) => { event.preventDefault(); document.getElementById('edit-organization-defaults')?.focus() }}>
       <form noValidate onSubmit={form.handleSubmit((values) => onSubmit({
         purchaseOrderRequired: values.purchaseOrderRequired === 'inherit' ? null : values.purchaseOrderRequired === 'required',
@@ -87,13 +97,13 @@ function OrganizationDefaultsDialog({ target, pending, error, onClose, onSubmit 
         shippingInstructions: values.shippingInstructions || null, resultDeliveryInstructions: values.resultDeliveryInstructions || null,
       }))}>
         <DialogHeader><DialogTitle>{m.editDefaults}</DialogTitle><DialogDescription>{m.defaultsEditDescription}</DialogDescription></DialogHeader>
-        {error ? <Alert variant="destructive"><AlertDescription>{departmentErrorMessage(error)}</AlertDescription></Alert> : null}
-        {discard ? <section role="alert" className="space-y-3"><p>{m.discardDefaults}</p><div className="flex flex-wrap gap-2"><Button type="button" variant="outline" onClick={() => setDiscard(false)}>{m.keepEditing}</Button><Button type="button" variant="destructive" onClick={onClose}>{m.discard}</Button></div></section> : null}
+        {error ? <Alert variant="destructive"><AlertDescription><CustomerSourceText source={departmentErrorMessage(error)} /></AlertDescription></Alert> : null}
+        {discard ? <section role="alert" className="space-y-3"><p>{m.discardDefaults}</p><div className="flex flex-wrap gap-2"><Button type="button" variant="outline" onClick={() => setDiscard(false)}>{m.keepEditing}</Button><Button type="button" variant="destructive" onClick={() => { void __modalGuard.close(() => (onClose)()) }}>{m.discard}</Button></div></section> : null}
         <fieldset disabled={pending} className="grid gap-4">
           <div className="grid gap-1.5"><Label htmlFor="defaults-po">{m.purchaseOrderRule}</Label>
-            <select id="defaults-po" className="h-9 cursor-pointer rounded-lg border border-input bg-background px-3 text-sm" {...form.register('purchaseOrderRequired')}>
+            <NativeSelect id="defaults-po" className="cursor-pointer rounded-lg border border-input bg-background px-3 text-sm" {...form.register('purchaseOrderRequired')}>
               <option value="inherit">{m.systemPoDefault}</option><option value="required">{m.required}</option><option value="optional">{m.optional}</option>
-            </select></div>
+            </NativeSelect></div>
           {textFields.map((field) => {
             const fieldError = form.formState.errors[field]?.message
             const props = { id: `defaults-${field}`, maxLength: field.endsWith('Email') ? 255 : 2000, 'aria-invalid': Boolean(fieldError), 'aria-describedby': fieldError ? `defaults-${field}-error` : undefined, ...form.register(field) }

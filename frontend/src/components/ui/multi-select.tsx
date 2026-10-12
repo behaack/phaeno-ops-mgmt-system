@@ -1,3 +1,4 @@
+import { CustomerSourceText, useCustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { Check, ChevronDown, Search } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 
@@ -34,6 +35,8 @@ export function MultiSelect({
   "aria-describedby"?: string;
   className?: string;
 }) {
+  const __customerSource = useCustomerSourceText()
+
   const generatedId = useId();
   const listboxId = `${id}-${generatedId}-options`;
   const searchRef = useRef<HTMLInputElement>(null);
@@ -133,7 +136,7 @@ export function MultiSelect({
               role="searchbox"
               aria-label={`Search ${ariaLabel.toLocaleLowerCase()}`}
               className="pl-8"
-              placeholder="Search services"
+              placeholder={__customerSource("Search services")}
               autoComplete="off"
               onChange={(event) => {
                 setSearch(event.target.value);
@@ -197,7 +200,7 @@ export function MultiSelect({
           </div>
           <div className="flex justify-end border-t p-1">
             <Button type="button" variant="ghost" size="sm" onClick={close}>
-              Done
+              <CustomerSourceText source={"Done"} />
             </Button>
           </div>
         </div>

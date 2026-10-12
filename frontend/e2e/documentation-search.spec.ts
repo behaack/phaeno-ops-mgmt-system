@@ -69,7 +69,9 @@ test('topic browsing uses metadata and search outages remain distinct from no re
     ? { success: true, data: { items: [], metadata: { ...result.metadata, total: 0, topics: [], workflows: [], contentTypes: [] } } }
     : { success: false, error: { code: 'documentation_search_unavailable' } } }))
   await page.goto('/docs')
+  await page.waitForLoadState('networkidle')
   await page.getByRole('region', { name: 'Browse by topic' }).getByRole('link', { name: 'Sample shipping' }).click()
+  await expect(page).toHaveURL(/\/docs\/search\?.*topic=shipping/)
   await expect(page.getByText(/Documentation search is temporarily unavailable/)).toBeVisible()
   await expect(page.getByText(/No guides matched/)).toHaveCount(0)
   status = 200

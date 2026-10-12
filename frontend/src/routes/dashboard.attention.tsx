@@ -1,3 +1,4 @@
+import { parseWorkSearch } from '#/features/work-attention/work-search'
 import { createFileRoute } from '@tanstack/react-router'
-import { OrderOperationsPage } from '#/features/orders/OrderOperationsPage'
-export const Route = createFileRoute('/dashboard/attention')({ component: () => <OrderOperationsPage workspace="attention" /> })
+import { WorkDashboard } from '#/features/work-attention/WorkDashboard'
+export const Route = createFileRoute('/dashboard/attention')({ validateSearch: parseWorkSearch, component: () => <WorkDashboard full /> })

@@ -16,6 +16,6 @@ export function FinanceSidebar({ recordSection, children }: { recordSection?: Fi
   const section = items.find(item => item.value === (recordSection ?? search.financeSection))?.value ?? items[0]?.value
   if (!section) return children
   return <WorkspaceSidebar workspaceLabel="Finance" items={items} value={section} onValueChange={value => {
-    void navigate({ to: '/finance', search: previous => ({ ...previous, financeSection: value }) })
+    void navigate({ to: '/finance', search: previous => ({ ...previous, financeSection: value, listPage: 1 }) })
   }}><div className="pt-6 lg:pt-0">{children}</div></WorkspaceSidebar>
 }

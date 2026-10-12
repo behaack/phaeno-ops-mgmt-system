@@ -1,3 +1,5 @@
+import { NativeSelect } from '#/components/ui/native-select'
+import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useRef } from 'react'
@@ -90,6 +92,8 @@ export function ServiceRequestEntitlementsDialog({ request, mode, error, isPendi
   })
   const initialized = useRef(false)
   const form = useForm<Values>({ resolver: zodResolver(schema), defaultValues: valuesFor(request, []) })
+  const __modalGuard = useModalDraftGuard(form.formState.isDirty, form.formState.isSubmitting)
+
   useEffect(() => {
     if (initialized.current || entitlements.isFetching || departments.isFetching || !entitlements.data || !departments.data) return
     form.reset(valuesFor(request, entitlements.data))
@@ -109,7 +113,7 @@ export function ServiceRequestEntitlementsDialog({ request, mode, error, isPendi
     form.setValue(`grants.${index}.configurationStatus`, selected?.configurationStatus ?? 'Pending', { shouldValidate: true })
   }
 
-  return <Dialog open onOpenChange={onOpenChange}>
+  return <Dialog open onOpenChange={open => { if (open) (onOpenChange)(open); else void __modalGuard.close(() => (onOpenChange)(false)) }}>
     <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
       <DialogHeader>
         <DialogTitle>{mode === 'approve' ? 'Approve and set up services' : 'Set up approved services'}</DialogTitle>
@@ -152,7 +156,7 @@ export function ServiceRequestEntitlementsDialog({ request, mode, error, isPendi
             <legend className="px-1 font-medium">{name}</legend>
             <div className="grid gap-1.5">
               <Label htmlFor={`service-department-${index}`}><RequiredFieldName>Applies to</RequiredFieldName></Label>
-              <select id={`service-department-${index}`} className={selectClass} value={grant.departmentId}
+              <NativeSelect id={`service-department-${index}`} className={selectClass} value={grant.departmentId}
                 onChange={event => {
                   const departmentId = event.target.value
                   form.setValue(`grants.${index}.departmentId`, departmentId, { shouldValidate: true })
@@ -161,17 +165,17 @@ export function ServiceRequestEntitlementsDialog({ request, mode, error, isPendi
                 }}>
                 <option value="">All departments (Company default)</option>
                 {(departments.data ?? []).filter(department => department.isActive).map(department => <option key={department.id} value={department.id}>{department.name}</option>)}
-              </select>
+              </NativeSelect>
             </div>
             {candidates.length ? <div className="grid gap-1.5">
               <Label htmlFor={`service-existing-${index}`}>Existing permission</Label>
-              <select id={`service-existing-${index}`} className={selectClass} value={grant.existingEntitlementId}
+              <NativeSelect id={`service-existing-${index}`} className={selectClass} value={grant.existingEntitlementId}
                 onChange={event => chooseExisting(index, event.target.value)}>
                 <option value="">Create a new permission</option>
                 {candidates.map(candidate => <option key={candidate.id} value={candidate.id}>
                   Update existing · {new Date(candidate.effectiveFrom).toLocaleDateString()} · {candidate.configurationStatus}
                 </option>)}
-              </select>
+              </NativeSelect>
               <p className="text-xs text-muted-foreground">Update an existing overlapping permission to avoid a duplicate. Its current dates and status are loaded for review.</p>
             </div> : null}
             <div className="grid gap-3 sm:grid-cols-2">
@@ -188,11 +192,11 @@ export function ServiceRequestEntitlementsDialog({ request, mode, error, isPendi
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor={`service-status-${index}`}><RequiredFieldName>Service configuration</RequiredFieldName></Label>
-              <select id={`service-status-${index}`} className={selectClass} {...form.register(`grants.${index}.configurationStatus`)}>
+              <NativeSelect id={`service-status-${index}`} className={selectClass} {...form.register(`grants.${index}.configurationStatus`)}>
                 <option value="Pending">Pending setup</option>
                 <option value="Ready">Ready to use</option>
                 <option value="Blocked">Blocked</option>
-              </select>
+              </NativeSelect>
             </div>
           </fieldset>
         })}
@@ -202,7 +206,7 @@ export function ServiceRequestEntitlementsDialog({ request, mode, error, isPendi
         </div> : null}
       </form> : null}
       <RequiredDialogFooter showLegend>
-        <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Keep unchanged</Button>
+        <Button type="button" variant="outline" onClick={() => { void __modalGuard.close(() => (() => onOpenChange(false))()) }}>Keep unchanged</Button>
         <Button type="submit" form="service-request-entitlements" disabled={busy || Boolean(entitlements.error || departments.error) || isPending}>
           {isPending ? 'Saving…' : mode === 'approve' ? 'Approve and save services' : 'Save services'}
         </Button>

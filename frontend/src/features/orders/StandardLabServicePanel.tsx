@@ -1,3 +1,5 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
+import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
@@ -62,6 +64,8 @@ export function StandardLabServicePanel({
   order: LabServiceOrder
   readOnly?: boolean
 }) {
+  const __customerText = useCustomerText()
+
   const {
     authProvider,
     session,
@@ -103,6 +107,8 @@ export function StandardLabServicePanel({
     resolver: zodResolver(schema),
     defaultValues: { purchaseOrderNumber: '', confirmed: false, sampleTypeConfirmed: false },
   })
+  const { isDirty: __formDraftDirty } = form.formState
+
   const requiresPo = session?.selectedDepartment?.purchaseOrderRequired === true
   const mutation = useMutation({
     mutationFn: async (values: z.infer<typeof schema>) => {
@@ -154,10 +160,10 @@ export function StandardLabServicePanel({
     },
   })
   const dismissal = useOrderDecisionDismissal(
-    Boolean(review) && form.formState.isDirty,
+    Boolean(review) && __formDraftDirty,
     mutation.isPending,
     () => setReview(null),
-    { scope: 'order confirmation', description: 'Your confirmation entries will be discarded. The saved Job will remain unchanged.' },
+    { scope: 'order confirmation', description: __customerText('m_4c74e6df1c92') },
   )
   function close() {
     dismissal.close()
@@ -184,76 +190,72 @@ export function StandardLabServicePanel({
       client.invalidateQueries({ queryKey: ['lab-service-order', order.id] }),
     ])
   }
-  if (order.customerDraft && !committed) return <Card><CardHeader><CardTitle>Order Draft</CardTitle><CardDescription>{order.customerReference} · {order.requestedSpecimenCount} samples · one run per sample</CardDescription></CardHeader><CardContent><p className="text-sm text-muted-foreground">Use Edit Draft to complete the scope and review the applicable price before placing the order. Saving a Draft does not authorize laboratory work.</p></CardContent></Card>
+  if (order.customerDraft && !committed) return <Card><CardHeader><CardTitle><CustomerText message="m_4a69ce3718a6" /></CardTitle><CardDescription>{order.customerReference} · {order.requestedSpecimenCount} <CustomerText message="m_c705a8dc3b3e" /></CardDescription></CardHeader><CardContent><p className="text-sm text-muted-foreground"><CustomerText message="m_cc1a52b475ce" /></p></CardContent></Card>
   if (!committed && !canReview) return null
   return (
     <Card className="mb-5">
       <CardHeader>
         <CardTitle>
           {committed
-            ? 'Accepted PSeq Lab Service'
-            : 'Standard PSeq Lab Service'}
+            ? <CustomerSourceText source={"Accepted PSeq Lab Service"} />
+            : __customerText('m_2bd147cb43c9')}
         </CardTitle>
         <CardDescription>
-          One library preparation, one sequencing run and data assembly are included in the price per sample.
-        </CardDescription>
+          <CustomerText message="m_7eeda7e38b90" /></CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {committed ? (
           <>
             <p className="font-medium">
-              {committed.productName} · version {committed.offeringVersion}
+              {committed.productName} <CustomerText message="m_46e8c5a67b4d" />{committed.offeringVersion}
             </p>
             <p>
               {money(committed.unitPrice, committed.currency)} ×{' '}
-              {committed.specimenCount} samples · {committed.sequencingRunCount || committed.specimenCount} sample-sequencing runs · Total{' '}
+              {committed.specimenCount} <CustomerText message="m_a0d8d107681a" />{committed.sequencingRunCount || committed.specimenCount} <CustomerText message="m_e759d1106547" />{' '}
               {money(committed.total, committed.currency)}
             </p>
             <p className="whitespace-pre-wrap text-sm">
               {committed.includedOutputContract}
             </p>
-            {committed.priceProvenance ? <p className="text-sm text-muted-foreground">Accepted {committed.priceProvenance.source === 'Standard' ? 'standard service price' : `${committed.priceProvenance.source.toLowerCase()} negotiated price`}. Later price changes do not affect this commitment.</p> : null}
+            {committed.priceProvenance ? <p className="text-sm text-muted-foreground"><CustomerText message="m_ca77c99d7648" />{committed.priceProvenance.source === 'Standard' ? <CustomerSourceText source={"standard service price"} /> : __customerText('m_d038e507b36e', { p0: String(committed.priceProvenance.source.toLowerCase()) })}<CustomerText message="m_994ced719a20" /></p> : null}
             <p className="text-sm text-muted-foreground">
               {committed.deliveryTargetBusinessDays
-                ? <>Delivery target: {committed.deliveryTargetBusinessDays} business days after Phaeno physically receives every required sample for a phase. Review the Phases card for phased commitments. Monday–Friday, excluding Phaeno holidays.</>
-                : <>Published turnaround: {committed.minimumTurnaroundDays}–{committed.maximumTurnaroundDays} days after scientific acceptance.</>} Accepted{' '}
+                ? <><CustomerText message="m_d5b76e17a87c" />{committed.deliveryTargetBusinessDays} <CustomerText message="m_7db55fa12e0b" /></>
+                : <><CustomerText message="m_9cd0b037a749" />{committed.minimumTurnaroundDays}–{committed.maximumTurnaroundDays} <CustomerText message="m_a4733936bbd3" /></>} <CustomerText message="m_77d3cbce8e9a" />{' '}
               {new Date(committed.committedAtUtc).toLocaleDateString()}.
             </p>
           </>
         ) : (
           <>
             {offerings.isLoading ? (
-              <p role="status">Checking eligible offerings…</p>
+              <p role="status"><CustomerText message="m_6b1e18db3b76" /></p>
             ) : null}
             {offerings.error ? (
               <Alert variant="destructive">
-                <AlertTitle>Standard offerings could not be loaded</AlertTitle>
+                <AlertTitle><CustomerText message="m_f89c50613c4f" /></AlertTitle>
                 <AlertDescription>
-                  {getOrderErrorMessage(offerings.error, 'Try again.')}{' '}
+                  {<CustomerSourceText source={getOrderErrorMessage(offerings.error, 'Try again.')} />}{' '}
                   <Button
                     variant="outline"
                     onClick={() => void offerings.refetch()}
                   >
-                    Retry offerings
-                  </Button>
+                    <CustomerText message="m_762f87fee8fc" /></Button>
                 </AlertDescription>
               </Alert>
             ) : null}
             {offerings.data?.length ? (
               <>
                 <Field>
-                  <Label htmlFor="standard-lab-offering">Offering</Label>
+                  <Label htmlFor="standard-lab-offering"><CustomerText message="m_300e2bef4a7a" /></Label>
                   <NativeSelect
                     id="standard-lab-offering"
                     value={offeringId}
                     onChange={(event) => setOfferingId(event.target.value)}
                   >
-                    <option value="">Select an offering</option>
+                    <option value=""><CustomerText message="m_d50fdaa30f51" /></option>
                     {offerings.data.map((item) => (
                       <option key={item.id} value={item.id}>
-                        {item.name} · {money(item.unitPrice, item.currency)} /
-                        specimen
-                      </option>
+                        {item.name} · {money(item.unitPrice, item.currency)} <CustomerText message="m_9b77b7969333" /></option>
                     ))}
                   </NativeSelect>
                 </Field>
@@ -265,20 +267,18 @@ export function StandardLabServicePanel({
                 ) : null}
                 {preview.isLoading ? (
                   <p role="status">
-                    Calculating the final price and checking eligibility…
-                  </p>
+                    <CustomerText message="m_dd87c0888c1e" /></p>
                 ) : null}
                 {preview.error ? (
                   <Alert variant="destructive">
-                    <AlertTitle>Final price could not be checked</AlertTitle>
+                    <AlertTitle><CustomerText message="m_4a2719541fe4" /></AlertTitle>
                     <AlertDescription>
-                      {getOrderErrorMessage(preview.error, 'Try again.')}{' '}
+                      {<CustomerSourceText source={getOrderErrorMessage(preview.error, 'Try again.')} />}{' '}
                       <Button
                         variant="outline"
                         onClick={() => void preview.refetch()}
                       >
-                        Retry price review
-                      </Button>
+                        <CustomerText message="m_9078e12b1074" /></Button>
                     </AlertDescription>
                   </Alert>
                 ) : null}
@@ -292,21 +292,15 @@ export function StandardLabServicePanel({
                   }
                   onClick={startReview}
                 >
-                  Review standard order
-                </Button>
+                  <CustomerText message="m_74cb0c55c607" /></Button>
                 {!order.canPlaceStandardOrder ? (
                   <p className="text-sm text-muted-foreground">
-                    An organization or assigned-department administrator must place standard orders.
-                    Complete the Job pricing details and ordering setup before
-                    commitment.
-                  </p>
+                    <CustomerText message="m_b1b5e128d734" /></p>
                 ) : null}
               </>
             ) : !offerings.isLoading && !offerings.error ? (
               <p className="text-sm text-muted-foreground">
-                No standard offering is currently available for this
-                organization. Submit this request for Phaeno to prepare pricing.
-              </p>
+                <CustomerText message="m_2d3f22adc957" /></p>
             ) : null}
 
           </>
@@ -324,30 +318,26 @@ export function StandardLabServicePanel({
           >
             <DialogHeader>
               <DialogTitle>
-                Place standard order {order.orderNumber}?
+                <CustomerText message="m_00d8b866637e" />{order.orderNumber}?
               </DialogTitle>
               <DialogDescription>
-                Confirm the price and Sample type. Request transportation kits when ready. Phaeno
-                will choose and send the appropriate Transportation kits. Laboratory
-                work begins after you save and confirm each Sample ID and tube pair.
-              </DialogDescription>
+                <CustomerText message="m_5d1863cd6174" /></DialogDescription>
             </DialogHeader>
-            <p className="text-sm">Run the purchased number of sample-sequencing runs. Submitted tube counts are separate; failure-recovery attempts do not add purchased runs.</p>
+            <p className="text-sm"><CustomerText message="m_53d6f2c2ca00" /></p>
             {mutation.error ? (
               <Alert variant="destructive">
-                <AlertTitle>Standard order was not placed</AlertTitle>
+                <AlertTitle><CustomerText message="m_20b959c97e0f" /></AlertTitle>
                 <AlertDescription>
-                  {getOrderErrorMessage(
+                  {<CustomerSourceText source={getOrderErrorMessage(
                     mutation.error,
                     'Review the details and try again.',
-                  )}{' '}
+                  )} />}{' '}
                   <Button
                     variant="outline"
                     disabled={mutation.isPending}
                     onClick={() => void refreshReview()}
                   >
-                    Refresh terms and review again
-                  </Button>
+                    <CustomerText message="m_29ec0b5a4ab9" /></Button>
                 </AlertDescription>
               </Alert>
             ) : null}
@@ -367,23 +357,22 @@ export function StandardLabServicePanel({
             >
               <fieldset disabled={mutation.isPending} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="standard-sample-type-confirmed"><RequiredFieldName>Sample type</RequiredFieldName></Label>
+                  <Label htmlFor="standard-sample-type-confirmed"><RequiredFieldName><CustomerText message="m_1e3f2e3f87c9" /></RequiredFieldName></Label>
                   <p className="text-sm">{order.sampleTypeName ?? 'No Sample type selected'}</p>
                   <label htmlFor="standard-sample-type-confirmed" className="flex cursor-pointer items-start gap-2 text-sm">
                     <Checkbox id="standard-sample-type-confirmed" checked={form.watch('sampleTypeConfirmed')} onCheckedChange={value => form.setValue('sampleTypeConfirmed', value === true, { shouldDirty: true, shouldValidate: true })} />
-                    <span>I confirm this is the Sample type I will send.</span>
+                    <span><CustomerText message="m_a2447be7c1e2" /></span>
                   </label>
-                  {form.formState.errors.sampleTypeConfirmed ? <p role="alert" className="text-sm text-destructive">{form.formState.errors.sampleTypeConfirmed.message}</p> : null}
+                  {form.formState.errors.sampleTypeConfirmed ? <p role="alert" className="text-sm text-destructive">{<CustomerSourceText source={form.formState.errors.sampleTypeConfirmed.message} />}</p> : null}
                 </div>
 
                 <Field>
                   <Label htmlFor="standard-po">
                     {requiresPo ? (
                       <RequiredFieldName>
-                        Purchase order number
-                      </RequiredFieldName>
+                        <CustomerText message="m_65b4c1324e67" /></RequiredFieldName>
                     ) : (
-                      'Purchase order number (optional)'
+                      __customerText('m_f04d695faf06')
                     )}
                   </Label>
                   <Input
@@ -395,7 +384,7 @@ export function StandardLabServicePanel({
                   />
                   {form.formState.errors.purchaseOrderNumber ? (
                     <p role="alert" className="mt-1 text-sm text-destructive">
-                      {form.formState.errors.purchaseOrderNumber.message}
+                      {<CustomerSourceText source={form.formState.errors.purchaseOrderNumber.message} />}
                     </p>
                   ) : null}
                 </Field>
@@ -415,14 +404,12 @@ export function StandardLabServicePanel({
                   />
                   <span>
                     <RequiredFieldName>
-                      I accept the displayed scope and price and confirm that
-                      the Job contains no patient identifiers or PHI.
-                    </RequiredFieldName>
+                      <CustomerText message="m_07ae6308212d" /></RequiredFieldName>
                   </span>
                 </label>
                 {form.formState.errors.confirmed ? (
                   <p role="alert" className="text-sm text-destructive">
-                    {form.formState.errors.confirmed.message}
+                    {<CustomerSourceText source={form.formState.errors.confirmed.message} />}
                   </p>
                 ) : null}
               </fieldset>
@@ -435,14 +422,13 @@ export function StandardLabServicePanel({
                 disabled={mutation.isPending}
                 onClick={close}
               >
-                Keep reviewing
-              </Button>
+                <CustomerText message="m_34411a1bde47" /></Button>
               <Button
                 type="submit"
                 form="standard-lab-order"
                 disabled={mutation.isPending}
               >
-                {mutation.isPending ? 'Placing order…' : 'Confirm price and order'}
+                {mutation.isPending ? <CustomerSourceText source={"Placing order…"} /> : __customerText('m_bbc89584850e')}
               </Button>
             </RequiredDialogFooter>
           </DialogContent>
@@ -462,48 +448,46 @@ export function OfferingSummary({
   return (
     <div className="space-y-2 text-sm">
       <p className="font-medium">
-        {offering.name} · version {offering.offeringVersion}
+        {offering.name} <CustomerText message="m_46e8c5a67b4d" />{offering.offeringVersion}
       </p>
       <p>{offering.description}</p>
       <p className="whitespace-pre-wrap">{offering.includedOutputContract}</p>
       <p>
-        Materials: {offering.supportedSampleTypes?.length ? offering.supportedSampleTypes.map(type => type.name).join(', ') : offering.allowedMaterialTypes.join(', ')}. Biological
-        sources: {offering.allowedBiologicalSources.join(', ')}.
+        <CustomerText message="m_1400337dbb99" />{offering.supportedSampleTypes?.length ? offering.supportedSampleTypes.map(type => type.name).join(', ') : offering.allowedMaterialTypes.join(', ')}<CustomerText message="m_1c0617aaaaa2" />{offering.allowedBiologicalSources.join(', ')}.
       </p>
       <p>
-        Delivery target: {offering.maximumTurnaroundDays} business days after Phaeno physically receives every required tube for a phase. Review the Phases card for phased commitments. Monday–Friday, excluding Phaeno holidays.
-      </p>
+        <CustomerText message="m_d9c6daa047fc" />{offering.maximumTurnaroundDays} <CustomerText message="m_8416d1f10238" /></p>
       <p className="text-base font-semibold">
-        Standard sample-service subtotal:{' '}
-        {money(offering.unitPrice, offering.currency)} × {quantity} samples ={' '}
+        <CustomerText message="m_8217b55dc65e" />{' '}
+        {money(offering.unitPrice, offering.currency)} × {quantity} <CustomerText message="m_ab0118a46083" />{' '}
         {money(offering.unitPrice * quantity, offering.currency)}
       </p>
       <p className="text-muted-foreground">
-        Scope subtotal. Review the final tax and total before commitment. No
-        separate assembly purchase is required.
-      </p>
+        <CustomerText message="m_3b78283d8b1a" /></p>
     </div>
   )
 }
 
 function PreviewTotal({ preview }: { preview: StandardLabOrderPreview }) {
+
+
   return (
     <div className="space-y-2 text-sm">
       <p>
-        Subtotal {money(preview.subtotal, preview.currency)} · Tax{' '}
+        <CustomerText message="m_8c0f2cb34079" />{money(preview.subtotal, preview.currency)} <CustomerText message="m_9ab850e6b676" />{' '}
         {preview.tax === null
-          ? 'Requires billing setup'
+          ? <CustomerSourceText source={"Requires billing setup"} />
           : money(preview.tax, preview.currency)}
       </p>
       <p className="text-lg font-semibold">
-        Total{' '}
+        <CustomerText message="m_c9b3c38247f7" />{' '}
         {preview.total === null
-          ? 'Not yet available'
+          ? <CustomerSourceText source={"Not yet available"} />
           : money(preview.total, preview.currency)}
       </p>
       {preview.blockers.length ? (
         <Alert>
-          <AlertTitle>Before standard placement</AlertTitle>
+          <AlertTitle><CustomerText message="m_8f297969792d" /></AlertTitle>
           <AlertDescription>
             <ul className="list-disc space-y-1 pl-5">
               {preview.blockers.map((blocker) => (

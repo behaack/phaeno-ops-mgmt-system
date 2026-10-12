@@ -1,3 +1,6 @@
+import { CustomerSourceText, useCustomerSourceText } from '#/features/customer-i18n/customer-text'
+import { NativeSelect } from '#/components/ui/native-select'
+import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
@@ -59,6 +62,8 @@ export function OrganizationDetailPage({
   embedded?: boolean
   showUsers?: boolean
 }) {
+  const __customerSource = useCustomerSourceText()
+
   const { session } = usePhaenoSession()
   const client = useQueryClient()
   const [editOpen, setEditOpen] = useState(false)
@@ -117,7 +122,7 @@ export function OrganizationDetailPage({
     { label: 'Company requests', error: requestsQuery.error },
     { label: 'Portal access action', error: editMutation.error ?? conversionMutation.error ?? inviteMutation.error ?? memberMutation.error ?? inviteAction.error ?? developmentLinkMutation.error ?? entitlementMutation.error ?? editEntitlementMutation.error ?? endMutation.error },
   ].find((item) => item.error)
-  if (organizationQuery.isLoading) return <div className={embedded ? '' : 'page-wrap px-4 py-8'}><p className="text-sm text-muted-foreground">Loading Portal access…</p></div>
+  if (organizationQuery.isLoading) return <div className={embedded ? '' : 'page-wrap px-4 py-8'}><p className="text-sm text-muted-foreground"><CustomerSourceText source={"Loading Portal access…"} /></p></div>
   if (!organization) return <NotFound />
 
   const summary = summaryQuery.data
@@ -136,38 +141,37 @@ export function OrganizationDetailPage({
         <section className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <div className="mb-2 flex flex-wrap gap-2">
-              <Badge variant="secondary">Portal access enabled</Badge>
+              <Badge variant="secondary"><CustomerSourceText source={"Portal access enabled"} /></Badge>
               <Badge variant="outline">{organization.kind}</Badge>
             </div>
-            <h2 className="text-xl font-semibold">Portal access and services</h2>
+            <h2 className="text-xl font-semibold"><CustomerSourceText source={"Portal access and services"} /></h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Manage this Company&apos;s service authorization, readiness, and retention. Manage people and invitations in People, and department settings in Departments.
+              <CustomerSourceText source={"Manage this Company's service authorization, readiness, and retention. Manage people and invitations in People, and department settings in Departments."} />
             </p>
           </div>
-          {showUsers ? <Button variant="outline" onClick={() => setActiveTab('members')}><Users data-icon="inline-start" />Manage users</Button> : null}
+          {showUsers ? <Button variant="outline" onClick={() => setActiveTab('members')}><Users data-icon="inline-start" /><CustomerSourceText source={"Manage users"} /></Button> : null}
         </section>
       ) : (
-        <section className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"><div><Badge variant="secondary" className="mb-3">{organization.kind}</Badge><h1 className="text-3xl font-semibold leading-tight">{organization.name}</h1><p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground sm:text-base">{organization.description || 'No account description has been recorded.'}</p></div><div className="flex flex-wrap gap-2"><Button asChild variant="outline"><Link to="/crm/companies"><ArrowLeft data-icon="inline-start" />Back to Companies</Link></Button><Button variant="outline" onClick={() => setActiveTab('members')}><Users data-icon="inline-start" />Manage users</Button><Button onClick={() => setEditOpen(true)}><Pencil data-icon="inline-start" />Edit access settings</Button></div></section>
+        <section className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"><div><Badge variant="secondary" className="mb-3">{organization.kind}</Badge><h1 className="text-3xl font-semibold leading-tight">{organization.name}</h1><p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground sm:text-base">{organization.description || 'No account description has been recorded.'}</p></div><div className="flex flex-wrap gap-2"><Button asChild variant="outline"><Link to="/crm/companies"><ArrowLeft data-icon="inline-start" /><CustomerSourceText source={"Back to Companies"} /></Link></Button><Button variant="outline" onClick={() => setActiveTab('members')}><Users data-icon="inline-start" /><CustomerSourceText source={"Manage users"} /></Button><Button onClick={() => setEditOpen(true)}><Pencil data-icon="inline-start" /><CustomerSourceText source={"Edit access settings"} /></Button></div></section>
       )}
-      {errorState ? <Alert variant="destructive"><AlertTitle>{errorState.label} could not be loaded</AlertTitle><AlertDescription>{apiErrorMessage(errorState.error)}</AlertDescription></Alert> : null}
+      {errorState ? <Alert variant="destructive"><AlertTitle>{errorState.label} <CustomerSourceText source={"could not be loaded"} /></AlertTitle><AlertDescription>{<CustomerSourceText source={apiErrorMessage(errorState.error)} />}</AlertDescription></Alert> : null}
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><Summary label="Start pricing" value={organization.kind !== 'Customer' ? 'Not applicable' : pricingReadiness.isPending ? 'Checking…' : pricingReadiness.data ? pricingReadiness.data.canStartPricing ? 'Ready' : 'Setup required' : 'Unavailable'} /><Summary label="Administrator" value={summary?.administratorStatus ?? 'Loading'} /><Summary label="Active users" value={`${summary?.activeMemberCount ?? 0}`} /><Summary label="Usable services" value={`${summary?.effectiveServices.length ?? 0}`} /></section>
 
-      <Card><CardContent className="pt-6"><Tabs value={activeTab} onValueChange={setActiveTab}><TabsList aria-label="Portal service sections" className="flex w-full flex-wrap justify-start"><TabsTrigger className="min-w-fit flex-none" value="overview">Overview</TabsTrigger>{showUsers ? <TabsTrigger className="min-w-fit flex-none" value="members">Users</TabsTrigger> : null}<TabsTrigger className="min-w-fit flex-none" value="services">Entitlements</TabsTrigger><TabsTrigger className="min-w-fit flex-none" value="retention">Retention</TabsTrigger></TabsList>
-        <TabsContent value="overview" className="mt-5 space-y-4"><div className="grid gap-4 md:grid-cols-2"><Info label="Portal relationship" value={organization.kind} /><Info label="Access status" value={organization.isActive ? 'Enabled' : 'Suspended'} /><Info label="Pending requests" value={`${summary?.pendingRequestCount ?? 0}`} /></div>{organization.kind === 'Customer' ? <section className="space-y-3"><Label htmlFor="company-readiness-department">Department readiness</Label><select id="company-readiness-department" className="h-9 rounded-md border bg-background px-3 text-sm" value={selectedReadinessDepartment} onChange={event => setReadinessDepartmentId(event.target.value)}>{departmentsQuery.data?.filter(value => value.isActive).map(value => <option key={value.id} value={value.id}>{value.name}</option>)}</select>{pricingReadiness.isPending ? <p role="status">Checking readiness…</p> : null}{pricingReadiness.error ? <Alert variant="destructive"><AlertDescription>{apiErrorMessage(pricingReadiness.error)}</AlertDescription></Alert> : null}{pricingReadiness.data ? <CustomerOrderReadiness readiness={pricingReadiness.data} /> : null}</section> : null}<div className="rounded-lg border p-4"><h2 className="font-medium">Readiness note</h2><p className="mt-2 text-sm text-muted-foreground">{organization.portalReadinessNote || 'No readiness note recorded. It does not authorize transactions.'}</p></div>{!embedded && organization.kind === 'Prospect' ? <div className="rounded-lg border p-4"><h2 className="font-medium">Convert qualified prospect</h2><p className="mt-1 text-sm text-muted-foreground">Conversion changes the relationship type only. Access, invitations, and services remain explicit.</p><div className="mt-3 flex gap-2"><Button size="sm" disabled={conversionMutation.isPending} onClick={() => setConversionTarget('Customer')}>Convert to customer</Button><Button size="sm" variant="outline" disabled={conversionMutation.isPending} onClick={() => setConversionTarget('Partner')}>Convert to partner</Button></div></div> : null}</TabsContent>
-        <TabsContent value="members" className="mt-5 space-y-5"><div className="flex items-center justify-between gap-3"><div><h2 className="font-medium">Portal users and invitations</h2><p className="text-sm text-muted-foreground">Only a Phaeno-reviewed Portal invitation grants access. Email delivery is tracked separately from invitation access.</p></div><Button size="sm" onClick={() => setInviteOpen(true)}><UserPlus data-icon="inline-start" />Invite user</Button></div><div className="space-y-3">{(usersQuery.data ?? []).map((user) => { const membership = user.memberships.find((value) => value.organizationId === organizationId); if (!membership) return null; return <div key={user.id} className="flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-medium">{user.firstName} {user.lastName}</p><p className="text-sm text-muted-foreground">{user.email} · {membership.isOrganizationAdmin ? 'Administrator' : 'Member'} · {membership.isActive ? user.status : 'Membership inactive'}</p></div><div className="flex gap-2">{membership.isActive ? <><Button size="sm" variant="outline" disabled={memberMutation.isPending} onClick={() => memberMutation.mutate({ membershipId: membership.id, action: 'role', isAdmin: !membership.isOrganizationAdmin })}>{membership.isOrganizationAdmin ? 'Make member' : 'Make admin'}</Button>{user.id !== session?.user?.id ? <Button size="sm" variant="destructive" disabled={memberMutation.isPending} onClick={() => setLifecycleTarget({ kind: 'member', membershipId: membership.id, email: user.email })}>Deactivate</Button> : null}</> : null}</div></div> })}{!usersQuery.isLoading && !(usersQuery.data ?? []).length ? <p className="rounded-lg border p-6 text-center text-sm text-muted-foreground">No Portal users yet.</p> : null}</div><div><h3 className="mb-3 font-medium">Pending invitations</h3><div className="space-y-2">{pendingInvitations.map((invite) => <InvitationRow key={invite.id} invitation={invite} isPending={inviteAction.isPending || developmentLinkMutation.isPending} onAction={(action) => inviteAction.mutate({ id: invite.id, action })} onDevelopmentLink={import.meta.env.DEV ? () => developmentLinkMutation.mutate(invite.id) : undefined} />)}{invitationsQuery.isLoading ? <p role="status" className="text-sm text-muted-foreground">Checking invitation delivery…</p> : null}{!invitationsQuery.isLoading && !pendingInvitations.length ? <p className="text-sm text-muted-foreground">No pending invitations.</p> : null}</div></div></TabsContent>
+      <Card><CardContent className="pt-6"><Tabs value={activeTab} onValueChange={setActiveTab}><TabsList aria-label={__customerSource("Portal service sections")} className="flex w-full flex-wrap justify-start"><TabsTrigger className="min-w-fit flex-none" value="overview"><CustomerSourceText source={"Overview"} /></TabsTrigger>{showUsers ? <TabsTrigger className="min-w-fit flex-none" value="members"><CustomerSourceText source={"Users"} /></TabsTrigger> : null}<TabsTrigger className="min-w-fit flex-none" value="services"><CustomerSourceText source={"Entitlements"} /></TabsTrigger><TabsTrigger className="min-w-fit flex-none" value="retention"><CustomerSourceText source={"Retention"} /></TabsTrigger></TabsList>
+        <TabsContent value="overview" className="mt-5 space-y-4"><div className="grid gap-4 md:grid-cols-2"><Info label="Portal relationship" value={organization.kind} /><Info label="Access status" value={organization.isActive ? 'Enabled' : 'Suspended'} /><Info label="Pending requests" value={`${summary?.pendingRequestCount ?? 0}`} /></div>{organization.kind === 'Customer' ? <section className="space-y-3"><Label htmlFor="company-readiness-department"><CustomerSourceText source={"Department readiness"} /></Label><NativeSelect id="company-readiness-department" className="rounded-md border bg-background px-3 text-sm" value={selectedReadinessDepartment} onChange={event => setReadinessDepartmentId(event.target.value)}>{departmentsQuery.data?.filter(value => value.isActive).map(value => <option key={value.id} value={value.id}>{value.name}</option>)}</NativeSelect>{pricingReadiness.isPending ? <p role="status"><CustomerSourceText source={"Checking readiness…"} /></p> : null}{pricingReadiness.error ? <Alert variant="destructive"><AlertDescription>{<CustomerSourceText source={apiErrorMessage(pricingReadiness.error)} />}</AlertDescription></Alert> : null}{pricingReadiness.data ? <CustomerOrderReadiness readiness={pricingReadiness.data} /> : null}</section> : null}<div className="rounded-lg border p-4"><h2 className="font-medium"><CustomerSourceText source={"Readiness note"} /></h2><p className="mt-2 text-sm text-muted-foreground">{organization.portalReadinessNote || 'No readiness note recorded. It does not authorize transactions.'}</p></div>{!embedded && organization.kind === 'Prospect' ? <div className="rounded-lg border p-4"><h2 className="font-medium"><CustomerSourceText source={"Convert qualified prospect"} /></h2><p className="mt-1 text-sm text-muted-foreground"><CustomerSourceText source={"Conversion changes the relationship type only. Access, invitations, and services remain explicit."} /></p><div className="mt-3 flex gap-2"><Button size="sm" disabled={conversionMutation.isPending} onClick={() => setConversionTarget('Customer')}><CustomerSourceText source={"Convert to customer"} /></Button><Button size="sm" variant="outline" disabled={conversionMutation.isPending} onClick={() => setConversionTarget('Partner')}><CustomerSourceText source={"Convert to partner"} /></Button></div></div> : null}</TabsContent>
+        <TabsContent value="members" className="mt-5 space-y-5"><div className="flex items-center justify-between gap-3"><div><h2 className="font-medium"><CustomerSourceText source={"Portal users and invitations"} /></h2><p className="text-sm text-muted-foreground"><CustomerSourceText source={"Only a Phaeno-reviewed Portal invitation grants access. Email delivery is tracked separately from invitation access."} /></p></div><Button size="sm" onClick={() => setInviteOpen(true)}><UserPlus data-icon="inline-start" /><CustomerSourceText source={"Invite user"} /></Button></div><div className="space-y-3">{(usersQuery.data ?? []).map((user) => { const membership = user.memberships.find((value) => value.organizationId === organizationId); if (!membership) return null; return <div key={user.id} className="flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-medium">{user.firstName} {user.lastName}</p><p className="text-sm text-muted-foreground">{user.email} · {membership.isOrganizationAdmin ? <CustomerSourceText source={"Administrator"} /> : <CustomerSourceText source={"Member"} />} · {membership.isActive ? user.status : <CustomerSourceText source={"Membership inactive"} />}</p></div><div className="flex gap-2">{membership.isActive ? <><Button size="sm" variant="outline" disabled={memberMutation.isPending} onClick={() => memberMutation.mutate({ membershipId: membership.id, action: 'role', isAdmin: !membership.isOrganizationAdmin })}>{membership.isOrganizationAdmin ? <CustomerSourceText source={"Make member"} /> : <CustomerSourceText source={"Make admin"} />}</Button>{user.id !== session?.user?.id ? <Button size="sm" variant="destructive" disabled={memberMutation.isPending} onClick={() => setLifecycleTarget({ kind: 'member', membershipId: membership.id, email: user.email })}><CustomerSourceText source={"Deactivate"} /></Button> : null}</> : null}</div></div> })}{!usersQuery.isLoading && !(usersQuery.data ?? []).length ? <p className="rounded-lg border p-6 text-center text-sm text-muted-foreground"><CustomerSourceText source={"No Portal users yet."} /></p> : null}</div><div><h3 className="mb-3 font-medium"><CustomerSourceText source={"Pending invitations"} /></h3><div className="space-y-2">{pendingInvitations.map((invite) => <InvitationRow key={invite.id} invitation={invite} isPending={inviteAction.isPending || developmentLinkMutation.isPending} onAction={(action) => inviteAction.mutate({ id: invite.id, action })} onDevelopmentLink={import.meta.env.DEV ? () => developmentLinkMutation.mutate(invite.id) : undefined} />)}{invitationsQuery.isLoading ? <p role="status" className="text-sm text-muted-foreground"><CustomerSourceText source={"Checking invitation delivery…"} /></p> : null}{!invitationsQuery.isLoading && !pendingInvitations.length ? <p className="text-sm text-muted-foreground"><CustomerSourceText source={"No pending invitations."} /></p> : null}</div></div></TabsContent>
         <TabsContent value="services" className="mt-5 space-y-4">
           <Card className="gap-0 py-0">
             <CardHeader className="border-b bg-muted/50 p-4">
-              <CardTitle>Service entitlements</CardTitle>
+              <CardTitle><CustomerSourceText source={"Service entitlements"} /></CardTitle>
               <CardDescription>
-                PSeq Kit always includes its data-assembly phase; it is not a
-                separate entitlement.
+                <CustomerSourceText source={"PSeq Kit always includes its data-assembly phase; it is not a\r\n                separate entitlement."} />
               </CardDescription>
               {organization.kind === 'Customer' || organization.kind === 'Partner' ? (
                 <CardAction>
                   <Button size="sm" onClick={() => setEntitlementOpen(true)}>
                     <Plus data-icon="inline-start" />
-                    Add entitlement
+                    <CustomerSourceText source={"Add entitlement"} />
                   </Button>
                 </CardAction>
               ) : null}
@@ -183,28 +187,28 @@ export function OrganizationDetailPage({
                     <span className="font-medium">{serviceLabel(value.service)}</span>
                     <Badge variant={value.isUsable ? 'secondary' : 'outline'}>
                       {value.endReason
-                        ? 'Ended'
+                        ? <CustomerSourceText source={"Ended"} />
                         : `Service configuration: ${value.configurationStatus}`}
                     </Badge>
                   </div>
                   <p className="mt-2 text-sm text-muted-foreground">
-                    Applies to {value.departmentId
+                    <CustomerSourceText source={"Applies to"} /> {value.departmentId
                       ? departmentsQuery.data?.find((department) => department.id === value.departmentId)?.name ?? 'Selected department'
-                      : 'all departments'} ·{' '}
+                      : <CustomerSourceText source={"all departments"} />} ·{' '}
                     {formatDate(value.effectiveFrom)} to{' '}
-                    {value.effectiveTo ? formatDate(value.effectiveTo) : 'open ended'}
+                    {value.effectiveTo ? formatDate(value.effectiveTo) : <CustomerSourceText source={"open ended"} />}
                   </p>
                   {value.notes ? <p className="mt-1 text-sm">{value.notes}</p> : null}
                   {value.endReason ? (
                     <p className="mt-1 text-sm text-muted-foreground">
-                      Ended: {value.endReason}
+                      <CustomerSourceText source={"Ended:"} /> {value.endReason}
                     </p>
                   ) : null}
                 </div>
                 <ActionMenu modal={false}>
                   <DropdownMenuTrigger asChild>
                     <Button size="sm" variant="outline" aria-label={`Actions for ${serviceLabel(value.service)}`}>
-                      Actions <ChevronDown aria-hidden="true" />
+                      <CustomerSourceText source={"Actions"} /> <ChevronDown aria-hidden="true" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-max min-w-40 max-w-[calc(100vw-2rem)]">
@@ -212,12 +216,12 @@ export function OrganizationDetailPage({
                       <DropdownMenuItem disabled={editEntitlementMutation.isPending} onSelect={() => {
                         editEntitlementMutation.reset()
                         setEntitlementEditTarget(value)
-                      }}><Pencil aria-hidden="true" />Edit</DropdownMenuItem>
+                      }}><Pencil aria-hidden="true" /><CustomerSourceText source={"Edit"} /></DropdownMenuItem>
                     ) : null}
                     {value.isEffective ? (
                       <DropdownMenuItem disabled={endMutation.isPending} onSelect={() =>
                         setLifecycleTarget({ kind: 'entitlement', entitlement: value })
-                      }>End now</DropdownMenuItem>
+                      }><CustomerSourceText source={"End now"} /></DropdownMenuItem>
                     ) : null}
                   </DropdownMenuContent>
                 </ActionMenu>
@@ -225,7 +229,7 @@ export function OrganizationDetailPage({
             ))}
             {!entitlementsQuery.isLoading && !(entitlementsQuery.data ?? []).length ? (
               <p className="rounded-lg border p-6 text-center text-sm text-muted-foreground">
-                No service entitlements recorded.
+                <CustomerSourceText source={"No service entitlements recorded."} />
               </p>
             ) : null}
             </CardContent>
@@ -325,14 +329,13 @@ export function DevelopmentInviteLinkDialog({
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Development sign-in link</DialogTitle>
+          <DialogTitle><CustomerSourceText source={"Development sign-in link"} /></DialogTitle>
           <DialogDescription>
-            This fresh link replaces the prior invitation link. Copy it into a private window,
-            then sign in or create the invited development account.
+            <CustomerSourceText source={"This fresh link replaces the prior invitation link. Copy it into a private window,\r\n            then sign in or create the invited development account."} />
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-2">
-          <Label htmlFor="development-invite-link">Sign-in link</Label>
+          <Label htmlFor="development-invite-link"><CustomerSourceText source={"Sign-in link"} /></Label>
           <Input
             id="development-invite-link"
             readOnly
@@ -342,10 +345,10 @@ export function DevelopmentInviteLinkDialog({
           {copyStatus ? <p className="text-sm text-muted-foreground" role="status">{copyStatus}</p> : null}
         </div>
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>Close</Button>
+          <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}><CustomerSourceText source={"Close"} /></Button>
           <Button type="button" onClick={() => void copyLink()}>
             <Copy data-icon="inline-start" />
-            Copy link
+            <CustomerSourceText source={"Copy link"} />
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -355,7 +358,9 @@ export function DevelopmentInviteLinkDialog({
 
 function InviteDialog({ error, isPending, onOpenChange, onSubmit, open }: { error?: string; isPending: boolean; onOpenChange: (open: boolean) => void; onSubmit: (values: InviteValues) => void; open: boolean }) {
   const form = useForm<InviteValues>({ resolver: zodResolver(inviteSchema), defaultValues: { firstName: '', lastName: '', email: '', role: 'Member' } })
-  return <Dialog open={open} onOpenChange={(value) => { onOpenChange(value); if (!value) form.reset() }}><DialogContent><DialogHeader><DialogTitle>Invite account user</DialogTitle><DialogDescription>Enter the designated CRM contact after Phaeno review. Portal access begins only after the recipient accepts this invitation.</DialogDescription></DialogHeader>{error ? <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert> : null}<form id="invite-user" className="grid gap-4" noValidate onSubmit={form.handleSubmit(onSubmit)}><div className="grid gap-4 sm:grid-cols-2"><div className="grid gap-1.5"><Label htmlFor="invite-first-name"><RequiredFieldName>First name</RequiredFieldName></Label><Input id="invite-first-name" autoComplete="given-name" required aria-invalid={Boolean(form.formState.errors.firstName)} {...form.register('firstName')} />{form.formState.errors.firstName ? <p className="text-sm text-destructive" role="alert">{form.formState.errors.firstName.message}</p> : null}</div><div className="grid gap-1.5"><Label htmlFor="invite-last-name"><RequiredFieldName>Last name</RequiredFieldName></Label><Input id="invite-last-name" autoComplete="family-name" required aria-invalid={Boolean(form.formState.errors.lastName)} {...form.register('lastName')} />{form.formState.errors.lastName ? <p className="text-sm text-destructive" role="alert">{form.formState.errors.lastName.message}</p> : null}</div></div><div className="grid gap-1.5"><Label htmlFor="invite-email"><RequiredFieldName>Email</RequiredFieldName></Label><Input id="invite-email" type="email" aria-invalid={Boolean(form.formState.errors.email)} {...form.register('email')} />{form.formState.errors.email ? <p className="text-sm text-destructive" role="alert">{form.formState.errors.email.message}</p> : null}</div><div className="grid gap-1.5"><Label htmlFor="invite-role"><RequiredFieldName>Role</RequiredFieldName></Label><select id="invite-role" className="h-9 cursor-pointer rounded-lg border border-input bg-background px-3 text-sm" {...form.register('role')}><option value="Member">Member</option><option value="Administrator">Organization administrator</option></select></div></form><RequiredDialogFooter><Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button><Button type="submit" form="invite-user" disabled={isPending}>{isPending ? 'Sending…' : 'Send invitation'}</Button></RequiredDialogFooter></DialogContent></Dialog>
+  const __modalGuard = useModalDraftGuard(form.formState.isDirty, form.formState.isSubmitting, open)
+
+  return <Dialog open={open} onOpenChange={open => { if (open) ((value) => { onOpenChange(value); if (!value) form.reset() })(open); else void __modalGuard.close(() => ((value) => { onOpenChange(value); if (!value) form.reset() })(false)) }}><DialogContent><DialogHeader><DialogTitle><CustomerSourceText source={"Invite account user"} /></DialogTitle><DialogDescription><CustomerSourceText source={"Enter the designated CRM contact after Phaeno review. Portal access begins only after the recipient accepts this invitation."} /></DialogDescription></DialogHeader>{error ? <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert> : null}<form id="invite-user" className="grid gap-4" noValidate onSubmit={form.handleSubmit(onSubmit)}><div className="grid gap-4 sm:grid-cols-2"><div className="grid gap-1.5"><Label htmlFor="invite-first-name"><RequiredFieldName><CustomerSourceText source={"First name"} /></RequiredFieldName></Label><Input id="invite-first-name" autoComplete="given-name" required aria-invalid={Boolean(form.formState.errors.firstName)} {...form.register('firstName')} />{form.formState.errors.firstName ? <p className="text-sm text-destructive" role="alert">{<CustomerSourceText source={form.formState.errors.firstName.message} />}</p> : null}</div><div className="grid gap-1.5"><Label htmlFor="invite-last-name"><RequiredFieldName><CustomerSourceText source={"Last name"} /></RequiredFieldName></Label><Input id="invite-last-name" autoComplete="family-name" required aria-invalid={Boolean(form.formState.errors.lastName)} {...form.register('lastName')} />{form.formState.errors.lastName ? <p className="text-sm text-destructive" role="alert">{<CustomerSourceText source={form.formState.errors.lastName.message} />}</p> : null}</div></div><div className="grid gap-1.5"><Label htmlFor="invite-email"><RequiredFieldName><CustomerSourceText source={"Email"} /></RequiredFieldName></Label><Input id="invite-email" type="email" aria-invalid={Boolean(form.formState.errors.email)} {...form.register('email')} />{form.formState.errors.email ? <p className="text-sm text-destructive" role="alert">{<CustomerSourceText source={form.formState.errors.email.message} />}</p> : null}</div><div className="grid gap-1.5"><Label htmlFor="invite-role"><RequiredFieldName><CustomerSourceText source={"Role"} /></RequiredFieldName></Label><NativeSelect id="invite-role" className="cursor-pointer rounded-lg border border-input bg-background px-3 text-sm" {...form.register('role')}><option value="Member"><CustomerSourceText source={"Member"} /></option><option value="Administrator"><CustomerSourceText source={"Organization administrator"} /></option></NativeSelect></div></form><RequiredDialogFooter><Button type="button" variant="outline" onClick={() => { void __modalGuard.close(() => (() => onOpenChange(false))()) }}><CustomerSourceText source={"Cancel"} /></Button><Button type="submit" form="invite-user" disabled={isPending}>{isPending ? <CustomerSourceText source={"Sending…"} /> : <CustomerSourceText source={"Send invitation"} />}</Button></RequiredDialogFooter></DialogContent></Dialog>
 }
 
 function InvitationRow({
@@ -374,17 +379,17 @@ function InvitationRow({
     <div className="flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-start sm:justify-between">
       <div>
         <p className="text-sm font-medium">{invitation.firstName} {invitation.lastName}</p>
-        <p className="text-xs text-muted-foreground">{invitation.email} · {invitation.isOrganizationAdmin ? 'Administrator' : 'Member'}</p>
+        <p className="text-xs text-muted-foreground">{invitation.email} · {invitation.isOrganizationAdmin ? <CustomerSourceText source={"Administrator"} /> : <CustomerSourceText source={"Member"} />}</p>
         <p className="mt-1 text-xs text-muted-foreground">
-          Access: {invitation.isExpired ? 'Expired' : invitation.status} · Email: {delivery} · Sends: {invitation.sendCount} · Expires {formatDate(invitation.expiresAt)}
+          <CustomerSourceText source={"Access:"} /> {invitation.isExpired ? <CustomerSourceText source={"Expired"} /> : invitation.status} <CustomerSourceText source={"· Email:"} /> {delivery} <CustomerSourceText source={"· Sends:"} /> {invitation.sendCount} <CustomerSourceText source={"· Expires"} /> {formatDate(invitation.expiresAt)}
         </p>
         {invitation.lastSendError ? <p role="status" className="mt-1 text-sm text-destructive">{invitation.lastSendError}</p> : null}
-        {invitation.hasHardBounce ? <p className="mt-1 text-sm text-destructive">Hard bounce: revoke and issue a new invitation to the corrected address.</p> : null}
+        {invitation.hasHardBounce ? <p className="mt-1 text-sm text-destructive"><CustomerSourceText source={"Hard bounce: revoke and issue a new invitation to the corrected address."} /></p> : null}
       </div>
       <div className="flex flex-wrap gap-2">
-        {onDevelopmentLink ? <Button type="button" size="sm" variant="outline" disabled={isPending} onClick={onDevelopmentLink}><Copy data-icon="inline-start" />Create sign-in link</Button> : null}
-        <Button type="button" size="sm" variant="outline" disabled={isPending || invitation.hasHardBounce} onClick={() => onAction('resend')}>Resend</Button>
-        <Button type="button" size="sm" variant="destructive" disabled={isPending} onClick={() => onAction('revoke')}>Revoke</Button>
+        {onDevelopmentLink ? <Button type="button" size="sm" variant="outline" disabled={isPending} onClick={onDevelopmentLink}><Copy data-icon="inline-start" /><CustomerSourceText source={"Create sign-in link"} /></Button> : null}
+        <Button type="button" size="sm" variant="outline" disabled={isPending || invitation.hasHardBounce} onClick={() => onAction('resend')}><CustomerSourceText source={"Resend"} /></Button>
+        <Button type="button" size="sm" variant="destructive" disabled={isPending} onClick={() => onAction('revoke')}><CustomerSourceText source={"Revoke"} /></Button>
       </div>
     </div>
   )
@@ -394,4 +399,4 @@ function Summary({ label, value }: { label: string; value: string }) { return <C
 function Info({ label, value }: { label: string; value: string }) { return <div className="rounded-lg border p-4"><dt className="text-xs font-medium text-muted-foreground">{label}</dt><dd className="mt-1 text-sm font-medium">{value}</dd></div> }
 function formatDate(value: string) { return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(value)) }
 function serviceLabel(value: string) { return value === 'PSeqLabService' ? 'PSeq Lab Service' : 'PSeq Kit + data assembly' }
-function NotFound() { return <main className="page-wrap px-4 py-8"><Card className="max-w-2xl"><CardHeader><CardTitle>Portal access not found</CardTitle><CardDescription>The Company&apos;s access settings could not be loaded.</CardDescription></CardHeader><CardContent><Button asChild variant="outline"><Link to="/crm/companies"><ArrowLeft data-icon="inline-start" />Back to Companies</Link></Button></CardContent></Card></main> }
+function NotFound() { return <main className="page-wrap px-4 py-8"><Card className="max-w-2xl"><CardHeader><CardTitle><CustomerSourceText source={"Portal access not found"} /></CardTitle><CardDescription><CustomerSourceText source={"The Company's access settings could not be loaded."} /></CardDescription></CardHeader><CardContent><Button asChild variant="outline"><Link to="/crm/companies"><ArrowLeft data-icon="inline-start" /><CustomerSourceText source={"Back to Companies"} /></Link></Button></CardContent></Card></main> }

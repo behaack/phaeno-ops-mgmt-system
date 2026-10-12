@@ -1,3 +1,4 @@
+import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
@@ -45,12 +46,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '#/components/ui/dialog'
-import {
-  ActionMenu as DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '#/components/ui/dropdown-menu'
+
 import { Input } from '#/components/ui/input'
 import {
   RequiredDialogFooter,
@@ -101,13 +97,15 @@ export function SourceSampleWorkspace({ sourceSampleId }: { sourceSampleId: stri
     resolver: zodResolver(metadataSchema),
     defaultValues: emptyMetadata,
   })
+  const { isDirty: __formDraftDirty } = form.formState
+
   const discardForm = useForm<DiscardValues>({
     resolver: zodResolver(discardSchema),
     defaultValues: { reason: '' },
   })
 
   useEffect(() => {
-    if (!source || form.formState.isDirty && reviewedMetadata.current?.id === source.id) return
+    if (!source || __formDraftDirty && reviewedMetadata.current?.id === source.id) return
     reviewedMetadata.current = { id: source.id, version: source.version }
     form.reset({
       label: source.label,
@@ -122,7 +120,7 @@ export function SourceSampleWorkspace({ sourceSampleId }: { sourceSampleId: stri
       deidentificationMethod: source.deidentificationMethod ?? '',
       deidentificationNotes: source.deidentificationNotes ?? '',
     })
-  }, [form, source])
+  }, [form, source, __formDraftDirty])
 
   const refresh = async () => {
     await Promise.all([
@@ -237,7 +235,7 @@ export function SourceSampleWorkspace({ sourceSampleId }: { sourceSampleId: stri
           </p>
         </div>
         {isDraft ? (
-          <DropdownMenu modal={false}>
+          <ActionMenu modal={false}>
             <DropdownMenuTrigger asChild>
               <Button type="button" variant="outline">
                 <Ellipsis data-icon="inline-start" />
@@ -253,7 +251,7 @@ export function SourceSampleWorkspace({ sourceSampleId }: { sourceSampleId: stri
                 Discard draft
               </DropdownMenuItem>
             </DropdownMenuContent>
-          </DropdownMenu>
+          </ActionMenu>
         ) : (
           <div className="flex items-center gap-2 rounded-lg border bg-muted/30 px-3 py-2 text-sm">
             <LockKeyhole aria-hidden="true" className="size-4" />
@@ -398,9 +396,9 @@ export function SourceSampleWorkspace({ sourceSampleId }: { sourceSampleId: stri
                 ))}
               </ul>
               <ErrorAlert error={readyMutation.error ?? archiveMutation.error} fallback="The lifecycle action could not be completed." />
-              {isDraft && form.formState.isDirty ? <p className="text-sm text-muted-foreground">Save your draft changes before marking this source ready.</p> : null}
+              {isDraft && __formDraftDirty ? <p className="text-sm text-muted-foreground">Save your draft changes before marking this source ready.</p> : null}
               {isDraft ? (
-                <Button type="button" className="w-full" disabled={form.formState.isDirty || saveMutation.isPending || uploadMutation.isPending || retryScanMutation.isPending} onClick={() => setReadyOpen(true)}>
+                <Button type="button" className="w-full" disabled={__formDraftDirty || saveMutation.isPending || uploadMutation.isPending || retryScanMutation.isPending} onClick={() => setReadyOpen(true)}>
                   <FileCheck2 data-icon="inline-start" />Mark ready
                 </Button>
               ) : source.status === 'Ready' ? (

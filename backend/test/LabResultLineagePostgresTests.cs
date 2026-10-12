@@ -121,6 +121,11 @@ public partial class SampleShippingPostgresTests
             await db.SaveChangesAsync();
             // This fixture intentionally covers pre-profile lineage compatibility; default-on scientific enforcement has separate governance coverage.
             var legacyPolicy = new PhaenoPortal.App.Features.Accounts.Services.PSeqOrderToCashOptions { RequireResultTraceability = false, RequireScientificEvidence = false };
+            var eligibility = new LabResultEligibilityReader(db, legacyPolicy);
+            Assert.Equal([package.Id], await eligibility.EligiblePackageIdsAsync(db.ResultOutputPackages.Where(p => p.Id == package.Id), false, default));
+            Assert.False(db.ChangeTracker.HasChanges());
+            Assert.Empty(await new LabResultEligibilityReader(db, new()).EligiblePackageIdsAsync(db.ResultOutputPackages.Where(p => p.Id == package.Id), false, default));
+            Assert.False(db.ChangeTracker.HasChanges());
             await service.RequirePackageAsync(package, default, legacyPolicy);
             await service.RequireReleaseAsync(release, default, legacyPolicy);
             artifact.BeginScan(); artifact.CompleteScan(true, "Simulated clean scan", now);

@@ -7,7 +7,7 @@ import { ReleasedDeliverableDetailPage, ReleaseReceiptView } from './ReleasedDel
 const api = vi.hoisted(() => ({ read: vi.fn(), hold: vi.fn(), release: vi.fn(), candidates: vi.fn(), reissue: vi.fn() }))
 vi.mock('#/api/released-deliverables', () => ({ readReleaseReceipt: api.read, placeReleaseHold: api.hold, releasePreservationHold: api.release, listReissueCandidates: api.candidates, linkReleaseReissue: api.reissue }))
 vi.mock('#/features/auth/session-context', () => ({ usePhaenoSession: () => ({ authProvider: 'clerk', session: { state: 'ready' } }) }))
-vi.mock('@tanstack/react-router', () => ({ Link: ({ to, children }: { to: string; children: ReactNode }) => <a href={to}>{children}</a> }))
+vi.mock('@tanstack/react-router', () => ({ useBlocker: () => ({status: 'idle', reset: vi.fn(), proceed: vi.fn()}), Link: ({ to, children }: { to: string; children: ReactNode }) => <a href={to}>{children}</a> }))
 function view() { const cache = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } }); return render(<QueryClientProvider client={cache}><ReleasedDeliverableDetailPage snapshotId={releaseReceipt.release.id} q="" page={0} /></QueryClientProvider>) }
 describe('Retained release receipt', () => {
   beforeEach(() => { vi.clearAllMocks(); api.read.mockResolvedValue(releaseReceipt); api.candidates.mockResolvedValue([]) })

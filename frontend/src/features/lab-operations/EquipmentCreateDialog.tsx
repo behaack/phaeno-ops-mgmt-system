@@ -1,3 +1,5 @@
+import { NativeSelect } from '#/components/ui/native-select'
+import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useState, type ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
@@ -80,6 +82,8 @@ export function EquipmentCreateDialog({
     resolver: zodResolver(equipmentSchema),
     defaultValues,
   })
+  const __modalGuard = useModalDraftGuard(form.formState.isDirty, form.formState.isSubmitting, open)
+
   const [referenceDialog, setReferenceDialog] = useState<ReferenceDialogState | null>(null)
   const equipmentType = form.watch('equipmentType')
   const location = form.watch('location')
@@ -141,9 +145,11 @@ export function EquipmentCreateDialog({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={(nextOpen) => {
+      <Dialog open={open} onOpenChange={open => { if (open) ((nextOpen) => {
         if (!nextOpen) close()
-      }}>
+      })(open); else void __modalGuard.close(() => ((nextOpen) => {
+        if (!nextOpen) close()
+      })(false)) }}>
         <DialogContent>
           <form noValidate onSubmit={form.handleSubmit(submit)}>
             <DialogHeader>
@@ -180,9 +186,9 @@ export function EquipmentCreateDialog({
                 required
                 error={form.formState.errors.equipmentType?.message}
               >
-                <select
+                <NativeSelect
                   id="equipment-type"
-                  className="h-9 w-full rounded-lg border bg-background px-3 text-sm"
+                  className="w-full rounded-lg border bg-background px-3 text-sm"
                   value={equipmentType}
                   required
                   aria-invalid={Boolean(form.formState.errors.equipmentType)}
@@ -199,7 +205,7 @@ export function EquipmentCreateDialog({
                     {equipmentType || 'New equipment type'}
                   </option>
                   <option value={createReferenceValue}>Create a new equipment type…</option>
-                </select>
+                </NativeSelect>
               </FormField>
 
               <FormField
@@ -209,9 +215,9 @@ export function EquipmentCreateDialog({
                 required
                 error={form.formState.errors.location?.message}
               >
-                <select
+                <NativeSelect
                   id="equipment-location"
-                  className="h-9 w-full rounded-lg border bg-background px-3 text-sm"
+                  className="w-full rounded-lg border bg-background px-3 text-sm"
                   value={location}
                   required
                   aria-invalid={Boolean(form.formState.errors.location)}
@@ -228,7 +234,7 @@ export function EquipmentCreateDialog({
                     {location || 'New location'}
                   </option>
                   <option value={createReferenceValue}>Create a new location…</option>
-                </select>
+                </NativeSelect>
               </FormField>
 
               <FormField

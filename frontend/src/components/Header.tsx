@@ -1,3 +1,5 @@
+import { useCustomerSourceText } from '#/features/customer-i18n/customer-text'
+import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import { Link } from '@tanstack/react-router'
 import { useEffect, useRef } from 'react'
 
@@ -10,8 +12,13 @@ import {
 } from '#/features/auth/session-context'
 import { useMockAdminData } from '#/features/admin/mock-admin-data'
 import { isExternalOrganizationKind } from './navigation'
+import { WorkBell } from '#/features/work-attention/WorkBell'
 
 export default function Header() {
+  const __customerSource = useCustomerSourceText()
+
+  const __customerText = useCustomerText()
+
   const headerRef = useRef<HTMLElement>(null)
   useEffect(() => {
     const header = headerRef.current
@@ -49,12 +56,12 @@ export default function Header() {
           <Link
             to="/"
             className="flex flex-col items-start gap-0.5 no-underline lg:inline-flex lg:px-3 lg:py-1"
-            aria-label={`${branding.name} home`}
+            aria-label={__customerText('m_2db732852ff3', { p0: String(branding.name) })}
             title={branding.fullName}
           >
             <img
               src="/phaeno124x40.webp"
-              alt="Phaeno"
+              alt={__customerSource("Phaeno")}
               width={124}
               height={40}
               className="h-9 w-[112px] object-contain lg:h-10 lg:w-[124px]"
@@ -67,12 +74,13 @@ export default function Header() {
 
         <MainMenu />
 
-        <div className="ml-auto lg:ml-0">
+        <div className="ml-auto flex items-center gap-1 lg:ml-0">
+          {session?.state === 'ready' && selectedOrganizationId && selectedDepartmentId ? <WorkBell /> : null}
           <UserMenu />
         </div>
         {showOrganizationContext ? (
-          <div className="flex w-full items-start gap-1.5 border-t pt-2 text-xs leading-5 text-muted-foreground md:absolute md:right-12 md:bottom-2 md:w-auto md:max-w-[min(24rem,calc(100%-4rem))] md:items-center md:border-0 md:pt-0 md:text-[0.6875rem] md:leading-normal">
-            <span className="shrink-0 font-medium">Organization:</span>
+          <div className="flex w-full items-start gap-1.5 border-t pt-2 text-xs leading-5 text-muted-foreground md:absolute md:right-24 md:bottom-2 md:w-auto md:max-w-[min(24rem,calc(100%-6rem))] md:items-center md:border-0 md:pt-0 md:text-[0.6875rem] md:leading-normal">
+            <span className="shrink-0 font-medium"><CustomerText message="m_5300e286a517" /></span>
             <span className="min-w-0 font-medium break-words text-foreground/80 md:truncate">
               {selectedCustomer?.name ?? selectedMembership?.organizationName}
               {selectedDepartment ? ` · ${selectedDepartment.departmentName}` : ''}

@@ -1,3 +1,4 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQuery } from '@tanstack/react-query'
 import { Printer, TriangleAlert } from 'lucide-react'
@@ -97,6 +98,8 @@ export function RecordKitPackedContentsDialog({ kit, assembly, writesBlocked, pr
     quantity: String(Math.max(0, Math.min(item.quantity - assembly.used(item.supplierProductId), item.kind === 'Tube' ? kit.tubes.length - assembly.used(item.supplierProductId) : item.quantity))),
     sourceMaterialLotId: '',
   })) } })
+  const { isDirty: __formDraftDirty } = form.formState
+
   const values = form.watch('components')
   const barcodes = form.watch('barcodes')
   const containerBarcode = form.watch('containerBarcode')
@@ -108,7 +111,7 @@ export function RecordKitPackedContentsDialog({ kit, assembly, writesBlocked, pr
     && new Set([...kit.tubes.map(tube => tube.supplierBarcode), ...acceptedBarcodes]).size === kit.container.capacity
   const completeReady = exactContents && tubeRosterReady && labelReady && !expiredComponents
   const errors = form.formState.errors
-  const allowNavigation = useOrderDraftGuard(form.formState.isDirty, assembly.pending)
+  const allowNavigation = useOrderDraftGuard(__formDraftDirty, assembly.pending)
   useEffect(() => {
     if (printOnOpen && !automaticPrint.current && assembly.canEdit && !assembly.query.isFetching) {
       automaticPrint.current = true
@@ -137,23 +140,23 @@ export function RecordKitPackedContentsDialog({ kit, assembly, writesBlocked, pr
   }, [discardOpen])
   function close() {
     if (submitting.current || assembly.pending) return
-    if (form.formState.isDirty) { setDiscardOpen(true); return }
+    if (__formDraftDirty) { setDiscardOpen(true); return }
     allowNavigation(); assembly.setComponentsOpen(false)
   }
   if (discardOpen) return <Dialog open onOpenChange={open => { if (!open) { restoreCancelFocus.current = true; setDiscardOpen(false) } }}><DialogContent showCloseButton={false} onOpenAutoFocus={event => { event.preventDefault(); keepEditingButton.current?.focus() }}>
-    <DialogHeader><DialogTitle>Discard unsaved assembly entries?</DialogTitle></DialogHeader>
-    <div><DialogDescription>Discard the unsaved tube scans, source-lot selections and label entries for {kit.kitNumber}? Previously saved scans and material use remain recorded.</DialogDescription></div>
-    <DialogFooter><Button ref={keepEditingButton} variant="outline" onClick={() => { restoreCancelFocus.current = true; setDiscardOpen(false) }}>Keep editing</Button><Button variant="destructive" onClick={() => { allowNavigation(); assembly.setComponentsOpen(false) }}>Discard entries</Button></DialogFooter>
+    <DialogHeader><DialogTitle><CustomerSourceText source={"Discard unsaved assembly entries?"} /></DialogTitle></DialogHeader>
+    <div><DialogDescription><CustomerSourceText source={"Discard the unsaved tube scans, source-lot selections and label entries for"} /> {kit.kitNumber}<CustomerSourceText source={"? Previously saved scans and material use remain recorded."} /></DialogDescription></div>
+    <DialogFooter><Button ref={keepEditingButton} variant="outline" onClick={() => { restoreCancelFocus.current = true; setDiscardOpen(false) }}><CustomerSourceText source={"Keep editing"} /></Button><Button variant="destructive" onClick={() => { allowNavigation(); assembly.setComponentsOpen(false) }}><CustomerSourceText source={"Discard entries"} /></Button></DialogFooter>
   </DialogContent></Dialog>
   return <Dialog open onOpenChange={open => { if (!open) close() }}><DialogContent className="max-w-2xl stock-kit-print-dialog" showCloseButton={!assembly.pending}>
-    <DialogHeader><DialogTitle>Assemble transportation kit</DialogTitle><DialogDescription>{kit.container.commonName} · {kit.container.capacity} tubes. Save for later to resume; the kit enters Inventory only when completed.</DialogDescription></DialogHeader>
-    <div className="stock-kit-print-surface hidden print:block"><p>Phaeno · {kit.container.commonName} · SKU {kit.container.sku}</p><ShippingBarcode value={kit.kitNumber} label="Container barcode" /></div>
-    {assembly.run!.steps.length !== 1 ? <Alert variant="destructive"><AlertTitle>Assembly workflow needs review</AlertTitle><AlertDescription>This kit must have one approved assembly step before packed contents can be recorded.</AlertDescription></Alert> : null}
-    {assembly.run!.status !== 'InProgress' ? <Alert variant="warning"><AlertTitle>Assembly is no longer active</AlertTitle><AlertDescription>Close this modal to review the saved kit and its assembly history.</AlertDescription></Alert> : null}
-    {mutation.error ? <Alert variant="destructive"><AlertTitle>Packed contents need review</AlertTitle><AlertDescription>{getLabOperationsError(mutation.error, 'The request could not be confirmed.')} Your entries are retained. Review refreshed quantities and source lots; remove any scans already registered before trying again.</AlertDescription></Alert> : null}
-    {assembly.printLabel.error ? <Alert variant="destructive"><AlertTitle>Label print request was not saved</AlertTitle><AlertDescription>{getLabOperationsError(assembly.printLabel.error, 'Retry printing before completing this kit.')}</AlertDescription></Alert> : null}
-    {refreshError ? <Alert variant="destructive"><AlertTitle>Assembly refresh failed</AlertTitle><AlertDescription>Your entries are retained. Refresh the saved kit before continuing. <Button type="button" variant="outline" onClick={onRetryRefresh}>Retry assembly check</Button></AlertDescription></Alert> : null}
-    {inventory.error ? <Alert variant="destructive"><AlertTitle>Component inventory unavailable</AlertTitle><AlertDescription>Retry before recording components. <Button type="button" variant="outline" onClick={() => void inventory.refetch()}>Retry inventory</Button></AlertDescription></Alert> : null}
+    <DialogHeader><DialogTitle><CustomerSourceText source={"Assemble transportation kit"} /></DialogTitle><DialogDescription>{kit.container.commonName} · {kit.container.capacity} <CustomerSourceText source={"tubes. Save for later to resume; the kit enters Inventory only when completed."} /></DialogDescription></DialogHeader>
+    <div className="stock-kit-print-surface hidden print:block"><p><CustomerSourceText source={"Phaeno ·"} /> {kit.container.commonName} <CustomerSourceText source={"· SKU"} /> {kit.container.sku}</p><ShippingBarcode value={kit.kitNumber} label="Container barcode" /></div>
+    {assembly.run!.steps.length !== 1 ? <Alert variant="destructive"><AlertTitle><CustomerSourceText source={"Assembly workflow needs review"} /></AlertTitle><AlertDescription><CustomerSourceText source={"This kit must have one approved assembly step before packed contents can be recorded."} /></AlertDescription></Alert> : null}
+    {assembly.run!.status !== 'InProgress' ? <Alert variant="warning"><AlertTitle><CustomerSourceText source={"Assembly is no longer active"} /></AlertTitle><AlertDescription><CustomerSourceText source={"Close this modal to review the saved kit and its assembly history."} /></AlertDescription></Alert> : null}
+    {mutation.error ? <Alert variant="destructive"><AlertTitle><CustomerSourceText source={"Packed contents need review"} /></AlertTitle><AlertDescription>{getLabOperationsError(mutation.error, 'The request could not be confirmed.')} <CustomerSourceText source={"Your entries are retained. Review refreshed quantities and source lots; remove any scans already registered before trying again."} /></AlertDescription></Alert> : null}
+    {assembly.printLabel.error ? <Alert variant="destructive"><AlertTitle><CustomerSourceText source={"Label print request was not saved"} /></AlertTitle><AlertDescription>{getLabOperationsError(assembly.printLabel.error, 'Retry printing before completing this kit.')}</AlertDescription></Alert> : null}
+    {refreshError ? <Alert variant="destructive"><AlertTitle><CustomerSourceText source={"Assembly refresh failed"} /></AlertTitle><AlertDescription><CustomerSourceText source={"Your entries are retained. Refresh the saved kit before continuing."} /> <Button type="button" variant="outline" onClick={onRetryRefresh}><CustomerSourceText source={"Retry assembly check"} /></Button></AlertDescription></Alert> : null}
+    {inventory.error ? <Alert variant="destructive"><AlertTitle><CustomerSourceText source={"Component inventory unavailable"} /></AlertTitle><AlertDescription><CustomerSourceText source={"Retry before recording components."} /> <Button type="button" variant="outline" onClick={() => void inventory.refetch()}><CustomerSourceText source={"Retry inventory"} /></Button></AlertDescription></Alert> : null}
     <form id="kit-components-record" noValidate className="space-y-4" onSubmit={form.handleSubmit(input => {
       if (blocked || submitting.current || assembly.pending) return
       submitting.current = true
@@ -163,19 +166,19 @@ export function RecordKitPackedContentsDialog({ kit, assembly, writesBlocked, pr
         return quantity > 0 ? [{ supplierProductId: component.supplierProductId, quantity, sourceMaterialLotId: value.sourceMaterialLotId || null }] : []
       }) }, { onSettled: () => { submitting.current = false; intent.current = 'save' } })
     }, () => { intent.current = 'save' })}>
-      {inventory.isFetching || assembly.query.isFetching ? <p role="status" className="text-sm">Checking current quantities and component inventory…</p> : null}
+      {inventory.isFetching || assembly.query.isFetching ? <p role="status" className="text-sm"><CustomerSourceText source={"Checking current quantities and component inventory…"} /></p> : null}
       {step ? <section aria-labelledby="kit-packing-instructions" className="space-y-2 border-b pb-4">
-        <h3 id="kit-packing-instructions" className="text-sm font-medium">Assembly instructions</h3>
+        <h3 id="kit-packing-instructions" className="text-sm font-medium"><CustomerSourceText source={"Assembly instructions"} /></h3>
         <p className="text-sm font-medium wrap-anywhere">{step.name}</p>
         <p className="whitespace-pre-wrap text-sm wrap-anywhere">{step.instructions}</p>
-        {assembly.run!.stepRecords[0]?.notes ? <p className="whitespace-pre-wrap text-xs text-muted-foreground">Recorded completion notes: {assembly.run!.stepRecords[0].notes}</p> : <p className="text-xs text-muted-foreground">Complete records the assembly step and makes this kit available in Inventory.</p>}
+        {assembly.run!.stepRecords[0]?.notes ? <p className="whitespace-pre-wrap text-xs text-muted-foreground"><CustomerSourceText source={"Recorded completion notes:"} /> {assembly.run!.stepRecords[0].notes}</p> : <p className="text-xs text-muted-foreground"><CustomerSourceText source={"Complete records the assembly step and makes this kit available in Inventory."} /></p>}
       </section> : null}
       <section aria-labelledby="kit-label-heading" className="space-y-2 border-b pb-4">
-        <div className="flex flex-wrap items-start justify-between gap-2"><h3 id="kit-label-heading" className="text-sm font-medium">Container label</h3><Button type="button" variant="outline" disabled={assembly.pending || writesBlocked || !assembly.canEdit || assembly.query.isFetching} onClick={() => assembly.printLabel.mutate()}><Printer aria-hidden="true" />{assembly.printLabel.isPending ? 'Preparing label…' : 'Print container barcode'}</Button></div>
+        <div className="flex flex-wrap items-start justify-between gap-2"><h3 id="kit-label-heading" className="text-sm font-medium"><CustomerSourceText source={"Container label"} /></h3><Button type="button" variant="outline" disabled={assembly.pending || writesBlocked || !assembly.canEdit || assembly.query.isFetching} onClick={() => assembly.printLabel.mutate()}><Printer aria-hidden="true" />{assembly.printLabel.isPending ? <CustomerSourceText source={"Preparing label…"} /> : <CustomerSourceText source={"Print container barcode"} />}</Button></div>
         <p className="wrap-anywhere font-mono text-xs text-muted-foreground">{kit.kitNumber}</p>
-        {assembly.run!.containerBarcodeVerifiedAtUtc ? <p role="status" className="text-sm">Attached container barcode verified.</p> : <Field>
-          <Label htmlFor="kit-attached-barcode"><RequiredFieldName>Attached container barcode</RequiredFieldName></Label>
-          <FieldDescription id="kit-attached-barcode-help">Print the label, affix it to this container, then scan it here. Required to complete.</FieldDescription>
+        {assembly.run!.containerBarcodeVerifiedAtUtc ? <p role="status" className="text-sm"><CustomerSourceText source={"Attached container barcode verified."} /></p> : <Field>
+          <Label htmlFor="kit-attached-barcode"><RequiredFieldName><CustomerSourceText source={"Attached container barcode"} /></RequiredFieldName></Label>
+          <FieldDescription id="kit-attached-barcode-help"><CustomerSourceText source={"Print the label, affix it to this container, then scan it here. Required to complete."} /></FieldDescription>
           <Input id="kit-attached-barcode" autoComplete="off" maxLength={100} disabled={assembly.pending || !assembly.run!.labelPrintRequestedAtUtc}
             aria-invalid={Boolean(errors.containerBarcode)} aria-describedby={'kit-attached-barcode-help' + (errors.containerBarcode ? ' kit-attached-barcode-error' : '')} {...form.register('containerBarcode')} />
           <FieldError id="kit-attached-barcode-error">{errors.containerBarcode?.message}</FieldError>
@@ -183,9 +186,9 @@ export function RecordKitPackedContentsDialog({ kit, assembly, writesBlocked, pr
       </section>
       <FieldError>{errors.components?.root?.message ?? errors.components?.message}</FieldError>
       {kit.tubes.length ? <section aria-labelledby="kit-recorded-tubes-heading" className="space-y-2 border-b pb-4">
-        <h3 id="kit-recorded-tubes-heading" className="text-sm font-medium">Recorded tubes · {kit.tubes.length} of {kit.container.capacity}</h3>
-        <p className="text-xs text-muted-foreground">Review these saved IDs when resuming. Do not scan them again; scan only newly packed tubes.</p>
-        <details><summary className="cursor-pointer rounded-sm text-sm focus-visible:outline-2 focus-visible:outline-ring">View recorded tube IDs</summary><div className="mt-2"><RegisteredTubeList tubes={kit.tubes} /></div></details>
+        <h3 id="kit-recorded-tubes-heading" className="text-sm font-medium"><CustomerSourceText source={"Recorded tubes ·"} /> {kit.tubes.length} of {kit.container.capacity}</h3>
+        <p className="text-xs text-muted-foreground"><CustomerSourceText source={"Review these saved IDs when resuming. Do not scan them again; scan only newly packed tubes."} /></p>
+        <details><summary className="cursor-pointer rounded-sm text-sm focus-visible:outline-2 focus-visible:outline-ring"><CustomerSourceText source={"View recorded tube IDs"} /></summary><div className="mt-2"><RegisteredTubeList tubes={kit.tubes} /></div></details>
       </section> : null}
       {components.map((component, index) => {
         const quantity = Number(values[index]?.quantity ?? 0)
@@ -200,21 +203,21 @@ export function RecordKitPackedContentsDialog({ kit, assembly, writesBlocked, pr
           <legend className="wrap-anywhere text-sm font-medium">{component.productNumber}</legend>
           <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-xs text-muted-foreground">
             <p className="wrap-anywhere">{component.supplierName}</p>
-            <p className="shrink-0 tabular-nums">{assembly.used(component.supplierProductId)} of {component.quantity} recorded</p>
+            <p className="shrink-0 tabular-nums">{assembly.used(component.supplierProductId)} of {component.quantity} <CustomerSourceText source={"recorded"} /></p>
           </div>
           {component.kind === 'Tube' && (Boolean(barcodes.trim()) || (kit.tubes.length < kit.container.capacity)) ? <div className="space-y-1">
-            <Label htmlFor="kit-packing-barcodes">Permanent tube barcodes</Label>
-            <FieldDescription id="kit-packing-barcodes-help">Scan each new tube as it goes into this container, one per line. {kit.tubes.length} of {kit.container.capacity} already registered.</FieldDescription>
+            <Label htmlFor="kit-packing-barcodes"><CustomerSourceText source={"Permanent tube barcodes"} /></Label>
+            <FieldDescription id="kit-packing-barcodes-help"><CustomerSourceText source={"Scan each new tube as it goes into this container, one per line."} /> {kit.tubes.length} of {kit.container.capacity} <CustomerSourceText source={"already registered."} /></FieldDescription>
             <Textarea id="kit-packing-barcodes" rows={4} className="font-mono" autoComplete="off" spellCheck={false} disabled={assembly.pending}
               aria-invalid={Boolean(errors.barcodes)} aria-describedby={'kit-packing-barcodes-help' + (errors.barcodes ? ' kit-packing-barcodes-error' : '')}
               {...form.register('barcodes', { onChange: () => { if (form.formState.isSubmitted) void form.trigger() } })} />
             <FieldError id="kit-packing-barcodes-error">{errors.barcodes?.message}</FieldError>
-            <p role="status" className="text-xs text-muted-foreground tabular-nums">{acceptedBarcodes.length} unique valid new scans · {kit.tubes.length + acceptedBarcodes.length} of {kit.container.capacity} tubes</p>
+            <p role="status" className="text-xs text-muted-foreground tabular-nums">{acceptedBarcodes.length} <CustomerSourceText source={"unique valid new scans ·"} /> {kit.tubes.length + acceptedBarcodes.length} of {kit.container.capacity} <CustomerSourceText source={"tubes"} /></p>
           </div> : null}
           <div className="grid items-start gap-3 sm:grid-cols-[10rem_minmax(0,1fr)]">
             <Field className="min-w-0">
-              <Label htmlFor={id + '-quantity'}><RequiredFieldName>Quantity</RequiredFieldName></Label>
-              <FieldDescription id={id + '-quantity-help'}>{component.kind === 'Tube' ? 'From tube scans.' : 'Packed now.'}</FieldDescription>
+              <Label htmlFor={id + '-quantity'}><RequiredFieldName><CustomerSourceText source={"Quantity"} /></RequiredFieldName></Label>
+              <FieldDescription id={id + '-quantity-help'}>{component.kind === 'Tube' ? <CustomerSourceText source={"From tube scans."} /> : <CustomerSourceText source={"Packed now."} />}</FieldDescription>
               <Input id={id + '-quantity'} required type="number" min={0} max={remaining}
                 step={component.kind === 'Other' ? 'any' : 1} disabled={assembly.pending} readOnly={component.kind === 'Tube'}
                 aria-invalid={Boolean(quantityError)}
@@ -224,40 +227,40 @@ export function RecordKitPackedContentsDialog({ kit, assembly, writesBlocked, pr
                   else if (errors.components?.[index]?.sourceMaterialLotId) void form.trigger(lotName)
                 } })} />
               <FieldError id={id + '-quantity-error'}>{quantityError?.message}</FieldError>
-              {component.kind === 'Tube' && quantity === 0 ? <p id={id + '-scan-warning'} className="text-xs text-warning">Scan the packed tubes above to record their use.</p> : null}
+              {component.kind === 'Tube' && quantity === 0 ? <p id={id + '-scan-warning'} className="text-xs text-warning"><CustomerSourceText source={"Scan the packed tubes above to record their use."} /></p> : null}
             </Field>
             {!inventory.isPending && !inventory.error ? lots.all.length ? <Field className="min-w-0">
-              <Label htmlFor={id + '-lot'}>{quantity > 0 ? <RequiredFieldName>Source lot</RequiredFieldName> : 'Source lot'}</Label>
+              <Label htmlFor={id + '-lot'}>{quantity > 0 ? <RequiredFieldName><CustomerSourceText source={"Source lot"} /></RequiredFieldName> : <CustomerSourceText source={"Source lot"} />}</Label>
               <FieldDescription id={id + '-lot-help'} className={quantity > 0 && !lots.available.length ? 'text-warning' : undefined}>
-                {quantity > 0 && lots.untrackedTubeUse ? 'Earlier tubes were recorded without a source lot. Review their recorded use before packing more tubes.' : quantity > 0 && !lots.available.length ? component.kind === 'Tube' && kit.tubeLotNumber ? `No eligible lot matching ${kit.tubeLotNumber} is available for this quantity.` : 'No eligible lot has enough available stock.' : component.kind === 'Tube' ? kit.tubeLotNumber ? `Use the kit’s recorded tube lot: ${kit.tubeLotNumber}.` : 'All tubes must use the same lot.' : 'Stock is deducted when recorded.'}
+                {quantity > 0 && lots.untrackedTubeUse ? <CustomerSourceText source={"Earlier tubes were recorded without a source lot. Review their recorded use before packing more tubes."} /> : quantity > 0 && !lots.available.length ? component.kind === 'Tube' && kit.tubeLotNumber ? `No eligible lot matching ${kit.tubeLotNumber} is available for this quantity.` : 'No eligible lot has enough available stock.' : component.kind === 'Tube' ? kit.tubeLotNumber ? `Use the kit’s recorded tube lot: ${kit.tubeLotNumber}.` : 'All tubes must use the same lot.' : 'Stock is deducted when recorded.'}
               </FieldDescription>
               <NativeSelect id={id + '-lot'} required={quantity > 0} disabled={assembly.pending || quantity <= 0}
                 aria-invalid={Boolean(lotError)} aria-describedby={id + '-lot-help' + (lotError ? ' ' + id + '-lot-error' : '')}
                 {...form.register(lotName)}>
-                <option value="">Select source lot</option>
-                {lots.available.map(lot => <option key={lot.id} value={lot.id}>{lot.lotNumber} · {lot.availableQuantity} {lot.quantityUnit} available</option>)}
+                <option value=""><CustomerSourceText source={"Select source lot"} /></option>
+                {lots.available.map(lot => <option key={lot.id} value={lot.id}>{lot.lotNumber} · {lot.availableQuantity} {lot.quantityUnit} <CustomerSourceText source={"available"} /></option>)}
               </NativeSelect>
               <FieldError id={id + '-lot-error'}>{lotError?.message}</FieldError>
             </Field> : <div className="min-w-0 space-y-1">
-              <p className="text-sm leading-none font-medium">Source lot</p>
-              <FieldDescription>Stock tracking for this component.</FieldDescription>
+              <p className="text-sm leading-none font-medium"><CustomerSourceText source={"Source lot"} /></p>
+              <FieldDescription><CustomerSourceText source={"Stock tracking for this component."} /></FieldDescription>
               <Alert variant="warning" className="text-xs">
                 <TriangleAlert aria-hidden="true" />
-                <AlertTitle>No tracked source lots</AlertTitle>
-                <AlertDescription className="text-xs">Quantity will be recorded without deducting source-lot stock.</AlertDescription>
+                <AlertTitle><CustomerSourceText source={"No tracked source lots"} /></AlertTitle>
+                <AlertDescription className="text-xs"><CustomerSourceText source={"Quantity will be recorded without deducting source-lot stock."} /></AlertDescription>
               </Alert>
             </div> : null}
           </div>
         </fieldset>
       })}
-      <p className="text-sm text-muted-foreground">Complete confirms that all recorded tubes and required contents are packed in this container.</p>
-      {!completeReady ? <Alert variant="warning"><AlertTitle>Before completing</AlertTitle><AlertDescription><ul className="list-disc space-y-1 pl-4">
-        {!exactContents ? <li>Record the exact required contents.</li> : null}
-        {!tubeRosterReady ? <li>Record all {kit.container.capacity} unique tube IDs as the tubes are packed.</li> : null}
-        {!labelReady ? <li>Print and attach the container label, then scan its barcode.</li> : null}
-        {expiredComponents ? <li>A component is expired or has no verified expiration date. Review the saved kit’s product expiration records.</li> : null}
+      <p className="text-sm text-muted-foreground"><CustomerSourceText source={"Complete confirms that all recorded tubes and required contents are packed in this container."} /></p>
+      {!completeReady ? <Alert variant="warning"><AlertTitle><CustomerSourceText source={"Before completing"} /></AlertTitle><AlertDescription><ul className="list-disc space-y-1 pl-4">
+        {!exactContents ? <li><CustomerSourceText source={"Record the exact required contents."} /></li> : null}
+        {!tubeRosterReady ? <li><CustomerSourceText source={"Record all"} /> {kit.container.capacity} <CustomerSourceText source={"unique tube IDs as the tubes are packed."} /></li> : null}
+        {!labelReady ? <li><CustomerSourceText source={"Print and attach the container label, then scan its barcode."} /></li> : null}
+        {expiredComponents ? <li><CustomerSourceText source={"A component is expired or has no verified expiration date. Review the saved kit’s product expiration records."} /></li> : null}
       </ul></AlertDescription></Alert> : null}
     </form>
-    <RequiredDialogFooter><Button ref={cancelButton} type="button" variant="ghost" disabled={assembly.pending} onClick={close}>Cancel</Button><Button type="submit" form="kit-components-record" variant="outline" disabled={blocked || assembly.pending} onClick={() => { intent.current = 'save' }}>{mutation.isPending && intent.current === 'save' ? 'Saving…' : 'Save for later'}</Button><Button type="submit" form="kit-components-record" disabled={blocked || assembly.pending || !completeReady} onClick={() => { intent.current = 'complete' }}>{mutation.isPending && intent.current === 'complete' ? 'Completing…' : 'Complete'}</Button></RequiredDialogFooter>
+    <RequiredDialogFooter><Button ref={cancelButton} type="button" variant="ghost" disabled={assembly.pending} onClick={close}><CustomerSourceText source={"Cancel"} /></Button><Button type="submit" form="kit-components-record" variant="outline" disabled={blocked || assembly.pending} onClick={() => { intent.current = 'save' }}>{mutation.isPending && intent.current === 'save' ? <CustomerSourceText source={"Saving…"} /> : <CustomerSourceText source={"Save for later"} />}</Button><Button type="submit" form="kit-components-record" disabled={blocked || assembly.pending || !completeReady} onClick={() => { intent.current = 'complete' }}>{mutation.isPending && intent.current === 'complete' ? <CustomerSourceText source={"Completing…"} /> : <CustomerSourceText source={"Complete"} />}</Button></RequiredDialogFooter>
   </DialogContent></Dialog>
 }

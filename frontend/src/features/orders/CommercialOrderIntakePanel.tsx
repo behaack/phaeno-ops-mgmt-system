@@ -1,3 +1,4 @@
+import { CustomerSourceText, useCustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { commercialRecordRoute } from '#/features/orders/service-workspaces'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate, useSearch } from '@tanstack/react-router'
@@ -37,6 +38,8 @@ export function CommercialOrderIntakePanel({
   userId: string | null
   organizations: OrganizationOption[]
 }) {
+  const __customerSource = useCustomerSourceText()
+
   const navigate = useNavigate()
   const searchState = useSearch({ strict: false })
   const search = searchState.intakeSearch ?? ''
@@ -84,55 +87,55 @@ export function CommercialOrderIntakePanel({
       <Card className="gap-0 overflow-hidden py-0">
         <CardHeader className="border-b bg-muted/50 p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
-            <CardTitle>Commercial order intake</CardTitle>
+            <CardTitle><CustomerSourceText source={"Commercial order intake"} /></CardTitle>
             <Button
               className="shrink-0"
               type="button"
               disabled={!canCreate || (!mock && (!apiEnabled || customers.isLoading || customers.isError || eligibleCustomers.length === 0))}
               onClick={() => void navigate({ to: '/order-operations/lab-services/orders/new', search: { organizationId: undefined, sourceRequestId: undefined } })}
             >
-              <Plus data-icon="inline-start" /> New Order
+              <Plus data-icon="inline-start" /> <CustomerSourceText source={"New Order"} />
             </Button>
           </div>
           <CardDescription>
-            Create Customer orders and manage pricing, quotes, extensions and holds. Use All orders and history for accepted, completed and cancelled records. Laboratory execution continues in Lab operations.
+            <CustomerSourceText source={"Create Customer orders and manage pricing, quotes, extensions and holds. Use All orders and history for accepted, completed and cancelled records. Laboratory execution continues in Lab operations."} />
           </CardDescription>
           <div className="mt-3 flex flex-wrap items-end gap-3">
-            <div><Label htmlFor="intake-view">View</Label><select id="intake-view" className="mt-2 block h-9 cursor-pointer rounded-lg border bg-background px-3 text-sm" value={view} onChange={event => setFilters({ intakeView: event.target.value as 'active' | 'holds' | 'all' })}><option value="active">Active intake</option><option value="holds">On hold</option><option value="all">All orders and history</option></select></div>
+            <div><Label htmlFor="intake-view"><CustomerSourceText source={"View"} /></Label><select id="intake-view" className="mt-2 block h-9 cursor-pointer rounded-lg border bg-background px-3 text-sm" value={view} onChange={event => setFilters({ intakeView: event.target.value as 'active' | 'holds' | 'all' })}><option value="active"><CustomerSourceText source={"Active intake"} /></option><option value="holds"><CustomerSourceText source={"On hold"} /></option><option value="all"><CustomerSourceText source={"All orders and history"} /></option></select></div>
             <div className="min-w-60 flex-1">
-            <Label htmlFor="commercial-intake-search">Search intake</Label>
+            <Label htmlFor="commercial-intake-search"><CustomerSourceText source={"Search intake"} /></Label>
             <Input
               id="commercial-intake-search"
               className="mt-2"
               value={search}
               onChange={(event) => setFilters({ intakeSearch: event.target.value })}
-              placeholder="Order, Job, Company, or request number"
+              placeholder={__customerSource("Order, Job, Company, or request number")}
             />
-            </div><Button variant="outline" onClick={() => setFilters({ intakeView: 'active', intakeSearch: '', intakePage: 1 })}>Clear filters</Button>
+            </div><Button variant="outline" onClick={() => setFilters({ intakeView: 'active', intakeSearch: '', intakePage: 1 })}><CustomerSourceText source={"Clear filters"} /></Button>
           </div>
         </CardHeader>
         <CardContent className="p-4">
           {customers.error ? (
             <Alert variant="destructive" className="mb-4">
-              <AlertTitle>Customer organizations could not be loaded</AlertTitle>
-              <AlertDescription>{getOrderErrorMessage(customers.error, 'Refresh the intake workspace and try again.')}</AlertDescription>
+              <AlertTitle><CustomerSourceText source={"Customer organizations could not be loaded"} /></AlertTitle>
+              <AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(customers.error, 'Refresh the intake workspace and try again.')} />}</AlertDescription>
             </Alert>
           ) : null}
           {!customers.isLoading && !customers.isError && apiEnabled && eligibleCustomers.length === 0 ? (
             <Alert className="mb-4">
-              <AlertTitle>No active Customers</AlertTitle>
+              <AlertTitle><CustomerSourceText source={"No active Customers"} /></AlertTitle>
               <AlertDescription>
-                Activate a Customer relationship in CRM before creating an order. Customers with incomplete service setup remain visible in New Customer order with their next steps.
+                <CustomerSourceText source={"Activate a Customer relationship in CRM before creating an order. Customers with incomplete service setup remain visible in New Customer order with their next steps."} />
               </AlertDescription>
             </Alert>
           ) : null}
           {handoffs.error || orders.error ? (
             <Alert variant="destructive" className="mb-4">
-              <AlertTitle>Commercial intake could not be loaded</AlertTitle>
-              <AlertDescription>{getOrderErrorMessage(handoffs.error ?? orders.error, 'Refresh the intake queue and try again.')}</AlertDescription>
+              <AlertTitle><CustomerSourceText source={"Commercial intake could not be loaded"} /></AlertTitle>
+              <AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(handoffs.error ?? orders.error, 'Refresh the intake queue and try again.')} />}</AlertDescription>
             </Alert>
           ) : null}
-          {handoffs.isLoading || orders.isLoading ? <p role="status">Loading commercial intake…</p> : null}
+          {handoffs.isLoading || orders.isLoading ? <p role="status"><CustomerSourceText source={"Loading commercial intake…"} /></p> : null}
           <div className="divide-y">
             {queueItems.map((item) => item.kind === 'order' ? (
               <CommercialOrderRow
@@ -150,14 +153,14 @@ export function CommercialOrderIntakePanel({
               />
             ))}
           </div>
-          {orders.data && !orders.isError ? <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t pt-4"><p className="text-sm text-muted-foreground">{orders.data.totalCount} orders · Page {page} of {Math.max(1, Math.ceil(orders.data.totalCount / 25))}{view === 'active' && page === 1 ? ' · Pending CRM handoffs shown separately on this page' : ''}</p><div className="flex gap-2"><Button variant="outline" disabled={page <= 1 || orders.isFetching} onClick={() => setFilters({ intakePage: page - 1 })}>Previous</Button><Button variant="outline" disabled={page * 25 >= orders.data.totalCount || orders.isFetching} onClick={() => setFilters({ intakePage: page + 1 })}>Next</Button></div></div> : null}
+          {orders.data && !orders.isError ? <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t pt-4"><p className="text-sm text-muted-foreground">{orders.data.totalCount} <CustomerSourceText source={"orders · Page"} /> {page} of {Math.max(1, Math.ceil(orders.data.totalCount / 25))}{view === 'active' && page === 1 ? <CustomerSourceText source={" · Pending CRM handoffs shown separately on this page"} /> : ''}</p><div className="flex gap-2"><Button variant="outline" disabled={page <= 1 || orders.isFetching} onClick={() => setFilters({ intakePage: page - 1 })}><CustomerSourceText source={"Previous"} /></Button><Button variant="outline" disabled={page * 25 >= orders.data.totalCount || orders.isFetching} onClick={() => setFilters({ intakePage: page + 1 })}><CustomerSourceText source={"Next"} /></Button></div></div> : null}
           {!handoffs.isLoading &&
           !orders.isLoading &&
           !handoffs.isError &&
           !orders.isError &&
           queueItems.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
-              {search.trim() ? 'No intake work matches your search.' : 'No commercial intake work is awaiting action.'}
+              {search.trim() ? <CustomerSourceText source={"No intake work matches your search."} /> : <CustomerSourceText source={"No commercial intake work is awaiting action."} />}
             </p>
           ) : null}
         </CardContent>
@@ -190,28 +193,28 @@ function CommercialOrderRow({
             {order.reference || order.number}
           </Link>
           <Badge variant="outline">{orderTypeLabel(order.orderType)}</Badge>
-          {order.hasPendingQuoteExtension ? <Badge variant="secondary">Extension requested</Badge> : null}
+          {order.hasPendingQuoteExtension ? <Badge variant="secondary"><CustomerSourceText source={"Extension requested"} /></Badge> : null}
         </div>
         <p className="mt-1 text-xs text-muted-foreground">
-          {order.number} · {organizationName ?? order.organizationId} · updated {formatDateTime(order.updatedAt)}
+          {order.number} · {organizationName ?? order.organizationId} <CustomerSourceText source={"· updated"} /> {formatDateTime(order.updatedAt)}
         </p>
         <p className="mt-1 text-xs text-muted-foreground">
-          {order.assignedToUserId ? order.assignedToUserId === userId ? 'Assigned to you' : 'Assigned' : 'Unassigned'}
+          {order.assignedToUserId ? order.assignedToUserId === userId ? 'Assigned to you' : 'Assigned' : <CustomerSourceText source={"Unassigned"} />}
           {order.dueAt ? ` · Due ${formatDateTime(order.dueAt)}` : ''}
         </p>
         {order.orderType === 'PSeqLabService' && order.proposedUnitPrice != null ? (
           <p className="mt-1 text-xs font-medium text-foreground">
-            Price proposed · {formatMoney(order.proposedUnitPrice, order.proposedCurrency ?? 'USD')} per sample
+            <CustomerSourceText source={"Price proposed ·"} /> {formatMoney(order.proposedUnitPrice, order.proposedCurrency ?? 'USD')} <CustomerSourceText source={"per sample"} />
           </p>
         ) : null}
         {order.orderType === 'PSeqLabService' && order.status === 'QuoteInPreparation' ? (
           <p className="mt-2 text-sm text-foreground">
-            <strong>Next step for Phaeno: Open this Job and select {order.proposedUnitPrice != null ? 'Review and issue quote' : 'Issue quote'} under Commercial control. Review the price and terms, then issue the quote for Customer acceptance.</strong>
+            <strong><CustomerSourceText source={"Next step for Phaeno: Open this Job and select"} /> {order.proposedUnitPrice != null ? <CustomerSourceText source={"Review and issue quote"} /> : <CustomerSourceText source={"Issue quote"} />} <CustomerSourceText source={"under Commercial control. Review the price and terms, then issue the quote for Customer acceptance."} /></strong>
           </p>
         ) : null}
       </div>
       <div className="flex items-center gap-2">
-        {order.isOverdue ? <span className="text-xs font-medium text-destructive">Overdue</span> : null}
+        {order.isOverdue ? <span className="text-xs font-medium text-destructive"><CustomerSourceText source={"Overdue"} /></span> : null}
         <OrderStatusBadge status={order.status} />
       </div>
     </div>
@@ -225,25 +228,25 @@ function CrmHandoffRow({ item, canCreate, onStart }: { item: CrmOrderHandoff; ca
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-medium">{item.handoff.requestNumber}</span>
           <Badge variant={item.handoff.type === 'PortalEvaluation' || item.handoff.type === 'TrialProject' ? 'secondary' : 'outline'}>
-            {item.handoff.type === 'PortalEvaluation' || item.handoff.type === 'TrialProject' ? 'Trial Project · No charge' : 'Sales handoff'}
+            {item.handoff.type === 'PortalEvaluation' || item.handoff.type === 'TrialProject' ? <CustomerSourceText source={"Trial Project · No charge"} /> : <CustomerSourceText source={"Sales handoff"} />}
           </Badge>
           <Badge variant="outline">{formatHandoffStatus(item.handoff.status)}</Badge>
         </div>
         <p className="mt-2 text-sm">{item.companyName}{item.opportunityName ? ` · ${item.opportunityName}` : ''}</p>
         <p className="mt-1 text-sm text-muted-foreground">{item.summary}</p>
         <p className="mt-1 text-xs text-muted-foreground">
-          POMS CRM handoff · received {formatDateTime(item.handoff.createdAt)}
+          <CustomerSourceText source={"POMS CRM handoff · received"} /> {formatDateTime(item.handoff.createdAt)}
         </p>
         {item.handoff.orderBlockingReason ? <p className="mt-2 text-sm text-amber-700 dark:text-amber-300">{item.handoff.orderBlockingReason}</p> : null}
       </div>
       {item.handoff.status === 'PendingReview' ? (
         <Button asChild variant="outline">
-          <Link to="/crm/requests" search={{ requestId: item.handoff.relationshipRequestId }}>Open request</Link>
+          <Link to="/crm/requests" search={{ requestId: item.handoff.relationshipRequestId }}><CustomerSourceText source={"Open request"} /></Link>
         </Button>
       ) : item.handoff.canStartCustomerOrder && item.handoff.organizationId ? (
-        <Button type="button" disabled={!canCreate} onClick={() => onStart(item)}>Start Customer order</Button>
+        <Button type="button" disabled={!canCreate} onClick={() => onStart(item)}><CustomerSourceText source={"Start Customer order"} /></Button>
       ) : (
-        <Button asChild variant="outline"><Link to="/crm/companies">Review Companies in CRM</Link></Button>
+        <Button asChild variant="outline"><Link to="/crm/companies"><CustomerSourceText source={"Review Companies in CRM"} /></Link></Button>
       )}
     </div>
   )

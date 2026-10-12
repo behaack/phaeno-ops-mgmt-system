@@ -8,7 +8,7 @@ const mocks = vi.hoisted(() => ({ shipments: vi.fn() }))
 const route = vi.hoisted(() => ({ search: {} as Record<string, unknown>, listeners: new Set<() => void>() }))
 vi.mock('@tanstack/react-router', async () => {
   const { useSyncExternalStore } = await import('react')
-  return { useSearch: () => useSyncExternalStore(listener => { route.listeners.add(listener); return () => { route.listeners.delete(listener) } }, () => route.search), useNavigate: () => ({ search }: { search: Record<string, unknown> | ((previous: Record<string, unknown>) => Record<string, unknown>) }) => { route.search = typeof search === 'function' ? search(route.search) : search; route.listeners.forEach(listener => listener()) }, Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a> }
+  return { useBlocker: () => ({status: 'idle', reset: vi.fn(), proceed: vi.fn()}), useSearch: () => useSyncExternalStore(listener => { route.listeners.add(listener); return () => { route.listeners.delete(listener) } }, () => route.search), useNavigate: () => ({ search }: { search: Record<string, unknown> | ((previous: Record<string, unknown>) => Record<string, unknown>) }) => { route.search = typeof search === 'function' ? search(route.search) : search; route.listeners.forEach(listener => listener()) }, Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a> }
 })
 vi.mock('#/api/sample-shipping', async (importOriginal) => ({
   ...await importOriginal<typeof import('#/api/sample-shipping')>(),

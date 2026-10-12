@@ -1,3 +1,4 @@
+import { confirmPortal } from '#/components/PortalConfirmation'
 import { useEffect, useRef, useState } from 'react'
 import { Plus } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -175,10 +176,12 @@ function LabStepEditor({ step }: { step: LabStep }) {
   const initial = source?.definitionJson === '{}' ? { preparationBatchEnabled: true, steps: [{ ...createEmptyProtocolStep(), name: step.name }] } : source ? deserializeProtocolDefinition(source.definitionJson) : { preparationBatchEnabled: true, steps: [{ ...createEmptyProtocolStep(), name: step.name }] }
   if (initial) initial.steps[0].name = step.name
   const form = useForm<ProtocolDefinitionFormValues>({ resolver: zodResolver(protocolDefinitionFormSchema), defaultValues: initial ?? undefined })
+  const { isDirty: __formDraftDirty } = form.formState
+
   const mutation = useMutation({ mutationFn: (values: ProtocolDefinitionFormValues) => saveLabStepVersion(step.id, { definitionJson: serializeProtocolDefinition(values), version: expectedVersion, draftId: draft?.id }), onSuccess: async () => { leaveApproved.current = true; await client.invalidateQueries({ queryKey: ['lab-steps'] }); await leave() } })
-  useBlocker({ shouldBlockFn: () => !leaveApproved.current && (mutation.isPending || form.formState.isDirty && !window.confirm('Discard unsaved Lab step changes?')), enableBeforeUnload: false })
+  useBlocker({ shouldBlockFn: async () => !leaveApproved.current && (mutation.isPending || __formDraftDirty && !(await confirmPortal('Discard unsaved Lab step changes?'))), enableBeforeUnload: false })
   const leave = () => navigate({ to: '/lab-operations/steps/$stepId', params: { stepId: step.id }, search: labStepListSearch })
-  useEffect(() => { const warn = (event: BeforeUnloadEvent) => { if (form.formState.isDirty && !mutation.isSuccess) { event.preventDefault(); event.returnValue = '' } }; window.addEventListener('beforeunload', warn); return () => window.removeEventListener('beforeunload', warn) }, [form.formState.isDirty, mutation.isSuccess])
+  useEffect(() => { const warn = (event: BeforeUnloadEvent) => { if (__formDraftDirty && !mutation.isSuccess) { event.preventDefault(); event.returnValue = '' } }; window.addEventListener('beforeunload', warn); return () => window.removeEventListener('beforeunload', warn) }, [__formDraftDirty, mutation.isSuccess])
   if (!initial) return <p role="alert">This definition cannot be opened safely. Return without changing it.</p>
   return <>
     <h2 className="text-2xl font-semibold">{step.name} · {draft ? `Edit draft v${draft.stepVersion}` : `New version ${step.latestVersion + 1}`}</h2>
@@ -186,7 +189,7 @@ function LabStepEditor({ step }: { step: LabStep }) {
     {mutation.error ? <p role="alert" className="text-destructive">{getLabOperationsError(mutation.error, 'The draft could not be saved. Your entries are retained; return and reopen if the version changed.')}</p> : null}
     <form noValidate className="space-y-4" onSubmit={form.handleSubmit(v => mutation.mutate(v))}>
       <RequiredLegend /><ProtocolStepEditor catalog form={form} index={0} total={1} onMoveUp={() => {}} onMoveDown={() => {}} onDuplicate={() => {}} onRemove={() => {}} onPreview={() => setPreview(JSON.parse(serializeProtocolDefinition(form.getValues())) as ProtocolDefinition)} />
-      <div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={() => form.formState.isDirty ? setDiscard(true) : void leave()}>Cancel</Button><Button type="submit" disabled={mutation.isPending || Boolean(draft) && !form.formState.isDirty}>{mutation.isPending ? 'Saving…' : 'Save draft'}</Button></div>
+      <div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={() => __formDraftDirty ? setDiscard(true) : void leave()}>Cancel</Button><Button type="submit" disabled={mutation.isPending || Boolean(draft) && !__formDraftDirty}>{mutation.isPending ? 'Saving…' : 'Save draft'}</Button></div>
     </form>
     {preview ? <ConfigurationPreview definition={preview} name={`${step.name} · Unsaved draft`} onClose={() => setPreview(undefined)} /> : null}
     {discard ? <PreparationFormDialog title="Discard unsaved changes?" description="The previously saved configuration remains unchanged." fields={[]} pending={false} submitLabel="Discard changes" onClose={() => setDiscard(false)} onSubmit={() => { leaveApproved.current = true; void leave() }} /> : null}

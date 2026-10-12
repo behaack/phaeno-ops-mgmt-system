@@ -8,8 +8,8 @@ import { AssemblyJobPage, AssemblyJobProgress, AssemblyJobsList } from './Assemb
 
 const mockApi = vi.hoisted(() => ({ list: vi.fn(), allowed: false }))
 vi.mock('#/features/auth/session-context', () => ({ usePhaenoSession: () => ({ authProvider: 'mock', session: { capabilities: { canManageLabOperations: mockApi.allowed } }, selectedOrganizationId: null }) }))
-vi.mock('#/api/lab-assembly', async original => ({ ...await original<object>(), getAssemblyJobs: mockApi.list }))
-vi.mock('@tanstack/react-router', () => ({ Link: ({ children }: { children: ReactNode }) => <a href="#job">{children}</a>, useNavigate: () => vi.fn(), useSearch: () => ({}) }))
+vi.mock('#/api/lab-assembly', async original => ({ ...await original<object>(), getAssemblyJobs: mockApi.list, getAssemblyJobsPage: mockApi.list }))
+vi.mock('@tanstack/react-router', () => ({ useBlocker: () => ({status: 'idle', reset: vi.fn(), proceed: vi.fn()}), Link: ({ children }: { children: ReactNode }) => <a href="#job">{children}</a>, useNavigate: () => vi.fn(), useSearch: () => ({}), useRouterState: ({ select }: { select: (state: { location: { search: object } }) => unknown }) => select({ location: { search: {} } }) }))
 afterEach(() => { cleanup(); mockApi.allowed = false })
 const job = { id: 'test-job', sampleName: 'Sample A', sequencingRunNumber: 2, state: 'Running', isTerminal: false,
   cancellationRequested: false, progress: { percentage: 42, receivedAtUtc: new Date().toISOString(), sequence: 1 } } as AssemblyJob

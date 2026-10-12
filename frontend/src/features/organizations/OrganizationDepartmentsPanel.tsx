@@ -1,12 +1,15 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
+import { useCustomerMessages } from '#/features/customer-i18n/use-customer-messages'
+import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { Ellipsis, Pencil, Plus, Star, UsersRound } from 'lucide-react'
+import { Pencil, Plus, Star, UsersRound } from 'lucide-react'
 import { useState } from 'react'
 import { isAxiosError } from 'axios'
 import { OrganizationDefaultsPanel } from './OrganizationDefaultsPanel'
 import { DepartmentSettingsDialog } from './DepartmentSettingsDialog'
 import { DepartmentMembersDialog } from './DepartmentMembersDialog'
-import { departmentErrorMessage as apiErrorMessage, departmentMessages as m } from './department-localization'
+import { departmentErrorMessage as apiErrorMessage, departmentMessages, departmentMessages as m } from './department-localization'
 
 import {
   createDepartment,
@@ -33,6 +36,10 @@ export function OrganizationDepartmentsPanel({ organizationId, organizationAdmin
   manageMembers?: boolean
   showOrganizationDefaults?: boolean
 }) {
+  const m = useCustomerMessages(departmentMessages)
+
+  const __customerText = useCustomerText()
+
   const client = useQueryClient()
   const [editTarget, setEditTarget] = useState<Department | 'new' | null>(null)
   const [lifecycleTarget, setLifecycleTarget] = useState<{ department: Department; action: 'default' | 'toggle' } | null>(null)
@@ -98,11 +105,11 @@ export function OrganizationDepartmentsPanel({ organizationId, organizationAdmin
         </CardHeader>
         <CardContent className="space-y-3 p-4">
           {!departments.isPending && !departments.error && !(departments.data ?? []).some((department) => organizationAdmin || managedDepartmentIds.includes(department.id)) ? <p role="status" className="text-sm text-muted-foreground">{m.noDepartments}</p> : null}
-          {lifecycle.error && !lifecycleTarget ? <Alert variant="destructive"><AlertDescription>{apiErrorMessage(lifecycle.error)} {m.reopenAction}</AlertDescription></Alert> : null}
+          {lifecycle.error && !lifecycleTarget ? <Alert variant="destructive"><AlertDescription><CustomerSourceText source={apiErrorMessage(lifecycle.error)} /> {m.reopenAction}</AlertDescription></Alert> : null}
           {departments.error ? (
-            <Alert variant="destructive"><AlertDescription>{apiErrorMessage(departments.error)}</AlertDescription></Alert>
+            <Alert variant="destructive"><AlertDescription><CustomerSourceText source={apiErrorMessage(departments.error)} /></AlertDescription></Alert>
           ) : null}
-          {departments.isLoading ? <p className="text-sm text-muted-foreground" role="status">Loading departments…</p> : null}
+          {departments.isLoading ? <p className="text-sm text-muted-foreground" role="status"><CustomerText message="m_b6bf91228240" /></p> : null}
           {(departments.data ?? []).filter((department) => organizationAdmin || managedDepartmentIds.includes(department.id)).map((department) => (
             <article key={department.id} className="rounded-lg border p-4">
               <div className="flex items-start justify-between gap-3">
@@ -117,7 +124,7 @@ export function OrganizationDepartmentsPanel({ organizationId, organizationAdmin
                     {department.description ?? m.noDescription}
                   </p>
                   <p className="mt-2 text-xs text-muted-foreground">
-                    {m.activeMembers(department.activeMemberCount)} · {overrideSummary(department)}
+                    {m.activeMembers(department.activeMemberCount)} · <CustomerSourceText source={overrideSummary(department)} />
                   </p>
                 </div>
                 {!manageMembers && (!organizationAdmin || department.isDefault) && !(deliveryLocations && department.isActive) ? (
@@ -126,12 +133,12 @@ export function OrganizationDepartmentsPanel({ organizationId, organizationAdmin
                   </Button>
                 ) : <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
-                    <Button id={`department-actions-${department.id}`} size="icon-sm" variant="outline" disabled={lifecycle.isPending} aria-label={m.actionsFor(department.name)}><Ellipsis aria-hidden="true" /></Button>
+                    <Button id={`department-actions-${department.id}`} size="sm" variant="outline" disabled={lifecycle.isPending} aria-label={m.actionsFor(department.name)}>{__customerText('m_ff8059dc6752')}</Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-max min-w-48 max-w-[calc(100vw-2rem)]">
                     <DropdownMenuItem onSelect={() => { save.reset(); setSaveConflict(null); setEditTarget(department) }}><Pencil aria-hidden="true" />{m.editSettings}</DropdownMenuItem>
                     {manageMembers ? <DropdownMenuItem onSelect={() => setMemberTarget(department)}><UsersRound aria-hidden="true" />{m.manageMembers}</DropdownMenuItem> : null}
-                    {deliveryLocations && department.isActive ? <DropdownMenuItem asChild><Link to="/delivery-locations" search={{ organizationId, departmentId: department.id, companyId }}>Delivery locations</Link></DropdownMenuItem> : null}
+                    {deliveryLocations && department.isActive ? <DropdownMenuItem asChild><Link to="/delivery-locations" search={{ organizationId, departmentId: department.id, companyId }}><CustomerText message="m_8a15cca5084b" /></Link></DropdownMenuItem> : null}
                     {organizationAdmin && !department.isDefault && department.isActive ? (
                       <DropdownMenuItem onSelect={() => { lifecycle.reset(); setLifecycleTarget({ department, action: 'default' }) }}><Star aria-hidden="true" />{m.makeDefault}</DropdownMenuItem>
                     ) : null}
@@ -146,7 +153,7 @@ export function OrganizationDepartmentsPanel({ organizationId, organizationAdmin
         </CardContent>
       </Card>
       {editTarget ? <DepartmentSettingsDialog
-        key={editTarget === 'new' ? 'new' : editTarget.id}
+        key={editTarget === 'new' ? "new" : editTarget.id}
         target={editTarget}
         pending={save.isPending}
         error={saveConflict ? new Error(saveConflict) : save.error}
@@ -165,12 +172,12 @@ export function OrganizationDepartmentsPanel({ organizationId, organizationAdmin
                   : m.reactivateConsequence}
             </DialogDescription>
           </DialogHeader>
-          {lifecycle.error ? <Alert variant="destructive"><AlertDescription>{apiErrorMessage(lifecycle.error)}</AlertDescription></Alert> : null}
+          {lifecycle.error ? <Alert variant="destructive"><AlertDescription><CustomerSourceText source={apiErrorMessage(lifecycle.error)} /></AlertDescription></Alert> : null}
           <DialogFooter>
             <Button variant="outline" disabled={lifecycle.isPending} onClick={() => setLifecycleTarget(null)}>{m.cancel}</Button>
-            <Button disabled={lifecycle.isPending} variant={lifecycleTarget?.action === 'toggle' && lifecycleTarget.department.isActive ? 'destructive' : 'default'}
+            <Button disabled={lifecycle.isPending} variant={lifecycleTarget?.action === 'toggle' && lifecycleTarget.department.isActive ? "destructive" : "default"}
               onClick={() => { if (lifecycleTarget) lifecycle.mutate(lifecycleTarget) }}>
-              {lifecycle.isPending ? 'Saving…' : 'Confirm change'}
+              {lifecycle.isPending ? <CustomerSourceText source={"Saving…"} /> : __customerText('m_704ac1d7acd8')}
             </Button>
           </DialogFooter>
         </DialogContent>

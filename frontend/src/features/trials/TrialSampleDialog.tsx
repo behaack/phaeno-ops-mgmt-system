@@ -1,3 +1,4 @@
+import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useBlocker } from '@tanstack/react-router'
 import { useRef, useState } from 'react'
@@ -77,7 +78,7 @@ export function TrialSampleDialog({ trial: initial, configuration: initialConfig
   const rows = useFieldArray({ control: form.control, name: 'samples' }); const typeId = useWatch({ control: form.control, name: 'sampleTypeId' })
   const sampleType = configuration.sampleTypes.find(value => value.id === typeId)
   const extras = requiredTrialInputs(trial.scope); const concentrationRequired = allRequiredTrialInputs(trial.scope).some(name => name.toLowerCase() === 'concentration')
-  function close() { if (!reloadPending.current && !form.formState.isSubmitting && (!isDirty || window.confirm('Discard the unsaved Trial sample roster?'))) onClose() }
+  async function close() { if (!reloadPending.current && !form.formState.isSubmitting && (!isDirty || (await confirmPortal('Discard the unsaved Trial sample roster?')))) onClose() }
   async function reload() {
     if (reloadPending.current || form.formState.isSubmitting) return
     reloadPending.current = true; setIsReloading(true); setNotice(null)

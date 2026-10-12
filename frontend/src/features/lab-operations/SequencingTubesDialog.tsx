@@ -78,6 +78,8 @@ export function SequencingTubesDialog({ batchId, batchName, suppliers, canManage
     timingIssues(values.timing).forEach(error => context.addIssue({ code: 'custom', path: ['timing', error.field], message: error.message }))
   })
   const form = useForm<Values>({ resolver: zodResolver(schema), defaultValues: emptyValues() })
+  const { isDirty: __formDraftDirty } = form.formState
+
   useEffect(() => {
     if (target || printing || recovery.data || !recovery.isFetched || !canEdit) return
     const next = query.data?.members.find(item => !item.transfer && item.source.status === 'Available')
@@ -126,7 +128,7 @@ export function SequencingTubesDialog({ batchId, batchName, suppliers, canManage
     },
   })
   const locked = save.isPending || Boolean(uncertain)
-  const dirty = Boolean(target && form.formState.isDirty)
+  const dirty = Boolean(target && __formDraftDirty)
   const blocker = useBlocker({ shouldBlockFn: () => locked || dirty, enableBeforeUnload: () => locked || dirty, withResolver: true })
   const leaveForm = () => {
     if (locked) return

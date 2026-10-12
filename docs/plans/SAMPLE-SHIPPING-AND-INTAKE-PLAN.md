@@ -1,5 +1,27 @@
 # Sample Shipping and Intake Plan
 
+## October 11 shipment discovery continuation
+
+Work-dashboard shipping attention now reads actual physical stock within the
+selected organization/Department. It shares receipt/assembled-roster/usable-stock
+rules with pairing and phase supply, excludes withdrawn/reserved/bound stock
+from new preparation, and preserves cancellation and preceding-phase gates.
+Received request status or an allocation alone cannot establish preparation.
+Batch reads evaluate all scoped candidates before counts without one query chain
+per Job. Local connected acceptance covers missing receipt, expired stock,
+ready stock, administrator/member responsibility, pending/declined cancellation,
+request waiting and a prepared phase awaiting dispatch. No physical shipping or
+commercial rule, persisted model, provider or deployment change is introduced.
+
+Customer **Sample shipping** discovery uses the selected organization/Department
+before shipment-number/Job-reference search, status filtering, exact totals and
+stable paging. Shipment detail retains the list page/filters for **Back to
+shipments**. Existing per-source consumers now receive all authorized shipments,
+without the former 250-record ceiling. Required evidence includes the extended
+261-shipment PostgreSQL journey, foreign-tenant denial and frontend page/filter
+regressions; execution is recorded in the [continuation receipt](../testing/runs/2026-10-11-system-gap-closure-verification.md).
+No persisted model, physical shipping rule or deployment change.
+
 ## September 29, 2026 shipping insert confirmation correction
 
 Keep the confirmation title and brief description in the fixed header, with the shipment's sample and tube counts and print/packing guidance in the dialog body. Name the shipping insert as the receiving sheet created by confirmation: its printed face has shipment details, sample and tube totals, and a scan barcode; the full packing instructions and sample/tube crosswalk remain available separately for review. The entry action is **Review and confirm shipment contents** and the final button is **Confirm and create receiving sheet**. A server error spans the available dialog width while the title retains space for the close control. In the Lab Job Actions menu, **Request cancellation** uses destructive red text while retaining its existing confirmation and permission rules.

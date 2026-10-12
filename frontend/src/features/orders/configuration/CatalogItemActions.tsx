@@ -1,3 +1,4 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
@@ -32,10 +33,10 @@ export function CatalogItemActions({ item, apiEnabled, onEdit }: {
       await client.invalidateQueries({ queryKey: ['order-configuration'] })
     } })
   return <div className="col-start-2 row-start-1 justify-self-end">
-    <ActionMenu><DropdownMenuTrigger asChild><Button ref={trigger} variant="outline" disabled={!apiEnabled}>Actions <ChevronDown aria-hidden="true" /></Button></DropdownMenuTrigger>
+    <ActionMenu><DropdownMenuTrigger asChild><Button ref={trigger} variant="outline" disabled={!apiEnabled}><CustomerSourceText source={"Actions"} /> <ChevronDown aria-hidden="true" /></Button></DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="max-w-80">
-        <DropdownMenuItem onSelect={() => onEdit(trigger.current)}>Edit item</DropdownMenuItem>
-        {!item.isActive ? <DropdownMenuItem variant="destructive" disabled={!canDelete} onSelect={() => { deletion.reset(); setConfirm({ id: item.id, name: item.name, version: item.version }) }}>Delete item</DropdownMenuItem> : null}
+        <DropdownMenuItem onSelect={() => onEdit(trigger.current)}><CustomerSourceText source={"Edit item"} /></DropdownMenuItem>
+        {!item.isActive ? <DropdownMenuItem variant="destructive" disabled={!canDelete} onSelect={() => { deletion.reset(); setConfirm({ id: item.id, name: item.name, version: item.version }) }}><CustomerSourceText source={"Delete item"} /></DropdownMenuItem> : null}
         {!item.isActive && reason ? <DropdownMenuLabel className="max-w-72 whitespace-normal text-xs font-normal text-muted-foreground">{reason}</DropdownMenuLabel> : null}
       </DropdownMenuContent>
     </ActionMenu>
@@ -43,10 +44,10 @@ export function CatalogItemActions({ item, apiEnabled, onEdit }: {
       <DialogContent showCloseButton={!deletion.isPending} aria-busy={deletion.isPending}
         onOpenAutoFocus={event => { event.preventDefault(); cancel.current?.focus() }}
         onCloseAutoFocus={event => { if (trigger.current?.isConnected) { event.preventDefault(); trigger.current.focus() } }}>
-        <DialogHeader><DialogTitle>Delete {confirm?.name}?</DialogTitle><DialogDescription>This item has never been active and is not used by saved work or configuration. Deletion permanently removes it from the catalog. Its audit history is retained.</DialogDescription></DialogHeader>
-        {confirm && confirm.version !== item.version ? <p role="status" className="text-sm">This item changed. Close this confirmation and review the latest item before deleting.</p> : null}
-        {deletion.error ? <p role="alert" className="text-sm text-destructive">{getOrderErrorMessage(deletion.error, 'The item was not deleted. Refresh and review it again.')}</p> : null}
-        <RequiredDialogFooter showLegend={false}><Button ref={cancel} variant="outline" disabled={deletion.isPending} onClick={() => setConfirm(null)}>Cancel</Button><Button variant="destructive" disabled={deletion.isPending || !canDelete || confirm?.version !== item.version} onClick={() => { if (confirm) deletion.mutate(confirm) }}>{deletion.isPending ? 'Deleting…' : 'Delete item'}</Button></RequiredDialogFooter>
+        <DialogHeader><DialogTitle><CustomerSourceText source={"Delete"} /> {confirm?.name}?</DialogTitle><DialogDescription><CustomerSourceText source={"This item has never been active and is not used by saved work or configuration. Deletion permanently removes it from the catalog. Its audit history is retained."} /></DialogDescription></DialogHeader>
+        {confirm && confirm.version !== item.version ? <p role="status" className="text-sm"><CustomerSourceText source={"This item changed. Close this confirmation and review the latest item before deleting."} /></p> : null}
+        {deletion.error ? <p role="alert" className="text-sm text-destructive">{<CustomerSourceText source={getOrderErrorMessage(deletion.error, 'The item was not deleted. Refresh and review it again.')} />}</p> : null}
+        <RequiredDialogFooter showLegend={false}><Button ref={cancel} variant="outline" disabled={deletion.isPending} onClick={() => setConfirm(null)}><CustomerSourceText source={"Cancel"} /></Button><Button variant="destructive" disabled={deletion.isPending || !canDelete || confirm?.version !== item.version} onClick={() => { if (confirm) deletion.mutate(confirm) }}>{deletion.isPending ? <CustomerSourceText source={"Deleting…"} /> : <CustomerSourceText source={"Delete item"} />}</Button></RequiredDialogFooter>
       </DialogContent>
     </Dialog>
   </div>

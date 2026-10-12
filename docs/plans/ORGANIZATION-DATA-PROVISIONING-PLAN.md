@@ -1,5 +1,16 @@
 # Organization Data Provisioning Plan
 
+## October 11 governance interaction closure
+
+Incident/notice/reissue forms use the shared draft guard while open. Resolution,
+quarantine and investigation confirmations identify scope, retain a body region
+and initially focus Cancel. Dirty notes can be kept or explicitly discarded,
+with focus returning to the surviving contextual Actions control. Completed or
+closed forms no longer block unrelated navigation. NativeSelect/Field spacing
+and shared ActionMenu behavior apply to touched controls. Retained paged history
+and older unresolved-governance discovery are verified in the local Department
+matrix. See the [final receipt](../testing/runs/2026-10-11-system-gap-closure-final.md).
+
 ## September 15 scanner outage recovery
 
 The authorized ten-case continuation found that managed uploads retained an Unavailable scan but provided no recovery command. Implemented a Phaeno-only, source-version-checked retry for Pending/Unavailable files on draft sources. It reuses the actual stored bytes and configured scanner, retains source/file identities and checksums, audits the transition, and updates source/file atomically with optimistic concurrency. Clean/rejected files, foreign file IDs and immutable sources are rejected. No schema, dependency, production setting or authorization change. Scan refresh preserves unsaved metadata and its reviewed version, so a refresh cannot silently authorize an overwrite. Mark ready remains disabled while edits are unsaved or save/upload/scan is in progress. Real scanner/storage outage/restoration, exact byte identity, role/scope/stale/frozen guards and component recovery pass. The source guide now accurately describes creating a new source record for corrections; no in-place new-source-revision endpoint is claimed.
@@ -15,6 +26,20 @@ The recommended first slice and the remaining implementation phases are complete
 for the confirmed baseline curated-sample contract. Real production scientific
 content and approved file kinds remain a content-readiness gate, not unfinished
 application behavior.
+
+## October 11 retained-history completeness
+
+Tenant downloads, activity and active governance attention, plus Phaeno
+provisioning/activity and governance histories, use stable server pages with exact
+scoped totals. Old 500-record ceilings and local 20-row truncation no longer
+hide history. Active governance attention is filtered before paging, so an older
+unresolved incident remains discoverable among later resolved incidents.
+Department/organization authorization stays ahead of counts and paging; page
+state resets immediately on scope changes. A rollback reference case verifies
+505 scoped downloads/notices, other-Department exclusion, revoked administrator
+denial and older active governance attention. Incident and affected-organization
+actions use the shared Actions menu. No persisted model or provider execution
+changes are included.
 
 ## Status
 

@@ -1,3 +1,5 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
+import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import { createPortal } from 'react-dom'
 import { useRef, useState, type RefObject } from 'react'
 import { useQuery } from '@tanstack/react-query'
@@ -38,6 +40,8 @@ export function LabJobShippingWorkspace({ order, workspace, onWorkspaceChange, h
   onPairRefresh?: () => void
   taskOnly?: boolean
 }) {
+  const __customerText = useCustomerText()
+
   const { allowed, shipments, related, retired, receiptState } = useSourceSampleShipments(order.id)
   const [sampleActionsTarget, setSampleActionsTarget] = useState<HTMLDivElement | null>(null)
   const fallbackActionRef = useRef<HTMLButtonElement>(null)
@@ -102,31 +106,31 @@ export function LabJobShippingWorkspace({ order, workspace, onWorkspaceChange, h
     page={(workspace.samplePage ?? 1) - 1} onPageChange={page => change({ samplePage: page ? page + 1 : undefined })} />
   return <Card id="samples-and-shipping" tabIndex={-1} className="min-w-0 scroll-mt-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
     {!taskOnly ? <CardHeader>
-      <CardTitle>Samples and shipping</CardTitle>
+      <CardTitle><CustomerText message="m_74607a548dd6" /></CardTitle>
       <CardAction ref={setSampleActionsTarget} className="row-span-1 flex flex-wrap justify-end gap-2 empty:hidden" />
-      <CardDescription className="col-span-full row-start-2 text-left">{order.usesPairedPreparation ? pairedWorkspaceDescription : order.sampleRosterFinalizedAt ? 'Review your samples, prepare each container and record its shipment here.' : 'Identify each accepted sample below, then review and finalize the list before preparing your shipment.'}</CardDescription>
+      <CardDescription className="col-span-full row-start-2 text-left">{order.usesPairedPreparation ? pairedWorkspaceDescription : order.sampleRosterFinalizedAt ? "Review your samples, prepare each container and record its shipment here." : __customerText('m_895cd2b9f04b')}</CardDescription>
     </CardHeader> : null}
-    <CardContent className={taskOnly ? 'space-y-5 pt-4' : 'space-y-5'}>
+    <CardContent className={taskOnly ? "space-y-5 pt-4" : "space-y-5"}>
       {!selected && headerTarget ? createPortal(<LabJobWorkspaceActions orderActions={orderActions} shipmentActions={fallbackShippingActions} triggerRef={fallbackActionRef} dialogOpen={orderDialogOpen} />, headerTarget) : null}
       {!selected ? renderSendAction(null, fallbackSendRef) : null}
       {allowed && (jobShipments.length > 1 || (!selected || selected.status === 'Cancelled') && jobShipments.length > 0) ? <Field>
-        <Label htmlFor="job-shipment-selector">Shipping container</Label>
-        <NativeSelect id="job-shipment-selector" aria-describedby={!selected && hasSentInsert ? 'job-shipment-reprint-hint' : undefined} value={selected?.id ?? ''} disabled={navigationLocked || orderDialogOpen || Boolean(shipments.error) || shipments.isFetching} onChange={event => change({ shipmentId: event.target.value || undefined, orderKits: undefined })}>
-          <option value="">Select a container</option>
-          {jobShipments.map(item => <option key={item.id} value={item.id}>{item.isPackingPool ? 'Tubes awaiting containers' : item.shipmentNumber} · {item.crosswalk.length} tubes · {humanizeStatus(item.status)} · {item.destinationName}</option>)}
-          {selected?.status === 'Cancelled' ? <option value={selected.id}>{selected.shipmentNumber} · Retired</option> : null}
+        <Label htmlFor="job-shipment-selector"><CustomerText message="m_093db4f01d81" /></Label>
+        <NativeSelect id="job-shipment-selector" aria-describedby={!selected && hasSentInsert ? "job-shipment-reprint-hint" : undefined} value={selected?.id ?? ''} disabled={navigationLocked || orderDialogOpen || Boolean(shipments.error) || shipments.isFetching} onChange={event => change({ shipmentId: event.target.value || undefined, orderKits: undefined })}>
+          <option value=""><CustomerText message="m_7a6c20fb6fa9" /></option>
+          {jobShipments.map(item => <option key={item.id} value={item.id}>{item.isPackingPool ? <CustomerSourceText source={"Tubes awaiting containers"} /> : item.shipmentNumber} · {item.crosswalk.length} <CustomerText message="m_2fb19d7bbf61" />{humanizeStatus(item.status)} · {item.destinationName}</option>)}
+          {selected?.status === 'Cancelled' ? <option value={selected.id}>{selected.shipmentNumber} <CustomerText message="m_fe31efed2de2" /></option> : null}
         </NativeSelect>
-        {!selected && hasSentInsert ? <p id="job-shipment-reprint-hint" className="text-sm text-muted-foreground">Select a shipping container to reprint its shipping insert.</p> : null}
+        {!selected && hasSentInsert ? <p id="job-shipment-reprint-hint" className="text-sm text-muted-foreground"><CustomerText message="m_07fe3af8030d" /></p> : null}
       </Field> : null}
-      {selected ? <p className="text-sm wrap-anywhere"><span className="font-medium">{selected.isPackingPool ? 'Tubes awaiting containers' : `Selected shipment: ${selected.shipmentNumber}`}</span> · {humanizeStatus(selected.status)} · {selected.destinationName}</p> : null}
-      {unknownSelection ? <Alert><AlertTitle>Selected shipment is not available for this Job</AlertTitle><AlertDescription>Choose a current container to continue. <Button variant="outline" onClick={() => change({ shipmentId: undefined, orderKits: undefined })}>Choose current container</Button></AlertDescription></Alert> : null}
-      {shipments.error ? <Alert variant="destructive"><AlertTitle>Shipping information could not be loaded</AlertTitle><AlertDescription>Your sample list is preserved. <Button variant="outline" onClick={() => void shipments.refetch()}>Retry shipments</Button></AlertDescription></Alert> : null}
+      {selected ? <p className="text-sm wrap-anywhere"><span className="font-medium">{selected.isPackingPool ? <CustomerSourceText source={"Tubes awaiting containers"} /> : __customerText('m_7756c7f3a1e3', { p0: String(selected.shipmentNumber) })}</span> · {humanizeStatus(selected.status)} · {selected.destinationName}</p> : null}
+      {unknownSelection ? <Alert><AlertTitle><CustomerText message="m_3c5a7f16fcb6" /></AlertTitle><AlertDescription><CustomerText message="m_b448bd233b89" /><Button variant="outline" onClick={() => change({ shipmentId: undefined, orderKits: undefined })}><CustomerText message="m_f9eb72bacb54" /></Button></AlertDescription></Alert> : null}
+      {shipments.error ? <Alert variant="destructive"><AlertTitle><CustomerText message="m_00cc48ad6ac8" /></AlertTitle><AlertDescription><CustomerText message="m_f4b041e5971e" /><Button variant="outline" onClick={() => void shipments.refetch()}><CustomerText message="m_6b505c2eafc9" /></Button></AlertDescription></Alert> : null}
       {awaitingPairedPreparation && !hasReceivedCompatibleKit ? pairState === 'loading'
-        ? <p role="status" className="text-sm text-muted-foreground">Checking for a received, compatible kit…</p>
+        ? <p role="status" className="text-sm text-muted-foreground"><CustomerText message="m_99b36e8f8a23" /></p>
         : pairState === 'unavailable'
-          ? <Alert variant="destructive"><AlertTitle>Kit receipt could not be checked</AlertTitle><AlertDescription>Refresh the kit status before preparing samples. {onPairRefresh ? <Button type="button" variant="outline" size="sm" onClick={onPairRefresh}>Retry</Button> : null}</AlertDescription></Alert>
+          ? <Alert variant="destructive"><AlertTitle><CustomerText message="m_d73a4b782dcd" /></AlertTitle><AlertDescription><CustomerText message="m_a6ca8e78c84c" />{onPairRefresh ? <Button type="button" variant="outline" size="sm" onClick={onPairRefresh}><CustomerText message="m_942087cc2d41" /></Button> : null}</AlertDescription></Alert>
           : null : null}
-      {submissionInstructions && (!order.usesPairedPreparation || hasReceivedCompatibleKit) ? <section aria-label="Sample preparation instructions" className="rounded-md border bg-muted/30 px-4 py-3 text-sm"><h3 className="font-medium">Sample preparation instructions</h3><p className="mt-1 whitespace-pre-wrap wrap-anywhere text-muted-foreground">{submissionInstructions}</p></section> : null}
+      {submissionInstructions && (!order.usesPairedPreparation || hasReceivedCompatibleKit) ? <section aria-label={__customerText('m_d64a3bc33aee')} className="rounded-md border bg-muted/30 px-4 py-3 text-sm"><h3 className="font-medium"><CustomerText message="m_d64a3bc33aee" /></h3><p className="mt-1 whitespace-pre-wrap wrap-anywhere text-muted-foreground">{submissionInstructions}</p></section> : null}
       {!selected ? renderSamples() : null}
       {selected ? <SampleShippingDetailPage key={selected.id} shipmentId={selected.id} autoOpenKitOrder={workspace.orderKits} embedded={{
         sourceId: order.id,
@@ -145,8 +149,8 @@ export function LabJobShippingWorkspace({ order, workspace, onWorkspaceChange, h
         onOpenPreparation: () => change({ shipmentId: selected.id, shippingView: 'tubes' }),
         renderActions: (actions, triggerRef, dialogOpen) => headerTarget ? createPortal(<LabJobWorkspaceActions orderActions={orderActions} shipmentActions={actions} shipmentLabel={selected.shipmentNumber} triggerRef={triggerRef} dialogOpen={dialogOpen || orderDialogOpen} />, headerTarget) : null,
         renderSendAction,
-      }} /> : !shipments.error && allowed && shipments.isLoading ? <p role="status">Loading shipping containers…</p>
-          : !shipments.error && tubesView ? <p className="text-sm text-muted-foreground">{jobShipments.length > 1 ? 'Select the container you are preparing before scanning.' : 'Container preparation becomes available after the accepted sample list is finalized.'}</p> : null}
+      }} /> : !shipments.error && allowed && shipments.isLoading ? <p role="status"><CustomerText message="m_b986c820e9db" /></p>
+          : !shipments.error && tubesView ? <p className="text-sm text-muted-foreground">{jobShipments.length > 1 ? <CustomerSourceText source={"Select the container you are preparing before scanning."} /> : __customerText('m_af351c68c209')}</p> : null}
     </CardContent>
   </Card>
 }

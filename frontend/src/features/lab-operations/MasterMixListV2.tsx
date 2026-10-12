@@ -1,3 +1,5 @@
+import { NativeSelect } from '#/components/ui/native-select'
+import { confirmPortal } from '#/components/PortalConfirmation'
 import { labAmount, labCount } from './lab-presentation'
 import { useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -40,13 +42,15 @@ export function MasterMixWorkspace({ enabled, canOperate }: { enabled: boolean; 
   const [open, setOpen] = useState(false)
   const requestId = useRef(crypto.randomUUID())
   const form = useForm<StartValues>({ resolver: zodResolver(startSchema), defaultValues: { workflowId: '' } })
+  const { isDirty: __formDraftDirty } = form.formState
+
   const mixes = useQuery({ queryKey: [...masterMixesKey, 'search', filters.search, filters.status, filters.page], queryFn: () => searchMasterMixes(filters.search, filters.status, filters.page), enabled })
   const workflows = useQuery({ queryKey: masterMixWorkflowsKey, queryFn: listMasterMixWorkflows, enabled })
   const updateFilters = (next: Filters) => {
     setFilters(next)
     try { sessionStorage.setItem(storageKey, JSON.stringify(next)) } catch { /* The list remains usable without saved filters. */ }
   }
-  const close = () => { if (!form.formState.isDirty || window.confirm('Discard the unsaved master-mix selection?')) setOpen(false) }
+  const close = async () => { if (!__formDraftDirty || (await confirmPortal('Discard the unsaved master-mix selection?'))) setOpen(false) }
   const start = useMutation({
     mutationFn: (value: StartValues) => {
       const [workflowId, revision] = value.workflowId.split(':')
@@ -73,7 +77,7 @@ export function MasterMixWorkspace({ enabled, canOperate }: { enabled: boolean; 
         </div>
         <form className="grid w-full grid-cols-1 items-end gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto]" onSubmit={event => { event.preventDefault(); updateFilters({ ...filters, search: searchText.trim(), page: 1 }) }}>
           <PreparationField id="mix-list-search" label="Find by name or full container barcode"><Input id="mix-list-search" value={searchText} onChange={event => setSearchText(event.target.value)} /></PreparationField>
-          <PreparationField id="mix-list-status" label="Status"><select id="mix-list-status" className={prepSelectClass} value={filters.status} onChange={event => updateFilters({ ...filters, status: event.target.value, page: 1 })}><option value="">All statuses</option><option value="Overdue">Overdue — discard needed</option><option value="Preparing">Preparing</option><option value="Ready">Ready</option><option value="Discarded">Discarded</option></select></PreparationField>
+          <PreparationField id="mix-list-status" label="Status"><NativeSelect id="mix-list-status" className={prepSelectClass} value={filters.status} onChange={event => updateFilters({ ...filters, status: event.target.value, page: 1 })}><option value="">All statuses</option><option value="Overdue">Overdue — discard needed</option><option value="Preparing">Preparing</option><option value="Ready">Ready</option><option value="Discarded">Discarded</option></NativeSelect></PreparationField>
           <Button type="submit" variant="outline" className="justify-self-end">Search</Button>
         </form>
       </CardHeader>
@@ -84,6 +88,6 @@ export function MasterMixWorkspace({ enabled, canOperate }: { enabled: boolean; 
         </> : <p className="text-sm text-muted-foreground">No master mixes match these filters.</p>}
       </CardContent>
     </Card>
-    {open ? <Dialog open onOpenChange={value => { if (!value && !start.isPending) close() }}><DialogContent><form className="contents" noValidate onSubmit={form.handleSubmit(value => start.mutate(value))}><DialogHeader><DialogTitle>Start master mix</DialogTitle><DialogDescription>Choose the approved recipe revision used by the library trays. POMS assigns a unique container barcode and a same-day use cutoff.</DialogDescription></DialogHeader><PreparationField id="mix-start-workflow" label="Approved recipe revision" required error={form.formState.errors.workflowId?.message}><select id="mix-start-workflow" className={prepSelectClass} {...form.register('workflowId', { onChange: () => { requestId.current = crypto.randomUUID() } })}><option value="">Choose revision…</option>{available.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}</select></PreparationField>{workflows.isError ? <p role="alert">Approved procedures could not be loaded.</p> : null}{!workflows.isPending && available.length === 0 ? <p>Approve a master-mix workflow in Lab settings first.</p> : null}{start.error ? <p role="alert" className="text-sm text-destructive">{getLabOperationsError(start.error, 'The preparation could not be started. Review the list before retrying.')}</p> : null}<RequiredDialogFooter><Button type="button" variant="outline" disabled={start.isPending} onClick={close}>Cancel</Button><Button type="submit" disabled={start.isPending || available.length === 0}>{start.isPending ? 'Starting…' : 'Start preparation'}</Button></RequiredDialogFooter></form></DialogContent></Dialog> : null}
+    {open ? <Dialog open onOpenChange={value => { if (!value && !start.isPending) close() }}><DialogContent><form className="contents" noValidate onSubmit={form.handleSubmit(value => start.mutate(value))}><DialogHeader><DialogTitle>Start master mix</DialogTitle><DialogDescription>Choose the approved recipe revision used by the library trays. POMS assigns a unique container barcode and a same-day use cutoff.</DialogDescription></DialogHeader><PreparationField id="mix-start-workflow" label="Approved recipe revision" required error={form.formState.errors.workflowId?.message}><NativeSelect id="mix-start-workflow" className={prepSelectClass} {...form.register('workflowId', { onChange: () => { requestId.current = crypto.randomUUID() } })}><option value="">Choose revision…</option>{available.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}</NativeSelect></PreparationField>{workflows.isError ? <p role="alert">Approved procedures could not be loaded.</p> : null}{!workflows.isPending && available.length === 0 ? <p>Approve a master-mix workflow in Lab settings first.</p> : null}{start.error ? <p role="alert" className="text-sm text-destructive">{getLabOperationsError(start.error, 'The preparation could not be started. Review the list before retrying.')}</p> : null}<RequiredDialogFooter><Button type="button" variant="outline" disabled={start.isPending} onClick={close}>Cancel</Button><Button type="submit" disabled={start.isPending || available.length === 0}>{start.isPending ? 'Starting…' : 'Start preparation'}</Button></RequiredDialogFooter></form></DialogContent></Dialog> : null}
   </>
 }

@@ -1,3 +1,4 @@
+import * as portalConfirmation from '#/components/PortalConfirmation'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -31,25 +32,25 @@ describe('Curated catalog dialog draft protection', () => {
     const update = vi.mocked(api.updateDataset).mockReturnValueOnce(pending)
     const deactivate = vi.mocked(api.deactivateDataset).mockReturnValueOnce(pending)
     const retire = vi.mocked(api.retireDatasetVersion).mockReturnValueOnce(pending as unknown as Promise<api.CuratedDatasetVersion>)
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    const confirm = vi.spyOn(portalConfirmation, 'confirmPortal').mockResolvedValue(false)
     try {
       const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
       render(<QueryClientProvider client={client}><DataProvisioningPage section="catalog" onSectionChange={vi.fn()} /></QueryClientProvider>)
       await screen.findByText('Reference dataset')
-      fireEvent.click(screen.getByRole('button', { name: scenario.open }))
+      await act(async () => { fireEvent.click(screen.getByRole('button', { name: scenario.open })) })
       const dialog = screen.getByRole('dialog', { name: scenario.title })
       fireEvent.change(within(dialog).getByRole('textbox', { name: scenario.field }), { target: { value: 'Reviewed change' } })
       if (scenario.kind === 'create') fireEvent.change(within(dialog).getByRole('textbox', { name: 'Description' }), { target: { value: 'Reviewed description' } })
-      fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }))
+      await act(async () => { fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' })) })
       expect(confirm).toHaveBeenCalled()
       expect(screen.getByRole('dialog', { name: scenario.title })).toBeTruthy()
       expect(within(dialog).getByRole('textbox', { name: scenario.field })).toHaveProperty('value', 'Reviewed change')
 
       act(() => client.setQueryData(['data-provisioning', 'datasets'], [{ ...dataset, version: 12, versions: [{ ...version, version: 15 }] }]))
-      fireEvent.click(within(dialog).getByRole('button', { name: scenario.save }))
+      await act(async () => { fireEvent.click(within(dialog).getByRole('button', { name: scenario.save })) })
       await waitFor(() => expect(within(dialog).getByRole('button', { name: 'Cancel' })).toHaveProperty('disabled', true))
       expect(within(dialog).getByRole('textbox', { name: scenario.field }).closest('fieldset')).toHaveProperty('disabled', true)
-      fireEvent.keyDown(dialog, { key: 'Escape' })
+      await act(async () => { fireEvent.keyDown(dialog, { key: 'Escape' }) })
       expect(screen.getByRole('dialog', { name: scenario.title })).toBeTruthy()
       if (scenario.kind === 'create') expect(create.mock.calls[0]?.[0]).toEqual({ name: 'Reviewed change', description: 'Reviewed description' })
       if (scenario.kind === 'edit') expect(update).toHaveBeenCalledWith({ datasetId: dataset.id, version: 4, name: 'Reviewed change', description: dataset.description })
@@ -61,10 +62,10 @@ describe('Curated catalog dialog draft protection', () => {
       expect(failure.closest('[data-slot="dialog-header"]')).not.toBeNull()
       expect(within(dialog).getByRole('textbox', { name: scenario.field })).toHaveProperty('value', 'Reviewed change')
       expect(within(dialog).getByRole('button', { name: 'Cancel' })).toHaveProperty('disabled', false)
-      confirm.mockReturnValue(true)
-      fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }))
+      confirm.mockResolvedValue(true)
+      await act(async () => { fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' })) })
       expect(screen.queryByRole('dialog')).toBeNull()
-      fireEvent.click(screen.getByRole('button', { name: scenario.open }))
+      await act(async () => { fireEvent.click(screen.getByRole('button', { name: scenario.open })) })
       expect(screen.queryByText(scenario.error)).toBeNull()
       expect(screen.getByRole('textbox', { name: scenario.field })).toHaveProperty('value', scenario.kind === 'edit' ? dataset.name : '')
     } finally { confirm.mockRestore() }

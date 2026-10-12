@@ -1,3 +1,4 @@
+import * as portalConfirmation from '#/components/PortalConfirmation'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import type { CrmContact } from '#/api/crm'
@@ -40,7 +41,7 @@ describe('Contact outreach editor', () => {
   })
 
   it('retains a dirty draft when discard is declined and disables controls during saving', () => {
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    const confirm = vi.spyOn(portalConfirmation, 'confirmPortal').mockResolvedValue(false)
     const props = { open: true, contact, pending: false, onSubmit: vi.fn(), onOpenChange: vi.fn() }
     try {
       const view = render(<CrmContactDialog {...props} />)

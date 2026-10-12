@@ -1,5 +1,16 @@
 # Sample material transfers and tube identity
 
+## October 11 generated prepared-yield provenance
+
+Newly generated preparation outputs now record actual yield through the same
+measured-quantity history as assigned library tubes. A new output may receive its
+first measurement while its generated label remains pending; subsequent pending-label
+remeasurement is denied. This adds no second source withdrawal and does not establish
+physical label confirmation. Exact history exposes recorder/time without inferring
+the performer. No historical backfill, persisted field, migration or release is
+included. Domain regression sources compile; connected preparation and bench
+acceptance remain open in the [gap receipt](../testing/runs/2026-10-11-system-gap-closure.md).
+
 ## Precision follow-up — September 23, 2026
 
 Both source-to-library and library-to-sequencing transfers now send the entered amount as invariant decimal text, compare it with exact source balances, and display exact decimal remainders where available. The API accepts `quantityText` for both commands while retaining numeric `quantity` for older clients; sending both is rejected. Input is limited to representable positive decimals with at most 28 fractional places. The API also rejects transfers whose source or destination balance would require rounding. The existing decimal domain model, transaction, and persisted schema remain unchanged. Focused API, PostgreSQL, frontend and desktop/mobile browser regressions pass locally. This follow-up has not been deployed or physically accepted; API activation must precede the updated Portal UI because older APIs do not understand the new text field.

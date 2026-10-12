@@ -1,3 +1,4 @@
+import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Link, useBlocker, useNavigate } from '@tanstack/react-router'
 import { useRef, useState } from 'react'
@@ -74,7 +75,7 @@ function ScopeEditor({ trial, configuration, onReload, fromCompanyId }: { fromCo
   const form = useForm<Values>({ resolver: (values, context, options) => zodResolver(intent.current === 'draft' ? draftSchema : schema)(values, context, options), mode: 'onBlur', reValidateMode: 'onChange', defaultValues: initialValues(trial, configuration) })
   const { isDirty } = form.formState
   const busy = form.formState.isSubmitting || isReloading
-  useBlocker({ shouldBlockFn: () => !saved.current && (reloadPending.current || form.formState.isSubmitting || isDirty && !window.confirm('Discard the unsaved Trial scope changes?')), enableBeforeUnload: () => !saved.current && (isDirty || busy) })
+  useBlocker({ shouldBlockFn: async () => !saved.current && (reloadPending.current || form.formState.isSubmitting || isDirty && !(await confirmPortal('Discard the unsaved Trial scope changes?'))), enableBeforeUnload: () => !saved.current && (isDirty || busy) })
   const sources = useFieldArray({ control: form.control, name: 'sources' })
   const sourceValues = useWatch({ control: form.control, name: 'sources' })
   const sourceTotal = sourceValues.reduce((sum, source) => sum + (Number(source.specimenCount) || 0), 0)

@@ -1,5 +1,104 @@
 # Frontend Test Plan
 
+## Error and edge-case review — October 11, 2026
+
+The [review receipt](../testing/runs/2026-10-11-gap-review.md) records 50 passing
+focused tests across six files. UserMenu regressions now cover Department guards,
+cancelled organization switching already on Dashboard and retry after a cancelled
+navigation whose promise stays pending. Navigation, Customer locale and guide
+regressions remain passing. Counts/list retry recover both queries, out-of-range
+work pages retain honest feedback and the existing Available priority is selectable.
+No broader suite is repeated after these focused review fixes; the prior full
+checkpoint remains historical evidence. Customer-only i18n/en-US and deployment
+hold are unchanged.
+
+## Final gap-closure checkpoint — October 11, 2026
+
+Full regression suite: 243 files, 1,511 passed, 3 existing skips, no failures.
+Final TypeScript, ESLint, five documentation-publication checks and Customer
+message-reference validation pass. See the
+[final receipt](../testing/runs/2026-10-11-system-gap-closure-final.md).
+The scope adds guarded governance dismissal/focus, open-scoped modal blockers,
+complete assembly server paging/search and retained Trial list-page return.
+Customer current-English coverage has 5,777 entries; shared FieldError still
+omits empty feedback. Phaeno/Partner/Prospect retain English. Contextual
+ActionMenu defaults to nonmodal behavior so opening a dialog and changing the
+available action count cannot leave background pointer interaction locked.
+
+Isolated client/SSR/Nitro build passes. Final main entry is 1,353,188 bytes and
+static startup imports total 1,364,583 bytes. Source matching is lazy; ordinary
+English startup avoids constructing the template matcher. The startup graph
+continues to exclude Lab Operations UI, barcode encoding and retired business
+dashboard panels. Larger Customer extraction increases the entry from the
+earlier shipping checkpoint; the main remains below the original 2,065,140-byte
+baseline. This is build evidence, not measured real-device or tenant latency.
+
+## Shipping and startup continuation — October 11, 2026
+
+The initial affected run passes 46 tests across 10 files; the final dashboard,
+Customer-boundary, work and documentation run passes 49 across 11 files.
+`dashboard-search.test` preserves valid bookmarked values and rejects unknown
+values after pure parsers move out of workspace UI modules. Customer feedback
+tests include the shipping-readiness message and confirm other audiences stay
+English. Final types/lint and isolated client/SSR/Nitro builds pass. The startup
+profile follows static dependencies from the entry and default home and rejects
+eager Lab Operations, barcode encoder or retired/Web Operations panels; see the
+[receipt](../testing/runs/2026-10-11-shipping-startup-gap-closure.md). Main output is
+1,159.61 KB, previously 2,065.14 KB; this is a bundle result, not a production
+latency or complete Customer-coverage claim.
+
+## Scientific, retained-list, localization and help continuation — October 11, 2026
+
+The full regression checkpoint passes 1,504 tests with three skips across 240
+files. After the final date/guide/pager changes, 32 affected checks pass across
+eight files. Three additional manufacturing/governance checks pass across two
+new files: older records, exact filtered totals, independent URL selections,
+filter resets, menu grouping, one chevron, keyboard opening and focus return.
+`DataLibraryPage.test` reaches older history with 505 scoped records and verifies
+scope changes/revocation. `customer-text.test` covers Customer-only shared help
+dictionaries, preserved parameters and timestamp formatting. Documentation
+registry tests accept lazy components; five Node publication checks verify the
+explicit import map, reject computed/wrong paths and validate regenerated content.
+See the [remaining-gap receipt](../testing/runs/2026-10-11-system-gap-closure-remaining.md).
+Full Customer-message and authenticated workflow acceptance remain open.
+
+## Requested gap verification continuation — October 11, 2026
+
+The Owner requested relevant test execution after the initial checkpoint below.
+`render-portal` supplies real Query/Router contexts and the shared confirmation
+host; affected regressions await decisions and use current paged response shapes.
+`SampleShippingPage.test` covers records beyond the previous cap, exact totals,
+filter resets and list context in detail links. `customer-text.test` covers the
+Customer boundary and preserved scientific/user parameters. Packing-reset,
+Finance menus and quote discard/focus expectations follow current behavior.
+The [continuation receipt](../testing/runs/2026-10-11-system-gap-closure-verification.md)
+records actual batch outcomes and remaining coverage.
+The full run passes 1,502 tests with three skips across 240 files; 60 affected
+component tests pass again after the final shipment/message changes. Initial
+Trial timeouts under heavier concurrency clear in the final lower-concurrency
+run; no assertion or timeout was weakened to hide them.
+
+## System-gap implementation checkpoint — October 11, 2026
+
+[System gap closure](SYSTEM-GAP-CLOSURE-PLAN.md) and
+[Work dashboard and notifications](WORK-DASHBOARD-AND-NOTIFICATIONS-PLAN.md)
+own planned coverage for shared discard/navigation recovery, exact selected
+phase drafts, honest measured-yield display, complete paging/filter return,
+dashboard/bell count parity, assigned/eligible-unassigned views, distinct
+updates/waiting work, stale/partial/error states, scope reset and exact record
+links. Customer-only localization supersedes earlier all-external-audience
+localization requirements; preserve existing audience access and English help
+paths. `DeadlineAdjustmentDialog.test.tsx` now covers exact selected-phase dates
+and undated phases; `work-policy.test.ts` covers destination boundaries, filters
+and scientific parameter preservation. Existing confirmation mocks now await
+`confirmPortal`; affected context-free Router and paged queue/Finance fixtures
+were updated. No automated suite execution occurred. TypeScript/lint/build and
+synthetic UI checks are separately recorded in the
+[receipt](../testing/runs/2026-10-11-system-gap-closure.md). Remaining acceptance
+includes real mutation conflicts, cross-scope guards, selection persistence over
+large receipt pages, source/count freshness, all Customer message surfaces and
+screen-reader/reflow/theme behavior across the migrated workflows.
+
 October 10 DPS dispatch recovery: new lab-assembly API regression sources cover
 recoverable saved IDs from failed/unconfirmed dispatch and rejection of setup
 errors or arbitrary locators. Start dialog refreshes saved jobs after an error,
@@ -1925,7 +2024,7 @@ Scoped lint and the full frontend typecheck passed after the final changes.
 390×480, in light/dark themes and a long specific error. Checks covered the exact
 saved-facts payload, a single adapter write, dismissal without a write, visible
 fixed actions, a full-width error and no overflow, page errors or external calls.
-Evidence: [`kit-request-sync/review.json`](../../artifacts/kit-request-sync/review.json).
+Evidence: `kit-request-sync/review.json` (`../../artifacts/kit-request-sync/review.json`) (historical artifact unavailable in this checkout as of October 11, 2026).
 Temporary browser fixtures and the isolated server were removed. Connected
 reconciliation of Request D20018AA then succeeded through the signed-in local UI;
 its fresh detail shows Dispatched, 1 sent, 0 received. Independent read-only
@@ -1958,7 +2057,7 @@ in light/dark themes for no-order, cancelled, pending, in-transit, received,
 partial-received and unbound physical-container states. Keyboard opening/Escape,
 confirmation without a write, stock-limited options, no overflow and retained
 receipt controls were checked. Representative images were visually inspected.
-Evidence: [`job-kit-gating-review/review.json`](../../artifacts/job-kit-gating-review/review.json).
+Evidence: `job-kit-gating-review/review.json` (`../../artifacts/job-kit-gating-review/review.json`) (historical artifact unavailable in this checkout as of October 11, 2026).
 There were no real data writes, nonlocal requests or browser errors. This is local
 synthetic evidence, not signed-in receipt/scanner acceptance. Scoped lint and
 the final full frontend typecheck passed.
@@ -2110,8 +2209,8 @@ or acceptance check, not a failed result.
 [delivery-location tests]: ../../frontend/src/features/organizations/delivery-locations/DeliveryLocations.test.tsx
 
 Recorded browser artifacts are
-[`transportation-kit-customer-review/review.json`](../../artifacts/transportation-kit-customer-review/review.json)
-and [`kit-request-staff-review/review.json`](../../artifacts/kit-request-staff-review/review.json).
+`transportation-kit-customer-review/review.json` (`../../artifacts/transportation-kit-customer-review/review.json`) (historical artifact unavailable in this checkout as of October 11, 2026)
+and `kit-request-staff-review/review.json` (`../../artifacts/kit-request-staff-review/review.json`) (historical artifact unavailable in this checkout as of October 11, 2026).
 They used synthetic records with no live API writes or external notifications;
 temporary harnesses were removed. The existing five
 [`SampleShippingDetailPage.test.tsx`](../../frontend/src/features/sample-shipping/SampleShippingDetailPage.test.tsx)
@@ -3153,10 +3252,11 @@ repository's requested-checks policy.
   Prospect/Customer/Partner locale filtering, indexed metadata and headings,
   canonical guide links, empty/error states, and stale-index recovery when the
   future search API is implemented.
-- [ ] Prospect, Customer, and Partner help localization - add pseudolocale,
+- [ ] Customer help localization - add pseudolocale,
   text-expansion, locale-aware review-date, complete-corpus, and
-  language-fallback coverage when a second external locale is implemented.
-  Phaeno-only guides remain US English.
+  language-fallback coverage for Customer localization readiness and any
+  separately approved second Customer locale. Prospect, Partner and Phaeno
+  guides may remain US English; retain their current audience/path coverage.
 
 ## Requested Execution Log
 

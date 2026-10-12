@@ -1,3 +1,4 @@
+import { CustomerText } from '#/features/customer-i18n/customer-text'
 import type { UseFormRegisterReturn } from 'react-hook-form'
 import { z } from 'zod'
 import { Input } from '#/components/ui/input'
@@ -19,17 +20,19 @@ export function TubeMaterialAmountFields({ idPrefix, quantityField, unitField, q
   unitError?: string
   disabled?: boolean
 }) {
+
+
   return <div className="grid gap-3 sm:grid-cols-2">
     <div className="space-y-1.5">
-      <Label htmlFor={`${idPrefix}-amount`}><RequiredFieldName>Material amount in this tube</RequiredFieldName></Label>
-      <p id={`${idPrefix}-amount-help`} className="text-xs text-muted-foreground">Enter the amount being sent in this physical tube.</p>
+      <Label htmlFor={`${idPrefix}-amount`}><RequiredFieldName><CustomerText message="m_df4c0745f837" /></RequiredFieldName></Label>
+      <p id={`${idPrefix}-amount-help`} className="text-xs text-muted-foreground"><CustomerText message="m_cfa8c4df223a" /></p>
       <Input id={`${idPrefix}-amount`} type="number" inputMode="decimal" min="0.000001" step="0.000001" disabled={disabled}
         aria-invalid={Boolean(quantityError)} aria-describedby={`${idPrefix}-amount-help${quantityError ? ` ${idPrefix}-amount-error` : ''}`} {...quantityField} />
       {quantityError ? <p id={`${idPrefix}-amount-error`} role="alert" className="text-sm text-destructive">{quantityError}</p> : null}
     </div>
     <div className="space-y-1.5">
-      <Label htmlFor={`${idPrefix}-unit`}><RequiredFieldName>Material unit</RequiredFieldName></Label>
-      <p id={`${idPrefix}-unit-help`} className="text-xs text-muted-foreground">For example, µL, mL, ng or µg.</p>
+      <Label htmlFor={`${idPrefix}-unit`}><RequiredFieldName><CustomerText message="m_9c1992ff0594" /></RequiredFieldName></Label>
+      <p id={`${idPrefix}-unit-help`} className="text-xs text-muted-foreground"><CustomerText message="m_88ae94c49d32" /></p>
       <Input id={`${idPrefix}-unit`} maxLength={50} autoComplete="off" disabled={disabled}
         aria-invalid={Boolean(unitError)} aria-describedby={`${idPrefix}-unit-help${unitError ? ` ${idPrefix}-unit-error` : ''}`} {...unitField} />
       {unitError ? <p id={`${idPrefix}-unit-error`} role="alert" className="text-sm text-destructive">{unitError}</p> : null}

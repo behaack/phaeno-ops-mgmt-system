@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '#/test-helpers/render-portal'
 import { describe, expect, it } from 'vitest'
 
 import { DataProvisioningPage } from './DataProvisioningPage'

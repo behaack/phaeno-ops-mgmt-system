@@ -946,9 +946,26 @@ public sealed class DataProvisioningAdminController(
 
         var runs = await query
             .OrderByDescending(run => run.RequestedAt)
-            .Take(500)
             .ToListAsync(cancellationToken);
         return runs.Select(DataProvisioningMappings.ToDto).ToList();
+    }
+
+    [HttpGet("provisioning-runs/page")]
+    public async Task<PhaenoPortal.App.Features.OrderManagement.DTOs.PagedResult<ProvisioningRunDto>> ListProvisioningRunsPage(
+        [FromQuery] Guid? organizationId,
+        CancellationToken cancellationToken, [FromQuery] int page = 1, [FromQuery] int pageSize = 25)
+    {
+        await RequirePlatformAdminAsync(cancellationToken);
+        var query = dbContext.ProvisioningRuns.AsNoTracking();
+        if (organizationId.HasValue)
+        {
+            query = query.Where(run => run.OrganizationId == organizationId.Value);
+        }
+
+        var pageRows = await PhaenoPortal.App.Infrastructure.Api.RecordPage.ReadAsync(query
+            .OrderByDescending(run => run.RequestedAt)
+            .ThenBy(item => item.Id), page, pageSize, cancellationToken);
+        return new(pageRows.Items.Select(DataProvisioningMappings.ToDto).ToList(), pageRows.Page, pageRows.PageSize, pageRows.TotalCount);
     }
 
     [HttpGet("activity")]
@@ -965,9 +982,26 @@ public sealed class DataProvisioningAdminController(
 
         var notices = await query
             .OrderByDescending(notice => notice.CreatedAt)
-            .Take(500)
             .ToListAsync(cancellationToken);
         return notices.Select(DataProvisioningMappings.ToDto).ToList();
+    }
+
+    [HttpGet("activity/page")]
+    public async Task<PhaenoPortal.App.Features.OrderManagement.DTOs.PagedResult<DataProvisioningNoticeDto>> ListActivityPage(
+        [FromQuery] Guid? organizationId,
+        CancellationToken cancellationToken, [FromQuery] int page = 1, [FromQuery] int pageSize = 25)
+    {
+        await RequirePlatformAdminAsync(cancellationToken);
+        var query = dbContext.DataProvisioningNotices.AsNoTracking();
+        if (organizationId.HasValue)
+        {
+            query = query.Where(notice => notice.OrganizationId == organizationId.Value);
+        }
+
+        var pageRows = await PhaenoPortal.App.Infrastructure.Api.RecordPage.ReadAsync(query
+            .OrderByDescending(notice => notice.CreatedAt)
+            .ThenBy(item => item.Id), page, pageSize, cancellationToken);
+        return new(pageRows.Items.Select(DataProvisioningMappings.ToDto).ToList(), pageRows.Page, pageRows.PageSize, pageRows.TotalCount);
     }
 
     private Task<User> RequirePlatformAdminAsync(

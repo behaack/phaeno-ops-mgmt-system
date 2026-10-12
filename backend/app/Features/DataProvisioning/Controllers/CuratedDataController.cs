@@ -182,9 +182,40 @@ public sealed class CuratedDataController(
                 ManagedFileId = download.ManagedFileId,
                 DownloadedAt = download.DownloadedAt
             })
-            .Take(500)
             .ToListAsync(cancellationToken);
         return downloads;
+    }
+
+    [HttpGet("downloads/page")]
+    public async Task<PhaenoPortal.App.Features.OrderManagement.DTOs.PagedResult<DatasetDownloadAuditDto>> ListDownloadHistoryPage(
+        CancellationToken cancellationToken, [FromQuery] int page = 1, [FromQuery] int pageSize = 25)
+    {
+        var tenant = await RequireTenantAccessAsync(
+            requireScopeAdmin: true,
+            cancellationToken);
+        var pageRows = await PhaenoPortal.App.Infrastructure.Api.RecordPage.ReadAsync((
+            from download in dbContext.DatasetDownloadAudits.AsNoTracking()
+            join user in dbContext.Users.AsNoTracking() on download.UserId equals user.Id
+            join grant in dbContext.OrganizationDatasetGrants.AsNoTracking()
+                on download.OrganizationDatasetGrantId equals grant.Id
+            where download.OrganizationId == tenant.Organization.Id
+                && grant.OrganizationId == tenant.Organization.Id
+                && (download.DepartmentId == tenant.Department.Id
+                    || (download.DepartmentId == null && tenant.Membership.IsOrganizationAdmin))
+                && (grant.DepartmentId == null || grant.DepartmentId == tenant.Department.Id)
+            orderby download.DownloadedAt descending
+            select new DatasetDownloadAuditDto
+            {
+                Id = download.Id,
+                UserId = download.UserId,
+                UserEmail = user.Email,
+                DatasetVersionId = download.CuratedDatasetVersionId,
+                Kind = download.Kind,
+                ManagedFileId = download.ManagedFileId,
+                DownloadedAt = download.DownloadedAt
+            })
+            .OrderByDescending(item => item.DownloadedAt).ThenBy(item => item.Id), page, pageSize, cancellationToken);
+        return pageRows;
     }
 
     [HttpGet("activity")]
@@ -203,9 +234,28 @@ public sealed class CuratedDataController(
                         && grant.OrganizationId == tenant.Organization.Id
                         && (grant.DepartmentId == null || grant.DepartmentId == tenant.Department.Id))))
             .OrderByDescending(notice => notice.CreatedAt)
-            .Take(500)
             .ToListAsync(cancellationToken);
         return notices.Select(DataProvisioningMappings.ToDto).ToList();
+    }
+
+    [HttpGet("activity/page")]
+    public async Task<PhaenoPortal.App.Features.OrderManagement.DTOs.PagedResult<DataProvisioningNoticeDto>> ListActivityPage(
+        CancellationToken cancellationToken, [FromQuery] int page = 1, [FromQuery] int pageSize = 25)
+    {
+        var tenant = await RequireTenantAccessAsync(
+            requireScopeAdmin: false,
+            cancellationToken);
+        var pageRows = await PhaenoPortal.App.Infrastructure.Api.RecordPage.ReadAsync(dbContext.DataProvisioningNotices
+            .AsNoTracking()
+            .Where(notice => notice.OrganizationId == tenant.Organization.Id
+                && (notice.OrganizationDatasetGrantId == null
+                    || dbContext.OrganizationDatasetGrants.Any(grant =>
+                        grant.Id == notice.OrganizationDatasetGrantId
+                        && grant.OrganizationId == tenant.Organization.Id
+                        && (grant.DepartmentId == null || grant.DepartmentId == tenant.Department.Id))))
+            .OrderByDescending(notice => notice.CreatedAt)
+            .ThenBy(item => item.Id), page, pageSize, cancellationToken);
+        return new(pageRows.Items.Select(DataProvisioningMappings.ToDto).ToList(), pageRows.Page, pageRows.PageSize, pageRows.TotalCount);
     }
 
     [HttpGet("governance-incidents")]
@@ -220,9 +270,25 @@ public sealed class CuratedDataController(
             .Include(affected => affected.Incident)
             .Where(affected => affected.OrganizationId == tenant.Organization.Id)
             .OrderByDescending(affected => affected.Incident.CreatedAt)
-            .Take(500)
             .ToListAsync(cancellationToken);
         return affectedOrganizations.Select(ToTenantIncidentDto).ToList();
+    }
+
+    [HttpGet("governance-incidents/page")]
+    public async Task<PhaenoPortal.App.Features.OrderManagement.DTOs.PagedResult<TenantGovernanceIncidentDto>> ListGovernanceIncidentsPage(
+        CancellationToken cancellationToken, [FromQuery] int page = 1, [FromQuery] int pageSize = 25, [FromQuery] bool activeOnly = false)
+    {
+        var tenant = await RequireTenantAccessAsync(
+            requireScopeAdmin: false,
+            cancellationToken);
+        var pageRows = await PhaenoPortal.App.Infrastructure.Api.RecordPage.ReadAsync(dbContext.DataGovernanceAffectedOrganizations
+            .AsNoTracking()
+            .Include(affected => affected.Incident)
+            .Where(affected => affected.OrganizationId == tenant.Organization.Id)
+            .Where(affected => !activeOnly || affected.Status == AffectedOrganizationStatus.Blocked || affected.Status == AffectedOrganizationStatus.AwaitingAttestation)
+            .OrderByDescending(affected => affected.Incident.CreatedAt)
+            .ThenBy(item => item.Id), page, pageSize, cancellationToken);
+        return new(pageRows.Items.Select(ToTenantIncidentDto).ToList(), pageRows.Page, pageRows.PageSize, pageRows.TotalCount);
     }
 
     [HttpPost("governance-incidents/{incidentId:guid}/attestation")]

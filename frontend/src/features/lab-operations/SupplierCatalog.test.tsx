@@ -9,7 +9,7 @@ const mocks = vi.hoisted(() => ({ catalog: vi.fn(), types: vi.fn(), supplier: vi
 vi.mock('#/api/supplier-catalog', async importOriginal => ({ ...await importOriginal<typeof import('#/api/supplier-catalog')>(), useSupplierCatalog: () => mocks.catalog(), useProductTypes: () => mocks.types(), saveSupplier: mocks.supplier, saveSupplierProduct: mocks.product }))
 vi.mock('#/features/auth/session-context', () => ({ usePhaenoSession: () => ({ authProvider: 'clerk', session: { capabilities: { canManageOrderConfiguration: mocks.allowed } } }) }))
 vi.mock('#/features/orders/use-order-draft-guard', () => ({ useOrderDraftGuard: () => vi.fn() }))
-vi.mock('@tanstack/react-router', () => ({ useSearch: () => ({}), Link: ({ children, to, params }: { children: ReactNode; to: string; params?: { supplierId: string } }) => <a href={to.replace('$supplierId', params?.supplierId ?? '')}>{children}</a> }))
+vi.mock('@tanstack/react-router', () => ({ useBlocker: () => ({status: 'idle', reset: vi.fn(), proceed: vi.fn()}), useSearch: () => ({}), Link: ({ children, to, params }: { children: ReactNode; to: string; params?: { supplierId: string } }) => <a href={to.replace('$supplierId', params?.supplierId ?? '')}>{children}</a> }))
 function mount(supplierId?: string) {
   render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}><SupplierCatalogPage supplierId={supplierId} /></QueryClientProvider>)
   const productsTab = supplierId ? screen.queryByRole('tab', { name: 'Products' }) : null

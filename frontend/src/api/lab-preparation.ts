@@ -6,7 +6,7 @@ type Envelope<T> = { data: T }
 export type TrayLayout = { name: string; rows: number; columns: number; labels: 'grid' | 'numeric'; unavailable: string[] }
 export type TrayFormat = { id: string; version: number; isActive: boolean; layout: TrayLayout }
 export type PreparationSummary = { id: string; name: string; displayName?: string; serviceName?: string; status: string; version: number; startedAtUtc: string | null; completedAtUtc: string | null }
-export type PreparationIndex = { formats: TrayFormat[]; batches: PreparationSummary[]; workflows: LabServiceWorkflow[]; compatibleWorkflowVersionIds: string[]; canOperate: boolean; canConfigure: boolean }
+export type PreparationIndex = { totalCount: number; page: number; pageSize: number; formats: TrayFormat[]; batches: PreparationSummary[]; workflows: LabServiceWorkflow[]; compatibleWorkflowVersionIds: string[]; canOperate: boolean; canConfigure: boolean }
 export type PreparationStage = { id: string; name: string; sequence: number; requirement: string; definition: ProtocolDefinition }
 export type PreparationExecution = { id: string; stageId: string; status: string; evidence: { records: (LabExecutionStepRecord & { preparationRecordId?: string })[] }; blockers: string[]; stepPrerequisites?: Record<string, string[]> }
 export type PreparationSourceMaterial = { id: string; barcode: string; quantity: number | null; quantityText?: string | null; quantityUnit: string | null; version: number; status: string }
@@ -33,7 +33,7 @@ export type PreparationCommand = { requestId: string; version: number; action: s
   containerId?: string;
   reason?: string; reasonCode?: string; step?: PreparationStepInput; resourceId?: string; resourceVersion?: number; quantity?: number; quantityUnit?: string; materialExhausted?: boolean; location?: string; coveredMemberIds?: string[]; outputContainerId?: string; outputs?: PreparationOutputInput[] }
 const base = '/platform/lab-operations/preparation'
-export const getPreparationIndex = async () => (await api.get<Envelope<PreparationIndex>>(base)).data.data
+export const getPreparationIndex = async (params: { page?: number; search?: string; status?: string } = {}) => (await api.get<Envelope<PreparationIndex>>(base, { params })).data.data
 export const getPreparation = async (id: string) => (await api.get<Envelope<PreparationDetail>>(`${base}/batches/${id}`)).data.data
 export const findPreparationTubes = async (id: string, query: string, freezerBox = '', page = 1) => {
   const result = (await api.get<Envelope<PreparationTubePage>>(`${base}/batches/${id}/tubes`, { params: { page, pageSize: 10, query: query.trim() || undefined, freezerBox: freezerBox.trim() || undefined } })).data.data

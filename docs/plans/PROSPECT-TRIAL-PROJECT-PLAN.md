@@ -1,5 +1,23 @@
 # Prospect Trial Project Plan
 
+## October 11 complete discovery and work surfacing
+
+Local Trial discovery now applies actor scope and filters before exact counts and
+stable paging. Existing 250-record warnings no longer substitute for discovery.
+The work feed separates staff scope review, Prospect acceptance and permitted sample
+submission, checking approved scope, current submission window and remaining
+allowance/replacement authority. Shared draft guards apply; Prospect UI remains
+English under Customer-only i18n. Compiled source does not establish connected
+role/tenant/volume acceptance; see the [gap receipt](../testing/runs/2026-10-11-system-gap-closure.md).
+
+Retained Trial timelines now have a dedicated scoped paged read and exact total,
+reaching events beyond the embedded 100-event preview. Staff-only commercial
+outcomes are filtered before totals and paging for external readers. The detail
+workspace retains its timeline page per Trial, refreshes after mutations and
+provides distinct loading/failure/retry feedback. Local rollback evidence reaches
+120 older events and verifies audience-specific totals. Other audience UI remains
+US English; Customer-only localization scope is unchanged.
+
 ## Subject workspace navigation — October 3, 2026
 
 The approved [navigation restructure](WORKSPACE-NAVIGATION-RESTRUCTURE-PLAN.md) groups Lab Order intake and Trials under LAB SERVICES and commercial Kit/Data assembly work under PARTNER SERVICES within Order Ops, governed result release to Lab ops, cross-workflow attention to the Dashboard, and Finance/Legacy integrations to More. Canonical list and record routes follow their subject domains; existing bookmarks redirect. Role isolation, scientific review, approval, billing, records and backend contracts remain intact. No persistence change or migration.

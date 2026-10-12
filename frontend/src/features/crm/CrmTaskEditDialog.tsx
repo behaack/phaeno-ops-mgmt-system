@@ -1,3 +1,5 @@
+import { NativeSelect } from '#/components/ui/native-select'
+import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
@@ -100,8 +102,8 @@ export function CrmTaskEditDialog({ task, onClose, onRestoreFocus }: { task: Crm
   })
   const busy = edit.isPending || refreshing
   useOrderDraftGuard(isDirty, busy)
-  function close() {
-    if (!busy && (!isDirty || window.confirm('Discard unsaved task changes?'))) onClose()
+  async function close() {
+    if (!busy && (!isDirty || (await confirmPortal('Discard unsaved task changes?')))) onClose()
   }
   const recurrence = baseline.recurrenceRule?.toLowerCase()
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
@@ -133,11 +135,11 @@ export function CrmTaskEditDialog({ task, onClose, onRestoreFocus }: { task: Crm
           <div className="grid gap-1.5"><Label htmlFor="edit-task-title"><RequiredFieldName>Title</RequiredFieldName></Label><Input id="edit-task-title" required maxLength={255} aria-invalid={Boolean(errors.title)} aria-describedby={errors.title ? 'edit-task-title-error' : undefined} {...form.register('title')} /><FieldError id="edit-task-title-error">{errors.title?.message}</FieldError></div>
           <div className="grid gap-1.5"><Label htmlFor="edit-task-description">Description</Label><Textarea id="edit-task-description" rows={3} maxLength={2000} aria-invalid={Boolean(errors.description)} aria-describedby={errors.description ? 'edit-task-description-error' : undefined} {...form.register('description')} /><FieldError id="edit-task-description-error">{errors.description?.message}</FieldError></div>
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="grid gap-1.5"><Label htmlFor="edit-task-owner"><RequiredFieldName>Owner</RequiredFieldName></Label><select id="edit-task-owner" required className="h-9 w-full min-w-0 cursor-pointer rounded-md border bg-background px-3 text-sm" aria-invalid={Boolean(errors.ownerUserId)} aria-describedby={errors.ownerUserId ? 'edit-task-owner-error' : undefined} {...form.register('ownerUserId')}>
+            <div className="grid gap-1.5"><Label htmlFor="edit-task-owner"><RequiredFieldName>Owner</RequiredFieldName></Label><NativeSelect id="edit-task-owner" required className="w-full min-w-0 cursor-pointer rounded-md border bg-background px-3 text-sm" aria-invalid={Boolean(errors.ownerUserId)} aria-describedby={errors.ownerUserId ? 'edit-task-owner-error' : undefined} {...form.register('ownerUserId')}>
               {!(owners.data ?? []).some(owner => owner.id === baseline.ownerUserId) ? <option value={baseline.ownerUserId}>{baseline.ownerName} · current owner</option> : null}
               {(owners.data ?? []).map(owner => <option key={owner.id} value={owner.id}>{owner.firstName} {owner.lastName} · {owner.email}</option>)}
-            </select><FieldError id="edit-task-owner-error">{errors.ownerUserId?.message}</FieldError></div>
-            <div className="grid gap-1.5"><Label htmlFor="edit-task-priority"><RequiredFieldName>Priority</RequiredFieldName></Label><select id="edit-task-priority" required className="h-9 cursor-pointer rounded-md border bg-background px-3 text-sm" {...form.register('priority')}>{['Low', 'Normal', 'High', 'Urgent'].map(value => <option key={value}>{value}</option>)}</select></div>
+            </NativeSelect><FieldError id="edit-task-owner-error">{errors.ownerUserId?.message}</FieldError></div>
+            <div className="grid gap-1.5"><Label htmlFor="edit-task-priority"><RequiredFieldName>Priority</RequiredFieldName></Label><NativeSelect id="edit-task-priority" required className="cursor-pointer rounded-md border bg-background px-3 text-sm" {...form.register('priority')}>{['Low', 'Normal', 'High', 'Urgent'].map(value => <option key={value}>{value}</option>)}</NativeSelect></div>
           </div>
           {owners.error ? <p role="status" className="text-sm">Owner choices could not be loaded. The current owner is retained. <Button type="button" variant="link" onClick={() => void owners.refetch()}>Retry owners</Button></p> : null}
           <div className="grid gap-4 sm:grid-cols-2">

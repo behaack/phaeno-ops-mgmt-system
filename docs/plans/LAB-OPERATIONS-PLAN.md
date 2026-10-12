@@ -1,5 +1,42 @@
 # Lab Operations Plan
 
+## Final application closure — October 11, 2026
+
+Global assembly discovery now uses server search, 25-row stable pages and exact
+counts at `/assembly-jobs/page`; specimen/Job consumers retain complete scoped
+reads. Remaining assembly input, QC history and dashboard read ceilings are
+removed without changing bounded processing, provider contracts or execution.
+The 261-attempt regression reaches the older page and checks filtering before
+counts. Read-only scientific eligibility shares the command evidence boundary,
+with cheap profile/analysis/artifact prerequisites applied in SQL before detailed
+assessment. Invalid candidates do not count; reads do not stamp or mutate evidence.
+Strict populated scientific evidence cost remains a release-acceptance item.
+Laboratory dialogs use shared Actions semantics and preserve pointer/focus return
+after completion. See the [final receipt](../testing/runs/2026-10-11-system-gap-closure-final.md).
+
+## October 11 discovery and interaction closure
+
+Local preparation and scientific-review discovery now use stable paged/count
+responses. Preparation supports active/closed search and its guided next-step
+control opens the one actual protocol-row capture action. Shared draft/confirmation,
+select sizing and work-notification changes are recorded in
+[System gap closure](SYSTEM-GAP-CLOSURE-PLAN.md). Reagent manufacturing now
+searches all runs by workflow or produced lot, filters status before exact counts
+and stable paging, and preserves that selection on return from a run. A local
+rollback journey reaches 262 runs and verifies the 260-run status filter and an
+older exact-lot match. The legacy tube list no longer truncates at 200; its
+current UI already uses the paged endpoint.
+
+Scientific-review discovery and work-feed review/release obligations now assess
+the existing command lineage/evidence rules within the read snapshot before
+counts or paging. Review additionally shares global and exact-sample attempt
+readiness, stage, blocking-exception and execution checks. Read assessment takes
+no command locks or concurrency stamps; commands retain both and recheck at
+submission. The lineage rollback journey proves eligibility and missing-profile
+exclusion without tracked writes. Populated-volume query cost and the complete
+authenticated actor matrix remain acceptance work; no hosted activation or
+physical acceptance is claimed.
+
 ## Vendor sequencing batch workflow — October 5, 2026
 
 The owner confirmed **Prepare shipment → Shipped → Vendor received (ETA) →

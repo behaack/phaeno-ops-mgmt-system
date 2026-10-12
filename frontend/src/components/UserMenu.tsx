@@ -1,3 +1,4 @@
+import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import { Link, useRouter, useRouterState } from '@tanstack/react-router'
 import { SignOutButton } from '@clerk/react'
 import {
@@ -47,6 +48,8 @@ const displayModes: readonly {
 ]
 
 export function UserMenu() {
+  const __customerText = useCustomerText()
+
   const [open, setOpen] = useState(false)
   const organizationSelect = useRef<HTMLSelectElement>(null)
   const router = useRouter()
@@ -69,13 +72,30 @@ export function UserMenu() {
     selectedOrganizationId,
   )
   const selectedOrganizationKind = selectedMembership?.organizationKind ?? null
-  const changeOrganization = async (organizationId: string) => {
+  const scopeRequest = useRef<string | null>(null)
+  const changeScope = async (apply: () => void) => {
+    const requestId = crypto.randomUUID()
+    scopeRequest.current = requestId
+    // Let the native selection event finish before its owning menu is unmounted.
+    await Promise.resolve()
+    if (scopeRequest.current !== requestId) return
+    setOpen(false)
+    // A distinct history state runs blockers even when Dashboard is already open.
+    // Cancelled navigation may leave its promise pending; it must not lock retries.
+    void router.navigate({ to: '/', state: previous => ({ ...previous, phaenoScopeChange: requestId }) }).then(() => {
+      const state = router.state.location.state as { phaenoScopeChange?: string }
+      if (scopeRequest.current === requestId && state.phaenoScopeChange === requestId) apply()
+    })
+  }
+  const changeOrganization = (organizationId: string) => {
     if (organizationId === selectedOrganizationId ||
       !session?.memberships.some(membership => membership.organizationId === organizationId)) return
-    setOpen(false)
-    // Route first so existing dirty-form blockers can keep the current scope.
-    await router.navigate({ to: '/' })
-    if (router.state.location.pathname === '/') setSelectedOrganizationId(organizationId)
+    void changeScope(() => setSelectedOrganizationId(organizationId))
+  }
+  const changeDepartment = (departmentId: string) => {
+    if (!setSelectedDepartmentId || departmentId === selectedDepartmentId ||
+      !selectedMembership?.departments?.some(department => department.departmentId === departmentId)) return
+    void changeScope(() => setSelectedDepartmentId(departmentId))
   }
   const navigationContext = {
     selectedOrganizationKind,
@@ -133,7 +153,7 @@ export function UserMenu() {
         >
           <DropdownMenuTrigger
             className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border bg-background text-foreground transition-all outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50"
-            aria-label="Open user menu"
+            aria-label={__customerText('m_19941a66df23')}
           >
             <Menu aria-hidden="true" className="size-5" />
           </DropdownMenuTrigger>
@@ -170,7 +190,7 @@ export function UserMenu() {
                 </Avatar>
                 <span className="min-w-0">
                   <span className="block text-base leading-6 font-semibold break-words text-foreground">
-                    {user ? `${user.firstName} ${user.lastName}` : 'Signed in'}
+                    {user ? `${user.firstName} ${user.lastName}` : __customerText('m_ca566c8968e7')}
                   </span>
                   <span className="mt-0.5 block text-sm leading-5 break-all text-muted-foreground">{user?.email}</span>
                 </span>
@@ -181,14 +201,14 @@ export function UserMenu() {
             <DropdownMenuRadioGroup
               value={mode}
               onValueChange={(value) => setMode(value as ThemeMode)}
-              aria-label="Display theme"
+              aria-label={__customerText('m_82b0f8d517f7')}
               className="mx-2 mb-2 grid grid-cols-3 gap-1 rounded-lg bg-muted/70 p-1"
             >
               {displayModes.map((displayMode) => (
                 <DropdownMenuRadioItem
                   key={displayMode.value}
                   value={displayMode.value}
-                  aria-label={`Use ${displayMode.label.toLowerCase()} theme`}
+                  aria-label={__customerText('m_052abb0e744f', { p0: String(displayMode.label.toLowerCase()) })}
                   className="min-h-8 justify-center gap-1.5 px-2 py-1 pr-2 text-xs focus:bg-background focus:text-foreground focus:**:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset data-[state=checked]:bg-background data-[state=checked]:font-semibold data-[state=checked]:text-foreground data-[state=checked]:shadow-sm data-[state=checked]:ring-1 data-[state=checked]:ring-border data-[state=checked]:focus-visible:ring-2 data-[state=checked]:focus-visible:ring-ring [&_[data-slot=dropdown-menu-radio-item-indicator]]:hidden"
                 >
                   <displayMode.icon aria-hidden="true" />
@@ -204,7 +224,7 @@ export function UserMenu() {
                   <Building2 aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
                   <NativeSelect
                     ref={organizationSelect}
-                    aria-label="Organization"
+                    aria-label={__customerText('m_d764d42592fc')}
                     value={selectedOrganizationId ?? ''}
                     onChange={event => { void changeOrganization(event.target.value) }}
                     onKeyDown={event => { if (event.key !== 'Tab' && event.key !== 'Escape') event.stopPropagation() }}
@@ -218,10 +238,10 @@ export function UserMenu() {
             {(selectedMembership?.departments?.length ?? 0) > 1 ? (
               <>
                 <DropdownMenuSeparator className="mx-1 my-2" />
-                <DropdownMenuLabel className="px-3 pb-2">Department</DropdownMenuLabel>
+                <DropdownMenuLabel className="px-3 pb-2"><CustomerText message="m_5304ab98e581" /></DropdownMenuLabel>
                 <DropdownMenuRadioGroup
                   value={selectedDepartmentId ?? ''}
-                  onValueChange={(value) => setSelectedDepartmentId?.(value)}
+                  onValueChange={changeDepartment}
                 >
                   {selectedMembership?.departments?.map((department) => (
                     <DropdownMenuRadioItem
@@ -233,7 +253,7 @@ export function UserMenu() {
                         {department.departmentName}
                       </span>
                       {department.isDepartmentAdmin ? (
-                        <span className="text-xs text-muted-foreground">Admin</span>
+                        <span className="text-xs text-muted-foreground"><CustomerText message="m_c1c224b03cd9" /></span>
                       ) : null}
                     </DropdownMenuRadioItem>
                   ))}
@@ -281,8 +301,7 @@ export function UserMenu() {
                     >
                       <Link to="/phaeno-users">
                         <UsersRound />
-                        User management
-                      </Link>
+                        <CustomerText message="m_5a35ce25a2bd" /></Link>
                     </DropdownMenuItem>
                   ) : null}
                 </DropdownMenuGroup>
@@ -294,14 +313,12 @@ export function UserMenu() {
               <SignOutButton redirectUrl="/">
                 <DropdownMenuItem>
                   <LogOut />
-                  Sign out
-                </DropdownMenuItem>
+                  <CustomerText message="m_48f0d3d397d4" /></DropdownMenuItem>
               </SignOutButton>
             ) : (
               <DropdownMenuItem>
                 <LogOut />
-                End mock session
-              </DropdownMenuItem>
+                <CustomerText message="m_77c04ff6e3f5" /></DropdownMenuItem>
             )}
           </DropdownMenuContent>
         </DropdownMenu>
@@ -322,7 +339,7 @@ export function UserMenu() {
         onOrganizationChange={organizationId => { void changeOrganization(organizationId) }}
         departments={selectedMembership?.departments}
         selectedDepartmentId={selectedDepartmentId}
-        onDepartmentChange={setSelectedDepartmentId}
+        onDepartmentChange={changeDepartment}
       />
     </>
   )
@@ -333,11 +350,13 @@ const activeDropdownItemClass = 'bg-secondary text-foreground [&_svg]:text-foreg
 type NavigationItems = ReturnType<typeof getVisibleMainMenuItems>
 
 function UserMenuLinks({ items, currentPath }: { items: NavigationItems; currentPath: string }) {
+
+
   return items.map(item => {
     const active = isMainMenuRouteActive(currentPath, item.to, item.exact)
     return (
       <DropdownMenuItem key={item.to} asChild className={active ? activeDropdownItemClass : undefined}>
-        <Link to={item.to} aria-current={active ? 'page' : undefined}>
+        <Link to={item.to} aria-current={active ? "page" : undefined}>
           <item.icon aria-hidden="true" />
           {item.label}
         </Link>

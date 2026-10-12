@@ -38,7 +38,7 @@ describe('Finance sidebar access and retained context', () => {
     fireEvent.click(screen.getByRole('button', { name: /^Receipts/ }))
     const navigation = mocks.navigate.mock.calls.at(-1)?.[0]
     expect(navigation.to).toBe('/finance')
-    expect(navigation.search(mocks.search)).toEqual({ ...mocks.search, financeSection: 'receipts' })
+    expect(navigation.search(mocks.search)).toEqual({ ...mocks.search, financeSection: 'receipts', listPage: 1 })
   })
 
   it('selects the record’s owning section while preserving its return context', () => {

@@ -1,3 +1,5 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
+import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ChevronDown, FilePenLine } from 'lucide-react'
 import { useRef, useState } from 'react'
@@ -19,6 +21,8 @@ export function SampleTypeActions({ item, revisions, onCreateRevision, onStatusC
   onCreateRevision: (item: SampleTypeDefinition) => void
   onStatusChanged?: (item: SampleTypeDefinition, isActive: boolean) => void
 }) {
+  const __customerText = useCustomerText()
+
   const client = useQueryClient()
   const trigger = useRef<HTMLButtonElement>(null)
   const fallback = useRef<HTMLDivElement>(null)
@@ -41,37 +45,37 @@ export function SampleTypeActions({ item, revisions, onCreateRevision, onStatusC
   const future = change && new Date(change.item.effectiveFrom).getTime() > Date.now()
   const affected = change && !change.isActive ? (kits.data ?? []).filter(kit => kit.sampleTypeAnchorId && revisions.some(revision => revision.id === kit.sampleTypeAnchorId) && kit.isActive) : []
   if (!latest && !item.isActive && latestReleased?.id !== item.id) return null
-  return <div ref={fallback} tabIndex={-1} aria-label={`${item.name} actions`} className="shrink-0">
-    <ActionMenu><DropdownMenuTrigger asChild><Button ref={trigger} type="button" variant="outline">Actions<ChevronDown data-icon="inline-end" /></Button></DropdownMenuTrigger>
+  return <div ref={fallback} tabIndex={-1} aria-label={__customerText('m_e6887baa4a66', { p0: String(item.name) })} className="shrink-0">
+    <ActionMenu><DropdownMenuTrigger asChild><Button ref={trigger} type="button" variant="outline"><CustomerText message="m_ff8059dc6752" /><ChevronDown data-icon="inline-end" /></Button></DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-max max-w-[calc(100vw-2rem)]">
-        {draft ? <DropdownMenuItem onSelect={() => onCreateRevision(draft)}><FilePenLine aria-hidden="true" />Edit Draft revision {draft.revision}</DropdownMenuItem> : latest || latestReleased?.id === item.id ? <DropdownMenuItem onSelect={() => onCreateRevision(latestReleased ?? item)}><FilePenLine aria-hidden="true" />Create revision</DropdownMenuItem> : null}
-        {item.lifecycle === 'Draft' && hasNotEnded(item) ? <DropdownMenuItem onSelect={() => choose(item, true)}>Activate</DropdownMenuItem> : null}
-        {item.lifecycle === 'Draft' ? <DropdownMenuItem variant="destructive" onSelect={() => setDiscarding(true)}>Discard</DropdownMenuItem> : null}
-        {item.isActive ? <DropdownMenuItem variant="destructive" onSelect={() => choose(item, false)}>Deactivate</DropdownMenuItem> : null}
-        {earlierActive.map(value => <DropdownMenuItem key={value.id} variant="destructive" onSelect={() => choose(value, false)}>Deactivate revision {value.revision}</DropdownMenuItem>)}
+        {draft ? <DropdownMenuItem onSelect={() => onCreateRevision(draft)}><FilePenLine aria-hidden="true" /><CustomerText message="m_439cdd5d5ae6" />{draft.revision}</DropdownMenuItem> : latest || latestReleased?.id === item.id ? <DropdownMenuItem onSelect={() => onCreateRevision(latestReleased ?? item)}><FilePenLine aria-hidden="true" /><CustomerText message="m_68bf5426f2b3" /></DropdownMenuItem> : null}
+        {item.lifecycle === 'Draft' && hasNotEnded(item) ? <DropdownMenuItem onSelect={() => choose(item, true)}><CustomerText message="m_24433c70eba5" /></DropdownMenuItem> : null}
+        {item.lifecycle === 'Draft' ? <DropdownMenuItem variant="destructive" onSelect={() => setDiscarding(true)}><CustomerText message="m_eb1a70e39274" /></DropdownMenuItem> : null}
+        {item.isActive ? <DropdownMenuItem variant="destructive" onSelect={() => choose(item, false)}><CustomerText message="m_fb1e6fa55327" /></DropdownMenuItem> : null}
+        {earlierActive.map(value => <DropdownMenuItem key={value.id} variant="destructive" onSelect={() => choose(value, false)}><CustomerText message="m_21258394677b" />{value.revision}</DropdownMenuItem>)}
       </DropdownMenuContent>
     </ActionMenu>
     <Dialog open={Boolean(change)} onOpenChange={open => { if (!open && !mutation.isPending) setChange(null) }}>
       <DialogContent aria-describedby="sample-type-status-summary sample-type-status-consequences" showCloseButton={!mutation.isPending} onCloseAutoFocus={event => { event.preventDefault(); (trigger.current ?? fallback.current)?.focus() }}>
-        <DialogHeader className="pr-[var(--dialog-inset)]"><DialogTitle className="pr-8">{change?.isActive ? 'Activate sample type?' : 'Deactivate sample type?'}</DialogTitle>
-          <DialogDescription id="sample-type-status-summary" className="pr-8">{change?.item.name} · revision {change?.item.revision}</DialogDescription>
+        <DialogHeader className="pr-[var(--dialog-inset)]"><DialogTitle className="pr-8">{change?.isActive ? <CustomerSourceText source={"Activate sample type?"} /> : __customerText('m_fef07dca0a4f')}</DialogTitle>
+          <DialogDescription id="sample-type-status-summary" className="pr-8">{change?.item.name} <CustomerText message="m_3b0e4579f573" />{change?.item.revision}</DialogDescription>
         </DialogHeader>
         <div id="sample-type-status-consequences" className="space-y-2 text-sm">
           {change?.isActive
-            ? <><p>This revision will become Active{future ? ` from ${new Date(change.item.effectiveFrom).toLocaleString()}` : ' now'} and replace any earlier active revision when it takes effect.</p><p>New Orders also require an Active Shipping procedure and a usable Active kit.</p></>
-            : <p>This revision will stop being used for new shipping work. Older revisions will not be reactivated.</p>}
-          <p>The revision number, sample requirements, and issued shipment instructions stay unchanged.</p>
+            ? <><p><CustomerText message="m_767901a0a49c" />{future ? __customerText('m_d337f5a9ae6d', { p0: String(new Date(change.item.effectiveFrom).toLocaleString()) }) : __customerText('m_4ea6cf4a6d30')} <CustomerText message="m_d5ff8cd889b0" /></p><p><CustomerText message="m_83c695323a3a" /></p></>
+            : <p><CustomerText message="m_34ae561f5046" /></p>}
+          <p><CustomerText message="m_1a4f11c06412" /></p>
         </div>
-        {affected.length ? <Alert variant="warning"><AlertTitle>{affected.length} Active transportation {affected.length === 1 ? 'kit depends' : 'kits depend'} on this Sample type</AlertTitle><AlertDescription>These kits cannot be selected for new Orders until this Sample type has an Active revision: {affected.slice(0, 3).map(kit => kit.commonName).join('; ')}{affected.length > 3 ? `; and ${affected.length - 3} more` : ''}.</AlertDescription></Alert> : null}
-        {mutation.error ? <Alert variant="destructive"><AlertTitle>Sample-type status was not changed</AlertTitle><AlertDescription>{getOrderErrorMessage(mutation.error, 'Try again, or refresh the sample types before retrying.')}<Button type="button" variant="outline" disabled={mutation.isPending} onClick={async () => { await client.invalidateQueries({ queryKey: ['sample-shipping-configuration'] }); setChange(null) }}>Refresh sample types</Button></AlertDescription></Alert> : null}
-        <RequiredDialogFooter showLegend={false}><Button type="button" variant="outline" disabled={mutation.isPending} onClick={() => setChange(null)}>Cancel</Button><Button type="button" variant={change?.isActive ? 'default' : 'destructive'} disabled={mutation.isPending} onClick={() => { if (change) mutation.mutate(change) }}>{mutation.isPending ? 'Saving…' : change?.isActive ? 'Activate' : 'Deactivate'}</Button></RequiredDialogFooter>
+        {affected.length ? <Alert variant="warning"><AlertTitle>{affected.length} <CustomerText message="m_4b869e7185a4" />{affected.length === 1 ? <CustomerSourceText source={"kit depends"} /> : __customerText('m_e063ef462d40')} <CustomerText message="m_b3bdec87d903" /></AlertTitle><AlertDescription><CustomerText message="m_7947b7805b53" />{affected.slice(0, 3).map(kit => kit.commonName).join('; ')}{affected.length > 3 ? __customerText('m_e01121508df3', { p0: String(affected.length - 3) }) : ''}.</AlertDescription></Alert> : null}
+        {mutation.error ? <Alert variant="destructive"><AlertTitle><CustomerText message="m_548dd9f845df" /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(mutation.error, 'Try again, or refresh the sample types before retrying.')} />}<Button type="button" variant="outline" disabled={mutation.isPending} onClick={async () => { await client.invalidateQueries({ queryKey: ['sample-shipping-configuration'] }); setChange(null) }}><CustomerText message="m_ca0de97f08d6" /></Button></AlertDescription></Alert> : null}
+        <RequiredDialogFooter showLegend={false}><Button type="button" variant="outline" disabled={mutation.isPending} onClick={() => setChange(null)}><CustomerText message="m_19766ed6ccb2" /></Button><Button type="button" variant={change?.isActive ? "default" : "destructive"} disabled={mutation.isPending} onClick={() => { if (change) mutation.mutate(change) }}>{mutation.isPending ? <CustomerSourceText source={"Saving…"} /> : change?.isActive ? "Activate" : __customerText('m_fb1e6fa55327')}</Button></RequiredDialogFooter>
       </DialogContent>
     </Dialog>
-    <Dialog open={discarding} onOpenChange={open => { if (!open && !discardMutation.isPending) setDiscarding(false) }}><DialogContent onCloseAutoFocus={event => { event.preventDefault(); (trigger.current ?? fallback.current)?.focus() }}><DialogHeader><DialogTitle>Discard Draft revision {item.revision}?</DialogTitle><DialogDescription>The number remains in history and cannot be reused. The released revision stays available.</DialogDescription></DialogHeader>{discardMutation.error ? <Alert variant="destructive"><AlertTitle>Draft was not discarded</AlertTitle><AlertDescription>{getOrderErrorMessage(discardMutation.error, 'Refresh this Sample type and try again.')}</AlertDescription></Alert> : null}<RequiredDialogFooter showLegend={false}><Button type="button" variant="outline" onClick={() => setDiscarding(false)}>Cancel</Button><Button type="button" variant="destructive" disabled={discardMutation.isPending} onClick={() => discardMutation.mutate()}>{discardMutation.isPending ? 'Discarding…' : 'Discard Draft'}</Button></RequiredDialogFooter></DialogContent></Dialog>
+    <Dialog open={discarding} onOpenChange={open => { if (!open && !discardMutation.isPending) setDiscarding(false) }}><DialogContent onCloseAutoFocus={event => { event.preventDefault(); (trigger.current ?? fallback.current)?.focus() }}><DialogHeader><DialogTitle><CustomerText message="m_cf1f2d80cffd" />{item.revision}?</DialogTitle><DialogDescription><CustomerText message="m_e07d302fb13d" /></DialogDescription></DialogHeader>{discardMutation.error ? <Alert variant="destructive"><AlertTitle><CustomerText message="m_f39e54ae4225" /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(discardMutation.error, 'Refresh this Sample type and try again.')} />}</AlertDescription></Alert> : null}<RequiredDialogFooter showLegend={false}><Button type="button" variant="outline" onClick={() => setDiscarding(false)}><CustomerText message="m_19766ed6ccb2" /></Button><Button type="button" variant="destructive" disabled={discardMutation.isPending} onClick={() => discardMutation.mutate()}>{discardMutation.isPending ? <CustomerSourceText source={"Discarding…"} /> : __customerText('m_35cefb4d4564')}</Button></RequiredDialogFooter></DialogContent></Dialog>
   </div>
 }
 
 export function SampleTypeActiveRevisionNote({ item, revisions }: { item: SampleTypeDefinition; revisions: SampleTypeDefinition[] }) {
   const current = revisions.filter(value => value.isActive && hasNotEnded(value) && new Date(value.effectiveFrom).getTime() <= Date.now()).sort((a, b) => b.revision - a.revision)[0]
-  return current && current.id !== item.id ? <p className="mt-2 text-sm text-muted-foreground">Revision {current.revision} is currently active for new shipments. Use Actions to deactivate it or activate the latest revision.</p> : null
+  return current && current.id !== item.id ? <p className="mt-2 text-sm text-muted-foreground"><CustomerText message="m_e330d85ff901" />{current.revision} <CustomerText message="m_7d1fd57a90f6" /></p> : null
 }

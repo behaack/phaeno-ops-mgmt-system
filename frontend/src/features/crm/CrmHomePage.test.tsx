@@ -7,7 +7,7 @@ import { CrmHomePage } from './CrmHomePage'
 
 vi.mock('#/api/crm', async original => ({ ...await original<typeof api>(), getCrmDashboard: vi.fn(), searchCrm: vi.fn() }))
 vi.mock('./use-crm-permissions', () => ({ useCrmPermissions: () => ({ canAccess: true, canAdminister: false }) }))
-vi.mock('@tanstack/react-router', () => ({ Link: ({ to, search, children }: { to: string; search?: object; children: ReactNode }) => <a href={`${to}?${new URLSearchParams(Object.entries(search ?? {}).map(([key, value]) => [key, String(value)]))}`}>{children}</a> }))
+vi.mock('@tanstack/react-router', () => ({ useRouterState: ({select}: {select: (state: {location: {search: Record<string, unknown>}}) => unknown}) => select({location: {search: {}}}), Link: ({ to, search, children }: { to: string; search?: object; children: ReactNode }) => <a href={`${to}?${new URLSearchParams(Object.entries(search ?? {}).map(([key, value]) => [key, String(value)]))}`}>{children}</a> }))
 
 function mount() { return render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><CrmHomePage /></QueryClientProvider>) }
 describe('CRM Home attention and search recovery', () => {

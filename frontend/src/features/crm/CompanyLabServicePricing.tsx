@@ -1,3 +1,4 @@
+import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
@@ -32,13 +33,17 @@ export function CompanyLabServicePricing({ companyId, canManage }: { companyId: 
   const [needsRefresh, setNeedsRefresh] = useState(false)
   const trigger = useRef<HTMLElement | null>(null)
   const form = useForm<z.input<typeof schema>, unknown, Values>({ resolver: zodResolver(schema), defaultValues: defaults() })
+  const { isDirty: __formDraftDirty } = form.formState
+  const __modalGuard = useModalDraftGuard(__formDraftDirty, form.formState.isSubmitting)
+
+
   const mutation = useMutation({ mutationFn: (v: Values) => saveCompanyLabPrice(companyId, target?.id ?? null, { ...v,
     departmentId: v.departmentId || null, effectiveFrom: `${v.effectiveFrom}T00:00:00Z`, effectiveTo: v.effectiveTo ? `${v.effectiveTo}T00:00:00Z` : null, version: target?.version }),
     onSuccess: async () => { setTarget(undefined); await client.invalidateQueries({ queryKey: ['company-lab-pricing', companyId] }); await client.invalidateQueries({ queryKey: ['lab-service-offerings'] }) },
     onError: error => { if (isOrderConcurrencyError(error)) setNeedsRefresh(true) },
   })
   function edit(p: NegotiatedLabPrice | null) { trigger.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; setTarget(p); setNeedsRefresh(false); setDiscard(false); mutation.reset(); form.reset(p ? { ...p, departmentId: p.departmentId ?? '', effectiveFrom: dateInput(p.effectiveFrom), effectiveTo: p.effectiveTo ? dateInput(p.effectiveTo) : '' } : defaults()) }
-  function close() { if (mutation.isPending) return; if (discard) { setDiscard(false); return } if (form.formState.isDirty) setDiscard(true); else setTarget(undefined) }
+  function close() { if (mutation.isPending) return; if (discard) { setDiscard(false); return } if (__formDraftDirty) setDiscard(true); else setTarget(undefined) }
   async function refresh() {
     const result = await pricing.refetch()
     const latest = result.data?.prices.find(p => p.id === target?.id)
@@ -49,7 +54,7 @@ export function CompanyLabServicePricing({ companyId, canManage }: { companyId: 
     <Card><CardHeader><CardTitle>Lab service pricing</CardTitle><CardDescription>Organization and Department negotiated prices override the standard service price. When both apply, the lower negotiated price wins. Prices do not grant service access or bypass the Customer sample limit.</CardDescription>{canManage ? <CardAction><Button disabled={!pricing.data} onClick={() => edit(null)}>Add price</Button></CardAction> : null}</CardHeader>
       <CardContent>{pricing.isPending ? <p role="status">Loading service prices…</p> : pricing.error ? <Alert variant="destructive"><AlertDescription>{getOrderErrorMessage(pricing.error, 'Set up this Company’s Customer scope to configure service prices.')} <Button variant="outline" onClick={() => void pricing.refetch()}>Retry</Button></AlertDescription></Alert> : pricing.data?.prices.length ? <div className="overflow-x-auto"><table className="w-full text-sm"><caption className="sr-only">Negotiated Lab service prices in USD</caption><thead><tr className="border-b text-left"><th className="p-2">Service / scope</th><th className="p-2">Price per sample</th><th className="p-2">Effective window (UTC)</th><th className="p-2">Status</th><th className="p-2"><span className="sr-only">Action</span></th></tr></thead><tbody>{pricing.data.prices.map(p => <tr key={p.id} className="border-b"><td className="p-2">{pricing.data.services.find(s => s.id === p.catalogItemId)?.name}<div className="text-xs text-muted-foreground">{p.departmentId ? pricing.data.departments.find(d => d.id === p.departmentId)?.name ?? 'Retained Department' : 'Organization'}</div></td><td className="p-2">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(p.unitPrice)}</td><td className="p-2">{dateInput(p.effectiveFrom)} → {p.effectiveTo ? dateInput(p.effectiveTo) : 'No end date'}</td><td className="p-2">{p.isActive ? 'Active' : 'Inactive'}</td><td className="p-2">{canManage ? <Button variant="outline" aria-label={`Edit ${pricing.data.services.find(s => s.id === p.catalogItemId)?.name} price for ${p.departmentId ? 'Department' : 'Organization'}`} onClick={() => edit(p)}>Edit</Button> : null}</td></tr>)}</tbody></table></div> : <p className="text-sm text-muted-foreground">No negotiated Lab service prices. Standard catalog prices apply.</p>}</CardContent>
     </Card>
-    <Dialog open={target !== undefined} onOpenChange={v => { if (!v) close() }}><DialogContent showCloseButton={!mutation.isPending} onCloseAutoFocus={e => { if (trigger.current?.isConnected) { e.preventDefault(); trigger.current.focus() } }}>
+    <Dialog open={target !== undefined} onOpenChange={open => { if (open) (v => { if (!v) close() })(open); else void __modalGuard.close(() => (v => { if (!v) close() })(false)) }}><DialogContent showCloseButton={!mutation.isPending} onCloseAutoFocus={e => { if (trigger.current?.isConnected) { e.preventDefault(); trigger.current.focus() } }}>
       <DialogHeader><DialogTitle>{discard ? 'Discard pricing changes?' : target ? 'Edit negotiated price' : 'Add negotiated price'}</DialogTitle><DialogDescription>{discard ? 'The saved price remains in effect.' : 'Set the USD sample price for one service and scope. End dates are exclusive, at midnight UTC. Accepted orders keep their saved price.'}</DialogDescription></DialogHeader>
       {mutation.error ? <DialogFeedback><Alert variant="destructive"><AlertDescription>{getOrderErrorMessage(mutation.error, 'Review the retained entries and retry.')}{needsRefresh ? <Button variant="outline" onClick={() => void refresh()}>Load latest price</Button> : null}</AlertDescription></Alert></DialogFeedback> : null}
       {discard ? <><div><DialogDescription>Discard your edits to the service price, status and effective window?</DialogDescription></div><DialogFooter><Button id="company-price-keep-editing" variant="outline" onClick={() => setDiscard(false)}>Keep editing</Button><Button variant="destructive" onClick={() => setTarget(undefined)}>Discard changes</Button></DialogFooter></> : <>

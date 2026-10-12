@@ -1,3 +1,5 @@
+import { NativeSelect } from '#/components/ui/native-select'
+import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useBlocker, useNavigate } from '@tanstack/react-router'
@@ -56,6 +58,8 @@ export function ServiceWorkflowVersionBuilderPage({ workflowId, draftVersionId }
     ?? workflow?.versions.filter((item) => item.status === 'Retired').slice(-1)[0]
   const formKey = `${workflowId}:${draftVersionId ?? 'new'}`
   const form = useForm<WorkflowForm>({ resolver: zodResolver(workflowSchema), defaultValues: { stages: [] } })
+  const { isDirty: __formDraftDirty } = form.formState
+
   const stages = useFieldArray({ control: form.control, name: 'stages' })
   const mutation = useMutation({
     mutationFn: (values: WorkflowForm) => {
@@ -78,7 +82,7 @@ export function ServiceWorkflowVersionBuilderPage({ workflowId, draftVersionId }
     },
   })
 
-  useBlocker({ shouldBlockFn: () => !leaveApproved.current && (mutation.isPending || form.formState.isDirty && !window.confirm('Discard unsaved workflow changes?')), enableBeforeUnload: false })
+  useBlocker({ shouldBlockFn: async () => !leaveApproved.current && (mutation.isPending || __formDraftDirty && !(await confirmPortal('Discard unsaved workflow changes?'))), enableBeforeUnload: false })
 
   useEffect(() => {
     if (!workflow || loadedKey === formKey) return
@@ -97,13 +101,13 @@ export function ServiceWorkflowVersionBuilderPage({ workflowId, draftVersionId }
 
   useEffect(() => {
     const warn = (event: BeforeUnloadEvent) => {
-      if (!form.formState.isDirty || mutation.isSuccess) return
+      if (!__formDraftDirty || mutation.isSuccess) return
       event.preventDefault()
       event.returnValue = ''
     }
     window.addEventListener('beforeunload', warn)
     return () => window.removeEventListener('beforeunload', warn)
-  }, [form.formState.isDirty, mutation.isSuccess])
+  }, [__formDraftDirty, mutation.isSuccess])
 
   const leave = () => navigate({ to: '/lab-configuration', search: { configurationTab: 'workflows' } })
   if (!canManage) return <PageAlert title="Workflow authoring unavailable" message="An active Protocol Administrator role is required." destructive />
@@ -150,8 +154,8 @@ export function ServiceWorkflowVersionBuilderPage({ workflowId, draftVersionId }
                   </CardHeader>
                   <CardContent className="grid gap-4 lg:grid-cols-2">
                     <Field label="Stage name" id={`workflow-stage-${index}-name`} required error={errors?.name?.message}><Input id={`workflow-stage-${index}-name`} {...form.register(`stages.${index}.name`)} /></Field>
-                    <Field label="Protocol version" id={`workflow-stage-${index}-protocol`} required error={errors?.labProtocolVersionId?.message}><select id={`workflow-stage-${index}-protocol`} className={selectClass} {...form.register(`stages.${index}.labProtocolVersionId`)}><option value="">Select…</option>{protocolOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></Field>
-                    <Field label="Requirement" id={`workflow-stage-${index}-requirement`} required error={errors?.requirement?.message}><select id={`workflow-stage-${index}-requirement`} className={selectClass} {...form.register(`stages.${index}.requirement`)}><option value="Required">Required</option><option value="Optional">Optional</option><option value="Conditional">Conditional</option></select></Field>
+                    <Field label="Protocol version" id={`workflow-stage-${index}-protocol`} required error={errors?.labProtocolVersionId?.message}><NativeSelect id={`workflow-stage-${index}-protocol`} className={selectClass} {...form.register(`stages.${index}.labProtocolVersionId`)}><option value="">Select…</option>{protocolOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</NativeSelect></Field>
+                    <Field label="Requirement" id={`workflow-stage-${index}-requirement`} required error={errors?.requirement?.message}><NativeSelect id={`workflow-stage-${index}-requirement`} className={selectClass} {...form.register(`stages.${index}.requirement`)}><option value="Required">Required</option><option value="Optional">Optional</option><option value="Conditional">Conditional</option></NativeSelect></Field>
                     {requirement === 'Conditional' ? <Field label="When this stage applies" id={`workflow-stage-${index}-condition`} required error={errors?.condition?.message}><Input id={`workflow-stage-${index}-condition`} {...form.register(`stages.${index}.condition`)} /></Field> : <div />}
                     <div className="lg:col-span-2"><Field label="Handoff criteria" id={`workflow-stage-${index}-handoff`} error={errors?.handoffCriteria?.message}><textarea id={`workflow-stage-${index}-handoff`} className={textareaClass} {...form.register(`stages.${index}.handoffCriteria`)} placeholder="Evidence or state required before the next stage may begin" /></Field></div>
                   </CardContent>
@@ -163,7 +167,7 @@ export function ServiceWorkflowVersionBuilderPage({ workflowId, draftVersionId }
           </CardContent>
         </Card>
         <div className="flex flex-wrap justify-end gap-2">
-          <Button type="button" variant="outline" onClick={() => form.formState.isDirty ? setDiscardOpen(true) : void leave()}>Cancel</Button>
+          <Button type="button" variant="outline" onClick={() => __formDraftDirty ? setDiscardOpen(true) : void leave()}>Cancel</Button>
           <Button type="submit" disabled={mutation.isPending}>{mutation.isPending ? 'Saving draft…' : draft ? 'Save draft' : 'Create workflow draft'}</Button>
         </div>
       </form>

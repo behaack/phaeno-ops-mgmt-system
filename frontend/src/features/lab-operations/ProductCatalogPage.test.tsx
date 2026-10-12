@@ -8,7 +8,7 @@ import { ProductCatalogPage } from './ProductCatalogPage'
 const mocks = vi.hoisted(() => ({ catalog: vi.fn(), navigate: vi.fn(), search: {} as Record<string, unknown> }))
 vi.mock('#/api/supplier-catalog', async importOriginal => ({ ...await importOriginal<typeof import('#/api/supplier-catalog')>(), useSupplierCatalog: () => mocks.catalog() }))
 vi.mock('#/features/auth/session-context', () => ({ usePhaenoSession: () => ({ authProvider: 'clerk', session: { capabilities: { canManageOrderConfiguration: true } } }) }))
-vi.mock('@tanstack/react-router', () => ({ useSearch: () => mocks.search, useNavigate: () => mocks.navigate, Link: ({ children, to, params, search }: { children: ReactNode; to: string; params?: Record<string, string>; search?: Record<string, string | boolean | undefined> }) => {
+vi.mock('@tanstack/react-router', () => ({ useBlocker: () => ({status: 'idle', reset: vi.fn(), proceed: vi.fn()}), useSearch: () => mocks.search, useNavigate: () => mocks.navigate, Link: ({ children, to, params, search }: { children: ReactNode; to: string; params?: Record<string, string>; search?: Record<string, string | boolean | undefined> }) => {
   let path = to
   for (const [key, value] of Object.entries(params ?? {})) path = path.replace('$' + key, value)
   const query = new URLSearchParams(Object.entries(search ?? {}).filter(([, value]) => value !== undefined).map(([key, value]) => [key, String(value)]))

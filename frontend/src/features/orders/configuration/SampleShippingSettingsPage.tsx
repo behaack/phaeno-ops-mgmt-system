@@ -1,3 +1,4 @@
+import { CustomerText } from '#/features/customer-i18n/customer-text'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { usePhaenoSession } from '#/features/auth/session-context'
 import { SampleShippingConfigurationPanel } from './SampleShippingConfigurationPanel'
@@ -14,10 +15,10 @@ export function SampleShippingSettingsPage({ section, onSectionChange, sampleTyp
 }) {
   const { session, authProvider } = usePhaenoSession()
   const canManage = Boolean(session?.capabilities.canManageOrderConfiguration)
-  if (!canManage) return <main className="page-wrap px-4 py-8"><Alert variant="destructive"><AlertTitle>Samples & shipping settings unavailable</AlertTitle><AlertDescription>A Phaeno platform administrator is required.</AlertDescription></Alert></main>
+  if (!canManage) return <main className="page-wrap px-4 py-8"><Alert variant="destructive"><AlertTitle><CustomerText message="m_f85fd14bbed9" /></AlertTitle><AlertDescription><CustomerText message="m_4a97295b8423" /></AlertDescription></Alert></main>
 
   return <SampleShippingSettingsLayout section={section} onSectionChange={onSectionChange}>
-    {authProvider === 'mock' ? <Alert><AlertTitle>Connected configuration is paused in mock-session mode</AlertTitle><AlertDescription>Use a real Phaeno session to load and change shipping settings.</AlertDescription></Alert> : null}
+    {authProvider === 'mock' ? <Alert><AlertTitle><CustomerText message="m_ad76fe290c74" /></AlertTitle><AlertDescription><CustomerText message="m_c7e09074830d" /></AlertDescription></Alert> : null}
     {section === 'submission' ? <SubmissionInstructionsPanel apiEnabled={authProvider !== 'mock'} /> : <SampleShippingConfigurationPanel key={section} apiEnabled={authProvider !== 'mock'} section={section} sampleTypeId={sampleTypeId} destinationId={destinationId} procedureId={procedureId} />}
   </SampleShippingSettingsLayout>
 }

@@ -1,3 +1,6 @@
+import { NativeSelect } from '#/components/ui/native-select'
+import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
+import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Ellipsis, Mail, Pencil, Trash2, UserPlus } from 'lucide-react'
@@ -68,6 +71,8 @@ export function OrganizationUserManagementPanel({
   organizationId: string
   organizationName: string
 }) {
+  const __customerText = useCustomerText()
+
   const queryClient = useQueryClient()
   const [editTarget, setEditTarget] = useState<EditTarget | null>(null)
   const [inviteOpen, setInviteOpen] = useState(false)
@@ -153,28 +158,25 @@ export function OrganizationUserManagementPanel({
         <CardHeader>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <CardTitle>Users</CardTitle>
+              <CardTitle><CustomerText message="m_6b0cc904d081" /></CardTitle>
               <CardDescription>
-                Active members and pending invitations for this organization.
-              </CardDescription>
+                <CustomerText message="m_749bad0816a3" /></CardDescription>
             </div>
             <Button id="add-organization-user" type="button" onClick={() => { inviteMutation.reset(); setInviteOpen(true) }}>
               <UserPlus data-icon="inline-start" />
-              Add user
-            </Button>
+              <CustomerText message="m_eec5c73a1d6c" /></Button>
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
           {error ? (
             <Alert variant="destructive">
-              <AlertTitle>User management could not be loaded</AlertTitle>
+              <AlertTitle><CustomerText message="m_ed37dff114e4" /></AlertTitle>
               <AlertDescription>{apiErrorMessage(error)}</AlertDescription>
             </Alert>
           ) : null}
           {usersQuery.isLoading ? (
             <p role="status" className="text-sm text-muted-foreground">
-              Loading users…
-            </p>
+              <CustomerText message="m_a53ec7ac2a7b" /></p>
           ) : null}
           {(usersQuery.data ?? []).map((user) => {
             const membership = user.memberships.find(
@@ -197,19 +199,19 @@ export function OrganizationUserManagementPanel({
                   </p>
                   <p className="m-0 mt-2 text-sm text-muted-foreground">
                     {membership.isOrganizationAdmin
-                      ? 'Organization administrator'
-                      : 'Member'}
+                      ? "Organization administrator"
+                      : __customerText('m_7c968fb71f50')}
                   </p>
                 </div>
                 <div className="flex shrink-0 flex-wrap items-center gap-2">
                   <Badge
                     variant={
                       membership.isActive && user.status === 'Active'
-                        ? 'secondary'
-                        : 'outline'
+                        ? "secondary"
+                        : "outline"
                     }
                   >
-                    {membership.isActive ? user.status : 'Membership inactive'}
+                    {membership.isActive ? user.status : __customerText('m_e695f3075af2')}
                   </Badge>
                   {membership.isActive ? (
                     <DropdownMenu modal={false}>
@@ -218,7 +220,7 @@ export function OrganizationUserManagementPanel({
                           type="button"
                           variant="outline"
                           size="icon-sm"
-                          aria-label={`Actions for ${user.firstName} ${user.lastName}`}
+                          aria-label={__customerText('m_d54cf5b8374c', { p0: String(user.firstName), p1: String(user.lastName) })}
                         >
                           <Ellipsis aria-hidden="true" />
                         </Button>
@@ -228,16 +230,14 @@ export function OrganizationUserManagementPanel({
                           onSelect={() => setEditTarget(target)}
                         >
                           <Pencil aria-hidden="true" />
-                          Edit
-                        </DropdownMenuItem>
+                          <CustomerText message="m_464c4ffd019e" /></DropdownMenuItem>
                         {user.id !== currentUserId ? (
                           <DropdownMenuItem
                             variant="destructive"
                             onSelect={() => setDeactivateTarget(target)}
                           >
                             <Trash2 aria-hidden="true" />
-                            Deactivate
-                          </DropdownMenuItem>
+                            <CustomerText message="m_fb1e6fa55327" /></DropdownMenuItem>
                         ) : null}
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -260,22 +260,22 @@ export function OrganizationUserManagementPanel({
                 </p>
                 <p className="m-0 mt-2 text-sm text-muted-foreground">
                   {invitation.isOrganizationAdmin
-                    ? 'Organization administrator'
-                    : 'Member'}
+                    ? "Organization administrator"
+                    : __customerText('m_7c968fb71f50')}
                 </p>
                 <p className="m-0 mt-1 text-xs text-muted-foreground">
-                  Access: {invitation.isExpired ? 'Expired' : invitation.status}
-                  {' · '}Email: {invitation.deliveryStatus ?? 'Not queued'}
-                  {' · '}Sends: {invitation.sendCount}
-                  {' · '}Expires {new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' }).format(new Date(invitation.expiresAt))}
+                  <CustomerText message="m_f06539e5b1d0" />{invitation.isExpired ? "Expired" : invitation.status}
+                  {' · '}<CustomerText message="m_620b685b667f" />{invitation.deliveryStatus ?? 'Not queued'}
+                  {' · '}<CustomerText message="m_58dae2b09750" />{invitation.sendCount}
+                  {' · '}<CustomerText message="m_d970e4fd1080" />{new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' }).format(new Date(invitation.expiresAt))}
                 </p>
                 {invitation.lastSendError ? <p className="m-0 mt-1 text-sm text-destructive" role="status">{invitation.lastSendError}</p> : null}
-                {invitation.hasHardBounce ? <p className="m-0 mt-1 text-sm text-destructive">Hard bounce: revoke and issue a new invitation to the corrected address.</p> : null}
+                {invitation.hasHardBounce ? <p className="m-0 mt-1 text-sm text-destructive"><CustomerText message="m_014c9b8659a2" /></p> : null}
               </div>
               <div className="flex shrink-0 flex-wrap items-center gap-2">
-                <Badge variant="outline">Pending invitation</Badge>
-                <Badge variant={invitation.deliveryStatus === 'Delivered' || invitation.deliveryStatus === 'Accepted' ? 'secondary' : 'outline'}>
-                  Email {invitation.deliveryStatus ?? 'Not queued'}
+                <Badge variant="outline"><CustomerText message="m_5cd314166bad" /></Badge>
+                <Badge variant={invitation.deliveryStatus === 'Delivered' || invitation.deliveryStatus === 'Accepted' ? "secondary" : "outline"}>
+                  <CustomerText message="m_969ccbd3cf63" />{invitation.deliveryStatus ?? 'Not queued'}
                 </Badge>
                 <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
@@ -283,7 +283,7 @@ export function OrganizationUserManagementPanel({
                       type="button"
                       variant="outline"
                       size="icon-sm"
-                      aria-label={`Actions for ${invitation.email}`}
+                      aria-label={__customerText('m_e78d9a50658a', { p0: String(invitation.email) })}
                     >
                       <Ellipsis aria-hidden="true" />
                     </Button>
@@ -299,8 +299,7 @@ export function OrganizationUserManagementPanel({
                       }
                     >
                       <Mail aria-hidden="true" />
-                      Resend invitation
-                    </DropdownMenuItem>
+                      <CustomerText message="m_6402d96e5fc7" /></DropdownMenuItem>
                     <DropdownMenuItem
                       variant="destructive"
                       disabled={invitationMutation.isPending}
@@ -312,8 +311,7 @@ export function OrganizationUserManagementPanel({
                       }
                     >
                       <Trash2 aria-hidden="true" />
-                      Revoke invitation
-                    </DropdownMenuItem>
+                      <CustomerText message="m_eb39fc8cf692" /></DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
@@ -324,8 +322,7 @@ export function OrganizationUserManagementPanel({
           !(usersQuery.data ?? []).length &&
           pendingInvitations.length === 0 ? (
             <div className="rounded-lg border bg-background p-4 text-sm text-muted-foreground">
-              No organization users found.
-            </div>
+              <CustomerText message="m_87fcb0d943ab" /></div>
           ) : null}
         </CardContent>
       </Card>
@@ -364,10 +361,10 @@ export function OrganizationUserManagementPanel({
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Deactivate organization membership?</DialogTitle>
+            <DialogTitle><CustomerText message="m_64c4c3716446" /></DialogTitle>
             <DialogDescription>
               {deactivateTarget
-                ? `${deactivateTarget.user.email} will lose access to ${organizationName}. A new invitation is required to restore this membership.`
+                ? __customerText('m_74143fe2c92e', { p0: String(deactivateTarget.user.email), p1: String(organizationName) })
                 : ''}
             </DialogDescription>
           </DialogHeader>
@@ -384,8 +381,7 @@ export function OrganizationUserManagementPanel({
               variant="outline"
               onClick={() => setDeactivateTarget(null)}
             >
-              Cancel
-            </Button>
+              <CustomerText message="m_19766ed6ccb2" /></Button>
             <Button
               type="button"
               variant="destructive"
@@ -399,8 +395,8 @@ export function OrganizationUserManagementPanel({
               }}
             >
               {deactivateMutation.isPending
-                ? 'Deactivating…'
-                : 'Deactivate membership'}
+                ? "Deactivating…"
+                : __customerText('m_3ce7a8f6793e')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -422,10 +418,16 @@ function MembershipRoleDialog({
   onSubmit: (values: RoleValues) => void
   target: EditTarget | null
 }) {
+  const __customerText = useCustomerText()
+
   const form = useForm<RoleValues>({
     resolver: zodResolver(roleSchema),
     defaultValues: { role: 'Member' },
   })
+  const { isDirty: __formDraftDirty } = form.formState
+  const __modalGuard = useModalDraftGuard(__formDraftDirty, form.formState.isSubmitting)
+
+
   useEffect(() => {
     form.reset({
       role: target?.membership.isOrganizationAdmin
@@ -435,17 +437,17 @@ function MembershipRoleDialog({
   }, [form, target])
 
   return (
-    <Dialog open={Boolean(target)} onOpenChange={onOpenChange}>
+    <Dialog open={Boolean(target)} onOpenChange={open => { if (open) (onOpenChange)(open); else void __modalGuard.close(() => (onOpenChange)(false)) }}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Edit user</DialogTitle>
+          <DialogTitle><CustomerText message="m_05b88d18fc0d" /></DialogTitle>
           <DialogDescription>
-            Update this user’s role in {target?.membership.organizationName}.
+            <CustomerText message="m_002b7d65e616" />{target?.membership.organizationName}.
           </DialogDescription>
         </DialogHeader>
         {error ? (
           <Alert variant="destructive">
-            <AlertTitle>User was not updated</AlertTitle>
+            <AlertTitle><CustomerText message="m_2a1a48708802" /></AlertTitle>
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         ) : null}
@@ -455,7 +457,7 @@ function MembershipRoleDialog({
           onSubmit={form.handleSubmit(onSubmit)}
         >
           <div className="grid gap-1.5">
-            <Label htmlFor="organization-user-name">Name</Label>
+            <Label htmlFor="organization-user-name"><CustomerText message="m_dcd1d5223f73" /></Label>
             <Input
               id="organization-user-name"
               value={
@@ -467,7 +469,7 @@ function MembershipRoleDialog({
             />
           </div>
           <div className="grid gap-1.5">
-            <Label htmlFor="organization-user-email">Email</Label>
+            <Label htmlFor="organization-user-email"><CustomerText message="m_969ccbd3cf63" /></Label>
             <Input
               id="organization-user-email"
               value={target?.user.email ?? ''}
@@ -476,34 +478,32 @@ function MembershipRoleDialog({
           </div>
           <div className="grid gap-1.5">
             <Label htmlFor="organization-user-role">
-              <RequiredFieldName>Role</RequiredFieldName>
+              <RequiredFieldName><CustomerText message="m_14736a2eb9f4" /></RequiredFieldName>
             </Label>
-            <select
+            <NativeSelect
               id="organization-user-role"
-              className="h-9 cursor-pointer rounded-lg border border-input bg-background px-3 text-sm"
+              className="cursor-pointer rounded-lg border border-input bg-background px-3 text-sm"
               {...form.register('role')}
             >
-              <option value="Member">Member</option>
+              <option value="Member"><CustomerText message="m_7c968fb71f50" /></option>
               <option value="Administrator">
-                Organization administrator
-              </option>
-            </select>
+                <CustomerText message="m_211d58cbb46a" /></option>
+            </NativeSelect>
           </div>
         </form>
         <RequiredDialogFooter>
           <Button
             type="button"
             variant="outline"
-            onClick={() => onOpenChange(false)}
+            onClick={() => { void __modalGuard.close(() => (() => onOpenChange(false))()) }}
           >
-            Cancel
-          </Button>
+            <CustomerText message="m_19766ed6ccb2" /></Button>
           <Button
             type="submit"
             form="edit-organization-user"
-            disabled={isPending || !form.formState.isDirty}
+            disabled={isPending || !__formDraftDirty}
           >
-            {isPending ? 'Saving…' : 'Save changes'}
+            {isPending ? "Saving…" : __customerText('m_dd0ae7a5cbcf')}
           </Button>
         </RequiredDialogFooter>
       </DialogContent>

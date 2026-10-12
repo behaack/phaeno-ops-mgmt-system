@@ -46,6 +46,8 @@ export function TrialCreateDialog({ fromCompanyId, onClose, onSubmit }: {
   const company = useQuery({ queryKey: ['crm-company', fromCompanyId], queryFn: () => getCrmCompany(fromCompanyId!), enabled: Boolean(fromCompanyId) })
   const configuration = useQuery({ queryKey: ['trial-create-configuration'], queryFn: () => getTrialConfiguration() })
   const form = useForm({ resolver: zodResolver(creationSchema), defaultValues: { companyId: fromCompanyId ?? '', departmentId: '', name: '', objective: '', sampleTypeId: '', sources: [{ biologicalSource: '', specimenCount: 1 as number | null }], submissionOpensAtUtc: '', submissionClosesAtUtc: '' } })
+  const { isDirty: __formDraftDirty } = form.formState
+
   const sources = useFieldArray({ control: form.control, name: 'sources' })
   const sourceValues = useWatch({ control: form.control, name: 'sources' })
   const total = sourceValues.reduce((sum, source) => sum + (Number(source.specimenCount) || 0), 0)
@@ -53,7 +55,7 @@ export function TrialCreateDialog({ fromCompanyId, onClose, onSubmit }: {
   const departments = useQuery({ queryKey: ['crm-opportunity-departments', companyId], queryFn: () => listCrmOpportunityDepartments(companyId), enabled: Boolean(companyId) })
   const choices = departments.data ?? []
   const required = choices.length > 1
-  const dirty = form.formState.isDirty || companySearchEdited
+  const dirty = __formDraftDirty || companySearchEdited
   const busy = form.formState.isSubmitting
   const unavailable = Boolean(fromCompanyId && !company.data) || Boolean(companyId && (departments.isFetching || !departments.isSuccess))
   useBlocker({

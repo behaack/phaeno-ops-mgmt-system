@@ -9,6 +9,7 @@ import { configureApiAuth } from '../../src/api/client'
 import { noSessionCapabilities } from '../../src/test-helpers/session'
 import { executionId, executionWorkId, recordingUserId } from '../../src/test-helpers/lab-execution'
 import { applyThemeMode } from '../../src/components/theme-mode'
+import { PortalConfirmation } from '../../src/components/PortalConfirmation'
 import '../../src/styles.css'
 
 applyThemeMode('auto')
@@ -22,7 +23,7 @@ const session: PhaenoSessionContextValue = {
     capabilities: { ...noSessionCapabilities, canManageLabOperations: true, canOperateLabWork: true },
   },
 }
-const root = createRootRoute({ component: Outlet })
+const root = createRootRoute({ component: () => <><Outlet /><PortalConfirmation /></> })
 const job = () => <LabWorkOrderPage workOrderId={executionWorkId} selectedTab="execution" />
 const routes = [
   createRoute({ getParentRoute: () => root, path: '/e2e/fixtures/lab-execution.html', component: job }),

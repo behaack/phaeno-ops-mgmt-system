@@ -4,7 +4,7 @@ import { useState, type ReactNode } from 'react'
 import { phaseShippingOrder, shippingPhasePlan, shippedPhasePairs, sentPhaseShipment, singleShippingOrder, singleShippingPlan, singleShippingPairs } from '#/test-helpers/lab-phase-shipping'
 import { kitRequestFixture } from '#/test-helpers/transportation-kit-requests'
 import { LabJobPhaseList } from './LabJobPhaseList'
-vi.mock('@tanstack/react-router', () => ({ Link: ({ children }: { children: ReactNode }) => <a href="#shipment">{children}</a> }))
+vi.mock('@tanstack/react-router', () => ({ useBlocker: () => ({status: 'idle', reset: vi.fn(), proceed: vi.fn()}), Link: ({ children }: { children: ReactNode }) => <a href="#shipment">{children}</a> }))
 vi.mock('./SpecimenHolds', () => ({ SpecimenHolds: ({ sampleIds }: { sampleIds: string[] }) => <div aria-label="Hold sample IDs">{sampleIds.join(',')}</div> }))
 
 function View({ receiving = false, onResults = vi.fn() }: { receiving?: boolean; onResults?: (id: string) => void }) {

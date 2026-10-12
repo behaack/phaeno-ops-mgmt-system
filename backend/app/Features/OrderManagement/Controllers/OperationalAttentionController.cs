@@ -34,15 +34,19 @@ public sealed class OperationalAttentionController(
     ];
 
     [HttpGet]
-    public async Task<IReadOnlyList<OperationalAttentionDto>> List(
+    public async Task<DTOs.PagedResult<OperationalAttentionDto>> List(
         [FromQuery] string? category, [FromQuery] bool includeResolved = false,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default, [FromQuery] int page = 1, [FromQuery] int pageSize = 25,
+        [FromQuery] Guid? attentionId = null, [FromQuery] string? attentionSource = null, [FromQuery] Guid? sourceId = null)
     {
         await RequireAsync(cancellationToken);
         if (!options.Value.AttentionOperations)
             throw new OrderManagementException("attention_operations_disabled", "Operational attention queues are not enabled.", StatusCodes.Status404NotFound);
         await SynchronizeAsync(cancellationToken);
         var query = dbContext.OperationalAttentionItems.AsNoTracking();
+        if (attentionId.HasValue) query = query.Where(item => item.Id == attentionId);
+        if (!string.IsNullOrWhiteSpace(attentionSource)) query = query.Where(item => item.SourceType == attentionSource);
+        if (sourceId.HasValue) query = query.Where(item => item.SourceId == sourceId);
         if (!includeResolved) query = query.Where(item => item.Status != OperationalAttentionStatus.Resolved);
         if (!string.IsNullOrWhiteSpace(category))
         {
@@ -50,8 +54,8 @@ public sealed class OperationalAttentionController(
                 throw new OrderManagementException("attention_category_invalid", "The attention category is invalid.");
             query = query.Where(item => item.Category == parsed);
         }
-        return await query.OrderBy(item => item.Status).ThenBy(item => item.CreatedAt)
-            .Select(item => Map(item)).Take(1000).ToListAsync(cancellationToken);
+        return await Infrastructure.Api.RecordPage.ReadAsync(query.OrderBy(item => item.Status).ThenBy(item => item.CreatedAt).ThenBy(item => item.Id)
+            .Select(item => Map(item)), page, pageSize, cancellationToken);
     }
 
     [HttpPost("{itemId:guid}/assign")]

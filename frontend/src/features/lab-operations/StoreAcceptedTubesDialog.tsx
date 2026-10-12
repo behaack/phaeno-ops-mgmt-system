@@ -54,7 +54,11 @@ export function StoreAcceptedTubesDialog({ rows, packet, work, available = true,
   const doneButton = useRef<HTMLButtonElement>(null)
   const exceptionFocusPending = useRef(false)
   const boxForm = useForm<z.infer<typeof boxSchema>>({ resolver: zodResolver(boxSchema), defaultValues: { barcode: '' } })
+  const { isDirty: __boxFormDraftDirty } = boxForm.formState
+
   const tubeForm = useForm<z.infer<typeof tubeSchema>>({ resolver: zodResolver(tubeSchema), defaultValues: { barcode: '' } })
+  const { isDirty: __tubeFormDraftDirty } = tubeForm.formState
+
   const reviewForm = useForm<z.infer<typeof reviewSchema>>({ resolver: zodResolver(reviewSchema), defaultValues: { confirmed: false } })
   const remaining = selection.filter(row => !stored.includes(row.supplierTubeBarcode!) && !exceptionsSaved.includes(row.supplierTubeBarcode!))
   const tubesByBarcode = new Map(work.containers.map(tube => [tube.barcode, tube]))
@@ -159,7 +163,7 @@ export function StoreAcceptedTubesDialog({ rows, packet, work, available = true,
     })
     return () => window.cancelAnimationFrame(frame)
   }, [exception, busy, canPlace, allDone])
-  const dirty = Boolean(activeBox || group.length || boxForm.formState.isDirty || tubeForm.formState.isDirty || submitted)
+  const dirty = Boolean(activeBox || group.length || __boxFormDraftDirty || __tubeFormDraftDirty || submitted)
   const dismissal = useOrderDecisionDismissal(!exception && dirty, busy, onClose, {
     scope: 'box placement',
     description: submitted ? 'A save was attempted and its outcome may be unknown. Saved decisions will remain. Check the recorded tube locations before handling or assigning these tubes again.' : `Unsaved box assignments will be discarded. Saved groups will remain. Any tubes physically placed${groupBox ? ` in ${groupBox}` : ''} must be reconciled before continuing; closing does not record their storage.`,

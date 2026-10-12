@@ -16,6 +16,8 @@ const config = defineConfig(({ command, mode }) => ({
   server: {
     host: '127.0.0.1',
     port: 3000,
+    // Browser acceptance must not remount fixtures during independent build/doc checks.
+    hmr: mode === 'e2e' ? false : undefined,
     // Give POMS notifications an explicit upgrade route alongside the HTTP API proxy.
     proxy: {
       '/api/platform/lab-operations/assembly-notifications': {

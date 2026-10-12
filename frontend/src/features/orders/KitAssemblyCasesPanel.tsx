@@ -1,3 +1,5 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
+import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
@@ -113,6 +115,8 @@ export function KitAssemblyCasesPanel({
     resolver: zodResolver(kitCaseSchema),
     defaultValues: empty,
   })
+  const { isDirty: __formDraftDirty } = form.formState
+
   const mutation = useMutation({
     mutationFn: (values: Values) => {
       if (
@@ -163,7 +167,7 @@ export function KitAssemblyCasesPanel({
     },
   })
   useOrderDraftGuard(
-    Boolean(reviewed) && form.formState.isDirty,
+    Boolean(reviewed) && __formDraftDirty,
     mutation.isPending,
   )
   function open(item: KitAssemblyCase, action: Values['action']) {
@@ -171,11 +175,11 @@ export function KitAssemblyCasesPanel({
     form.reset({ ...empty, action })
     setReviewed({ item, action })
   }
-  function close() {
+  async function close() {
     if (
       !mutation.isPending &&
-      (!form.formState.isDirty ||
-        window.confirm('Discard the unsaved case change?'))
+      (!__formDraftDirty ||
+        (await confirmPortal('Discard the unsaved case change?')))
     )
       setReviewed(null)
   }
@@ -203,7 +207,7 @@ export function KitAssemblyCasesPanel({
         />
         {form.formState.errors[name] ? (
           <p role="alert" className="mt-1 text-sm text-destructive">
-            {form.formState.errors[name]?.message}
+            {<CustomerSourceText source={form.formState.errors[name]?.message} />}
           </p>
         ) : null}
       </div>
@@ -213,11 +217,9 @@ export function KitAssemblyCasesPanel({
   return (
     <Card className="mb-5">
       <CardHeader>
-        <CardTitle>Included assembly cases</CardTitle>
+        <CardTitle><CustomerSourceText source={"Included assembly cases"} /></CardTitle>
         <CardDescription>
-          Each purchased kit unit includes one case. Corrected inputs stay with
-          that case. Assembly does not create another purchase or billing
-          source.
+          <CustomerSourceText source={"Each purchased kit unit includes one case. Corrected inputs stay with\r\n          that case. Assembly does not create another purchase or billing\r\n          source."} />
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -226,9 +228,7 @@ export function KitAssemblyCasesPanel({
             'Kit fulfillment and assembly are tracked separately.'}
         </p>
         <p className="mt-2 text-sm text-muted-foreground">
-          Unused cases expire 90 days after the kit’s labeled expiration, or 12
-          months after shipment when no expiration is recorded. An unused case
-          does not automatically create a refund.
+          <CustomerSourceText source={"Unused cases expire 90 days after the kit’s labeled expiration, or 12\r\n          months after shipment when no expiration is recorded. An unused case\r\n          does not automatically create a refund."} />
         </p>
         <div className="mt-4 divide-y">
           {(order.assemblyCases ?? []).map((item) => {
@@ -243,7 +243,7 @@ export function KitAssemblyCasesPanel({
                 </div>
                 <dl className="grid gap-3 text-sm sm:grid-cols-2">
                   <div>
-                    <dt className="text-muted-foreground">Kit</dt>
+                    <dt className="text-muted-foreground"><CustomerSourceText source={"Kit"} /></dt>
                     <dd>
                       {unit?.label ?? 'Assigned kit'}
                       {unit?.lotBatchNumber
@@ -253,7 +253,7 @@ export function KitAssemblyCasesPanel({
                   </div>
                   <div>
                     <dt className="text-muted-foreground">
-                      Submission deadline
+                      <CustomerSourceText source={"Submission deadline"} />
                     </dt>
                     <dd>
                       {display(item.submissionDeadlineAt)}
@@ -263,18 +263,18 @@ export function KitAssemblyCasesPanel({
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-muted-foreground">Included profile</dt>
+                    <dt className="text-muted-foreground"><CustomerSourceText source={"Included profile"} /></dt>
                     <dd>
-                      {item.profile.name} · version{' '}
+                      {item.profile.name} <CustomerSourceText source={"· version"} />{' '}
                       {item.profile.profileVersion}
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-muted-foreground">Shipment</dt>
+                    <dt className="text-muted-foreground"><CustomerSourceText source={"Shipment"} /></dt>
                     <dd>
                       {unit?.shippedAt
                         ? `${display(unit.shippedAt)} · ${unit.carrier ?? ''} ${unit.trackingNumber ?? ''}`
-                        : 'Awaiting kit shipment'}
+                        : <CustomerSourceText source={"Awaiting kit shipment"} />}
                     </dd>
                   </div>
                 </dl>
@@ -287,7 +287,7 @@ export function KitAssemblyCasesPanel({
                           params={{ orderId: item.assemblyRequestId }}
                           search={{ section: undefined }}
                         >
-                          Open assembly work
+                          <CustomerSourceText source={"Open assembly work"} />
                         </Link>
                       ) : (
                         <Link
@@ -296,8 +296,8 @@ export function KitAssemblyCasesPanel({
                           search={(previous) => previous}
                         >
                           {item.status === 'ResultsReleased'
-                            ? 'View results'
-                            : 'Open assembly case'}
+                            ? <CustomerSourceText source={"View results"} />
+                            : <CustomerSourceText source={"Open assembly case"} />}
                         </Link>
                       )}
                     </Button>
@@ -307,7 +307,7 @@ export function KitAssemblyCasesPanel({
                         to="/data-assembly/new"
                         search={{ kitOrderId: order.id, kitCaseId: item.id }}
                       >
-                        Prepare inputs
+                        <CustomerSourceText source={"Prepare inputs"} />
                       </Link>
                     </Button>
                   ) : null}
@@ -316,7 +316,7 @@ export function KitAssemblyCasesPanel({
                       variant="outline"
                       onClick={() => open(item, 'extend')}
                     >
-                      Extend deadline
+                      <CustomerSourceText source={"Extend deadline"} />
                     </Button>
                   ) : null}
                   {staff && item.canReplace ? (
@@ -324,7 +324,7 @@ export function KitAssemblyCasesPanel({
                       variant="outline"
                       onClick={() => open(item, 'replace')}
                     >
-                      Replace kit
+                      <CustomerSourceText source={"Replace kit"} />
                     </Button>
                   ) : null}
                   {staff && item.canCancel ? (
@@ -332,13 +332,13 @@ export function KitAssemblyCasesPanel({
                       variant="outline"
                       onClick={() => open(item, 'cancel')}
                     >
-                      Cancel unused case
+                      <CustomerSourceText source={"Cancel unused case"} />
                     </Button>
                   ) : null}
                 </div>
                 <details className="text-sm">
                   <summary className="cursor-pointer font-medium">
-                    Included outputs and case history
+                    <CustomerSourceText source={"Included outputs and case history"} />
                   </summary>
                   <p className="mt-2 whitespace-pre-wrap">
                     {item.profile.instructions}
@@ -361,7 +361,7 @@ export function KitAssemblyCasesPanel({
         </div>
         {!order.assemblyCases?.length ? (
           <p className="mt-4 text-sm text-muted-foreground">
-            Case identities are created when this kit order is placed.
+            <CustomerSourceText source={"Case identities are created when this kit order is placed."} />
           </p>
         ) : null}
         <Dialog
@@ -381,7 +381,7 @@ export function KitAssemblyCasesPanel({
               </DialogTitle>
               <DialogDescription>
                 {reviewed?.action === 'replace'
-                  ? 'The existing assembly case transfers to the replacement kit. This records the actual replacement shipment without creating another entitlement, sale or invoice.'
+                  ? <CustomerSourceText source={"The existing assembly case transfers to the replacement kit. This records the actual replacement shipment without creating another entitlement, sale or invoice."} />
                   : reviewed?.action === 'cancel'
                     ? 'This closes the unused assembly entitlement. It does not cancel shipped kits or automatically issue a refund.'
                     : `Current deadline: ${display(reviewed?.item.submissionDeadlineAt)}. This extension preserves the original purchase and records your reason.`}
@@ -389,14 +389,13 @@ export function KitAssemblyCasesPanel({
             </DialogHeader>
             {mutation.error ? (
               <Alert variant="destructive">
-                <AlertTitle>Case was not changed</AlertTitle>
+                <AlertTitle><CustomerSourceText source={"Case was not changed"} /></AlertTitle>
                 <AlertDescription>
-                  {getOrderErrorMessage(
+                  {<CustomerSourceText source={getOrderErrorMessage(
                     mutation.error,
                     'Review the entries and try again.',
-                  )}{' '}
-                  Your entries remain here. Refresh and reopen this action if
-                  the case has changed.
+                  )} />}{' '}
+                  <CustomerSourceText source={"Your entries remain here. Refresh and reopen this action if\r\n                  the case has changed."} />
                 </AlertDescription>
               </Alert>
             ) : null}
@@ -433,11 +432,10 @@ export function KitAssemblyCasesPanel({
                 ) : null}
                 <div>
                   <Label htmlFor="kit-case-reason">
-                    <RequiredFieldName>Reason</RequiredFieldName>
+                    <RequiredFieldName><CustomerSourceText source={"Reason"} /></RequiredFieldName>
                   </Label>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    This reason is visible in the Partner’s case history. Keep
-                    internal and other-customer details out.
+                    <CustomerSourceText source={"This reason is visible in the Partner’s case history. Keep\r\n                    internal and other-customer details out."} />
                   </p>
                   <Textarea
                     id="kit-case-reason"
@@ -446,7 +444,7 @@ export function KitAssemblyCasesPanel({
                   />
                   {form.formState.errors.reason ? (
                     <p role="alert" className="mt-1 text-sm text-destructive">
-                      {form.formState.errors.reason.message}
+                      {<CustomerSourceText source={form.formState.errors.reason.message} />}
                     </p>
                   ) : null}
                 </div>
@@ -459,7 +457,7 @@ export function KitAssemblyCasesPanel({
                 disabled={mutation.isPending}
                 onClick={close}
               >
-                Keep case
+                <CustomerSourceText source={"Keep case"} />
               </Button>
               <Button
                 type="submit"
@@ -470,7 +468,7 @@ export function KitAssemblyCasesPanel({
                 disabled={mutation.isPending}
               >
                 {mutation.isPending
-                  ? 'Saving…'
+                  ? <CustomerSourceText source={"Saving…"} />
                   : reviewed
                     ? titles[reviewed.action]
                     : 'Save'}

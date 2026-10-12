@@ -1,3 +1,4 @@
+import { useCustomerText } from '#/features/customer-i18n/customer-text'
 import * as React from "react"
 import { Dialog as DialogPrimitive } from "radix-ui"
 import { XIcon } from "lucide-react"
@@ -62,11 +63,14 @@ function DialogContent({
   onOpenAutoFocus,
   onCloseAutoFocus,
   onMouseDownCapture,
+  onClickCapture,
   showCloseButton = true,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
 }) {
+  const __customerText = useCustomerText()
+
   const arrangedChildren = arrangeDialogChildren(children)
   const openerRef = React.useRef<HTMLElement | null>(null)
   const returnFocus = React.useContext(DialogReturnFocusContext)
@@ -76,6 +80,17 @@ function DialogContent({
       <DialogOverlay />
       <DialogPrimitive.Content
         data-slot="dialog-content"
+        onClickCapture={(event) => {
+          onClickCapture?.(event)
+          if (event.defaultPrevented) return
+          const action = event.target instanceof Element ? event.target.closest('button') : null
+          if (action && !action.disabled && action.closest('[data-slot="dialog-content"]') === event.currentTarget
+            && (action.closest('[data-slot="dialog-footer"]') || action.matches('[data-slot="dialog-close"]'))) {
+            // Mouse-down preserves the field until the click target is settled.
+            // Focus the action now so nested confirmations restore its focus.
+            action.focus()
+          }
+        }}
         onMouseDownCapture={(event) => {
           onMouseDownCapture?.(event)
           if (event.defaultPrevented || event.button !== 0) return
@@ -142,7 +157,7 @@ function DialogContent({
           <DialogPrimitive.Close
             data-slot="dialog-close"
             className="absolute top-3 right-3 inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-            aria-label="Close"
+            aria-label={__customerText('m_7d9eb7acb13e')}
           >
             <XIcon aria-hidden="true" className="size-4" />
           </DialogPrimitive.Close>

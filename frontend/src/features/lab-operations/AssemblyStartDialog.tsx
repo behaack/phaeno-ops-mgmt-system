@@ -28,6 +28,8 @@ export function AssemblyStartDialog({ availability, previous, workOrderId, speci
   const [requestId] = useState(() => crypto.randomUUID())
   const inputs = useQuery({ queryKey: ['assembly-inputs', workOrderId, specimenId], queryFn: () => getAssemblyInputs(workOrderId, specimenId) })
   const form = useForm<Values>({ resolver: zodResolver(schema), defaultValues: { selection: '', recipeKey: '', inputIds: [], reason: '' } })
+  const { isDirty: __formDraftDirty } = form.formState
+
   const selection = form.watch('selection')
   const selectedIds = form.watch('inputIds')
   const candidates = (inputs.data ?? []).filter(i => !previous || i.labSpecimenId === previous.labSpecimenId && i.sequencingRunNumber === previous.sequencingRunNumber)
@@ -49,7 +51,7 @@ export function AssemblyStartDialog({ availability, previous, workOrderId, speci
   } })
   const savedAttempt = assemblyAttemptFromDispatchError(mutation.error)
   const recoveryId = savedAttempt === requestId ? savedAttempt : null
-  const dismissal = useOrderDecisionDismissal(form.formState.isDirty, mutation.isPending, onClose, { scope: 'assembly request', description: 'The unsaved input and recipe selection will be discarded. Any assembly attempt already saved will continue independently.' })
+  const dismissal = useOrderDecisionDismissal(__formDraftDirty, mutation.isPending, onClose, { scope: 'assembly request', description: 'The unsaved input and recipe selection will be discarded. Any assembly attempt already saved will continue independently.' })
   const openSavedAttempt = async () => {
     if (!recoveryId) return
     dismissal.allowNavigation(); form.reset(form.getValues()); onClose()

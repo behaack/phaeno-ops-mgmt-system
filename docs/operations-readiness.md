@@ -1,5 +1,18 @@
 # Operations and production-readiness boundary
 
+## October 11 gap closure in development
+
+The Owner authorized the ordered application gap-closure implementation with
+Customer-only internationalization and deployment held. Source changes,
+compilation and synthetic UI evidence do not change the hosted source/runtime.
+Current closure status is in [System gap closure](plans/SYSTEM-GAP-CLOSURE-PLAN.md).
+Requested local regression execution is recorded in the
+[continuation receipt](testing/runs/2026-10-11-system-gap-closure-verification.md).
+The work dashboard/bell use scoped source facts; read state does not resolve
+work. Recovery preparation is in [S3 recovery preparation](operations/S3-RECOVERY-PREPARATION.md).
+Physical DataMatrix/supplier qualification and the outage/trainer exercise
+remain unaccepted. Existing S3 test deferral and deployment holds are preserved.
+
 ## Portal DPS source release — completed October 10, 2026
 
 The Owner authorized a matched Portal API/frontend update from main under the
@@ -269,11 +282,11 @@ it does not replace an approved environment-specific deployment or incident runb
 | Database | PostgreSQL through one EF Core `PSeqOperationsDbContext`, with Commercial/current-flow and Lab projections in `commercial_ops`, Laboratory execution in `lab_ops`, Website intake/delivery/control in `website`, and migration history in `public`. Use the complete [database ERD](database-erd.md) and [EF snapshot](../backend/app/Migrations/PSeqOperationsDbContextModelSnapshot.cs) for current entities, fields, keys and relationships; applied migration state is environment-specific. |
 | Authentication | Clerk-issued bearer JWTs; application authorization comes from internal users, active memberships, and capabilities. |
 | Lab Operations | Feature-complete internal provider with additive Phaeno roles, operator APIs/workspace, receipt and accession, controlled execution, traceability, outsourced NGS sendouts, exceptions, scientific approval, and customer-safe Commercial projections. Production validation and activation remain incomplete. |
-| Curated-data files | `IManagedFileStorage` adapts to shared `IFileStorage`, with Local, Disabled, and S3 providers. Production Local is active on a private persistent volume with explicit acknowledgement. Both managed areas passed write/checksum/readback/scan/deletion checks. File bytes and metadata must be backed up together; populated recovery remains an acceptance gate. |
+| Curated-data files | `IManagedFileStorage` adapts to shared `IFileStorage`, with Local, Disabled, and S3 providers. The October 9 receipts record hosted-test S3 activation; the old Local volume is retained and Local-only backup automation is deferred. Both managed areas passed write/checksum/readback/scan/deletion checks. File bytes and metadata must be backed up together; populated recovery remains an acceptance gate. |
 | Order files | `IOperationalFileStorage` uses the same provider contract and environment boundary, while retaining its own file ownership, scanning, authorization and release rules. A healthy API with Disabled storage is not evidence of usable file delivery. |
 | Malware scanning | The private managed ClamAV service is active, with persistent definitions, updater/signature-age health checks and confirmed complete-scan limits. Clean text, EICAR rejection, encrypted ZIP rejection and oversized stream rejection passed in production. Authenticated approved-format and failure/recovery journeys remain to be accepted. |
-| File scanning | A shared ClamAV INSTREAM adapter streams managed/operational bytes through the selected storage interface, with bounded limits and explicit verdicts. Production defaults to Disabled scanning; only Development may select trusted fixtures. A configured private daemon, current definitions, approved file kinds and hosted acceptance are required before clean-file workflows work. |
-| PSeq accounts receivable | POMS-owned Customer billing/tax/terms snapshots, immutable invoice/PDF issue at job completion, receipt/import/allocation, aging, adjustments, and independently approved reconciliation behind `NativePSeqAccountsReceivable`. QuickBooks remains legacy/non-PSeq context only. |
+| File scanning | A shared ClamAV INSTREAM adapter streams managed/operational bytes through the selected storage interface, with bounded limits and explicit verdicts. Disabled is the default option, distinct from the explicitly configured hosted-test ClamAV service; only Development may select trusted fixtures. A configured private daemon, current definitions, approved file kinds and hosted acceptance are required before clean-file workflows work. |
+| PSeq accounts receivable | POMS-owned Customer billing/tax/terms snapshots, immutable explicitly issued phase invoices/PDFs, receipt/import/allocation, aging, adjustments, and independently approved reconciliation behind `NativePSeqAccountsReceivable`. QuickBooks remains legacy/non-PSeq context only. |
 | Relationship CRM | Implemented first-party Companies, Contacts, Leads, Opportunities, pipelines, Activities, Tasks, reporting, administration, and controlled Company requests. CRM is standalone-first; HubSpot runtime integration is not implemented or required. See [CRM](plans/CRM-PLAN.md) and [standalone commercial lifecycle](plans/STANDALONE-COMMERCIAL-LIFECYCLE-PLAN.md). |
 | Email and notices | Portal invitations use durable Mailgun attempts plus signed, idempotent delivery/permanent-failure webhooks behind `InvitationDelivery`. Production rejects incomplete invitation Mailgun/sender, public URL or webhook-signing configuration. Website notices use their own transactional intent, leased attempts, bounded retries and administrator recovery with the configured Mailgun templates. Website provider acceptance is not inbox-delivery confirmation and does not consume invitation webhook events. |
 | Public Website API | Portal owns anonymous `/api/v1/web-ops` search, database ping, contact and order endpoints and `/public` documents. Public traffic/data cutover and old-runtime retirement are recorded as completed historical operations; the new durable Website notification schema and controls still require their own authorized target rollout. |
@@ -338,7 +351,7 @@ environments.
 | Website email processing control | Database-backed pause/resume state, version, actor, timestamp and required reason | Apply the control migration before the new API. The initial state is running (`IsPaused=false`); an administrator can pause durably across API instances/restarts. This is an operational control, not an environment secret or a substitute for rollout approval. |
 | `WebCrawlerSettings`, `WebSearchSettings`, and `ChronJobs:IndexWebsite` | Public-site crawl target, Lucene index path, and rebuild schedule | Durable writable index storage, successful initial crawl, monitoring, and representative search verified. |
 | `WebsitePreviewSearch` | Protected branch crawl target, dedicated Preview Lucene path, Vercel automation bypass, proxy key, and rebuild schedule | Disabled by default; when activated, secrets remain server-side, the index uses its dedicated volume, direct unauthenticated access is denied, and production search remains unchanged. |
-| `FileStorage` | Provider selection, private local root/persistent-volume acknowledgement, or S3 bucket/region/prefix and optional service settings | Local requires a private absolute directory outside application/public/source roots; Production additionally requires `LocalPersistentVolumeConfirmed=true`. Green deployments mount `/var/lib/phaeno-portal/files` persistently and preserve provider selection. No automatic byte migration. Disabled blocks file operations; S3 remains an optional later provider with independent credentials, protection, backup and acceptance requirements. |
+| `FileStorage` | Provider selection, private local root/persistent-volume acknowledgement, or S3 bucket/region/prefix and optional service settings | Local requires a private absolute directory outside application/public/source roots; Production additionally requires `LocalPersistentVolumeConfirmed=true`. Green deployments mount `/var/lib/phaeno-portal/files` persistently and preserve provider selection. No automatic byte migration. Disabled blocks file operations; S3 is active for local/hosted testing; commercial recovery/protection acceptance remains required. |
 | `FileScanning` | Disabled, ClamAv, or Development-only fixture provider; private daemon Host/Port, timeout and maximum streamed bytes | ClamAv requires a privately reachable service with current signatures and matching scan limits. Missing service, incomplete/error verdicts and timeouts remain unavailable. Never expose its unauthenticated TCP port publicly. Selecting storage does not select or activate scanning. |
 | `DataProvisioning` | Upload limit, synthetic policy, scanner, allowed kinds | Synthetic fixtures rejected; real file policy and trusted scanner approved. |
 | `OrderManagement` | Upload limit, scanner, allowed kinds | Trusted scanner and real Customer/Partner file policy approved. |
@@ -654,7 +667,7 @@ Until these gates are complete, a passing local build or test suite demonstrates
 
 - A general shared-folder and file-version product outside the feature-owned file boundaries.
 - A confidential Phaeno runbook delivery system; browser-bundled help must remain distributable.
-- Deployment and hosted acceptance of documentation search; additional external guide locales.
+- Further authenticated/cold-index recovery acceptance of the deployed documentation search; separately approved additional Customer guide locales.
 - Any external CRM integration until a fresh adapter plan is explicitly
   approved, implemented, and production-validated.
 - A third-party LIMS adapter and ownership cutover unless an approved future

@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { CrmCompanyFormDialog } from "./CrmCompanyFormDialog";
 import { toInput } from "./CrmCompaniesPage";
 import type { CrmCompany } from "#/api/crm";
-vi.mock('@tanstack/react-router', () => ({ useBlocker: vi.fn() }));
+vi.mock('@tanstack/react-router', () => ({ useRouterState: ({select}: {select: (state: {location: {search: Record<string, unknown>}}) => unknown}) => select({location: {search: {}}}), useBlocker: vi.fn() }));
 
 describe("CRM Company form", () => {
   it("protects a pending save against dismissal and repeated form submission", () => {

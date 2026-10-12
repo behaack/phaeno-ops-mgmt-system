@@ -1,3 +1,6 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
+import { NativeSelect } from '#/components/ui/native-select'
+import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRef, useState } from 'react'
@@ -156,6 +159,8 @@ export function LabServiceOfferingsPanel({
     resolver: zodResolver(offeringSchema),
     defaultValues: empty(),
   })
+  const { isDirty: __formDraftDirty } = form.formState
+
   const mutation = useMutation({
     mutationFn: (values: Values) =>
       editing?.availability && editing.item
@@ -197,7 +202,7 @@ export function LabServiceOfferingsPanel({
     },
   })
   useOrderDraftGuard(
-    Boolean(editing) && form.formState.isDirty,
+    Boolean(editing) && __formDraftDirty,
     mutation.isPending,
   )
   function open(item: LabServiceOffering | null, availability = false) {
@@ -209,11 +214,11 @@ export function LabServiceOfferingsPanel({
     })
     setEditing({ item, availability })
   }
-  function close() {
+  async function close() {
     if (
       !mutation.isPending &&
-      (!form.formState.isDirty ||
-        window.confirm('Discard the unsaved offering changes?'))
+      (!__formDraftDirty ||
+        (await confirmPortal('Discard the unsaved offering changes?')))
     )
       setEditing(null)
   }
@@ -284,28 +289,26 @@ export function LabServiceOfferingsPanel({
       <div className="flex items-start justify-between gap-3 border-b bg-muted/50 p-4">
         <div>
           <h2 id="lab-offerings-heading" className="font-heading text-base leading-snug font-medium">
-            Scientific definition
+            <CustomerSourceText source={"Scientific definition"} />
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Included analyses, supported sample types, outputs and turnaround.
-            Scope changes create a new version; accepted orders keep their
-            original terms.
+            <CustomerSourceText source={"Included analyses, supported sample types, outputs and turnaround.\r\n            Scope changes create a new version; accepted orders keep their\r\n            original terms."} />
           </p>
         </div>
-        {!offerings.isLoading && !offerings.error && versions.length === 0 ? <Button disabled={!apiEnabled} onClick={event => { actionRef.current = event.currentTarget; open(null) }}>Add definition</Button> : null}
+        {!offerings.isLoading && !offerings.error && versions.length === 0 ? <Button disabled={!apiEnabled} onClick={event => { actionRef.current = event.currentTarget; open(null) }}><CustomerSourceText source={"Add definition"} /></Button> : null}
       </div>
       {offerings.isLoading ? (
         <p role="status" className="mt-4">
-          Loading offerings…
+          <CustomerSourceText source={"Loading offerings…"} />
         </p>
       ) : null}
       {offerings.error ? (
         <Alert variant="destructive" className="mt-4">
-          <AlertTitle>Offerings could not be loaded</AlertTitle>
+          <AlertTitle><CustomerSourceText source={"Offerings could not be loaded"} /></AlertTitle>
           <AlertDescription>
-            {getOrderErrorMessage(offerings.error, 'Try again.')}{' '}
+            {<CustomerSourceText source={getOrderErrorMessage(offerings.error, 'Try again.')} />}{' '}
             <Button variant="outline" onClick={() => void offerings.refetch()}>
-              Retry offerings
+              <CustomerSourceText source={"Retry offerings"} />
             </Button>
           </AlertDescription>
         </Alert>
@@ -315,56 +318,56 @@ export function LabServiceOfferingsPanel({
           <article key={item.id} className="py-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h3 className="font-medium">
-                Version {item.offeringVersion} · {item.name}
+                <CustomerSourceText source={"Version"} /> {item.offeringVersion} · {item.name}
               </h3>
               <Badge variant="outline">
                 {item.isAvailable
-                  ? 'Available'
+                  ? <CustomerSourceText source={"Available"} />
                   : item.isActive
                     ? 'Not currently available'
                     : 'Inactive'}
               </Badge>
             </div>
             <p className="mt-1 text-sm">{item.description}</p>
-            <p className="mt-2 text-sm"><span className="font-medium">Included analyses:</span> {item.analysisIds.map(id => configuration.analyses.find(analysis => analysis.id === id)?.name ?? 'Unavailable analysis').join(', ')}</p>
-            <p className="mt-2 text-sm"><span className="font-medium">Supported sample types:</span> {item.supportedSampleTypes?.length ? item.supportedSampleTypes.map(type => `${type.name} · revision ${type.revision}${type.isAvailable ? '' : ' (not currently available)'}`).join('; ') : 'Review required — create a new version and explicitly select supported sample types. Existing accepted orders keep their scope.'}</p>
+            <p className="mt-2 text-sm"><span className="font-medium"><CustomerSourceText source={"Included analyses:"} /></span> {item.analysisIds.map(id => configuration.analyses.find(analysis => analysis.id === id)?.name ?? 'Unavailable analysis').join(', ')}</p>
+            <p className="mt-2 text-sm"><span className="font-medium"><CustomerSourceText source={"Supported sample types:"} /></span> {item.supportedSampleTypes?.length ? item.supportedSampleTypes.map(type => `${type.name} · revision ${type.revision}${type.isAvailable ? '' : ' (not currently available)'}`).join('; ') : <CustomerSourceText source={"Review required — create a new version and explicitly select supported sample types. Existing accepted orders keep their scope."} />}</p>
             <p className="mt-2 text-sm text-muted-foreground">
               {new Intl.NumberFormat('en-US', {
                 style: 'currency',
                 currency: item.currency,
               }).format(item.unitPrice)}{' '}
-              per specimen · new approval target {item.maximumTurnaroundDays} business days after all required tubes are received ·{' '}
+              <CustomerSourceText source={"per specimen · new approval target"} /> {item.maximumTurnaroundDays} <CustomerSourceText source={"business days after all required tubes are received ·"} />{' '}
               {item.catalogName}
             </p>
             <details className="mt-2 text-sm">
               <summary className="cursor-pointer font-medium">
-                Included scope and availability
+                <CustomerSourceText source={"Included scope and availability"} />
               </summary>
               <p className="mt-2 whitespace-pre-wrap">
                 {item.includedOutputContract}
               </p>
               <p className="mt-2">
-                Materials: {item.allowedMaterialTypes.join(', ')}. Sources:{' '}
+                <CustomerSourceText source={"Materials:"} /> {item.allowedMaterialTypes.join(', ')}<CustomerSourceText source={". Sources:"} />{' '}
                 {item.allowedBiologicalSources.join(', ')}.
               </p>
               <p className="mt-2">
-                Effective {item.effectiveFrom.slice(0, 10)}
+                <CustomerSourceText source={"Effective"} /> {item.effectiveFrom.slice(0, 10)}
                 {item.effectiveTo
                   ? ` through ${item.effectiveTo.slice(0, 10)}`
-                  : ', no end date'}
+                  : <CustomerSourceText source={", no end date"} />}
                 {item.isSynthetic
-                  ? ' · Test offering; unavailable for standard orders'
+                  ? <CustomerSourceText source={" · Test offering; unavailable for standard orders"} />
                   : ''}
                 .
               </p>
             </details>
-            <div className="mt-3 flex justify-end"><ActionMenu><DropdownMenuTrigger asChild><Button variant="outline" size="sm" disabled={!apiEnabled} onPointerDown={event => { actionRef.current = event.currentTarget }} onFocus={event => { actionRef.current = event.currentTarget }}>Actions <ChevronDown className="size-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-52"><DropdownMenuItem onSelect={() => open(item, true)}>Edit availability</DropdownMenuItem><DropdownMenuItem disabled={versions.some(version => version.familyId === item.familyId && version.offeringVersion > item.offeringVersion)} onSelect={() => open(item)}>Create new version</DropdownMenuItem></DropdownMenuContent></ActionMenu></div>
+            <div className="mt-3 flex justify-end"><ActionMenu><DropdownMenuTrigger asChild><Button variant="outline" size="sm" disabled={!apiEnabled} onPointerDown={event => { actionRef.current = event.currentTarget }} onFocus={event => { actionRef.current = event.currentTarget }}><CustomerSourceText source={"Actions"} /> <ChevronDown className="size-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-52"><DropdownMenuItem onSelect={() => open(item, true)}><CustomerSourceText source={"Edit availability"} /></DropdownMenuItem><DropdownMenuItem disabled={versions.some(version => version.familyId === item.familyId && version.offeringVersion > item.offeringVersion)} onSelect={() => open(item)}><CustomerSourceText source={"Create new version"} /></DropdownMenuItem></DropdownMenuContent></ActionMenu></div>
           </article>
         ))}
       </div>
       {!offerings.isLoading && !offerings.error && !versions.length ? (
         <p className="p-5 text-sm text-muted-foreground">
-          No scientific definition is configured for this service. Manual pricing remains available.
+          <CustomerSourceText source={"No scientific definition is configured for this service. Manual pricing remains available."} />
         </p>
       ) : null}
       <Dialog
@@ -381,26 +384,26 @@ export function LabServiceOfferingsPanel({
           <DialogHeader>
             <DialogTitle>
               {editing?.availability
-                ? 'Edit definition availability'
+                ? <CustomerSourceText source={"Edit definition availability"} />
                 : editing?.item
                   ? 'Create scientific version'
                   : 'Add scientific definition'}
             </DialogTitle>
             <DialogDescription>
               {editing?.availability
-                ? 'Update when this version can be selected. Existing orders keep their accepted terms.'
-                : 'The Service catalog supplies the price. Define the scientific scope and turnaround included for each specimen.'}
+                ? <CustomerSourceText source={"Update when this version can be selected. Existing orders keep their accepted terms."} />
+                : <CustomerSourceText source={"The Service catalog supplies the price. Define the scientific scope and turnaround included for each specimen."} />}
             </DialogDescription>
           </DialogHeader>
           {mutation.error ? (
             <Alert variant="destructive">
-              <AlertTitle>Scientific definition was not saved</AlertTitle>
+              <AlertTitle><CustomerSourceText source={"Scientific definition was not saved"} /></AlertTitle>
               <AlertDescription>
-                {getOrderErrorMessage(
+                {<CustomerSourceText source={getOrderErrorMessage(
                   mutation.error,
                   'Review the values and try again.',
-                )}{' '}
-                Latest saved values have been refreshed where available; your edits remain. Review them before saving again.
+                )} />}{' '}
+                <CustomerSourceText source={"Latest saved values have been refreshed where available; your edits remain. Review them before saving again."} />
               </AlertDescription>
             </Alert>
           ) : null}
@@ -417,16 +420,16 @@ export function LabServiceOfferingsPanel({
                   <div>
                     <Label htmlFor="offering-catalog">
                       <RequiredFieldName>
-                        Service catalog item
+                        <CustomerSourceText source={"Service catalog item"} />
                       </RequiredFieldName>
                     </Label>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      This definition belongs to the service shown here. Maintain its price on the service item.
+                      <CustomerSourceText source={"This definition belongs to the service shown here. Maintain its price on the service item."} />
                     </p>
-                    <select
+                    <NativeSelect
                       id="offering-catalog"
                       disabled
-                      className="mt-2 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                      className="mt-2 w-full rounded-md border border-input bg-background px-3 text-sm"
                       {...form.register('catalogItemId')}
                     >
                       {configuration.catalogItems
@@ -436,22 +439,21 @@ export function LabServiceOfferingsPanel({
                         )
                         .map((item) => (
                           <option key={item.id} value={item.id}>
-                            {item.name} · {item.currency} {item.basePrice} /
-                            specimen
+                            {item.name} · {item.currency} {item.basePrice} <CustomerSourceText source={"/\r\n                            specimen"} />
                           </option>
                         ))}
-                    </select>
+                    </NativeSelect>
                     {error('catalogItemId')}
                     {selectedCatalog ? (
                       <p className="mt-2 text-sm">
-                        Current base price: {selectedCatalog.currency}{' '}
-                        {selectedCatalog.basePrice} per specimen.
+                        <CustomerSourceText source={"Current base price:"} /> {selectedCatalog.currency}{' '}
+                        {selectedCatalog.basePrice} <CustomerSourceText source={"per specimen."} />
                       </p>
                     ) : null}
                   </div>
                   <fieldset>
                     <legend className="text-sm font-medium">
-                      <RequiredFieldName>Included analyses</RequiredFieldName>
+                      <RequiredFieldName><CustomerSourceText source={"Included analyses"} /></RequiredFieldName>
                     </legend>
                     <div className="mt-2 space-y-2">
                       {configuration.analyses
@@ -475,18 +477,18 @@ export function LabServiceOfferingsPanel({
                                 )
                               }
                             />
-                            {item.name}{!item.isActive || item.isSynthetic ? ' (not available for new orders)' : ''}
+                            {item.name}{!item.isActive || item.isSynthetic ? <CustomerSourceText source={" (not available for new orders)"} /> : ''}
                           </label>
                         ))}
                     </div>
-                    {!configuration.analyses.some(item => item.isActive && !item.isSynthetic) ? <p className="mt-2 text-sm">Create or activate an approved analysis in Order settings → Analyses before activating this service definition.</p> : null}
+                    {!configuration.analyses.some(item => item.isActive && !item.isSynthetic) ? <p className="mt-2 text-sm"><CustomerSourceText source={"Create or activate an approved analysis in Order settings → Analyses before activating this service definition."} /></p> : null}
                     {error('analysisIds')}
                   </fieldset>
-                  <fieldset><legend className="text-sm font-medium"><RequiredFieldName>Supported sample types</RequiredFieldName></legend><p className="mt-1 text-sm text-muted-foreground">Select the exact approved revisions. PSeq ordering currently requires one extracted-RNA tube type; other materials do not enable new intake workflows.</p>
-                    {samples.isLoading ? <p role="status">Loading sample types…</p> : null}
-                    {samples.error ? <p role="alert">Sample types could not be loaded. <Button variant="outline" onClick={() => void samples.refetch()} type="button">Retry</Button></p> : null}
-                    <div className="mt-2 space-y-2">{(samples.data?.sampleTypes ?? []).filter(type => type.isActive || selectedSampleTypes.includes(type.id)).map(type => <label key={type.id} className="flex cursor-pointer items-start gap-2 text-sm"><Checkbox checked={selectedSampleTypes.includes(type.id)} onCheckedChange={checked => form.setValue('supportedSampleTypeIds', checked ? [...selectedSampleTypes, type.id] : selectedSampleTypes.filter(id => id !== type.id), { shouldDirty: true, shouldValidate: true })} />{type.name} · revision {type.revision} · {type.materialClass}{type.isActive ? '' : ' (inactive)'}</label>)}</div>
-                    {samples.data && samples.data.sampleTypes.length === 0 ? <p className="mt-2 text-sm">Create a shared sample-type definition in Order settings → Sample types first.</p> : null}
+                  <fieldset><legend className="text-sm font-medium"><RequiredFieldName><CustomerSourceText source={"Supported sample types"} /></RequiredFieldName></legend><p className="mt-1 text-sm text-muted-foreground"><CustomerSourceText source={"Select the exact approved revisions. PSeq ordering currently requires one extracted-RNA tube type; other materials do not enable new intake workflows."} /></p>
+                    {samples.isLoading ? <p role="status"><CustomerSourceText source={"Loading sample types…"} /></p> : null}
+                    {samples.error ? <p role="alert"><CustomerSourceText source={"Sample types could not be loaded."} /> <Button variant="outline" onClick={() => void samples.refetch()} type="button"><CustomerSourceText source={"Retry"} /></Button></p> : null}
+                    <div className="mt-2 space-y-2">{(samples.data?.sampleTypes ?? []).filter(type => type.isActive || selectedSampleTypes.includes(type.id)).map(type => <label key={type.id} className="flex cursor-pointer items-start gap-2 text-sm"><Checkbox checked={selectedSampleTypes.includes(type.id)} onCheckedChange={checked => form.setValue('supportedSampleTypeIds', checked ? [...selectedSampleTypes, type.id] : selectedSampleTypes.filter(id => id !== type.id), { shouldDirty: true, shouldValidate: true })} />{type.name} <CustomerSourceText source={"· revision"} /> {type.revision} · {type.materialClass}{type.isActive ? '' : <CustomerSourceText source={" (inactive)"} />}</label>)}</div>
+                    {samples.data && samples.data.sampleTypes.length === 0 ? <p className="mt-2 text-sm"><CustomerSourceText source={"Create a shared sample-type definition in Order settings → Sample types first."} /></p> : null}
                     {error('supportedSampleTypeIds')}
                   </fieldset>
                   {field(
@@ -502,11 +504,11 @@ export function LabServiceOfferingsPanel({
                     true,
                   )}
                   <div>
-                    <Label htmlFor="offering-maximumTurnaroundDays"><RequiredFieldName>Delivery target (business days)</RequiredFieldName></Label>
+                    <Label htmlFor="offering-maximumTurnaroundDays"><RequiredFieldName><CustomerSourceText source={"Delivery target (business days)"} /></RequiredFieldName></Label>
                     <Input id="offering-maximumTurnaroundDays" className="mt-2 max-w-40" type="number" min={1} max={365} step={1}
                       {...form.register('maximumTurnaroundDays', { onChange: event => form.setValue('minimumTurnaroundDays', Number(event.target.value), { shouldValidate: true }) })} />
                     <input type="hidden" {...form.register('minimumTurnaroundDays')} />
-                    <p className="mt-1 text-xs text-muted-foreground">Starts after Phaeno receives all required physical tubes for the Job. Monday–Friday, excluding Phaeno holidays.</p>
+                    <p className="mt-1 text-xs text-muted-foreground"><CustomerSourceText source={"Starts after Phaeno receives all required physical tubes for the Job. Monday–Friday, excluding Phaeno holidays."} /></p>
                     {error('maximumTurnaroundDays')}
                   </div>
                   <label
@@ -522,14 +524,14 @@ export function LabServiceOfferingsPanel({
                         })
                       }
                     />
-                    Test offering (not available for standard placement)
+                    <CustomerSourceText source={"Test offering (not available for standard placement)"} />
                   </label>
                 </>
               ) : null}
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <Label htmlFor="offering-start">
-                    <RequiredFieldName>Effective from</RequiredFieldName>
+                    <RequiredFieldName><CustomerSourceText source={"Effective from"} /></RequiredFieldName>
                   </Label>
                   <Input
                     id="offering-start"
@@ -541,7 +543,7 @@ export function LabServiceOfferingsPanel({
                 </div>
                 <div>
                   <Label htmlFor="offering-end">
-                    Effective through (optional)
+                    <CustomerSourceText source={"Effective through (optional)"} />
                   </Label>
                   <Input
                     id="offering-end"
@@ -565,7 +567,7 @@ export function LabServiceOfferingsPanel({
                     })
                   }
                 />
-                Active
+                <CustomerSourceText source={"Active"} />
               </label>
             </fieldset>
           </form>
@@ -576,15 +578,15 @@ export function LabServiceOfferingsPanel({
               disabled={mutation.isPending}
               onClick={close}
             >
-              Cancel
+              <CustomerSourceText source={"Cancel"} />
             </Button>
             <Button
               type="submit"
               form="lab-offering-form"
-              disabled={mutation.isPending || !apiEnabled || Boolean(editing?.availability && !form.formState.isDirty) || (!editing?.availability && !samples.data)}
+              disabled={mutation.isPending || !apiEnabled || Boolean(editing?.availability && !__formDraftDirty) || (!editing?.availability && !samples.data)}
             >
               {mutation.isPending
-                ? 'Saving…'
+                ? <CustomerSourceText source={"Saving…"} />
                 : editing?.availability
                   ? 'Save availability'
                   : editing?.item

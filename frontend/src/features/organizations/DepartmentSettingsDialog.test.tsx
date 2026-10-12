@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '#/test-helpers/render-portal'
 import { afterEach, expect, it, vi } from 'vitest'
 import { DepartmentSettingsDialog } from './DepartmentSettingsDialog'
 import { type Department } from '#/api/organization-management'

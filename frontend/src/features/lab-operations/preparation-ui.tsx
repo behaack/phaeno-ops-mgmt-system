@@ -1,3 +1,4 @@
+import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Controller, useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -38,7 +39,9 @@ export function PreparationFormDialog({ title, description, fields, onClose, onS
     if (field.options && values[field.key] && !field.options.some(o => o.value === values[field.key])) ctx.addIssue({ code: 'custom', path: [field.key], message: 'Choose an available option.' })
   }))
   const form = useForm<Record<string, string>>({ resolver: zodResolver(schema), defaultValues: Object.fromEntries(fields.map(f => [f.key, f.defaultValue ?? ''])) })
-  return <Dialog open={!suspended} onOpenChange={open => { if (!open && !pending) onClose() }}><DialogContent onOpenAutoFocus={event => { if (initialFocus === 'cancel') { event.preventDefault(); cancelRef.current?.focus() } }}><form className="contents" onSubmit={form.handleSubmit(onSubmit)} noValidate>
+  const __modalGuard = useModalDraftGuard(form.formState.isDirty, form.formState.isSubmitting)
+
+  return <Dialog open={!suspended} onOpenChange={open => { if (open) (open => { if (!open && !pending) onClose() })(open); else void __modalGuard.close(() => (open => { if (!open && !pending) onClose() })(false)) }}><DialogContent onOpenAutoFocus={event => { if (initialFocus === 'cancel') { event.preventDefault(); cancelRef.current?.focus() } }}><form className="contents" onSubmit={form.handleSubmit(onSubmit)} noValidate>
     <DialogHeader><DialogTitle>{title}</DialogTitle><DialogDescription>{description}</DialogDescription></DialogHeader>
     <div className="space-y-4">{children}{error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
       {fields.map(field => field.type === 'checkbox' ? <div key={field.key} className="space-y-1.5">
@@ -55,7 +58,7 @@ export function PreparationFormDialog({ title, description, fields, onClose, onS
           : <Input id={`prep-${field.key}`} {...operationalInputProps} type={field.type ?? 'text'} step={field.type === 'number' ? 'any' : undefined} maxLength={field.maxLength} {...form.register(field.key)} />}
       </PreparationField>)}
     </div>
-    <RequiredDialogFooter showLegend={fields.some(field => field.required)}><Button ref={cancelRef} type="button" variant="outline" disabled={pending} onClick={onClose}>Cancel</Button><Button disabled={pending} type="submit">{pending ? 'Saving…' : submitLabel}</Button></RequiredDialogFooter>
+    <RequiredDialogFooter showLegend={fields.some(field => field.required)}><Button ref={cancelRef} type="button" variant="outline" disabled={pending} onClick={() => { void __modalGuard.close(() => (onClose)()) }}>Cancel</Button><Button disabled={pending} type="submit">{pending ? 'Saving…' : submitLabel}</Button></RequiredDialogFooter>
   </form></DialogContent></Dialog>
 }
 

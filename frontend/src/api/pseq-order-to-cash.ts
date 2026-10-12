@@ -1,3 +1,5 @@
+import { requireRecordPage } from './record-page'
+import type { PagedResult } from './order-management'
 import type { AxiosRequestConfig } from 'axios'
 
 import { api } from './client'
@@ -217,11 +219,10 @@ export async function createStagedPSeqOrder(input: {
   return postJson<LabServiceOrder>('/platform/pseq-staging/orders', input)
 }
 
-export async function listOperationalAttention(category?: string) {
-  return getJson<OperationalAttention[]>('/platform/operational-attention', {
-    params: { category: category || undefined },
-  })
+export async function listAttentionPage(category?: string, page = 1, attentionId?: string, attentionSource?: string, sourceId?: string) {
+  return requireRecordPage(await getJson<PagedResult<OperationalAttention>>('/platform/operational-attention', { params: { category, page, attentionId, attentionSource, sourceId } }))
 }
+export async function listOperationalAttention(category?: string) { return (await listAttentionPage(category)).items }
 
 export async function assignOperationalAttention(
   id: string,
@@ -245,11 +246,8 @@ export async function resolveOperationalAttention(
   )
 }
 
-export async function listResultPackages(state?: string) {
-  return getJson<ResultPackage[]>('/platform/pseq-result-packages', {
-    params: { state: state || undefined },
-  })
-}
+export async function listResultPackagePage(state?: string, page = 1) { return requireRecordPage(await getJson<PagedResult<ResultPackage>>('/platform/pseq-result-packages', { params: { state, page } })) }
+export async function listResultPackages(state?: string) { return (await listResultPackagePage(state)).items }
 
 export async function getResultPackage(id: string) {
   return getJson<ResultPackage>(`/platform/pseq-result-packages/${id}`)
@@ -306,11 +304,10 @@ export async function downloadCustomerResultArtifact(
   URL.revokeObjectURL(url)
 }
 
-export async function listInvoices(openOnly = false, invoiceId?: string, organizationId?: string) {
-  return getJson<InvoiceReceivable[]>('/platform/accounts-receivable/invoices', {
-    params: { openOnly, invoiceId, organizationId },
-  })
+export async function listInvoicePage(openOnly = false, invoiceId?: string, organizationId?: string, page = 1, search = '') {
+  return requireRecordPage(await getJson<PagedResult<InvoiceReceivable>>('/platform/accounts-receivable/invoices', { params: { openOnly, invoiceId, organizationId, page, search } }))
 }
+export async function listInvoices(openOnly = false, invoiceId?: string, organizationId?: string) { return (await listInvoicePage(openOnly, invoiceId, organizationId)).items }
 
 export async function listAccountsReceivableCustomers() {
   return getJson<AccountsReceivableCustomer[]>(
@@ -369,11 +366,10 @@ export async function getAgingSummary() {
   return getJson<AgingSummary>('/platform/accounts-receivable/aging')
 }
 
-export async function listPaymentReceipts(unappliedOnly = false, receiptId?: string, organizationId?: string) {
-  return getJson<PaymentReceipt[]>('/platform/accounts-receivable/receipts', {
-    params: { unappliedOnly, receiptId, organizationId },
-  })
+export async function listReceiptPage(unappliedOnly = false, receiptId?: string, organizationId?: string, page = 1, search = '', eligibleOnly = false) {
+  return requireRecordPage(await getJson<PagedResult<PaymentReceipt>>('/platform/accounts-receivable/receipts', { params: { unappliedOnly, receiptId, organizationId, page, search, eligibleOnly } }))
 }
+export async function listPaymentReceipts(unappliedOnly = false, receiptId?: string, organizationId?: string) { return (await listReceiptPage(unappliedOnly, receiptId, organizationId)).items }
 
 export async function recordPaymentReceipt(input: {
   organizationId: string
@@ -493,11 +489,8 @@ export async function confirmPaymentImport(id: string, version: number) {
   )
 }
 
-export async function listReconciliations(batchId?: string) {
-  return getJson<ReconciliationBatch[]>(
-    '/platform/accounts-receivable/reconciliations', { params: { batchId } },
-  )
-}
+export async function listReconciliationPage(batchId?: string, page = 1) { return requireRecordPage(await getJson<PagedResult<ReconciliationBatch>>('/platform/accounts-receivable/reconciliations', { params: { batchId, page } })) }
+export async function listReconciliations(batchId?: string) { return (await listReconciliationPage(batchId)).items }
 
 export async function createReconciliation(input: {
   periodEnd: string

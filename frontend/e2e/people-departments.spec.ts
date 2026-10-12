@@ -93,7 +93,7 @@ test('department edit validates, preserves entries on conflict, restores focus, 
   await page.getByRole('button', { name: 'Add department' }).click()
   await page.getByLabel('Name', { exact: false }).fill('Unsaved')
   await page.keyboard.press('Escape')
-  await expect(page.getByText('Discard your unsaved department changes?')).toBeVisible()
+  await expect(page.getByRole('dialog',{name:'Discard unsaved changes?'})).toBeVisible()
   await page.getByRole('button', { name: 'Discard changes' }).click()
   await expect(page.getByRole('button', { name: 'Add department' })).toBeFocused()
   await expect(page.locator('vite-error-overlay')).toHaveCount(0)

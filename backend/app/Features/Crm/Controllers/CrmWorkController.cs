@@ -93,11 +93,12 @@ public sealed class CrmWorkController(PSeqOperationsDbContext dbContext, IExtern
     }
 
     [HttpGet("tasks")]
-    public async Task<CrmPageDto<CrmTaskDto>> Tasks([FromQuery] CrmTaskStatus? status, [FromQuery] Guid? ownerUserId, [FromQuery] Guid? companyId, [FromQuery] Guid? contactId, [FromQuery] Guid? leadId, [FromQuery] Guid? opportunityId, [FromQuery] bool overdueOnly = false, [FromQuery] int page = 1, [FromQuery] int pageSize = 50, CancellationToken cancellationToken = default, [FromQuery] string? search = null, [FromQuery] bool dueSoonOnly = false)
+    public async Task<CrmPageDto<CrmTaskDto>> Tasks([FromQuery] CrmTaskStatus? status, [FromQuery] Guid? ownerUserId, [FromQuery] Guid? companyId, [FromQuery] Guid? contactId, [FromQuery] Guid? leadId, [FromQuery] Guid? opportunityId, [FromQuery] bool overdueOnly = false, [FromQuery] int page = 1, [FromQuery] int pageSize = 50, CancellationToken cancellationToken = default, [FromQuery] string? search = null, [FromQuery] bool dueSoonOnly = false, [FromQuery] Guid? taskId = null)
     {
         await RequireActor(cancellationToken);
         EnsurePagination(page, pageSize);
         var query = TaskQuery().Where(value => value.IsActive);
+        if (taskId.HasValue) query = query.Where(value => value.Id == taskId);
         if (!string.IsNullOrWhiteSpace(search))
         {
             var term = search.Trim().ToLower();
@@ -112,7 +113,7 @@ public sealed class CrmWorkController(PSeqOperationsDbContext dbContext, IExtern
         query = CrmAttentionFilters.Tasks(query, overdueOnly, dueSoonOnly, DateTime.UtcNow);
 
         var total = await query.CountAsync(cancellationToken);
-        var values = await query.OrderBy(value => value.Status == CrmTaskStatus.Completed || value.Status == CrmTaskStatus.Cancelled).ThenBy(value => value.DueAt).ThenByDescending(value => value.Priority)
+        var values = await query.OrderBy(value => value.Status == CrmTaskStatus.Completed || value.Status == CrmTaskStatus.Cancelled).ThenBy(value => value.DueAt).ThenByDescending(value => value.Priority).ThenBy(value => value.Id)
             .Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
         return new CrmPageDto<CrmTaskDto> { Items = values.Select(value => ToDto(value)).ToList(), Page = page, PageSize = pageSize, TotalCount = total };
     }

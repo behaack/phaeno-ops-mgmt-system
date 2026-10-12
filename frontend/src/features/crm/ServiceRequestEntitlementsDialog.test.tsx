@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '#/test-helpers/render-portal'
 import { describe, expect, it, vi } from 'vitest'
 import type { RelationshipRequest, ServiceEntitlement } from '#/api/organization-management'
 import { ServiceRequestEntitlementsDialog } from './ServiceRequestEntitlementsDialog'

@@ -1,8 +1,9 @@
+import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
+import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useBlocker } from '@tanstack/react-router'
 import axios from 'axios'
-import { ChevronDown } from 'lucide-react'
 import { useRef, useState, type ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -12,7 +13,7 @@ import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '#/components/ui/dialog'
-import { ActionMenu as DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
+
 import { FieldError } from '#/components/ui/field'
 import { Label } from '#/components/ui/label'
 import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/required-field'
@@ -92,11 +93,11 @@ export function LabExecutionWorkspace({ data, returnLink, reviewTubesLink, speci
     {returnLink}
     <header className="flex flex-wrap items-start justify-between gap-4">
       <div className="min-w-0"><h1 ref={heading} tabIndex={-1} className="text-2xl font-semibold break-words">{data.protocolName}</h1><p className="mt-2 text-sm text-muted-foreground">Protocol version {data.protocolVersion}{data.accessionNumber ? ` · Specimen ${data.accessionNumber}` : ' · Job-level execution'}</p><Badge variant="outline" className="mt-2">{data.execution.status === 'InProgress' ? 'In progress' : data.execution.status}</Badge></div>
-      {data.canAbandon || data.canOperate && (active || data.execution.status === 'Planned') ? <DropdownMenu><DropdownMenuTrigger asChild><Button ref={actionTrigger} variant="outline" disabled={pending}>Actions <ChevronDown aria-hidden="true" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-max min-w-40">
+      {data.canAbandon || data.canOperate && (active || data.execution.status === 'Planned') ? <ActionMenu><DropdownMenuTrigger asChild><Button ref={actionTrigger} variant="outline" disabled={pending}>Actions </Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-max min-w-40">
         {data.canOperate && data.execution.status === 'Planned' ? <DropdownMenuItem disabled={pending || data.tubeAcceptanceRequired || data.sourceSelectionRequired} onSelect={() => { if (data.attemptId) { trigger.current = actionTrigger.current; setConfirmStart(true) } else void onTransition('start').catch(() => {}) }}>Start execution</DropdownMenuItem> : null}
         {data.canOperate && active ? <DropdownMenuItem disabled={pending || data.completionBlockers.length > 0} onSelect={() => openFinish('complete')}>Complete execution</DropdownMenuItem> : null}
         {data.canAbandon ? <DropdownMenuItem disabled={pending} onSelect={() => openFinish('abandon')}>Abandon execution</DropdownMenuItem> : null}
-      </DropdownMenuContent></DropdownMenu> : null}
+      </DropdownMenuContent></ActionMenu> : null}
     </header>
     {data.execution.status === 'Planned' && data.tubeAcceptanceRequired ? <Alert><AlertTitle>Tube acceptance required</AlertTitle><AlertDescription><p id="tube-acceptance-message">At least one available tube for this specimen must be Accepted before processing can start. Complete tube intake during accessioning. Open Tubes to see the recorded decisions.</p><div className="mt-3">{reviewTubesLink}</div></AlertDescription></Alert> : null}
     {data.attemptId ? <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-muted/30 p-3 text-sm"><p>Attempt {data.attemptNumber} · Source {data.sourceBarcode} · {data.attemptState}</p>{specimenLink}</div> : data.sourceSelectionRequired ? <Alert><AlertTitle>Source tube selection required</AlertTitle><AlertDescription><p>Open the specimen to confirm its tube-use instruction and select the source. This Planned execution will be retained.</p><div className="mt-3">{specimenLink}</div></AlertDescription></Alert> : null}
@@ -126,7 +127,7 @@ export function LabExecutionWorkspace({ data, returnLink, reviewTubesLink, speci
             {active && step.actionBlocker ? <p className="text-xs text-muted-foreground">{step.actionBlocker}</p> : null}
             <div className="flex flex-wrap gap-2">
               {step.canRecord ? <Button size="sm" disabled={pending} onClick={() => open(def.key, 'record')}>{def.name === 'Record simulated library preparation and traceability' ? 'Record preparation and traceability' : /^record\b/i.test(def.name) ? def.name : `Record ${def.name}`}</Button> : null}
-              {step.canRepeat && step.canCorrect ? <DropdownMenu><DropdownMenuTrigger asChild><Button id={`step-actions-${def.key}`} size="sm" variant="outline" disabled={pending} aria-label={`Actions for ${def.name}`}>Actions <ChevronDown /></Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-max min-w-48 max-w-[calc(100vw-2rem)]"><DropdownMenuItem onSelect={() => open(def.key, 'repeat', document.getElementById(`step-actions-${def.key}`))}>Repeat {def.name}</DropdownMenuItem><DropdownMenuItem onSelect={() => open(def.key, 'correct', document.getElementById(`step-actions-${def.key}`))}>Correct {def.name}</DropdownMenuItem></DropdownMenuContent></DropdownMenu> : step.canRepeat ? <Button size="sm" variant="outline" disabled={pending} onClick={() => open(def.key, 'repeat')}>Repeat {def.name}</Button> : step.canCorrect ? <Button size="sm" variant="outline" disabled={pending} onClick={() => open(def.key, 'correct')}>Correct {def.name}</Button> : null}
+              {step.canRepeat && step.canCorrect ? <ActionMenu><DropdownMenuTrigger asChild><Button id={`step-actions-${def.key}`} size="sm" variant="outline" disabled={pending} aria-label={`Actions for ${def.name}`}>Actions </Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-max min-w-48 max-w-[calc(100vw-2rem)]"><DropdownMenuItem onSelect={() => open(def.key, 'repeat', document.getElementById(`step-actions-${def.key}`))}>Repeat {def.name}</DropdownMenuItem><DropdownMenuItem onSelect={() => open(def.key, 'correct', document.getElementById(`step-actions-${def.key}`))}>Correct {def.name}</DropdownMenuItem></DropdownMenuContent></ActionMenu> : step.canRepeat ? <Button size="sm" variant="outline" disabled={pending} onClick={() => open(def.key, 'repeat')}>Repeat {def.name}</Button> : step.canCorrect ? <Button size="sm" variant="outline" disabled={pending} onClick={() => open(def.key, 'correct')}>Correct {def.name}</Button> : null}
             </div>
             {step.records.length > 0 ? <details className="text-sm"><summary className="cursor-pointer font-medium">Step history ({step.records.length})</summary><ol className="mt-3 space-y-3 border-l pl-4">{step.records.map((record, recordIndex) => <li key={record.id} className="space-y-1 break-words"><p className="font-medium">{recordIndex + 1}. {record.action} · {record.outcome}{record.qcOutcome ? ` · QC ${record.qcOutcome}` : ''}</p>{def.captures.filter(capture => record.captures[capture.key] !== undefined).map(capture => <p key={capture.key}>{capture.label}: {String(record.captures[capture.key])}{capture.unit ? ` ${capture.unit}` : ''}</p>)}{record.reason ? <p className="whitespace-pre-wrap">{record.reason}</p> : null}{record.operatorConfirmed ? <p>Step confirmation recorded.</p> : null}{record.resourcesConfirmed ? <p>Resource traceability confirmed.</p> : null}<StepPerformanceEvidence record={record} people={recorders} /></li>)}</ol></details> : null}
           </li>
@@ -146,11 +147,13 @@ function ExecutionFinishDialog({ action, name, pending, error, onClose, onSave, 
 }) {
   const abandon = action === 'abandon'
   const form = useForm<{ note: string }>({ resolver: zodResolver(z.object({ note: z.string().trim().max(4000).min(abandon ? 1 : 0, 'Enter the reason for abandoning this execution.') })), defaultValues: { note: '' }, mode: 'onBlur' })
+  const { isDirty: __formDraftDirty } = form.formState
+
   useBlocker({
-    shouldBlockFn: () => pending || form.formState.isDirty && !window.confirm('Discard the unsaved note?'),
-    enableBeforeUnload: () => form.formState.isDirty || pending,
+    shouldBlockFn: async () => pending || __formDraftDirty && !(await confirmPortal('Discard the unsaved note?')),
+    enableBeforeUnload: () => __formDraftDirty || pending,
   })
-  const close = () => { if (!pending && (!form.formState.isDirty || window.confirm('Discard the unsaved note?'))) onClose() }
+  const close = async () => { if (!pending && (!__formDraftDirty || (await confirmPortal('Discard the unsaved note?')))) onClose() }
   return <Dialog open onOpenChange={open => { if (!open) close() }}><DialogContent onCloseAutoFocus={event => { event.preventDefault(); onReturnFocus() }}><DialogHeader><DialogTitle>{abandon ? 'Abandon' : 'Complete'} {name}?</DialogTitle><DialogDescription>{abandon ? 'This stops the execution and retains every recorded step. Record a reason; further work requires a new execution.' : 'The server will check the saved step evidence and QC. Completion locks the execution and preserves its history.'}</DialogDescription></DialogHeader>{error ? <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert> : null}<form id="finish-execution" noValidate onSubmit={form.handleSubmit(async values => { try { await onSave(values.note) } catch { /* Keep entered values and show API feedback. */ } })}><Label htmlFor="finish-note">{abandon ? <RequiredFieldName>Reason</RequiredFieldName> : 'Deviation note (optional)'}</Label><Textarea className="mt-1.5" id="finish-note" rows={4} maxLength={4000} aria-invalid={Boolean(form.formState.errors.note)} {...form.register('note')} /><FieldError>{form.formState.errors.note?.message}</FieldError></form><RequiredDialogFooter showLegend={abandon}><Button variant="outline" onClick={close} disabled={pending}>Cancel</Button><Button type="submit" form="finish-execution" variant={abandon ? 'destructive' : 'default'} disabled={pending}>{pending ? 'Saving…' : abandon ? 'Abandon execution' : 'Confirm completion'}</Button></RequiredDialogFooter></DialogContent></Dialog>
 }
 
@@ -158,7 +161,9 @@ function formatTime(value: string | null) { return value ? new Date(value).toLoc
 
 function ExecutionStartDialog({ barcode, pending, error, onClose, onSave, onReturnFocus }: { barcode: string; pending: boolean; error?: string; onClose: () => void; onSave: (barcode: string) => Promise<void>; onReturnFocus: () => void }) {
   const form = useForm<{ barcode: string }>({ resolver: zodResolver(z.object({ barcode: z.string().trim().refine(value => value === barcode, 'Scan the selected source tube.') })), defaultValues: { barcode: '' }, mode: 'onBlur' })
-  useBlocker({ shouldBlockFn: () => pending || form.formState.isDirty && !window.confirm('Discard the scanned barcode?'), enableBeforeUnload: () => form.formState.isDirty || pending })
-  const close = () => { if (!pending && (!form.formState.isDirty || window.confirm('Discard the scanned barcode?'))) onClose() }
+  const { isDirty: __formDraftDirty } = form.formState
+
+  useBlocker({ shouldBlockFn: async () => pending || __formDraftDirty && !(await confirmPortal('Discard the scanned barcode?')), enableBeforeUnload: () => __formDraftDirty || pending })
+  const close = async () => { if (!pending && (!__formDraftDirty || (await confirmPortal('Discard the scanned barcode?')))) onClose() }
   return <Dialog open onOpenChange={open => !open && close()}><DialogContent onCloseAutoFocus={event => { event.preventDefault(); onReturnFocus() }}><DialogHeader><DialogTitle>Confirm source and start</DialogTitle><DialogDescription>Selected source: {barcode}. Scan this tube before starting the pinned protocol.</DialogDescription></DialogHeader>{error ? <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert> : null}<form id="start-attempt-execution" onSubmit={form.handleSubmit(async values => { try { await onSave(values.barcode) } catch { /* Keep the barcode and display server feedback. */ } })}><Label htmlFor="execution-source"><RequiredFieldName>Scan source barcode</RequiredFieldName></Label><input id="execution-source" className="mt-1.5 h-9 w-full rounded-lg border bg-background px-3 text-sm" aria-invalid={Boolean(form.formState.errors.barcode)} {...form.register('barcode')} /><FieldError>{form.formState.errors.barcode?.message}</FieldError></form><RequiredDialogFooter><Button variant="outline" disabled={pending} onClick={close}>Cancel</Button><Button type="submit" form="start-attempt-execution" disabled={pending}>{pending ? 'Starting…' : 'Start execution'}</Button></RequiredDialogFooter></DialogContent></Dialog>
 }

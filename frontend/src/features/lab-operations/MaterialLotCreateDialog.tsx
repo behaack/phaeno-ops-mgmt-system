@@ -1,3 +1,5 @@
+import { NativeSelect } from '#/components/ui/native-select'
+import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { useLotProducts } from '#/api/lab-materials'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Plus, Trash2 } from 'lucide-react'
@@ -146,6 +148,8 @@ export function MaterialLotCreateDialog({
     defaultValues,
     mode: 'onBlur',
   })
+  const __modalGuard = useModalDraftGuard(form.formState.isDirty, form.formState.isSubmitting, open)
+
   const components = useFieldArray({ control: form.control, name: 'components' })
   const kind = form.watch('kind')
   const productCatalog = useLotProducts(open && kind === 'SupplierLot')
@@ -273,9 +277,11 @@ export function MaterialLotCreateDialog({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={(nextOpen) => {
+      <Dialog open={open} onOpenChange={open => { if (open) ((nextOpen) => {
         if (!nextOpen) close()
-      }}>
+      })(open); else void __modalGuard.close(() => ((nextOpen) => {
+        if (!nextOpen) close()
+      })(false)) }}>
         <DialogContent className="max-w-2xl">
           <form noValidate onSubmit={(event) => {
             // Native date edits can be visible before the form library receives a change event.
@@ -302,7 +308,7 @@ export function MaterialLotCreateDialog({
             <div className="grid gap-4 sm:grid-cols-2">
               {kind === 'PreparedReagent' ? <div className="sm:col-span-2">
                 <FormField id="material-definition" label="Prepared reagent" required error={form.formState.errors.materialSelection?.message}>
-                  <select
+                  <NativeSelect
                     id="material-definition"
                     className={selectClass}
                     aria-invalid={Boolean(form.formState.errors.materialSelection)}
@@ -322,7 +328,7 @@ export function MaterialLotCreateDialog({
                     ))}
                     <option value={newReferenceValue} hidden={!newMaterialName}>{newMaterialName || 'New prepared reagent'}</option>
                     <option value={createReferenceValue}>Create a new prepared reagent…</option>
-                  </select>
+                  </NativeSelect>
                 </FormField>
                 {materialSelection === newReferenceValue ? (
                   <p className="mt-1.5 text-xs text-muted-foreground">The immutable material key is generated when the lot is created.</p>
@@ -333,7 +339,7 @@ export function MaterialLotCreateDialog({
                 <>
                   <div className="sm:col-span-2">
                     <FormField id="material-supplier" label="Supplier" required error={form.formState.errors.supplierSelection?.message}>
-                      <select
+                      <NativeSelect
                         id="material-supplier"
                         className={selectClass}
                         aria-invalid={Boolean(form.formState.errors.supplierSelection)}
@@ -351,15 +357,15 @@ export function MaterialLotCreateDialog({
                       >
                         <option value="">Select supplier…</option>
                         {suppliers.filter((supplier) => !supplier.isInternalProducer).map((supplier) => <option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}
-                      </select>
+                      </NativeSelect>
                     </FormField>
                   </div>
                   <div className="sm:col-span-2">
                     <FormField id="material-product" label="Product name" required error={form.formState.errors.supplierProductId?.message}>
-                      <select id="material-product" className={selectClass} disabled={!supplierSelection || productCatalog.isPending || productCatalog.isError} aria-invalid={Boolean(form.formState.errors.supplierProductId)} {...form.register('supplierProductId', { onChange: event => form.setValue('quantityUnit', productCatalog.data?.find(supplier => supplier.id === supplierSelection)?.products.find(product => product.id === event.target.value)?.defaultQuantityUnit ?? '') })}>
+                      <NativeSelect id="material-product" className={selectClass} disabled={!supplierSelection || productCatalog.isPending || productCatalog.isError} aria-invalid={Boolean(form.formState.errors.supplierProductId)} {...form.register('supplierProductId', { onChange: event => form.setValue('quantityUnit', productCatalog.data?.find(supplier => supplier.id === supplierSelection)?.products.find(product => product.id === event.target.value)?.defaultQuantityUnit ?? '') })}>
                         <option value="">Select product…</option>
                         {(productCatalog.data?.find(s => s.id === supplierSelection)?.products ?? []).map(p => <option key={p.id} value={p.id}>{p.productNumber} — {p.description}</option>)}
-                      </select>
+                      </NativeSelect>
                     </FormField>
                     {productCatalog.isPending ? <p role="status" className="mt-2 text-sm">Loading products…</p> : productCatalog.isError ? <div role="alert" className="mt-2 text-sm">Products could not be loaded. <Button type="button" variant="outline" onClick={() => void productCatalog.refetch()}>Retry products</Button></div> : supplierSelection && !productCatalog.data?.find(s => s.id === supplierSelection)?.products.length ? <p className="mt-2 text-sm text-muted-foreground">Add or activate this supplier's product in Suppliers &amp; products before receiving its lot.</p> : null}
                   </div>
@@ -374,7 +380,7 @@ export function MaterialLotCreateDialog({
 
               <div className="sm:col-span-2">
                 <FormField id="material-storage" label="Storage location" required error={form.formState.errors.storageSelection?.message}>
-                  <select
+                  <NativeSelect
                     id="material-storage"
                     className={selectClass}
                     aria-invalid={Boolean(form.formState.errors.storageSelection)}
@@ -392,7 +398,7 @@ export function MaterialLotCreateDialog({
                     {storageLocations.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}
                     <option value={newReferenceValue} hidden={!newStorageLocationName}>{newStorageLocationName || 'New storage location'}</option>
                     <option value={createReferenceValue}>Create a new storage location…</option>
-                  </select>
+                  </NativeSelect>
                 </FormField>
               </div>
 
@@ -423,7 +429,7 @@ export function MaterialLotCreateDialog({
                   {components.fields.map((component, index) => (
                     <div key={component.id} className="grid gap-3 rounded-lg border p-3 sm:grid-cols-[minmax(0,1fr)_8rem_8rem_auto]">
                       <FormField id={`component-${component.id}-lot`} label="Source lot" required error={form.formState.errors.components?.[index]?.componentMaterialLotId?.message}>
-                        <select
+                        <NativeSelect
                           id={`component-${component.id}-lot`}
                           className={selectClass}
                           aria-invalid={Boolean(form.formState.errors.components?.[index]?.componentMaterialLotId)}
@@ -442,7 +448,7 @@ export function MaterialLotCreateDialog({
                               {lot.name} · {lot.lotNumber} · {lot.availableQuantity} {lot.quantityUnit}
                             </option>
                           ))}
-                        </select>
+                        </NativeSelect>
                       </FormField>
                       <FormField id={`component-${component.id}-quantity`} label="Quantity" required error={form.formState.errors.components?.[index]?.quantity?.message}>
                         <Input id={`component-${component.id}-quantity`} type="number" min="0" step="any" {...form.register(`components.${index}.quantity`)} />

@@ -56,7 +56,8 @@ test('biological material and its report survive a reload after an interrupted s
     member.sourceMaterial = { id: 'source', barcode: member.barcode, quantity: 100, quantityUnit: 'µL', version: 7, status: 'Available' }
     member.libraryTube = { id: 'library', barcode: 'TEST-LIBRARY', barcodeSource: 'Manufacturer', quantity: null, quantityUnit: null, version: 1, confirmed: false, transferId: null }
   } })
-  await page.getByRole('region', { name: 'Preparation progress' }).getByRole('button', { name: 'Record step', exact: true }).click()
+  await page.getByRole('region', { name: 'Preparation progress' }).getByRole('button', { name: 'Go to current step', exact: true }).click()
+  await page.getByRole('button', { name: 'Record step', exact: true }).click()
   await expect(page.getByRole('button', { name: /^A1 · TEST-TUBE-1/ })).toHaveAttribute('aria-expanded', 'true')
   await page.getByLabel('Scan accessioned source tube barcode', { exact: false }).fill('*test-tube-1*')
   await page.getByLabel('Scan library tube barcode', { exact: false }).fill('*test-library*')
@@ -79,7 +80,8 @@ test('biological material and its report survive a reload after an interrupted s
 test('shared capture and a tube exception retain explicit coverage and accessible fields', async ({ page }, info) => {
   if (info.project.name === 'mobile-chrome') await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' })
   const { bodies } = await setup(page)
-  await page.getByRole('region', { name: 'Preparation progress' }).getByRole('button', { name: 'Record step', exact: true }).click()
+  await page.getByRole('region', { name: 'Preparation progress' }).getByRole('button', { name: 'Go to current step', exact: true }).click()
+  await page.getByRole('button', { name: 'Record step', exact: true }).click()
   await page.getByRole('spinbutton', { name: 'Temperature (°C)', exact: true }).first().fill('20')
   await page.getByRole('combobox', { name: 'QC outcome', exact: true }).first().selectOption('pass')
   await page.getByRole('checkbox', { name: 'Record exception', exact: true }).check()
@@ -109,7 +111,8 @@ test('failed tubes are excluded from later evidence and output identity is carri
   await expect(page.getByRole('link', { name: 'TEST-FAILED-OUTPUT', exact: true })).toBeVisible()
   await expect(page.getByText('Output scan needed', { exact: false })).toHaveCount(0)
   await expect(page.getByText('Open the output tube to print, attach and scan back its label, then confirm its identity.')).toHaveCount(0)
-  await page.getByRole('region', { name: 'Preparation progress' }).getByRole('button', { name: 'Record step', exact: true }).click()
+  await page.getByRole('region', { name: 'Preparation progress' }).getByRole('button', { name: 'Go to current step', exact: true }).click()
+  await page.getByRole('button', { name: 'Record step', exact: true }).click()
   await expect(page.getByLabel('A2 · TEST-TUBE-2 · TEST-JOB-2', { exact: true })).toHaveCount(0)
   await page.getByRole('button', { name: 'Cancel', exact: true }).click()
   expect(bodies).toHaveLength(0)
@@ -218,7 +221,8 @@ for (const role of ['Operator', 'ScientificReviewer']) {
 
 test('keyboard step cancellation restores focus without saving', async ({ page }) => {
   const { bodies } = await setup(page)
-  const trigger = page.getByRole('region', { name: 'Preparation progress' }).getByRole('button', { name: 'Record step', exact: true })
+  await page.getByRole('region', { name: 'Preparation progress' }).getByRole('button', { name: 'Go to current step', exact: true }).click()
+  const trigger = page.getByRole('button', { name: 'Record step', exact: true })
   await trigger.focus()
   await trigger.press('Enter')
   const dialog = page.getByRole('dialog')

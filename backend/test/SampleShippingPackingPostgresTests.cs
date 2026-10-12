@@ -590,7 +590,18 @@ public partial class SampleShippingPostgresTests
         scope.DbContext.SampleShipments.AddRange(packages);
         await scope.DbContext.SaveChangesAsync();
         scope.ClearTrackedState();
-        Assert.Equal(250, (await scope.CreateCustomerWorkflowController().Shipments(default)).Count);
+        Assert.Equal(261, (await scope.CreateCustomerWorkflowController().Shipments(default)).Count);
+        var page = await scope.CreateCustomerWorkflowController().ShipmentPage(default, page: 11, pageSize: 25);
+        Assert.Equal(261, page.TotalCount);
+        Assert.Equal(11, page.Items.Count);
+        Assert.All(page.Items, item => Assert.Equal(fixture.Shipment.OrganizationId, item.OrganizationId));
+        var found = await scope.CreateCustomerWorkflowController().ShipmentPage(default,
+            search: packages[^1].ShipmentNumber.ToLowerInvariant(), status: "Preparing");
+        Assert.Equal(1, found.TotalCount);
+        Assert.Equal(packages[^1].Id, Assert.Single(found.Items).Id);
+        Assert.Equal(0, (await scope.CreateOtherCustomerWorkflowController().ShipmentPage(default,
+            search: packages[^1].ShipmentNumber)).TotalCount);
+        await Assert.ThrowsAsync<OrderManagementException>(() => scope.CreateCustomerWorkflowController().ShipmentPage(default, status: "invented"));
         Assert.Equal(261, (await scope.CreateCustomerWorkflowController().Shipments(default, fixture.Shipment.AuthorizationSourceId)).Count);
         Assert.Equal(261, (await scope.CreatePlatformWorkflowController().Shipments(default, fixture.Shipment.AuthorizationSourceId)).Count);
         Assert.Empty(await scope.CreateOtherCustomerWorkflowController().Shipments(default, fixture.Shipment.AuthorizationSourceId));

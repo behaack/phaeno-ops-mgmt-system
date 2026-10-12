@@ -1,0 +1,22 @@
+{
+  "invitation.subject": "You have been invited to {p0}",
+  "invoice.title": "Phaeno Biotechnology - Invoice",
+  "invoice.number": "Invoice: {p0}",
+  "invoice.customer": "Customer: {p0}",
+  "invoice.issued": "Issued: {p0}",
+  "invoice.due": "Due: {p0}",
+  "invoice.subtotal": "Subtotal: {p0} {p1}",
+  "invoice.tax": "Tax: {p0} {p1}",
+  "invoice.total": "Total: {p0} {p1}",
+  "quote.pricing": "Pricing",
+  "quote.biologicalSource": "Biological source",
+  "quote.samples": "Samples",
+  "quote.description": "Description",
+  "quote.quantity": "Quantity",
+  "quote.unitPrice": "Unit price",
+  "quote.amount": "Amount",
+  "quote.subtotal": "Subtotal",
+  "quote.tax": "Tax",
+  "quote.total": "Total",
+  "quote.preTaxTotal": "Pre-tax total"
+}

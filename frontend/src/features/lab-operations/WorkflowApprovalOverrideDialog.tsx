@@ -1,3 +1,4 @@
+import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useBlocker } from '@tanstack/react-router'
 import { useForm } from 'react-hook-form'
@@ -15,9 +16,11 @@ export function WorkflowApprovalOverrideDialog({ workflow, version, pending, err
   workflow: LabServiceWorkflow; version: LabServiceWorkflowVersion; pending: boolean; error?: string; onClose: () => void; onApprove: (reason: string) => void
 }) {
   const form = useForm<z.infer<typeof schema>>({ resolver: zodResolver(schema), defaultValues: { reason: '', confirmed: false } })
-  const confirmLeave = () => !form.formState.isDirty || window.confirm('Discard the unsaved approval override?')
-  const close = () => { if (!pending && confirmLeave()) onClose() }
-  useBlocker({ shouldBlockFn: () => pending || !confirmLeave(), enableBeforeUnload: () => pending || form.formState.isDirty })
+  const { isDirty: __formDraftDirty } = form.formState
+
+  const confirmLeave = async () => !__formDraftDirty || (await confirmPortal('Discard the unsaved approval override?'))
+  const close = async () => { if (!pending && await confirmLeave()) onClose() }
+  useBlocker({ shouldBlockFn: async () => pending || !await confirmLeave(), enableBeforeUnload: () => pending || __formDraftDirty })
   return <Dialog open onOpenChange={open => { if (!open) close() }}><DialogContent className="sm:max-w-2xl">
     <DialogHeader><DialogTitle>Administrator approval override</DialogTitle><DialogDescription>{workflow.name} · version {version.workflowVersion}. You are approving your own work without independent review. Your identity, time and reason will be retained. Production promotion is a separate action.</DialogDescription></DialogHeader>
     <ol className="space-y-3">{version.stages.map(stage => <li key={stage.id} className="rounded-md border p-3 text-sm"><p className="font-medium">{stage.sequence}. {stage.name} · {stage.requirement}</p><p>{stage.protocolName} · version {stage.protocolVersion}</p>{stage.condition ? <p>Condition: {stage.condition}</p> : null}{stage.handoffCriteria ? <p>Handoff: {stage.handoffCriteria}</p> : null}</li>)}</ol>

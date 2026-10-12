@@ -1,3 +1,7 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
+import { NativeSelect } from '#/components/ui/native-select'
+import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
+import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query'
 import { useBlocker } from '@tanstack/react-router'
@@ -32,6 +36,8 @@ export function PackingDialog({ packing, initial, availableKits, locationInvento
   locationInventory?: boolean; writesBlocked?: boolean
   onClose: () => void; onConfirm: (input: PackingInput & { version: number }) => void
 }) {
+  const __customerText = useCustomerText()
+
   const [openedPacking] = useState(packing)
   const [page, setPage] = useState(0)
   const addButton = useRef<HTMLButtonElement>(null)
@@ -41,6 +47,8 @@ export function PackingDialog({ packing, initial, availableKits, locationInvento
       containers: recommendationRows(initial, openedPacking, availableKits),
     },
   })
+  const { isDirty: __formDraftDirty } = form.formState
+
   const { fields, append, remove, replace } = useFieldArray({ control: form.control, name: 'containers' })
   const values = useWatch({ control: form.control })
   const parsed = packingSchema.safeParse(values)
@@ -53,13 +61,13 @@ export function PackingDialog({ packing, initial, availableKits, locationInvento
     mutationFn: () => previewSampleShipmentPacking(packing.shipmentId, { ...(openedPacking.deliveryLocationId ? { deliveryLocationId: openedPacking.deliveryLocationId } : {}) }),
     onSuccess: result => { replace(recommendationRows(result, openedPacking, availableKits)); form.clearErrors(); setPage(0) },
   })
-  const isDirty = form.formState.isDirty
+  const isDirty = __formDraftDirty
   const working = busy || suggest.isPending
   const currentPreview = previewSignature === inputSignature && !preview.isFetching && !preview.isPlaceholderData && !preview.error ? preview.data : undefined
   const pages = Math.max(1, Math.ceil(fields.length / pageSize))
   const visiblePage = Math.min(page, pages - 1)
-  const close = () => { if (!working && (!isDirty || window.confirm('Discard the unsaved container selection?'))) onClose() }
-  useBlocker({ shouldBlockFn: () => working || isDirty && !window.confirm('Discard the unsaved container selection?'), enableBeforeUnload: working || isDirty })
+  const close = async () => { if (!working && (!isDirty || (await confirmPortal('Discard the unsaved container selection?')))) onClose() }
+  useBlocker({ shouldBlockFn: async () => working || isDirty && !(await confirmPortal('Discard the unsaved container selection?')), enableBeforeUnload: working || isDirty })
   const capacityNeeded = (rows: Array<{ definitionId?: string }>, excludedIndex?: number) => Math.max(0, openedPacking.tubeCount - rows.reduce((sum, row, index) => sum + (index === excludedIndex ? 0 : openedPacking.containerTypes.find(type => type.id === row.definitionId)?.tubeCapacity ?? 0), 0))
   const additionalCapacityNeeded = capacityNeeded(values.containers ?? [])
   const optionsFor = (rows: Array<{ definitionId?: string }>, index?: number) => containerOptions(openedPacking, rows, index, availableKits)
@@ -169,18 +177,18 @@ export function PackingDialog({ packing, initial, availableKits, locationInvento
   }
   return <Dialog open onOpenChange={next => { if (!next) close() }}>
     <DialogContent className="sm:max-w-2xl">
-      <DialogHeader><DialogTitle>Assign shipping containers</DialogTitle><DialogDescription>{locationInventory ? 'Scan or enter each physical container barcode from the selected location' : availableKits ? 'Choose from received kits' : 'Add the containers you have'} and set how many of the {packing.tubeCount} tubes go in each. {locationInventory ? 'Confirmation reserves these containers; an unsaved scan does not.' : 'Empty containers will not become shipments.'}</DialogDescription></DialogHeader>
-      {error || suggest.error ? <Alert variant="destructive"><AlertTitle>Containers were not assigned</AlertTitle><AlertDescription>{apiErrorMessage(error ?? suggest.error)}</AlertDescription></Alert> : null}
+      <DialogHeader><DialogTitle><CustomerText message="m_1ce09aa2747e" /></DialogTitle><DialogDescription>{locationInventory ? <CustomerSourceText source={"Scan or enter each physical container barcode from the selected location"} /> : availableKits ? "Choose from received kits" : __customerText('m_61a724065aed')} <CustomerText message="m_3da756415c85" />{packing.tubeCount} <CustomerText message="m_e3fe3d56ed3f" />{locationInventory ? <CustomerSourceText source={"Confirmation reserves these containers; an unsaved scan does not."} /> : __customerText('m_a32b3908b4c7')}</DialogDescription></DialogHeader>
+      {error || suggest.error ? <Alert variant="destructive"><AlertTitle><CustomerText message="m_fd06c04e4dd4" /></AlertTitle><AlertDescription><CustomerSourceText source={apiErrorMessage(error ?? suggest.error)} /></AlertDescription></Alert> : null}
       <form id="sample-packing" noValidate className="space-y-3" onSubmit={submit}>
-        <section className="space-y-3" aria-label="Containers to use">
+        <section className="space-y-3" aria-label={__customerText('m_7aaf1e3a13b9')}>
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h3 className="text-sm font-semibold">Containers to use</h3>
+            <h3 className="text-sm font-semibold"><CustomerText message="m_7aaf1e3a13b9" /></h3>
             <div className="flex flex-wrap items-center gap-2">
-              <Button type="button" variant="outline" size="sm" disabled={working} onClick={applyRecommendation}>{suggest.isPending ? 'Recommending…' : 'Use recommendation'}</Button>
-              <Button ref={addButton} type="button" variant="outline" size="sm" disabled={working || !optionsFor(values.containers ?? []).length || fields.length >= quantityLimit || additionalCapacityNeeded === 0} onClick={addContainer}><Plus aria-hidden="true" data-icon="inline-start" />Add container</Button>
+              <Button type="button" variant="outline" size="sm" disabled={working} onClick={applyRecommendation}>{suggest.isPending ? <CustomerSourceText source={"Recommending…"} /> : __customerText('m_76eb29b2d1b0')}</Button>
+              <Button ref={addButton} type="button" variant="outline" size="sm" disabled={working || !optionsFor(values.containers ?? []).length || fields.length >= quantityLimit || additionalCapacityNeeded === 0} onClick={addContainer}><Plus aria-hidden="true" data-icon="inline-start" /><CustomerText message="m_f5bd263af954" /></Button>
             </div>
           </div>
-          {!fields.length ? <p className="text-sm text-muted-foreground">Add a container to start your packing plan.</p> : null}
+          {!fields.length ? <p className="text-sm text-muted-foreground"><CustomerText message="m_b0450c0a179a" /></p> : null}
           <div className="space-y-2">{fields.slice(visiblePage * pageSize, (visiblePage + 1) * pageSize).map((field, offset) => {
             const index = visiblePage * pageSize + offset
             const row = values.containers?.[index]
@@ -192,53 +200,53 @@ export function PackingDialog({ packing, initial, availableKits, locationInvento
             const tubesId = `container-tubes-${field.id}`
             const helpId = `container-help-${field.id}`
             return <div key={field.id} role="group" aria-labelledby={`container-heading-${field.id}`} className={`grid items-start gap-x-2 gap-y-1 rounded-md border p-3 sm:gap-x-3 ${canRemoveContainer ? 'grid-cols-[minmax(0,1fr)_4.5rem_2rem] sm:grid-cols-[minmax(0,1fr)_5rem_2rem]' : 'grid-cols-[minmax(0,1fr)_4.5rem] sm:grid-cols-[minmax(0,1fr)_5rem]'}`}>
-              <h4 id={`container-heading-${field.id}`} className="col-span-full mb-2 text-sm font-semibold">Container {index + 1}</h4>
+              <h4 id={`container-heading-${field.id}`} className="col-span-full mb-2 text-sm font-semibold"><CustomerText message="m_1fad83691c37" />{index + 1}</h4>
               <div className="min-w-0 space-y-1.5">
-                <Label htmlFor={sizeId}><RequiredFieldName>Container</RequiredFieldName></Label>
-                <select id={sizeId} value={row?.definitionId ?? ''} disabled={working} className="h-8 w-full min-w-0 cursor-pointer rounded-md border border-input bg-background px-2 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50" aria-invalid={Boolean(sizeError)} aria-describedby={`${helpId}${sizeError ? ` ${sizeId}-error` : ''}`} {...form.register(`containers.${index}.definitionId`, { onChange: event => changeSize(index, event.target.value) })}>
-                  {type && !optionsFor(values.containers ?? [], index).some(option => option.id === type.id) ? <option value={type.id} disabled>{type.commonName} · Unavailable</option> : null}
+                <Label htmlFor={sizeId}><RequiredFieldName><CustomerText message="m_0c7823e8c759" /></RequiredFieldName></Label>
+                <NativeSelect id={sizeId} value={row?.definitionId ?? ''} disabled={working} className="w-full min-w-0 cursor-pointer rounded-md border border-input bg-background px-2 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50" aria-invalid={Boolean(sizeError)} aria-describedby={`${helpId}${sizeError ? ` ${sizeId}-error` : ''}`} {...form.register(`containers.${index}.definitionId`, { onChange: event => changeSize(index, event.target.value) })}>
+                  {type && !optionsFor(values.containers ?? [], index).some(option => option.id === type.id) ? <option value={type.id} disabled>{type.commonName} <CustomerText message="m_77649d652d5d" /></option> : null}
                   {optionsFor(values.containers ?? [], index).map(option => <option key={option.id} value={option.id}>{option.commonName} · {option.sku}</option>)}
-                </select>
+                </NativeSelect>
               </div>
-              {fields.length === 1 ? <div className="space-y-1.5"><Label htmlFor={tubesId}><span aria-hidden="true">Tubes</span><span className="sr-only">Tubes to pack · {type?.commonName ?? 'container'} #{index + 1}</span></Label><Input id={tubesId} className="h-8 cursor-default bg-muted text-muted-foreground dark:bg-muted" type="text" readOnly aria-describedby={helpId} {...form.register(`containers.${index}.tubes`)} /></div> : <div className="space-y-1.5">
-                <Label htmlFor={tubesId}><RequiredFieldName><span aria-hidden="true">Tubes</span><span className="sr-only">Tubes to pack · {type?.commonName ?? 'container'} #{index + 1}</span></RequiredFieldName></Label>
+              {fields.length === 1 ? <div className="space-y-1.5"><Label htmlFor={tubesId}><span aria-hidden="true"><CustomerText message="m_9896e020cb56" /></span><span className="sr-only"><CustomerText message="m_a90d48ed22c8" />{type?.commonName ?? 'container'} #{index + 1}</span></Label><Input id={tubesId} className="h-8 cursor-default bg-muted text-muted-foreground dark:bg-muted" type="text" readOnly aria-describedby={helpId} {...form.register(`containers.${index}.tubes`)} /></div> : <div className="space-y-1.5">
+                <Label htmlFor={tubesId}><RequiredFieldName><span aria-hidden="true"><CustomerText message="m_9896e020cb56" /></span><span className="sr-only"><CustomerText message="m_a90d48ed22c8" />{type?.commonName ?? 'container'} #{index + 1}</span></RequiredFieldName></Label>
                 <Input id={tubesId} className="h-8" type="number" min="0" max={type?.tubeCapacity} step="1" disabled={working} aria-invalid={Boolean(tubeError)} aria-describedby={`${helpId}${tubeError ? ` ${tubesId}-error` : ''}`} {...form.register(`containers.${index}.tubes`)} />
               </div>}
-              {canRemoveContainer ? <Button type="button" variant="outline" size="icon" className="mt-5 size-8" disabled={working} aria-label={`Remove container ${index + 1}`} title={`Remove container ${index + 1}`} onClick={() => removeContainer(index)}><Trash2 aria-hidden="true" className="size-4" /></Button> : null}
-              <p id={helpId} className="col-span-full text-xs text-muted-foreground wrap-anywhere">SKU {type?.sku} · Capacity {type?.tubeCapacity}</p>
-              {locationInventory ? <div className="col-span-full mt-2 space-y-1.5"><Label htmlFor={`container-barcode-${field.id}`}><RequiredFieldName>Scan or enter container barcode</RequiredFieldName></Label><Input id={`container-barcode-${field.id}`} className="font-mono uppercase" autoComplete="off" disabled={working} aria-invalid={Boolean(barcodeError)} aria-describedby={barcodeError ? `container-barcode-error-${field.id}` : undefined} {...form.register(`containers.${index}.containerBarcode`)} onBlur={() => { if (form.getValues(`containers.${index}.containerBarcode`)?.trim()) resolveBarcode(index, true) }} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); if (resolveBarcode(index, true) && fields.length > 1) form.setFocus(`containers.${index}.tubes`) } }} />{barcodeError ? <p id={`container-barcode-error-${field.id}`} role="alert" className="text-sm text-destructive">{barcodeError.message}</p> : row?.containerBarcode && packing.availableKits?.some(kit => kit.kitNumber.toUpperCase() === row.containerBarcode?.trim().toUpperCase() && kit.container.definitionId === row.definitionId) ? <p role="status" className="text-xs text-muted-foreground">Container identified. Confirm assignment to reserve it for this Job.</p> : null}</div> : null}
-              {sizeError ? <p id={`${sizeId}-error`} role="alert" className="col-span-full text-sm text-destructive">{sizeError.message}</p> : null}
-              {tubeError ? <p id={`${tubesId}-error`} role="alert" className="col-span-full text-sm text-destructive">{tubeError.message}</p> : null}
+              {canRemoveContainer ? <Button type="button" variant="outline" size="icon" className="mt-5 size-8" disabled={working} aria-label={__customerText('m_6573cdad3772', { p0: String(index + 1) })} title={__customerText('m_6573cdad3772', { p0: String(index + 1) })} onClick={() => removeContainer(index)}><Trash2 aria-hidden="true" className="size-4" /></Button> : null}
+              <p id={helpId} className="col-span-full text-xs text-muted-foreground wrap-anywhere"><CustomerText message="m_7370f6c81297" />{type?.sku} <CustomerText message="m_37bdf9777d54" />{type?.tubeCapacity}</p>
+              {locationInventory ? <div className="col-span-full mt-2 space-y-1.5"><Label htmlFor={`container-barcode-${field.id}`}><RequiredFieldName><CustomerText message="m_203f66410f97" /></RequiredFieldName></Label><Input id={`container-barcode-${field.id}`} className="font-mono uppercase" autoComplete="off" disabled={working} aria-invalid={Boolean(barcodeError)} aria-describedby={barcodeError ? `container-barcode-error-${field.id}` : undefined} {...form.register(`containers.${index}.containerBarcode`)} onBlur={() => { if (form.getValues(`containers.${index}.containerBarcode`)?.trim()) resolveBarcode(index, true) }} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); if (resolveBarcode(index, true) && fields.length > 1) form.setFocus(`containers.${index}.tubes`) } }} />{barcodeError ? <p id={`container-barcode-error-${field.id}`} role="alert" className="text-sm text-destructive">{<CustomerSourceText source={barcodeError.message} />}</p> : row?.containerBarcode && packing.availableKits?.some(kit => kit.kitNumber.toUpperCase() === row.containerBarcode?.trim().toUpperCase() && kit.container.definitionId === row.definitionId) ? <p role="status" className="text-xs text-muted-foreground"><CustomerText message="m_bd79ce7f7321" /></p> : null}</div> : null}
+              {sizeError ? <p id={`${sizeId}-error`} role="alert" className="col-span-full text-sm text-destructive">{<CustomerSourceText source={sizeError.message} />}</p> : null}
+              {tubeError ? <p id={`${tubesId}-error`} role="alert" className="col-span-full text-sm text-destructive">{<CustomerSourceText source={tubeError.message} />}</p> : null}
             </div>
           })}</div>
-          {pages > 1 ? <div className="flex items-center justify-between gap-2"><Button type="button" variant="outline" disabled={visiblePage === 0 || working} onClick={() => setPage(visiblePage - 1)}>Previous containers</Button><span className="text-xs">Page {visiblePage + 1} of {pages}</span><Button type="button" variant="outline" disabled={visiblePage === pages - 1 || working} onClick={() => setPage(visiblePage + 1)}>Next containers</Button></div> : null}
-          {form.formState.errors.root?.allocation ? <p role="alert" className="text-sm text-destructive">{form.formState.errors.root.allocation.message}</p> : null}
+          {pages > 1 ? <div className="flex items-center justify-between gap-2"><Button type="button" variant="outline" disabled={visiblePage === 0 || working} onClick={() => setPage(visiblePage - 1)}><CustomerText message="m_1b506aa51b19" /></Button><span className="text-xs"><CustomerText message="m_6076934f99bd" />{visiblePage + 1} of {pages}</span><Button type="button" variant="outline" disabled={visiblePage === pages - 1 || working} onClick={() => setPage(visiblePage + 1)}><CustomerText message="m_0667565d5667" /></Button></div> : null}
+          {form.formState.errors.root?.allocation ? <p role="alert" className="text-sm text-destructive">{<CustomerSourceText source={form.formState.errors.root.allocation.message} />}</p> : null}
         </section>
         <section aria-labelledby="packing-summary-heading" aria-busy={!currentPreview && Boolean(inputSignature) && !preview.error} className="space-y-2">
-          <h3 id="packing-summary-heading" className="text-sm font-semibold">Summary</h3>
+          <h3 id="packing-summary-heading" className="text-sm font-semibold"><CustomerText message="m_8e76a94ac832" /></h3>
           <div className="space-y-3">
-            {writesBlocked ? <p role="status" className="text-sm text-muted-foreground">Current inventory must be verified before confirming. Your selections are retained.</p> : null}
-            {unavailableSelection ? <Alert variant="destructive"><AlertTitle>Received kits changed</AlertTitle><AlertDescription>Your selections are still here. Remove unavailable containers or choose another received kit at this location.</AlertDescription></Alert> : null}
-            {preview.error ? <Alert variant="destructive"><AlertTitle>Review container selection</AlertTitle><AlertDescription>{apiErrorMessage(preview.error)} <Button type="button" variant="outline" onClick={() => void preview.refetch()}>Retry preview</Button></AlertDescription></Alert> : null}
+            {writesBlocked ? <p role="status" className="text-sm text-muted-foreground"><CustomerText message="m_597bd327ecf5" /></p> : null}
+            {unavailableSelection ? <Alert variant="destructive"><AlertTitle><CustomerText message="m_cef8b61a5c6d" /></AlertTitle><AlertDescription><CustomerText message="m_0fe510207f07" /></AlertDescription></Alert> : null}
+            {preview.error ? <Alert variant="destructive"><AlertTitle><CustomerText message="m_5516df411f22" /></AlertTitle><AlertDescription><CustomerSourceText source={apiErrorMessage(preview.error)} /> <Button type="button" variant="outline" onClick={() => void preview.refetch()}><CustomerText message="m_ceba35272869" /></Button></AlertDescription></Alert> : null}
             <div className="grid grid-cols-2 gap-3 rounded-md bg-muted/40 p-3 text-sm sm:grid-cols-3">
               {[['Tubes', openedPacking.tubeCount], ['Containers', fields.length], ['Usable capacity', draftTotals.capacity], ['Spare slots', Math.max(0, draftTotals.capacity - draftTotals.assigned)], ['Unallocated tubes', Math.max(0, openedPacking.tubeCount - draftTotals.assigned)]].map(([label, value]) => <dl key={label}><dt className="text-xs text-muted-foreground">{label}</dt><dd className="mt-1 font-semibold">{value}</dd></dl>)}
-              <div className="self-end text-xs text-muted-foreground" role="status">{!currentPreview && !preview.error && inputSignature ? 'Updating…' : null}</div>
+              <div className="self-end text-xs text-muted-foreground" role="status">{!currentPreview && !preview.error && inputSignature ? <CustomerSourceText source={"Updating…"} /> : null}</div>
             </div>
-            {preview.data?.containerCount === 0 ? <p className="text-sm text-muted-foreground">Choose at least one compatible container to prepare a shipment.</p> : null}
-            {additionalCapacityNeeded > 0 && fields.length > 0 ? <p className="text-sm">{additionalCapacityNeeded} tubes still need a container. You can prepare the allocated tubes now; the remaining tubes stay visible on the Job.</p> : null}
+            {preview.data?.containerCount === 0 ? <p className="text-sm text-muted-foreground"><CustomerText message="m_9be13ae10eb8" /></p> : null}
+            {additionalCapacityNeeded > 0 && fields.length > 0 ? <p className="text-sm">{additionalCapacityNeeded} <CustomerText message="m_81155322933a" /></p> : null}
           </div>
         </section>
       </form>
-      <RequiredDialogFooter><Button variant="outline" disabled={working} onClick={close}>Keep reviewing</Button><Button type="submit" form="sample-packing" disabled={working || writesBlocked || !packing.canPack || unavailableSelection || parsed.success && !currentPreview?.containerCount}>{busy ? 'Confirming…' : currentPreview && !currentPreview.isComplete ? 'Confirm partial assignment' : 'Confirm assignment'}</Button></RequiredDialogFooter>
+      <RequiredDialogFooter><Button variant="outline" disabled={working} onClick={close}><CustomerText message="m_34411a1bde47" /></Button><Button type="submit" form="sample-packing" disabled={working || writesBlocked || !packing.canPack || unavailableSelection || parsed.success && !currentPreview?.containerCount}>{busy ? <CustomerSourceText source={"Confirming…"} /> : currentPreview && !currentPreview.isComplete ? "Confirm partial assignment" : __customerText('m_3f9b843a2106')}</Button></RequiredDialogFooter>
     </DialogContent>
   </Dialog>
 }
 
 export function PackingSummary({ preview, description }: { preview: ContainerRecommendation; description?: string }) {
   return <div className="space-y-3">
-    <h3 className="text-sm font-semibold">Recommended containers — not yet assigned</h3>
+    <h3 className="text-sm font-semibold"><CustomerText message="m_c448fa7771e5" /></h3>
     <p className="text-sm">{description ?? preview.explanation}</p>
-    <ul className="space-y-2">{preview.containers.map(item => <li key={item.containerDefinitionId} className="flex items-start gap-2 text-sm"><Package aria-hidden="true" className="mt-0.5 size-4 shrink-0" /><span><strong>{item.quantity} × {item.commonName}</strong> · SKU {item.sku}<br /><span className="text-muted-foreground">{item.capacity} tubes per container · {item.assignedTubes} tubes allocated · {item.unusedCapacity} spare slots</span></span></li>)}</ul>
+    <ul className="space-y-2">{preview.containers.map(item => <li key={item.containerDefinitionId} className="flex items-start gap-2 text-sm"><Package aria-hidden="true" className="mt-0.5 size-4 shrink-0" /><span><strong>{item.quantity} × {item.commonName}</strong> <CustomerText message="m_ce92c91a9097" />{item.sku}<br /><span className="text-muted-foreground">{item.capacity} <CustomerText message="m_2f728cb81280" />{item.assignedTubes} <CustomerText message="m_f5d2219270bd" />{item.unusedCapacity} <CustomerText message="m_a463107d506f" /></span></span></li>)}</ul>
     <dl className="grid grid-cols-2 gap-3 rounded-md bg-muted/40 p-3 text-sm sm:grid-cols-3">{[['Tubes', preview.tubeCount], ['Containers', preview.containerCount], ['Usable capacity', preview.totalCapacity], ['Spare slots', preview.unusedCapacity], ['Unallocated tubes', preview.unallocatedTubes]].map(([label, value]) => <div key={label}><dt className="text-xs text-muted-foreground">{label}</dt><dd className="mt-1 font-semibold">{value}</dd></div>)}</dl>
   </div>
 }

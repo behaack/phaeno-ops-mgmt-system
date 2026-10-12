@@ -1,3 +1,4 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import {
   apiErrorMessage,
   existingAccessScopeCandidate,
@@ -34,23 +35,22 @@ export function AccountCreationRecoveryDialog({
     <Dialog open={Boolean(request)} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Complete Portal access enablement</DialogTitle>
+          <DialogTitle><CustomerSourceText source={"Complete Portal access enablement"} /></DialogTitle>
           <DialogDescription>
-            Recover this approved Company request by creating its internal access scope.
+            <CustomerSourceText source={"Recover this approved Company request by creating its internal access scope."} />
           </DialogDescription>
         </DialogHeader>
         {reuseCandidate ? (
           <Alert>
-            <AlertTitle>Existing access scope found</AlertTitle>
+            <AlertTitle><CustomerSourceText source={"Existing access scope found"} /></AlertTitle>
             <AlertDescription>
-              {reuseCandidate.organizationName} already has an active unlinked{' '}
-              {reuseCandidate.organizationKind} access scope. Confirm reuse to
-              preserve its users, orders, invitations, and history.
+              {reuseCandidate.organizationName} <CustomerSourceText source={"already has an active unlinked"} />{' '}
+              {reuseCandidate.organizationKind} <CustomerSourceText source={"access scope. Confirm reuse to\r\n              preserve its users, orders, invitations, and history."} />
             </AlertDescription>
           </Alert>
         ) : error ? (
           <Alert variant="destructive">
-            <AlertDescription>{apiErrorMessage(error)}</AlertDescription>
+            <AlertDescription>{<CustomerSourceText source={apiErrorMessage(error)} />}</AlertDescription>
           </Alert>
         ) : null}
         {request ? (
@@ -64,15 +64,13 @@ export function AccountCreationRecoveryDialog({
               <p className="mt-2 text-sm text-muted-foreground">{request.summary}</p>
             </div>
             <p className="text-sm text-muted-foreground">
-              The Company starts with pending Portal readiness. This recovery does not
-              invite users, change product or service access, create an order, or mark
-              the request completed.
+              <CustomerSourceText source={"The Company starts with pending Portal readiness. This recovery does not\r\n              invite users, change product or service access, create an order, or mark\r\n              the request completed."} />
             </p>
           </div>
         ) : null}
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            Keep incomplete
+            <CustomerSourceText source={"Keep incomplete"} />
           </Button>
           <Button
             type="button"
@@ -80,7 +78,7 @@ export function AccountCreationRecoveryDialog({
             onClick={() => onConfirm(reuseCandidate?.organizationId)}
           >
             {isPending
-              ? 'Enabling…'
+              ? <CustomerSourceText source={"Enabling…"} />
               : reuseCandidate
                 ? 'Use existing access scope'
                 : 'Enable Portal access'}

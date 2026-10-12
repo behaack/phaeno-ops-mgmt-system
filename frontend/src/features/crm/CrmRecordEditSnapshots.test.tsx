@@ -1,3 +1,4 @@
+import * as portalConfirmation from '#/components/PortalConfirmation'
 vi.mock('./use-crm-permissions', () => ({ useCrmPermissions: () => ({ canAccess: true, canAdminister: true }) }))
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
@@ -42,7 +43,7 @@ function mount(node: ReactNode) {
 describe('CRM reviewed record snapshots', () => {
   beforeEach(() => {
     vi.resetAllMocks()
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    vi.spyOn(portalConfirmation, 'confirmPortal').mockResolvedValue(true)
     vi.mocked(api.getCrmCompany).mockResolvedValue(company)
     vi.mocked(api.getCrmContact).mockResolvedValue(contact)
     vi.mocked(api.listContactCompanies).mockResolvedValue([])

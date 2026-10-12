@@ -266,10 +266,13 @@ public sealed class LabContainer : LabAuditedEntity
 
     public void RecordPreparedQuantity(decimal quantity, string unit, Guid recordId, Guid actorId, DateTime now)
     {
-        if (Kind != LabContainerKind.Library || Status != LabContainerStatus.Available || quantity <= 0)
+        if (Kind != LabContainerKind.Library || quantity <= 0
+            || Status != LabContainerStatus.Available && !(Status == LabContainerStatus.LabelPending && Quantity is null))
             throw new InvalidOperationException("Record a positive prepared-library amount in its available library tube.");
         unit = Required(unit, nameof(unit), 50);
         RecordBiologicalQuantityHistory("prepared-yield", Quantity, quantity, unit, null, false, null, recordId, actorId, now, "Prepared-library measurement; independent of sample input.");
+        InitialQuantity ??= quantity;
+        InitialQuantityUnit ??= unit;
         Quantity = quantity; QuantityUnit = unit; QuantityBasis = "Measured";
     }
 

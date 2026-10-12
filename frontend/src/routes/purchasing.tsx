@@ -1,5 +1,6 @@
 import { Outlet, createFileRoute, useNavigate, useRouterState } from '@tanstack/react-router'
-import { PurchasingWorkspace, parsePurchasingSection, type PurchasingSection } from '#/features/lab-operations/PurchasingWorkspace'
+import { PurchasingWorkspace } from '#/features/lab-operations/PurchasingWorkspace'
+import { parsePurchasingSection, type PurchasingSection } from '#/features/lab-operations/purchasing-search'
 
 export const Route = createFileRoute('/purchasing')({
   validateSearch: (search: Record<string, unknown>): { section?: PurchasingSection; productTab?: 'products' | 'product-types'; supplierSearch?: string; supplierInactive?: boolean; productSearch?: string; productInactive?: boolean; productTypeFilter?: string; productTypeSearch?: string; productTypeInactive?: boolean } => ({

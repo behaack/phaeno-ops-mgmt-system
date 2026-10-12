@@ -1,5 +1,6 @@
 import { api } from './client'
 import axios from 'axios'
+import { requireRecordPage } from './record-page'
 
 export function assemblyAttemptFromDispatchError(error: unknown): string | null {
   if (!axios.isAxiosError(error)) return null
@@ -36,6 +37,11 @@ const root = '/platform/lab-operations'
 async function get<T>(path: string, params?: object) { return (await api.get<{ data: T }>(root + path, { params })).data.data }
 async function post<T>(path: string, body: object) { return (await api.post<{ data: T }>(root + path, body)).data.data }
 export const getAssemblyJobs = (workOrderId?: string, specimenId?: string) => get<AssemblyQueue>('/assembly-jobs', { workOrderId, specimenId })
+export async function getAssemblyJobsPage(search: string, page: number) {
+  const data = await get<AssemblyQueue & { page: number; pageSize: number; totalCount: number }>('/assembly-jobs/page', { search,page })
+  const checked = requireRecordPage({ items: data.jobs,page: data.page,pageSize: data.pageSize,totalCount: data.totalCount })
+  return { ...data, jobs: checked.items }
+}
 export const getAssemblyJob = (id: string) => get<AssemblyDetail>(`/assembly-jobs/${id}`)
 export const getAssemblyInputs = (workOrderId?: string, specimenId?: string) => get<AssemblyInputChoice[]>('/assembly-jobs/inputs', { workOrderId, specimenId })
 export const startAssembly = (workId: string, body: StartAssembly) => post<AssemblyJob>(`/work-orders/${workId}/assembly-jobs`, body)

@@ -1,3 +1,6 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
+import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
+import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
 import { useRef, useState } from 'react'
@@ -42,6 +45,8 @@ export function RequestCustomWorkButton({
   sourceOrderId?: string
   defaultSubject?: string
 }) {
+  const __customerText = useCustomerText()
+
   const { authProvider, session } = usePhaenoSession()
   const selectedOrganizationId = session?.selectedOrganization?.organizationId
   const mayRequest = session?.memberships?.some(item =>
@@ -55,17 +60,19 @@ export function RequestCustomWorkButton({
     resolver: zodResolver(schema),
     defaultValues: { subject: defaultSubject, description: '' },
   })
+  const { isDirty: __formDraftDirty } = form.formState
+
   const mutation = useMutation({
     mutationFn: (values: z.infer<typeof schema>) =>
       requestCustomWork({ service, sourceOrderId, ...values }, key.current),
     onSuccess: () => form.reset(form.getValues()),
   })
-  useOrderDraftGuard(open && form.formState.isDirty, mutation.isPending)
-  function close() {
+  useOrderDraftGuard(open && __formDraftDirty, mutation.isPending)
+  async function close() {
     if (
       !mutation.isPending &&
-      (!form.formState.isDirty ||
-        window.confirm('Discard the unsaved custom-work request?'))
+      (!__formDraftDirty ||
+        (await confirmPortal('Discard the unsaved custom-work request?')))
     )
       setOpen(false)
   }
@@ -82,8 +89,7 @@ export function RequestCustomWorkButton({
           setOpen(true)
         }}
       >
-        Request custom work
-      </Button>
+        <CustomerText message="m_82c0e6e65ccc" /></Button>
       <Dialog
         open={open}
         onOpenChange={(value) => {
@@ -96,42 +102,36 @@ export function RequestCustomWorkButton({
         >
           <DialogHeader>
             <DialogTitle>
-              Request custom{' '}
-              {service === 'PSeqKit' ? 'PSeq Kit' : 'Lab Service'} work
-            </DialogTitle>
+              <CustomerText message="m_f51b32f59dba" />{' '}
+              {service === 'PSeqKit' ? <CustomerSourceText source={"PSeq Kit"} /> : __customerText('m_562143624095')} <CustomerText message="m_00e13ed7af55" /></DialogTitle>
             <DialogDescription>
-              Phaeno Sales reviews work outside the configured scope. This sends
-              a request for review; it does not place an order or accept a
-              price.
-            </DialogDescription>
+              <CustomerText message="m_f43fbe48a79d" /></DialogDescription>
           </DialogHeader>
           {mutation.error ? (
             <Alert variant="destructive">
-              <AlertTitle>Custom-work request was not confirmed</AlertTitle>
+              <AlertTitle><CustomerText message="m_805cf65c13e8" /></AlertTitle>
               <AlertDescription>
-                {getOrderErrorMessage(
+                {<CustomerSourceText source={getOrderErrorMessage(
                   mutation.error,
                   'Try the same submission again. Your entries are retained.',
-                )}
+                )} />}
               </AlertDescription>
             </Alert>
           ) : null}
           {mutation.data ? (
             <>
               <Alert>
-                <AlertTitle>Custom-work request submitted</AlertTitle>
+                <AlertTitle><CustomerText message="m_8be4df8e5217" /></AlertTitle>
                 <AlertDescription>
-                  Reference {mutation.data.opportunityNumber}. Phaeno Sales will
-                  review the requested scope.{' '}
+                  <CustomerText message="m_71bf90935fc2" />{mutation.data.opportunityNumber}<CustomerText message="m_25becc1cb2c8" />{' '}
                   {sourceOrderId
-                    ? 'Your original order or Job remains unchanged.'
+                    ? <CustomerSourceText source={"Your original order or Job remains unchanged."} />
                     : ''}
                 </AlertDescription>
               </Alert>
               <DialogFooter>
                 <Button type="button" onClick={close}>
-                  Done
-                </Button>
+                  <CustomerText message="m_11a6767d5674" /></Button>
               </DialogFooter>
             </>
           ) : (
@@ -146,7 +146,7 @@ export function RequestCustomWorkButton({
                 <fieldset disabled={mutation.isPending} className="space-y-4">
                   <div>
                     <Label htmlFor="custom-work-subject">
-                      <RequiredFieldName>Subject</RequiredFieldName>
+                      <RequiredFieldName><CustomerText message="m_68971283841a" /></RequiredFieldName>
                     </Label>
                     <Input
                       id="custom-work-subject"
@@ -155,19 +155,16 @@ export function RequestCustomWorkButton({
                     />
                     {form.formState.errors.subject ? (
                       <p role="alert" className="mt-1 text-sm text-destructive">
-                        {form.formState.errors.subject.message}
+                        {<CustomerSourceText source={form.formState.errors.subject.message} />}
                       </p>
                     ) : null}
                   </div>
                   <div>
                     <Label htmlFor="custom-work-description">
-                      <RequiredFieldName>Requested work</RequiredFieldName>
+                      <RequiredFieldName><CustomerText message="m_a53a0c0ce5ac" /></RequiredFieldName>
                     </Label>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      Explain the sources, quantity, outputs or timing you need.
-                      Do not include patient identifiers, PHI, sensitive files
-                      or a downstream customer’s identity.
-                    </p>
+                      <CustomerText message="m_373390d9352c" /></p>
                     <Textarea
                       id="custom-work-description"
                       className="mt-2"
@@ -177,7 +174,7 @@ export function RequestCustomWorkButton({
                     />
                     {form.formState.errors.description ? (
                       <p role="alert" className="mt-1 text-sm text-destructive">
-                        {form.formState.errors.description.message}
+                        {<CustomerSourceText source={form.formState.errors.description.message} />}
                       </p>
                     ) : null}
                   </div>
@@ -190,16 +187,15 @@ export function RequestCustomWorkButton({
                   disabled={mutation.isPending}
                   onClick={close}
                 >
-                  Cancel
-                </Button>
+                  <CustomerText message="m_19766ed6ccb2" /></Button>
                 <Button
                   type="submit"
                   form="custom-work-form"
                   disabled={mutation.isPending || authProvider === 'mock'}
                 >
                   {mutation.isPending
-                    ? 'Submitting…'
-                    : 'Submit custom-work request'}
+                    ? <CustomerSourceText source={"Submitting…"} />
+                    : __customerText('m_c52cfef4f155')}
                 </Button>
               </RequiredDialogFooter>
             </>

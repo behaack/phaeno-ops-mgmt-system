@@ -1,3 +1,4 @@
+import * as portalConfirmation from '#/components/PortalConfirmation'
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
@@ -235,7 +236,7 @@ describe('Customer sample-list authorization', () => {
   it('clears saved details with confirmation and restores the accepted empty slot with one tube', async () => {
     const cleared = { ...order, version: 5, samples: [], canFinalizeSamples: false }
     api.clear.mockResolvedValue(cleared)
-    const systemConfirm = vi.spyOn(window, 'confirm')
+    const systemConfirm = vi.spyOn(portalConfirmation, 'confirmPortal')
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
     function SavedRoster() {
       const { data } = useQuery({ queryKey: ['lab-service-order', order.id], queryFn: async () => order, initialData: order, enabled: false })

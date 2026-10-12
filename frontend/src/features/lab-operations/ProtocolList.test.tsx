@@ -7,7 +7,7 @@ import type { LabProtocol } from '#/api/lab-operations'
 
 import { ProtocolList } from './LabOperationsPage'
 
-vi.mock('@tanstack/react-router', () => ({
+vi.mock('@tanstack/react-router', () => ({ useRouterState: ({select}: {select: (state: {location: {search: Record<string, unknown>}}) => unknown}) => select({location: {search: {}}}),
   Link: ({ children }: { children: ReactNode }) => <a href="#protocol">{children}</a>,
   useNavigate: () => vi.fn(),
   useBlocker: vi.fn(),

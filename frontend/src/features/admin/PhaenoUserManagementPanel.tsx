@@ -1,3 +1,4 @@
+import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -521,6 +522,10 @@ function PhaenoUserEditDialog({
     defaultValues: { firstName: '', lastName: '', roles: [] },
     mode: 'onBlur',
   })
+  const { isDirty: __formDraftDirty } = form.formState
+  const __modalGuard = useModalDraftGuard(__formDraftDirty, form.formState.isSubmitting)
+
+
   useEffect(() => {
     form.reset(
       user
@@ -545,7 +550,7 @@ function PhaenoUserEditDialog({
   }
 
   return (
-    <Dialog open={Boolean(user)} onOpenChange={onOpenChange}>
+    <Dialog open={Boolean(user)} onOpenChange={open => { if (open) (onOpenChange)(open); else void __modalGuard.close(() => (onOpenChange)(false)) }}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Edit user</DialogTitle>
@@ -636,14 +641,14 @@ function PhaenoUserEditDialog({
           <Button
             type="button"
             variant="outline"
-            onClick={() => onOpenChange(false)}
+            onClick={() => { void __modalGuard.close(() => (() => onOpenChange(false))()) }}
           >
             Cancel
           </Button>
           <Button
             type="submit"
             form="edit-phaeno-user"
-            disabled={isPending || !form.formState.isDirty}
+            disabled={isPending || !__formDraftDirty}
           >
             {isPending ? 'Saving…' : 'Save changes'}
           </Button>
@@ -671,6 +676,8 @@ function PhaenoUserInviteDialog({
     defaultValues: { firstName: '', lastName: '', email: '', roles: [] },
     mode: 'onBlur',
   })
+  const __modalGuard = useModalDraftGuard(form.formState.isDirty, form.formState.isSubmitting, open)
+
   const selectedRoles = form.watch('roles')
 
   function toggleRole(role: RoleValue, checked: boolean) {
@@ -686,10 +693,13 @@ function PhaenoUserInviteDialog({
   return (
     <Dialog
       open={open}
-      onOpenChange={(value) => {
+      onOpenChange={open => { if (open) ((value) => {
         onOpenChange(value)
         if (!value) form.reset()
-      }}
+      })(open); else void __modalGuard.close(() => ((value) => {
+        onOpenChange(value)
+        if (!value) form.reset()
+      })(false)) }}
     >
       <DialogContent>
         <DialogHeader>
@@ -805,7 +815,7 @@ function PhaenoUserInviteDialog({
           <Button
             type="button"
             variant="outline"
-            onClick={() => onOpenChange(false)}
+            onClick={() => { void __modalGuard.close(() => (() => onOpenChange(false))()) }}
           >
             Cancel
           </Button>

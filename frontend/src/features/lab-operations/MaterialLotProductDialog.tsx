@@ -17,8 +17,10 @@ export function MaterialLotProductDialog({ lot, onClose }: { lot: LabMaterialLot
   const client = useQueryClient()
   const products = catalog.data?.find(s => s.id === lot.supplierId)?.products ?? []
   const form = useForm<z.infer<typeof schema>>({ resolver: zodResolver(schema), defaultValues: { productId: '' } })
+  const { isDirty: __formDraftDirty } = form.formState
+
   const save = useMutation({ mutationFn: ({ productId }: z.infer<typeof schema>) => assignLotProduct(lot.id, productId, lot.version), onSuccess: async () => { form.reset(); await client.invalidateQueries({ queryKey: ['lab-operations'] }); await client.invalidateQueries({ queryKey: ['lab-preparation'] }); onClose() } })
-  return <CatalogEditor title="Assign product" description={`${lot.name} · ${lot.lotNumber}. Confirm the product on the lot's label. This assignment cannot be replaced after saving.`} formId={id} dirty={form.formState.isDirty} busy={save.isPending} error={save.error || catalog.error} onClose={onClose} saveDisabled={catalog.isPending || catalog.isError || !products.length}>
+  return <CatalogEditor title="Assign product" description={`${lot.name} · ${lot.lotNumber}. Confirm the product on the lot's label. This assignment cannot be replaced after saving.`} formId={id} dirty={__formDraftDirty} busy={save.isPending} error={save.error || catalog.error} onClose={onClose} saveDisabled={catalog.isPending || catalog.isError || !products.length}>
     <form id={id} className="space-y-4" noValidate onSubmit={form.handleSubmit(values => { if (!save.isPending && !catalog.isPending && !catalog.isError) save.mutate(values) })}>
       <p className="text-sm">Supplier: {lot.supplier}</p>
       <CatalogField id={`${id}-product`} label="Product name" error={form.formState.errors.productId?.message}>

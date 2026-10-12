@@ -1,3 +1,5 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
+import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useId, useRef } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
@@ -35,15 +37,19 @@ export function LabQuoteDeclineDialog({ orderNumber, quoteRevision, busy, error,
   onCloseFocus?: () => void
   unavailableReason?: string
 }) {
+  const __customerText = useCustomerText()
+
   const formId = useId()
   const reasonId = useId()
   const explanationId = useId()
   const submitting = useRef(false)
   const cancelRef = useRef<HTMLButtonElement>(null)
   const form = useForm<z.infer<typeof schema>>({ resolver: zodResolver(schema), mode: 'onBlur', reValidateMode: 'onChange', defaultValues: { reason: '', explanation: '' } })
+  const { isDirty: __formDraftDirty } = form.formState
+
   const selectedReason = useWatch({ control: form.control, name: 'reason' })
   const isBusy = busy || form.formState.isSubmitting
-  const dismissal = useOrderDecisionDismissal(form.formState.isDirty, isBusy, onClose)
+  const dismissal = useOrderDecisionDismissal(__formDraftDirty, isBusy, onClose)
   const submit = form.handleSubmit(async values => {
     if (busy || submitting.current || unavailableReason) return
     submitting.current = true
@@ -60,30 +66,30 @@ export function LabQuoteDeclineDialog({ orderNumber, quoteRevision, busy, error,
       onOpenAutoFocus={event => { event.preventDefault(); cancelRef.current?.focus() }}
       onCloseAutoFocus={event => { if (onCloseFocus) { event.preventDefault(); onCloseFocus() } }}>
       <DialogHeader>
-        <DialogTitle>Decline quote for {orderNumber}</DialogTitle>
-        <DialogDescription>{quoteRevision ? `Quote revision ${quoteRevision}` : 'Current quote'}</DialogDescription>
+        <DialogTitle><CustomerText message="m_582575edea0a" />{orderNumber}</DialogTitle>
+        <DialogDescription>{quoteRevision ? __customerText('m_b86057d722ab', { p0: String(quoteRevision) }) : __customerText('m_9a577057772a')}</DialogDescription>
       </DialogHeader>
-      {error ? <Alert variant="destructive"><AlertTitle>Quote was not declined</AlertTitle><AlertDescription>{getOrderErrorMessage(error, 'Try again. Your selected reason has been kept.')}</AlertDescription></Alert> : null}
+      {error ? <Alert variant="destructive"><AlertTitle><CustomerText message="m_c6c335bc69d3" /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(error, 'Try again. Your selected reason has been kept.')} />}</AlertDescription></Alert> : null}
       <form id={formId} noValidate onSubmit={submit} className="space-y-4">
-        <p className="text-sm">Declining this quote closes the entire request, including every phase. The quote, phase details and history will be kept.</p>
-        {unavailableReason ? <Alert><AlertTitle>Quote decision is unavailable</AlertTitle><AlertDescription>{unavailableReason}</AlertDescription></Alert> : null}
+        <p className="text-sm"><CustomerText message="m_ac51a4a42d67" /></p>
+        {unavailableReason ? <Alert><AlertTitle><CustomerText message="m_4915dcce5690" /></AlertTitle><AlertDescription>{unavailableReason}</AlertDescription></Alert> : null}
         <Field>
-          <Label htmlFor={reasonId}><RequiredFieldName>Reason</RequiredFieldName></Label>
+          <Label htmlFor={reasonId}><RequiredFieldName><CustomerText message="m_f81ab834de5f" /></RequiredFieldName></Label>
           <NativeSelect id={reasonId} required disabled={isBusy} aria-invalid={Boolean(form.formState.errors.reason)} aria-describedby={form.formState.errors.reason ? `${reasonId}-error` : undefined} {...form.register('reason', { onChange: () => { if (form.formState.errors.reason) void form.trigger('reason'); if (form.formState.errors.explanation) form.clearErrors('explanation') } })}>
-            <option value="">Select a reason</option>
+            <option value=""><CustomerText message="m_8f60b8652e7c" /></option>
             {reasons.map(reason => <option key={reason} value={reason}>{reason}</option>)}
           </NativeSelect>
           <FieldError id={`${reasonId}-error`}>{form.formState.errors.reason?.message}</FieldError>
         </Field>
         {selectedReason === 'Other' ? <Field>
-          <Label htmlFor={explanationId}><RequiredFieldName>Please explain</RequiredFieldName></Label>
+          <Label htmlFor={explanationId}><RequiredFieldName><CustomerText message="m_4702058c8a87" /></RequiredFieldName></Label>
           <Textarea id={explanationId} required disabled={isBusy} className="min-h-24" aria-invalid={Boolean(form.formState.errors.explanation)} aria-describedby={form.formState.errors.explanation ? `${explanationId}-error` : undefined} {...form.register('explanation', { onChange: () => { if (form.formState.errors.explanation) void form.trigger('explanation') } })} />
           <FieldError id={`${explanationId}-error`}>{form.formState.errors.explanation?.message}</FieldError>
         </Field> : null}
       </form>
       <RequiredDialogFooter>
-        <Button ref={cancelRef} type="button" variant="outline" disabled={isBusy} onClick={dismissal.close}>Keep reviewing</Button>
-        <Button type="submit" form={formId} variant="destructive" disabled={isBusy || Boolean(unavailableReason)}>{isBusy ? 'Updating…' : 'Decline quote and close request'}</Button>
+        <Button ref={cancelRef} type="button" variant="outline" disabled={isBusy} onClick={dismissal.close}><CustomerText message="m_34411a1bde47" /></Button>
+        <Button type="submit" form={formId} variant="destructive" disabled={isBusy || Boolean(unavailableReason)}>{isBusy ? <CustomerSourceText source={"Updating…"} /> : __customerText('m_e95880061726')}</Button>
       </RequiredDialogFooter>
     </DialogContent>
   </Dialog>{dismissal.confirmation}</>

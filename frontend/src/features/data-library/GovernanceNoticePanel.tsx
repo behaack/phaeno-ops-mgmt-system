@@ -1,3 +1,8 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
+import { RecordPagination } from '#/components/RecordPagination'
+import { useScopedRecordPage } from '#/components/use-scoped-record-page'
+import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
+import { CustomerText, useCustomerText, useCustomerDateFormatter } from '#/features/customer-i18n/customer-text'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Bell, ShieldAlert } from 'lucide-react'
@@ -7,8 +12,8 @@ import { z } from 'zod'
 
 import {
   getApiErrorMessage,
-  listTenantActivity,
-  listTenantGovernanceIncidents,
+  listTenantActivityPage,
+  listTenantGovernanceIncidentsPage,
   submitTenantGovernanceAttestation,
   type TenantGovernanceIncident,
 } from '#/api/data-provisioning'
@@ -45,27 +50,39 @@ export function GovernanceNoticePanel({
   apiEnabled,
   isOrganizationAdmin,
   selectedOrganizationId,
+  selectedDepartmentId,
 }: {
   apiEnabled: boolean
   isOrganizationAdmin: boolean
   selectedOrganizationId: string | null
+  selectedDepartmentId?: string | null
 }) {
+  const __customerText = useCustomerText()
+  const dates = useCustomerDateFormatter()
+  const timestamps = useCustomerDateFormatter(true)
+
   const queryClient = useQueryClient()
   const [attestingIncident, setAttestingIncident] = useState<TenantGovernanceIncident | null>(null)
-  const incidentsQuery = useQuery({
-    queryKey: ['curated-data', selectedOrganizationId, 'governance-incidents'],
-    queryFn: listTenantGovernanceIncidents,
+  const incidentsQuerySelection = useScopedRecordPage(`${selectedOrganizationId}:${selectedDepartmentId}`)
+  const incidentsQueryPage = useQuery({
+    queryKey: ['curated-data', selectedOrganizationId, 'governance-incidents', `${selectedOrganizationId}:${selectedDepartmentId}`, incidentsQuerySelection.page],
+    queryFn: () => listTenantGovernanceIncidentsPage(incidentsQuerySelection.page),
     enabled: apiEnabled,
   })
-  const activityQuery = useQuery({
-    queryKey: ['curated-data', selectedOrganizationId, 'activity'],
-    queryFn: listTenantActivity,
+  const incidentsQuery = { ...incidentsQueryPage, data: incidentsQueryPage.isError ? undefined : incidentsQueryPage.data?.items }
+  const activityQuerySelection = useScopedRecordPage(`${selectedOrganizationId}:${selectedDepartmentId}`)
+  const activityQueryPage = useQuery({
+    queryKey: ['curated-data', selectedOrganizationId, 'activity', `${selectedOrganizationId}:${selectedDepartmentId}`, activityQuerySelection.page],
+    queryFn: () => listTenantActivityPage(activityQuerySelection.page),
     enabled: apiEnabled,
   })
+  const activityQuery = { ...activityQueryPage, data: activityQueryPage.isError ? undefined : activityQueryPage.data?.items }
   const form = useForm<AttestationValues>({
     resolver: zodResolver(attestationSchema),
     defaultValues: { notes: '' },
   })
+  const __modalGuard = useModalDraftGuard(form.formState.isDirty, form.formState.isSubmitting)
+
   const mutation = useMutation({
     mutationFn: ({ incident, values }: { incident: TenantGovernanceIncident; values: AttestationValues }) =>
       submitTenantGovernanceAttestation({
@@ -99,20 +116,19 @@ export function GovernanceNoticePanel({
           <ShieldAlert aria-hidden="true" />
           <AlertTitle>
             {incident.organizationStatus === 'Blocked'
-              ? 'Curated data access is temporarily paused'
-              : 'Action required for withdrawn curated data'}
+              ? <CustomerSourceText source="Curated data access is temporarily paused" />
+              : __customerText('m_5f2c18e67914')}
           </AlertTitle>
           <AlertDescription className="space-y-3">
             <p className="m-0">{incident.externalGuidance}</p>
             {incident.organizationStatus === 'AwaitingAttestation' ? (
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <span>Attestation due {formatDate(incident.attestationDueAt)}.</span>
+                <span><CustomerText message="m_834d6f6a2b14" />{dates.format(new Date(incident.attestationDueAt))}.</span>
                 {isOrganizationAdmin ? (
                   <Button type="button" size="sm" variant="outline" onClick={() => setAttestingIncident(incident)}>
-                    Submit attestation
-                  </Button>
+                    <CustomerText message="m_5728818ab1b2" /></Button>
                 ) : (
-                  <span>Ask an organization administrator to submit the required attestation.</span>
+                  <span><CustomerText message="m_ed09dca76f3f" /></span>
                 )}
               </div>
             ) : null}
@@ -120,10 +136,11 @@ export function GovernanceNoticePanel({
         </Alert>
       ))}
 
+      <RecordPagination label={__customerText('governance_attention_pages')} data={incidentsQueryPage.isError ? undefined : incidentsQueryPage.data} busy={incidentsQueryPage.isFetching} onPage={incidentsQuerySelection.setPage} />
       {incidentsQuery.error ? (
         <Alert variant="destructive" className="mb-4" role="alert">
-          <AlertTitle>Governance status could not be loaded</AlertTitle>
-          <AlertDescription>{getApiErrorMessage(incidentsQuery.error, 'Try again or contact Phaeno support.')}</AlertDescription>
+          <AlertTitle><CustomerText message="m_733f935ce0bb" /></AlertTitle>
+          <AlertDescription><CustomerSourceText source={getApiErrorMessage(incidentsQuery.error, 'Try again or contact Phaeno support.')} /></AlertDescription>
         </Alert>
       ) : null}
 
@@ -132,45 +149,42 @@ export function GovernanceNoticePanel({
           <div className="flex items-start gap-3">
             <Bell aria-hidden="true" className="mt-0.5 size-5 text-muted-foreground" />
             <div>
-              <CardTitle>Data activity</CardTitle>
+              <CardTitle><CustomerText message="m_3d2dfdbdd955" /></CardTitle>
               <CardDescription>
-                Assignment, upgrade, revocation, and governance notices for this organization.
-              </CardDescription>
+                <CustomerText message="m_05bded18185a" /></CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-2">
-          {(activityQuery.data ?? []).slice(0, 20).map((notice) => (
+          {(activityQuery.data ?? []).map((notice) => (
             <div key={notice.id} className="rounded-lg border bg-background p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="m-0 text-sm font-medium">{notice.subject}</p>
                 <Badge variant="outline">{notice.kind}</Badge>
               </div>
               <p className="m-0 mt-1 text-sm text-muted-foreground">{notice.body}</p>
-              <p className="m-0 mt-2 text-xs text-muted-foreground">{formatDateTime(notice.createdAt)}</p>
+              <p className="m-0 mt-2 text-xs text-muted-foreground">{timestamps.format(new Date(notice.createdAt))}</p>
             </div>
           ))}
-          {!activityQuery.isLoading && (activityQuery.data?.length ?? 0) === 0 ? (
+          {!activityQuery.isLoading && !activityQuery.isError && activityQueryPage.data?.totalCount === 0 ? (
             <p className="m-0 rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-              No data-provisioning activity has been recorded for this organization.
-            </p>
+              <CustomerText message="m_7b52d70bb96c" /></p>
           ) : null}
+          <RecordPagination label={__customerText('data_activity_pages')} data={activityQueryPage.isError ? undefined : activityQueryPage.data} busy={activityQueryPage.isFetching} onPage={activityQuerySelection.setPage} />
           {activityQuery.error ? (
             <p className="m-0 text-sm text-destructive" role="alert">
-              {getApiErrorMessage(activityQuery.error, 'Data activity could not be loaded.')}
+              <CustomerSourceText source={getApiErrorMessage(activityQuery.error, 'Data activity could not be loaded.')} />
             </p>
           ) : null}
         </CardContent>
       </Card>
 
-      <Dialog open={Boolean(attestingIncident)} onOpenChange={(open) => !open && setAttestingIncident(null)}>
+      <Dialog open={Boolean(attestingIncident)} onOpenChange={open => { if (open) ((open) => !open && setAttestingIncident(null))(open); else void __modalGuard.close(() => ((open) => !open && setAttestingIncident(null))(false)) }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Submit remediation attestation</DialogTitle>
+            <DialogTitle><CustomerText message="m_16976dba1a15" /></DialogTitle>
             <DialogDescription>
-              Confirm what your organization did with previously downloaded affected copies.
-              Your identity and submission time are recorded.
-            </DialogDescription>
+              <CustomerText message="m_c9b8d6760d4c" /></DialogDescription>
           </DialogHeader>
           {attestingIncident ? (
             <form
@@ -179,23 +193,23 @@ export function GovernanceNoticePanel({
             >
               <label className="grid gap-1.5">
                 <span className="text-sm font-medium">
-                  <RequiredFieldName>Remediation details</RequiredFieldName>
+                  <RequiredFieldName><CustomerText message="m_15b72350f1d1" /></RequiredFieldName>
                 </span>
                 <textarea className={textareaClass} rows={5} {...form.register('notes')} />
                 {form.formState.errors.notes?.message ? (
-                  <span className="text-sm text-destructive" role="alert">{form.formState.errors.notes.message}</span>
+                  <span className="text-sm text-destructive" role="alert"><CustomerSourceText source={form.formState.errors.notes.message} /></span>
                 ) : null}
               </label>
               {mutation.error ? (
                 <Alert variant="destructive" role="alert">
-                  <AlertTitle>Attestation could not be submitted</AlertTitle>
-                  <AlertDescription>{getApiErrorMessage(mutation.error, 'Try again or contact Phaeno support.')}</AlertDescription>
+                  <AlertTitle><CustomerText message="m_f31031e36bbb" /></AlertTitle>
+                  <AlertDescription><CustomerSourceText source={getApiErrorMessage(mutation.error, 'Try again or contact Phaeno support.')} /></AlertDescription>
                 </Alert>
               ) : null}
               <RequiredDialogFooter>
-                <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
+                <DialogClose asChild><Button type="button" variant="outline"><CustomerText message="m_19766ed6ccb2" /></Button></DialogClose>
                 <Button type="submit" disabled={mutation.isPending}>
-                  {mutation.isPending ? 'Submitting' : 'Submit attestation'}
+                  {mutation.isPending ? <CustomerSourceText source={"Submitting"} /> : __customerText('m_5728818ab1b2')}
                 </Button>
               </RequiredDialogFooter>
             </form>
@@ -204,14 +218,6 @@ export function GovernanceNoticePanel({
       </Dialog>
     </>
   )
-}
-
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(value))
-}
-
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
 }
 
 const textareaClass = 'min-h-20 w-full resize-y rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50'

@@ -11,18 +11,13 @@ import { MaterialList } from './LabOperationsPage'
 import { MaterialLotCreateDialog } from './MaterialLotCreateDialog'
 import { ProductCatalogWorkspace } from './ProductCatalogWorkspace'
 import { SupplierCatalogPage } from './SupplierCatalogPage'
-
-export type PurchasingSection = 'suppliers' | 'products' | 'materials'
+import type { PurchasingSection } from './purchasing-search'
 
 export const purchasingSections: ReadonlyArray<WorkspaceSidebarItem<PurchasingSection>> = [
   { value: 'suppliers', label: 'Suppliers', description: 'Vendors and internal production', icon: Building2 },
   { value: 'products', label: 'Products', description: 'Catalog products and product types', icon: Package },
   { value: 'materials', label: 'Purchased materials', description: 'Material lots, prepared reagents, and QC', icon: FlaskConical },
 ]
-
-export function parsePurchasingSection(value: unknown): PurchasingSection | undefined {
-  return value === 'suppliers' || value === 'products' || value === 'materials' ? value : undefined
-}
 
 export function PurchasingWorkspace({ section, onSectionChange, children, productTab, onProductTabChange }: {
   section: PurchasingSection

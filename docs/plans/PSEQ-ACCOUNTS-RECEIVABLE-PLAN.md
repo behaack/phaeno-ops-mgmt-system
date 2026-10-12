@@ -1,5 +1,30 @@
 # PSeq Accounts Receivable Plan
 
+## October 11 document-source and rendering closure
+
+Invoice PDFs now use the existing embedded Unicode font, wrap long line
+descriptions and continue across numbered pages with the invoice identifier.
+Saved quantities, unit prices, line totals, subtotal, tax and total are rendered
+without recalculation or machine-culture changes. Unsupported glyphs fail rather
+than silently substituting characters. Invoice/quote English document labels use
+the current Customer document catalog; no additional language is published.
+The synthetic 60-line, five-page invoice was text/bounds checked and its first
+and final pages visually inspected. Existing quote rendering/frozen-scope checks
+and local Department/member access checks pass. See the
+[final receipt](../testing/runs/2026-10-11-system-gap-closure-final.md).
+
+## October 11 complete primary Finance discovery
+
+Local invoices, receipts and reconciliation queues expose stable counts/paging;
+invoice/receipt search runs before paging. Receipt selection in new and edited
+reconciliation drafts preserves selected identities across pages and leaves final
+eligibility/version checks with the existing atomic command. Exact-record reads and
+all-Customer aging/export scopes retain their meaning. Work attention separates
+unapplied cash, overdue invoices, billing/tax setup and independent reconciliation.
+See the [gap receipt](../testing/runs/2026-10-11-system-gap-closure.md) for compiled
+source and pending connected, volume, menu/guard and financial acceptance. No
+financial data, tax decision, schema, deployment or accounting integration changed.
+
 ## Remaining-case review — September 15, 2026
 
 The Product Owner approved accepted failed processing as billable, with separate reviewed credits/replacements. Authoritative terminal handoff and current hold checks now support Job completion and native invoice/PDF issuance. FIN-01/03 pass the approved simulated scope, including immutable PDF through adjustments and unpaid scientific download. [Evidence](../testing/runs/2026-09-15-remaining-case-acceptance.md).

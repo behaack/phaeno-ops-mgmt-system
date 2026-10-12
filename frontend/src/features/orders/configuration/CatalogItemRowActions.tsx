@@ -1,3 +1,4 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { useRef, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
@@ -49,12 +50,12 @@ export function CatalogItemRowActions({ item, apiEnabled, onEdit }: {
   return <div className="flex justify-end">
     <ActionMenu>
       <DropdownMenuTrigger asChild>
-        <Button ref={trigger} variant="outline" size="sm" aria-label={`Actions for ${item.name}`} disabled={!apiEnabled || status.isPending}>Actions</Button>
+        <Button ref={trigger} variant="outline" size="sm" aria-label={`Actions for ${item.name}`} disabled={!apiEnabled || status.isPending}><CustomerSourceText source={"Actions"} /></Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-40 w-max">
-        <DropdownMenuItem onSelect={() => onEdit(trigger.current)}>Edit</DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => onEdit(trigger.current)}><CustomerSourceText source={"Edit"} /></DropdownMenuItem>
         <DropdownMenuItem onSelect={() => { status.reset(); setReviewed(item) }}>
-          {item.isActive ? 'Deactivate' : 'Activate'}
+          {item.isActive ? <CustomerSourceText source={"Deactivate"} /> : <CustomerSourceText source={"Activate"} />}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </ActionMenu>
@@ -69,16 +70,16 @@ export function CatalogItemRowActions({ item, apiEnabled, onEdit }: {
         <DialogHeader><DialogTitle>{action} {reviewed?.name}?</DialogTitle></DialogHeader>
         <div className="space-y-3">
           <DialogDescription>
-            {reviewed?.isActive ? 'This item will no longer be available for new pricing.' : 'This item will become available for new pricing.'}
-            {' '}Existing orders and quotes retain their saved service details and prices.
+            {reviewed?.isActive ? <CustomerSourceText source={"This item will no longer be available for new pricing."} /> : <CustomerSourceText source={"This item will become available for new pricing."} />}
+            {' '}<CustomerSourceText source={"Existing orders and quotes retain their saved service details and prices."} />
           </DialogDescription>
-          {changed ? <p role="status" className="text-sm">This item changed. Close this confirmation and review the latest item before changing its status.</p> : null}
-          {status.error ? <p role="alert" className="text-sm text-destructive">{getOrderErrorMessage(status.error, 'The item status was not changed. Review the latest item and try again.')}</p> : null}
+          {changed ? <p role="status" className="text-sm"><CustomerSourceText source={"This item changed. Close this confirmation and review the latest item before changing its status."} /></p> : null}
+          {status.error ? <p role="alert" className="text-sm text-destructive">{<CustomerSourceText source={getOrderErrorMessage(status.error, 'The item status was not changed. Review the latest item and try again.')} />}</p> : null}
         </div>
         <RequiredDialogFooter showLegend={false}>
-          <Button ref={cancel} variant="outline" disabled={status.isPending} onClick={() => setReviewed(null)}>Cancel</Button>
+          <Button ref={cancel} variant="outline" disabled={status.isPending} onClick={() => setReviewed(null)}><CustomerSourceText source={"Cancel"} /></Button>
           <Button disabled={!apiEnabled || status.isPending || changed} onClick={() => { if (reviewed) status.mutate(reviewed) }}>
-            {status.isPending ? 'Saving…' : action}
+            {status.isPending ? <CustomerSourceText source={"Saving…"} /> : action}
           </Button>
         </RequiredDialogFooter>
       </DialogContent>

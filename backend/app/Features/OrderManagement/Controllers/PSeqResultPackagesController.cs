@@ -316,7 +316,8 @@ public sealed class PSeqResultReleaseController(
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     [HttpGet]
-    public async Task<IReadOnlyList<ResultPackageDto>> List([FromQuery] string? state, CancellationToken cancellationToken)
+    public async Task<DTOs.PagedResult<ResultPackageDto>> List([FromQuery] string? state, CancellationToken cancellationToken,
+        [FromQuery] int page = 1, [FromQuery] int pageSize = 25)
     {
         RequireGovernedResultsConfiguration();
         await requestContext.RequireBusinessRoleAsync(HttpContext, BusinessRole.ResultReleaseManager,
@@ -328,17 +329,19 @@ public sealed class PSeqResultReleaseController(
                 throw new OrderManagementException("result_package_state_invalid", "The result package state is invalid.");
             query = query.Where(item => item.State == parsed);
         }
-        var packages = await query.OrderByDescending(item => item.CreatedAt).Take(250).ToListAsync(cancellationToken);
+        var packagePage = await Infrastructure.Api.RecordPage.ReadAsync(query.OrderByDescending(item => item.CreatedAt).ThenBy(item => item.Id), page, pageSize, cancellationToken);
+        var packages = packagePage.Items;
         var packageIds = packages.Select(item => item.Id).ToList();
         var artifacts = await dbContext.ResultArtifacts.AsNoTracking().Where(item => packageIds.Contains(item.ResultOutputPackageId))
             .OrderBy(item => item.FileName).ToListAsync(cancellationToken);
         var retention = await retentionService.ReadAsync(packages, artifacts, await RetentionTransaction.ClockAsync(dbContext, cancellationToken), cancellationToken);
         var contexts = await ReadContextsAsync(packages, cancellationToken);
-        return packages.Select(package => PSeqResultPipelineController.Map(package,
+        var items = packages.Select(package => PSeqResultPipelineController.Map(package,
             artifacts.Where(item => item.ResultOutputPackageId == package.Id)
                 .Select(item => new ResultArtifactDto(item.Id, item.LogicalRole, item.FileName, item.ContentType,
                     item.SizeBytes, item.Sha256, item.ScanState.ToString(), item.ScanCompletedAtUtc, item.DeletedAtUtc, item.ResultLocator)).ToList(),
             retention[package.Id].State) with { Context = contexts[package.Id] }).ToList();
+        return new(items, packagePage.Page, packagePage.PageSize, packagePage.TotalCount);
     }
 
     [HttpGet("{packageId:guid}")]

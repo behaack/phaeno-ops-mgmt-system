@@ -1,3 +1,4 @@
+import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, type ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
@@ -45,13 +46,15 @@ export function ProtocolIdentityDialog({
     defaultValues: valuesFor(protocol),
     mode: 'onBlur',
   })
+  const __modalGuard = useModalDraftGuard(form.formState.isDirty, form.formState.isSubmitting)
+
 
   useEffect(() => {
     if (protocol) form.reset(valuesFor(protocol))
   }, [form, protocol])
 
   return (
-    <Dialog open={protocol !== null} onOpenChange={onOpenChange}>
+    <Dialog open={protocol !== null} onOpenChange={open => { if (open) (onOpenChange)(open); else void __modalGuard.close(() => (onOpenChange)(false)) }}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Edit protocol name and description</DialogTitle>
@@ -104,7 +107,7 @@ export function ProtocolIdentityDialog({
           </Field>
         </form>
         <RequiredDialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <Button type="button" variant="outline" onClick={() => { void __modalGuard.close(() => (() => onOpenChange(false))()) }}>
             Cancel
           </Button>
           <Button type="submit" form="edit-protocol-identity" disabled={isPending}>

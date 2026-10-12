@@ -1,3 +1,6 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
+import { NativeSelect } from '#/components/ui/native-select'
+import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
@@ -97,6 +100,8 @@ export function LabServiceTimingPanel({
     resolver: zodResolver(timingSchema),
     defaultValues: empty,
   })
+  const { isDirty: __formDraftDirty } = form.formState
+
   const mutation = useMutation({
     mutationFn: (values: z.infer<typeof timingSchema>) =>
       overrideLabServiceTiming(orderId, {
@@ -119,14 +124,14 @@ export function LabServiceTimingPanel({
     },
   })
   useOrderDraftGuard(
-    Boolean(reviewed) && form.formState.isDirty,
+    Boolean(reviewed) && __formDraftDirty,
     mutation.isPending,
   )
-  function close() {
+  async function close() {
     if (
       !mutation.isPending &&
-      (!form.formState.isDirty ||
-        window.confirm('Discard the unsaved timing change?'))
+      (!__formDraftDirty ||
+        (await confirmPortal('Discard the unsaved timing change?')))
     )
       setReviewed(null)
   }
@@ -144,7 +149,7 @@ export function LabServiceTimingPanel({
     <Card className="mb-5">
       <CardHeader>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <CardTitle>{phaseCount > 1 ? 'Whole-Job milestones' : 'Turnaround and progress'}</CardTitle>
+          <CardTitle>{phaseCount > 1 ? <CustomerSourceText source={"Whole-Job milestones"} /> : <CustomerSourceText source={"Turnaround and progress"} />}</CardTitle>
           {staff && phaseCount === 1 && timing.canOverrideTiming ? (
             <Button
               variant="outline"
@@ -159,12 +164,12 @@ export function LabServiceTimingPanel({
                 setReviewed(timing)
               }}
             >
-              Change expected completion
+              <CustomerSourceText source={"Change expected completion"} />
             </Button>
           ) : null}
         </div>
         <CardDescription>
-          {phaseCount > 1 ? 'Review the Phases card for each cohort’s receipt-triggered TAT, original commitment and current delivery due date.' : 'Processing targets track scientific acceptance. Delivery TAT starts after physical receipt of every required tube. Original targets remain recorded when timing changes.'} Laboratory completion is separate from delivery of every required result.
+          {phaseCount > 1 ? <CustomerSourceText source={"Review the Phases card for each cohort’s receipt-triggered TAT, original commitment and current delivery due date."} /> : <CustomerSourceText source={"Processing targets track scientific acceptance. Delivery TAT starts after physical receipt of every required tube. Original targets remain recorded when timing changes."} />} <CustomerSourceText source={"Laboratory completion is separate from delivery of every required result."} />
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -185,16 +190,16 @@ export function LabServiceTimingPanel({
         </dl>
         {duration !== null ? (
           <p className="mt-4 text-sm">
-            Receipt to acceptance: {duration.toFixed(1)} days.
+            <CustomerSourceText source={"Receipt to acceptance:"} /> {duration.toFixed(1)} <CustomerSourceText source={"days."} />
           </p>
         ) : null}
         <p className="mt-3 text-sm">
-          Laboratory schedule: {timing.scheduleHealth.replace(/([a-z])([A-Z])/g, '$1 $2')}
+          <CustomerSourceText source={"Laboratory schedule:"} /> {timing.scheduleHealth.replace(/([a-z])([A-Z])/g, '$1 $2')}
         </p>
         {timing.changes.length ? (
           <details className="mt-4">
             <summary className="cursor-pointer text-sm font-medium">
-              Timing history
+              <CustomerSourceText source={"Timing history"} />
             </summary>
             <ol className="mt-3 divide-y">
               {timing.changes.map((change) => (
@@ -210,21 +215,20 @@ export function LabServiceTimingPanel({
                       : ''}
                   </p>
                   <p className="text-muted-foreground">
-                    Recorded {display(change.occurredAtUtc)}
+                    <CustomerSourceText source={"Recorded"} /> {display(change.occurredAtUtc)}
                   </p>
                   {staff ? (
                     <>
                       {change.internalNote ? (
-                        <p>Internal note: {change.internalNote}</p>
+                        <p><CustomerSourceText source={"Internal note:"} /> {change.internalNote}</p>
                       ) : null}
                       {change.notificationRequired ? (
                         <p>
-                          Organization notification: {change.notificationStatus}
-                          . Failed delivery can be reviewed in Order operations
-                          → Legacy integrations → Notifications.
+                          <CustomerSourceText source={"Organization notification:"} /> {change.notificationStatus}
+                          <CustomerSourceText source={". Failed delivery can be reviewed in Order operations\r\n                          → Legacy integrations → Notifications."} />
                         </p>
                       ) : (
-                        <p>No later-date notification required.</p>
+                        <p><CustomerSourceText source={"No later-date notification required."} /></p>
                       )}
                     </>
                   ) : null}
@@ -244,24 +248,21 @@ export function LabServiceTimingPanel({
             aria-busy={mutation.isPending}
           >
             <DialogHeader>
-              <DialogTitle>Change expected completion</DialogTitle>
+              <DialogTitle><CustomerSourceText source={"Change expected completion"} /></DialogTitle>
               <DialogDescription>
-                A later date updates the Portal and queues a notice to the
-                ordering organization. Earlier dates update the Portal. The
-                original target remains{' '}
+                <CustomerSourceText source={"A later date updates the Portal and queues a notice to the\r\n                ordering organization. Earlier dates update the Portal. The\r\n                original target remains"} />{' '}
                 {display(reviewed?.originalTargetAtUtc ?? null)}.
               </DialogDescription>
             </DialogHeader>
             {mutation.error ? (
               <Alert variant="destructive">
-                <AlertTitle>Timing was not changed</AlertTitle>
+                <AlertTitle><CustomerSourceText source={"Timing was not changed"} /></AlertTitle>
                 <AlertDescription>
-                  {getOrderErrorMessage(
+                  {<CustomerSourceText source={getOrderErrorMessage(
                     mutation.error,
                     'Review the details and try again.',
-                  )}{' '}
-                  Your entries remain here. Reopen this action after refreshing
-                  if another operator changed the record.
+                  )} />}{' '}
+                  <CustomerSourceText source={"Your entries remain here. Reopen this action after refreshing\r\n                  if another operator changed the record."} />
                 </AlertDescription>
               </Alert>
             ) : null}
@@ -273,7 +274,7 @@ export function LabServiceTimingPanel({
               <fieldset disabled={mutation.isPending} className="space-y-4">
                 <div>
                   <Label htmlFor="lab-expected">
-                    <RequiredFieldName>Expected completion</RequiredFieldName>
+                    <RequiredFieldName><CustomerSourceText source={"Expected completion"} /></RequiredFieldName>
                   </Label>
                   <Input
                     id="lab-expected"
@@ -283,39 +284,38 @@ export function LabServiceTimingPanel({
                   />
                   {form.formState.errors.expectedCompletion ? (
                     <p role="alert" className="mt-1 text-sm text-destructive">
-                      {form.formState.errors.expectedCompletion.message}
+                      {<CustomerSourceText source={form.formState.errors.expectedCompletion.message} />}
                     </p>
                   ) : null}
                 </div>
                 <div>
                   <Label htmlFor="lab-timing-reason">
                     <RequiredFieldName>
-                      Reason shown to the organization
+                      <CustomerSourceText source={"Reason shown to the organization"} />
                     </RequiredFieldName>
                   </Label>
-                  <select
+                  <NativeSelect
                     id="lab-timing-reason"
-                    className="mt-2 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    className="mt-2 w-full rounded-md border border-input bg-background px-3 text-sm"
                     {...form.register('reason')}
                   >
                     {reasons.map((reason) => (
                       <option key={reason}>{reason}</option>
                     ))}
-                  </select>
+                  </NativeSelect>
                 </div>
                 <div>
                   <Label htmlFor="lab-safe-note">
                     {form.watch('reason') === 'Other operational delay' ? (
                       <RequiredFieldName>
-                        Organization-visible note
+                        <CustomerSourceText source={"Organization-visible note"} />
                       </RequiredFieldName>
                     ) : (
                       'Organization-visible note (optional)'
                     )}
                   </Label>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Do not include other organizations, internal batch
-                    composition or confidential details.
+                    <CustomerSourceText source={"Do not include other organizations, internal batch\r\n                    composition or confidential details."} />
                   </p>
                   <Textarea
                     id="lab-safe-note"
@@ -324,13 +324,13 @@ export function LabServiceTimingPanel({
                   />
                   {form.formState.errors.customerSafeNote ? (
                     <p role="alert" className="mt-1 text-sm text-destructive">
-                      {form.formState.errors.customerSafeNote.message}
+                      {<CustomerSourceText source={form.formState.errors.customerSafeNote.message} />}
                     </p>
                   ) : null}
                 </div>
                 <div>
                   <Label htmlFor="lab-internal-note">
-                    Internal note (optional)
+                    <CustomerSourceText source={"Internal note (optional)"} />
                   </Label>
                   <Textarea
                     id="lab-internal-note"
@@ -347,14 +347,14 @@ export function LabServiceTimingPanel({
                 disabled={mutation.isPending}
                 onClick={close}
               >
-                Cancel
+                <CustomerSourceText source={"Cancel"} />
               </Button>
               <Button
                 type="submit"
                 form="lab-timing-form"
                 disabled={mutation.isPending}
               >
-                {mutation.isPending ? 'Saving…' : 'Save expected completion'}
+                {mutation.isPending ? <CustomerSourceText source={"Saving…"} /> : <CustomerSourceText source={"Save expected completion"} />}
               </Button>
             </RequiredDialogFooter>
           </DialogContent>

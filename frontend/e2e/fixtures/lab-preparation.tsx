@@ -7,6 +7,7 @@ import { PhaenoSessionContext, type PhaenoSessionContextValue } from '../../src/
 import { configureApiAuth } from '../../src/api/client'
 import { noSessionCapabilities } from '../../src/test-helpers/session'
 import { preparationFixture } from '../../src/test-helpers/lab-preparation'
+import { PortalConfirmation } from '../../src/components/PortalConfirmation'
 import { applyThemeMode } from '../../src/components/theme-mode'
 import '../../src/styles.css'
 
@@ -17,7 +18,7 @@ const session: PhaenoSessionContextValue = {
   session: { state: 'ready', user: { id: 'operator', email: 'operator@example.test', firstName: 'Training', lastName: 'Operator', status: 'Active' }, memberships: [{ membershipId: 'training', organizationId: 'training-phaeno', organizationName: 'Phaeno', organizationKind: 'Phaeno', isOrganizationAdmin: false }],
     isPlatformAdmin: false, selectedOrganization: { organizationId: 'training-phaeno', membershipId: 'training', isAvailable: true }, capabilities: { ...noSessionCapabilities, canManageLabOperations: true, canOperateLabWork: true } },
 }
-const root = createRootRoute({ component: Outlet })
+const root = createRootRoute({ component: () => <><Outlet /><PortalConfirmation /></> })
 root.addChildren([createRoute({ getParentRoute: () => root, path: '/e2e/fixtures/lab-preparation.html', component: () => <PreparationBatchPage batchId={preparationFixture().id} /> })])
 const router = createRouter({ routeTree: root })
 createRoot(document.getElementById('root')!).render(<PhaenoSessionContext.Provider value={session}><QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}><RouterProvider router={router} /></QueryClientProvider></PhaenoSessionContext.Provider>)

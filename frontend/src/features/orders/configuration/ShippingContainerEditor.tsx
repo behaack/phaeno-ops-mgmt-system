@@ -1,3 +1,7 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
+import { NativeSelect } from '#/components/ui/native-select'
+import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
+import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useState, type ReactNode } from 'react'
@@ -54,6 +58,8 @@ export function ShippingContainerEditor({ source, configuration, existingDefinit
   onClose: () => void
   onSaved: (value: ShippingContainerDefinition) => void | Promise<void>
 }) {
+  const __customerText = useCustomerText()
+
   const catalog = useSupplierCatalog()
   const kitWorkflows = useQuery({ queryKey: kitAssemblyWorkflowsKey, queryFn: getKitAssemblyWorkflows })
   const suppliers = (catalog.data ?? []).filter(item => item.isActive)
@@ -87,6 +93,8 @@ export function ShippingContainerEditor({ source, configuration, existingDefinit
       kitContents: source?.kitContents?.map(item => ({ supplierProductId: item.supplierProductId, quantity: item.quantity })) ?? [],
     },
   })
+  const { isDirty: __formDraftDirty } = form.formState
+
   const contents = useFieldArray({ control: form.control, name: 'kitContents' })
   const mutation = useMutation({
     mutationFn: (values: Values) => {
@@ -106,7 +114,7 @@ export function ShippingContainerEditor({ source, configuration, existingDefinit
     },
     onSuccess: async value => { form.reset(form.getValues()); allowSavedNavigation(); await onSaved(value) },
   })
-  const isDirty = form.formState.isDirty
+  const isDirty = __formDraftDirty
   const allowSavedNavigation = useOrderDraftGuard(isDirty, mutation.isPending)
   const selectedSku = form.watch('sku').trim().toUpperCase()
   const matchingSkuSpecifications = new Map<string, ShippingContainerDefinition>()
@@ -132,8 +140,8 @@ export function ShippingContainerEditor({ source, configuration, existingDefinit
     ?.revisions.filter(revision => revision.status === 'Approved').sort((a, b) => b.revision - a.revision)[0]
   const catalogUnavailable = catalog.isPending || catalog.isError
   const errors = form.formState.errors
-  function close() {
-    if (mutation.isPending || isDirty && !window.confirm('Discard the unsaved shipping specification changes?')) return
+  async function close() {
+    if (mutation.isPending || isDirty && !(await confirmPortal('Discard the unsaved shipping specification changes?'))) return
     onClose()
   }
   function input(name: 'sku' | 'tubeCapacity' | 'displayOrder' | 'effectiveFrom' | 'effectiveTo', label: string, type = 'text', required = false, help?: string) {
@@ -145,39 +153,39 @@ export function ShippingContainerEditor({ source, configuration, existingDefinit
     </ContainerField>
   }
   return <Dialog open onOpenChange={open => { if (!open) close() }}><DialogContent className="max-w-3xl">
-    <DialogHeader><DialogTitle>{source?.lifecycle === 'Draft' ? `Edit Draft revision ${source.revision}` : source ? `Create ${source.commonName} revision ${source.revision + 1}` : 'Add kit shipping specification'}</DialogTitle>
-       <DialogDescription>Save an incomplete Draft and finish it later. Select this revision's Sample type and required contents here. Activation can precede Sample type and assembly-workflow approval once the contents are complete.</DialogDescription></DialogHeader>
-    {mutation.error ? <Alert variant="destructive"><AlertTitle>Kit specification was not saved</AlertTitle><AlertDescription>{getOrderErrorMessage(mutation.error, 'Review the values and try again.')}</AlertDescription></Alert> : null}
+    <DialogHeader><DialogTitle>{source?.lifecycle === 'Draft' ? __customerText('m_fed098d586d6', { p0: String(source.revision) }) : source ? __customerText('m_d69d66c3f4fa', { p0: String(source.commonName), p1: String(source.revision + 1) }) : __customerText('m_f73ad245ceb0')}</DialogTitle>
+       <DialogDescription><CustomerText message="m_fcf6551b0918" /></DialogDescription></DialogHeader>
+    {mutation.error ? <Alert variant="destructive"><AlertTitle><CustomerText message="m_7ea501d4eac5" /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(mutation.error, 'Review the values and try again.')} />}</AlertDescription></Alert> : null}
     <form id="shipping-container-editor" className="space-y-4" noValidate onSubmit={form.handleSubmit(values => { if (!mutation.isPending) mutation.mutate(values) })}>
-      <ContainerField id="container-commonName" label="Kit specification name" required error={errors.commonName?.message} help="Name this specification as staff should recognize it. Revisions may update the name without changing the product SKU."><Input id="container-commonName" maxLength={255} disabled={mutation.isPending} aria-invalid={Boolean(errors.commonName)} aria-describedby={`container-commonName-help${errors.commonName ? ' container-commonName-error' : ''}`} {...form.register('commonName')} /></ContainerField>
+      <ContainerField id="container-commonName" label={__customerText('m_76eb714698bd')} required error={errors.commonName?.message} help="Name this specification as staff should recognize it. Revisions may update the name without changing the product SKU."><Input id="container-commonName" maxLength={255} disabled={mutation.isPending} aria-invalid={Boolean(errors.commonName)} aria-describedby={`container-commonName-help${errors.commonName ? ' container-commonName-error' : ''}`} {...form.register('commonName')} /></ContainerField>
       {input('sku', 'Kit SKU', 'text', true, 'Identifies this complete kit specification. Fixed across revisions.')}
       <>
-        <ContainerField id="kit-supplier" label="Container supplier" required><select id="kit-supplier" className="h-9 w-full cursor-pointer rounded-md border border-input bg-background px-3 text-sm" disabled={mutation.isPending || catalogUnavailable} value={selectedSupplier?.id ?? ''} onChange={event => { setSupplierId(event.target.value); form.setValue('shippingContainerProductId', '', { shouldDirty: true, shouldValidate: true }) }}><option value="">Select a supplier</option>{productSuppliers.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></ContainerField>
-        <ContainerField id="kit-container-product" label="Shipping Container" required error={errors.shippingContainerProductId?.message} help="The purchased outer container for one assembled kit. Its capacity must accommodate the usable tube count."><select id="kit-container-product" className="h-9 w-full cursor-pointer rounded-md border border-input bg-background px-3 text-sm" disabled={mutation.isPending || catalogUnavailable || !selectedSupplier} {...form.register('shippingContainerProductId')} onChange={event => {
+        <ContainerField id="kit-supplier" label={__customerText('m_b41214ee5da9')} required><NativeSelect id="kit-supplier" className="w-full cursor-pointer rounded-md border border-input bg-background px-3 text-sm" disabled={mutation.isPending || catalogUnavailable} value={selectedSupplier?.id ?? ''} onChange={event => { setSupplierId(event.target.value); form.setValue('shippingContainerProductId', '', { shouldDirty: true, shouldValidate: true }) }}><option value=""><CustomerText message="m_8c59dadf7b42" /></option>{productSuppliers.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</NativeSelect></ContainerField>
+        <ContainerField id="kit-container-product" label={__customerText('m_2f81122e0ded')} required error={errors.shippingContainerProductId?.message} help="The purchased outer container for one assembled kit. Its capacity must accommodate the usable tube count."><NativeSelect id="kit-container-product" className="w-full cursor-pointer rounded-md border border-input bg-background px-3 text-sm" disabled={mutation.isPending || catalogUnavailable || !selectedSupplier} {...form.register('shippingContainerProductId')} onChange={event => {
           const product = supplierProducts.find(item => item.id === event.target.value)
           form.setValue('shippingContainerProductId', event.target.value, { shouldDirty: true, shouldValidate: true })
           const otherContents = form.getValues('kitContents').filter(item => !suppliers.some(supplier => supplier.products.some(value => value.id === item.supplierProductId && value.kind === 'ShippingContainer')))
           form.setValue('kitContents', product ? [...otherContents, { supplierProductId: product.id, quantity: 1 }] : otherContents, { shouldDirty: true, shouldValidate: true })
           if (product && !form.getValues('tubeCapacity') && product.tubeCapacity) form.setValue('tubeCapacity', product.tubeCapacity, { shouldDirty: true })
-        }}><option value="">Select a Shipping Container</option>{supplierProducts.map(product => <option key={product.id} value={product.id}>{product.productNumber} · {product.description}</option>)}</select></ContainerField>
+        }}><option value=""><CustomerText message="m_ad72c250ff94" /></option>{supplierProducts.map(product => <option key={product.id} value={product.id}>{product.productNumber} · {product.description}</option>)}</NativeSelect></ContainerField>
       </>
-      {skuUses.length ? <Alert><AlertTitle>Kit SKU already used</AlertTitle><AlertDescription>This kit SKU appears in another specification family. Review the existing specification before creating a separate family.</AlertDescription></Alert> : null}
-      <ContainerField id="kit-sample-type" label="Sample type" error={errors.sampleTypeDefinitionId?.message} help="Optional while saving a Draft; required for activation. This kit can be activated while its selected Sample type is Draft. New Orders wait until that Sample type and its Shipping procedure are Active. Changing the choice leaves earlier specifications and physical kits unchanged."><select id="kit-sample-type" className="h-9 w-full cursor-pointer rounded-md border border-input bg-background px-3 text-sm" disabled={mutation.isPending} {...form.register('sampleTypeDefinitionId')}><option value="">Choose a Sample type…</option>{sampleTypeChoices.map(item => <option key={item.id} value={item.id}>{item.name} — {item.lifecycle === 'Draft' ? `Draft revision ${item.revision}` : pendingByFamily.has(item.definitionKey) ? `Active; Draft revision ${pendingByFamily.get(item.definitionKey)} in progress` : 'Active'}</option>)}{source?.sampleTypeAnchorId && !initialSampleType ? <option value={source.sampleTypeAnchorId}>Previously selected Sample type (unavailable for activation)</option> : null}</select></ContainerField>
-      <ContainerField id="kit-assembly-method" label="Assembly workflow" help="Choose a reusable method from Lab settings. Activation may precede approval; preparing a physical kit requires an approved version."><select id="kit-assembly-method" className="h-9 w-full cursor-pointer rounded-md border border-input bg-background px-3 text-sm" disabled={mutation.isPending || kitWorkflows.isPending || kitWorkflows.isError} {...form.register('assemblyWorkflowId')}><option value="">Choose later</option>{kitWorkflows.data?.map(workflow => <option key={workflow.id} value={workflow.id}>{workflow.name}{workflow.revisions.some(revision => revision.status === 'Approved') ? '' : ' (approval pending)'}</option>)}</select>{kitWorkflows.isError ? <p role="alert" className="mt-1 text-sm text-destructive">Assembly workflows could not be loaded.</p> : <p className="mt-1 text-xs text-muted-foreground">{approvedRevision ? 'New physical kits will use approved version ' + approvedRevision.revision + '.' : 'New physical kits wait until an assembly workflow is selected and approved.'}</p>}</ContainerField>
+      {skuUses.length ? <Alert><AlertTitle><CustomerText message="m_a09441893c9b" /></AlertTitle><AlertDescription><CustomerText message="m_ed6f822c7037" /></AlertDescription></Alert> : null}
+      <ContainerField id="kit-sample-type" label={__customerText('m_1e3f2e3f87c9')} error={errors.sampleTypeDefinitionId?.message} help="Optional while saving a Draft; required for activation. This kit can be activated while its selected Sample type is Draft. New Orders wait until that Sample type and its Shipping procedure are Active. Changing the choice leaves earlier specifications and physical kits unchanged."><NativeSelect id="kit-sample-type" className="w-full cursor-pointer rounded-md border border-input bg-background px-3 text-sm" disabled={mutation.isPending} {...form.register('sampleTypeDefinitionId')}><option value=""><CustomerText message="m_823d33011757" /></option>{sampleTypeChoices.map(item => <option key={item.id} value={item.id}>{item.name} — {item.lifecycle === 'Draft' ? __customerText('m_cb1dd158b6d0', { p0: String(item.revision) }) : pendingByFamily.has(item.definitionKey) ? __customerText('m_cea7713ce42a', { p0: String(pendingByFamily.get(item.definitionKey)) }) : __customerText('m_92340695899b')}</option>)}{source?.sampleTypeAnchorId && !initialSampleType ? <option value={source.sampleTypeAnchorId}><CustomerText message="m_5f15b3a2a9d3" /></option> : null}</NativeSelect></ContainerField>
+      <ContainerField id="kit-assembly-method" label={__customerText('m_95a88f82a843')} help="Choose a reusable method from Lab settings. Activation may precede approval; preparing a physical kit requires an approved version."><NativeSelect id="kit-assembly-method" className="w-full cursor-pointer rounded-md border border-input bg-background px-3 text-sm" disabled={mutation.isPending || kitWorkflows.isPending || kitWorkflows.isError} {...form.register('assemblyWorkflowId')}><option value=""><CustomerText message="m_64f99c1ca6b5" /></option>{kitWorkflows.data?.map(workflow => <option key={workflow.id} value={workflow.id}>{workflow.name}{workflow.revisions.some(revision => revision.status === 'Approved') ? '' : __customerText('m_7c79ce14fbcc')}</option>)}</NativeSelect>{kitWorkflows.isError ? <p role="alert" className="mt-1 text-sm text-destructive"><CustomerText message="m_91d3acebe66f" /></p> : <p className="mt-1 text-xs text-muted-foreground">{approvedRevision ? 'New physical kits will use approved version ' + approvedRevision.revision + '.' : __customerText('m_6f8aada278d4')}</p>}</ContainerField>
       <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2">
         {input('tubeCapacity', 'Usable tube capacity', 'number', true, 'Approved capacity with packing materials in place.')}
         {input('displayOrder', 'Display order', 'number', true, 'Lower numbers appear first.')}
       </div>
       <section aria-labelledby="kit-contents-heading" aria-describedby="kit-contents-help" className="rounded-md border bg-muted/20 p-3 sm:p-4">
         <div className="flex flex-wrap items-start justify-between gap-2">
-          <h3 id="kit-contents-heading" className="text-sm font-medium">Required contents for one kit</h3>
-          <Button type="button" variant="outline" disabled={mutation.isPending} onClick={() => contents.append({ supplierProductId: '', quantity: 1 })}>Add product</Button>
+          <h3 id="kit-contents-heading" className="text-sm font-medium"><CustomerText message="m_0d4a0be8b9d1" /></h3>
+          <Button type="button" variant="outline" disabled={mutation.isPending} onClick={() => contents.append({ supplierProductId: '', quantity: 1 })}><CustomerText message="m_61c2739652de" /></Button>
         </div>
-        <p id="kit-contents-help" className="mt-1 text-xs text-muted-foreground">Choose one tube product with a quantity equal to usable tube capacity, one Shipping Container product with quantity one and enough tube slots, and any other required purchased products. The selected Shipping Container must be included once with quantity one. You can finish this list while the revision is a Draft; activation requires a complete list.</p>
-        {usableTubeCapacity > 0 && !catalog.isPending && !catalog.isError && !configuredShipperAvailable ? <p className="mt-2 text-xs text-amber-700 dark:text-amber-400">No available Shipping Container product has a configured capacity of at least {usableTubeCapacity} tubes. Add or update one in Suppliers &amp; products.</p> : null}
+        <p id="kit-contents-help" className="mt-1 text-xs text-muted-foreground"><CustomerText message="m_3c905e940ee0" /></p>
+        {usableTubeCapacity > 0 && !catalog.isPending && !catalog.isError && !configuredShipperAvailable ? <p className="mt-2 text-xs text-amber-700 dark:text-amber-400"><CustomerText message="m_fe62e5680e29" />{usableTubeCapacity} <CustomerText message="m_366a02b5754c" /></p> : null}
         {contents.fields.length > 0 || errors.kitContents?.message ? <div className="mt-3 space-y-1.5">
         {contents.fields.length > 0 ? <div aria-hidden="true" className="hidden gap-2 text-xs text-muted-foreground sm:grid sm:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_5rem_5rem]">
-          <span>Supplier</span><span><RequiredFieldName>Product</RequiredFieldName></span><span><RequiredFieldName>Quantity</RequiredFieldName></span><span />
+          <span><CustomerText message="m_72e2f03367f7" /></span><span><RequiredFieldName><CustomerText message="m_fb9ef894175c" /></RequiredFieldName></span><span><RequiredFieldName><CustomerText message="m_822bab8d41bc" /></RequiredFieldName></span><span />
         </div> : null}
         {contents.fields.map((field, index) => {
           const selectedId = form.watch(`kitContents.${index}.supplierProductId`)
@@ -193,39 +201,41 @@ export function ShippingContainerEditor({ source, configuration, existingDefinit
           const productError = errors.kitContents?.[index]?.supplierProductId?.message
           const quantityError = errors.kitContents?.[index]?.quantity?.message
           return <div key={field.id} className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_5rem_5rem] sm:items-start">
-            <div><Label htmlFor={`spec-content-supplier-${field.id}`} className="mb-1 block text-xs sm:sr-only">Supplier</Label><select id={`spec-content-supplier-${field.id}`} className="h-9 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm" value={selectedSupplierId} disabled={mutation.isPending} onChange={event => { setContentSuppliers(current => ({ ...current, [field.id]: event.target.value })); form.setValue(`kitContents.${index}.supplierProductId`, '', { shouldDirty: true, shouldValidate: true }) }}><option value="">Select supplier</option>{previousContent && !componentSuppliers.some(item => item.id === selectedSupplierId) ? <option value={previousContent.supplierId}>{previousContent.supplierName} (unavailable)</option> : null}{componentSuppliers.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></div>
-            <div><Label htmlFor={`spec-content-product-${field.id}`} className="mb-1 block text-xs sm:sr-only"><RequiredFieldName>Product</RequiredFieldName></Label><select id={`spec-content-product-${field.id}`} className="h-9 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm" disabled={!selectedSupplierId || mutation.isPending} aria-invalid={Boolean(productError)} {...form.register(`kitContents.${index}.supplierProductId`)} onChange={event => form.setValue(`kitContents.${index}.supplierProductId`, event.target.value, { shouldDirty: true, shouldValidate: true })}><option value="">Select product</option>{unavailableProduct && previousContent ? <option value={selectedId}>{previousContent.productNumber} · {previousContent.productDescription} (unavailable)</option> : null}{selectedSupplier?.products.map(product => <option key={product.id} value={product.id}>{product.productNumber} · {product.description} ({product.productTypeName}{product.kind === 'ShippingContainer' ? ` · ${product.tubeCapacity ?? 'capacity unset'} tubes` : ''})</option>)}</select>{productError ? <p role="alert" className="text-xs text-destructive">{productError}</p> : unavailableProduct ? <p className="text-xs text-amber-700 dark:text-amber-400">Replace this unavailable product before activation.</p> : unitWarning ? <p className="text-xs text-amber-700 dark:text-amber-400">Set this product's inventory unit to each in Suppliers &amp; products before activation.</p> : capacityWarning ? <p className="text-xs text-amber-700 dark:text-amber-400">Set this container's tube capacity to at least {usableTubeCapacity} in Suppliers &amp; products before activation.</p> : null}</div>
-            <div><Label htmlFor={`spec-content-quantity-${field.id}`} className="mb-1 block text-xs sm:sr-only"><RequiredFieldName>Quantity</RequiredFieldName></Label><Input id={`spec-content-quantity-${field.id}`} type="number" min={1} step={1} disabled={mutation.isPending} aria-invalid={Boolean(quantityError)} {...form.register(`kitContents.${index}.quantity`)} onChange={event => form.setValue(`kitContents.${index}.quantity`, event.target.value, { shouldDirty: true, shouldValidate: true })} />{quantityError ? <p role="alert" className="text-xs text-destructive">{quantityError}</p> : null}</div>
-            <Button type="button" variant="outline" disabled={mutation.isPending} onClick={() => contents.remove(index)} aria-label={`Remove component ${index + 1}`}>Remove</Button>
+            <div><Label htmlFor={`spec-content-supplier-${field.id}`} className="mb-1 block text-xs sm:sr-only"><CustomerText message="m_72e2f03367f7" /></Label><NativeSelect id={`spec-content-supplier-${field.id}`} className="w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm" value={selectedSupplierId} disabled={mutation.isPending} onChange={event => { setContentSuppliers(current => ({ ...current, [field.id]: event.target.value })); form.setValue(`kitContents.${index}.supplierProductId`, '', { shouldDirty: true, shouldValidate: true }) }}><option value=""><CustomerText message="m_4cd620ae8ed9" /></option>{previousContent && !componentSuppliers.some(item => item.id === selectedSupplierId) ? <option value={previousContent.supplierId}>{previousContent.supplierName} <CustomerText message="m_334558585eea" /></option> : null}{componentSuppliers.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</NativeSelect></div>
+            <div><Label htmlFor={`spec-content-product-${field.id}`} className="mb-1 block text-xs sm:sr-only"><RequiredFieldName><CustomerText message="m_fb9ef894175c" /></RequiredFieldName></Label><NativeSelect id={`spec-content-product-${field.id}`} className="w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm" disabled={!selectedSupplierId || mutation.isPending} aria-invalid={Boolean(productError)} {...form.register(`kitContents.${index}.supplierProductId`)} onChange={event => form.setValue(`kitContents.${index}.supplierProductId`, event.target.value, { shouldDirty: true, shouldValidate: true })}><option value=""><CustomerText message="m_563f8e6fa1a3" /></option>{unavailableProduct && previousContent ? <option value={selectedId}>{previousContent.productNumber} · {previousContent.productDescription} <CustomerText message="m_334558585eea" /></option> : null}{selectedSupplier?.products.map(product => <option key={product.id} value={product.id}>{product.productNumber} · {product.description} ({product.productTypeName}{product.kind === 'ShippingContainer' ? __customerText('m_c08eb4c538fc', { p0: String(product.tubeCapacity ?? 'capacity unset') }) : ''})</option>)}</NativeSelect>{productError ? <p role="alert" className="text-xs text-destructive">{productError}</p> : unavailableProduct ? <p className="text-xs text-amber-700 dark:text-amber-400"><CustomerText message="m_a3696f7957df" /></p> : unitWarning ? <p className="text-xs text-amber-700 dark:text-amber-400"><CustomerText message="m_6dc624e5d1c3" /></p> : capacityWarning ? <p className="text-xs text-amber-700 dark:text-amber-400"><CustomerText message="m_fd6c1b5d9f48" />{usableTubeCapacity} <CustomerText message="m_715a6eb4b3f3" /></p> : null}</div>
+            <div><Label htmlFor={`spec-content-quantity-${field.id}`} className="mb-1 block text-xs sm:sr-only"><RequiredFieldName><CustomerText message="m_822bab8d41bc" /></RequiredFieldName></Label><Input id={`spec-content-quantity-${field.id}`} type="number" min={1} step={1} disabled={mutation.isPending} aria-invalid={Boolean(quantityError)} {...form.register(`kitContents.${index}.quantity`)} onChange={event => form.setValue(`kitContents.${index}.quantity`, event.target.value, { shouldDirty: true, shouldValidate: true })} />{quantityError ? <p role="alert" className="text-xs text-destructive">{quantityError}</p> : null}</div>
+            <Button type="button" variant="outline" disabled={mutation.isPending} onClick={() => contents.remove(index)} aria-label={__customerText('m_e818d37a4f08', { p0: String(index + 1) })}><CustomerText message="m_c3812fc4acb8" /></Button>
           </div>
         })}
-        {errors.kitContents?.message ? <p role="alert" className="text-sm text-destructive">{errors.kitContents.message}</p> : null}
+        {errors.kitContents?.message ? <p role="alert" className="text-sm text-destructive">{<CustomerSourceText source={errors.kitContents.message} />}</p> : null}
         </div> : null}
       </section>
-      {catalog.isPending ? <p role="status">Loading suppliers and products…</p> : null}
-      {catalog.isError ? <Alert variant="destructive"><AlertTitle>Supplier catalog unavailable</AlertTitle><AlertDescription>{getOrderErrorMessage(catalog.error, 'Try loading the supplier catalog again.')}<Button type="button" variant="outline" disabled={catalog.isFetching || mutation.isPending} onClick={() => void catalog.refetch()}>Retry supplier catalog</Button></AlertDescription></Alert> : null}
-      <ContainerField id="kit-temperature-control" label="Temperature-control instructions" error={errors.temperatureControlInstructions?.message} help="Describe the approved cooling method for one complete kit, including when no cooling is needed.">
+      {catalog.isPending ? <p role="status"><CustomerText message="m_843f09474237" /></p> : null}
+      {catalog.isError ? <Alert variant="destructive"><AlertTitle><CustomerText message="m_029e69472c1c" /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(catalog.error, 'Try loading the supplier catalog again.')} />}<Button type="button" variant="outline" disabled={catalog.isFetching || mutation.isPending} onClick={() => void catalog.refetch()}><CustomerText message="m_9bdd1d300f9e" /></Button></AlertDescription></Alert> : null}
+      <ContainerField id="kit-temperature-control" label={__customerText('m_4ab06269eb93')} error={errors.temperatureControlInstructions?.message} help="Describe the approved cooling method for one complete kit, including when no cooling is needed.">
         <Textarea id="kit-temperature-control" rows={3} disabled={mutation.isPending} {...form.register('temperatureControlInstructions')} />
       </ContainerField>
       <div className="grid gap-3 sm:grid-cols-2">
-        <ContainerField id="kit-dry-ice-quantity" label="Dry ice amount" error={errors.dryIceQuantity?.message} help="Leave empty when this kit does not use dry ice." alignWithAdjacentField helpBelow>
+        <ContainerField id="kit-dry-ice-quantity" label={__customerText('m_7d93e011228c')} error={errors.dryIceQuantity?.message} help="Leave empty when this kit does not use dry ice." alignWithAdjacentField helpBelow>
           <Input id="kit-dry-ice-quantity" type="number" min="0" step="any" disabled={mutation.isPending} aria-invalid={Boolean(errors.dryIceQuantity)} aria-describedby={fieldHelpIds('kit-dry-ice-quantity', 'Leave empty when this kit does not use dry ice.', errors.dryIceQuantity?.message)} {...form.register('dryIceQuantity')} />
         </ContainerField>
-        <ContainerField id="kit-dry-ice-unit" label="Dry ice unit" error={errors.dryIceUnit?.message} alignWithAdjacentField helpBelow>
+        <ContainerField id="kit-dry-ice-unit" label={__customerText('m_4d1dfabd5b36')} error={errors.dryIceUnit?.message} alignWithAdjacentField helpBelow>
           <Input id="kit-dry-ice-unit" placeholder="e.g. kg" disabled={mutation.isPending} aria-invalid={Boolean(errors.dryIceUnit)} aria-describedby={fieldHelpIds('kit-dry-ice-unit', undefined, errors.dryIceUnit?.message)} {...form.register('dryIceUnit')} />
         </ContainerField>
       </div>
       <section aria-labelledby="container-availability-heading" className="space-y-3 border-t pt-4">
-        <h3 id="container-availability-heading" className="text-sm font-medium">Availability</h3>
+        <h3 id="container-availability-heading" className="text-sm font-medium"><CustomerText message="m_12f67f8539c4" /></h3>
         <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2">{input('effectiveFrom', 'Effective from', 'datetime-local', true)}{input('effectiveTo', 'Effective through', 'datetime-local')}</div>
-        <p className="text-sm text-muted-foreground">Saving keeps this revision as a Draft. Use Actions to activate when required details and dependencies are ready.</p>
+        <p className="text-sm text-muted-foreground"><CustomerText message="m_025fcc72d190" /></p>
       </section>
     </form>
-    <RequiredDialogFooter><Button variant="outline" disabled={mutation.isPending} onClick={close}>Cancel</Button><Button type="submit" form="shipping-container-editor" disabled={mutation.isPending}>{mutation.isPending ? 'Saving…' : source?.lifecycle === 'Draft' ? 'Save Draft' : 'Create Draft'}</Button></RequiredDialogFooter>
+    <RequiredDialogFooter><Button variant="outline" disabled={mutation.isPending} onClick={close}><CustomerText message="m_19766ed6ccb2" /></Button><Button type="submit" form="shipping-container-editor" disabled={mutation.isPending}>{mutation.isPending ? <CustomerSourceText source={"Saving…"} /> : source?.lifecycle === 'Draft' ? "Save Draft" : __customerText('m_0f3960b0d6d6')}</Button></RequiredDialogFooter>
   </DialogContent></Dialog>
 }
 
 export function ContainerField({ id, label, required, error, help, children, alignWithAdjacentField = false, helpBelow = false }: { id: string; label: string; required?: boolean; error?: string; help?: string; children: ReactNode; alignWithAdjacentField?: boolean; helpBelow?: boolean }) {
+
+
   if (alignWithAdjacentField && helpBelow) return <div className="grid gap-y-1.5 sm:row-span-2 sm:grid-rows-subgrid">
     <Label htmlFor={id}>{required ? <RequiredFieldName>{label}</RequiredFieldName> : label}</Label>
     <div>{children}{help ? <p id={`${id}-help`} className="mt-[2px] text-xs text-muted-foreground">{help}</p> : null}<ContainerFieldError id={`${id}-error`} message={error} /></div>

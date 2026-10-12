@@ -1,3 +1,5 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
+import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { Undo2 } from 'lucide-react'
@@ -12,6 +14,8 @@ const scanBlockedReason = 'Finish or discard the current tube scan before changi
 const issuedInsertBlockedReason = 'Containers cannot be changed because a shipping insert has already been issued for this job.'
 
 export function SampleShipmentResetPacking({ shipment, canManage, scanActive = false, writesBlocked = false, onSelectShipment, onActivityChange }: { shipment: SampleShipmentWorkflow; canManage: boolean; scanActive?: boolean; writesBlocked?: boolean; onSelectShipment?: (id: string) => Promise<void>; onActivityChange?: (active: boolean) => void }) {
+  const __customerText = useCustomerText()
+
   const client = useQueryClient()
   const navigate = useNavigate()
   const reasonId = useId()
@@ -60,25 +64,25 @@ export function SampleShipmentResetPacking({ shipment, canManage, scanActive = f
 
   return <>
     <div className="w-full min-w-0 space-y-1.5 sm:w-auto sm:max-w-xs sm:shrink-0">
-      <Button variant="outline" className="h-10 w-full" disabled={!canReset || reset.isPending} aria-describedby={reason ? reasonId : undefined} onClick={() => { if (eligibility.data) { reset.reset(); setReview(eligibility.data) } }}><Undo2 data-icon="inline-start" />Reset container configuration</Button>
+      <Button variant="outline" className="h-10 w-full" disabled={!canReset || reset.isPending} aria-describedby={reason ? reasonId : undefined} onClick={() => { if (eligibility.data) { reset.reset(); setReview(eligibility.data) } }}><Undo2 data-icon="inline-start" /><CustomerText message="m_9d96e659aa90" /></Button>
       {reason ? <p id={reasonId} className="text-xs text-muted-foreground">{reason}</p> : null}
-      {eligibility.error && !review ? <Button variant="outline" size="sm" disabled={eligibility.isFetching} onClick={() => void retryEligibility()}>Retry container check</Button> : null}
+      {eligibility.error && !review ? <Button variant="outline" size="sm" disabled={eligibility.isFetching} onClick={() => void retryEligibility()}><CustomerText message="m_f9c283978ecd" /></Button> : null}
     </div>
     <Dialog open={Boolean(review)} onOpenChange={open => { if (!open) close() }}>
       <DialogContent>
-        <DialogHeader><DialogTitle>Reset container configuration?</DialogTitle><DialogDescription>This resets the complete packing plan for {shipment.authorizationReference}.</DialogDescription></DialogHeader>
-        {reset.error ? <Alert variant="destructive"><AlertTitle>Container configuration was not reset</AlertTitle><AlertDescription>{apiErrorMessage(reset.error)} Review the current container choices before trying again.</AlertDescription></Alert> : null}
-        {eligibility.error ? <Alert variant="destructive"><AlertTitle>Container check unavailable</AlertTitle><AlertDescription>{apiErrorMessage(eligibility.error)} <Button variant="outline" disabled={eligibility.isFetching || reset.isPending} onClick={() => void retryEligibility()}>Retry container check</Button></AlertDescription></Alert> : null}
+        <DialogHeader><DialogTitle><CustomerText message="m_55a629af5739" /></DialogTitle><DialogDescription><CustomerText message="m_5c45657959b5" />{shipment.authorizationReference}.</DialogDescription></DialogHeader>
+        {reset.error ? <Alert variant="destructive"><AlertTitle><CustomerText message="m_e57f8536c412" /></AlertTitle><AlertDescription><CustomerSourceText source={apiErrorMessage(reset.error)} /> <CustomerText message="m_b3e7f669de01" /></AlertDescription></Alert> : null}
+        {eligibility.error ? <Alert variant="destructive"><AlertTitle><CustomerText message="m_21706e62943a" /></AlertTitle><AlertDescription><CustomerSourceText source={apiErrorMessage(eligibility.error)} /> <Button variant="outline" disabled={eligibility.isFetching || reset.isPending} onClick={() => void retryEligibility()}><CustomerText message="m_f9c283978ecd" /></Button></AlertDescription></Alert> : null}
         {review ? <div className="space-y-3 text-sm">
-          <p>All {review.containerCount} selected {review.containerCount === 1 ? 'container' : 'containers'} will be removed. All {review.tubeCount} {review.tubeCount === 1 ? 'tube will' : 'tubes will'} return to container selection.</p>
-          <p>Your finalized sample list will stay unchanged.</p>
-          <p className="text-muted-foreground">Unscanned container reservations return to location inventory. Container selection cannot be undone after tube scanning starts.</p>
+          <p>{__customerText(review.containerCount === 1 ? review.tubeCount === 1 ? 'packing_reset_one_one' : 'packing_reset_one_many' : review.tubeCount === 1 ? 'packing_reset_many_one' : 'packing_reset_many_many', { p0: review.containerCount, p1: review.tubeCount })}</p>
+          <p><CustomerText message="m_7415a59c9ae6" /></p>
+          <p className="text-muted-foreground"><CustomerText message="m_e9cc299467e9" /></p>
           {scanActive ? <p role="alert" className="text-destructive">{scanBlockedReason}</p> : null}
           {eligibility.data && !eligibility.data.canReset && !eligibility.isFetching ? <p role="alert" className="text-destructive">{reason ?? 'These containers can no longer be changed.'}</p> : null}
-          {canReset && !matchesReview ? <div className="space-y-2"><p role="alert">The container choices changed. Review the updated selection before continuing.</p><Button variant="outline" onClick={() => { if (eligibility.data) setReview(eligibility.data) }}>Review updated containers</Button></div> : null}
-          {eligibility.isFetching && !reset.isPending ? <p role="status">Checking current containers…</p> : null}
+          {canReset && !matchesReview ? <div className="space-y-2"><p role="alert"><CustomerText message="m_10d97b3d2a0e" /></p><Button variant="outline" onClick={() => { if (eligibility.data) setReview(eligibility.data) }}><CustomerText message="m_12099252bb68" /></Button></div> : null}
+          {eligibility.isFetching && !reset.isPending ? <p role="status"><CustomerText message="m_9475df56a353" /></p> : null}
         </div> : null}
-        <DialogFooter><Button variant="outline" disabled={reset.isPending} onClick={close}>Keep containers</Button><Button disabled={reset.isPending || !canReset || !matchesReview || !review?.canReset} onClick={confirm}>{reset.isPending ? 'Resetting…' : 'Reset container configuration'}</Button></DialogFooter>
+        <DialogFooter><Button variant="outline" disabled={reset.isPending} onClick={close}><CustomerText message="m_1d1f9dbc6849" /></Button><Button disabled={reset.isPending || !canReset || !matchesReview || !review?.canReset} onClick={confirm}>{reset.isPending ? <CustomerSourceText source={"Resetting…"} /> : __customerText('m_9d96e659aa90')}</Button></DialogFooter>
       </DialogContent>
     </Dialog>
   </>

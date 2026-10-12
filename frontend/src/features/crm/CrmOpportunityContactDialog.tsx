@@ -1,3 +1,4 @@
+import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -30,8 +31,10 @@ export function CrmOpportunityContactDialog({ association, excludedIds, pending,
   const removeButtonRef = useRef<HTMLButtonElement>(null)
   const keepButtonRef = useRef<HTMLButtonElement>(null)
   const form = useForm<Values>({ resolver: zodResolver(schema), mode: 'onSubmit', reValidateMode: 'onChange', defaultValues: { contactId: association?.contactId ?? '', role: association?.role ?? '', isPrimary: association?.isPrimary ?? false } })
-  useOrderDraftGuard(form.formState.isDirty, pending)
-  function close() { if (!pending && (!form.formState.isDirty || window.confirm('Discard unsaved Opportunity contact changes?'))) onClose() }
+  const { isDirty: __formDraftDirty } = form.formState
+
+  useOrderDraftGuard(__formDraftDirty, pending)
+  async function close() { if (!pending && (!__formDraftDirty || (await confirmPortal('Discard unsaved Opportunity contact changes?')))) onClose() }
   const contactError = form.formState.errors.contactId?.message
   return <Dialog open onOpenChange={open => { if (!open) close() }}><DialogContent><DialogHeader><DialogTitle>{association ? `Manage ${association.contactName}` : 'Associate Opportunity contact'}</DialogTitle><DialogDescription>{association ? "Update this person's role or remove them from the Opportunity. The Contact and prior relationship history are retained." : 'Search the Contact directory to add a buying-team member. Existing active associations are excluded.'}</DialogDescription></DialogHeader>
     {error ? <Alert variant="destructive"><AlertDescription>{apiErrorMessage(error)}</AlertDescription></Alert> : null}
@@ -44,7 +47,7 @@ export function CrmOpportunityContactDialog({ association, excludedIds, pending,
     </form>
     {confirmRemoval ? <Alert><AlertDescription>Remove {association?.contactName} from this Opportunity? The saved association will remain in history. Unsaved role changes will be discarded.</AlertDescription></Alert> : null}
     <RequiredDialogFooter showLegend={!association}>
-      {confirmRemoval ? <><Button ref={keepButtonRef} type="button" variant="outline" disabled={pending} onClick={() => { setConfirmRemoval(false); requestAnimationFrame(() => removeButtonRef.current?.focus()) }}>Keep association</Button><Button type="button" variant="destructive" disabled={pending} onClick={onRemove}>{pending ? 'Removing…' : 'Confirm removal'}</Button></> : <>{association && onRemove ? <Button ref={removeButtonRef} type="button" variant="destructive" disabled={pending} onClick={() => { setConfirmRemoval(true); requestAnimationFrame(() => keepButtonRef.current?.focus()) }}>Remove association</Button> : null}<Button type="button" variant="outline" disabled={pending} onClick={close}>Cancel</Button><Button type="submit" form="opportunity-contact-form" disabled={pending || (Boolean(association) && !form.formState.isDirty)}>{pending ? 'Saving…' : association ? 'Save changes' : 'Associate contact'}</Button></>}
+      {confirmRemoval ? <><Button ref={keepButtonRef} type="button" variant="outline" disabled={pending} onClick={() => { setConfirmRemoval(false); requestAnimationFrame(() => removeButtonRef.current?.focus()) }}>Keep association</Button><Button type="button" variant="destructive" disabled={pending} onClick={onRemove}>{pending ? 'Removing…' : 'Confirm removal'}</Button></> : <>{association && onRemove ? <Button ref={removeButtonRef} type="button" variant="destructive" disabled={pending} onClick={() => { setConfirmRemoval(true); requestAnimationFrame(() => keepButtonRef.current?.focus()) }}>Remove association</Button> : null}<Button type="button" variant="outline" disabled={pending} onClick={close}>Cancel</Button><Button type="submit" form="opportunity-contact-form" disabled={pending || (Boolean(association) && !__formDraftDirty)}>{pending ? 'Saving…' : association ? 'Save changes' : 'Associate contact'}</Button></>}
     </RequiredDialogFooter>
   </DialogContent></Dialog>
 }

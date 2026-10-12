@@ -1,6 +1,11 @@
+import { parseRecordListSearch, type RecordListSearch } from '#/components/RecordPagination'
 import { parseOrderSection, type OrderSection } from './order-sections'
 
-export const parseServiceWorkspaceSearch = (search: Record<string, unknown>): { orderSection?: OrderSection; intakeView?: 'active' | 'holds' | 'all'; intakeSearch?: string; intakePage?: number; financeSection?: string; financeCustomer?: string; financeSearch?: string; resultState?: string; queueSearch?: string; queueOrganization?: string; queueStatus?: string; queueView?: 'all' | 'mine' | 'unassigned' | 'overdue' | 'holds'; queueFrom?: string; queueTo?: string; queuePage?: number } => ({
+export const parseServiceWorkspaceSearch = (search: Record<string, unknown>): RecordListSearch & { attentionId?: string; attentionSource?: string; sourceId?: string; orderSection?: OrderSection; intakeView?: 'active' | 'holds' | 'all'; intakeSearch?: string; intakePage?: number; financeSection?: string; financeCustomer?: string; financeSearch?: string; resultState?: string; queueSearch?: string; queueOrganization?: string; queueStatus?: string; queueView?: 'all' | 'mine' | 'unassigned' | 'overdue' | 'holds'; queueFrom?: string; queueTo?: string; queuePage?: number } => ({
+  ...parseRecordListSearch(search),
+  attentionId: typeof search.attentionId === 'string' ? search.attentionId : undefined,
+  attentionSource: typeof search.attentionSource === 'string' ? search.attentionSource : undefined,
+  sourceId: typeof search.sourceId === 'string' ? search.sourceId : undefined,
   orderSection: parseOrderSection(search.orderSection),
   intakeView: search.intakeView === 'all' || search.intakeView === 'holds' ? search.intakeView : undefined,
   intakeSearch: typeof search.intakeSearch === 'string' ? search.intakeSearch : undefined,

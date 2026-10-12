@@ -1,3 +1,5 @@
+import { requireRecordPage } from './record-page'
+import type { PagedResult } from './order-management'
 import { api } from './client'
 import type { ReleasedDeliverableRetention } from './order-management'
 import { isAxiosError } from 'axios'
@@ -54,8 +56,12 @@ export type TrialConfiguration = {
 }
 export type TrialOutputPackage = { id: string; trialSampleId: string; packageVersion: number; state: string; scientificApprovalId: string | null; artifacts: { id: string; logicalRole: string; fileName: string; scanState: string }[] }
 type Envelope<T> = { data: T }
-export const listTrials = async (search: string, status?: string, ownerId?: string) => (await api.get<Envelope<TrialRow[]>>('/trials', { params: { search, status: status || undefined, ownerId: ownerId || undefined } })).data.data
+export const listTrialPage = async (search: string, status?: string, ownerId?: string, page = 1) => requireRecordPage((await api.get<Envelope<PagedResult<TrialRow>>>('/trials', { params: { search, status: status || undefined, ownerId: ownerId || undefined, page } })).data.data)
+export const listTrials = async (search: string, status?: string, ownerId?: string) => (await listTrialPage(search, status, ownerId)).items
 export const getTrial = async (id: string) => (await api.get<Envelope<TrialDetail>>(`/trials/${id}`)).data.data
+export async function getTrialTimeline(id: string, page = 1) {
+  return requireRecordPage((await api.get<Envelope<PagedResult<TrialDetail['timeline'][number]>>>(`/trials/${id}/timeline`, { params: { page } })).data.data)
+}
 export const getTrialConfiguration = async (companyId?: string) => (await api.get<Envelope<TrialConfiguration>>('/trials/configuration', { params: { companyId } })).data.data
 export const getTrialOutputPackages = async (id: string) => (await api.get<Envelope<TrialOutputPackage[]>>(`/trials/${id}/results/candidates`)).data.data
 export const changeTrial = async <T = TrialDetail>(path: string, payload: unknown, key: string) =>

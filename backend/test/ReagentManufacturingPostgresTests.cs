@@ -105,6 +105,21 @@ public partial class SampleShippingPostgresTests
             Assert.Equal("Completed", completed.Status);
             Assert.Equal(5, completed.AvailableQuantity);
             Assert.Equal("Pending", completed.QcDisposition);
+            var workflowRecord = await db.LabReagentWorkflows.SingleAsync(item => item.Id == workflow.Id);
+            for (var index = 0; index < 260; index++)
+            {
+                var syntheticLot = new LabMaterialLot(LabMaterialLotKind.PreparedReagent, outputDefinitionId,
+                    $"TEST-PAGE-{scope.Suffix}-{index}", null, null, location.Id, 0, "mL");
+                syntheticLot.AssignInternalProduct(producerId, product.Id);
+                db.AddRange(syntheticLot, new LabReagentManufacturingRun(workflowRecord, syntheticLot.Id, scope.PlatformUser.Id, DateTime.UtcNow.AddMinutes(-index)));
+            }
+            await db.SaveChangesAsync();
+            var older = await controller.ReagentRunsPage(default, workflow.Name, page: 11);
+            Assert.Equal(262, older.TotalCount);
+            Assert.Equal(12, older.Items.Count);
+            var activeRuns = await controller.ReagentRunsPage(default, workflow.Name, "InProgress");
+            Assert.Equal(260, activeRuns.TotalCount);
+            Assert.Equal(1, (await controller.ReagentRunsPage(default, $"TEST-PAGE-{scope.Suffix}-259")).TotalCount);
             Assert.Equal(5, (await db.LabMaterialLots.AsNoTracking()
                 .SingleAsync(item => item.Id == source.Id)).AvailableQuantity);
             var component = await db.LabPreparedReagentComponents.AsNoTracking()

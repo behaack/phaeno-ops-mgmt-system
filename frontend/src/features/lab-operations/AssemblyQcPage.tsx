@@ -44,6 +44,8 @@ function QcForm({ data, close }: { data: AssemblyQcWorkspace; close: () => void 
   const id = useRef(crypto.randomUUID())
   const client = useQueryClient()
   const form = useForm<Values>({ resolver: zodResolver(schema), defaultValues: { packageId: '', decision: '', note: '', reportFileId: '', reportReference: '', coversInputs: false, measurements: [] }, mode: 'onBlur' })
+  const { isDirty: __formDraftDirty } = form.formState
+
   const metrics = useFieldArray({ control: form.control, name: 'measurements' })
   const save = useMutation({ mutationFn: (v: Values) => {
     const p = reviewed.packages.find(p => p.id === v.packageId)!
@@ -51,7 +53,7 @@ function QcForm({ data, close }: { data: AssemblyQcWorkspace; close: () => void 
       previousReviewVersion: reviewed.reviews.find(q => q.resultOutputPackageId === p.id)?.reviewVersion ?? 0, decision: v.decision, note: v.note, reportFileId: v.reportFileId,
       measurements: v.measurements.map(m => ({ ...m, value: Number(m.value) })), coversSequencingInputs: v.coversInputs })
   }, onSuccess: async () => { dismissal.allowNavigation(); form.reset(form.getValues()); await client.invalidateQueries({ queryKey: ['assembly-qc', data.jobId] }); close() } })
-  const dismissal = useOrderDecisionDismissal(form.formState.isDirty, uploading || save.isPending, close, { scope: 'QC decision', description: 'The unsaved QC decision and measurements will be discarded. Uploaded report evidence is retained.' })
+  const dismissal = useOrderDecisionDismissal(__formDraftDirty, uploading || save.isPending, close, { scope: 'QC decision', description: 'The unsaved QC decision and measurements will be discarded. Uploaded report evidence is retained.' })
   return <form noValidate className="space-y-4 rounded-lg border p-4" onSubmit={form.handleSubmit(v => save.mutate(v))}><h2 className="font-medium">Record QC</h2>
     <PreparationField id="qc-package" label="Exact output package" required error={form.formState.errors.packageId?.message}><NativeSelect id="qc-package" {...form.register('packageId')}><option value="">Choose package</option>{reviewed.packages.filter(p => p.state === 'ReadyForReview').map(p => <option key={p.id} value={p.id}>Package v{p.packageVersion} · {p.artifacts.length} files</option>)}</NativeSelect></PreparationField>
     <PreparationField id="qc-decision" label="QC decision" required error={form.formState.errors.decision?.message}><NativeSelect id="qc-decision" {...form.register('decision')}><option value="">Choose decision</option><option>Pass</option><option>Fail</option><option>Hold</option></NativeSelect></PreparationField>
