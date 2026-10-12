@@ -17,6 +17,7 @@ import {
   Truck,
   UsersRound,
   Workflow,
+  Globe2,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -190,6 +191,15 @@ export const mainMenuItems: readonly MainMenuItem[] = [
       isPhaenoEmployee(session) &&
       context.selectedOrganizationKind === 'Phaeno' &&
       Boolean(session?.capabilities.canViewDatasetConfiguration),
+  },
+  {
+    label: 'Website operations',
+    to: '/website-operations',
+    icon: Globe2,
+    group: 'more',
+    visibleWhen: (session, context) => session?.state === 'ready'
+      && context.selectedOrganizationKind === 'Phaeno'
+      && session.isPlatformAdmin,
   },
   {
     label: 'Legacy integrations',

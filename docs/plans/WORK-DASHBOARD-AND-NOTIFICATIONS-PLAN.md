@@ -6,6 +6,14 @@ or hosted acceptance is claimed. The source/actor matrix below remains the
 representative operational acceptance contract.
 Owning review: [System gap closure](SYSTEM-GAP-CLOSURE-PLAN.md), GAP-06.
 
+October 12 navigation follow-up: **More → Website operations** owns the full
+platform-administrator Website tools. **Mailing list** and **Demo requests** are
+shared-sidebar queues; **Email delivery** remains a separate recovery section.
+Old home bookmarks redirect and client work links select the exact intake or
+delivery in its matching queue. This replaces the retained home-only entry point;
+the work dashboard and bell remain the shared attention surface. Scope and
+verification are recorded in [Website API consolidation](WEBSITE-API-CONSOLIDATION-PLAN.md#website-operations-workspace--october-12-2026).
+
 ## October 11 local implementation
 
 The post-closure review corrects out-of-range page feedback and independent

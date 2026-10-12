@@ -145,6 +145,7 @@ Use these owning surfaces consistently across overviews, task guides, and troubl
 
 | User task | Owning surface |
 | --- | --- |
+| Public Website signups, demo inquiries and email recovery | Phaeno More → Website operations; Mailing list and Demo requests are sidebar queues. Platform administrators only. |
 | External Company identity and People | CRM Company; global Contacts remains the cross-Company directory. |
 | Company request decision and approved-work completion | Central CRM Requests; the Company tab links to the same records. |
 | Each new Customer pricing request | Order intake → New Customer order; Customer self-service uses Lab services. |

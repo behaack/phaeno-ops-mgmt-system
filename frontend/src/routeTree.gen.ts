@@ -36,6 +36,7 @@ import { Route as ReleasedDeliverablesRouteImport } from './routes/released-deli
 import { Route as SampleShippingRouteImport } from './routes/sample-shipping'
 import { Route as SampleShippingSettingsRouteImport } from './routes/sample-shipping-settings'
 import { Route as TrialProjectsRouteImport } from './routes/trial-projects'
+import { Route as WebsiteOperationsRouteImport } from './routes/website-operations'
 import { Route as CrmAdministrationRouteImport } from './routes/crm.administration'
 import { Route as CrmCompaniesRouteImport } from './routes/crm.companies'
 import { Route as CrmContactsRouteImport } from './routes/crm.contacts'
@@ -256,6 +257,11 @@ const SampleShippingSettingsRoute = SampleShippingSettingsRouteImport.update({
 const TrialProjectsRoute = TrialProjectsRouteImport.update({
   id: '/trial-projects',
   path: '/trial-projects',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WebsiteOperationsRoute = WebsiteOperationsRouteImport.update({
+  id: '/website-operations',
+  path: '/website-operations',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CrmAdministrationRoute = CrmAdministrationRouteImport.update({
@@ -778,6 +784,7 @@ export interface FileRoutesByFullPath {
   '/sample-shipping': typeof SampleShippingRouteWithChildren
   '/sample-shipping-settings': typeof SampleShippingSettingsRoute
   '/trial-projects': typeof TrialProjectsRouteWithChildren
+  '/website-operations': typeof WebsiteOperationsRoute
   '/crm/administration': typeof CrmAdministrationRoute
   '/crm/companies': typeof CrmCompaniesRoute
   '/crm/contacts': typeof CrmContactsRoute
@@ -893,6 +900,7 @@ export interface FileRoutesByTo {
   '/sample-shipping': typeof SampleShippingRouteWithChildren
   '/sample-shipping-settings': typeof SampleShippingSettingsRoute
   '/trial-projects': typeof TrialProjectsRouteWithChildren
+  '/website-operations': typeof WebsiteOperationsRoute
   '/crm/administration': typeof CrmAdministrationRoute
   '/crm/companies': typeof CrmCompaniesRoute
   '/crm/contacts': typeof CrmContactsRoute
@@ -1009,6 +1017,7 @@ export interface FileRoutesById {
   '/sample-shipping': typeof SampleShippingRouteWithChildren
   '/sample-shipping-settings': typeof SampleShippingSettingsRoute
   '/trial-projects': typeof TrialProjectsRouteWithChildren
+  '/website-operations': typeof WebsiteOperationsRoute
   '/crm/administration': typeof CrmAdministrationRoute
   '/crm/companies': typeof CrmCompaniesRoute
   '/crm/contacts': typeof CrmContactsRoute
@@ -1126,6 +1135,7 @@ export interface FileRouteTypes {
     | '/sample-shipping'
     | '/sample-shipping-settings'
     | '/trial-projects'
+    | '/website-operations'
     | '/crm/administration'
     | '/crm/companies'
     | '/crm/contacts'
@@ -1241,6 +1251,7 @@ export interface FileRouteTypes {
     | '/sample-shipping'
     | '/sample-shipping-settings'
     | '/trial-projects'
+    | '/website-operations'
     | '/crm/administration'
     | '/crm/companies'
     | '/crm/contacts'
@@ -1356,6 +1367,7 @@ export interface FileRouteTypes {
     | '/sample-shipping'
     | '/sample-shipping-settings'
     | '/trial-projects'
+    | '/website-operations'
     | '/crm/administration'
     | '/crm/companies'
     | '/crm/contacts'
@@ -1472,6 +1484,7 @@ export interface RootRouteChildren {
   SampleShippingRoute: typeof SampleShippingRouteWithChildren
   SampleShippingSettingsRoute: typeof SampleShippingSettingsRoute
   TrialProjectsRoute: typeof TrialProjectsRouteWithChildren
+  WebsiteOperationsRoute: typeof WebsiteOperationsRoute
   DashboardAttentionRoute: typeof DashboardAttentionRoute
   DemoTanstackQueryRoute: typeof DemoTanstackQueryRoute
   SessionTasksSetupMfaRoute: typeof SessionTasksSetupMfaRoute
@@ -1667,6 +1680,13 @@ declare module '@tanstack/react-router' {
       path: '/trial-projects'
       fullPath: '/trial-projects'
       preLoaderRoute: typeof TrialProjectsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/website-operations': {
+      id: '/website-operations'
+      path: '/website-operations'
+      fullPath: '/website-operations'
+      preLoaderRoute: typeof WebsiteOperationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/crm/administration': {
@@ -2759,6 +2779,7 @@ const rootRouteChildren: RootRouteChildren = {
   SampleShippingRoute: SampleShippingRouteWithChildren,
   SampleShippingSettingsRoute: SampleShippingSettingsRoute,
   TrialProjectsRoute: TrialProjectsRouteWithChildren,
+  WebsiteOperationsRoute: WebsiteOperationsRoute,
   DashboardAttentionRoute: DashboardAttentionRoute,
   DemoTanstackQueryRoute: DemoTanstackQueryRoute,
   SessionTasksSetupMfaRoute: SessionTasksSetupMfaRoute,

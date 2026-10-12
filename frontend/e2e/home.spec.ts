@@ -37,10 +37,15 @@ test('uses POMS branding with the work dashboard in the internal Phaeno context'
   await expect(bell).toBeFocused()
   await page.goto('/?dashboardSection=webOps')
   await page.waitForLoadState('networkidle')
-  await expect(page.getByRole('heading', { name: 'Web Operations', level: 2 })).toBeVisible()
-  await expect(page.getByRole('region', { name: 'Mailing List' })).toBeVisible()
-  await page.getByRole('tab', { name: /Demo Requests/ }).click()
-  await expect(page.getByRole('region', { name: 'Demo Requests' })).toBeVisible()
+  await expect(page).toHaveURL(/\/website-operations(?:\?|$)/)
+  await expect(page.getByRole('heading', { name: 'Website operations', level: 1 })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Mailing list' })).toBeVisible()
+  const sidebar = page.getByRole('navigation', { name: 'Website operations sections' })
+  if (!await sidebar.isVisible()) await page.getByRole('button', { name: /^Open Website operations navigation/ }).click()
+  await sidebar.getByRole('button', { name: /^Demo requests/ }).click()
+  await expect(page.getByRole('region', { name: 'Demo requests' })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Mailing list' })).toHaveCount(0)
+  await expect(page.getByRole('tab')).toHaveCount(0)
 })
 test('uses Portal branding in an external organization context', async ({ page }) => {
   await page.addInitScript(() => {
@@ -121,7 +126,7 @@ test('keeps workspace navigation concise and groups the user menu', async ({
 
   await expect(header.getByRole('link', { name: /^(Docs|Documentation)$/ })).toHaveCount(0)
 
-  const moreLabels = ['Finance', 'Purchasing', 'Equipment', 'Data provisioning', 'Legacy integrations']
+  const moreLabels = ['Finance', 'Purchasing', 'Equipment', 'Data provisioning', 'Website operations', 'Legacy integrations']
   const moreTrigger = header.getByRole('button', { name: 'More workspaces', exact: true })
   if (isMobile) {
     await expect(moreTrigger).toBeHidden()
@@ -315,7 +320,7 @@ async function verifyMobileNavigationTray(page: Page) {
   expect(links.indexOf('User management')).toBe(links.indexOf('Documentation') + 1)
   await more.press('Enter')
   await expect(more).toHaveAttribute('aria-expanded', 'true')
-  await expect(tray.getByRole('group', { name: 'More', exact: true }).getByRole('link')).toHaveText(['Finance', 'Purchasing', 'Equipment', 'Data provisioning', 'Legacy integrations'])
+  await expect(tray.getByRole('group', { name: 'More', exact: true }).getByRole('link')).toHaveText(['Finance', 'Purchasing', 'Equipment', 'Data provisioning', 'Website operations', 'Legacy integrations'])
   await more.press('ArrowDown')
   await expect(tray.getByRole('link', { name: 'Finance', exact: true })).toBeFocused()
   await page.keyboard.press('Tab')

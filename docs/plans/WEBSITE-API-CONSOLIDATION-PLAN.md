@@ -185,11 +185,47 @@ The Website records are public-intake records, not Portal users,
 organizations, memberships, orders, or HubSpot contacts. Any later promotion
 into CRM or Portal onboarding must be an explicit workflow.
 
-## Internal Web Operations dashboard
+## Website operations workspace — October 12, 2026
 
-The POMS home includes a **Web Operations** view for Phaeno platform
+Owner-requested scope: make Website intake discoverable from the secondary
+POMS menu, labeled **Website operations**, and put **Mailing list** and
+**Demo requests** in its shared sidebar. The existing menu is labeled **More**;
+this request adds a destination without renaming the whole menu. Users remain
+active Phaeno platform administrators; other Phaeno roles and external contexts
+do not gain access. Success means either queue is directly reachable on desktop
+and phone, only the selected queue is shown, and complete paging and confirmed
+soft lifecycle actions remain available.
+
+Implementation uses `/website-operations`, URL-backed sidebar selection and
+independent queue pages, and existing Website Operations APIs. Retain **Email
+delivery** as a separate recovery section. Existing home/bell bookmarks redirect
+to the matching section and exact intake/delivery; new client work links use the
+workspace. No backend contract, model, migration, dependency, authentication,
+public Website UI, Customer localization, or release change is required.
+
+The small public-intake entries retain their current view-first queue cards
+and bounded confirmed actions; they are not major CRM/Portal records. Moving
+navigation does not create a new major-record detail/edit workflow. Queue errors
+must not appear as zero counts. Sidebar navigation replaces the old tab strip.
+Verification covers route typing, lint, documentation consistency, menu placement,
+access denial, exact-item links, paging, keyboard/focus and narrow reflow.
+Automated regression sources are updated; execution remains request-only.
+
+Local completion: the workspace, both sidebar queues, retained email recovery,
+secondary-menu entry and old home/notification destinations are implemented.
+TypeScript, scoped ESLint, help-corpus consistency, Customer message references
+(5,780 current-English entries) and whitespace checks pass. Desktop and 390 px
+phone inspection verifies menu/sidebar selection, one visible queue, no duplicate
+tabs and no horizontal overflow. A fresh load reports no browser errors; an
+external selected organization sees the direct-route access message. The
+[verification receipt](../testing/runs/2026-10-12-website-operations.md) records
+the mock-session boundary. No automated suite or deployment ran for this slice.
+
+## Internal Website operations queues
+
+The POMS **More → Website operations** workspace is for Phaeno platform
 administrators. Active mailing-list signups and open demo requests appear in
-separate panels, with a two-button tab selector showing one panel at a time.
+separate sidebar sections showing one queue at a time.
 Each panel has independent pagination with a fixed page size of 10.
 Mailing-list contacts are ordered newest first; demo requests are ordered
 deterministically by organization and contact. The UI labels the persisted

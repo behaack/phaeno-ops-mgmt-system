@@ -1,5 +1,16 @@
 # Playwright E2E Test Plan
 
+## Website operations sidebar — October 12, 2026
+
+Home sources retain My work and check the old Web Operations bookmark redirects
+to `/website-operations`, with Mailing list and Demo requests selected through
+the responsive sidebar and no duplicate tabs. Desktop and mobile secondary-menu
+lists include Website operations. Email-delivery fixture sources use the shared
+Actions menu for history and resend, retain exact-recipient/stale-version and
+accessibility checks, and accept focus returning to surviving history or heading.
+Automated execution remains request-only; local browser inspection is separate
+from authenticated API/provider acceptance.
+
 ## Error and edge-case review — October 11, 2026
 
 Final relevant browser checkpoint: 40 cases pass, no skips/failures, across

@@ -102,7 +102,9 @@ describe('WebOpsDeliveryPanel', () => {
   it('reviews the exact recipient and refreshes stale recovery state before retry', async () => {
     vi.mocked(resendWebOpsNotification).mockRejectedValueOnce(new Error('This notification changed. Refresh email delivery.')).mockResolvedValueOnce(undefined)
     show()
-    fireEvent.click(await screen.findByRole('button', { name: /Queue resend: Technical brief/ }))
+    const trigger = await screen.findByRole('button', { name: /^Actions: Technical brief/ })
+    fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false })
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Queue resend' }))
     const dialog = screen.getByRole('dialog')
     expect(within(dialog).getByText(/Recipient: ada@example.test/)).toBeTruthy()
     fireEvent.click(within(dialog).getByRole('button', { name: 'Queue resend' }))

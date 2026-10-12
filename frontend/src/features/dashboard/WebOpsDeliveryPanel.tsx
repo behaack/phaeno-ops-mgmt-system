@@ -8,6 +8,7 @@ import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '#/components/ui/dialog'
 import { WebOpsProcessingControls } from './WebOpsProcessingControls'
+import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 
 const kindLabels = { MailingListAlert: 'Mailing-list staff alert', TechnicalBrief: 'Technical brief', DemoRequestAlert: 'Demo-request staff alert' }
 const stateLabels = { Pending: 'Queued', Processing: 'Sending', Accepted: 'Accepted by email provider', Failed: 'Needs attention', Cancelled: 'Cancelled' }
@@ -41,7 +42,7 @@ export function WebOpsDeliveryPanel() {
       <CardDescription>Failed messages retry automatically up to five attempts. Provider acceptance does not confirm inbox delivery. An interrupted attempt may already have sent email; review history before resending.</CardDescription>
     </CardHeader>
     <CardContent className="space-y-4" aria-busy={query.isFetching}>
-      {deliveryId ? <Button asChild variant="outline"><Link to="/" search={{ dashboardSection: 'webOps' }}>View all email deliveries</Link></Button> : null}
+      {deliveryId ? <Button asChild variant="outline"><Link to="/website-operations" search={{ section: 'email-delivery' }}>View all email deliveries</Link></Button> : null}
       <WebOpsProcessingControls attentionOnly={attentionOnly} onAttentionChange={value => { setAttentionOnly(value); setPage(1) }} />
       {success && <p role="status" className="text-sm">{success}</p>}
       {query.isError && <Alert variant="destructive"><AlertDescription className="flex flex-wrap items-center gap-2">{getWebOpsErrorMessage(query.error, 'Email delivery could not be loaded.')}<Button variant="outline" size="sm" onClick={() => void query.refetch()}>Retry email delivery</Button></AlertDescription></Alert>}
@@ -55,9 +56,8 @@ export function WebOpsDeliveryPanel() {
         {item.lastError && <p className="text-sm text-destructive">{item.lastError}</p>}
         {item.nextAttemptAtUtc && <p className="text-xs text-muted-foreground">Next attempt: {formatTime(item.nextAttemptAtUtc)}</p>}
         {item.acceptedAtUtc && <p className="text-xs text-muted-foreground">Last provider acceptance: {formatTime(item.acceptedAtUtc)}</p>}
-        <div className="flex flex-wrap items-start gap-2"><NotificationHistory id={item.id} />
-          {item.canResend && <Button size="sm" variant="outline" disabled={resend.isPending} onClick={event => { actionButton.current = event.currentTarget; resend.reset(); setSelected(item); setSuccess(undefined) }}>Queue resend<span className="sr-only">: {kindLabels[item.kind]} for {item.organizationName}</span></Button>}
-        </div>
+        <NotificationHistory id={item.id} label={`${kindLabels[item.kind]} for ${item.organizationName}`} pending={resend.isPending}
+          onResend={item.canResend ? () => { actionButton.current = document.activeElement instanceof HTMLButtonElement ? document.activeElement : null; resend.reset(); setSelected(item); setSuccess(undefined) } : undefined} />
         {(item.state === 'Accepted' || item.state === 'Failed') && !item.canResend && <p className="text-xs text-muted-foreground">Resending requires an active intake record and a five-minute wait after the previous attempt.</p>}
       </li>)}</ul>}
       {query.data && query.data.totalCount > query.data.pageSize && <nav className="flex flex-wrap items-center justify-between gap-2" aria-label="Email delivery pages">
@@ -69,7 +69,7 @@ export function WebOpsDeliveryPanel() {
     <Dialog open={Boolean(selected)} onOpenChange={open => { if (!open && !resend.isPending) closeDialog() }}>
       <DialogContent onCloseAutoFocus={event => { event.preventDefault(); (actionButton.current?.isConnected ? actionButton.current : heading.current)?.focus() }}>
         <DialogHeader><DialogTitle>Queue this email again?</DialogTitle></DialogHeader>
-        <DialogDescription>{selected ? `${kindLabels[selected.kind]} for ${selected.contactName} at ${selected.organizationName}. Recipient: ${selected.recipientEmail ?? 'Phaeno staff'}. ` : ''}This can send a duplicate if an earlier attempt reached the recipient. Check the request and delivery history before continuing.</DialogDescription>
+        <div><DialogDescription>{selected ? `${kindLabels[selected.kind]} for ${selected.contactName} at ${selected.organizationName}. Recipient: ${selected.recipientEmail ?? 'Phaeno staff'}. ` : ''}This can send a duplicate if an earlier attempt reached the recipient. Check the request and delivery history before continuing.</DialogDescription></div>
         {resend.isError && <Alert variant="destructive"><AlertDescription>{getWebOpsErrorMessage(resend.error, 'The email could not be queued.')}<Button size="sm" variant="outline" onClick={async () => { const current = await query.refetch(); if (current.error) return; const refreshed = current.data?.items.find(item => item.id === selected?.id); if (refreshed?.canResend) { setSelected(refreshed); resend.reset() } else closeDialog() }}>Refresh delivery status</Button></AlertDescription></Alert>}
         <DialogFooter><Button variant="outline" disabled={resend.isPending} onClick={closeDialog}>Cancel</Button><Button disabled={resend.isPending} onClick={() => void confirm()}>{resend.isPending ? 'Queuing…' : 'Queue resend'}</Button></DialogFooter>
       </DialogContent>
@@ -77,11 +77,17 @@ export function WebOpsDeliveryPanel() {
   </Card>
 }
 
-function NotificationHistory({ id }: { id: string }) {
+function NotificationHistory({ id, label, pending, onResend }: { id: string; label: string; pending: boolean; onResend?: () => void }) {
   const [open, setOpen] = useState(false)
+  const trigger = useRef<HTMLButtonElement | null>(null)
   const query = useQuery({ queryKey: ['web-ops', 'notification-attempts', id], queryFn: () => getWebOpsNotificationAttempts(id), enabled: open, refetchInterval: open ? 30_000 : false })
   return <div className="min-w-0">
-    <Button variant="ghost" size="sm" aria-expanded={open} aria-controls={`delivery-history-${id}`} onClick={() => setOpen(!open)}>{open ? 'Hide attempts' : 'View attempts'}</Button>
+    <ActionMenu><DropdownMenuTrigger asChild><Button ref={trigger} variant="outline" size="sm" aria-label={`Actions: ${label}`}>Actions</Button></DropdownMenuTrigger>
+      <DropdownMenuContent>
+        <DropdownMenuItem onSelect={() => setOpen(!open)}>{open ? 'Hide attempts' : 'View attempts'}</DropdownMenuItem>
+        {onResend ? <DropdownMenuItem disabled={pending} onSelect={() => { trigger.current?.focus(); onResend() }}>Queue resend</DropdownMenuItem> : null}
+      </DropdownMenuContent>
+    </ActionMenu>
     {open && <div id={`delivery-history-${id}`} className="mt-2 space-y-2 text-xs">
       {query.isPending && <p role="status">Loading attempts…</p>}
       {query.isError && <p role="alert">Attempt history could not be loaded. <Button variant="outline" size="sm" onClick={() => void query.refetch()}>Retry history</Button></p>}

@@ -1,5 +1,15 @@
 # Frontend Test Plan
 
+## Website operations navigation — October 12, 2026
+
+Regression sources cover platform-administrator-only secondary navigation,
+external-context omission, independent queue URL pages, validated exact-item
+bookmarks, legacy notification links to matching queues, and selected-panel
+rendering without duplicate tabs. Email recovery expectations now open the shared
+Actions menu; its recipient review, stale-version recovery and single-action
+history remain covered. Automated execution is deferred under the request-only
+policy; types, scoped lint and documentation checks are separate verification.
+
 ## Error and edge-case review — October 11, 2026
 
 The [review receipt](../testing/runs/2026-10-11-gap-review.md) records 50 passing

@@ -47,6 +47,15 @@ const demoRequestPage: WebOpsPage<WebOpsDemoRequest> = {
 }
 
 describe('WebOpsDashboardContent', () => {
+  it('shows only the selected sidebar queue without mounting a duplicate tab strip', () => {
+    render(<WebOpsDashboardContent panel="demo-requests" showHeading={false}
+      mailingList={{ data: mailingListPage, error: null, isLoading: false, onPageChange: vi.fn(), onRetry: vi.fn() }}
+      demoRequests={{ data: demoRequestPage, error: null, isLoading: false, onPageChange: vi.fn(), onRetry: vi.fn() }} />)
+    expect(screen.getByRole('region', { name: 'Demo requests' })).toBeTruthy()
+    expect(screen.queryByRole('region', { name: 'Mailing list' })).toBeNull()
+    expect(screen.queryByRole('tablist')).toBeNull()
+    expect(screen.queryByText('Ada Lovelace')).toBeNull()
+  })
   it('selects one independently paginated intake panel at a time', () => {
     render(
       <WebOpsDashboardContent
@@ -69,13 +78,13 @@ describe('WebOpsDashboardContent', () => {
     )
 
     expect(
-      screen.getByRole('heading', { name: 'Web Operations' }),
+      screen.getByRole('heading', { name: 'Website operations' }),
     ).toBeTruthy()
     expect(
-      screen.getByRole('region', { name: 'Mailing List' }),
+      screen.getByRole('region', { name: 'Mailing list' }),
     ).toBeTruthy()
     expect(
-      screen.queryByRole('region', { name: 'Demo Requests' }),
+      screen.queryByRole('region', { name: 'Demo requests' }),
     ).toBeNull()
     expect(screen.getByText('Mock data')).toBeTruthy()
     expect(screen.getByText('Ada Lovelace')).toBeTruthy()
@@ -86,13 +95,13 @@ describe('WebOpsDashboardContent', () => {
       screen.getByText('Showing 1–10 of 12 signups. Page 1 of 2.'),
     ).toBeTruthy()
 
-    selectTab(/Demo Requests/)
+    selectTab(/Demo requests/)
 
     expect(
-      screen.queryByRole('region', { name: 'Mailing List' }),
+      screen.queryByRole('region', { name: 'Mailing list' }),
     ).toBeNull()
     expect(
-      screen.getByRole('region', { name: 'Demo Requests' }),
+      screen.getByRole('region', { name: 'Demo requests' }),
     ).toBeTruthy()
     expect(screen.getByText('Compiler Labs')).toBeTruthy()
     expect(
@@ -112,11 +121,11 @@ describe('WebOpsDashboardContent', () => {
     expect(screen.getAllByRole('tab')).toHaveLength(3)
     expect(screen.getAllByRole('tabpanel')).toHaveLength(1)
     expect(screen.queryByRole('button', { name: 'Review pending messages', hidden: true })).toBeNull()
-    selectTab(/Demo Requests/)
+    selectTab(/Demo requests/)
     expect(screen.getByText('Compiler Labs')).toBeTruthy()
     expect(screen.queryByText('Ada Lovelace')).toBeNull()
     expect(screen.queryByRole('heading', { name: 'Email delivery', hidden: true })).toBeNull()
-    const demoTab = screen.getByRole('tab', { name: /Demo Requests/ })
+    const demoTab = screen.getByRole('tab', { name: /Demo requests/ })
     act(() => demoTab.focus())
     fireEvent.keyDown(demoTab, { key: 'ArrowRight' })
     await waitFor(() => expect(screen.getByRole('tab', { name: 'Email delivery' }).getAttribute('aria-selected')).toBe('true'))
@@ -125,7 +134,7 @@ describe('WebOpsDashboardContent', () => {
     expect(screen.queryByText('Compiler Labs')).toBeNull()
     expect(document.activeElement).toBe(screen.getByRole('tab', { name: 'Email delivery' }))
     fireEvent.keyDown(screen.getByRole('tab', { name: 'Email delivery' }), { key: 'Home' })
-    await waitFor(() => expect(screen.getByRole('tab', { name: /Mailing List/ }).getAttribute('aria-selected')).toBe('true'))
+    await waitFor(() => expect(screen.getByRole('tab', { name: /Mailing list/ }).getAttribute('aria-selected')).toBe('true'))
     expect(screen.getByText('Ada Lovelace')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Review pending messages', hidden: true })).toBeNull()
     expect(screen.getAllByRole('tabpanel')).toHaveLength(1)
@@ -155,7 +164,7 @@ describe('WebOpsDashboardContent', () => {
     )
 
     const mailingListPagination = screen.getByRole('navigation', {
-      name: 'Mailing List pagination',
+      name: 'Mailing list pagination',
     })
     expect(
       within(mailingListPagination).getByRole('button', { name: 'Previous' })
@@ -167,9 +176,9 @@ describe('WebOpsDashboardContent', () => {
     expect(changeMailingListPage).toHaveBeenCalledWith(2)
     expect(changeDemoRequestPage).not.toHaveBeenCalled()
 
-    selectTab(/Demo Requests/)
+    selectTab(/Demo requests/)
     const demoRequestPagination = screen.getByRole('navigation', {
-      name: 'Demo Requests pagination',
+      name: 'Demo requests pagination',
     })
     fireEvent.click(
       within(demoRequestPagination).getByRole('button', { name: 'Next' }),
@@ -203,7 +212,7 @@ describe('WebOpsDashboardContent', () => {
 
     expect(
       screen.queryByRole('navigation', {
-        name: 'Mailing List pagination',
+        name: 'Mailing list pagination',
       }),
     ).toBeNull()
   })
@@ -230,17 +239,17 @@ describe('WebOpsDashboardContent', () => {
     )
 
     const mailingListPanel = screen.getByRole('region', {
-      name: 'Mailing List',
+      name: 'Mailing list',
     })
     expect(
       within(mailingListPanel).getByRole('alert').textContent,
-    ).toContain('Mailing List could not be loaded')
+    ).toContain('Mailing list could not be loaded')
     fireEvent.click(
       within(mailingListPanel).getByRole('button', { name: 'Try again' }),
     )
     expect(retryMailingList).toHaveBeenCalledOnce()
 
-    selectTab(/Demo Requests/)
+    selectTab(/Demo requests/)
     expect(screen.getByText('Compiler Labs')).toBeTruthy()
   })
 
@@ -302,7 +311,7 @@ describe('WebOpsDashboardContent', () => {
       ),
     ).toBeTruthy()
 
-    selectTab(/Demo Requests/)
+    selectTab(/Demo requests/)
     fireEvent.click(
       screen.getAllByRole('button', { name: 'Mark complete' })[0],
     )

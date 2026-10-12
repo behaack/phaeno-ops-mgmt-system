@@ -185,6 +185,17 @@ describe('sample-shipping navigation permissions', () => {
 })
 
 describe('navigation placement', () => {
+  it('offers Website operations only to a ready platform administrator in Phaeno', () => {
+    const session = createSession('Phaeno', {})
+    const context = { selectedOrganizationKind: 'Phaeno' as const, selectedMembership: session.memberships[0] }
+    expect(getVisibleMainMenuItems(session, context, 'more')).toContainEqual(expect.objectContaining({ label: 'Website operations', to: '/website-operations' }))
+    for (const kind of ['Customer', 'Prospect', 'Partner'] as const) {
+      expect(getVisibleMainMenuItems(session, { ...context, selectedOrganizationKind: kind }, 'more').some(item => item.to === '/website-operations')).toBe(false)
+    }
+    session.isPlatformAdmin = false
+    expect(getVisibleMainMenuItems(session, context, 'more').some(item => item.to === '/website-operations')).toBe(false)
+    expect(getVisibleMainMenuItems(null, context, 'more').some(item => item.to === '/website-operations')).toBe(false)
+  })
   it('offers Customer settings to Customer administrators without duplicating Departments', () => {
     const customer = createSession('Customer', {})
     const customerContext = { selectedOrganizationKind: 'Customer' as const, selectedMembership: customer.memberships[1] }
@@ -266,8 +277,8 @@ describe('navigation placement', () => {
         (item) => item.label,
       ),
     ).toEqual(['Order settings', 'Lab settings', 'CRM settings', 'Samples & shipping settings', 'File retention policies'])
-    expect(getVisibleMainMenuItems(session, context, 'more').map(item => item.label)).toEqual(['Purchasing', 'Equipment', 'Data provisioning', 'Legacy integrations'])
-    for (const label of ['Purchasing', 'Equipment', 'Data provisioning', 'Legacy integrations']) {
+    expect(getVisibleMainMenuItems(session, context, 'more').map(item => item.label)).toEqual(['Purchasing', 'Equipment', 'Data provisioning', 'Website operations', 'Legacy integrations'])
+    for (const label of ['Purchasing', 'Equipment', 'Data provisioning', 'Website operations', 'Legacy integrations']) {
       expect(getVisibleMainMenuItems(session, context).filter(item => item.label === label)).toHaveLength(1)
     }
     expect(

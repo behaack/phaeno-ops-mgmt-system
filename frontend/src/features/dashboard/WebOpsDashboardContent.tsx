@@ -9,6 +9,7 @@ import {
   UserMinus,
 } from 'lucide-react'
 import { useRef, useState, type ReactNode } from 'react'
+import type { WebsiteOperationsSection } from '#/features/website-operations/website-operations-search'
 
 import {
   getWebOpsErrorMessage,
@@ -68,6 +69,8 @@ type WebOpsDashboardContentProps = {
   demoRequests: WebOpsPanelState<WebOpsDemoRequest>
   isMockData?: boolean
   notificationPanel?: ReactNode
+  panel?: WebsiteOperationsSection
+  showHeading?: boolean
 }
 
 export function WebOpsDashboardContent({
@@ -75,6 +78,8 @@ export function WebOpsDashboardContent({
   demoRequests,
   isMockData = false,
   notificationPanel,
+  panel,
+  showHeading = true,
 }: WebOpsDashboardContentProps) {
   const [contactToUnsubscribe, setContactToUnsubscribe] =
     useState<WebOpsMailingListContact>()
@@ -87,6 +92,7 @@ export function WebOpsDashboardContent({
   const mailingListHeading = useRef<HTMLHeadingElement | null>(null)
   const demoRequestsHeading = useRef<HTMLHeadingElement | null>(null)
   const hasNotificationPanel = Boolean(notificationPanel)
+  const QueueHeading = panel ? 'h2' : 'h3'
   const responsiveTabClass = hasNotificationPanel
     ? 'flex-col gap-0.5 sm:flex-row sm:gap-1.5'
     : undefined
@@ -146,11 +152,12 @@ export function WebOpsDashboardContent({
   }
 
   return (
-    <section aria-labelledby="web-ops-heading" className="space-y-4">
+    <section aria-label={showHeading ? undefined : 'Website queues'} aria-labelledby={showHeading ? 'web-ops-heading' : undefined} className="space-y-4">
+      {showHeading ? (
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 id="web-ops-heading" className="text-lg font-semibold">
-            Web Operations
+            Website operations
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
             {hasNotificationPanel
@@ -162,30 +169,31 @@ export function WebOpsDashboardContent({
           {isMockData ? 'Mock data' : 'Active intake'}
         </Badge>
       </div>
+      ) : isMockData ? <Badge variant="outline">Mock data</Badge> : null}
 
-      <Tabs defaultValue="mailing-list">
-        <TabsList aria-label="Web Operations lists" className={hasNotificationPanel ? 'grid w-full grid-cols-3 sm:w-fit' : undefined}>
+      <Tabs defaultValue="mailing-list" value={panel}>
+        {!panel ? <TabsList aria-label="Website operations lists" className={hasNotificationPanel ? 'grid w-full grid-cols-3 sm:w-fit' : undefined}>
           <TabsTrigger value="mailing-list" className={responsiveTabClass}>
             <Mail aria-hidden="true" className={hasNotificationPanel ? 'hidden sm:block' : undefined} />
-            <span>Mailing List</span>
+            <span>Mailing list</span>
             <Badge variant="secondary" className={hasNotificationPanel ? 'tabular-nums sm:ml-1' : 'ml-1 tabular-nums'}>
-              {mailingList.data?.totalCount ?? 0}
+              {mailingList.error ? '—' : mailingList.data?.totalCount ?? '—'}
             </Badge>
           </TabsTrigger>
           <TabsTrigger value="demo-requests" className={responsiveTabClass}>
             <Send aria-hidden="true" className={hasNotificationPanel ? 'hidden sm:block' : undefined} />
-            <span>Demo Requests</span>
+            <span>Demo requests</span>
             <Badge variant="secondary" className={hasNotificationPanel ? 'tabular-nums sm:ml-1' : 'ml-1 tabular-nums'}>
-              {demoRequests.data?.totalCount ?? 0}
+              {demoRequests.error ? '—' : demoRequests.data?.totalCount ?? '—'}
             </Badge>
           </TabsTrigger>
           {hasNotificationPanel ? <TabsTrigger value="email-delivery" className={responsiveTabClass}>
             <Mail aria-hidden="true" className="hidden sm:block" />
             <span>Email delivery</span>
           </TabsTrigger> : null}
-        </TabsList>
+        </TabsList> : null}
 
-        <TabsContent value="mailing-list">
+        <WebOpsPanel value="mailing-list" selected={panel}>
           <Card
             role="region"
             aria-labelledby="mailing-list-heading"
@@ -195,39 +203,39 @@ export function WebOpsDashboardContent({
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <CardTitle>
-                    <h3
+                    <QueueHeading
                       id="mailing-list-heading"
                       ref={mailingListHeading}
                       tabIndex={-1}
                       className="flex items-center gap-2"
                     >
                       <Mail aria-hidden="true" className="size-4" />
-                      Mailing List
-                    </h3>
+                      Mailing list
+                    </QueueHeading>
                   </CardTitle>
                   <CardDescription>
                     Active public signups, including technical-brief requests.
                   </CardDescription>
                 </div>
                 <Badge variant="secondary" className="tabular-nums">
-                  {mailingList.data?.totalCount ?? 0}
+                  {mailingList.error ? '—' : mailingList.data?.totalCount ?? '—'}
                 </Badge>
               </div>
             </CardHeader>
             <CardContent>
               <PanelError
                 error={mailingList.error}
-                label="Mailing List"
+                label="Mailing list"
                 onRetry={mailingList.onRetry}
               />
               {mailingListSuccess ? (
                 <ActionSuccess
-                  title="Mailing List updated"
+                  title="Mailing list updated"
                   message={mailingListSuccess}
                 />
               ) : null}
               {mailingList.isLoading && !mailingList.data ? (
-                <PanelLoading label="Mailing List" />
+                <PanelLoading label="Mailing list" />
               ) : null}
               {mailingList.data ? (
                 mailingList.data.items.length ? (
@@ -299,7 +307,7 @@ export function WebOpsDashboardContent({
               <PanelPagination
                 itemCount={mailingList.data.items.length}
                 label="signups"
-                panelLabel="Mailing List"
+                panelLabel="Mailing list"
                 page={mailingList.data.page}
                 pageSize={mailingList.data.pageSize}
                 totalCount={mailingList.data.totalCount}
@@ -308,9 +316,9 @@ export function WebOpsDashboardContent({
               />
             ) : null}
           </Card>
-        </TabsContent>
+        </WebOpsPanel>
 
-        <TabsContent value="demo-requests">
+        <WebOpsPanel value="demo-requests" selected={panel}>
           <Card
             role="region"
             aria-labelledby="demo-requests-heading"
@@ -320,39 +328,39 @@ export function WebOpsDashboardContent({
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <CardTitle>
-                    <h3
+                    <QueueHeading
                       id="demo-requests-heading"
                       ref={demoRequestsHeading}
                       tabIndex={-1}
                       className="flex items-center gap-2"
                     >
                       <Send aria-hidden="true" className="size-4" />
-                      Demo Requests
-                    </h3>
+                      Demo requests
+                    </QueueHeading>
                   </CardTitle>
                   <CardDescription>
                     Open public inquiries ordered by organization.
                   </CardDescription>
                 </div>
                 <Badge variant="secondary" className="tabular-nums">
-                  {demoRequests.data?.totalCount ?? 0}
+                  {demoRequests.error ? '—' : demoRequests.data?.totalCount ?? '—'}
                 </Badge>
               </div>
             </CardHeader>
             <CardContent>
               <PanelError
                 error={demoRequests.error}
-                label="Demo Requests"
+                label="Demo requests"
                 onRetry={demoRequests.onRetry}
               />
               {demoRequestSuccess ? (
                 <ActionSuccess
-                  title="Demo Request updated"
+                  title="Demo request updated"
                   message={demoRequestSuccess}
                 />
               ) : null}
               {demoRequests.isLoading && !demoRequests.data ? (
-                <PanelLoading label="Demo Requests" />
+                <PanelLoading label="Demo requests" />
               ) : null}
               {demoRequests.data ? (
                 demoRequests.data.items.length ? (
@@ -413,7 +421,7 @@ export function WebOpsDashboardContent({
               <PanelPagination
                 itemCount={demoRequests.data.items.length}
                 label="requests"
-                panelLabel="Demo Requests"
+                panelLabel="Demo requests"
                 page={demoRequests.data.page}
                 pageSize={demoRequests.data.pageSize}
                 totalCount={demoRequests.data.totalCount}
@@ -422,14 +430,14 @@ export function WebOpsDashboardContent({
               />
             ) : null}
           </Card>
-        </TabsContent>
-        {hasNotificationPanel ? <TabsContent value="email-delivery">{notificationPanel}</TabsContent> : null}
+        </WebOpsPanel>
+        {hasNotificationPanel ? <WebOpsPanel value="email-delivery" selected={panel}>{notificationPanel}</WebOpsPanel> : null}
       </Tabs>
 
       <WebOpsActionDialog
         open={Boolean(contactToUnsubscribe)}
         title={`Unsubscribe ${contactToUnsubscribe?.firstName ?? ''} ${contactToUnsubscribe?.lastName ?? ''}?`}
-        description={`This removes ${contactToUnsubscribe?.email ?? 'this signup'} from the active Mailing List. The original Website submission remains in POMS.`}
+        description={`This removes ${contactToUnsubscribe?.email ?? 'this signup'} from the active Mailing list. The original Website submission remains in POMS.`}
         confirmLabel="Unsubscribe"
         pendingLabel="Unsubscribing…"
         errorTitle="Signup was not unsubscribed"
@@ -446,7 +454,7 @@ export function WebOpsDashboardContent({
       <WebOpsActionDialog
         open={Boolean(requestToComplete)}
         title={`Mark the ${requestToComplete?.organizationName ?? ''} demo request complete?`}
-        description="This removes the request from the active Demo Requests list. The original Website inquiry remains in POMS."
+        description="This removes the request from the active Demo requests list. The original Website inquiry remains in POMS."
         confirmLabel="Mark complete"
         pendingLabel="Completing…"
         errorTitle="Demo request was not completed"
@@ -461,6 +469,10 @@ export function WebOpsDashboardContent({
       />
     </section>
   )
+}
+
+function WebOpsPanel({ value, selected, children }: { value: WebsiteOperationsSection; selected?: WebsiteOperationsSection; children: ReactNode }) {
+  return selected ? selected === value ? children : null : <TabsContent value={value}>{children}</TabsContent>
 }
 
 function WebOpsActionDialog({
