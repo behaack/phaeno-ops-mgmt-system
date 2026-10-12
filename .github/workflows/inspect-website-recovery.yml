@@ -1,0 +1,76 @@
+name: Inspect Retained Website Recovery
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phaeno-portal-green-production
+  cancel-in-progress: false
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: production
+    steps:
+      - name: Inspect retained database and encrypted backup availability
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          for name in DEPLOY_HOST DEPLOY_USER DEPLOY_SSH_KEY DEPLOY_KNOWN_HOSTS; do
+            [[ -n "${!name}" ]] || { printf 'Missing protected connection setting: %s\n' "$name" >&2; exit 1; }
+          done
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/deploy_key ~/.ssh/known_hosts
+          trap 'rm -f ~/.ssh/deploy_key' EXIT
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 \
+            -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" bash -s <<'PROBE' | tee "$RUNNER_TEMP/website-recovery-inspection.txt"
+          set -euo pipefail
+          [[ $EUID == 0 ]] || { printf 'Expected the existing maintenance identity.\n' >&2; exit 1; }
+          [[ "$(docker inspect phaeno-portal-green-db --format '{{.State.Running}}')" == true ]]
+          docker exec phaeno-portal-green-db psql --username phaeno_portal_green --dbname postgres \
+            --no-psqlrc --tuples-only --no-align --set ON_ERROR_STOP=1 \
+            --command "BEGIN READ ONLY; SELECT json_build_object('retained_database', datname, 'connections_enabled', datallowconn, 'size_bytes', pg_database_size(oid)) FROM pg_database WHERE datname = 'phaeno_portal_green_before_20260929'; COMMIT;"
+          docker exec phaeno-portal-green-db psql --username phaeno_portal_green --dbname postgres \
+            --no-psqlrc --tuples-only --no-align --set ON_ERROR_STOP=1 \
+            --command "BEGIN READ ONLY; SELECT 'retained_database_exists=' || EXISTS (SELECT 1 FROM pg_database WHERE datname = 'phaeno_portal_green_before_20260929'); COMMIT;"
+          recovery_root=/opt/phaeno.portal-green/reset-20260929
+          if [[ -d "$recovery_root" && ! -L "$recovery_root" ]]; then
+            printf 'recovery_directory_exists=true\n'
+            for filename in final-before.dump.enc final-before.key.enc; do
+              found=false
+              while IFS= read -r -d '' candidate; do
+                found=true
+                actual="$(sha256sum "$candidate" | cut -d ' ' -f 1)"
+                if [[ "$filename" == final-before.dump.enc ]]; then
+                  expected=492bee08c1fc814f8f1b3faf551ce6701207d27d2f96be5b53e4117e0f93cfac
+                else
+                  expected=19c4729538bd3fe0eb9d10b217b4482292cf500a80b4a52b077e2f31458c7ccd
+                fi
+                matches=false
+                [[ "$actual" != "$expected" ]] || matches=true
+                printf 'encrypted_file=%s sha256=%s matches_verified_receipt=%s\n' "$filename" "$actual" "$matches"
+              done < <(find "$recovery_root" -maxdepth 4 -type f -name "$filename" -print0)
+              printf 'encrypted_file=%s exists=%s\n' "$filename" "$found"
+            done
+          else
+            printf 'recovery_directory_exists=false\n'
+          fi
+          printf 'live_data_changed=false\nretained_database_connections_changed=false\nbackup_decrypted=false\n'
+          PROBE
+          {
+            printf '## Retained Website recovery inspection\n\n```text\n'
+            cat "$RUNNER_TEMP/website-recovery-inspection.txt"
+            printf '\n```\n\nAvailability and checksum inspection only; no restore or fresh restore test.\n'
+          } >> "$GITHUB_STEP_SUMMARY"
