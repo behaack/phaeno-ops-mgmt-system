@@ -1,10 +1,24 @@
 # Operations and production-readiness boundary
 
+## Website operations hosted-test release — completed October 12, 2026
+
+The Owner requested commit, push and deploy. Matched API/Portal source
+`dedae5d23909fdf540dff2786bfdad308a8ae261` is live under the
+[preserving release plan](plans/PORTAL-WEBSITE-OPERATIONS-TEST-RELEASE-20261012-PLAN.md).
+Protected run 38255085546 succeeds; the exact-source frontend is promoted after
+API verification. Website operations is available from More, with Mailing list
+and Demo requests in its sidebar. Existing authenticated queue reads, health,
+scanner, rendering and anonymous authorization pass; bounded runtime errors are
+empty. No EF migration is needed or ran. Hosted data, S3/ClamAV and existing
+recovery/worker settings are preserved. Manual/Vercel Git holds, Customer-only
+i18n and commercial activation gates remain. See the
+[release receipt](operations/portal-website-operations-test-release-20261012.md).
+
 ## Portal gap-closure hosted-test release — completed October 11, 2026
 
 The Owner authorized matched API/Portal deployment with commit/push and temporary
 protected-workflow enablement. Source `97da7807c1de86f6d60492a1d2ad825ee533eb7c`
-is live on the preserved hosted test environment under the
+was deployed to the preserved hosted test environment under the
 [release plan](plans/PORTAL-GAP-CLOSURE-TEST-RELEASE-20261011-PLAN.md).
 Protected run 38206214665 succeeds; exact-source staged frontend was promoted
 after API source/health checks. No EF migration is needed or ran; no reset,

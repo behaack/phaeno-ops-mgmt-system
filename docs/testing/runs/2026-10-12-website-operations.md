@@ -46,4 +46,14 @@ queue reads, validated bookmarks, matching notification destinations, independen
 pages, sidebar-only rendering, and email recovery menus. Browser inspection with
 mock data does not establish connected API, real Clerk, email-provider or hosted
 acceptance. No real intake completion, unsubscribe, email send, worker change,
-model/migration, Git mutation or deployment occurs in this slice.
+model/migration, Git mutation or deployment occurs in the initial implementation
+checkpoint.
+
+## Subsequent requested release
+
+The Owner then requested commit, push and deploy. Source `dedae5d2` and matching
+API/frontend are live under the
+[release receipt](../../operations/portal-website-operations-test-release-20261012.md).
+Release builds, no-change EF check, protected scanner smoke, health, authorization,
+source/alias metadata and authenticated Phaeno menu/both queues pass. Regression
+suite execution is not claimed by that release verification.

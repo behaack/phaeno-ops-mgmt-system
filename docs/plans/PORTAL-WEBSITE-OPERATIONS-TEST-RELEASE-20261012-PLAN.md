@@ -83,3 +83,13 @@ Do not unsubscribe, complete real intake, resend email, change worker settings,
 create orders or perform scientific writes as smoke. Check bounded frontend
 runtime errors and restored manual/Git holds. Record actual IDs and outcomes in
 the completion receipt; mock browser checks are not provider or tenant acceptance.
+
+## Completed release
+
+Source `dedae5d23909fdf540dff2786bfdad308a8ae261` is committed, pushed and live on
+both API and Portal frontend. Protected run `38255085546` succeeds; staged
+deployment `dpl_753tSeojqisXXoP8dhn3GYXFDaYg` is promoted after API verification.
+EF model check reports no change; no migration ran. Storage, scanning, data and
+settings are preserved. The authenticated menu/both queues, health/rendering,
+anonymous authorization and bounded runtime errors pass. Manual/Git holds remain.
+See the [completion receipt](../operations/portal-website-operations-test-release-20261012.md).

@@ -219,7 +219,11 @@ phone inspection verifies menu/sidebar selection, one visible queue, no duplicat
 tabs and no horizontal overflow. A fresh load reports no browser errors; an
 external selected organization sees the direct-route access message. The
 [verification receipt](../testing/runs/2026-10-12-website-operations.md) records
-the mock-session boundary. No automated suite or deployment ran for this slice.
+the mock-session boundary. No automated suite or deployment ran for the initial
+implementation checkpoint. The Owner subsequently requested commit, push and
+deploy; matched source `dedae5d2` is now live on the preserved hosted test target,
+with both authenticated sidebar queues verified and no EF migration. See the
+[completed release](../operations/portal-website-operations-test-release-20261012.md).
 
 ## Internal Website operations queues
 
