@@ -1,5 +1,29 @@
 # Operations and production-readiness boundary
 
+## October 12 remaining-deficiency continuation
+
+The Owner accepted a maximum one-hour data-loss window and four-hour restoration
+target. The [commercial acceptance packet](operations/COMMERCIAL-ACCEPTANCE-20261012.md)
+records the concrete preserving drill, required schedule/monitoring changes and
+Lab/training signoffs. The current daily Local-only schedule is insufficient for
+those targets and active S3 storage. Synthetic recovery checks establish software
+integrity/failure behavior only. Qualified recovery target, named responders,
+observed alert delivery and representative physical/training evidence are still
+required. Hosted-test S3 deferral, deployment holds and separate commercial
+activation authorization remain unchanged.
+
+## Website intake recovery — completed October 12, 2026
+
+The Owner explicitly requested recovery into the two Website intake tables after
+verified copies were located. The guarded preview and additive import succeeded:
+12 contacts and five historical demo requests recovered, the current request
+preserved, final table counts 12 and six. All six requests retain completed state,
+so the open queue remains empty. Existing records and other application tables
+are preserved; no notifications replay, model migration or application deployment
+occurs. The before-table backup is verified/encrypted, temporary copies are cleaned
+and authenticated mailing-list paging/health pass. See the
+[recovery receipt](operations/website-intake-recovery-20261012.md).
+
 ## Website operations hosted-test release — completed October 12, 2026
 
 The Owner requested commit, push and deploy. Matched API/Portal source

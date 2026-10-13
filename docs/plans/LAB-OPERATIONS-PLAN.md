@@ -1,5 +1,14 @@
 # Lab Operations Plan
 
+## October 12 confirmed-output completion repair
+
+REVIEW-07 in [System gap closure](SYSTEM-GAP-CLOSURE-PLAN.md) clears the library
+output draft after a confirmed successful write. Done returns to the protocol
+step without an unsaved-change warning; uncertain failures retain the original
+member coverage and quantity/location payload for recovery. Output provenance,
+barcodes, scientific meaning and source-material balances are unchanged. The
+component regression checks Done after success; execution remains deferred.
+
 ## Final application closure — October 11, 2026
 
 Global assembly discovery now uses server search, 25-row stable pages and exact

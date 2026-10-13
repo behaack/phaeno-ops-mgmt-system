@@ -34,7 +34,7 @@ export function PreparationOutputsDialog({ members, supported, pending, error, o
   const [previewValid, setPreviewValid] = useState(false)
   const saving = useRef(false)
   const form = useForm<Values>({ resolver: zodResolver(schema), defaultValues: { unit: '', location: '', rows: targets.map(() => ({ quantity: '', unit: '', location: '' })) } })
-  const __modalGuard = useModalDraftGuard(form.formState.isDirty, form.formState.isSubmitting)
+  const __modalGuard = useModalDraftGuard(form.formState.isDirty, pending || form.formState.isSubmitting, !saved)
 
   const busy = pending || form.formState.isSubmitting
   const sharedUnit = form.watch('unit')
@@ -47,6 +47,7 @@ export function PreparationOutputsDialog({ members, supported, pending, error, o
     try {
       const result = await onSubmit(targets.map((member, index) => ({ memberId: member.id, quantity: Number(values.rows[index].quantity), quantityUnit: values.rows[index].unit || values.unit, location: values.rows[index].location || values.location })))
       setSaved(result.members.filter(m => targets.some(t => t.id === m.id)))
+      form.reset(values)
     } catch {
       setSaveError('Outputs could not be confirmed as saved. Your entries are retained; review the message and retry.')
     } finally {

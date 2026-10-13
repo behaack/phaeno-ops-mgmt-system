@@ -2,6 +2,13 @@
 
 Status: initial plan and management manual drafted; management review and trainer walkthrough not yet performed.
 
+October 12 continuation: the Owner requested closing the remaining deficiencies.
+The [acceptance packet](../operations/COMMERCIAL-ACCEPTANCE-20261012.md) specifies
+the management walkthrough, observed teach-back, named first lesson and linked
+physical session. The existing manual, task guides and session record are ready
+for that session. Trainer/management names and observed feedback are still
+required; preparation does not change the training status to Complete.
+
 October 11 preparation: navigation/work discovery and current DataMatrix scope
 are reconciled in the management material. The
 [outage worksheet draft](../training/LAB-OUTAGE-WORKSHEET.md) supplies the

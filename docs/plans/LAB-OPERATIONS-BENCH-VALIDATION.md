@@ -1,5 +1,15 @@
 # Lab Operations Bench Validation
 
+## October 12 acceptance preparation
+
+The Owner requested remaining deficiency closure. The
+[commercial acceptance packet](../operations/COMMERCIAL-ACCEPTANCE-20261012.md)
+connects the current DataMatrix/supplier-label scenarios with the required named
+supervisor, representative equipment/stock, degraded-mode decision and observed
+signoff. Software regressions and screenshots are recorded separately in the
+closure execution receipt. No physical session has been observed, so hardware,
+handling/storage and provider-custody qualification remain pending.
+
 ## October 11 current qualification scope
 
 Current POMS-generated labels use DataMatrix; supplier labels retain their

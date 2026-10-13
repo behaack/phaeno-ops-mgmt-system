@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '#/test-helpers/render-portal'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { acceptLabQuote, declineLabChangeQuote, issuePlatformQuote, type LabServiceOrder, type OrderConfiguration, type Quote } from '#/api/order-management'
 import { IssueLabChangeQuote, LabChangeQuotes } from './LabChangeQuotes'
@@ -13,13 +13,19 @@ const change = { id: 'change', purpose: 'Change', status: 'Issued', revision: 2,
 const order = { id: 'job', organizationId: 'org', orderNumber: 'TEST-CHANGE', version: 5, requestedSpecimenCount: 2, status: 'InProgress', quotes: [change, initial] } as LabServiceOrder
 function renderQuotes(value = order) { return render(<QueryClientProvider client={new QueryClient()}><LabChangeQuotes order={value} onSaved={vi.fn().mockResolvedValue(undefined)} /></QueryClientProvider>) }
 
+async function openDecision(name: string) {
+  fireEvent.keyDown(screen.getByRole('button', { name: 'Actions for Change quote 2' }), { key: 'Enter' })
+  fireEvent.click(await screen.findByRole('menuitem', { name }))
+  await screen.findByRole('dialog')
+}
+
 describe('separate Change-quote decisions', () => {
   beforeEach(() => { vi.clearAllMocks(); identity.allowed = true })
   it('keeps the original accepted quote as the main Job agreement', () => { expect(currentLabQuote(order.quotes)?.id).toBe('initial') })
   it('requires affirmative acceptance and the Department PO before committing the reviewed revision', async () => {
     vi.mocked(acceptLabQuote).mockResolvedValue(order)
     renderQuotes()
-    fireEvent.click(screen.getByRole('button', { name: 'Review and accept addition' }))
+    await openDecision('Review and accept addition')
     expect(screen.getByRole('button', { name: 'Accept addition' })).toHaveProperty('disabled', true)
     fireEvent.change(screen.getByRole('textbox', { name: /Purchase order number/ }), { target: { value: 'PO-CHANGE' } })
     fireEvent.click(screen.getByRole('checkbox'))
@@ -28,7 +34,7 @@ describe('separate Change-quote decisions', () => {
   })
   it('declines only the separate proposal', async () => {
     vi.mocked(declineLabChangeQuote).mockResolvedValue(order)
-    renderQuotes(); fireEvent.click(screen.getByRole('button', { name: 'Decline addition' }))
+    renderQuotes(); await openDecision('Decline addition')
     fireEvent.click(screen.getAllByRole('button', { name: 'Decline addition' }).at(-1)!)
     await waitFor(() => expect(declineLabChangeQuote).toHaveBeenCalledWith('job', 'change', 5))
     expect(acceptLabQuote).not.toHaveBeenCalled()
@@ -37,6 +43,36 @@ describe('separate Change-quote decisions', () => {
     renderQuotes({ ...order, quotes: [{ ...change, status }] }); expect(screen.queryByRole('button', { name: 'Review and accept addition' })).toBeNull()
   })
   it('does not offer a decision to a member', () => { identity.allowed = false; renderQuotes(); expect(screen.queryByRole('button', { name: 'Review and accept addition' })).toBeNull() })
+  it('guards Cancel consistently, preserves the PO when editing continues, and discards explicitly', async () => {
+    renderQuotes()
+    await openDecision('Review and accept addition')
+    fireEvent.change(screen.getByRole('textbox', { name: /Purchase order number/ }), { target: { value: 'KEEP-PO' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+    await screen.findByRole('dialog', { name: 'Discard unsaved changes?' })
+    fireEvent.click(screen.getByRole('button', { name: 'Keep editing' }))
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Discard unsaved changes?' })).toBeNull())
+    expect(screen.getByRole('textbox', { name: /Purchase order number/ })).toHaveProperty('value', 'KEEP-PO')
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Discard changes' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    await openDecision('Review and accept addition')
+    expect(screen.getByRole('textbox', { name: /Purchase order number/ })).toHaveProperty('value', '')
+    expect(acceptLabQuote).not.toHaveBeenCalled()
+  })
+  it('keeps a pending decision open and restores the request for recovery after failure', async () => {
+    let reject!: (reason: Error) => void
+    vi.mocked(acceptLabQuote).mockReturnValue(new Promise((_resolve, rejectRequest) => { reject = rejectRequest }))
+    renderQuotes()
+    await openDecision('Review and accept addition')
+    fireEvent.change(screen.getByRole('textbox', { name: /Purchase order number/ }), { target: { value: 'PENDING-PO' } })
+    fireEvent.click(screen.getByRole('checkbox'))
+    fireEvent.click(screen.getByRole('button', { name: 'Accept addition' }))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Cancel' })).toHaveProperty('disabled', true))
+    expect(screen.queryByRole('button', { name: 'Close' })).toBeNull()
+    reject(new Error('Synthetic response failure'))
+    await screen.findByRole('alert')
+    expect(screen.getByRole('textbox', { name: /Purchase order number/ })).toHaveProperty('value', 'PENDING-PO')
+  })
   it('retains the reviewed version and additive counts during issuance', async () => {
     vi.mocked(issuePlatformQuote).mockResolvedValue(order)
     const catalog = [

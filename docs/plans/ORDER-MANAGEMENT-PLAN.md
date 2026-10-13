@@ -1,5 +1,15 @@
 # Order Management Plan
 
+## October 12 final review repairs
+
+REVIEW-01/02/05/08 in [System gap closure](SYSTEM-GAP-CLOSURE-PLAN.md) retain phase
+shipping attention after laboratory receipt, add current Change quote/Partner
+substitution decisions with scope and responsibility, and guard Change quote
+issuance/decisions across dismissal, navigation and pending writes. Quote commands
+share ActionMenu and Customer controls use the existing English message catalog.
+No commercial agreement, model, dependency or authorization policy changes.
+Compilation/static checks are separate from deferred regression execution.
+
 ## Graphical phase sample completion — October 5, 2026
 
 The Owner requested the same graphical tracker in Customer Progress, with sample

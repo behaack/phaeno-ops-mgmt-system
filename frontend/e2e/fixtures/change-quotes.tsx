@@ -8,6 +8,7 @@ import { configureApiAuth } from '../../src/api/client'
 import { PhaenoSessionContext, type PhaenoSessionContextValue } from '../../src/features/auth/session-context'
 import { noSessionCapabilities } from '../../src/test-helpers/session'
 import { applyThemeMode } from '../../src/components/theme-mode'
+import { PortalRouterContext } from './portal-router-context'
 import '../../src/styles.css'
 
 applyThemeMode('auto')
@@ -23,4 +24,4 @@ function App() {
     <LabChangeQuotes order={order} onSaved={async () => setSaved(value => value + 1)} />
   </main>
 }
-createRoot(document.getElementById('root')!).render(<QueryClientProvider client={new QueryClient()}><PhaenoSessionContext.Provider value={context}><App /></PhaenoSessionContext.Provider></QueryClientProvider>)
+createRoot(document.getElementById('root')!).render(<QueryClientProvider client={new QueryClient()}><PhaenoSessionContext.Provider value={context}><PortalRouterContext><App /></PortalRouterContext></PhaenoSessionContext.Provider></QueryClientProvider>)

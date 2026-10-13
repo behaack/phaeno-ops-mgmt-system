@@ -20,6 +20,12 @@ The grant operation should show:
 
 Company access approval and data assignment are separate actions. A failed grant never recreates the Company or its access scope.
 
+Each grant's contextual commands share its **Actions** control; a sole command
+appears directly. Assignment, upgrade and revocation keep entered details on
+failure and ask before discarding unsaved work. An access-changing request must
+finish before the dialog closes or you navigate away. After a successful save or
+explicit discard, the closed form does not block later navigation.
+
 ## Understand access
 
 An organization-wide grant is visible to authorized active members throughout that organization. A Department grant is visible only in that Department under the current role rules. Access is package-wide, not file-by-file. Downloads remain authorized at request time against membership, grant, version, package, and governance state.

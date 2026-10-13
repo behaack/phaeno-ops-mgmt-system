@@ -16,8 +16,9 @@ function fill() {
 
 describe('shared library outputs', () => {
   it('requires every quantity and submits shared defaults with individual overrides in one request', async () => {
+    const close = vi.fn()
     const submit = vi.fn().mockResolvedValue({ members: members.map(m => ({ ...m, output: { ...output, barcode: `OUT-${m.position}` } })) } as PreparationDetail)
-    show(submit)
+    show(submit, { onClose: close })
     expect(screen.queryByRole('combobox')).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Create library outputs' }))
     await screen.findByText('Enter the shared quantity unit.')
@@ -34,6 +35,9 @@ describe('shared library outputs', () => {
     ])
     expect(screen.getByText('Output: OUT-A1')).toBeTruthy()
     expect(screen.getByText('Output: OUT-A2')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Done' }))
+    await waitFor(() => expect(close).toHaveBeenCalledOnce())
+    expect(screen.queryByRole('dialog', { name: 'Discard unsaved changes?' })).toBeNull()
   })
 
   it('retains the original rows and request values after an uncertain response and refresh', async () => {

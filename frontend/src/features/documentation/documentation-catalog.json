@@ -484,7 +484,7 @@
       "title": "Getting started",
       "summary": "Find current actions, responsibility and available updates for your Department, then open Customer Jobs, samples, data and retained Trials.",
       "order": 10,
-      "reviewedAt": "2026-10-11",
+      "reviewedAt": "2026-10-12",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [
@@ -542,7 +542,7 @@
       "title": "Request laboratory services",
       "summary": "Accept pricing, request phase kits, wait for dispatch before recording receipt, prepare and send samples, and follow Progress and results.",
       "order": 30,
-      "reviewedAt": "2026-10-05",
+      "reviewedAt": "2026-10-12",
       "navigationGroup": "laboratory-work",
       "contentType": "guide",
       "topicIds": [
@@ -700,7 +700,7 @@
       "title": "Getting started",
       "summary": "Find reagent orders, Assembly requests, curated data, and retained Trials in the selected Department.",
       "order": 10,
-      "reviewedAt": "2026-10-11",
+      "reviewedAt": "2026-10-12",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [
@@ -1273,7 +1273,7 @@
       "title": "Organization grants",
       "summary": "Grant, upgrade, and revoke exact package versions without implicit access changes.",
       "order": 33,
-      "reviewedAt": "2026-10-11",
+      "reviewedAt": "2026-10-12",
       "navigationGroup": "data-provisioning",
       "contentType": "guide",
       "topicIds": [
@@ -1407,7 +1407,7 @@
       "title": "PSeq kit fulfillment",
       "summary": "Review Partner kit orders commercially, then open Lab work for substitutions, backorders, and shipment fulfillment.",
       "order": 52,
-      "reviewedAt": "2026-10-03",
+      "reviewedAt": "2026-10-12",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1885,7 +1885,7 @@
       "title": "Use Partner Lab services",
       "summary": "Accept pricing, request phase kits, wait for dispatch before recording receipt, prepare and send samples, and follow Progress and results.",
       "order": 25,
-      "reviewedAt": "2026-10-05",
+      "reviewedAt": "2026-10-12",
       "navigationGroup": "partner-work",
       "contentType": "guide",
       "topicIds": [

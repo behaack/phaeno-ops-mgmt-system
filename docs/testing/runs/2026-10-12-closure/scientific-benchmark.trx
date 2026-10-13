@@ -1,0 +1,34 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="45cabd81-2e9d-44fa-9f22-531fcced2ff3" name="bhaac@HAACK-HP 2026-10-12 17:19:20" runUser="HAACK-HP\bhaac" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-10-12T17:19:20.1680808-07:00" queuing="2026-10-12T17:19:20.1680817-07:00" start="2026-10-12T17:18:58.5681574-07:00" finish="2026-10-12T17:19:20.1743216-07:00" />
+  <TestSettings name="default" id="b983409c-7474-4ff7-ba9e-99a295eb36ef">
+    <Deployment runDeploymentRoot="bhaac_HAACK-HP_2026-10-12_17_19_20" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="26e6eff9-66ac-483c-8075-71a68ec43c42" testId="69ef2929-3c83-1dbf-98a7-b1ce67d94a89" testName="PhaenoPortal.Test.SampleShippingPostgresTests.EvidenceGovernancePreservesReportsAndRequiresIndependentReviewAndScientificCoverage" computerName="HAACK-HP" duration="00:00:20.3943749" startTime="2026-10-12T17:18:59.6254121-07:00" endTime="2026-10-12T17:19:20.0380688-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="26e6eff9-66ac-483c-8075-71a68ec43c42" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="PhaenoPortal.Test.SampleShippingPostgresTests.EvidenceGovernancePreservesReportsAndRequiresIndependentReviewAndScientificCoverage" storage="c:\@dev\phaeno-ops-mgmt-system\.verification\closure-20261012\backend\bin\pseq.operations.test\debug\pseq.operations.test.dll" id="69ef2929-3c83-1dbf-98a7-b1ce67d94a89">
+      <Execution id="26e6eff9-66ac-483c-8075-71a68ec43c42" />
+      <TestMethod codeBase="C:\@dev\phaeno-ops-mgmt-system\.verification\closure-20261012\backend\bin\PSeq.Operations.Test\debug\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.SampleShippingPostgresTests" name="EvidenceGovernancePreservesReportsAndRequiresIndependentReviewAndScientificCoverage" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="69ef2929-3c83-1dbf-98a7-b1ce67d94a89" executionId="26e6eff9-66ac-483c-8075-71a68ec43c42" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="1" executed="1" passed="1" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.12)&#xD;
+[xUnit.net 00:00:00.19]   Discovering: PSeq.Operations.Test&#xD;
+[xUnit.net 00:00:00.41]   Discovered:  PSeq.Operations.Test&#xD;
+[xUnit.net 00:00:00.44]   Starting:    PSeq.Operations.Test&#xD;
+[xUnit.net 00:00:20.91]   Finished:    PSeq.Operations.Test&#xD;
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>

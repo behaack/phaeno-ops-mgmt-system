@@ -47,11 +47,32 @@ public sealed partial class WorkAttentionReader
             queries.Add(orders.Where(order => order.Status == LabServiceOrderStatus.OnHold || order.Status == LabServiceOrderStatus.SubmittedForQuote || order.Status == LabServiceOrderStatus.QuoteInPreparation
                     || order.Status == LabServiceOrderStatus.InProgress).Select(order => new WorkItem { SourceId = order.Id, SourceType = "LabWaiting", Domain = "commercial", MessageKey = "orders.waiting",
                     RecordLabel = order.OrderNumber, Destination = "/lab-services/", Kind = "waiting", CreatedAtUtc = order.CreatedAt, TargetId = (Guid?)null, OwnerUserId = (Guid?)null, DueAtUtc = (DateTime?)null, Priority = 3 }));
+            queries.Add(from quote in db.LabServiceQuotes.AsNoTracking()
+                join order in orders on quote.LabServiceOrderId equals order.Id
+                where order.AcceptedQuoteId != null && (order.Status == LabServiceOrderStatus.PlacedAwaitingSamples
+                    || order.Status == LabServiceOrderStatus.InProgress || order.Status == LabServiceOrderStatus.ResultsAvailable)
+                    && quote.Purpose == QuotePurpose.Change && quote.Status == QuoteStatus.Issued && quote.ExpiresAt > now
+                select new WorkItem { SourceId = quote.Id, TargetId = order.Id, SourceType = "ChangeQuote", Domain = "commercial",
+                    MessageKey = "orders.changeQuote", RecordLabel = order.OrderNumber, Destination = "/lab-services/",
+                    Kind = Caps.CanAcceptLabServiceQuotes ? "action" : "waiting", CreatedAtUtc = quote.CreatedAt,
+                    DueAtUtc = quote.ExpiresAt, Priority = quote.ExpiresAt <= now.AddDays(3) ? 2 : 3, OwnerUserId = null });
         }
         if (Caps.CanViewReagentOrders)
+        {
             queries.Add(db.PartnerReagentOrders.AsNoTracking().Where(order => order.OrganizationId == organizationId && order.DepartmentId == departmentId && !order.IsDiscarded && order.Status == ReagentOrderStatus.Draft)
                 .Select(order => new WorkItem { SourceId = order.Id, SourceType = "KitOrder", Domain = "commercial", MessageKey = "kits.complete", RecordLabel = order.OrderNumber,
                     Destination = "/reagent-orders/", Kind = Caps.CanPlaceReagentOrders ? "action" : "waiting", CreatedAtUtc = order.CreatedAt, TargetId = (Guid?)null, OwnerUserId = (Guid?)null, DueAtUtc = (DateTime?)null, Priority = 3 }));
+            queries.Add(from adjustment in db.ReagentOrderAdjustments.AsNoTracking()
+                join order in db.PartnerReagentOrders.AsNoTracking() on adjustment.PartnerReagentOrderId equals order.Id
+                where order.OrganizationId == organizationId && order.DepartmentId == departmentId && !order.IsDiscarded
+                    && adjustment.Status == ReagentAdjustmentStatus.Proposed
+                    && (order.Status == ReagentOrderStatus.Processing || order.Status == ReagentOrderStatus.PartiallyShipped || order.Status == ReagentOrderStatus.OnHold)
+                select new WorkItem { SourceId = adjustment.Id, TargetId = order.Id, SourceType = "KitSubstitution", Domain = "commercial",
+                    MessageKey = "kits.substitution", RecordLabel = order.OrderNumber, Destination = "/reagent-orders/",
+                    Kind = Caps.CanApproveReagentSubstitutions && order.Status != ReagentOrderStatus.OnHold
+                        && order.Status != ReagentOrderStatus.CancellationRequested ? "action" : "waiting",
+                    CreatedAtUtc = adjustment.CreatedAt, DueAtUtc = null, Priority = 2, OwnerUserId = null });
+        }
     }
 
     // Scope/phase rules depend on authoritative domain methods, including JSON scope

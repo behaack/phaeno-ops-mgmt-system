@@ -235,7 +235,7 @@ describe('navigation placement', () => {
       ...(retention ? ['File retention policies'] : []),
     ])
     expect(getVisibleMainMenuItems(session, context, 'workspace').some(item => item.label === 'Order ops')).toBe(orders)
-    expect(getVisibleMainMenuItems(session, context, 'more').map(item => item.label)).toEqual(orders ? ['Purchasing', 'Legacy integrations'] : [])
+    expect(getVisibleMainMenuItems(session, context, 'more').map(item => item.label)).toEqual(orders ? ['Purchasing', 'Website operations', 'Legacy integrations'] : ['Website operations'])
   })
 
   it('keeps settings independent of operational workspaces', () => {
@@ -247,7 +247,7 @@ describe('navigation placement', () => {
   it('shows Lab settings only with laboratory access in Phaeno', () => {
     const session = createSession('Phaeno', { canManageLabOperations: true, canAdministerCrm: false })
     expect(getVisibleMainMenuItems(session, { selectedOrganizationKind: 'Phaeno' }, 'administration').map(item => item.label)).toEqual(['Lab settings'])
-    expect(getVisibleMainMenuItems(session, { selectedOrganizationKind: 'Phaeno' }, 'more').map(item => item.label)).toEqual(['Purchasing', 'Equipment'])
+    expect(getVisibleMainMenuItems(session, { selectedOrganizationKind: 'Phaeno' }, 'more').map(item => item.label)).toEqual(['Purchasing', 'Equipment', 'Website operations'])
     expect(getVisibleMainMenuItems(session, { selectedOrganizationKind: 'Customer' }, 'administration')).toEqual([])
     expect(getVisibleMainMenuItems(session, { selectedOrganizationKind: 'Customer' }, 'more')).toEqual([])
     expect(isMainMenuRouteActive('/lab-configuration', '/lab-operations')).toBe(false)

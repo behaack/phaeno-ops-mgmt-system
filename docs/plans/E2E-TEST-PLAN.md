@@ -1,5 +1,36 @@
 # Playwright E2E Test Plan
 
+## Remaining-deficiency execution — October 12, 2026
+
+Requested checkpoint after the shared Dialog focus repair: 39 cases pass, none
+skipped: 13 Chromium Change quote/work/scope cases plus 13 dialog/preparation
+cases each on desktop Chromium and mobile Chrome. Coverage includes Change quotes, work attention and organization/
+Department scope switching. Change quote review runs at 320 and 1,440 px in
+light/dark themes, with WCAG 2.2 Axe checks, keyboard consent, rendered screenshots
+and exact intercepted mutation bodies. Scope changes retain or explicitly discard
+drafts and cannot dismiss pending saves. Work reads cover exact links, refresh,
+Customer-only pseudolocale, failure/retry, unknown counts and safe discard focus.
+These browser fixtures render real components/router/confirmation context with
+intercepted API responses. PostgreSQL source/command checks are separate evidence;
+real Clerk, hosted provider/file access and physical bench acceptance remain gates.
+Preparation cases cover interrupted/uncertain/stale writes, retained quantities
+and command identity, output selection, role gates, resource eligibility and
+keyboard focus return. The phone dialog case also exercises dark theme and
+reduced motion.
+After final quote Field/required-indicator alignment, all four quote viewport/theme
+cases pass again with required-control semantics and conditional pricing checks;
+retained screenshots are from this final rerun.
+
+## Final review repair sources — October 12, 2026
+
+The Change quote fixture now uses shared real router/Portal-confirmation context,
+and desktop/phone light/dark cases open acceptance through the record Actions
+menu. Execution is deferred under the request-only policy. At the next authorized
+checkpoint, include dirty Cancel/Escape/Keep/Discard, pending navigation and
+organization/Department denial, saved output Done, grant/upgrade/revoke recovery,
+single/multiple Actions behavior and focus return when a control disappears.
+Static/compilation checks do not establish rendered acceptance.
+
 ## Website operations sidebar — October 12, 2026
 
 Home sources retain My work and check the old Web Operations bookmark redirects

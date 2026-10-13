@@ -90,6 +90,44 @@ public partial class SampleShippingPostgresTests
             await lineage.RequirePackageAsync(replacementPackage, default);
             var replacementRelease = new LabResultRelease(work.SubmittingOrganizationId, work.AuthorizationSourceId, specimen.SubmittedSpecimenId, 2, "TEST", "1", "TEST", "pass", "{}", now, complete.Id, true, "*");
             await lineage.RequireReleaseAsync(replacementRelease, default);
+            if (Environment.GetEnvironmentVariable("PSEQ_OPERATIONS_BENCHMARK_OUTPUT") is { Length: > 0 } benchmarkOutput)
+            {
+                // Populate complete current-model analyses, not cheap missing-profile
+                // exclusions. All objects belong to this rollback-isolated fixture.
+                var benchmarkIds = new List<Guid>();
+                for (var index = 0; index < 100; index++)
+                {
+                    var benchmarkRun = await lineage.RegisterAnalysisAsync(new(Guid.NewGuid(), work.Id, specimen.Id,
+                        "TEST analysis", $"benchmark-{index}-{scope.Suffix}", [corrected.Id], null,
+                        null, scientific), scope.PlatformUser.Id, "lab-staff", default, true);
+                    var candidate = new ResultOutputPackage(work.SubmittingOrganizationId, work.AuthorizationSourceId, work.Id,
+                        specimen.SubmittedSpecimenId, index + 10, null, "TEST", $"benchmark-{index}-{scope.Suffix}", $"benchmark-{index}-{scope.Suffix}",
+                        "{}", new string('C', 64), 1, labAnalysisRunId: benchmarkRun.Id);
+                    db.AddRange(candidate, new ResultArtifact(candidate.Id, "result", "benchmark.txt", "text/plain", 10,
+                        new string('D', 64), $"test-only/benchmark/{scope.Suffix}/{index}", "*"));
+                    benchmarkIds.Add(candidate.Id);
+                }
+                await db.SaveChangesAsync();
+                db.ChangeTracker.Clear();
+                var timings = new List<object>();
+                foreach (var count in new[] { 25, 100 })
+                {
+                    var selectedIds = benchmarkIds.Take(count).ToArray();
+                    for (var repetition = 0; repetition < 4; repetition++)
+                    {
+                        var watch = System.Diagnostics.Stopwatch.StartNew();
+                        var eligible = await new LabResultEligibilityReader(db, new() { RequireScientificEvidence = true, RequireResultTraceability = true })
+                            .EligiblePackageIdsAsync(db.ResultOutputPackages.Where(p => selectedIds.Contains(p.Id)), false, default);
+                        watch.Stop();
+                        Assert.Equal(count, eligible.Length);
+                        Assert.False(db.ChangeTracker.HasChanges());
+                        timings.Add(new { Candidates = count, Repetition = repetition, ElapsedMs = watch.Elapsed.TotalMilliseconds, Eligible = eligible.Length });
+                    }
+                }
+                await File.WriteAllTextAsync(benchmarkOutput, System.Text.Json.JsonSerializer.Serialize(new {
+                    Scope = "Local PostgreSQL, 100 independently registered strict analyses over one prepared specimen; no cloud storage IO or HTTP/auth overhead", Timings = timings
+                }));
+            }
             var investigation = await new LabInvestigationService(db).ReadAsync(work.Id, specimen.Id, default);
             Assert.True(investigation.Evidence.ContainsKey("performanceDecisions"));
             Assert.True(investigation.Evidence.ContainsKey("scientificRequirements"));

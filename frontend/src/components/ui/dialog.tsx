@@ -118,6 +118,14 @@ function DialogContent({
           onOpenAutoFocus?.(event)
         }}
         onCloseAutoFocus={(event) => {
+          // A queued close can finish after another overlay has opened. Preserve
+          // its active focus instead of returning to the old trigger and closing
+          // the newly opened menu/dialog through an outside-focus event.
+          const active = document.activeElement
+          if (active instanceof Element && active.closest('[data-state="open"][data-slot="dialog-content"], [data-state="open"][data-slot="dropdown-menu-content"]')) {
+            event.preventDefault()
+            return
+          }
           onCloseAutoFocus?.(event)
           if (!event.defaultPrevented && openerRef.current?.isConnected) {
             event.preventDefault()

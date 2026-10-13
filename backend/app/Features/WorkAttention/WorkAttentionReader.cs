@@ -138,6 +138,7 @@ public sealed partial class WorkAttentionReader(PSeqOperationsDbContext db, PSeq
                     SourceType = "PhaseCancellation", Domain = "commercial", MessageKey = "orders.phaseDecision", RecordLabel = "Phase cancellation request", Destination = "/order-operations/lab-services/orders/",
                     Kind = "action", OwnerUserId = null, DueAtUtc = null, CreatedAtUtc = request.RequestedAtUtc, Priority = 0 }));
         }
+        AddKitWork(queries);
         AddFinance(queries);
         AddRecovery(queries);
     }
@@ -154,7 +155,7 @@ public sealed partial class WorkAttentionReader(PSeqOperationsDbContext db, PSeq
                 .Select(receipt => new WorkItem { SourceId = receipt.Id, SourceType = "Receipt", Domain = "finance", MessageKey = "finance.allocate", RecordLabel = receipt.ReceiptNumber,
                     Destination = "/finance/receipt/", CreatedAtUtc = receipt.CreatedAt, TargetId = (Guid?)null, Kind = "action", OwnerUserId = (Guid?)null, DueAtUtc = (DateTime?)null, Priority = 3 }));
         if (Caps.CanReconcilePSeqCash)
-            queries.Add(db.ReconciliationBatches.AsNoTracking().Where(batch => batch.Status == ReconciliationBatchStatus.Submitted
+            queries.Add(db.ReconciliationBatches.AsNoTracking().Where(batch => batch.Status == ReconciliationBatchStatus.Submitted && batch.Difference == 0
                     && (!options.DualControlEnforced || batch.CreatedByUserIdValue != session.User!.Id && batch.SubmittedByUserId != session.User.Id))
                 .Select(batch => new WorkItem { SourceId = batch.Id, SourceType = "Reconciliation", Domain = "finance", MessageKey = "finance.reconcile", RecordLabel = batch.BatchNumber,
                     Destination = "/finance/reconciliation/", CreatedAtUtc = batch.CreatedAt, TargetId = (Guid?)null, Kind = "action", OwnerUserId = (Guid?)null, DueAtUtc = (DateTime?)null, Priority = 3 }));

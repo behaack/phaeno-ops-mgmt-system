@@ -6,6 +6,36 @@ or hosted acceptance is claimed. The source/actor matrix below remains the
 representative operational acceptance contract.
 Owning review: [System gap closure](SYSTEM-GAP-CLOSURE-PLAN.md), GAP-06.
 
+## October 12 final review repair scope
+
+Authorized under REVIEW-01/02/03/09 in the
+[closure register](SYSTEM-GAP-CLOSURE-PLAN.md#final-code-review-repairs--october-12-2026).
+Include unfinished phase shipping for InProgress Jobs. Add exact current Change
+quote and Partner substitution decision sources, keeping Department/organization
+scope, role responsibility, expiry and source clearance before counts/paging.
+Reconciliation work shares the approval command's creator, submitter, source
+contributor and draft-editor exclusions when dual control is enforced. Preserve
+the existing work-item envelope and extend same-app source/message values only.
+Undated elevated actions display Needs review; date-based Due soon stays tied
+to a recorded deadline. No schema, auth, dependency or deployment change.
+These repairs are implemented locally. The Owner subsequently requested regression
+execution and the remaining deficiency closure; current results supersede the
+earlier deferred execution state in the October 12 closure receipt.
+
+### PSeq Kit staff coverage — October 12
+
+The shared feed includes current non-discarded Partner Kit orders. Commercial
+review, cancellation requests and pre-acceptance holds use the existing Platform
+administrator and Order configuration authority. Accepted, processing, partially
+shipped, shipped and fulfillment-held orders use existing Lab operator/supervisor
+or Platform administrator authority and Lab operations capability. Each source
+preserves its assignment and deadline and links to its canonical Commercial or
+Lab workspace. Completion/discard removes the source; personal/team filtering
+does not expand permissions. Count and stage filtering run before paging.
+PostgreSQL coverage includes source clearance, narrow roles, other assignments
+and 1,005 qualifying Kit orders across stable pages. No new state or authority
+is inferred from commercial-role membership alone.
+
 October 12 navigation follow-up: **More → Website operations** owns the full
 platform-administrator Website tools. **Mailing list** and **Demo requests** are
 shared-sidebar queues; **Email delivery** remains a separate recovery section.

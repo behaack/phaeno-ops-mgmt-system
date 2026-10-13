@@ -4,6 +4,14 @@ Prepared October 11, 2026. Code preparation only; no production activation,
 timer installation, credential grant, capture or restore is authorized here.
 The Owner's hosted-test backup deferral and deployment hold remain in force.
 
+October 12 continuation: the Owner accepted at most one hour of data loss and
+restoration within four hours and requested remaining closure work. The
+[commercial acceptance packet](COMMERCIAL-ACCEPTANCE-20261012.md) records the
+current scheduling/monitoring mismatch, concrete drill criteria and required
+target/responders. Twenty-nine synthetic archive/encryption/restart checks and
+seven current-tool S3 integrity checks pass locally. No live S3 capture, recovery,
+schedule installation, alert delivery or responder acceptance is claimed.
+
 The repository now contains `backend/tools/PSeq.Operations.S3Recovery`. It uses
 the existing AWS SDK and current storage locators; no new application dependency
 or schema is introduced. `dry-run` parses the current private reference manifest

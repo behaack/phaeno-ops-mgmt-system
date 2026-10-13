@@ -1,5 +1,44 @@
 # Backend Test Plan
 
+## Remaining-deficiency execution — October 12, 2026
+
+The Owner requested the affected regression batch. Kit staff attention sources
+now cover current Commercial/Lab authority, assignment, stage/hold transitions,
+discard/completion clearance and exact counts over 1,005 orders. Substitution
+attention covers current scoped consent, held/member waiting and decision
+clearance. The actual two-phase shipping journey accepts a quote, records paired
+samples, finalizes rosters, issues packets and records both handoffs; first-phase
+receipt must retain the later action, and both handoffs clear it. It uses its own
+generated loopback PostgreSQL database because commands own transactions and
+physical catalog/stock must not depend on the shared development fixture.
+Teardown deletes packet revisions before shipments; the owned temporary database
+is dropped in `finally`. Original development records and Website intake remain
+preserved. All 16 distinct affected cases have passing batch/follow-up evidence in
+the [closure receipt](../testing/runs/2026-10-12-deficiency-closure.md); older deferred
+statements describe the earlier checkpoint.
+
+The opt-in `PSEQ_OPERATIONS_BENCHMARK_OUTPUT` mode in evidence governance measures
+25 and 100 complete current-profile analysis/package candidates, requires strict
+scientific/traceability policy, asserts all eligible and checks no read-side writes.
+Eight local measurements range from 188–253 ms (25) and 664–812 ms (100).
+The fixture contains 100 independent registered analyses over one prepared
+specimen and rolls back. It excludes HTTP/auth, cloud IO, diverse-job evidence and
+production concurrency; it does not establish a constant query budget or hosted
+performance acceptance. The same governance case independently checks missing
+evidence, correction lineage, independent review and immutable reports.
+
+## Final review repair sources — October 12, 2026
+
+New `WorkAttentionReviewPostgresTests` covers unfinished shipping after Lab
+receipt/InProgress, held-job exclusion, scoped/current Change quotes, expired and
+resolved exclusion, member waiting, balanced reconciliation counts and retained
+source-contributor/draft-editor separation. `ReconciliationApprovalEligibilityTests`
+checks the shared domain assessment against approval for creator, submitter,
+contributor and prior editor. The solution build compiles these sources; test
+execution is deferred under the request-only policy. Substitution decision/
+clearance and complete actor/tenant acceptance remain required at the next
+authorized regression checkpoint. Earlier review results remain historical.
+
 ## Error and edge-case review boundary — October 11, 2026
 
 The post-closure pass reviewed authorization/scoping, read-only scientific

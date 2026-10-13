@@ -37,7 +37,13 @@ describe('Curated catalog dialog draft protection', () => {
       const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
       render(<QueryClientProvider client={client}><DataProvisioningPage section="catalog" onSectionChange={vi.fn()} /></QueryClientProvider>)
       await screen.findByText('Reference dataset')
-      await act(async () => { fireEvent.click(screen.getByRole('button', { name: scenario.open })) })
+      await act(async () => {
+        if (scenario.kind === 'create') fireEvent.click(screen.getByRole('button', { name: scenario.open }))
+        else {
+          fireEvent.keyDown(screen.getByRole('button', { name: scenario.kind === 'retire' ? 'Actions for Reference dataset version 1' : 'Actions for Reference dataset' }), { key: 'Enter' })
+          fireEvent.click(await screen.findByRole('menuitem', { name: scenario.open }))
+        }
+      })
       const dialog = screen.getByRole('dialog', { name: scenario.title })
       fireEvent.change(within(dialog).getByRole('textbox', { name: scenario.field }), { target: { value: 'Reviewed change' } })
       if (scenario.kind === 'create') fireEvent.change(within(dialog).getByRole('textbox', { name: 'Description' }), { target: { value: 'Reviewed description' } })
@@ -65,9 +71,16 @@ describe('Curated catalog dialog draft protection', () => {
       confirm.mockResolvedValue(true)
       await act(async () => { fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' })) })
       expect(screen.queryByRole('dialog')).toBeNull()
-      await act(async () => { fireEvent.click(screen.getByRole('button', { name: scenario.open })) })
+      await act(async () => {
+        if (scenario.kind === 'create') fireEvent.click(screen.getByRole('button', { name: scenario.open }))
+        else {
+          fireEvent.keyDown(screen.getByRole('button', { name: scenario.kind === 'retire' ? 'Actions for Reference dataset version 1' : 'Actions for Reference dataset' }), { key: 'Enter' })
+          fireEvent.click(await screen.findByRole('menuitem', { name: scenario.open }))
+        }
+      })
       expect(screen.queryByText(scenario.error)).toBeNull()
-      expect(screen.getByRole('textbox', { name: scenario.field })).toHaveProperty('value', scenario.kind === 'edit' ? dataset.name : '')
+      const reopened = await screen.findByRole('dialog', { name: scenario.title })
+      expect(within(reopened).getByRole('textbox', { name: scenario.field })).toHaveProperty('value', scenario.kind === 'edit' ? dataset.name : '')
     } finally { confirm.mockRestore() }
   })
 })

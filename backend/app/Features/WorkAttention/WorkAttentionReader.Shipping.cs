@@ -13,7 +13,8 @@ public sealed partial class WorkAttentionReader
         var departmentId = session.SelectedDepartment!.DepartmentId;
         var orders = await db.LabServiceOrders.AsNoTracking().AsSplitQuery().Include(order => order.Phases).Include(order => order.Samples)
             .Where(order => order.OrganizationId == organizationId && order.DepartmentId == departmentId
-                && !order.IsDiscarded && order.CommercialDraftJson == null && order.Status == LabServiceOrderStatus.PlacedAwaitingSamples).ToArrayAsync(token);
+                && !order.IsDiscarded && order.CommercialDraftJson == null
+                && (order.Status == LabServiceOrderStatus.PlacedAwaitingSamples || order.Status == LabServiceOrderStatus.InProgress)).ToArrayAsync(token);
         if (orders.Length == 0) return [];
         var orderIds = orders.Select(order => order.Id).ToArray();
         var phaseIds = orders.SelectMany(order => order.Phases).Select(phase => phase.Id).ToArray();

@@ -1,4 +1,6 @@
 import { RecordPagination } from '#/components/RecordPagination'
+import { GuardedFormDialog, ConfirmationFormContent } from '#/components/GuardedFormDialog'
+import { Field, FieldError } from '#/components/ui/field'
 import { useScopedRecordPage } from '#/components/use-scoped-record-page'
 import { NativeSelect } from '#/components/ui/native-select'
 import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
@@ -15,7 +17,7 @@ import {
   ShieldCheck,
   UserRoundCheck,
 } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { cloneElement, isValidElement, useEffect, useId, useMemo, useRef, useState, type ReactElement, type ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
@@ -50,6 +52,7 @@ import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { WorkspaceSidebar, type WorkspaceSidebarItem } from '#/components/WorkspaceSidebar'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
+import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 import {
   Card,
   CardContent,
@@ -154,7 +157,7 @@ export function DataProvisioningPage({ section, onSectionChange }: { section: Da
             <Badge variant="secondary" className="mb-3">
               Phaeno-only configuration
             </Badge>
-            <h1 className="text-3xl font-semibold leading-tight">Data provisioning</h1>
+            <h1 id="data-provisioning-heading" tabIndex={-1} className="text-3xl font-semibold leading-tight">Data provisioning</h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
               Register Phaeno-owned source samples, publish immutable curated versions,
               and grant one exact version to an organization.
@@ -193,7 +196,7 @@ function SourceRegistryPanel({ apiEnabled }: { apiEnabled: boolean }) {
     resolver: zodResolver(sourceSchema),
     defaultValues: { label: '', isSynthetic: true },
   })
-  const __modalGuard = useModalDraftGuard(form.formState.isDirty, form.formState.isSubmitting)
+  const __modalGuard = useModalDraftGuard(form.formState.isDirty, form.formState.isSubmitting, dialogOpen)
 
   const createMutation = useMutation({
     mutationFn: createSourceSample,
@@ -263,8 +266,8 @@ function SourceRegistryPanel({ apiEnabled }: { apiEnabled: boolean }) {
         </CardContent>
       </Card>
 
-      <Dialog open={dialogOpen} onOpenChange={open => { if (open) (setDialogOpen)(open); else void __modalGuard.close(() => (setDialogOpen)(false)) }}>
-        <DialogContent>
+      <Dialog open={dialogOpen} onOpenChange={open => { if (open) setDialogOpen(true); else void __modalGuard.close(() => { form.reset(); createMutation.reset(); setDialogOpen(false) }) }}>
+        <DialogContent showCloseButton={!createMutation.isPending}>
           <DialogHeader>
             <DialogTitle>Register source sample</DialogTitle>
             <DialogDescription>
@@ -272,11 +275,12 @@ function SourceRegistryPanel({ apiEnabled }: { apiEnabled: boolean }) {
               are completed in its dedicated workspace.
             </DialogDescription>
           </DialogHeader>
+          <DialogFeedback><MutationError error={createMutation.error} fallback="The source sample could not be created." /></DialogFeedback>
           <form
             className="space-y-4"
-            onSubmit={form.handleSubmit((values) => createMutation.mutateAsync(values))}
+            onSubmit={form.handleSubmit((values) => createMutation.isPending ? undefined : createMutation.mutate(values))}
           >
-            <FormField label="Internal label" error={form.formState.errors.label?.message} required>
+            <fieldset disabled={createMutation.isPending} className="space-y-4"><FormField label="Internal label" error={form.formState.errors.label?.message} required>
               <Input {...form.register('label')} />
             </FormField>
             <label className="flex items-start gap-2 rounded-lg border p-3 text-sm">
@@ -288,9 +292,8 @@ function SourceRegistryPanel({ apiEnabled }: { apiEnabled: boolean }) {
                 </span>
               </span>
             </label>
-            <MutationError error={createMutation.error} fallback="The source sample could not be created." />
-            <RequiredDialogFooter>
-              <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
+            </fieldset><RequiredDialogFooter>
+              <DialogClose asChild><Button type="button" variant="outline" disabled={createMutation.isPending}>Cancel</Button></DialogClose>
               <Button type="submit" disabled={createMutation.isPending}>
                 {createMutation.isPending ? 'Registering' : 'Register source'}
               </Button>
@@ -310,6 +313,12 @@ function CuratedCatalogPanel({ apiEnabled }: { apiEnabled: boolean }) {
   const [publishVersion, setPublishVersion] = useState<CuratedDatasetVersion | null>(null)
   const [lifecycleAction, setLifecycleAction] = useState<CatalogLifecycleAction | null>(null)
   const [removingEligibility, setRemovingEligibility] = useState<CuratedDataset | null>(null)
+  const dialogOpening = useRef(false)
+  function openDialog(action: () => void) { dialogOpening.current = true; action() }
+  function closeMenu(event: Event) { if (dialogOpening.current) { event.preventDefault(); dialogOpening.current = false } }
+  useEffect(() => {
+    if (!editingDataset && !versionDataset && !publishVersion && !lifecycleAction && !removingEligibility) dialogOpening.current = false
+  }, [editingDataset, versionDataset, publishVersion, lifecycleAction, removingEligibility])
   const datasetsQuery = useQuery({
     queryKey: ['data-provisioning', 'datasets'],
     queryFn: listDatasets,
@@ -436,28 +445,28 @@ function CuratedCatalogPanel({ apiEnabled }: { apiEnabled: boolean }) {
                   <p className="m-0 font-medium">{dataset.name}</p>
                   <p className="m-0 mt-1 text-sm text-muted-foreground">{dataset.description}</p>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button type="button" size="sm" variant="outline" onClick={() => {
+                <ActionMenu><DropdownMenuTrigger asChild><Button id={`dataset-actions-${dataset.id}`} type="button" size="sm" variant="outline" disabled={!apiEnabled} aria-label={`Actions for ${dataset.name}`}>Actions</Button></DropdownMenuTrigger><DropdownMenuContent align="end" onCloseAutoFocus={closeMenu}>
+                  <DropdownMenuItem onSelect={() => openDialog(() => {
                     editForm.reset({ name: dataset.name, description: dataset.description })
                     setEditingDataset(dataset)
-                  }}>
+                  })}>
                     Edit details
-                  </Button>
+                  </DropdownMenuItem>
                   {dataset.isActive ? (
                     <>
-                      <Button type="button" size="sm" variant="outline" onClick={() => setVersionDataset(dataset)}>
+                      <DropdownMenuItem onSelect={() => openDialog(() => setVersionDataset(dataset))}>
                         <Plus data-icon="inline-start" />Create version
-                      </Button>
-                      <Button type="button" size="sm" variant="destructive" onClick={() => setLifecycleAction({ kind: 'deactivate', dataset })}>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem variant="destructive" onSelect={() => openDialog(() => setLifecycleAction({ kind: 'deactivate', dataset }))}>
                         Deactivate
-                      </Button>
+                      </DropdownMenuItem>
                     </>
                   ) : (
-                    <Button type="button" size="sm" disabled={reactivateMutation.isPending} onClick={() => reactivateMutation.mutate(dataset)}>
+                    <DropdownMenuItem disabled={reactivateMutation.isPending} onSelect={() => reactivateMutation.mutate(dataset)}>
                       Reactivate
-                    </Button>
+                    </DropdownMenuItem>
                   )}
-                </div>
+                </DropdownMenuContent></ActionMenu>
               </div>
               <div className="mt-4 space-y-2">
                 {dataset.versions.map((version) => {
@@ -475,36 +484,31 @@ function CuratedCatalogPanel({ apiEnabled }: { apiEnabled: boolean }) {
                           SHA-256 {version.contentChecksum}
                         </p>
                       </div>
-                      <div className="flex flex-wrap gap-2">
+                      <ActionMenu><DropdownMenuTrigger asChild><Button id={`version-actions-${version.id}`} type="button" size="sm" variant="outline" disabled={!apiEnabled} aria-label={`Actions for ${dataset.name} version ${version.versionNumber}`}>Actions</Button></DropdownMenuTrigger><DropdownMenuContent align="end" onCloseAutoFocus={closeMenu}>
                         {version.status === 'Draft' ? (
-                          <Button type="button" size="sm" onClick={() => setPublishVersion(version)}>
+                          <DropdownMenuItem onSelect={() => openDialog(() => setPublishVersion(version))}>
                             <CheckCircle2 data-icon="inline-start" />Publish
-                          </Button>
+                          </DropdownMenuItem>
                         ) : null}
                         {version.status === 'Published' ? (
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant={eligible ? 'outline' : 'default'}
+                          <DropdownMenuItem
                             disabled={eligibilityMutation.isPending}
-                            onClick={() => eligible
-                              ? setRemovingEligibility(dataset)
+                            onSelect={() => eligible
+                              ? openDialog(() => setRemovingEligibility(dataset))
                               : eligibilityMutation.mutate({ dataset, versionId: version.id, eligible: true })}
                           >
                             {eligible ? 'Remove eligibility' : 'Mark eligible'}
-                          </Button>
+                          </DropdownMenuItem>
                         ) : null}
                         {version.status === 'Published' ? (
-                          <Button
-                            type="button"
-                            size="sm"
+                          <DropdownMenuItem
                             variant="destructive"
-                            onClick={() => setLifecycleAction({ kind: 'retire', dataset, datasetVersion: version })}
+                            onSelect={() => openDialog(() => setLifecycleAction({ kind: 'retire', dataset, datasetVersion: version }))}
                           >
                             Retire version
-                          </Button>
+                          </DropdownMenuItem>
                         ) : null}
-                      </div>
+                      </DropdownMenuContent></ActionMenu>
                     </div>
                   )
                 })}
@@ -537,7 +541,11 @@ function OrganizationGrantsPanel({ apiEnabled }: { apiEnabled: boolean }) {
   const [grantOpen, setGrantOpen] = useState(false)
   const [selectedOrganizationId, setSelectedOrganizationId] = useState('')
   const [revokingGrant, setRevokingGrant] = useState<DatasetGrant | null>(null)
+  const dialogOpening = useRef(false)
   const [upgradingGrant, setUpgradingGrant] = useState<DatasetGrant | null>(null)
+  useEffect(() => {
+    if (!upgradingGrant && !revokingGrant) dialogOpening.current = false
+  }, [upgradingGrant, revokingGrant])
   const organizationsQuery = useQuery({ queryKey: ['organizations', 'external'], queryFn: listOrganizations, enabled: apiEnabled })
   const datasetsQuery = useQuery({ queryKey: ['data-provisioning', 'datasets'], queryFn: listDatasets, enabled: apiEnabled })
   const grantForm = useForm<GrantValues>({
@@ -653,7 +661,7 @@ function OrganizationGrantsPanel({ apiEnabled }: { apiEnabled: boolean }) {
             </div>
             <div className="flex flex-wrap gap-2">
               <Button asChild variant="outline"><Link to="/crm/companies" search={{ returnTo: 'data-provisioning' }}>Open Company access setup</Link></Button>
-              <Button type="button" disabled={!apiEnabled || eligibleVersions.length === 0} onClick={() => setGrantOpen(true)}>
+              <Button id="assign-data-action" type="button" disabled={!apiEnabled || eligibleVersions.length === 0} onClick={() => setGrantOpen(true)}>
                 <UserRoundCheck data-icon="inline-start" />Assign data
               </Button>
             </div>
@@ -682,12 +690,12 @@ function OrganizationGrantsPanel({ apiEnabled }: { apiEnabled: boolean }) {
                 </p>
               </div>
               {grant.status === 'Active' ? (
-                <div className="flex flex-wrap gap-2">
+                <ActionMenu><DropdownMenuTrigger asChild><Button id={`grant-actions-${grant.id}`} type="button" size="sm" variant="outline" aria-label={`Actions for ${grant.datasetName}`} disabled={!apiEnabled}>Actions</Button></DropdownMenuTrigger><DropdownMenuContent align="end" onCloseAutoFocus={event => { if (dialogOpening.current) { event.preventDefault(); dialogOpening.current = false } }}>
                   {eligibleVersions.some(({ dataset, version }) => dataset.id === grant.curatedDatasetId && version.versionNumber > grant.datasetVersionNumber) ? (
-                    <Button type="button" size="sm" onClick={() => setUpgradingGrant(grant)}>Upgrade version</Button>
+                    <DropdownMenuItem onSelect={() => { dialogOpening.current = true; setUpgradingGrant(grant) }}>Upgrade version</DropdownMenuItem>
                   ) : null}
-                  <Button type="button" size="sm" variant="destructive" onClick={() => setRevokingGrant(grant)}>Revoke access</Button>
-                </div>
+                  <DropdownMenuItem variant="destructive" onSelect={() => { dialogOpening.current = true; setRevokingGrant(grant) }}>Revoke access</DropdownMenuItem>
+                </DropdownMenuContent></ActionMenu>
               ) : null}
             </div>
           ))}
@@ -786,7 +794,7 @@ function DatasetEditDialog({ dataset, onOpenChange, form, mutation }: { dataset:
     onOpenChange(false)
   }
   return <Dialog open={Boolean(dataset)} onOpenChange={open => { if (!open) close() }}>
-    <DialogContent showCloseButton={!mutation.isPending}>
+    <DialogContent onCloseAutoFocus={event => { event.preventDefault(); const id = dataset ? `dataset-actions-${dataset.id}` : null; (id ? document.getElementById(id) : document.getElementById('data-provisioning-heading'))?.focus() }} showCloseButton={!mutation.isPending}>
       <DialogHeader><DialogTitle>Edit curated dataset details</DialogTitle><DialogDescription>This changes catalog metadata only. Immutable version contents and every organization grant remain unchanged.</DialogDescription></DialogHeader>
       {mutation.error ? <DialogFeedback><MutationError error={mutation.error} fallback="The curated dataset could not be updated." /></DialogFeedback> : null}
       {dataset ? <form id="catalog-edit-dataset-form" noValidate onSubmit={form.handleSubmit(values => { if (!mutation.isPending) mutation.mutate({ dataset, values }) })}>
@@ -812,7 +820,7 @@ function CatalogLifecycleDialog({ action, onOpenChange, form, mutation }: { acti
     onOpenChange(false)
   }
   return <Dialog open={Boolean(action)} onOpenChange={open => { if (!open) close() }}>
-    <DialogContent showCloseButton={!mutation.isPending}>
+    <DialogContent onCloseAutoFocus={event => { event.preventDefault(); const id = action ? action.kind === 'retire' ? `version-actions-${action.datasetVersion.id}` : `dataset-actions-${action.dataset.id}` : null; (id ? document.getElementById(id) : document.getElementById('data-provisioning-heading'))?.focus() }} showCloseButton={!mutation.isPending}>
       <DialogHeader><DialogTitle>{isRetirement ? 'Retire this exact version?' : 'Deactivate this curated dataset?'}</DialogTitle><DialogDescription>{isRetirement ? 'The version can never receive a new grant or be made eligible again. Existing grants and tenant access remain active, and all history is preserved.' : 'The dataset disappears from future assignment choices. Existing organization grants and access remain unchanged.'}</DialogDescription></DialogHeader>
       {mutation.error ? <DialogFeedback><MutationError error={mutation.error} fallback="The lifecycle change could not be completed." /></DialogFeedback> : null}
       {action ? <form id="catalog-lifecycle-form" noValidate onSubmit={form.handleSubmit(values => { if (!mutation.isPending) mutation.mutate({ action, reason: values.reason }) })}>
@@ -825,34 +833,66 @@ function CatalogLifecycleDialog({ action, onOpenChange, form, mutation }: { acti
   </Dialog>
 }
 function EligibilityRemovalDialog({ dataset, onOpenChange, form, mutation }: { dataset: CuratedDataset | null; onOpenChange: (open: boolean) => void; form: ReturnType<typeof useForm<EligibilityRemovalValues>>; mutation: ReturnType<typeof useMutation<unknown, Error, { dataset: CuratedDataset; values: EligibilityRemovalValues }>> }) {
+  const formId = useId()
+  function changeOpen(next: boolean) {
+    if (!next) { form.reset(); mutation.reset() }
+    onOpenChange(next)
+  }
   const revoke = form.watch('revokeAllActiveGrants')
-  return <Dialog open={Boolean(dataset)} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>Remove this version from the eligible catalog?</DialogTitle><DialogDescription>By default this affects future assignments only and preserves every existing organization grant. Bulk revocation is a separate, explicit destructive option.</DialogDescription></DialogHeader>{dataset ? <form className="space-y-4" onSubmit={form.handleSubmit((values) => mutation.mutateAsync({ dataset, values }))}><label className="flex items-start gap-2 rounded-lg border p-3 text-sm"><input type="checkbox" className="mt-0.5 size-4" {...form.register('revokeAllActiveGrants')} /><span><span className="font-medium">Also revoke every active organization grant for this dataset.</span><span className="mt-1 block text-muted-foreground">Access ends immediately. Previously downloaded copies cannot be recalled.</span></span></label>{revoke ? <FormField label="Bulk revocation reason" error={form.formState.errors.reason?.message} required><textarea className={textareaClass} rows={4} {...form.register('reason')} /></FormField> : null}<MutationError error={mutation.error} fallback="Eligibility could not be removed." /><RequiredDialogFooter showLegend={revoke}><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" variant={revoke ? 'destructive' : 'default'} disabled={mutation.isPending}>{mutation.isPending ? 'Saving' : revoke ? 'Remove and revoke all' : 'Remove eligibility only'}</Button></RequiredDialogFooter></form> : null}</DialogContent></Dialog>
+  return <GuardedFormDialog fallbackFocusId="data-provisioning-heading" returnFocusId={dataset ? `version-actions-${dataset.eligibleVersionId}` : undefined} open={Boolean(dataset)} dirty={form.formState.isDirty} pending={mutation.isPending} onOpenChange={changeOpen}><ConfirmationFormContent showCloseButton={!mutation.isPending}><DialogHeader><DialogTitle>Remove this version from the eligible catalog?</DialogTitle></DialogHeader><div><DialogDescription>By default this affects future assignments only and preserves every existing organization grant. Bulk revocation is a separate, explicit destructive option.</DialogDescription></div>{dataset ? <form id={formId} className="space-y-4" noValidate onSubmit={form.handleSubmit((values) => mutation.isPending ? undefined : mutation.mutate({ dataset, values }))}><fieldset disabled={mutation.isPending} className="space-y-4"><label className="flex items-start gap-2 rounded-lg border p-3 text-sm"><input type="checkbox" className="mt-0.5 size-4" {...form.register('revokeAllActiveGrants')} /><span><span className="font-medium">Also revoke every active organization grant for this dataset.</span><span className="mt-1 block text-muted-foreground">Access ends immediately. Previously downloaded copies cannot be recalled.</span></span></label>{revoke ? <FormField label="Bulk revocation reason" error={form.formState.errors.reason?.message} required><textarea className={textareaClass} rows={4} {...form.register('reason')} /></FormField> : null}</fieldset></form> : null}<DialogFeedback><MutationError error={mutation.error} fallback="Eligibility could not be removed." /></DialogFeedback><RequiredDialogFooter showLegend={revoke}><DialogClose asChild><Button type="button" variant="outline" disabled={mutation.isPending}>Cancel</Button></DialogClose><Button type="submit" form={formId} variant={revoke ? 'destructive' : 'default'} disabled={mutation.isPending}>{mutation.isPending ? 'Saving' : revoke ? 'Remove and revoke all' : 'Remove eligibility only'}</Button></RequiredDialogFooter></ConfirmationFormContent></GuardedFormDialog>
 }
 
 function VersionCreateDialog({ dataset, onOpenChange, form, readySources, mutation }: { dataset: CuratedDataset | null; onOpenChange: (open: boolean) => void; form: ReturnType<typeof useForm<VersionValues>>; readySources: Awaited<ReturnType<typeof listSourceSamples>>; mutation: ReturnType<typeof useMutation<unknown, Error, { dataset: CuratedDataset; values: VersionValues }>> }) {
-  return <Dialog open={Boolean(dataset)} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>Create immutable-version draft</DialogTitle><DialogDescription>Select one ready source revision. Its metadata, evidence, checksums, and files are snapshotted.</DialogDescription></DialogHeader>{dataset ? <form className="space-y-4" onSubmit={form.handleSubmit((values) => mutation.mutateAsync({ dataset, values }))}><FormField label="Ready source" error={form.formState.errors.sourceSampleId?.message} required><NativeSelect className={selectClass} {...form.register('sourceSampleId')}><option value="">Select a source</option>{readySources.map((source) => <option key={source.id} value={source.id}>{source.label} · revision {source.revision}</option>)}</NativeSelect></FormField><FormField label="Release notes" error={form.formState.errors.releaseNotes?.message} required><textarea className={textareaClass} rows={4} {...form.register('releaseNotes')} /></FormField><MutationError error={mutation.error} fallback="The version draft could not be created." /><RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" disabled={mutation.isPending || readySources.length === 0}>{mutation.isPending ? 'Snapshotting' : 'Create version draft'}</Button></RequiredDialogFooter></form> : null}</DialogContent></Dialog>
+  const formId = useId()
+  function changeOpen(next: boolean) {
+    if (!next) { form.reset(); mutation.reset() }
+    onOpenChange(next)
+  }
+  return <GuardedFormDialog fallbackFocusId="data-provisioning-heading" returnFocusId={dataset ? `dataset-actions-${dataset.id}` : undefined} open={Boolean(dataset)} dirty={form.formState.isDirty} pending={mutation.isPending} onOpenChange={changeOpen}><DialogContent showCloseButton={!mutation.isPending}><DialogHeader><DialogTitle>Create immutable-version draft</DialogTitle></DialogHeader><div><DialogDescription>Select one ready source revision. Its metadata, evidence, checksums, and files are snapshotted.</DialogDescription></div>{dataset ? <form id={formId} className="space-y-4" noValidate onSubmit={form.handleSubmit((values) => mutation.isPending ? undefined : mutation.mutate({ dataset, values }))}><fieldset disabled={mutation.isPending} className="space-y-4"><FormField label="Ready source" error={form.formState.errors.sourceSampleId?.message} required><NativeSelect className={selectClass} {...form.register('sourceSampleId')}><option value="">Select a source</option>{readySources.map((source) => <option key={source.id} value={source.id}>{source.label} · revision {source.revision}</option>)}</NativeSelect></FormField><FormField label="Release notes" error={form.formState.errors.releaseNotes?.message} required><textarea className={textareaClass} rows={4} {...form.register('releaseNotes')} /></FormField></fieldset></form> : null}<DialogFeedback><MutationError error={mutation.error} fallback="The version draft could not be created." /></DialogFeedback><RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline" disabled={mutation.isPending}>Cancel</Button></DialogClose><Button type="submit" form={formId} disabled={mutation.isPending || readySources.length === 0}>{mutation.isPending ? 'Snapshotting' : 'Create version draft'}</Button></RequiredDialogFooter></DialogContent></GuardedFormDialog>
 }
 
 function PublishDialog({ version, onOpenChange, onConfirm, pending, error }: { version: CuratedDatasetVersion | null; onOpenChange: (open: boolean) => void; onConfirm: () => void; pending: boolean; error: unknown }) {
-  return <Dialog open={Boolean(version)} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>Publish immutable version?</DialogTitle><DialogDescription>Publication validates the complete manifest atomically and freezes this exact source snapshot. A failed validation leaves it in Draft.</DialogDescription></DialogHeader>{version ? <div className="rounded-lg border bg-muted/30 p-3 text-sm"><p className="m-0 font-medium">{version.sampleLabel} · version {version.versionNumber}</p><p className="m-0 mt-1">{version.files.length} file{version.files.length === 1 ? '' : 's'}</p><p className="m-0 mt-1 break-all font-mono text-xs text-muted-foreground">{version.contentChecksum}</p></div> : null}<MutationError error={error} fallback="The version could not be published." /><DialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="button" disabled={pending} onClick={onConfirm}>{pending ? 'Publishing' : 'Publish version'}</Button></DialogFooter></DialogContent></Dialog>
+  return <GuardedFormDialog fallbackFocusId="data-provisioning-heading" returnFocusId={version ? `version-actions-${version.id}` : undefined} open={Boolean(version)} dirty={false} pending={pending} onOpenChange={onOpenChange}><ConfirmationFormContent showCloseButton={!pending}><DialogHeader><DialogTitle>Publish immutable version?</DialogTitle></DialogHeader><div><DialogDescription>Publication validates the complete manifest atomically and freezes this exact source snapshot. A failed validation leaves it in Draft.</DialogDescription></div>{version ? <div className="rounded-lg border bg-muted/30 p-3 text-sm"><p className="m-0 font-medium">{version.sampleLabel} · version {version.versionNumber}</p><p className="m-0 mt-1">{version.files.length} file{version.files.length === 1 ? '' : 's'}</p><p className="m-0 mt-1 break-all font-mono text-xs text-muted-foreground">{version.contentChecksum}</p></div> : null}<DialogFeedback><MutationError error={error} fallback="The version could not be published." /></DialogFeedback><DialogFooter><DialogClose asChild><Button type="button" variant="outline" disabled={pending}>Cancel</Button></DialogClose><Button type="button" disabled={pending} onClick={() => { if (!pending) onConfirm() }}>{pending ? 'Publishing' : 'Publish version'}</Button></DialogFooter></ConfirmationFormContent></GuardedFormDialog>
 }
 
 function GrantDialog({ open, onOpenChange, form, organizations, departments, eligibleVersions, mutation }: { open: boolean; onOpenChange: (open: boolean) => void; form: ReturnType<typeof useForm<GrantValues>>; organizations: Awaited<ReturnType<typeof listOrganizations>>; departments: Department[]; eligibleVersions: { dataset: CuratedDataset; version: CuratedDatasetVersion }[]; mutation: ReturnType<typeof useMutation<unknown, Error, GrantValues>> }) {
+  const formId = useId()
+  function changeOpen(next: boolean) {
+    if (!next) { form.reset(); mutation.reset() }
+    onOpenChange(next)
+  }
   const organizationField = form.register('organizationId')
-  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>Assign curated sample data</DialogTitle><DialogDescription>Choose whether the exact pinned version is available throughout the organization or only inside one department. Catalog eligibility alone does not grant access.</DialogDescription></DialogHeader><form className="space-y-4" onSubmit={form.handleSubmit((values) => mutation.mutateAsync(values))}><FormField label="Organization" error={form.formState.errors.organizationId?.message} required><NativeSelect className={selectClass} {...organizationField} onChange={(event) => { void organizationField.onChange(event); form.setValue('departmentId', '') }}><option value="">Select an organization</option>{organizations.map((organization) => <option key={organization.id} value={organization.id}>{organization.name} ({organization.kind})</option>)}</NativeSelect></FormField><FormField label="Access scope" error={form.formState.errors.departmentId?.message}><NativeSelect className={selectClass} {...form.register('departmentId')} disabled={!form.watch('organizationId')}><option value="">All departments (organization-wide)</option>{departments.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}</NativeSelect></FormField><FormField label="Eligible package version" error={form.formState.errors.datasetVersionId?.message} required><NativeSelect className={selectClass} {...form.register('datasetVersionId')}><option value="">Select a version</option>{eligibleVersions.map(({ dataset, version }) => <option key={version.id} value={version.id}>{dataset.name} · version {version.versionNumber}</option>)}</NativeSelect></FormField><MutationError error={mutation.error} fallback="The package could not be assigned." /><RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" disabled={mutation.isPending}>{mutation.isPending ? 'Assigning' : 'Assign exact version'}</Button></RequiredDialogFooter></form></DialogContent></Dialog>
+  return <GuardedFormDialog fallbackFocusId="data-provisioning-heading" returnFocusId={'assign-data-action'} open={open} dirty={form.formState.isDirty} pending={mutation.isPending} onOpenChange={changeOpen}><DialogContent showCloseButton={!mutation.isPending}><DialogHeader><DialogTitle>Assign curated sample data</DialogTitle></DialogHeader><div><DialogDescription>Choose whether the exact pinned version is available throughout the organization or only inside one department. Catalog eligibility alone does not grant access.</DialogDescription></div><form id={formId} className="space-y-4" noValidate onSubmit={form.handleSubmit((values) => mutation.isPending ? undefined : mutation.mutate(values))}><fieldset disabled={mutation.isPending} className="space-y-4"><FormField label="Organization" error={form.formState.errors.organizationId?.message} required><NativeSelect className={selectClass} {...organizationField} onChange={(event) => { void organizationField.onChange(event); form.setValue('departmentId', '') }}><option value="">Select an organization</option>{organizations.map((organization) => <option key={organization.id} value={organization.id}>{organization.name} ({organization.kind})</option>)}</NativeSelect></FormField><FormField label="Access scope" error={form.formState.errors.departmentId?.message}><NativeSelect className={selectClass} {...form.register('departmentId')} disabled={!form.watch('organizationId')}><option value="">All departments (organization-wide)</option>{departments.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}</NativeSelect></FormField><FormField label="Eligible package version" error={form.formState.errors.datasetVersionId?.message} required><NativeSelect className={selectClass} {...form.register('datasetVersionId')}><option value="">Select a version</option>{eligibleVersions.map(({ dataset, version }) => <option key={version.id} value={version.id}>{dataset.name} · version {version.versionNumber}</option>)}</NativeSelect></FormField></fieldset></form><DialogFeedback><MutationError error={mutation.error} fallback="The package could not be assigned." /></DialogFeedback><RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline" disabled={mutation.isPending}>Cancel</Button></DialogClose><Button type="submit" form={formId} disabled={mutation.isPending}>{mutation.isPending ? 'Assigning' : 'Assign exact version'}</Button></RequiredDialogFooter></DialogContent></GuardedFormDialog>
 }
 
 function UpgradeDialog({ grant, onOpenChange, form, eligibleVersions, mutation }: { grant: DatasetGrant | null; onOpenChange: (open: boolean) => void; form: ReturnType<typeof useForm<UpgradeValues>>; eligibleVersions: { dataset: CuratedDataset; version: CuratedDatasetVersion }[]; mutation: ReturnType<typeof useMutation<unknown, Error, { grant: DatasetGrant; values: UpgradeValues }>> }) {
+  const formId = useId()
+  function changeOpen(next: boolean) {
+    if (!next) { form.reset(); mutation.reset() }
+    onOpenChange(next)
+  }
   const newerVersions = grant ? eligibleVersions.filter(({ dataset, version }) => dataset.id === grant.curatedDatasetId && version.versionNumber > grant.datasetVersionNumber) : []
-  return <Dialog open={Boolean(grant)} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>Upgrade this organization to a newer exact version?</DialogTitle><DialogDescription>The new version becomes the organization's only active grant for this dataset. The prior grant and its download history remain preserved as superseded evidence.</DialogDescription></DialogHeader>{grant ? <form className="space-y-4" onSubmit={form.handleSubmit((values) => mutation.mutateAsync({ grant, values }))}><FormField label="Newer eligible version" error={form.formState.errors.datasetVersionId?.message} required><NativeSelect className={selectClass} {...form.register('datasetVersionId')}><option value="">Select a version</option>{newerVersions.map(({ dataset, version }) => <option key={version.id} value={version.id}>{dataset.name} · version {version.versionNumber}</option>)}</NativeSelect></FormField><MutationError error={mutation.error} fallback="The organization grant could not be upgraded." /><RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" disabled={mutation.isPending || newerVersions.length === 0}>{mutation.isPending ? 'Upgrading' : 'Upgrade exact version'}</Button></RequiredDialogFooter></form> : null}</DialogContent></Dialog>
+  return <GuardedFormDialog fallbackFocusId="data-provisioning-heading" returnFocusId={grant ? `grant-actions-${grant.id}` : undefined} open={Boolean(grant)} dirty={form.formState.isDirty} pending={mutation.isPending} onOpenChange={changeOpen}><ConfirmationFormContent showCloseButton={!mutation.isPending}><DialogHeader><DialogTitle>Upgrade this organization to a newer exact version?</DialogTitle></DialogHeader><div><DialogDescription>The new version becomes the organization's only active grant for this dataset. The prior grant and its download history remain preserved as superseded evidence.</DialogDescription></div>{grant ? <form id={formId} className="space-y-4" noValidate onSubmit={form.handleSubmit((values) => mutation.isPending ? undefined : mutation.mutate({ grant, values }))}><fieldset disabled={mutation.isPending} className="space-y-4"><FormField label="Newer eligible version" error={form.formState.errors.datasetVersionId?.message} required><NativeSelect className={selectClass} {...form.register('datasetVersionId')}><option value="">Select a version</option>{newerVersions.map(({ dataset, version }) => <option key={version.id} value={version.id}>{dataset.name} · version {version.versionNumber}</option>)}</NativeSelect></FormField></fieldset></form> : null}<DialogFeedback><MutationError error={mutation.error} fallback="The organization grant could not be upgraded." /></DialogFeedback><RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline" disabled={mutation.isPending}>Cancel</Button></DialogClose><Button type="submit" form={formId} disabled={mutation.isPending || newerVersions.length === 0}>{mutation.isPending ? 'Upgrading' : 'Upgrade exact version'}</Button></RequiredDialogFooter></ConfirmationFormContent></GuardedFormDialog>
 }
 
 function RevokeDialog({ grant, onOpenChange, form, mutation }: { grant: DatasetGrant | null; onOpenChange: (open: boolean) => void; form: ReturnType<typeof useForm<RevokeValues>>; mutation: ReturnType<typeof useMutation<unknown, Error, { grant: DatasetGrant; values: RevokeValues }>> }) {
-  return <Dialog open={Boolean(grant)} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>Revoke {grant?.departmentName ? `${grant.departmentName} department` : 'organization'} access?</DialogTitle><DialogDescription>Portal access ends immediately for users in this grant's scope. Previously downloaded copies cannot be recalled.</DialogDescription></DialogHeader>{grant ? <form className="space-y-4" onSubmit={form.handleSubmit((values) => mutation.mutateAsync({ grant, values }))}><FormField label="Reason" error={form.formState.errors.reason?.message} required><textarea className={textareaClass} rows={4} {...form.register('reason')} /></FormField><MutationError error={mutation.error} fallback="Access could not be revoked." /><RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" variant="destructive" disabled={mutation.isPending}>{mutation.isPending ? 'Revoking' : 'Revoke access'}</Button></RequiredDialogFooter></form> : null}</DialogContent></Dialog>
+  const formId = useId()
+  function changeOpen(next: boolean) {
+    if (!next) { form.reset(); mutation.reset() }
+    onOpenChange(next)
+  }
+  return <GuardedFormDialog fallbackFocusId="data-provisioning-heading" returnFocusId={grant ? `grant-actions-${grant.id}` : undefined} open={Boolean(grant)} dirty={form.formState.isDirty} pending={mutation.isPending} onOpenChange={changeOpen}><ConfirmationFormContent showCloseButton={!mutation.isPending}><DialogHeader><DialogTitle>Revoke {grant?.departmentName ? `${grant.departmentName} department` : 'organization'} access?</DialogTitle></DialogHeader><div><DialogDescription>Portal access ends immediately for users in this grant's scope. Previously downloaded copies cannot be recalled.</DialogDescription></div>{grant ? <form id={formId} className="space-y-4" noValidate onSubmit={form.handleSubmit((values) => mutation.isPending ? undefined : mutation.mutate({ grant, values }))}><fieldset disabled={mutation.isPending} className="space-y-4"><FormField label="Reason" error={form.formState.errors.reason?.message} required><textarea className={textareaClass} rows={4} {...form.register('reason')} /></FormField></fieldset></form> : null}<DialogFeedback><MutationError error={mutation.error} fallback="Access could not be revoked." /></DialogFeedback><RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline" disabled={mutation.isPending}>Cancel</Button></DialogClose><Button type="submit" form={formId} variant="destructive" disabled={mutation.isPending}>{mutation.isPending ? 'Revoking' : 'Revoke access'}</Button></RequiredDialogFooter></ConfirmationFormContent></GuardedFormDialog>
 }
 
-function FormField({ label, error, required, children }: { label: string; error?: string; required?: boolean; children: React.ReactNode }) {
-  return <label className="grid gap-1.5"><span className="text-sm font-medium">{required ? <RequiredFieldName>{label}</RequiredFieldName> : label}</span>{children}{error ? <span className="text-sm text-destructive" role="alert">{error}</span> : null}</label>
+function FormField({ label, error, required, children }: { label: string; error?: string; required?: boolean; children: ReactNode }) {
+  const id = useId()
+  const control = isValidElement<{ id?: string; 'aria-describedby'?: string }>(children) ? children : null
+  const controlId = control?.props.id ?? id
+  return <Field><Label htmlFor={controlId}>{required ? <RequiredFieldName>{label}</RequiredFieldName> : label}</Label>
+    {control ? cloneElement(control as ReactElement<Record<string, unknown>>, { id: controlId, 'aria-invalid': Boolean(error), 'aria-required': required || undefined,
+      'aria-describedby': [control.props['aria-describedby'], error ? `${id}-error` : undefined].filter(Boolean).join(' ') || undefined }) : children}
+    <FieldError id={`${id}-error`}>{error}</FieldError>
+  </Field>
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -880,7 +920,7 @@ function formatDateTime(value: string) {
   return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
 }
 
-const selectClass = 'h-9 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50'
+const selectClass = 'w-full'
 const textareaClass = 'min-h-20 w-full resize-y rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50'
 
 function readGrantDraft(): GrantValues {

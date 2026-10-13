@@ -1,8 +1,8 @@
 # Historical Website intake recovery
 
 Prepared October 12, 2026. Status: read-only inspection complete; recovery copies
-confirmed available. The Owner has subsequently authorized recovery of the two
-Website tables; the guarded candidate preview and additive import are in progress.
+confirmed available. The Owner subsequently authorized recovery of the two
+Website tables; the guarded preview and additive import are complete.
 
 The Owner explicitly approved committing, pushing and running the protected
 read-only verification on October 12. This authorizes inspection only; it does
@@ -97,3 +97,19 @@ Acceptance requires actual preview counts/fingerprint, verified before-table
 backup, atomic conservation checks, cleanup, unchanged original archive connection
 state and authenticated queue reads. Current active queues may exclude recovered
 completed/unsubscribed records; recovery does not reactivate historical records.
+
+## Completed recovery — October 12, 2026
+
+Maintenance source `b2a5185ca716fdff75c9c21548078f131f033a8d` was published for
+the requested recovery. Preview `38284319223` succeeded with 12 contact and five
+demo-request candidates, no conflicts, matching schemas and source digest
+`281cfbbd134a263ef194a44bd7beaad72dc6ffe5a4cf33425420e2bb2d50395c`.
+Restore `38284814766` succeeded with verified before-table encrypted backup,
+atomic import, exact source/prior-row conservation and task-owned cleanup.
+
+Final counts are 12 mailing-list contacts (all active) and six demo requests
+(all completed), including the preserved existing request. The original backup
+database stays closed, no messages replay and no other application tables are
+modified. API health/database ping pass; authenticated Portal reads reach all 12
+contacts across two pages. No model migration or application deployment occurs.
+See the [completed recovery receipt](../operations/website-intake-recovery-20261012.md).

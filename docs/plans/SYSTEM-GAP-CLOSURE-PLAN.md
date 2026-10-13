@@ -50,6 +50,79 @@ must retain their meaning throughout these changes.
 
 ## Closure register
 
+### Remaining-deficiency closure execution — October 12, 2026
+
+The Owner authorized closing the remaining deficiencies, including regression
+execution, and accepted the proposed commercial recovery targets: at most one
+hour of data loss and restoration within four hours. These are acceptance targets,
+not claims of achieved recovery. A named Operations responder and observed Lab
+supervisor bench/training acceptance remain required; do not replace them with
+synthetic evidence or mark physical qualification complete without observation.
+
+Engineering work: add PSeq Kit intake/commercial decisions and laboratory
+fulfillment to the same work feed using current endpoint authority, assignments,
+stage rules and canonical destinations. Prove source clearance, permissions,
+counts and an actual two-phase shipping journey. Execute the affected frontend,
+PostgreSQL and browser regressions, repair failures, and measure read-only
+scientific eligibility on populated strict-evidence fixtures. Prepare recovery,
+monitoring and bench acceptance against the approved objectives while preserving
+the current runtime, Website intake and existing recovery copies. No blanket
+deployment, Git mutation, destructive data operation, provider cutover or
+commercial activation is implied. Scope any installation/maintenance separately
+once target, resource bounds and preserving recovery evidence are reviewable.
+
+Status: software source coverage and authorized local regression execution are
+complete. The [execution receipt](../testing/runs/2026-10-12-deficiency-closure.md)
+records passing evidence and the scientific measurement's limits. The
+[commercial acceptance packet](../operations/COMMERCIAL-ACCEPTANCE-20261012.md)
+is ready; live coordinated S3 recovery/scheduling/monitoring, named responders
+and observed Lab/training acceptance remain open. The Owner was asked for the
+target, alert destination and named participants. No live/physical signoff is
+inferred from code or synthetic tests.
+
+### Final code-review repairs — October 12, 2026
+
+The Owner authorized updating this plan and implementing the nine findings from
+the final code review. This reopens the affected application checks; October 11
+verification remains historical evidence, not verification of these repairs.
+Customers/Partners need every current decision and later-phase shipping action
+in their work list. Finance staff need command-equivalent independent approval
+eligibility. Phaeno configuration and scientific operators need one consistent
+draft/pending-save boundary and honest completion feedback.
+
+| ID | Authorized repair and acceptance | Status |
+| --- | --- | --- |
+| REVIEW-01 | Include active InProgress Jobs in phase shipping attention; first-phase receipt must not hide unfinished later phases. Preserve phase sequencing, scope and physical readiness. | Implemented; affected local regressions passed |
+| REVIEW-02 | Project current additional-scope quote and Partner substitution decisions before counts/paging; expired, resolved, held or unauthorized decisions must not become user actions. Members see the administrator responsibility as waiting. | Implemented; affected local regressions passed |
+| REVIEW-03 | Share reconciliation contributor eligibility with approval, including receipt actors and retained draft editors under enforced dual control. | Implemented; affected local regressions passed |
+| REVIEW-04 | Activate modal guards only while the corresponding form is open; explicit discard clears its draft and closed forms do not block unrelated navigation. | Implemented; affected local regressions passed |
+| REVIEW-05 | Guard Change quote issuance and decisions across Cancel, close, Escape, navigation, scope switching and pending saves. Preserve entered values on failure and focus on return. | Implemented; affected local regressions passed |
+| REVIEW-06 | Guard dataset assignment, upgrade, revocation, version creation and eligibility removal; pending access-changing requests cannot be dismissed. Keep confirmations' header/body/footer and Cancel focus. | Implemented; affected local regressions passed |
+| REVIEW-07 | Confirmed library output creation clears the draft; Done closes without claiming saved quantities are unsaved. Uncertain failures retain the original request. | Implemented; affected local regressions passed |
+| REVIEW-08 | Group touched Change quote, Finance and data-provisioning contextual actions through shared ActionMenu; preserve permissions, destructive treatment, explanations and single-action behavior. | Implemented; affected local regressions passed |
+| REVIEW-09 | Separate elevated action priority from actual deadline labels; undated priority-2 work says Needs review rather than Due soon. | Implemented; affected local regressions passed |
+
+Engineering scope: existing API work-item envelope with additional same-app
+source/message values, current command/domain rules and shared Portal controls.
+No persisted model, migration, dependency, authentication change, Website change,
+Git mutation or deployment. Customer localization remains en-US only. No new
+commercial, scientific or access authority is introduced.
+
+Add focused regression sources for the changed behavioral boundaries and update
+the living test plans. Execution was initially deferred under the request-only
+policy; the subsequent Owner request authorized the local checkpoint below.
+Batch backend build, frontend types/scoped lint, documentation generation and
+consistency/whitespace checks after implementation. Record actual checks and
+limits here; hosted/provider, operational-user, performance, recovery and bench
+acceptance gates remain open. Owning work-feed detail is in
+[Work dashboard and notifications](WORK-DASHBOARD-AND-NOTIFICATIONS-PLAN.md).
+
+Implementation and the actual static/compilation checkpoint are recorded in the
+[October 12 repair receipt](../testing/runs/2026-10-12-final-review-repairs.md).
+All nine repairs are implemented. The later
+[closure execution receipt](../testing/runs/2026-10-12-deficiency-closure.md)
+supersedes the earlier no-execution state for the affected local checks.
+
 ### Post-closure error and edge-case review — October 11, 2026
 
 The Owner requested one further review pass. Correct Department switching that

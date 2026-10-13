@@ -1,5 +1,6 @@
 // Customer UI English catalog. Scientific identifiers and entered data are not messages.
 export const customerEnglishMessages = {
+  "change_quote_actions": "Actions for Change quote {p0}",
   "surface_0a4b98b3ac83": "{p0} configuration override",
   "surface_c61304c78a22": "{p0} configuration overrides",
   "surface_3aa78b3b6268": "{p0} active member",
@@ -1475,6 +1476,7 @@ export const customerEnglishMessages = {
   "m_7d872a59d44f": "Modify lab service request",
   "m_7d93e011228c": "Dry ice amount",
   "m_7d9eb7acb13e": "Close",
+  "m_7da418252ec3": "Additional samples",
   "m_7db55fa12e0b": " business days after Phaeno physically receives every required sample for a phase. Review the Phases card for phased commitments. Monday–Friday, excluding Phaeno holidays.",
   "m_7db6aec8f0ba": " tubes per container",
   "m_7dfe093147e7": "Try again. Your explanation has been kept.",
@@ -1778,6 +1780,7 @@ export const customerEnglishMessages = {
   "m_9da5ef0ad903": "Record kit receipt",
   "m_9dad62c1cfba": "Review the recommended containers, then adjust the sizes and tube counts for your shipment.",
   "m_9dc859e86f2e": "Viewing",
+  "m_9ddc78e7a54d": "Price per sample (USD)",
   "m_9df53a853f13": "Add Transportation kit",
   "m_9e07bda57de2": "Laboratory sample progress",
   "m_9e59b8c3a311": "Next tubes",
@@ -2695,6 +2698,7 @@ export const customerEnglishMessages = {
   "m_f94379a379e4": "Customer labeling",
   "m_f959774a5fdd": "Quote actions",
   "m_f96404674470": "Correction reason",
+  "m_f983968eda19": "Price per additional run (USD)",
   "m_f9bfa3dc7c8f": "Discard changes",
   "m_f9c283978ecd": "Retry container check",
   "m_f9eb72bacb54": "Choose current container",

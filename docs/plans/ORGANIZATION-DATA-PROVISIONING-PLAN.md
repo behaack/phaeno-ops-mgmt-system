@@ -1,5 +1,17 @@
 # Organization Data Provisioning Plan
 
+## October 12 final review repairs
+
+REVIEW-04/06/08 in [System gap closure](SYSTEM-GAP-CLOSURE-PLAN.md) correct source
+registration's closed-modal blocker and guard assignment, upgrade, revocation,
+version creation, publication and eligibility removal. Explicit discard resets
+the form; pending mutations cannot dismiss or navigate. Touched dataset/version
+and grant commands use shared ActionMenu, with preserved destructive treatment,
+Cancel focus, three confirmation regions and surviving-trigger/heading focus.
+Single-line fields use shared Field/NativeSelect spacing. No access policy,
+persisted model or authentication changes. Regression execution remains deferred
+until requested; static/build evidence is recorded in the closure receipt.
+
 ## October 11 governance interaction closure
 
 Incident/notice/reissue forms use the shared draft guard while open. Resolution,

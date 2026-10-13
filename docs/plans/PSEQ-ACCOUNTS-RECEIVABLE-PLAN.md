@@ -1,5 +1,16 @@
 # PSeq Accounts Receivable Plan
 
+## October 12 final review repairs
+
+REVIEW-03/08 in [System gap closure](SYSTEM-GAP-CLOSURE-PLAN.md) share the existing
+reconciliation contributor rule between approval and work assessment. Balanced,
+submitted batches are assessed before counts/paging; enforced dual control excludes
+creator, submitter, included source contributors and every retained draft editor.
+Record-level Finance commands use shared ActionMenu, including submit/edit/cancel
+on a draft batch. Preserve roles, reviewed versions, errors and modal focus.
+No financial calculation, persisted model or authority changes. Regression
+execution is deferred until requested; compilation is recorded separately.
+
 ## October 11 document-source and rendering closure
 
 Invoice PDFs now use the existing embedded Unicode font, wrap long line

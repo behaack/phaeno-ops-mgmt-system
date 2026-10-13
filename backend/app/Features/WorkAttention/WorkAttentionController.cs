@@ -94,6 +94,7 @@ public sealed class WorkAttentionController(PSeqOperationsDbContext db, IExterna
         // Same projection and ordering for preview, list and counts; no controller caps or writes.
         if (sources.Count == 0) return await Complete(new([], page, pageSize, 0, 0, 0, 0, now, reader.DisabledSources));
         var all = await reader.WithScientificEligibilityAsync(sources.Aggregate((left, right) => left.Concat(right)), token);
+        all = await reader.WithReconciliationEligibilityAsync(all, token);
         var personal = all.Where(item => item.OwnerUserId == null || item.OwnerUserId == actor.Id);
         var actions = await personal.CountAsync(item => item.Kind == "action", token);
         var waiting = await personal.CountAsync(item => item.Kind == "waiting", token);

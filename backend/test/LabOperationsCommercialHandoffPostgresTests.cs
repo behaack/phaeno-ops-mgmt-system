@@ -2598,6 +2598,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 await DbContext.SampleShippingStockTubes.Where(item => stockKitIds.Contains(item.SampleShippingStockKitId)).ExecuteDeleteAsync();
                 await DbContext.SampleShippingStockKits.Where(item => stockKitIds.Contains(item.Id)).ExecuteDeleteAsync();
                 await DbContext.SampleShipmentItems.Where(item => shipmentIds.Contains(item.SampleShipmentId)).ExecuteDeleteAsync();
+                await DbContext.SampleShippingPacketRevisions.Where(item => shipmentIds.Contains(item.SampleShipmentId)).ExecuteDeleteAsync();
                 await DbContext.SampleShipments.Where(item => shipmentIds.Contains(item.Id)).ExecuteDeleteAsync();
                 await DbContext.LabWorkOrders.Where(item => workOrderIds.Contains(item.Id)).ExecuteDeleteAsync();
                 await DbContext.CommercialLabAuthorizations.Where(item => orderIds.Contains(item.CommercialOrderId)).ExecuteDeleteAsync();

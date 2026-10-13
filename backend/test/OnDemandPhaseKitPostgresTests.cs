@@ -1,6 +1,7 @@
 namespace PhaenoPortal.Test;
 
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using PhaenoPortal.App.Features.Accounts.DTOs;
 using PhaenoPortal.App.Features.Accounts.Services;
 using PhaenoPortal.App.Features.WorkAttention;
@@ -170,6 +171,65 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         var authorization = await scope.DbContext.CommercialLabAuthorizations.SingleAsync(a => a.CommercialOrderId == fixture.OrderId);
         Assert.Equal(1, authorization.AuthorizationVersion);
     }
+    [PostgreSqlReferenceFact]
+    public async Task TwoPhaseShippingKeepsTheLaterActionAfterFirstReceiptAndClearsAfterBothHandoffs()
+    {
+        // This journey creates physical shipping catalog/stock and invokes commands
+        // that own their transactions. Keep it independent of the shared catalog.
+        var connection = new NpgsqlConnectionStringBuilder(Environment.GetEnvironmentVariable("PSEQ_OPERATIONS_REFERENCE_CONNECTION")!);
+        if (connection.Host is not ("localhost" or "127.0.0.1"))
+            throw new InvalidOperationException("The shipping journey requires disposable local PostgreSQL.");
+        var database = $"pseq_handoff_test_{Guid.NewGuid():N}";
+        await using var admin = new NpgsqlConnection(connection.ConnectionString);
+        await admin.OpenAsync();
+        await using (var create = new NpgsqlCommand($"CREATE DATABASE {database}", admin)) await create.ExecuteNonQueryAsync();
+        connection.Database = database;
+        connection.Pooling = false;
+        try { await VerifyTwoPhaseShipping(connection.ConnectionString); }
+        finally
+        {
+            await using var drop = new NpgsqlCommand($"DROP DATABASE {database} WITH (FORCE)", admin);
+            await drop.ExecuteNonQueryAsync();
+        }
+    }
+
+    private static async Task VerifyTwoPhaseShipping(string connectionString)
+    {
+        await using var scope = await HandoffTestScope.CreateAsync(isolatedConnection: connectionString);
+        var fixture = await scope.CreateQuotedOrderAsync("attention-two-phase", 2, separateSamplePhases: true);
+        var phases = await scope.DbContext.Set<LabJobPhase>().Where(p => p.LabServiceOrderId == fixture.OrderId).OrderBy(p => p.Position).ToArrayAsync();
+        var accepted = await scope.AcceptQuoteAsync(fixture);
+        var provider = new InternalLabOperationsProvider(scope.DbContext);
+        for (var index = 0; index < 2; index++)
+        {
+            var version = index == 0 ? accepted.Version : (await scope.DbContext.LabServiceOrders.AsNoTracking().SingleAsync(o => o.Id == fixture.OrderId)).Version;
+            var paired = await scope.AddReferenceSampleAsync(fixture.OrderId, version);
+            var controller = scope.CreateCustomerController(provider, Guid.NewGuid().ToString("N"));
+            await controller.FinalizeSampleRoster(fixture.OrderId, new(paired.Version, true, phases[index].Id), default);
+            Assert.Equal(phases[index].Id, Assert.Single(await ReadPhaseWorkAsync(scope, fixture.OrderId)).SourceId);
+            var sampleIds = await scope.DbContext.LabSamples.Where(s => s.LabServiceOrderId == fixture.OrderId && s.LabJobPhaseId == phases[index].Id).Select(s => s.Id).ToArrayAsync();
+            var shipment = await scope.DbContext.SampleShipments.SingleAsync(s => s.AuthorizationSourceId == fixture.OrderId
+                && s.Items.Any(item => sampleIds.Contains(item.SubmittedSpecimenId)));
+            var issued = await scope.CreateCustomerShippingWorkflowController().IssuePacket(shipment.Id, new(shipment.Version, null), default);
+            shipment = await scope.DbContext.SampleShipments.SingleAsync(s => s.Id == shipment.Id);
+            shipment.RecordShipment("TEST ONLY carrier", $"TEST-PHASE-{index + 1}", DateTime.UtcNow);
+            await scope.DbContext.SaveChangesAsync();
+            if (index == 0)
+            {
+                var order = await scope.DbContext.LabServiceOrders.SingleAsync(o => o.Id == fixture.OrderId);
+                order.RecordLaboratoryReceipt();
+                await scope.DbContext.SaveChangesAsync();
+                Assert.Equal("InProgress", order.Status.ToString());
+                var later = Assert.Single(await ReadPhaseWorkAsync(scope, fixture.OrderId));
+                Assert.Equal(phases[1].Id, later.SourceId); Assert.Equal("action", later.Kind);
+                Assert.Equal("waiting", Assert.Single(await ReadPhaseWorkAsync(scope, fixture.OrderId, false)).Kind);
+                Assert.NotNull(issued.CurrentPacket);
+            }
+        }
+        Assert.Empty(await ReadPhaseWorkAsync(scope, fixture.OrderId));
+        Assert.Equal(2, await scope.DbContext.SampleShipments.CountAsync(s => s.AuthorizationSourceId == fixture.OrderId && s.ShippedAt != null));
+    }
+
     private static async Task<IReadOnlyList<WorkItem>> ReadPhaseWorkAsync(HandoffTestScope scope, Guid orderId, bool canManage = true)
     {
         var order = await scope.DbContext.LabServiceOrders.AsNoTracking().SingleAsync(value => value.Id == orderId);

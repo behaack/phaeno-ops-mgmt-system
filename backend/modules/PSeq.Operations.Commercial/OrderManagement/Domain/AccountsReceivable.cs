@@ -532,6 +532,10 @@ public sealed class ReconciliationBatch : CommercialReceivableEntity
         SubmittedAtUtc = utcNow;
     }
 
+    public bool HasApprovalConflict(Guid actorUserId, IEnumerable<Guid> contributingActors) =>
+        actorUserId == CreatedByUserIdValue || actorUserId == SubmittedByUserId
+        || contributingActors.Contains(actorUserId) || ReadDraftChanges().Any(change => change.ActorUserId == actorUserId);
+
     public void Approve(Guid actorUserId, IEnumerable<Guid> contributingActors,
         string closeoutReportJson, DateTime utcNow, bool enforceActorSeparation = true)
     {
@@ -539,9 +543,7 @@ public sealed class ReconciliationBatch : CommercialReceivableEntity
             throw new InvalidOperationException("Only a submitted reconciliation can be approved.");
         if (Difference != 0)
             throw new InvalidOperationException("Resolve reconciliation differences before approval.");
-        if (enforceActorSeparation && (actorUserId == CreatedByUserIdValue
-            || actorUserId == SubmittedByUserId
-            || contributingActors.Contains(actorUserId) || ReadDraftChanges().Any(change => change.ActorUserId == actorUserId)))
+        if (enforceActorSeparation && HasApprovalConflict(actorUserId, contributingActors))
             throw new InvalidOperationException(
                 "Reconciliation approval requires an actor who did not create or edit the batch, submit, receive, import, allocate, reverse, or adjust included cash.");
         Status = ReconciliationBatchStatus.Approved;

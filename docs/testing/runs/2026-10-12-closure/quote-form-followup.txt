@@ -1,0 +1,9 @@
+
+ RUN  v4.1.8 C:/@dev/phaeno-ops-mgmt-system/frontend
+
+··················
+
+ Test Files  2 passed (2)
+      Tests  18 passed (18)
+   Start at  17:40:29
+   Duration  4.83s (transform 557ms, setup 361ms, import 1.55s, tests 2.41s, environment 1.58s)

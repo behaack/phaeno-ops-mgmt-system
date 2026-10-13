@@ -1,0 +1,194 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="ca8b3272-72e8-4b87-9168-0de1f4af333e" name="bhaac@HAACK-HP 2026-10-12 17:30:07" runUser="HAACK-HP\bhaac" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-10-12T17:30:07.7324492-07:00" queuing="2026-10-12T17:30:07.7324497-07:00" start="2026-10-12T17:30:05.8469199-07:00" finish="2026-10-12T17:31:20.6821591-07:00" />
+  <TestSettings name="default" id="532f5f06-1831-4961-a94d-9011a62e0d1e">
+    <Deployment runDeploymentRoot="bhaac_HAACK-HP_2026-10-12_17_30_07" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="79fc8fc7-428a-47a3-a1cb-f800057849b7" testId="02dad81b-6931-bc17-611d-06dbc55a4cce" testName="PhaenoPortal.Test.LabSpecimenReviewReadinessTests.ReviewRequiresResolvedAffectedSpecimensAndASuccessfulExactOutput" computerName="HAACK-HP" duration="00:00:00.0081751" startTime="2026-10-12T17:30:06.6205378-07:00" endTime="2026-10-12T17:30:06.6346392-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="79fc8fc7-428a-47a3-a1cb-f800057849b7" />
+    <UnitTestResult executionId="39793819-accb-41e9-a234-f6cf7f8436a9" testId="836dcfc1-9bb8-6dd9-4d19-cb0ae300f7c8" testName="PhaenoPortal.Test.DepartmentAccessPostgresTests.WorkAttentionCountsBeyondOneThousandAndScopesBeforePaging" computerName="HAACK-HP" duration="00:00:12.6583241" startTime="2026-10-12T17:30:40.8431975-07:00" endTime="2026-10-12T17:30:53.5005259-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="39793819-accb-41e9-a234-f6cf7f8436a9" />
+    <UnitTestResult executionId="6a8f307a-61be-4dde-99c9-433b6e6b629a" testId="92856585-36b4-3519-acde-7477d4806142" testName="PhaenoPortal.Test.DepartmentAccessPostgresTests.ReconciliationWorkExcludesSourceContributorsAndRetainedDraftEditorsBeforePaging" computerName="HAACK-HP" duration="00:00:00.0915247" startTime="2026-10-12T17:30:54.1322510-07:00" endTime="2026-10-12T17:30:54.2238887-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="6a8f307a-61be-4dde-99c9-433b6e6b629a" />
+    <UnitTestResult executionId="e9bc9901-e02c-43de-b9c6-9c05e08ca3b3" testId="f84d3955-60e3-fadf-28b0-a7c62ca558ab" testName="PhaenoPortal.Test.LabPhaseShippingSequenceTests.EveryRequiredShipmentUnlocksNextPhaseWithoutResults" computerName="HAACK-HP" duration="00:00:00.0091232" startTime="2026-10-12T17:30:06.6500045-07:00" endTime="2026-10-12T17:30:06.6523852-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e9bc9901-e02c-43de-b9c6-9c05e08ca3b3" />
+    <UnitTestResult executionId="4b1edd19-66b7-4cb5-b8e6-f0e45de671b1" testId="9c53785f-1951-a4db-421c-072a01dcc83c" testName="PhaenoPortal.Test.WorkAttentionSqlTests.Staff_union_remains_server_paged_and_does_not_depend_on_old_controller_caps" computerName="HAACK-HP" duration="00:00:03.3222575" startTime="2026-10-12T17:30:06.6205216-07:00" endTime="2026-10-12T17:30:09.9459563-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4b1edd19-66b7-4cb5-b8e6-f0e45de671b1" />
+    <UnitTestResult executionId="9711e305-c1b8-4b9f-a3d9-da903ec29416" testId="2b0eac40-c61e-0a7b-a0ce-76361d8e038d" testName="PhaenoPortal.Test.LabPhaseShippingSequenceTests.MissingSampleIdentityAndMixedPhaseShipmentDoNotCompleteShipping" computerName="HAACK-HP" duration="00:00:00.0007460" startTime="2026-10-12T17:30:06.6525428-07:00" endTime="2026-10-12T17:30:06.6531788-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="9711e305-c1b8-4b9f-a3d9-da903ec29416" />
+    <UnitTestResult executionId="6369f56b-b53e-4d0a-89c9-1cf11d0cfaa3" testId="f344599e-6475-32d8-367f-b40f2e1a617f" testName="PhaenoPortal.Test.DepartmentAccessPostgresTests.KitAttentionCountsBeyondOneThousandBeforeStablePaging" computerName="HAACK-HP" duration="00:00:00.4721395" startTime="2026-10-12T17:30:53.5942031-07:00" endTime="2026-10-12T17:30:54.0665443-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="6369f56b-b53e-4d0a-89c9-1cf11d0cfaa3" />
+    <UnitTestResult executionId="fa234a13-ef78-416d-b476-4b5a2f54628f" testId="6e8ec494-6635-a53b-a664-f21504d988cb" testName="PhaenoPortal.Test.DepartmentAccessPostgresTests.ActiveJobsKeepUnfinishedShippingAfterLaboratoryReceipt" computerName="HAACK-HP" duration="00:00:00.5282082" startTime="2026-10-12T17:30:14.8612230-07:00" endTime="2026-10-12T17:30:15.3894129-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="fa234a13-ef78-416d-b476-4b5a2f54628f" />
+    <UnitTestResult executionId="4eee7c22-3b49-4f5d-8cf8-7b2d56da28f4" testId="3b2aae36-48ff-73ab-60ee-ded4a880b194" testName="PhaenoPortal.Test.LabOperationsCommercialHandoffPostgresTests.TwoPhaseShippingKeepsTheLaterActionAfterFirstReceiptAndClearsAfterBothHandoffs" computerName="HAACK-HP" duration="00:00:26.3561398" startTime="2026-10-12T17:30:54.2243150-07:00" endTime="2026-10-12T17:31:20.5805931-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4eee7c22-3b49-4f5d-8cf8-7b2d56da28f4" />
+    <UnitTestResult executionId="9da635e4-c809-4572-9d65-a4bf664ebac0" testId="2d70c109-98f0-0033-3229-8ea8d70977b2" testName="PhaenoPortal.Test.DepartmentAccessPostgresTests.KitAttentionUsesCurrentAuthorityStageAssignmentAndSourceClearance" computerName="HAACK-HP" duration="00:00:00.0931831" startTime="2026-10-12T17:30:53.5011312-07:00" endTime="2026-10-12T17:30:53.5939088-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="9da635e4-c809-4572-9d65-a4bf664ebac0" />
+    <UnitTestResult executionId="6566cf2d-66d6-4781-93f8-4b686573c390" testId="94d0a3e8-325c-5827-c477-031fd1129372" testName="PhaenoPortal.Test.DepartmentAccessPostgresTests.ShippingAttentionQueriesStayBoundedBeyondOneThousandScopedJobs" computerName="HAACK-HP" duration="00:00:25.1498410" startTime="2026-10-12T17:30:15.7009256-07:00" endTime="2026-10-12T17:30:40.8416696-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="6566cf2d-66d6-4781-93f8-4b686573c390" />
+    <UnitTestResult executionId="cb75b8b1-89a4-4af1-8f3f-f258f05c2087" testId="69ef2929-3c83-1dbf-98a7-b1ce67d94a89" testName="PhaenoPortal.Test.SampleShippingPostgresTests.EvidenceGovernancePreservesReportsAndRequiresIndependentReviewAndScientificCoverage" computerName="HAACK-HP" duration="00:00:04.9090764" startTime="2026-10-12T17:30:09.9476306-07:00" endTime="2026-10-12T17:30:14.8583585-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="cb75b8b1-89a4-4af1-8f3f-f258f05c2087" />
+    <UnitTestResult executionId="ed7743c1-648c-4148-a643-37e9250a462a" testId="4911058d-7365-725e-9a75-9abe9394e211" testName="PhaenoPortal.Test.LabPhaseShippingSequenceTests.ResultsDoNotSubstituteForShippingAndCancelledPhasesAreSkipped" computerName="HAACK-HP" duration="00:00:00.0195048" startTime="2026-10-12T17:30:06.6204888-07:00" endTime="2026-10-12T17:30:06.6493133-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ed7743c1-648c-4148-a643-37e9250a462a" />
+    <UnitTestResult executionId="d446a6ea-e2e8-4bf1-b7b2-9b319487f175" testId="4103bdcd-406b-6142-74ab-af4eca4a023d" testName="PhaenoPortal.Test.ReconciliationApprovalEligibilityTests.AssessmentAndApprovalRetainDraftEditorsAndIncludedSourceContributors" computerName="HAACK-HP" duration="00:00:00.0593817" startTime="2026-10-12T17:30:06.6190790-07:00" endTime="2026-10-12T17:30:06.6830892-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d446a6ea-e2e8-4bf1-b7b2-9b319487f175" />
+    <UnitTestResult executionId="53d12d92-3197-464f-9d60-91bf556b1f4c" testId="1747d3c3-f14a-367c-0cef-fa865bd54995" testName="PhaenoPortal.Test.DepartmentAccessPostgresTests.SubstitutionAttentionScopesCurrentConsentAndClearsAfterDecision" computerName="HAACK-HP" duration="00:00:00.2844700" startTime="2026-10-12T17:30:15.3897660-07:00" endTime="2026-10-12T17:30:15.6924912-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="53d12d92-3197-464f-9d60-91bf556b1f4c">
+      <Output>
+        <ErrorInfo>
+          <Message>Microsoft.EntityFrameworkCore.DbUpdateException : An error occurred while saving the entity changes. See the inner exception for details.&#xD;
+---- Npgsql.PostgresException : 23503: insert or update on table "partner_reagent_order_lines" violates foreign key constraint "FK_partner_reagent_order_lines_qbo_catalog_items_qbo_catalog_i~"&#xD;
+&#xD;
+DETAIL: Key (qbo_catalog_item_id)=(00000000-0000-0000-0000-000000000000) is not present in table "qbo_catalog_items".</Message>
+          <StackTrace>   at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)&#xD;
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)&#xD;
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)&#xD;
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)&#xD;
+   at Microsoft.EntityFrameworkCore.Storage.RelationalDatabase.SaveChangesAsync(IList`1 entries, CancellationToken cancellationToken)&#xD;
+   at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(IList`1 entriesToSave, CancellationToken cancellationToken)&#xD;
+   at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(StateManager stateManager, Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)&#xD;
+   at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)&#xD;
+   at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)&#xD;
+   at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)&#xD;
+   at PhaenoPortal.App.Infrastructure.Persistence.PSeqOperationsDbContext.SaveWithCustomerHoldsAsync(Boolean acceptAllChangesOnSuccess, CancellationToken ct) in C:\@dev\phaeno-ops-mgmt-system\backend\app\Infrastructure\Persistence\PSeqOperationsDbContext.CustomerHolds.cs:line 67&#xD;
+   at PhaenoPortal.Test.DepartmentAccessPostgresTests.SubstitutionAttentionScopesCurrentConsentAndClearsAfterDecision() in C:\@dev\phaeno-ops-mgmt-system\backend\test\WorkAttentionReviewPostgresTests.cs:line 35&#xD;
+   at PhaenoPortal.Test.DepartmentAccessPostgresTests.SubstitutionAttentionScopesCurrentConsentAndClearsAfterDecision() in C:\@dev\phaeno-ops-mgmt-system\backend\test\WorkAttentionReviewPostgresTests.cs:line 51&#xD;
+--- End of stack trace from previous location ---&#xD;
+----- Inner Stack Trace -----&#xD;
+   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)&#xD;
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource&lt;TResult&gt;.GetResult(Int16 token)&#xD;
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)&#xD;
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)&#xD;
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)&#xD;
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)&#xD;
+   at Npgsql.NpgsqlCommand.ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)&#xD;
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)&#xD;
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)&#xD;
+   at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="34d82164-696f-4635-93b4-e527fc7e4a63" testId="87bd9039-219e-8ebf-3ef4-c039376c14df" testName="PhaenoPortal.Test.DepartmentAccessPostgresTests.ChangeQuoteAttentionScopesCurrentDecisionsAndAdministratorResponsibility" computerName="HAACK-HP" duration="00:00:00.0649373" startTime="2026-10-12T17:30:54.0667649-07:00" endTime="2026-10-12T17:30:54.1320060-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="34d82164-696f-4635-93b4-e527fc7e4a63" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="PhaenoPortal.Test.SampleShippingPostgresTests.EvidenceGovernancePreservesReportsAndRequiresIndependentReviewAndScientificCoverage" storage="c:\@dev\phaeno-ops-mgmt-system\.verification\closure-20261012\backend\bin\pseq.operations.test\debug\pseq.operations.test.dll" id="69ef2929-3c83-1dbf-98a7-b1ce67d94a89">
+      <Execution id="cb75b8b1-89a4-4af1-8f3f-f258f05c2087" />
+      <TestMethod codeBase="C:\@dev\phaeno-ops-mgmt-system\.verification\closure-20261012\backend\bin\PSeq.Operations.Test\debug\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.SampleShippingPostgresTests" name="EvidenceGovernancePreservesReportsAndRequiresIndependentReviewAndScientificCoverage" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.DepartmentAccessPostgresTests.ChangeQuoteAttentionScopesCurrentDecisionsAndAdministratorResponsibility" storage="c:\@dev\phaeno-ops-mgmt-system\.verification\closure-20261012\backend\bin\pseq.operations.test\debug\pseq.operations.test.dll" id="87bd9039-219e-8ebf-3ef4-c039376c14df">
+      <Execution id="34d82164-696f-4635-93b4-e527fc7e4a63" />
+      <TestMethod codeBase="C:\@dev\phaeno-ops-mgmt-system\.verification\closure-20261012\backend\bin\PSeq.Operations.Test\debug\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.DepartmentAccessPostgresTests" name="ChangeQuoteAttentionScopesCurrentDecisionsAndAdministratorResponsibility" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.DepartmentAccessPostgresTests.KitAttentionCountsBeyondOneThousandBeforeStablePaging" storage="c:\@dev\phaeno-ops-mgmt-system\.verification\closure-20261012\backend\bin\pseq.operations.test\debug\pseq.operations.test.dll" id="f344599e-6475-32d8-367f-b40f2e1a617f">
+      <Execution id="6369f56b-b53e-4d0a-89c9-1cf11d0cfaa3" />
+      <TestMethod codeBase="C:\@dev\phaeno-ops-mgmt-system\.verification\closure-20261012\backend\bin\PSeq.Operations.Test\debug\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.DepartmentAccessPostgresTests" name="KitAttentionCountsBeyondOneThousandBeforeStablePaging" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.LabOperationsCommercialHandoffPostgresTests.TwoPhaseShippingKeepsTheLaterActionAfterFirstReceiptAndClearsAfterBothHandoffs" storage="c:\@dev\phaeno-ops-mgmt-system\.verification\closure-20261012\backend\bin\pseq.operations.test\debug\pseq.operations.test.dll" id="3b2aae36-48ff-73ab-60ee-ded4a880b194">
+      <Execution id="4eee7c22-3b49-4f5d-8cf8-7b2d56da28f4" />
+      <TestMethod codeBase="C:\@dev\phaeno-ops-mgmt-system\.verification\closure-20261012\backend\bin\PSeq.Operations.Test\debug\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.LabOperationsCommercialHandoffPostgresTests" name="TwoPhaseShippingKeepsTheLaterActionAfterFirstReceiptAndClearsAfterBothHandoffs" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.DepartmentAccessPostgresTests.KitAttentionUsesCurrentAuthorityStageAssignmentAndSourceClearance" storage="c:\@dev\phaeno-ops-mgmt-system\.verification\closure-20261012\backend\bin\pseq.operations.test\debug\pseq.operations.test.dll" id="2d70c109-98f0-0033-3229-8ea8d70977b2">
+      <Execution id="9da635e4-c809-4572-9d65-a4bf664ebac0" />
+      <TestMethod codeBase="C:\@dev\phaeno-ops-mgmt-system\.verification\closure-20261012\backend\bin\PSeq.Operations.Test\debug\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.DepartmentAccessPostgresTests" name="KitAttentionUsesCurrentAuthorityStageAssignmentAndSourceClearance" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.DepartmentAccessPostgresTests.ShippingAttentionQueriesStayBoundedBeyondOneThousandScopedJobs" storage="c:\@dev\phaeno-ops-mgmt-system\.verification\closure-20261012\backend\bin\pseq.operations.test\debug\pseq.operations.test.dll" id="94d0a3e8-325c-5827-c477-031fd1129372">
+      <Execution id="6566cf2d-66d6-4781-93f8-4b686573c390" />
+      <TestMethod codeBase="C:\@dev\phaeno-ops-mgmt-system\.verification\closure-20261012\backend\bin\PSeq.Operations.Test\debug\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.DepartmentAccessPostgresTests" name="ShippingAttentionQueriesStayBoundedBeyondOneThousandScopedJobs" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.LabPhaseShippingSequenceTests.EveryRequiredShipmentUnlocksNextPhaseWithoutResults" storage="c:\@dev\phaeno-ops-mgmt-system\.verification\closure-20261012\backend\bin\pseq.operations.test\debug\pseq.operations.test.dll" id="f84d3955-60e3-fadf-28b0-a7c62ca558ab">
+      <Execution id="e9bc9901-e02c-43de-b9c6-9c05e08ca3b3" />
+      <TestMethod codeBase="C:\@dev\phaeno-ops-mgmt-system\.verification\closure-20261012\backend\bin\PSeq.Operations.Test\debug\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.LabPhaseShippingSequenceTests" name="EveryRequiredShipmentUnlocksNextPhaseWithoutResults" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.ReconciliationApprovalEligibilityTests.AssessmentAndApprovalRetainDraftEditorsAndIncludedSourceContributors" storage="c:\@dev\phaeno-ops-mgmt-system\.verification\closure-20261012\backend\bin\pseq.operations.test\debug\pseq.operations.test.dll" id="4103bdcd-406b-6142-74ab-af4eca4a023d">
+      <Execution id="d446a6ea-e2e8-4bf1-b7b2-9b319487f175" />
+      <TestMethod codeBase="C:\@dev\phaeno-ops-mgmt-system\.verification\closure-20261012\backend\bin\PSeq.Operations.Test\debug\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.ReconciliationApprovalEligibilityTests" name="AssessmentAndApprovalRetainDraftEditorsAndIncludedSourceContributors" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.LabPhaseShippingSequenceTests.ResultsDoNotSubstituteForShippingAndCancelledPhasesAreSkipped" storage="c:\@dev\phaeno-ops-mgmt-system\.verification\closure-20261012\backend\bin\pseq.operations.test\debug\pseq.operations.test.dll" id="4911058d-7365-725e-9a75-9abe9394e211">
+      <Execution id="ed7743c1-648c-4148-a643-37e9250a462a" />
+      <TestMethod codeBase="C:\@dev\phaeno-ops-mgmt-system\.verification\closure-20261012\backend\bin\PSeq.Operations.Test\debug\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.LabPhaseShippingSequenceTests" name="ResultsDoNotSubstituteForShippingAndCancelledPhasesAreSkipped" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.LabPhaseShippingSequenceTests.MissingSampleIdentityAndMixedPhaseShipmentDoNotCompleteShipping" storage="c:\@dev\phaeno-ops-mgmt-system\.verification\closure-20261012\backend\bin\pseq.operations.test\debug\pseq.operations.test.dll" id="2b0eac40-c61e-0a7b-a0ce-76361d8e038d">
+      <Execution id="9711e305-c1b8-4b9f-a3d9-da903ec29416" />
+      <TestMethod codeBase="C:\@dev\phaeno-ops-mgmt-system\.verification\closure-20261012\backend\bin\PSeq.Operations.Test\debug\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.LabPhaseShippingSequenceTests" name="MissingSampleIdentityAndMixedPhaseShipmentDoNotCompleteShipping" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.DepartmentAccessPostgresTests.WorkAttentionCountsBeyondOneThousandAndScopesBeforePaging" storage="c:\@dev\phaeno-ops-mgmt-system\.verification\closure-20261012\backend\bin\pseq.operations.test\debug\pseq.operations.test.dll" id="836dcfc1-9bb8-6dd9-4d19-cb0ae300f7c8">
+      <Execution id="39793819-accb-41e9-a234-f6cf7f8436a9" />
+      <TestMethod codeBase="C:\@dev\phaeno-ops-mgmt-system\.verification\closure-20261012\backend\bin\PSeq.Operations.Test\debug\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.DepartmentAccessPostgresTests" name="WorkAttentionCountsBeyondOneThousandAndScopesBeforePaging" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.DepartmentAccessPostgresTests.ActiveJobsKeepUnfinishedShippingAfterLaboratoryReceipt" storage="c:\@dev\phaeno-ops-mgmt-system\.verification\closure-20261012\backend\bin\pseq.operations.test\debug\pseq.operations.test.dll" id="6e8ec494-6635-a53b-a664-f21504d988cb">
+      <Execution id="fa234a13-ef78-416d-b476-4b5a2f54628f" />
+      <TestMethod codeBase="C:\@dev\phaeno-ops-mgmt-system\.verification\closure-20261012\backend\bin\PSeq.Operations.Test\debug\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.DepartmentAccessPostgresTests" name="ActiveJobsKeepUnfinishedShippingAfterLaboratoryReceipt" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.DepartmentAccessPostgresTests.SubstitutionAttentionScopesCurrentConsentAndClearsAfterDecision" storage="c:\@dev\phaeno-ops-mgmt-system\.verification\closure-20261012\backend\bin\pseq.operations.test\debug\pseq.operations.test.dll" id="1747d3c3-f14a-367c-0cef-fa865bd54995">
+      <Execution id="53d12d92-3197-464f-9d60-91bf556b1f4c" />
+      <TestMethod codeBase="C:\@dev\phaeno-ops-mgmt-system\.verification\closure-20261012\backend\bin\PSeq.Operations.Test\debug\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.DepartmentAccessPostgresTests" name="SubstitutionAttentionScopesCurrentConsentAndClearsAfterDecision" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.DepartmentAccessPostgresTests.ReconciliationWorkExcludesSourceContributorsAndRetainedDraftEditorsBeforePaging" storage="c:\@dev\phaeno-ops-mgmt-system\.verification\closure-20261012\backend\bin\pseq.operations.test\debug\pseq.operations.test.dll" id="92856585-36b4-3519-acde-7477d4806142">
+      <Execution id="6a8f307a-61be-4dde-99c9-433b6e6b629a" />
+      <TestMethod codeBase="C:\@dev\phaeno-ops-mgmt-system\.verification\closure-20261012\backend\bin\PSeq.Operations.Test\debug\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.DepartmentAccessPostgresTests" name="ReconciliationWorkExcludesSourceContributorsAndRetainedDraftEditorsBeforePaging" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.WorkAttentionSqlTests.Staff_union_remains_server_paged_and_does_not_depend_on_old_controller_caps" storage="c:\@dev\phaeno-ops-mgmt-system\.verification\closure-20261012\backend\bin\pseq.operations.test\debug\pseq.operations.test.dll" id="9c53785f-1951-a4db-421c-072a01dcc83c">
+      <Execution id="4b1edd19-66b7-4cb5-b8e6-f0e45de671b1" />
+      <TestMethod codeBase="C:\@dev\phaeno-ops-mgmt-system\.verification\closure-20261012\backend\bin\PSeq.Operations.Test\debug\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.WorkAttentionSqlTests" name="Staff_union_remains_server_paged_and_does_not_depend_on_old_controller_caps" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.LabSpecimenReviewReadinessTests.ReviewRequiresResolvedAffectedSpecimensAndASuccessfulExactOutput" storage="c:\@dev\phaeno-ops-mgmt-system\.verification\closure-20261012\backend\bin\pseq.operations.test\debug\pseq.operations.test.dll" id="02dad81b-6931-bc17-611d-06dbc55a4cce">
+      <Execution id="79fc8fc7-428a-47a3-a1cb-f800057849b7" />
+      <TestMethod codeBase="C:\@dev\phaeno-ops-mgmt-system\.verification\closure-20261012\backend\bin\PSeq.Operations.Test\debug\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.LabSpecimenReviewReadinessTests" name="ReviewRequiresResolvedAffectedSpecimensAndASuccessfulExactOutput" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="02dad81b-6931-bc17-611d-06dbc55a4cce" executionId="79fc8fc7-428a-47a3-a1cb-f800057849b7" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="836dcfc1-9bb8-6dd9-4d19-cb0ae300f7c8" executionId="39793819-accb-41e9-a234-f6cf7f8436a9" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="92856585-36b4-3519-acde-7477d4806142" executionId="6a8f307a-61be-4dde-99c9-433b6e6b629a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="f84d3955-60e3-fadf-28b0-a7c62ca558ab" executionId="e9bc9901-e02c-43de-b9c6-9c05e08ca3b3" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9c53785f-1951-a4db-421c-072a01dcc83c" executionId="4b1edd19-66b7-4cb5-b8e6-f0e45de671b1" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="2b0eac40-c61e-0a7b-a0ce-76361d8e038d" executionId="9711e305-c1b8-4b9f-a3d9-da903ec29416" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="f344599e-6475-32d8-367f-b40f2e1a617f" executionId="6369f56b-b53e-4d0a-89c9-1cf11d0cfaa3" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="6e8ec494-6635-a53b-a664-f21504d988cb" executionId="fa234a13-ef78-416d-b476-4b5a2f54628f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="3b2aae36-48ff-73ab-60ee-ded4a880b194" executionId="4eee7c22-3b49-4f5d-8cf8-7b2d56da28f4" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="2d70c109-98f0-0033-3229-8ea8d70977b2" executionId="9da635e4-c809-4572-9d65-a4bf664ebac0" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="94d0a3e8-325c-5827-c477-031fd1129372" executionId="6566cf2d-66d6-4781-93f8-4b686573c390" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="69ef2929-3c83-1dbf-98a7-b1ce67d94a89" executionId="cb75b8b1-89a4-4af1-8f3f-f258f05c2087" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="4911058d-7365-725e-9a75-9abe9394e211" executionId="ed7743c1-648c-4148-a643-37e9250a462a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="4103bdcd-406b-6142-74ab-af4eca4a023d" executionId="d446a6ea-e2e8-4bf1-b7b2-9b319487f175" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1747d3c3-f14a-367c-0cef-fa865bd54995" executionId="53d12d92-3197-464f-9d60-91bf556b1f4c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="87bd9039-219e-8ebf-3ef4-c039376c14df" executionId="34d82164-696f-4635-93b4-e527fc7e4a63" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Failed">
+    <Counters total="16" executed="16" passed="15" failed="1" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.12)&#xD;
+[xUnit.net 00:00:00.16]   Discovering: PSeq.Operations.Test&#xD;
+[xUnit.net 00:00:00.33]   Discovered:  PSeq.Operations.Test&#xD;
+[xUnit.net 00:00:00.36]   Starting:    PSeq.Operations.Test&#xD;
+[xUnit.net 00:00:09.46]       Microsoft.EntityFrameworkCore.DbUpdateException : An error occurred while saving the entity changes. See the inner exception for details.&#xD;
+[xUnit.net 00:00:09.46]       ---- Npgsql.PostgresException : 23503: insert or update on table "partner_reagent_order_lines" violates foreign key constraint "FK_partner_reagent_order_lines_qbo_catalog_items_qbo_catalog_i~"&#xD;
+[xUnit.net 00:00:09.46]       &#xD;
+[xUnit.net 00:00:09.46]       DETAIL: Key (qbo_catalog_item_id)=(00000000-0000-0000-0000-000000000000) is not present in table "qbo_catalog_items".&#xD;
+[xUnit.net 00:00:09.46]       Stack Trace:&#xD;
+[xUnit.net 00:00:09.46]            at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)&#xD;
+[xUnit.net 00:00:09.46]            at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)&#xD;
+[xUnit.net 00:00:09.46]            at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)&#xD;
+[xUnit.net 00:00:09.46]            at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)&#xD;
+[xUnit.net 00:00:09.46]            at Microsoft.EntityFrameworkCore.Storage.RelationalDatabase.SaveChangesAsync(IList`1 entries, CancellationToken cancellationToken)&#xD;
+[xUnit.net 00:00:09.46]            at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(IList`1 entriesToSave, CancellationToken cancellationToken)&#xD;
+[xUnit.net 00:00:09.46]            at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(StateManager stateManager, Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)&#xD;
+[xUnit.net 00:00:09.46]            at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)&#xD;
+[xUnit.net 00:00:09.46]            at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)&#xD;
+[xUnit.net 00:00:09.46]            at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)&#xD;
+[xUnit.net 00:00:09.46]         C:\@dev\phaeno-ops-mgmt-system\backend\app\Infrastructure\Persistence\PSeqOperationsDbContext.CustomerHolds.cs(67,0): at PhaenoPortal.App.Infrastructure.Persistence.PSeqOperationsDbContext.SaveWithCustomerHoldsAsync(Boolean acceptAllChangesOnSuccess, CancellationToken ct)&#xD;
+[xUnit.net 00:00:09.46]         C:\@dev\phaeno-ops-mgmt-system\backend\test\WorkAttentionReviewPostgresTests.cs(35,0): at PhaenoPortal.Test.DepartmentAccessPostgresTests.SubstitutionAttentionScopesCurrentConsentAndClearsAfterDecision()&#xD;
+[xUnit.net 00:00:09.46]         C:\@dev\phaeno-ops-mgmt-system\backend\test\WorkAttentionReviewPostgresTests.cs(51,0): at PhaenoPortal.Test.DepartmentAccessPostgresTests.SubstitutionAttentionScopesCurrentConsentAndClearsAfterDecision()&#xD;
+[xUnit.net 00:00:09.46]         --- End of stack trace from previous location ---&#xD;
+[xUnit.net 00:00:09.46]         ----- Inner Stack Trace -----&#xD;
+[xUnit.net 00:00:09.46]            at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)&#xD;
+[xUnit.net 00:00:09.46]            at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource&lt;TResult&gt;.GetResult(Int16 token)&#xD;
+[xUnit.net 00:00:09.46]            at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)&#xD;
+[xUnit.net 00:00:09.46]            at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)&#xD;
+[xUnit.net 00:00:09.46]            at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)&#xD;
+[xUnit.net 00:00:09.46]            at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)&#xD;
+[xUnit.net 00:00:09.46]            at Npgsql.NpgsqlCommand.ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)&#xD;
+[xUnit.net 00:00:09.46]            at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)&#xD;
+[xUnit.net 00:00:09.46]            at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)&#xD;
+[xUnit.net 00:00:09.46]            at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)&#xD;
+Synthetic shipping attention: 1005 Jobs, 10 queries, 37 ms. No end-to-end latency target is inferred.&#xD;
+[xUnit.net 00:01:14.35]   Finished:    PSeq.Operations.Test&#xD;
+</StdOut>
+    </Output>
+    <RunInfos>
+      <RunInfo computerName="HAACK-HP" outcome="Error" timestamp="2026-10-12T17:30:15.6963263-07:00">
+        <Text>[xUnit.net 00:00:09.46]     PhaenoPortal.Test.DepartmentAccessPostgresTests.SubstitutionAttentionScopesCurrentConsentAndClearsAfterDecision [FAIL]</Text>
+      </RunInfo>
+    </RunInfos>
+  </ResultSummary>
+</TestRun>

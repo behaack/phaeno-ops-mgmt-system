@@ -73,6 +73,14 @@ vi.mock('#/api/order-management', async (importOriginal) => ({
   isOrderConcurrencyError: (error: unknown) => Boolean(error && typeof error === 'object' && 'code' in error && error.code === 'concurrency_conflict'),
 }))
 
+async function openFinanceAction(name: string) {
+  await waitFor(() => expect(screen.queryByRole('button', { name }) ?? screen.queryByRole('button', { name: /^Actions/ })).not.toBeNull())
+  const direct = screen.queryByRole('button', { name })
+  if (direct) { fireEvent.click(direct); return }
+  fireEvent.keyDown(screen.getByRole('button', { name: /^Actions/ }), { key: 'Enter' })
+  fireEvent.click(await screen.findByRole('menuitem', { name }))
+}
+
 describe('PSeq order-to-cash panels', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
@@ -92,8 +100,14 @@ describe('PSeq order-to-cash panels', () => {
     mocks.listInvoices.mockResolvedValue([invoice])
     renderPanel(<FinanceOperationsPanel apiEnabled canBill canManageCash={false} canReconcile={false} canViewCommercialOrder={canViewCommercialOrder} record={{ kind: 'invoice', id: invoice.id }} />)
     await screen.findByText(invoice.invoiceNumber)
-    expect(Boolean(screen.queryByRole('link', { name: 'Open order' }))).toBe(canViewCommercialOrder)
-    expect(screen.getByRole('button', { name: 'Record adjustment' })).toBeTruthy()
+    if (canViewCommercialOrder) {
+      fireEvent.keyDown(screen.getByRole('button', { name: /^Actions for/ }), { key: 'Enter' })
+      expect(await screen.findByRole('menuitem', { name: 'Open order' })).toBeTruthy()
+      expect(screen.getByRole('menuitem', { name: 'Record adjustment' })).toBeTruthy()
+    } else {
+      expect(screen.queryByRole('link', { name: 'Open order' })).toBeNull()
+      expect(screen.getByRole('button', { name: 'Record adjustment' })).toBeTruthy()
+    }
   })
 
   it.each([
@@ -190,7 +204,7 @@ describe('PSeq order-to-cash panels', () => {
 
     expect(await screen.findByText(batch.batchNumber)).toBeTruthy()
     expect(mocks.listReconciliations).toHaveBeenCalledWith(batch.id)
-    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Approve independently' })) })
+    await act(async () => { fireEvent.click(await screen.findByRole('button', { name: 'Approve independently' })) })
     await waitFor(() => expect(mocks.approveReconciliation).toHaveBeenCalledWith(batch.id, batch.version))
     expect(screen.queryByRole('button', { name: 'New reconciliation' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Submit balanced batch' })).toBeNull()
@@ -299,7 +313,7 @@ describe('PSeq order-to-cash panels', () => {
     expect(await screen.findByText('PAY-100')).toBeTruthy()
     expect(mocks.listPaymentReceipts).toHaveBeenCalledWith(false, 'receipt-id', undefined)
     expect(screen.queryByLabelText(/Invoice/)).toBeNull()
-    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Allocate to invoice' })) })
+    await act(async () => { await openFinanceAction('Allocate to invoice') })
     await screen.findByRole('option', { name: /INV-100/ })
     expect(mocks.listMatchingInvoices).toHaveBeenCalledWith('receipt-id', '', 0)
     fireEvent.change(screen.getByLabelText(/Invoice/), { target: { value: invoice.id } })
@@ -324,7 +338,7 @@ describe('PSeq order-to-cash panels', () => {
     const receipt = { id: 'receipt-id', organizationId: customer.organizationId, receiptNumber: 'PAY-100', source: 'Bank', externalId: 'EXT-1', payer: 'Atlas', amount: 100, appliedAmount: 0, unappliedAmount: 100, currency: 'USD', receivedOn: '2026-09-01', method: 'Wire', bankReference: 'BANK-1', status: 'Recorded', version: 7 }
     mocks.listPaymentReceipts.mockResolvedValue([receipt]); mocks.listMatchingInvoices.mockResolvedValue([invoice]); mocks.allocatePayment.mockRejectedValue(new Error('Not saved'))
     const client = renderPanel(<FinanceOperationsPanel apiEnabled canBill={false} canManageCash canReconcile={false} record={{ kind: 'receipt', id: receipt.id }} />)
-    await act(async () => { fireEvent.click(await screen.findByRole('button', { name: 'Allocate to invoice' })) })
+    await act(async () => { await openFinanceAction('Allocate to invoice') })
     await screen.findByRole('option', { name: /INV-100/ })
     fireEvent.change(screen.getByLabelText(/Invoice/), { target: { value: invoice.id } })
     fireEvent.change(screen.getByLabelText(/Amount \(USD\)/), { target: { value: '25' } })

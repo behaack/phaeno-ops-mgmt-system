@@ -1,5 +1,41 @@
 # Frontend Test Plan
 
+## Remaining-deficiency execution — October 12, 2026
+
+The Owner requested regression execution. Full suite passes with two workers:
+1,532 passed, three skipped, zero failed (246 files). The default-concurrency
+run exposed stale Website navigation expectations, asynchronous record/dialog
+readiness assumptions and a shared overlay focus race. Tests now wait for loaded
+records/reopened forms; the shared Dialog preserves focus when an older close
+finishes after another dialog or Actions menu opens. The focused 81-case batch
+and complete bounded run pass. Two timeout cases also pass in a focused 13-case
+run; do not count their earlier default-concurrency failures as passing runs.
+PSeq Kit work destinations and current source stages are covered with backend
+PostgreSQL evidence. Types, touched-source lint and generated help consistency
+pass separately. See the October 12 closure execution receipt for exact scope
+and remaining hosted/physical acceptance.
+
+The three existing skipped cases cover sample-pause request/member restriction
+and duplicate sample identity across phases; they are not counted as executed.
+Final visual QA aligns quote issuance with shared Field spacing and required
+markers, including conditional additional-run pricing. Eighteen quote/localization
+follow-up cases pass after this correction; all Customer message references are
+valid (5,784 English entries). The full-suite report precedes that small correction.
+
+## Final review repair sources — October 12, 2026
+
+`LabChangeQuotes` regressions use real router/Portal-confirmation context, open
+decisions through Actions, preserve a PO after Keep editing, explicitly discard
+it and retain failed/pending decisions. `DataProvisioningGuard` uses real routes
+to cover the closed source-form blocker and pending assignment with Escape/
+navigation denial and retained values after failure. Output creation checks Done
+after confirmed save; work priority distinguishes undated Needs review from
+dated Due soon and keeps exact decision destinations. Finance and curated-catalog
+expectations follow grouped record commands. Types/scoped lint and help checks
+are separate from regression execution, which is deferred until requested.
+Full permission, scope-switch, focus, keyboard, phone/theme and mutation recovery
+acceptance remains required at the next authorized browser checkpoint.
+
 ## Website operations navigation — October 12, 2026
 
 Regression sources cover platform-administrator-only secondary navigation,

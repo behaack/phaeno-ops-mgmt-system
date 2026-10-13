@@ -582,9 +582,7 @@ public sealed partial class AccountsReceivableController(
         }, JsonOptions);
         var contributingActors = items.Select(item => item.ContributingActorUserId)
             .Concat(batch.ReadDraftChanges().Select(change => change.ActorUserId)).Distinct().ToList();
-        var actorConflict = actor.Id == batch.CreatedByUserIdValue
-            || actor.Id == batch.SubmittedByUserId
-            || contributingActors.Contains(actor.Id);
+        var actorConflict = batch.HasApprovalConflict(actor.Id, contributingActors);
         if (actorConflict && rolloutOptions.Value.DualControlAuditOnly
             && !rolloutOptions.Value.DualControlEnforced)
             logger.LogWarning(
