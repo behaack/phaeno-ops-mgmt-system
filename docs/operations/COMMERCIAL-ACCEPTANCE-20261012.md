@@ -6,6 +6,17 @@ These are acceptance targets; no completed recovery drill, operational activatio
 or physical qualification is claimed. Existing hosted-test S3 backup deferral,
 deployment holds and preserved recovery copies remain in force.
 
+Owner-adopted defaults, October 12: use a named Operations primary and separate
+alternate, alerts to a shared monitored Operations inbox, and a 15-minute
+acknowledgment/escalation target. Engineering owns the technical setup and drill
+preparation. Use an isolated temporary Linux recovery host in the existing
+hosting account; preserve the live runtime and database during the drill.
+The Lab supervisor leads training and qualifies the existing printer, stock
+and scanner before considering replacement equipment. These choices establish
+the operating design; actual responder/inbox/equipment identities and observed
+acceptance remain required. No credentials, resource provisioning, schedule or
+commercial activation was changed by adopting these defaults.
+
 ## Recovery acceptance
 
 Operations supplies the named primary responder, alternate, alert destination,

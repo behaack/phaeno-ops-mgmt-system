@@ -1,9 +1,12 @@
 # Work dashboard and notifications
 
 Prepared: October 11, 2026.
-Status: implemented and locally regression-tested October 11, 2026. No deployment
-or hosted acceptance is claimed. The source/actor matrix below remains the
-representative operational acceptance contract.
+Status: implemented and locally regression-tested through October 12, 2026.
+The review continuation is deployed to the preserved hosted test environment on
+matched source `c4cdc20f`; see the [release receipt](../operations/portal-review-closure-test-release-20261012.md).
+Authenticated staff smoke is unperformed because the available browser is signed
+out. The source/actor matrix below remains the representative operational
+acceptance contract; deployment does not close that complete acceptance matrix.
 Owning review: [System gap closure](SYSTEM-GAP-CLOSURE-PLAN.md), GAP-06.
 
 ## October 12 final review repair scope

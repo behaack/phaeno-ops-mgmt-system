@@ -1,5 +1,18 @@
 # Operations and production-readiness boundary
 
+## Review closure hosted-test release — completed October 12, 2026
+
+Matched API/Portal source `c4cdc20fa9d10e16f28f83958d9d423f6b8cadde` is live
+under the [preserving release plan](plans/PORTAL-REVIEW-CLOSURE-TEST-RELEASE-20261012-PLAN.md).
+Protected run #104 succeeds, and the exact-source production frontend is promoted
+after API verification. No migration, reset, identity/storage/provider cutover or
+commercial activation occurs. Website counts remain `12,6`; retained recovery,
+S3/ClamAV, runtime settings and manual/Vercel Git holds are preserved. Health,
+rendering, scanner and anonymous authorization checks pass; bounded frontend
+errors are empty. The live browser is signed out, so authenticated staff smoke
+is unperformed. See the [release receipt](operations/portal-review-closure-test-release-20261012.md)
+for actual evidence, local regression scope and remaining recovery/physical gates.
+
 ## October 12 remaining-deficiency continuation
 
 The Owner accepted a maximum one-hour data-loss window and four-hour restoration

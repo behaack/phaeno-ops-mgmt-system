@@ -116,3 +116,15 @@ change scientific state as smoke. Count preservation and prior full-record
 recovery evidence are distinct from a new transfer; this release transfers no
 application data. Record actual IDs, outcomes, retained recovery and restored
 manual/Vercel Git holds in the completion receipt.
+
+## Completed release
+
+Source `c4cdc20fa9d10e16f28f83958d9d423f6b8cadde` is committed, pushed and live
+on both API and Portal. Protected run `38331174463` succeeds. Exact-source
+production deployment `dpl_57PDBLQLtv4ofyo3cGet91PWNoRs` is promoted after API
+verification; the canonical alias independently matches it. No migration ran,
+Website counts remain `12,6`, scanner and health/rendering/anonymous authorization
+checks pass, and the manual/Git holds are restored. Authenticated staff smoke is
+unperformed because the available browser is signed out. The
+[completion receipt](../operations/portal-review-closure-test-release-20261012.md)
+records actual evidence and remaining acceptance boundaries.

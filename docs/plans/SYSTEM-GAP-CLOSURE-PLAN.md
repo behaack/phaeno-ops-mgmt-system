@@ -9,6 +9,11 @@ the [release plan](PORTAL-GAP-CLOSURE-TEST-RELEASE-20261011-PLAN.md). Remaining
 operational/commercial acceptance stays open.
 Implementation and verification evidence is recorded below; operational gates
 are not closed by source changes.
+The October 12 review closure is now live on matched source `c4cdc20f` under the
+[preserving test release](PORTAL-REVIEW-CLOSURE-TEST-RELEASE-20261012-PLAN.md).
+The [completion receipt](../operations/portal-review-closure-test-release-20261012.md)
+records the successful API/frontend release and remaining authenticated,
+recovery/monitoring and observed Lab/training acceptance.
 Product owner: repository Owner. Engineering owner: Codex.
 
 ## Outcome and confirmed direction
