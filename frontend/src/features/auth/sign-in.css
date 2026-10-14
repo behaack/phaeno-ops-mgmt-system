@@ -1,0 +1,59 @@
+/* Keep Clerk's own instruction and controls in the authenticator-code layout. */
+.phaeno-sign-in-form .cl-card.cl-signIn-totp2Fa {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, max-content) minmax(0, 1fr);
+  row-gap: 0.75rem;
+  column-gap: 0;
+}
+
+.phaeno-sign-in-form .cl-card.cl-signIn-totp2Fa :is(
+  .cl-header,
+  .cl-header > div,
+  .cl-main,
+  .cl-main > .cl-form
+) {
+  display: contents;
+}
+
+.phaeno-sign-in-form .cl-card.cl-signIn-totp2Fa .cl-otpCodeField {
+  grid-column: 2;
+  order: 1;
+  min-inline-size: 0;
+}
+
+.phaeno-sign-in-form .cl-card.cl-signIn-totp2Fa .cl-otpCodeFieldInputContainer {
+  max-inline-size: 100%;
+}
+
+.phaeno-sign-in-form .cl-card.cl-signIn-totp2Fa .cl-otpCodeFieldInputs {
+  min-inline-size: 0;
+}
+
+.phaeno-sign-in-form .cl-card.cl-signIn-totp2Fa :is(
+  .cl-otpCodeFieldErrorText,
+  .cl-otpCodeFieldSuccessText
+) {
+  inline-size: 100%;
+  contain: inline-size;
+}
+
+.phaeno-sign-in-form .cl-card.cl-signIn-totp2Fa .cl-headerSubtitle {
+  grid-column: 2;
+  order: 2;
+  inline-size: 100%;
+  min-inline-size: 0;
+  margin: 0;
+  text-align: center;
+  /* The code control, rather than this sentence, determines the column width. */
+  contain: inline-size;
+}
+
+.phaeno-sign-in-form .cl-card.cl-signIn-totp2Fa .cl-main > :not(.cl-form) {
+  grid-column: 1 / -1;
+  order: 3;
+}
+
+.phaeno-sign-in-form .cl-card.cl-signIn-totp2Fa > :not(.cl-header, .cl-main),
+.phaeno-sign-in-form .cl-card.cl-signIn-totp2Fa .cl-identityPreview {
+  grid-column: 1 / -1;
+}

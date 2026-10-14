@@ -1,5 +1,34 @@
 # Auth and User System Plan
 
+## October 14, 2026 - Place the code instruction beneath the control
+
+The Owner supplied the live authenticator prompt and requested that its existing
+source instruction sit beneath the code entry, centered and constrained to the
+same width as that entry. This is an Owner-directed exception to the usual
+helper-before-control placement in the UI principles, scoped to this Clerk
+TOTP verification step for all audiences.
+
+Use an auth-owned stylesheet and Clerk's public TOTP/element classes. A shared
+grid column takes its width from the code control; the existing localized
+instruction follows the control and its feedback before Continue. Flatten only
+non-semantic layout wrappers for this step. Preserve Clerk-owned DOM, code
+entry, error feedback, accessible text and authentication. Do not duplicate the
+instruction, replace the provider form, alter other sign-in steps, or add
+fixed-position copy. No dependency, provider, API, database or migration change.
+
+Acceptance: instruction below the entry, matching horizontal bounds, centered
+text and natural wrapping, with no overlap at desktop/narrow widths, either
+theme or field-error display. Account guides describe the code source without
+specifying a position and remain correct; no guide/corpus change is required.
+Verified manually against representative Clerk TOTP markup and the current
+provider element structure: the control and instruction share bounds at 1280px
+(280px wide), 390px (232px wide), and 320px (198px wide). Light and dark/error
+views wrap without horizontal overflow or overlap; keyboard focus proceeds
+from code entry to Continue. This is layout evidence, not live MFA acceptance.
+Targeted lint and TypeScript checks passed. No automated suites
+were run. The existing hosted release is unchanged until a new release is
+authorized.
+
 ## October 13, 2026 - Identify the sign-in code source
 
 The Owner reported that two-factor sign-in does not identify where to get the

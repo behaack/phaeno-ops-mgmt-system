@@ -29,6 +29,7 @@ import {
 } from '#/api/session'
 import { Button } from '#/components/ui/button'
 import { getInvitationReturnPath, readStoredInviteToken } from '#/features/auth/invitation-storage'
+import './sign-in.css'
 
 const SELECTED_ORGANIZATION_STORAGE_KEY = 'phaeno.selectedOrganizationId'
 const SELECTED_DEPARTMENT_STORAGE_KEY = 'phaeno.selectedDepartmentId'
