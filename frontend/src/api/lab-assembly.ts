@@ -12,7 +12,7 @@ export function assemblyAttemptFromDispatchError(error: unknown): string | null 
   return typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id) ? id : null
 }
 
-export type AssemblyRecipe = { key: string; name: string; version: string; parametersJson: string }
+export type AssemblyRecipe = { key: string; name: string; version: string; parametersJson: string; simulated: boolean }
 export type AssemblyAvailability = { available: boolean; message: string; supportsCancellation: boolean; recipes: AssemblyRecipe[] }
 export type AssemblyProgress = { percentage: number; receivedAtUtc: string; sequence: number | null }
 export type AssemblyJob = {
@@ -20,11 +20,12 @@ export type AssemblyJob = {
   state: string; requestedAtUtc: string; startedAtUtc: string | null; stoppedAtUtc: string | null; dispositionAtUtc: string | null
   durationSeconds: number | null; isTerminal: boolean; cancellationRequested: boolean; dispositionReason: string | null
   attentionReason: string | null; previousJobId: string | null; retryReason: string | null; labAnalysisRunId: string | null
-  outputsDeclared: boolean; providerKey: string; providerJobId: string | null; requestedByUserId: string; version: number; progress: AssemblyProgress | null
+  outputsDeclared: boolean; providerKey: string; providerJobId: string | null; requestedByUserId: string; version: number; progress: AssemblyProgress | null; simulated: boolean
 }
 export type AssemblyInputChoice = { libraryKey?: string; fileName?: string | null; id: string; labWorkOrderId: string; labSpecimenId: string; sampleName: string | null; sequencingRunNumber: number; labSpecimenAttemptId: string; providerRunReference: string; sampleMappingReference: string; sizeBytes: number; sha256: string }
 export type AssemblyQueue = { availability: AssemblyAvailability; canOperate: boolean; jobs: AssemblyJob[] }
 export type AssemblyDetail = {
+  simulatedOutputs: { artifactId: string; role: string; fileName: string; sizeBytes: number }[]
   delivery: { kind: string; attemptCount: number; lastAttemptAtUtc: string | null; nextAttemptAtUtc: string | null;
     receivedAtUtc: string | null; confirmedAtUtc: string | null; escalatedAtUtc: string | null; suppressed: boolean }[]
   job: AssemblyJob; availability: AssemblyAvailability; canOperate: boolean; recipe: AssemblyRecipe
@@ -47,3 +48,13 @@ export const getAssemblyInputs = (workOrderId?: string, specimenId?: string) => 
 export const startAssembly = (workId: string, body: StartAssembly) => post<AssemblyJob>(`/work-orders/${workId}/assembly-jobs`, body)
 export const cancelAssembly = (job: AssemblyJob, reason: string) => post<AssemblyJob>(`/work-orders/${job.labWorkOrderId}/assembly-jobs/${job.id}/cancel`, { version: job.version, reason })
 export const linkAssemblyAnalysis = (job: AssemblyJob, analysisRunId: string) => post<AssemblyJob>(`/work-orders/${job.labWorkOrderId}/assembly-jobs/${job.id}/analysis`, { version: job.version, analysisRunId })
+export async function downloadSimulatedAssemblyOutput(jobId: string, artifactId: string, fileName: string) {
+  const response = await api.get<Blob>(`${root}/assembly-jobs/${jobId}/simulated-outputs/${artifactId}`, { responseType: 'blob' })
+  const url = URL.createObjectURL(response.data)
+  try {
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `SIMULATED-${fileName}`
+    link.click()
+  } finally { URL.revokeObjectURL(url) }
+}

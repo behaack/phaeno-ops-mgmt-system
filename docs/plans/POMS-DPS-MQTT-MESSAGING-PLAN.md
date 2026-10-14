@@ -1,5 +1,89 @@
 # POMS–DPS MQTT messaging plan
 
+## Hosted-test release scope — October 14, 2026
+
+The Owner subsequently authorized documents, commit/push and API/UI deployment.
+The [preserving hosted-test activation plan](PORTAL-DPS-TEST-ACTIVATION-20261014-PLAN.md)
+extends the local checkpoint below to the existing hosted test environment with
+an explicit default-off simulation permission and private SSH tunnel. The recipe
+remains Simulated; scientific admission, analysis linking, QC and Customer
+release remain blocked. No database migration or storage cutover is included.
+
+## Local sample assembly activation — October 14, 2026
+
+The Owner requested API/UI activation for any sequenced sample, using
+`pseq_data_assembler` version `0.1.0`. This extends the earlier standalone
+synthetic probe to the existing authorized sample/run workflow. Eligibility
+still requires a complete current verified FASTQ set, preparation/run lineage,
+an active authorized Lab Job, and the existing hold/concurrency checks.
+
+Engineering scope: support a separately configured versioned DPS S3 handoff
+bucket while keeping the application's current Local file provider. Verify and
+copy exact managed FASTQ bytes into immutable S3 input objects; freeze their
+versions, checksum, manifest and per-attempt output destination. Reuse existing
+Start/Cancel, durable command and lifecycle receipts, recovery, transient
+progress, and view-first attempt UI. No new dependency or database columns are
+required. Defaults remain off/unconfigured and hosted activation is excluded.
+
+The current remote recipe is a mock. Mark its approved local recipe and saved
+attempts as **Simulated**. Verify and retain its diagnostic output manifest and
+files, but prohibit automatic scientific analysis admission, manual analysis
+linking, QC and Customer release from those attempts. Its mock provenance is
+validated separately from the scientific output contract, without inventing
+missing reference evidence. Simulation is allowed only in Development/local.
+Real recipes continue to require the full scientific output contract.
+
+Acceptance: local API reports the matching available recipe; the existing
+sample/run Start control is enabled for eligible verified inputs; the attempt
+shows an explicit simulation notice, actual remote lifecycle/progress and
+verified diagnostic output downloads; refreshed/reopened pages retain the saved
+attempt; simulated attempts never produce a completed scientific analysis.
+Build, type/lint and manual connected checks are in scope. Automated suites
+remain deferred unless requested.
+
+Checkpoint: implementation is enabled locally. The signed-in workspace shows
+Processing connected with the exact recipe/version and Simulated marker. Backend
+compilation, types/lint, generated help and the configured S3 SDK round trip pass.
+The actual mock manifest passes diagnostic validation and fails scientific
+validation. There are no local sequencing outputs/FASTQ sets, so sample Start,
+cancellation and downstream download acceptance have not been executed. See the
+[activation record](../testing/runs/2026-10-14-local-sample-dps-api-ui.md). No
+scientific records or hosted changes were created.
+
+## Local API connection enabled — October 14, 2026
+
+The Owner requested API activation, initially selected the hosted test API, then
+changed the target to the local API. Hosted inspection was read-only; no hosted
+runtime, deployment, database, file storage or release hold changed.
+
+The local Development override now enables DPS at `127.0.0.1:11883` in the local
+contract environment, with the advertised `pseq_data_assembler` / `0.1.0`
+recipe and the assembly worker enabled. An SSH tunnel carries this loopback
+connection to the EC2 broker's port 1883. The existing file provider remains
+Local, so the normal S3 requirement still blocks assembly starts. No simulation,
+fake lifecycle events or bypass of scientific/file gates was added to the API.
+
+The API project builds with zero warnings/errors. Local API health and anonymous
+assembly-route rejection pass. Passive observation confirms an API-issued
+Describe request and its correlated DPS capabilities reply; the observer itself
+published no commands. The configured local database had zero assembly jobs
+before activation. See the [run record](../testing/runs/2026-10-14-local-api-dps-connection.md)
+and [startup guide](../operations/dps-integration-configuration.md).
+
+The [October 14 standalone synthetic S3 run](../testing/runs/2026-10-14-synthetic-fastq-s3-dps.md)
+passed exact-version input/output checks and Accepted → Running → Succeeded,
+followed by an authoritative Query and a simulated receiver committed ACK.
+This used fresh synthetic IDs and no Portal database writes. The server's
+current recipe and outputs are mocks; its output provenance does not yet contain
+the current contract's reference-data declarations. Portal Start/Cancel execution, lifecycle recovery across restarts,
+scientific output admission, authenticated browser acceptance and hosted
+activation remain separate unverified steps. Automated test suites were not run.
+
+The earlier unavailable-provider statements and "Current implementation boundary"
+section below describe the September/October 1 foundation and conflict with the
+current registration in `Program.cs`. Current code registers `DpsAssemblyProvider`;
+the October 10 implementation and this local checkpoint are the current boundary.
+
 ## POMS implementation authorized — October 10, 2026
 
 Status: implementation written; full Release solution compilation passes during

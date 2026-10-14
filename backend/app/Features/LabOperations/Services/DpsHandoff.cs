@@ -9,7 +9,8 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 using PhaenoPortal.App.Infrastructure.Storage;
 using PSeq.Operations.Laboratory.Domain;
 
-public sealed class DpsHandoff(PSeqOperationsDbContext db, DpsS3Objects objects, IOptions<DpsOptions> options, TimeProvider time)
+public sealed class DpsHandoff(PSeqOperationsDbContext db, DpsS3Objects objects, IOptions<DpsOptions> options, TimeProvider time,
+    IOperationalFileStorage storage, DpsStorage destinationStorage, IWebHostEnvironment environment)
 {
     public async Task<AssemblyInputVerification> VerifyInputsAsync(IReadOnlyList<AssemblyInput> inputs, CancellationToken ct)
     {
@@ -27,7 +28,11 @@ public sealed class DpsHandoff(PSeqOperationsDbContext db, DpsS3Objects objects,
                 || !Guid.TryParseExact(input.ExternalFileReference[LabScientificFiles.Prefix.Length..], "D", out var id)) throw DpsContract.Invalid();
             var file = await db.LabScientificFiles.AsNoTracking().SingleAsync(f => f.Id == id && f.LabWorkOrderId == output.LabWorkOrderId && f.LabSpecimenId == output.LabSpecimenId, ct);
             if (file.SizeBytes != input.SizeBytes || !file.Sha256.Equals(input.Sha256, StringComparison.OrdinalIgnoreCase)) throw DpsContract.Invalid();
-            var address = await objects.ResolveAsync(file.StorageKey, file.Sha256, file.SizeBytes, ct);
+            await using var content = await LabScientificFiles.OpenVerifiedAsync(storage, file.StorageKey, file.Sha256, file.SizeBytes, ct, file.SizeBytes);
+            var prefix = FileStorageKeys.NormalizePrefix(destinationStorage.Settings.KeyPrefix);
+            var inputKey = (prefix.Length == 0 ? "" : prefix + "/") + $"input-cache/{file.Id:N}/{file.Sha256.ToLowerInvariant()}/input"
+                + (file.FileName.EndsWith(".gz", StringComparison.OrdinalIgnoreCase) ? ".fastq.gz" : ".fastq");
+            var address = await objects.WriteInputAsync(inputKey, content, file.Sha256, file.SizeBytes, ct);
             files.Add(new(input.SequencingOutputId, address.Bucket, address.Key, address.VersionId, input.Sha256, input.SizeBytes, ManagedFileId: file.Id));
         }
         return new(DpsS3Objects.Hash(JsonSerializer.SerializeToUtf8Bytes(files, DpsContract.Json)), time.GetUtcNow().UtcDateTime, files);
@@ -96,6 +101,54 @@ public sealed class DpsHandoff(PSeqOperationsDbContext db, DpsS3Objects objects,
         if (manifest.ProviderJobId != evidence.ProviderJobId || manifest.StartedAtUtc != evidence.StartedAtUtc
             || manifest.StoppedAtUtc != evidence.StoppedAtUtc) throw DpsContract.Invalid();
         return manifest;
+    }
+    public async Task<string> ReadSimulatedOutputAsync(LabAssemblyJob job, DpsObject locator, DpsEvent evidence, CancellationToken ct)
+    {
+        RequireSimulation(job);
+        var frozen = JsonSerializer.Deserialize<AssemblyFrozenInputs>(job.InputsJson, LabAssemblyService.Json) ?? throw DpsContract.Invalid();
+        var submission = frozen.Dps ?? throw DpsContract.Invalid();
+        var destination = frozen.OutputStorage ?? throw DpsContract.Invalid();
+        objects.RequireAddress(locator, destination.Prefix);
+        if (locator.Key != destination.Prefix + "output-manifest.json") throw DpsContract.Invalid();
+        var bytes = await objects.ReadAsync(locator, DpsContract.MaximumManifestBytes, ct);
+        using var document = JsonDocument.Parse(bytes, new JsonDocumentOptions { MaxDepth = 48 });
+        DpsContract.ValidateSimulatedOutput(document.RootElement);
+        var manifest = DpsContract.Read<DpsOutputManifest>(document.RootElement);
+        RequireOutput(job, manifest, submission);
+        if (manifest.ProviderJobId != evidence.ProviderJobId || manifest.StartedAtUtc != evidence.StartedAtUtc
+            || manifest.StoppedAtUtc != evidence.StoppedAtUtc) throw DpsContract.Invalid();
+        long total = 0;
+        foreach (var artifact in manifest.Outputs) {
+            if (artifact.S3.SizeBytes > options.Value.MaximumOutputFileBytes
+                || total > options.Value.MaximumOutputSetBytes - artifact.S3.SizeBytes
+                || artifact.FileName.Length > 255 || artifact.FileName.Any(c => char.IsControl(c) || c is '/' or '\\')) throw DpsContract.Invalid();
+            total += artifact.S3.SizeBytes;
+            objects.RequireAddress(artifact.S3, submission.Instructions.OutputDestination.Prefix);
+            await objects.VerifyAsync(artifact.S3, ct);
+        }
+        // Preserve the actual mock document, including absent scientific provenance, without filling it in.
+        return document.RootElement.GetRawText();
+    }
+    public IReadOnlyList<DpsArtifact> SimulatedArtifacts(LabAssemblyJob job)
+    {
+        if (!LabAssemblyService.IsSimulated(job) || job.State != "Succeeded" || job.AttentionReason is not null || job.OutputManifestJson is null) return [];
+        RequireSimulation(job);
+        using var parsed = JsonDocument.Parse(job.OutputManifestJson);
+        DpsContract.ValidateSimulatedOutput(parsed.RootElement);
+        return DpsContract.Read<DpsOutputManifest>(parsed.RootElement).Outputs;
+    }
+    public async Task<byte[]> ReadSimulatedArtifactAsync(LabAssemblyJob job, Guid artifactId, CancellationToken ct)
+    {
+        var artifact = SimulatedArtifacts(job).SingleOrDefault(a => a.ArtifactId == artifactId)
+            ?? throw LabAssemblyService.Error("Simulated output not found for this attempt.", 404);
+        var frozen = JsonSerializer.Deserialize<AssemblyFrozenInputs>(job.InputsJson, LabAssemblyService.Json)!;
+        objects.RequireAddress(artifact.S3, frozen.Dps!.Instructions.OutputDestination.Prefix);
+        // Diagnostic downloads are bounded independently of the scientific output admission path.
+        return await objects.ReadAsync(artifact.S3, (int)Math.Min(options.Value.MaximumOutputFileBytes, 16 * 1024 * 1024), ct);
+    }
+    private void RequireSimulation(LabAssemblyJob job)
+    {
+        if (!options.Value.SimulationAllowed(environment) || !LabAssemblyService.IsSimulated(job)) throw DpsContract.Invalid();
     }
     internal static void RequireOutput(LabAssemblyJob job, DpsOutputManifest manifest, DpsSubmission submission)
     {

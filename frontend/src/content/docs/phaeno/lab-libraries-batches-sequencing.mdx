@@ -34,9 +34,22 @@ Where the legacy manual-upload workflow is still enabled, authorized platform ad
 
 Open **Lab operations > Data assembly** for PSeq Service work. **Sequencing inputs** lists verified FASTQ input sets by specimen and run; start assembly from the relevant input set. **Sequencing assembly** tracks requested attempts, progress and outcomes. Select a specimen/run there to open its attempt. Partner Assembly cases are a separate concern, available from **Order ops > PARTNER SERVICES > Data assembly**; open the case and select **Open Lab work** for its manufacturing workflow.
 
-The processing connection is not yet configured. POMS displays **Assembly setup required**, and **Start assembly** remains unavailable until the external service is connected. This notice does not mean a job failed.
+When the processing connection is unavailable or unconfigured, POMS displays **Assembly setup required**, and **Start assembly** remains unavailable. This notice does not mean a job failed. Complete verified FASTQ sets remain required even when the connection is available.
 
 For a connected service, Start assembly selects the registered inputs for one sample/run and a configured processing recipe. The server verifies the inputs before accepting the request. Processing continues after the browser closes. Percentage progress is live display information; individual updates are not retained. After a connection interruption, the percentage may be unavailable until a fresh update arrives.
+
+When one processing recipe is available, it is selected automatically. Choosing
+a sample/run selects its listed input files; keep the complete verified FASTQ
+set selected. For files stored locally, the API verifies and copies their exact
+bytes into the configured S3 processing handoff. The original files remain in
+POMS custody, and the attempt retains the exact S3 versions and checksums.
+
+A recipe labelled **Simulated** runs the remote mock pipeline using the selected
+sample's files. The attempt remains visibly **Simulated** and shows
+**Simulation completed** after a confirmed successful outcome. Its verified
+placeholder outputs can be downloaded for inspection with `SIMULATED-` in their
+names. These attempts cannot link a scientific analysis, enter QC, or release
+results to a Customer. Use a validated scientific recipe for actual results.
 
 Start assembly saves the attempt before dispatch and waits for DPS to accept
 the command. Broker delivery alone does not establish acceptance or execution.
@@ -304,15 +317,17 @@ results under its retention rules. Internal evidence remains preserved.
 ## Respect the implementation boundary
 
 POMS owns verified uploaded FASTQ custody, result/file-set bindings, processing
-attempts and QC evidence. A real DPS connection with exact local-input access and
-verified output registration is still needed for automatic assembly execution.
-POMS does not simulate scientific processing or manufacture provider completion.
-Scientific approval and explicit Customer publication remain separate.
+attempts and QC evidence. Configured test DPS can execute labelled simulations;
+POMS records the remote server's actual lifecycle and verifies its diagnostic
+outputs. A validated scientific recipe and complete scientific output provenance
+are still required for actual results. Scientific approval and explicit Customer
+publication remain separate.
 
-Until the processing service is connected, the assembly workspace reports that
-assembly is unavailable and cannot start an actual job. Complete verified uploads
-and vendor results can still be saved. A successful application test is separate
-from an actual assembly, scientific approval or Customer publication.
+The current DPS contract requires a commercial Lab Job and one complete current
+FASTQ set for a specimen/purchased sequencing run. Trial processing requires a
+separate contract extension. Holds, cancelled work, incomplete inputs and
+unconfirmed earlier attempts retain their existing restrictions. A successful
+simulation is separate from scientific assembly, approval or Customer publication.
 
 ## Record library quality evidence
 

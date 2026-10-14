@@ -1,5 +1,17 @@
 # Backend Test Plan
 
+## Local DPS sample activation — October 14, 2026
+
+`DpsContractTests` now covers diagnostic mock provenance remaining invalid for
+scientific admission and mandatory immutable output versions in simulation.
+Sources compile; automated execution remains deferred at the Owner's request.
+Manual runtime checks cover API health/anonymous rejection and an exact-version
+S3 SDK write/read, binary FASTQ stream staging and stable repeated-verification
+version using the configured handoff. Full sample Start/Cancel,
+commit-before-ACK, changed local input/cache, restart recovery and simulation
+analysis-link rejection remain connected acceptance cases. The local database
+has no sequencing outputs/FASTQ sets to run through those cases.
+
 ## Remaining-deficiency execution — October 12, 2026
 
 The Owner requested the affected regression batch. Kit staff attention sources

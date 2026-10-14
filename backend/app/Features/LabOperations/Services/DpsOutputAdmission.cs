@@ -18,6 +18,7 @@ public sealed class DpsOutputAdmission(PSeqOperationsDbContext db, DpsS3Objects 
     {
         await using var tx = await SampleShippingPackingData.BeginAsync(db, "assembly-job:" + id, ct);
         var job = await service.RequireJobAsync(id, ct); await db.Entry(job).ReloadAsync(ct);
+        if (LabAssemblyService.IsSimulated(job)) return;
         if (job.State != "Succeeded" || job.ProviderKey != DpsContract.Provider || job.AttentionReason == LabAssemblyDelivery.ConflictAttention) return;
         if (job.LabAnalysisRunId.HasValue) return;
         var frozen = JsonSerializer.Deserialize<AssemblyFrozenInputs>(job.InputsJson, LabAssemblyService.Json) ?? throw DpsContract.Invalid();

@@ -56,7 +56,7 @@ public sealed partial class LabOperationsController
     }
 
     [HttpGet("assembly-jobs/{jobId:guid}")]
-    public async Task<object> AssemblyJob(Guid jobId, [FromServices] LabAssemblyService service, CancellationToken ct)
+    public async Task<object> AssemblyJob(Guid jobId, [FromServices] LabAssemblyService service, [FromServices] DpsHandoff handoff, CancellationToken ct)
     {
         var actor = await requestContext.RequireAsync(HttpContext, ct, LabRole.Operator, LabRole.Supervisor, LabRole.ScientificReviewer, LabRole.OperationsAdministrator);
         var job = await service.RequireJobAsync(jobId, ct);
@@ -69,9 +69,23 @@ public sealed partial class LabOperationsController
             && a.LabSpecimenId == job.LabSpecimenId && a.ProviderKey == job.ProviderKey && a.RunReference == job.ProviderJobId)
             .Select(a => new { a.Id, a.RunReference, a.RecordedAtUtc }).ToListAsync(ct);
         return new { job = await service.ReadAsync(jobId, ct), events, analyses, delivery,
+            simulatedOutputs = handoff.SimulatedArtifacts(job).Select(a => new { a.ArtifactId, a.Role, a.FileName, a.S3.SizeBytes }),
             inputs = JsonSerializer.Deserialize<AssemblyFrozenInputs>(job.InputsJson, LabAssemblyService.Json)!.Inputs,
             recipe = JsonSerializer.Deserialize<AssemblyRecipe>(job.RecipeJson, LabAssemblyService.Json),
             availability = service.Availability, canOperate = actor.HasAny(LabRole.Operator, LabRole.Supervisor) };
+    }
+
+    [HttpGet("assembly-jobs/{jobId:guid}/simulated-outputs/{artifactId:guid}")]
+    public async Task<IActionResult> SimulatedAssemblyOutput(Guid jobId, Guid artifactId,
+        [FromServices] LabAssemblyService service, [FromServices] DpsHandoff handoff, CancellationToken ct)
+    {
+        await requestContext.RequireAsync(HttpContext, ct, LabRole.Operator, LabRole.Supervisor, LabRole.ScientificReviewer, LabRole.OperationsAdministrator);
+        var job = await service.RequireJobAsync(jobId, ct);
+        var artifact = handoff.SimulatedArtifacts(job).SingleOrDefault(a => a.ArtifactId == artifactId)
+            ?? throw LabAssemblyService.Error("Simulated output not found for this attempt.", 404);
+        var bytes = await handoff.ReadSimulatedArtifactAsync(job, artifactId, ct);
+        Response.Headers.CacheControl = "no-store";
+        return File(bytes, "application/octet-stream", "SIMULATED-" + artifact.FileName);
     }
 
     [HttpPost("work-orders/{workOrderId:guid}/assembly-jobs")]

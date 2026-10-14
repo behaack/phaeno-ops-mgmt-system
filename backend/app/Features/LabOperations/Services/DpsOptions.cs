@@ -1,6 +1,7 @@
 namespace PhaenoPortal.App.Features.LabOperations.Services;
 
 using System.Net;
+using PhaenoPortal.App.Infrastructure.Storage;
 
 public sealed class DpsApprovedRecipe
 {
@@ -9,11 +10,13 @@ public sealed class DpsApprovedRecipe
     public string Version { get; set; } = "";
     public string ParametersJson { get; set; } = "{}";
     public string[] RequiredOutputRoles { get; set; } = [];
+    public bool Simulated { get; set; }
 }
 public sealed class DpsOptions
 {
     public const string SectionName = "Dps";
     public bool Enabled { get; set; }
+    public bool AllowHostedTestSimulation { get; set; }
     public string Environment { get; set; } = "local";
     public string Host { get; set; } = "";
     public int Port { get; set; } = 8883;
@@ -28,7 +31,10 @@ public sealed class DpsOptions
     public long MaximumOutputFileBytes { get; set; } = 1_073_741_824;
     public long MaximumOutputSetBytes { get; set; } = 17_179_869_184;
     public List<DpsApprovedRecipe> Recipes { get; set; } = [];
+    public S3FileStorageOptions S3 { get; set; } = new();
     public string TopicRoot => $"phaeno/dps/v1/{Environment}";
+    public bool SimulationAllowed(IWebHostEnvironment host) => Environment == "local"
+        && (host.IsDevelopment() || AllowHostedTestSimulation);
     public bool IsConfigured()
     {
         var loopback = Host.Equals("localhost", StringComparison.OrdinalIgnoreCase)

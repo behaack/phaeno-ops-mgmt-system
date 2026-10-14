@@ -67,6 +67,17 @@ public static class DpsContract
         RejectDuplicateProperties(value);
         if (!Matches(Schema.RootElement.GetProperty("$defs").GetProperty(definition), value, Schema.RootElement, 0)) throw Invalid();
     }
+    /// <summary>Diagnostic mock provenance is never admitted as scientific evidence.</summary>
+    public static void ValidateSimulatedOutput(JsonElement value)
+    {
+        RejectDuplicateProperties(value);
+        var diagnostic = JsonNode.Parse(Schema.RootElement.GetProperty("$defs").GetProperty("output_manifest").GetRawText())!;
+        var provenance = diagnostic["properties"]!["provenance"]!.AsObject();
+        provenance["required"] = new JsonArray("engine", "engine_version", "tools", "container_images");
+        provenance.Remove("oneOf");
+        var definition = JsonSerializer.SerializeToElement(diagnostic);
+        if (!Matches(definition, value, Schema.RootElement, 0)) throw Invalid();
+    }
     public static bool ParametersMatch(JsonElement schema, JsonElement parameters)
     {
         RejectDuplicateProperties(schema); RejectDuplicateProperties(parameters);

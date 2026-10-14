@@ -88,7 +88,7 @@ public sealed class LabAssemblyProcessor(PSeqOperationsDbContext db, LabAssembly
         {
             var job = await service.RequireJobAsync(id, token);
             if (job.State == "Succeeded" && job.ProviderKey == DpsContract.Provider && !job.LabAnalysisRunId.HasValue
-                && job.AttentionReason != LabAssemblyDelivery.ConflictAttention) {
+                && !LabAssemblyService.IsSimulated(job) && job.AttentionReason != LabAssemblyDelivery.ConflictAttention) {
                 if (outputAdmission is null) throw DpsContract.Invalid();
                 await outputAdmission.AdmitAsync(id, token); return;
             }
@@ -186,7 +186,8 @@ public sealed class LabAssemblyProcessor(PSeqOperationsDbContext db, LabAssembly
         }
         var changed = job.Observe(snapshot.ProviderJobId, snapshot.State, snapshot.StartedAtUtc, snapshot.StoppedAtUtc,
             snapshot.DispositionAtUtc, snapshot.Reason, snapshot.OutputManifestJson, snapshot.NeverStarted, time.GetUtcNow().UtcDateTime);
-        if (job.State == "Succeeded" && job.ProviderKey == DpsContract.Provider && !job.LabAnalysisRunId.HasValue && job.AttentionReason is null)
+        if (job.State == "Succeeded" && job.ProviderKey == DpsContract.Provider && !job.LabAnalysisRunId.HasValue
+            && !LabAssemblyService.IsSimulated(job) && job.AttentionReason is null)
             changed |= job.SetAttention(DpsOutputAdmission.Pending);
         await delivery.ConfirmAsync(job, ct);
         if (await delivery.RefreshAttentionAsync(job, ct)) changed = true;

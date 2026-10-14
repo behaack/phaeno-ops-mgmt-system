@@ -166,6 +166,7 @@ builder.Services.AddOptions<DpsOptions>().Bind(builder.Configuration.GetSection(
 builder.Services.AddSingleton<DpsMqttClient>();
 builder.Services.AddHostedService(services => services.GetRequiredService<DpsMqttClient>());
 builder.Services.AddSingleton<ILabAssemblyProvider, DpsAssemblyProvider>();
+builder.Services.AddSingleton<DpsStorage>();
 builder.Services.AddScoped<DpsS3Objects>();
 builder.Services.AddScoped<DpsHandoff>();
 builder.Services.AddScoped<DpsEventReceiver>();

@@ -1,6 +1,35 @@
 # DPS integration configuration
 
-Implementation status, October 10, 2026: POMS source and regression sources compile
+The Owner authorized API/UI deployment and hosted-test simulation activation on
+October 14, 2026. Follow the [preserving hosted release plan](../plans/PORTAL-DPS-TEST-ACTIVATION-20261014-PLAN.md)
+for the exact target, private container-loopback SSH connection, protected host
+identity, explicit simulation setting and rollback. The historical local-only
+checkpoints below retain their original scope; release evidence is recorded
+separately. Automatic deployment holds remain in place.
+
+Local connection checkpoint, October 14, 2026: the Owner selected the local API
+after an initial hosted-target discussion. The local API now connects through SSH
+to the EC2 broker at `127.0.0.1:11883`. Its own POMS-DPS 1.0 Describe request and
+correlated capabilities reply were observed. The hosted API was inspected only
+and was not changed. See the [local run record](../testing/runs/2026-10-14-local-api-dps-connection.md).
+
+The current configured and advertised recipe is `pseq_data_assembler` version
+`0.1.0`. The remote implementation runs a mock pipeline. The local file provider
+remains Local; a separate `Dps:S3` handoff is now configured in the existing
+versioned local-test bucket. Eligible registered FASTQ sets can start through the
+normal API/UI workflow, with the recipe and immutable attempts labelled
+Simulated. Diagnostic outputs are verified and downloadable, while scientific
+analysis admission/linking and QC remain blocked for those attempts.
+See the [API/UI activation record](../testing/runs/2026-10-14-local-sample-dps-api-ui.md)
+for the connected workspace, S3 SDK evidence and remaining sample acceptance.
+
+The [standalone simulated FASTQ run](../testing/runs/2026-10-14-synthetic-fastq-s3-dps.md)
+subsequently verified versioned S3 input/output transfer and a correlated
+Accepted → Running → Succeeded exchange for this recipe. Its receiver journal
+and committed ACKs simulate POMS persistence; the Portal API did not dispatch or
+admit that synthetic job.
+
+Historical implementation status, October 10, 2026: POMS source and regression sources compile
 in the full Release solution with zero warnings/errors during release preparation.
 Tests and connected validation remain deferred at the Owner's request. No connection,
 command, S3 handoff or output-admission operation has been exercised. This guide
@@ -9,6 +38,41 @@ describes the implemented configuration, not evidence of a working deployment.
 The API uses MQTTnet 5.2.0.1603 and the embedded POMS–DPS 1.0 JSON schema. The
 browser uses the existing authenticated API and scoped SignalR notifications.
 No Clerk authentication or authorization rule is changed.
+
+## Local development startup
+
+The ignored `backend/app/appsettings.Development.json` holds this computer's
+enabled DPS settings: local environment, host `127.0.0.1`, port `11883`, TLS off
+on the loopback connection, the declared test recipe, and the assembly worker
+enabled. The remote part of the connection is encrypted by SSH. Shared defaults
+remain disabled/unconfigured. `Dps:S3` supplies the separate handoff bucket,
+region, prefix and protected server-side credential profile. Application files
+remain in Local storage. The S3 guard now applies to that explicit processing
+destination rather than requiring an application-wide storage cutover.
+
+Build the API, then use [the local launcher](../../backend/tools/Start-LocalDpsApi.ps1)
+with the current EC2 hostname, private-key path and trusted-host file. From the
+repository root:
+
+```powershell
+dotnet build backend/app/PSeq.Operations.Api.csproj --no-restore
+./backend/tools/Start-LocalDpsApi.ps1 `
+  -SshHost '<current EC2 hostname>' `
+  -IdentityFile '<private-key file path>' `
+  -KnownHostsFile '<trusted SSH host-key file path>'
+```
+
+The launcher uses the frontend's existing `https://localhost:44399` API target
+and `http://localhost:48056`, opens a loopback-only SSH forward from local port
+11883 to the EC2 broker's port 1883, and removes its account-restricted temporary key copy when the API
+stops. It rejects an occupied tunnel port and never changes the original key's
+permissions. The EC2 hostname can change when the instance is restarted. Do not
+start a second API instance on these ports while the launcher is running.
+
+The EC2 Mosquitto process currently listens on both 1883 and 11883. DPS uses
+`127.0.0.1:11883` on EC2; the local API uses `127.0.0.1:11883` on this computer.
+The supplied `-L 11883:localhost:1883` convention forwards local 11883 to remote
+1883. Both remote ports reach the same broker.
 
 ## Required configuration
 
@@ -33,6 +97,9 @@ automatic deployment holds remain in place.
 | `Dps:MaximumOutputFileBytes` | Output-admission file bound; default 1 GiB; actual scanning/storage limits also apply |
 | `Dps:MaximumOutputSetBytes` | Output set bound; default 16 GiB |
 | `Dps:Recipes` | Approved key, name, exact version, JSON parameters and required output roles |
+| `Dps:Recipes:Simulated` | Explicit mock recipe marker; accepted in Development or explicitly enabled hosted test, with contract environment local. Saved on each attempt and never authorizes scientific output admission or manual analysis linking. |
+| `Dps:AllowHostedTestSimulation` | False by default. Explicit hosted-test permission for a Simulated recipe under the Production runtime, restricted to contract environment local. Scientific admission, analysis linking and QC remain blocked. |
+| `Dps:S3` | Optional dedicated versioned handoff bucket, region, key prefix and credential profile/file. When omitted, an already configured application S3 store is used. Local application storage alone does not supply a DPS destination. |
 | `LabAssembly:MaximumConcurrentJobs` | Shared dispatch capacity, 1–32; default 4 |
 
 Non-loopback brokers require a configured client certificate or credentials.
@@ -52,8 +119,10 @@ External references, unsupported vocabularies and invalid schemas fail closed.
 Recipe UTC date-time and UUID formats are enforced. Keep parameter schemas
 compatible with this vocabulary; POMS will not guess defaults or a new version.
 
-The initial adapter requires a commercial Lab Job and one complete sealed FASTQ
-set per specimen/purchased run, stored in versioned S3. Trial scope needs a
+The adapter requires a commercial Lab Job and one complete sealed FASTQ
+set per specimen/purchased run. Managed files are verified and copied into
+immutable S3 input-cache objects before the manifest is frozen. Original custody
+and scientific receipts remain unchanged. Trial scope needs a
 contract extension. At most 63 required output documents plus one parameters
 document fit the existing scientific-evidence record; software/tool declarations
 must fit its 64-entry limit. Scientific filenames retain the existing 255-character

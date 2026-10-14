@@ -27,8 +27,11 @@ public sealed class DpsEventReceiver(PSeqOperationsDbContext db, LabAssemblyRece
         }
         string? output = null;
         if (evidence.OutputManifest is { } locator) {
-            var manifest = await handoff.ReadOutputAsync(job, locator, evidence, ct);
-            output = JsonSerializer.Serialize(manifest, DpsContract.Json);
+            if (LabAssemblyService.IsSimulated(job)) output = await handoff.ReadSimulatedOutputAsync(job, locator, evidence, ct);
+            else {
+                var manifest = await handoff.ReadOutputAsync(job, locator, evidence, ct);
+                output = JsonSerializer.Serialize(manifest, DpsContract.Json);
+            }
         }
         var snapshot = new AssemblyProviderSnapshot(evidence.ProviderJobId, evidence.EventType, evidence.StartedAtUtc,
             evidence.StoppedAtUtc, evidence.DispositionAtUtc, evidence.Reason, output, evidence.NeverStarted);

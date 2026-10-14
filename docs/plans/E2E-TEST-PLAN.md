@@ -1,5 +1,16 @@
 # Playwright E2E Test Plan
 
+## Local DPS sample activation — October 14, 2026
+
+Automated browser execution remains deferred. Manual signed-in local inspection
+reaches Data assembly; the local database has no sequencing outputs or sealed
+FASTQ sets, so no sample execution is manufactured. Connected acceptance still
+needs one eligible current sample/run: Start with `pseq_data_assembler` 0.1.0,
+confirmed acceptance/actual times, fresh progress, reopen/reconnect, simulated
+completion/downloads, and absence of scientific analysis/QC/release. Cover
+light/dark/narrow layouts, keyboard/focus, the shared Field spacing and contextual
+Actions rule for the touched Start/detail controls at that checkpoint.
+
 ## Remaining-deficiency execution — October 12, 2026
 
 Requested checkpoint after the shared Dialog focus repair: 39 cases pass, none

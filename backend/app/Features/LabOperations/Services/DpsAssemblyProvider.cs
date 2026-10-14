@@ -13,7 +13,7 @@ public interface ILabAssemblySubmissionProvider
     Task<DpsSubmission> PrepareAsync(LabAssemblyJob job, AssemblyRecipe recipe, CancellationToken ct);
 }
 public sealed class DpsAssemblyProvider(DpsMqttClient transport, IServiceScopeFactory scopes, IOptions<DpsOptions> options,
-    IOptions<FileStorageOptions> storage, TimeProvider time) : ILabAssemblyProvider, ILabAssemblySubmissionProvider
+    DpsStorage storage, TimeProvider time, IWebHostEnvironment environment) : ILabAssemblyProvider, ILabAssemblySubmissionProvider
 {
     public string Key => DpsContract.Provider;
     public bool SupportsIdempotentStart => transport.Capabilities is { } data && data.GetProperty("supports_idempotent_start").GetBoolean()
@@ -21,7 +21,7 @@ public sealed class DpsAssemblyProvider(DpsMqttClient transport, IServiceScopeFa
     public AssemblyProviderAvailability Availability {
         get {
             if (!options.Value.Enabled) return new(false, "DPS integration is disabled. Operations must configure the processing connection.", false, []);
-            if (!options.Value.IsConfigured() || !storage.Value.Provider.Equals(FileStorageProviders.S3, StringComparison.OrdinalIgnoreCase))
+            if (!options.Value.IsConfigured() || !storage.Available)
                 return new(false, "Configure the DPS broker, environment, approved recipes and versioned S3 storage before assembly.", false, []);
             if (transport.Capabilities is not { } data || !data.GetProperty("available").GetBoolean()
                 || data.GetProperty("service_key").GetString() != "dps" || !SupportsIdempotentStart)
@@ -29,6 +29,7 @@ public sealed class DpsAssemblyProvider(DpsMqttClient transport, IServiceScopeFa
             try {
                 var recipes = new List<AssemblyRecipe>();
                 foreach (var approved in options.Value.Recipes) {
+                    if (approved.Simulated && !options.Value.SimulationAllowed(environment)) continue;
                     if (string.IsNullOrWhiteSpace(approved.Key) || string.IsNullOrWhiteSpace(approved.Version)
                         || approved.RequiredOutputRoles.Length is < 1 or > 63) continue;
                     var matches = data.GetProperty("recipes").EnumerateArray().Where(r => r.GetProperty("key").GetString() == approved.Key
@@ -40,7 +41,7 @@ public sealed class DpsAssemblyProvider(DpsMqttClient transport, IServiceScopeFa
                     if (!roles.Order(StringComparer.Ordinal).SequenceEqual(approved.RequiredOutputRoles.Order(StringComparer.Ordinal))
                         || !DpsContract.ParametersMatch(declared.GetProperty("parameters_schema"), parameters.RootElement)) continue;
                     recipes.Add(new(approved.Key, string.IsNullOrWhiteSpace(approved.Name) ? declared.GetProperty("name").GetString()! : approved.Name,
-                        approved.Version, approved.ParametersJson, roles));
+                        approved.Version, approved.ParametersJson, roles, approved.Simulated));
                 }
                 if (recipes.Select(r => r.Key).Distinct().Count() != recipes.Count || recipes.Count == 0)
                     return new(false, "DPS has no compatible approved processing recipe. Review the configured recipe version, parameters and outputs.", false, []);

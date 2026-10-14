@@ -1,5 +1,15 @@
 # Frontend Test Plan
 
+## Local DPS sample activation — October 14, 2026
+
+The assembly progress component has a regression source distinguishing
+**Simulation completed** from scientific success. Automated execution is
+deferred. Types/touched-source lint and signed-in local workspace inspection
+are the current checkpoint. Remaining coverage: recipe preselection, complete
+input-set selection, simulation notice in Start/detail, no scientific link/QC
+actions for simulated attempts, bounded diagnostic downloads/error recovery,
+and retained sample/run lineage after refresh.
+
 ## Remaining-deficiency execution — October 12, 2026
 
 The Owner requested regression execution. Full suite passes with two workers:

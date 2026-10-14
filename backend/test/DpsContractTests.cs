@@ -76,5 +76,34 @@ public sealed class DpsContractTests
     {
         var options = new DpsOptions(); Assert.False(options.Enabled); Assert.False(options.IsConfigured());
         Assert.Empty(options.Recipes); Assert.Empty(options.Host);
+        Assert.False(options.AllowHostedTestSimulation);
+    }
+    [Fact]
+    public void Mock_provenance_is_diagnostic_only_and_never_passes_scientific_validation()
+    {
+        var body = MockOutput();
+        DpsContract.ValidateSimulatedOutput(JsonSerializer.SerializeToElement(body));
+        Assert.Throws<OrderManagementException>(() => DpsContract.Validate("output_manifest", JsonSerializer.SerializeToElement(body)));
+        Assert.False(body["provenance"]!.AsObject().ContainsKey("reference_data"));
+    }
+    [Fact]
+    public void Diagnostic_output_still_requires_immutable_object_versions()
+    {
+        var body = MockOutput();
+        body["outputs"]![0]!["s3"]!["version_id"] = "null";
+        Assert.Throws<OrderManagementException>(() => DpsContract.ValidateSimulatedOutput(JsonSerializer.SerializeToElement(body)));
+    }
+    private static JsonObject MockOutput()
+    {
+        var scope = new DpsScope(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 1, Guid.NewGuid(), 1, 1);
+        var recipe = new DpsRecipe("pseq_data_assembler", "0.1.0", JsonSerializer.SerializeToElement(new { }), new[] { "assembly_output" });
+        var at = new DateTime(2026, 10, 14, 18, 0, 0, DateTimeKind.Utc);
+        var output = new DpsOutputManifest(DpsContract.Version, "local", "output_manifest", Guid.NewGuid(), "dps-test", scope,
+            recipe, new string('a', 64), at, at.AddMinutes(1), at.AddMinutes(1),
+            new("mock", "0.1.0", [], [], [], null), [new(Guid.NewGuid(), "assembly_output", "FASTA", "placeholder.fasta", Object())]);
+        var body = JsonSerializer.SerializeToNode(output, DpsContract.Json)!.AsObject();
+        body["provenance"]!.AsObject().Remove("reference_data");
+        body["provenance"]!.AsObject().Remove("reference_data_not_applicable");
+        return body;
     }
 }

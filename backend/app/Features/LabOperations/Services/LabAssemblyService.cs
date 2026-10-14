@@ -22,11 +22,11 @@ public sealed record AssemblyJobDto(Guid Id, Guid LabWorkOrderId, Guid LabSpecim
     string State, DateTime RequestedAtUtc, DateTime? StartedAtUtc, DateTime? StoppedAtUtc, DateTime? DispositionAtUtc,
     double? DurationSeconds, bool IsTerminal, bool CancellationRequested, string? DispositionReason, string? AttentionReason,
     Guid? PreviousJobId, string? RetryReason, Guid? LabAnalysisRunId, bool OutputsDeclared, string ProviderKey,
-    string? ProviderJobId, Guid RequestedByUserId, long Version, AssemblyProgress? Progress);
+    string? ProviderJobId, Guid RequestedByUserId, long Version, AssemblyProgress? Progress, bool Simulated = false);
 
 public sealed class LabAssemblyService(PSeqOperationsDbContext db, ILabAssemblyProvider provider,
     LabAssemblyProgress progress, IOptions<LabAssemblyOptions> options, IOptions<PSeqOrderToCashOptions> policy, TimeProvider time,
-    IOperationalFileStorage? fileStorage = null, IOptions<FileStorageOptions>? fileOptions = null)
+    IOperationalFileStorage? fileStorage = null, IOptions<FileStorageOptions>? fileOptions = null, DpsStorage? dpsStorage = null)
 {
     public static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
     private static readonly string[] TerminalStates = ["Succeeded", "Failed", "Terminated", "CancelledBeforeStart"];
@@ -125,9 +125,10 @@ public sealed class LabAssemblyService(PSeqOperationsDbContext db, ILabAssemblyP
         var verification = await provider.VerifyInputsAsync(frozen, ct);
         ValidateVerification(frozen, verification, Now);
         AssemblyStorageDestination? outputStorage = null;
-        if (string.Equals(fileOptions?.Value.Provider, FileStorageProviders.S3, StringComparison.OrdinalIgnoreCase))
+        if (provider.Key == DpsContract.Provider && dpsStorage?.Available == true
+            || string.Equals(fileOptions?.Value.Provider, FileStorageProviders.S3, StringComparison.OrdinalIgnoreCase))
         {
-            var s3 = fileOptions!.Value.S3;
+            var s3 = provider.Key == DpsContract.Provider ? dpsStorage!.Settings : fileOptions!.Value.S3;
             var fileIds = frozen.Where(i => i.ExternalFileReference.StartsWith(LabScientificFiles.Prefix, StringComparison.Ordinal))
                 .Select(i => Guid.Parse(i.ExternalFileReference[LabScientificFiles.Prefix.Length..])).ToArray();
             var captures = await db.Set<LabFastqUpload>().AsNoTracking().Where(u => u.LabScientificFileId.HasValue && fileIds.Contains(u.LabScientificFileId.Value))
@@ -183,6 +184,7 @@ public sealed class LabAssemblyService(PSeqOperationsDbContext db, ILabAssemblyP
         await using var tx = await SampleShippingPackingData.BeginAsync(db, "assembly-job:" + id, ct);
         var job = await RequireJobAsync(id, ct);
         if (job.LabWorkOrderId != workId) throw Error("Assembly job not found in this Lab Job.", 404);
+        if (IsSimulated(job)) throw Error("Simulated assembly cannot be linked to a scientific analysis or enter QC.", 409);
         if (job.LabAnalysisRunId == request.AnalysisRunId) return;
         if (job.Version != request.Version || job.State != "Succeeded" || job.AttentionReason is not null)
             throw Error("Refresh and reconcile the successful assembly before linking its analysis.", 409);
@@ -243,7 +245,10 @@ public sealed class LabAssemblyService(PSeqOperationsDbContext db, ILabAssemblyP
         name ?? "Unaccessioned sample", j.SequencingRunNumber, j.State, j.RequestedAtUtc, j.StartedAtUtc, j.StoppedAtUtc, j.DispositionAtUtc,
         j.StartedAtUtc.HasValue && j.StoppedAtUtc.HasValue ? (j.StoppedAtUtc.Value - j.StartedAtUtc.Value).TotalSeconds : null,
         j.IsTerminal, j.CancellationRequestedAtUtc.HasValue, j.DispositionReason, j.AttentionReason, j.PreviousJobId, j.RetryReason,
-        j.LabAnalysisRunId, j.OutputManifestJson is not null, j.ProviderKey, j.ProviderJobId, j.RequestedByUserId, j.Version, progress.Read(j.Id, j.IsTerminal));
+        j.LabAnalysisRunId, j.OutputManifestJson is not null, j.ProviderKey, j.ProviderJobId, j.RequestedByUserId, j.Version, progress.Read(j.Id, j.IsTerminal), IsSimulated(j));
+
+    public static bool IsSimulated(LabAssemblyJob job) =>
+        (JsonSerializer.Deserialize<AssemblyRecipe>(job.RecipeJson, Json) ?? throw DpsContract.Invalid()).Simulated;
 
     internal static void ValidateVerification(IReadOnlyList<AssemblyInput> inputs, AssemblyInputVerification receipt, DateTime now)
     {

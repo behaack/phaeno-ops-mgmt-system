@@ -1711,9 +1711,9 @@
       "slug": "lab-libraries-batches-sequencing",
       "parentSlug": "lab-operations",
       "title": "Libraries, batches, and sequencing",
-      "summary": "Track library/tube lineage, record vendor results with verified ZIP/FASTQ uploads or configured S3 originals, preserve repeated sequencing and assembly work, record QC and hand off approved Customer packages.",
+      "summary": "Track library/tube lineage, verify FASTQ inputs, follow scientific or explicitly simulated assembly attempts, record QC and hand off approved Customer packages.",
       "order": 56,
-      "reviewedAt": "2026-10-10",
+      "reviewedAt": "2026-10-14",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [

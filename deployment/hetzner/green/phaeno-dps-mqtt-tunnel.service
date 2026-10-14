@@ -1,0 +1,22 @@
+[Unit]
+Description=Phaeno hosted-test DPS MQTT SSH tunnel
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=simple
+User=root
+EnvironmentFile=/opt/phaeno.portal-green/runtime/dps-tunnel.env
+ExecStart=/opt/phaeno.portal-green/runtime/dps-tunnel/run.sh
+Restart=always
+RestartSec=5
+TimeoutStopSec=15
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/phaeno.portal-green/runtime/dps-tunnel
+
+[Install]
+WantedBy=multi-user.target

@@ -5,19 +5,18 @@ using System.Security.Cryptography;
 using System.Text;
 using Amazon.S3;
 using Amazon.S3.Model;
-using Microsoft.Extensions.Options;
 using PhaenoPortal.App.Features.OrderManagement.Services;
 using PhaenoPortal.App.Infrastructure.Storage;
 
-public sealed class DpsS3Objects(IServiceProvider services, IOptions<FileStorageOptions> options)
+public sealed class DpsS3Objects(DpsStorage storage)
 {
-    private FileStorageOptions Settings => options.Value;
-    private IAmazonS3 Client => services.GetRequiredService<IAmazonS3>();
-    public bool Available => Settings.Provider.Equals(FileStorageProviders.S3, StringComparison.OrdinalIgnoreCase);
+    private S3FileStorageOptions Settings => storage.Settings;
+    private IAmazonS3 Client => storage.Client;
+    public bool Available => storage.Available;
     public void RequireAddress(DpsObject file, string? prefix = null)
     {
-        var configured = FileStorageKeys.NormalizePrefix(Settings.S3.KeyPrefix);
-        if (!Available || file.Bucket != Settings.S3.BucketName || file.Region != Settings.S3.Region
+        var configured = FileStorageKeys.NormalizePrefix(Settings.KeyPrefix);
+        if (!Available || file.Bucket != Settings.BucketName || file.Region != Settings.Region
             || string.IsNullOrWhiteSpace(file.VersionId) || file.VersionId == "null" || file.SizeBytes <= 0
             || Encoding.UTF8.GetByteCount(file.Key) > 1024 || file.Key.Any(char.IsControl)
             || file.Key.Split('/').Any(s => s is "." or "..")
@@ -30,10 +29,10 @@ public sealed class DpsS3Objects(IServiceProvider services, IOptions<FileStorage
         if (!Available) throw new OrderManagementException("dps_s3_required", "DPS requires configured versioned S3 scientific storage.", 503);
         var original = S3OriginalObject.IsOriginal(storageKey) ? S3OriginalObject.Parse(storageKey) : null;
         var key = original?.Key ?? S3ManagedObject.ObjectKey(FileStorageAreas.OrderManagement, storageKey);
-        if (original is not null && (original.Bucket != Settings.S3.BucketName || original.Region != Settings.S3.Region)) throw DpsContract.Invalid();
-        var metadata = await Client.GetObjectMetadataAsync(new() { BucketName = Settings.S3.BucketName, Key = key,
+        if (original is not null && (original.Bucket != Settings.BucketName || original.Region != Settings.Region)) throw DpsContract.Invalid();
+        var metadata = await Client.GetObjectMetadataAsync(new() { BucketName = Settings.BucketName, Key = key,
             VersionId = original?.VersionId, EtagToMatch = original?.ETag }, ct);
-        var result = new DpsObject(Settings.S3.BucketName, Settings.S3.Region, key, metadata.VersionId ?? "", hash.ToLowerInvariant(), size);
+        var result = new DpsObject(Settings.BucketName, Settings.Region, key, metadata.VersionId ?? "", hash.ToLowerInvariant(), size);
         if (string.IsNullOrWhiteSpace(result.VersionId) || result.VersionId == "null")
             throw new OrderManagementException("dps_s3_versioning_required", "DPS handoff requires exact S3 object versions. Operations must configure versioned scientific storage.", 409);
         RequireAddress(result);
@@ -74,20 +73,36 @@ public sealed class DpsS3Objects(IServiceProvider services, IOptions<FileStorage
         var digest = SHA256.HashData(bytes);
         using var stream = new MemoryStream(bytes, writable: false);
         try {
-            await Client.PutObjectAsync(new() { BucketName = Settings.S3.BucketName, Key = key, InputStream = stream,
+            await Client.PutObjectAsync(new() { BucketName = Settings.BucketName, Key = key, InputStream = stream,
                 ContentType = "application/json", IfNoneMatch = "*", ChecksumSHA256 = Convert.ToBase64String(digest) }, ct);
         } catch (AmazonS3Exception error) when (error.StatusCode == HttpStatusCode.PreconditionFailed) {
             // A retry must match the already-written instructions, never overwrite them.
         }
         return await ResolveAsync(S3ManagedObject.ToStorageKey(FileStorageAreas.OrderManagement, key), Convert.ToHexString(digest), bytes.LongLength, ct);
     }
+    public async Task<DpsObject> WriteInputAsync(string key, Stream verifiedContent, string sha256, long size, CancellationToken ct)
+    {
+        var candidate = new DpsObject(Settings.BucketName, Settings.Region, key, "pending", sha256.ToLowerInvariant(), size);
+        RequireAddress(candidate);
+        try {
+            // A stable file/hash key makes repeated request verification reuse the same immutable bytes.
+            await Client.GetObjectMetadataAsync(new() { BucketName = Settings.BucketName, Key = key }, ct);
+        } catch (AmazonS3Exception error) when (error.StatusCode == HttpStatusCode.NotFound) {
+            try {
+                await Client.PutObjectAsync(new() { BucketName = Settings.BucketName, Key = key, InputStream = verifiedContent,
+                    ContentType = "application/octet-stream", IfNoneMatch = "*", AutoCloseStream = false,
+                    ChecksumSHA256 = Convert.ToBase64String(Convert.FromHexString(sha256)) }, ct);
+            } catch (AmazonS3Exception concurrent) when (concurrent.StatusCode == HttpStatusCode.PreconditionFailed) { }
+        }
+        return await ResolveAsync(S3ManagedObject.ToStorageKey(FileStorageAreas.OrderManagement, key), sha256, size, ct);
+    }
     public async Task<(DpsObject Address, byte[] Content)?> ReadExistingInstructionsAsync(string key, CancellationToken ct)
     {
         if (!Available) throw DpsContract.Invalid();
         try {
-            var metadata = await Client.GetObjectMetadataAsync(new() { BucketName = Settings.S3.BucketName, Key = key }, ct);
+            var metadata = await Client.GetObjectMetadataAsync(new() { BucketName = Settings.BucketName, Key = key }, ct);
             var size = metadata.Headers.ContentLength;
-            var address = new DpsObject(Settings.S3.BucketName, Settings.S3.Region, key, metadata.VersionId ?? "", new string('0', 64), size);
+            var address = new DpsObject(Settings.BucketName, Settings.Region, key, metadata.VersionId ?? "", new string('0', 64), size);
             RequireAddress(address);
             if (size > DpsContract.MaximumManifestBytes) throw DpsContract.Invalid();
             using var response = await Client.GetObjectAsync(new() { BucketName = address.Bucket, Key = key, VersionId = address.VersionId }, ct);

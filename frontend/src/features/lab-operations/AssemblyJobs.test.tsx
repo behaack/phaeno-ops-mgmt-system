@@ -24,6 +24,13 @@ it('displays live progress and replaces it with the final disposition', () => {
   expect(screen.getByText('Terminated')).toBeTruthy()
 })
 
+it('distinguishes simulated completion from a scientific success', () => {
+  render(<AssemblyJobProgress job={{ ...job, state: 'Succeeded', isTerminal: true, simulated: true }} />)
+  expect(screen.getByText('Simulation completed')).toBeTruthy()
+  expect(screen.queryByText('Succeeded')).toBeNull()
+  expect(screen.queryByRole('progressbar')).toBeNull()
+})
+
 it('uses the assembly tracker without a generic start action and explains missing setup', async () => {
   mockApi.list.mockResolvedValue({ jobs: [], canOperate: true,
     availability: { available: false, message: 'The processing service is not connected.', supportsCancellation: false, recipes: [] } })

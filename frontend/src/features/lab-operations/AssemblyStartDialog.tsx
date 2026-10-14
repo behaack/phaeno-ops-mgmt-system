@@ -11,6 +11,7 @@ import { Button } from '#/components/ui/button'
 import { Checkbox } from '#/components/ui/checkbox'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '#/components/ui/dialog'
 import { Label } from '#/components/ui/label'
+import { Field, FieldError } from '#/components/ui/field'
 import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/required-field'
 import { NativeSelect } from '#/components/ui/native-select'
 import { useOrderDecisionDismissal } from '#/features/orders/use-order-decision-dismissal'
@@ -27,11 +28,13 @@ export function AssemblyStartDialog({ availability, previous, workOrderId, speci
   const client = useQueryClient()
   const [requestId] = useState(() => crypto.randomUUID())
   const inputs = useQuery({ queryKey: ['assembly-inputs', workOrderId, specimenId], queryFn: () => getAssemblyInputs(workOrderId, specimenId) })
-  const form = useForm<Values>({ resolver: zodResolver(schema), defaultValues: { selection: '', recipeKey: '', inputIds: [], reason: '' } })
+  const form = useForm<Values>({ resolver: zodResolver(schema), defaultValues: { selection: '', recipeKey: availability.recipes.length === 1 ? availability.recipes[0].key : '', inputIds: [], reason: '' } })
   const { isDirty: __formDraftDirty } = form.formState
 
   const selection = form.watch('selection')
   const selectedIds = form.watch('inputIds')
+  const recipeKey = form.watch('recipeKey')
+  const recipe = availability.recipes.find(item => item.key === recipeKey)
   const candidates = (inputs.data ?? []).filter(i => !previous || i.labSpecimenId === previous.labSpecimenId && i.sequencingRunNumber === previous.sequencingRunNumber)
   const keyOf = (input: typeof candidates[number]) => `${input.labSpecimenId}:${input.sequencingRunNumber}:${input.labSpecimenAttemptId}`
   const groups = [...new Map(candidates.map(i => [keyOf(i), i])).entries()]
@@ -63,25 +66,26 @@ export function AssemblyStartDialog({ availability, previous, workOrderId, speci
     </DialogHeader>
     <form id="assembly-start" noValidate onSubmit={form.handleSubmit(value => mutation.mutate(value))} className="space-y-4">
       <fieldset disabled={Boolean(recoveryId)} className="space-y-4"><legend className="sr-only">Assembly selection</legend>
-      <div className="space-y-1"><Label htmlFor="assembly-run"><RequiredFieldName>Sample and run</RequiredFieldName></Label>
-        <NativeSelect id="assembly-run" {...form.register('selection', { onChange: () => form.setValue('inputIds', []) })} aria-invalid={Boolean(form.formState.errors.selection)} aria-describedby="assembly-run-error">
+      <Field><Label htmlFor="assembly-run"><RequiredFieldName>Sample and run</RequiredFieldName></Label>
+        <NativeSelect id="assembly-run" {...form.register('selection', { onChange: event => form.setValue('inputIds', candidates.filter(input => keyOf(input) === event.target.value).map(input => input.id), { shouldValidate: true }) })} aria-invalid={Boolean(form.formState.errors.selection)} aria-describedby="assembly-run-error">
           <option value="">{inputs.isPending ? 'Loading sequencing inputs…' : 'Choose a sequencing run'}</option>
           {groups.map(([key, input]) => <option key={key} value={key}>{input.sampleName ?? 'Unaccessioned sample'} · Run {input.sequencingRunNumber} · {input.providerRunReference}</option>)}
-        </NativeSelect><p id="assembly-run-error" className="text-sm text-destructive">{form.formState.errors.selection?.message}</p>
+        </NativeSelect><FieldError id="assembly-run-error">{form.formState.errors.selection?.message}</FieldError>
         {!inputs.isPending && !groups.length ? <p className="text-sm text-muted-foreground">Record successful vendor results with verified FASTQ files before requesting assembly.</p> : null}
-      </div>
-      <div className="space-y-1"><Label htmlFor="assembly-recipe"><RequiredFieldName>Processing recipe</RequiredFieldName></Label>
+      </Field>
+      <Field><Label htmlFor="assembly-recipe"><RequiredFieldName>Processing recipe</RequiredFieldName></Label>
         <NativeSelect id="assembly-recipe" {...form.register('recipeKey')} aria-invalid={Boolean(form.formState.errors.recipeKey)} aria-describedby="assembly-recipe-error">
-          <option value="">Choose a recipe</option>{availability.recipes.map(r => <option key={r.key} value={r.key}>{r.name} · {r.version}</option>)}
-        </NativeSelect><p id="assembly-recipe-error" className="text-sm text-destructive">{form.formState.errors.recipeKey?.message}</p>
-      </div>
+          <option value="">Choose a recipe</option>{availability.recipes.map(r => <option key={r.key} value={r.key}>{r.name} · {r.version}{r.simulated ? ' · Simulated' : ''}</option>)}
+        </NativeSelect><FieldError id="assembly-recipe-error">{form.formState.errors.recipeKey?.message}</FieldError>
+      </Field>
+      {recipe?.simulated ? <Alert><AlertDescription>This recipe uses the selected sample’s verified FASTQ files and runs a simulated pipeline. Its placeholder outputs cannot enter scientific QC or Customer release.</AlertDescription></Alert> : null}
       <fieldset className="space-y-2"><legend className="text-sm font-medium"><RequiredFieldName>Sequencing inputs</RequiredFieldName></legend>
         {selected.map(input => <Label key={input.id} className="flex cursor-pointer items-start gap-2 rounded border p-3">
           <Checkbox checked={selectedIds.includes(input.id)} onCheckedChange={checked => form.setValue('inputIds', checked ? [...selectedIds, input.id] : selectedIds.filter(id => id !== input.id), { shouldValidate: true })} />
           <span className="min-w-0 break-words">{input.libraryKey ? `${input.libraryKey} · ` : ''}{input.fileName ?? input.sampleMappingReference}<span className="block text-xs text-muted-foreground">{input.providerRunReference} · {input.sizeBytes.toLocaleString()} bytes</span></span>
         </Label>)}<p className="text-sm text-destructive" role="alert">{form.formState.errors.inputIds?.message}</p>
       </fieldset>
-      {previous ? <div className="space-y-1"><Label htmlFor="assembly-reason"><RequiredFieldName>Reason for another attempt</RequiredFieldName></Label><Textarea id="assembly-reason" {...form.register('reason')} aria-invalid={Boolean(form.formState.errors.reason)} aria-describedby="assembly-reason-error" /><p id="assembly-reason-error" className="text-sm text-destructive">{form.formState.errors.reason?.message}</p></div> : null}
+      {previous ? <Field><Label htmlFor="assembly-reason"><RequiredFieldName>Reason for another attempt</RequiredFieldName></Label><Textarea id="assembly-reason" {...form.register('reason')} aria-invalid={Boolean(form.formState.errors.reason)} aria-describedby="assembly-reason-error" /><FieldError id="assembly-reason-error">{form.formState.errors.reason?.message}</FieldError></Field> : null}
       </fieldset>
     </form>
     <RequiredDialogFooter><Button variant="outline" disabled={mutation.isPending} onClick={dismissal.close}>{recoveryId ? 'Close' : 'Cancel'}</Button>{recoveryId ? <Button type="button" onClick={() => void openSavedAttempt()}>Open saved attempt</Button> : <Button type="submit" form="assembly-start" disabled={mutation.isPending || !availability.available}>{mutation.isPending ? 'Requesting…' : 'Start assembly'}</Button>}</RequiredDialogFooter>

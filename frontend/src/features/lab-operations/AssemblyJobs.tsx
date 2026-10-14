@@ -8,7 +8,7 @@ import { Link, useNavigate, useSearch } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
-import { cancelAssembly, getAssemblyInputs, getAssemblyJob, getAssemblyJobs, getAssemblyJobsPage, linkAssemblyAnalysis, type AssemblyDetail, type AssemblyJob } from '#/api/lab-assembly'
+import { cancelAssembly, downloadSimulatedAssemblyOutput, getAssemblyInputs, getAssemblyJob, getAssemblyJobs, getAssemblyJobsPage, linkAssemblyAnalysis, type AssemblyDetail, type AssemblyJob } from '#/api/lab-assembly'
 import { getLabOperationsError } from '#/api/lab-operations'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Badge } from '#/components/ui/badge'
@@ -49,6 +49,7 @@ function ReadyAssemblyInputs({ enabled }: { enabled: boolean }) {
   const groups = [...new Map((inputs.data ?? []).map(i => [`${i.labSpecimenId}:${i.sequencingRunNumber}:${i.labSpecimenAttemptId}`, i])).entries()]
   return <Card><CardHeader><CardTitle>Sequencing inputs</CardTitle></CardHeader><CardContent className="space-y-3">
     <p className="text-sm text-muted-foreground">Verified FASTQ files for each PSeq Service specimen and run. Start assembly from an input set, then follow its progress in Sequencing assembly.</p>
+    {queue.data?.availability.available ? <div className="space-y-1 text-sm" role="status"><p className="font-medium">Processing connected</p>{queue.data.availability.recipes.map(recipe => <p key={recipe.key}>{recipe.name} · {recipe.version}{recipe.simulated ? <Badge variant="outline" className="ml-2">Simulated</Badge> : null}</p>)}</div> : null}
     {inputs.isPending && enabled ? <p role="status">Loading available input sets…</p> : null}
     {inputs.error ? <p role="alert">{getLabOperationsError(inputs.error, 'Sequencing inputs could not be loaded.')}</p> : null}
     {!inputs.isPending && !groups.length ? <p className="text-sm text-muted-foreground">Record vendor results with complete verified FASTQ files to prepare assembly inputs.</p> : null}
@@ -60,7 +61,7 @@ function ReadyAssemblyInputs({ enabled }: { enabled: boolean }) {
 
 export function AssemblyJobProgress({ job }: { job: AssemblyJob }) {
   const percentage = currentAssemblyPercentage(job.progress, job.isTerminal)
-  if (job.isTerminal) return <Badge variant="outline">{assemblyStateLabel(job.state)}</Badge>
+  if (job.isTerminal) return <Badge variant="outline">{job.simulated && job.state === 'Succeeded' ? 'Simulation completed' : assemblyStateLabel(job.state)}</Badge>
   return <div className="min-w-0 space-y-2"><span className="text-sm">{job.cancellationRequested ? 'Cancellation requested' : assemblyStateLabel(job.state)}</span>
     <ProgressBar aria-label={`Assembly progress for ${job.sampleName}, run ${job.sequencingRunNumber}`} value={percentage}
       aria-valuetext={percentage === null ? 'Progress unavailable' : `${Math.round(percentage)}% reported`} />
@@ -90,7 +91,7 @@ export function AssemblyJobsList({ enabled, workOrderId, specimenId, search = ''
     {data && !data.jobs.length ? <p className="text-sm text-muted-foreground">{search ? 'No assembly jobs match this search.' : global && 'totalCount' in data && typeof data.totalCount === 'number' && data.totalCount > 0 ? 'This page has no assembly jobs. Choose an earlier page.' : 'No assembly jobs have been requested.'}</p> : null}
     {!global && data?.jobs.length && !data.jobs.some(j => assemblyMatches(j, search)) ? <p>No assembly jobs match this search.</p> : null}
     {data?.jobs.filter(j => global || assemblyMatches(j, search)).map(job => <div key={job.id} className="grid gap-3 rounded-lg border p-4 sm:grid-cols-[minmax(0,1fr)_minmax(10rem,16rem)]">
-      <div className="min-w-0"><Link className={`${linkStyle} font-medium`} to="/lab-operations/assembly-jobs/$jobId" params={{ jobId: job.id }} search={p => ({ ...p, section: 'assembly', assemblyTab: 'jobs' })}>{job.sampleName} · Run {job.sequencingRunNumber}</Link>
+      <div className="min-w-0"><Link className={`${linkStyle} font-medium`} to="/lab-operations/assembly-jobs/$jobId" params={{ jobId: job.id }} search={p => ({ ...p, section: 'assembly', assemblyTab: 'jobs' })}>{job.sampleName} · Run {job.sequencingRunNumber}</Link>{job.simulated ? <Badge variant="outline" className="ml-2">Simulated</Badge> : null}
         <p className="mt-1 text-xs text-muted-foreground">Requested {date(job.requestedAtUtc)}</p><p className="text-xs text-muted-foreground">Start: {date(job.startedAtUtc)} · Stop: {date(job.stoppedAtUtc)}</p>
         {job.attentionReason ? <p className="mt-1 text-sm">{job.attentionReason}</p> : null}</div><AssemblyJobProgress job={job} />
     </div>)}
@@ -114,8 +115,8 @@ export function AssemblyJobPage({ jobId }: { jobId: string }) {
   const actions: { label: string; action: 'retry' | 'cancel' | 'analysis' | 'qc' }[] = data && job && data.canOperate ? [
     ...(job.isTerminal && !job.attentionReason && data.availability.available ? [{ label: 'Repeat assembly', action: 'retry' as const }] : []),
     ...(!job.isTerminal && !job.cancellationRequested && (job.state === 'Queued' || data.availability.supportsCancellation) ? [{ label: 'Request cancellation', action: 'cancel' as const }] : []),
-    ...(job.state === 'Succeeded' && !job.attentionReason && !job.labAnalysisRunId && data.analyses.length ? [{ label: 'Link completed analysis', action: 'analysis' as const }] : []),
-    ...(job.state === 'Succeeded' && job.labAnalysisRunId && !job.attentionReason ? [{ label: 'Review QC', action: 'qc' as const }] : []),
+    ...(job.state === 'Succeeded' && !job.simulated && !job.attentionReason && !job.labAnalysisRunId && data.analyses.length ? [{ label: 'Link completed analysis', action: 'analysis' as const }] : []),
+    ...(job.state === 'Succeeded' && !job.simulated && job.labAnalysisRunId && !job.attentionReason ? [{ label: 'Review QC', action: 'qc' as const }] : []),
   ] : []
   const openAction = (action: typeof actions[number]['action']) => action === 'qc' ? void navigate({ to: '/lab-operations/assembly-jobs/$jobId/qc', params: { jobId }, search: p => ({ ...p, section: 'assembly', assemblyTab: 'jobs' }) }) : setAction(action)
   return <main className="page-wrap space-y-5 px-4 py-8">
@@ -126,6 +127,7 @@ export function AssemblyJobPage({ jobId }: { jobId: string }) {
       <header className="flex flex-wrap items-start justify-between gap-3"><div><h1 className="text-2xl font-semibold">{job.sampleName} · Run {job.sequencingRunNumber}</h1><p className="text-sm text-muted-foreground">Assembly attempt · {data.recipe.name} {data.recipe.version}</p></div>
         {actions.length === 1 ? <Button onClick={() => openAction(actions[0].action)}>{actions[0].label}</Button> : actions.length > 1 ? <ActionMenu><DropdownMenuTrigger asChild><Button variant="outline">Actions</Button></DropdownMenuTrigger><DropdownMenuContent align="end">{actions.map(item => <DropdownMenuItem key={item.action} onSelect={() => openAction(item.action)}>{item.label}</DropdownMenuItem>)}</DropdownMenuContent></ActionMenu> : null}
       </header>
+      {job.simulated ? <Alert><AlertTitle>Simulated assembly</AlertTitle><AlertDescription>The server processes this sample’s verified inputs with a mock pipeline. Outputs are diagnostic placeholders and cannot enter scientific QC or Customer release.</AlertDescription></Alert> : null}
       {job.attentionReason ? <Alert><AlertTitle>Attention required</AlertTitle><AlertDescription>{job.attentionReason}</AlertDescription></Alert> : null}
       {!data.availability.available ? <Alert><AlertDescription>{data.availability.message}</AlertDescription></Alert> : null}
       <Card><CardHeader><CardTitle>Execution</CardTitle></CardHeader><CardContent className="space-y-4"><AssemblyJobProgress job={job} />
@@ -146,7 +148,8 @@ export function AssemblyJobPage({ jobId }: { jobId: string }) {
       <Card><CardHeader><CardTitle>Inputs and results</CardTitle></CardHeader><CardContent className="space-y-3 text-sm">
         <p>{data.inputs.length} registered sequencing input{data.inputs.length === 1 ? '' : 's'} · exact input identities retained.</p>
         {data.inputs.map((input, i) => <div key={input.sequencingOutputId} className="break-all border-b pb-2"><p>Input {i + 1} · {input.sizeBytes.toLocaleString()} bytes</p><p className="text-xs text-muted-foreground">SHA-256: {input.sha256}</p></div>)}
-        <p>{job.labAnalysisRunId ? 'Completed analysis linked. Review the exact output package and record QC before scientific approval and Customer release.' : job.state === 'Succeeded' ? 'Execution succeeded. Completed-analysis evidence and verified result files must be registered and linked before review.' : 'Results become eligible for inspection only after successful assembly and output verification.'}</p>
+        <p>{job.simulated ? job.state === 'Succeeded' ? 'Simulation completed. Verified placeholder outputs are available for inspection below.' : 'Diagnostic outputs become available after the simulation completes and their checksums are verified.' : job.labAnalysisRunId ? 'Completed analysis linked. Review the exact output package and record QC before scientific approval and Customer release.' : job.state === 'Succeeded' ? 'Execution succeeded. Completed-analysis evidence and verified result files must be registered and linked before review.' : 'Results become eligible for inspection only after successful assembly and output verification.'}</p>
+        {job.simulated ? <SimulatedOutputs jobId={job.id} outputs={data.simulatedOutputs} /> : null}
         <Link className={linkStyle} to="/lab-operations/$workOrderId/specimens/$specimenId" params={{ workOrderId: job.labWorkOrderId, specimenId: job.labSpecimenId }} search={p => ({ ...p, section: 'jobs' })}>Open sample and scientific evidence</Link>
       </CardContent></Card>
       <Card><CardHeader><CardTitle>Job history</CardTitle></CardHeader><CardContent><ol className="space-y-3 text-sm">{data.events.map(event => <li key={event.id} className="border-b pb-2"><span className="font-medium">{assemblyStateLabel(event.kind)}</span><p className="text-xs text-muted-foreground">Recorded {date(event.recordedAtUtc)}</p></li>)}</ol></CardContent></Card>
@@ -154,6 +157,19 @@ export function AssemblyJobPage({ jobId }: { jobId: string }) {
       {action === 'cancel' || action === 'analysis' ? <AssemblyActionDialog data={data} action={action} onClose={() => setAction(null)} /> : null}
     </> : null}
   </main>
+}
+
+function SimulatedOutputs({ jobId, outputs }: { jobId: string; outputs: AssemblyDetail['simulatedOutputs'] }) {
+  const download = useMutation({ mutationFn: (output: AssemblyDetail['simulatedOutputs'][number]) =>
+    downloadSimulatedAssemblyOutput(jobId, output.artifactId, output.fileName) })
+  if (!outputs.length) return null
+  return <div className="space-y-2">
+    {outputs.map(output => <div key={output.artifactId} className="flex min-w-0 flex-wrap items-center justify-between gap-2 rounded border p-3">
+      <span className="min-w-0 break-words">{output.fileName}<span className="block text-xs text-muted-foreground">Simulated · {output.sizeBytes.toLocaleString()} bytes</span></span>
+      <Button variant="outline" disabled={download.isPending} aria-label={`Download simulated ${output.fileName}`} onClick={() => download.mutate(output)}>{download.isPending && download.variables?.artifactId === output.artifactId ? 'Downloading…' : 'Download'}</Button>
+    </div>)}
+    {download.error ? <p role="alert" className="text-destructive">{getLabOperationsError(download.error, 'The simulated output could not be downloaded.')}</p> : null}
+  </div>
 }
 
 function AssemblyActionDialog({ data, action, onClose }: { data: AssemblyDetail; action: 'cancel' | 'analysis'; onClose: () => void }) {
