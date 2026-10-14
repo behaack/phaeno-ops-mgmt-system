@@ -1,5 +1,17 @@
 # Operations and production-readiness boundary
 
+## Authenticator instruction layout hosted-test release - completed October 14, 2026
+
+Portal frontend source `43622eae11f6c229acf60a79d6b7fbd54baed104` is live
+as deployment `dpl_AKJSis2at4cnTNYoovRLyb1sVQnn` under the
+[frontend-only preserving plan](plans/PORTAL-AUTH-CODE-LAYOUT-TEST-RELEASE-20261014-PLAN.md).
+The code instruction follows the entry, centered and sharing its width. The
+canonical alias and served stylesheet/client match the staged production build.
+API health, database ping, signed-out rendering and authorization checks pass;
+bounded frontend errors are empty. The API/database are untouched and all
+deployment holds remain. Actual live MFA/recovery acceptance is separate.
+See the [receipt](operations/portal-auth-code-layout-test-release-20261014.md).
+
 ## Sign-in code source hosted-test release - completed October 13, 2026
 
 Matched API/help and Portal source `60b176f0c7cdac308531efe3713d667942381ea5`

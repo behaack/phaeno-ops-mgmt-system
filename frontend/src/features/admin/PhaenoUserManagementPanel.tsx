@@ -2,7 +2,6 @@ import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  Ellipsis,
   Mail,
   Pencil,
   RotateCcw,
@@ -255,20 +254,14 @@ export function PhaenoUserManagementPanel({
           {(usersQuery.data ?? []).map((user) => (
             <div
               key={user.id}
-              className="flex flex-col gap-3 rounded-lg border bg-background p-3 sm:flex-row sm:items-start sm:justify-between"
+              className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2 rounded-lg border bg-background p-3"
             >
               <div className="min-w-0">
-                <p className="m-0 truncate font-medium">
+                <p className="m-0 wrap-anywhere font-medium">
                   {formatUserName(user)}
                 </p>
-                <p className="m-0 truncate text-xs text-muted-foreground">
-                  {user.email}
-                </p>
-                <p className="m-0 mt-2 text-sm text-muted-foreground">
-                  {formatUserRoles(user)}
-                </p>
               </div>
-              <div className="flex shrink-0 flex-wrap items-center gap-2">
+              <div className="flex flex-nowrap items-center justify-self-end gap-2">
                 <Badge
                   variant={user.status === 'Active' ? 'secondary' : 'outline'}
                 >
@@ -282,10 +275,10 @@ export function PhaenoUserManagementPanel({
                       <Button
                         type="button"
                         variant="outline"
-                        size="icon-sm"
+                        size="sm"
                         aria-label={`Actions for ${formatUserName(user)}`}
                       >
-                        <Ellipsis aria-hidden="true" />
+                        Actions
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
@@ -326,6 +319,14 @@ export function PhaenoUserManagementPanel({
                     </DropdownMenuContent>
                   </DropdownMenu>
                 ) : null}
+              </div>
+              <div className="col-span-2 min-w-0">
+                <p className="m-0 wrap-anywhere text-xs text-muted-foreground">
+                  {user.email}
+                </p>
+                <p className="m-0 mt-2 wrap-anywhere text-sm text-muted-foreground">
+                  {formatUserRoles(user)}
+                </p>
               </div>
             </div>
           ))}
@@ -373,10 +374,10 @@ export function PhaenoUserManagementPanel({
                         <Button
                           type="button"
                           variant="outline"
-                          size="icon-sm"
+                          size="sm"
                           aria-label={`Actions for ${invitation.email}`}
                         >
-                          <Ellipsis aria-hidden="true" />
+                          Actions
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-max min-w-48 max-w-[calc(100vw-2rem)]">

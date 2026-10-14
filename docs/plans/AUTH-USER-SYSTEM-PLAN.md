@@ -1,5 +1,29 @@
 # Auth and User System Plan
 
+## October 14, 2026 - Phaeno user card status and actions
+
+The Owner supplied the narrow-screen User management account list and requested
+its status badge and action control remain on the first row at the right, with
+the ellipsis replaced by Actions. Phaeno administrators need to find account
+status and commands without scanning past long role lists. Reserve the trailing
+grid column for a non-wrapping badge/action group at every viewport size; let
+long names wrap in the leading column and give email/roles the full width below.
+
+Use the existing shared ActionMenu and its single chevron for multiple actions.
+Preserve directly labeled sole actions (Edit for the current user, Reactivate
+for a disabled user), all capability checks, self-deactivation protection,
+disabled/pending states, confirmations, optimistic concurrency and focus.
+Pending invitations retain their distinct delivery/status layout and receive
+the same visible Actions trigger label. Account-detail destinations, role
+behavior, authentication and APIs do not change. No dependency or model change.
+
+Acceptance: account badges and controls stay in the top-right first row at
+desktop/phone widths; long identity/role text cannot displace them or overflow.
+Multiple-action triggers visibly say Actions with one dropdown indicator; sole
+actions keep their direct labels. Preserve light/dark themes and keyboard menu
+opening, Escape dismissal and focus return. Verification is pending. Automated
+suites remain request-only. This new presentation change is local until released.
+
 ## October 14, 2026 - Place the code instruction beneath the control
 
 The Owner supplied the live authenticator prompt and requested that its existing
@@ -26,8 +50,10 @@ provider element structure: the control and instruction share bounds at 1280px
 views wrap without horizontal overflow or overlap; keyboard focus proceeds
 from code entry to Continue. This is layout evidence, not live MFA acceptance.
 Targeted lint and TypeScript checks passed. No automated suites
-were run. The existing hosted release is unchanged until a new release is
-authorized.
+were run. The Owner authorized deployment of the latest push; source
+`43622eae11f6c229acf60a79d6b7fbd54baed104` is now live under the
+[frontend-only release receipt](../operations/portal-auth-code-layout-test-release-20261014.md).
+Live MFA/recovery acceptance remains separate from layout/source evidence.
 
 ## October 13, 2026 - Identify the sign-in code source
 
