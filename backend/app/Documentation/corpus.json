@@ -143,7 +143,7 @@
       "title": "Account and access",
       "summary": "Accept invitations, protect sign-in, select a Department, and manage access within organization and Department roles.",
       "order": 20,
-      "reviewedAt": "2026-10-11",
+      "reviewedAt": "2026-10-13",
       "navigationGroup": "basics",
       "contentType": "guide",
       "topicIds": [
@@ -168,7 +168,7 @@
       "publicationStatus": "published",
       "id": "customer/en-US/account-and-access",
       "route": "/docs/customer/account-and-access",
-      "contentHash": "7d38975f324fd0f1438a3132dfc97eb2002a76cf19154c1af081fccf34fb4e21",
+      "contentHash": "939575425b97a0fc101959601b889899ff2af0e6cbcdd58c69643dd27cecee94",
       "sections": [
         {
           "heading": "Account and access",
@@ -183,7 +183,7 @@
         {
           "heading": "Protect your account",
           "anchor": "protect-your-account",
-          "text": "After your first sign-in step, connect an authenticator app and confirm the code it displays. Save the one-time backup codes shown during setup somewhere private and separate from the device running the authenticator. Never send an authenticator or backup code to Phaeno or your organization administrator. If you lose the authenticator but still have a backup code, use that code to sign in, then contact Phaeno to reset the authenticator enrollment. If you lose both the authenticator and every backup code, contact Phaeno directly. Phaeno will verify your identity and organization before resetting MFA; all active sessions are revoked and you must connect a new authenticator before Portal access resumes. Email can start the support request but does not itself bypass MFA."
+          "text": "During sign-in, find the Authenticator app code in the authenticator app you linked to your account. Enter the current six-digit code shown for Phaeno. After your first sign-in step, connect an authenticator app and confirm the code it displays. Save the one-time backup codes shown during setup somewhere private and separate from the device running the authenticator. Never send an authenticator or backup code to Phaeno or your organization administrator. If you lose the authenticator but still have a backup code, use that code to sign in, then contact Phaeno to reset the authenticator enrollment. If you lose both the authenticator and every backup code, contact Phaeno directly. Phaeno will verify your identity and organization before resetting MFA; all active sessions are revoked and you must connect a new authenticator before Portal access resumes. Email can start the support request but does not itself bypass MFA."
         },
         {
           "heading": "Confirm the current organization",
@@ -748,7 +748,7 @@
       "title": "Account and access",
       "summary": "Accept invitations, protect sign-in, select a Department, and manage access within organization and Department roles.",
       "order": 20,
-      "reviewedAt": "2026-10-11",
+      "reviewedAt": "2026-10-13",
       "navigationGroup": "basics",
       "contentType": "guide",
       "topicIds": [
@@ -773,7 +773,7 @@
       "publicationStatus": "published",
       "id": "partner/en-US/account-and-access",
       "route": "/docs/partner/account-and-access",
-      "contentHash": "51d4e77df27e638918c8bc68bd9df5662c29c4489d847bc3a0c54404dce03d5b",
+      "contentHash": "cb94b47e90d2db99e6e81bde509d99e1133046213c356c8d2615ea7570e6767a",
       "sections": [
         {
           "heading": "Account and access",
@@ -788,7 +788,7 @@
         {
           "heading": "Protect your account",
           "anchor": "protect-your-account",
-          "text": "After your first sign-in step, connect an authenticator app and confirm the code it displays. Save the one-time backup codes shown during setup somewhere private and separate from the device running the authenticator. Never send an authenticator or backup code to Phaeno or your Partner administrator. If you lose the authenticator but still have a backup code, use that code to sign in, then contact Phaeno to reset the authenticator enrollment. If you lose both the authenticator and every backup code, contact Phaeno directly. Phaeno will verify your identity and Partner organization before resetting MFA; all active sessions are revoked and you must connect a new authenticator before Portal access resumes. Email can start the support request but does not itself bypass MFA."
+          "text": "During sign-in, find the Authenticator app code in the authenticator app you linked to your account. Enter the current six-digit code shown for Phaeno. After your first sign-in step, connect an authenticator app and confirm the code it displays. Save the one-time backup codes shown during setup somewhere private and separate from the device running the authenticator. Never send an authenticator or backup code to Phaeno or your Partner administrator. If you lose the authenticator but still have a backup code, use that code to sign in, then contact Phaeno to reset the authenticator enrollment. If you lose both the authenticator and every backup code, contact Phaeno directly. Phaeno will verify your identity and Partner organization before resetting MFA; all active sessions are revoked and you must connect a new authenticator before Portal access resumes. Email can start the support request but does not itself bypass MFA."
         },
         {
           "heading": "Confirm the current Partner organization",
@@ -2285,7 +2285,7 @@
       "title": "Phaeno operations guide",
       "summary": "Find each workflow, its owning workspace, reusable configuration, and the roles needed to act.",
       "order": 10,
-      "reviewedAt": "2026-10-12",
+      "reviewedAt": "2026-10-13",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [
@@ -2304,7 +2304,7 @@
       "publicationStatus": "published",
       "id": "phaeno/getting-started",
       "route": "/docs/phaeno/getting-started",
-      "contentHash": "46e2934bb6b5a70d8663fb23c00436f2ebf80e36c6a3109d8a30375bd84caa97",
+      "contentHash": "bb7a8ca7d81580c5b19e2c5d0291245a9b9f5ba46c277b46921cc0831430d78f",
       "sections": [
         {
           "heading": "Phaeno operations guide",
@@ -2324,7 +2324,7 @@
         {
           "heading": "Protect your account",
           "anchor": "protect-your-account",
-          "text": "After your first sign-in step, connect an authenticator app and confirm the code it displays. Store the one-time backup codes separately from the authenticator device. Never send an authenticator or backup code in email, chat, support notes, or an audit description. If both the authenticator and all backup codes are lost, contact an authorized Phaeno platform administrator. The administrator verifies your identity, resets the MFA enrollment, and revokes active sessions. You must connect a new authenticator before Portal access resumes. Email can initiate recovery but does not automatically bypass MFA."
+          "text": "During sign-in, find the Authenticator app code in the authenticator app you linked to your account. Enter the current six-digit code shown for Phaeno. After your first sign-in step, connect an authenticator app and confirm the code it displays. Store the one-time backup codes separately from the authenticator device. Never send an authenticator or backup code in email, chat, support notes, or an audit description. If both the authenticator and all backup codes are lost, contact an authorized Phaeno platform administrator. The administrator verifies your identity, resets the MFA enrollment, and revokes active sessions. You must connect a new authenticator before Portal access resumes. Email can initiate recovery but does not automatically bypass MFA."
         },
         {
           "heading": "Find platform work",
@@ -3811,7 +3811,7 @@
       "title": "Account and access",
       "summary": "Accept invitations, protect sign-in, select a Department, and manage access within organization and Department roles.",
       "order": 20,
-      "reviewedAt": "2026-10-11",
+      "reviewedAt": "2026-10-13",
       "navigationGroup": "basics",
       "contentType": "guide",
       "topicIds": [
@@ -3836,7 +3836,7 @@
       "publicationStatus": "published",
       "id": "prospect/en-US/account-and-access",
       "route": "/docs/prospect/account-and-access",
-      "contentHash": "0d288c9f8990a8a0e9d55ead43bd785985ea5bc6b5933321820d6b129c43d27f",
+      "contentHash": "8e8393001993365be6cc722f9000fd724e864ecf6e96a54b109bddd35cabc4fe",
       "sections": [
         {
           "heading": "Account and access",
@@ -3851,7 +3851,7 @@
         {
           "heading": "Protect your account",
           "anchor": "protect-your-account",
-          "text": "After your first sign-in step, connect an authenticator app and confirm the code it displays. Save the one-time backup codes shown during setup somewhere private and separate from the device running the authenticator. Never send an authenticator or backup code to Phaeno or your organization administrator. If you lose the authenticator but still have a backup code, use that code to sign in, then contact Phaeno to reset the authenticator enrollment. If you lose both the authenticator and every backup code, contact Phaeno directly. Phaeno will verify your identity and organization before resetting MFA; all active sessions are revoked and you must connect a new authenticator before Portal access resumes. Email can start the support request but does not itself bypass MFA."
+          "text": "During sign-in, find the Authenticator app code in the authenticator app you linked to your account. Enter the current six-digit code shown for Phaeno. After your first sign-in step, connect an authenticator app and confirm the code it displays. Save the one-time backup codes shown during setup somewhere private and separate from the device running the authenticator. Never send an authenticator or backup code to Phaeno or your organization administrator. If you lose the authenticator but still have a backup code, use that code to sign in, then contact Phaeno to reset the authenticator enrollment. If you lose both the authenticator and every backup code, contact Phaeno directly. Phaeno will verify your identity and organization before resetting MFA; all active sessions are revoked and you must connect a new authenticator before Portal access resumes. Email can start the support request but does not itself bypass MFA."
         },
         {
           "heading": "Confirm the current organization",
@@ -4296,5 +4296,5 @@
       ]
     }
   ],
-  "corpusHash": "24626584a60b05f6418aa8b1753e77e84665dcfcecfe2fdc9cdbdba445ab7ea5"
+  "corpusHash": "a08fd5a077673bf040bfc2060f11422631af811811d032fedc890ce8a0874b7c"
 }

@@ -1,5 +1,38 @@
 # Auth and User System Plan
 
+## October 13, 2026 - Identify the sign-in code source
+
+The Owner reported that two-factor sign-in does not identify where to get the
+code. This affects invited users across all audiences after their first sign-in
+verification. Clerk's header subtitles were hidden by the Phaeno appearance
+configuration, including the authenticator instructions.
+
+Scope: label the TOTP field **Authenticator app code** and show **Enter the
+current 6-digit code from the authenticator app you linked to your account.**
+through the Customer-capable message catalog. Restore Clerk's step-specific
+subtitles; leave the initial sign-in subtitle empty because the Phaeno shell
+already supplies its description. Other verification methods retain Clerk's
+source descriptions. No provider methods, MFA enforcement, sessions, access
+rules or recovery workflow change.
+
+Acceptance: the authenticator field has a visible and accessible source label
+and a readable source instruction on desktop/narrow layouts and light/dark
+themes. Initial sign-in retains one heading and description. The success measure
+is an explicit code source at entry. The four audience guides identify it.
+
+Clerk's [MFA recovery documentation](https://clerk.com/docs/guides/secure/mfa-recovery)
+confirms single-use backup-code sign-in and administrator resets through its
+Dashboard or Backend API. It provides no end-user MFA reset flow, and enrollment
+reset does not revoke sessions automatically. The approved Phaeno policy below
+requires identity verification, separate session revocation and re-enrollment.
+
+Verification: TypeScript, scoped lint, Customer message references,
+documentation generation/check and whitespace validation passed. Automated test
+suites remain request-only and were not run; no tests were added for this
+presentation change. Clerk's source confirms the TOTP field and instruction use
+the configured localization keys. No pending MFA browser session was available;
+rendered verification-step and live provider acceptance remain unperformed.
+
 ## October 10 2026 Organization membership selection
 
 The Owner approved an Organization switcher for users with multiple active

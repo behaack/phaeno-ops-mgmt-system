@@ -88,7 +88,6 @@ export function AuthProvider({ children, isPreSessionRoute = false }: SessionPro
           footer: { display: "none" },
           footerAction: { display: "none" },
           headerTitle: { display: "none" },
-          headerSubtitle: { display: "none" },
           rootBox: { width: '100%' },
           cardBox: {
             width: '100%',
@@ -118,6 +117,11 @@ export function AuthProvider({ children, isPreSessionRoute = false }: SessionPro
           start: {
             title: __customerText('m_bfd402b2f6f3'),
             titleCombined: "Sign in",
+            subtitle: '',
+          },
+          totpMfa: {
+            formTitle: __customerText('auth_authenticator_app_code'),
+            subtitle: __customerText('auth_authenticator_app_code_help'),
           },
         },
       }}
