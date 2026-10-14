@@ -33,6 +33,16 @@ presentation change. Clerk's source confirms the TOTP field and instruction use
 the configured localization keys. No pending MFA browser session was available;
 rendered verification-step and live provider acceptance remain unperformed.
 
+Hosted test release: matched API/help and frontend source
+`60b176f0c7cdac308531efe3713d667942381ea5` is committed, pushed and live.
+Protected run `38499219507` succeeds; exact Git-source Vercel deployment
+`dpl_HZEfxqABvABTUp1kusHQu5RaT7Z1` is promoted after API verification.
+Canonical asset hashes match the staged build and include the label/instruction.
+Initial sign-in rendering, health, scanner, authorization and bounded error
+checks pass. Website counts remain `12,6`; no migration or provider cutover
+occurs. Workflow/Git holds remain. The full MFA challenge and recovery journey
+remain unperformed. See the [release receipt](../operations/portal-auth-code-label-test-release-20261013.md).
+
 ## October 10 2026 Organization membership selection
 
 The Owner approved an Organization switcher for users with multiple active

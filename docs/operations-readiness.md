@@ -1,5 +1,18 @@
 # Operations and production-readiness boundary
 
+## Sign-in code source hosted-test release - completed October 13, 2026
+
+Matched API/help and Portal source `60b176f0c7cdac308531efe3713d667942381ea5`
+is live under the [preserving plan](plans/PORTAL-AUTH-CODE-LABEL-TEST-RELEASE-20261013-PLAN.md).
+Protected run #105 succeeds and the exact Git-source production frontend is
+promoted after API verification. The login field identifies the authenticator
+app as its code source. No migration, reset or identity/storage/provider cutover
+occurs; Website counts remain `12,6`, S3/ClamAV and recovery/runtime settings are
+preserved, and manual/Vercel Git holds remain. Health, signed-out rendering,
+scanner, authorization and served label/asset checks pass; bounded frontend
+errors are empty. The full MFA challenge and recovery journey remain unperformed.
+See the [receipt](operations/portal-auth-code-label-test-release-20261013.md).
+
 ## Review closure hosted-test release — completed October 12, 2026
 
 Matched API/Portal source `c4cdc20fa9d10e16f28f83958d9d423f6b8cadde` is live

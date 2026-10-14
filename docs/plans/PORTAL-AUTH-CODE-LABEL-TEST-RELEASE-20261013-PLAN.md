@@ -92,3 +92,18 @@ recovery acceptance remain unperformed unless a suitable user session is availab
 Record application/deployment/run identities, outcomes and retained holds in a
 completion receipt after verification. The MFA recovery answer is informational;
 this release adds no self-service reset workflow.
+
+## Completed release
+
+Matched API and frontend source `60b176f0c7cdac308531efe3713d667942381ea5`
+is committed, pushed and live. Protected run `38499219507` succeeds; production
+deployment `dpl_HZEfxqABvABTUp1kusHQu5RaT7Z1` is promoted after API verification,
+and the canonical alias independently matches it. Final staging uses Vercel's
+existing GitHub connection pinned to the full SHA after local upload attempts
+created no deployment. Automatic domain assignment remains disabled until the
+explicit promotion. The archived-source hash is retained as metadata/evidence.
+
+Website counts remain `12,6`; no migration ran. Health, rendering, scanner,
+anonymous authorization, exact live/staged asset hashes and bounded frontend
+errors pass. The restored workflow/Git holds and actual MFA acceptance limits
+are recorded in the [completion receipt](../operations/portal-auth-code-label-test-release-20261013.md).
