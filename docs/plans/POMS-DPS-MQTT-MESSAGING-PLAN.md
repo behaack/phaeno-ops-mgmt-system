@@ -9,6 +9,13 @@ an explicit default-off simulation permission and private SSH tunnel. The recipe
 remains Simulated; scientific admission, analysis linking, QC and Customer
 release remain blocked. No database migration or storage cutover is included.
 
+This bounded activation is now deployed on matched source `10e0dc9e`; API run
+#106 succeeds and the hosted signed-in workspace shows the available exact recipe
+and Simulated marker. Private discovery and exact-version S3 access pass, data
+is preserved and release holds are restored. No complete hosted FASTQ sets exist;
+sample execution and scientific acceptance remain outstanding. See the
+[completion receipt](../operations/portal-dps-test-activation-20261014.md).
+
 ## Local sample assembly activation — October 14, 2026
 
 The Owner requested API/UI activation for any sequenced sample, using

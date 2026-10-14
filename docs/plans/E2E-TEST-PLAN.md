@@ -1,5 +1,13 @@
 # Playwright E2E Test Plan
 
+Hosted DPS checkpoint, October 14: manual signed-in inspection reaches the
+deployed connected Data assembly workspace with the exact Simulated recipe.
+Canonical/prior-pin assets, API/database health, anonymous authorization and
+bounded error checks pass. No hosted complete FASTQ sets exist; no sample journey
+is manufactured. Automated E2E remains deferred and the connected sample
+Start/Cancel/reopen/download/guard cases below remain outstanding. See the
+[release receipt](../operations/portal-dps-test-activation-20261014.md).
+
 ## Local DPS sample activation — October 14, 2026
 
 Automated browser execution remains deferred. Manual signed-in local inspection

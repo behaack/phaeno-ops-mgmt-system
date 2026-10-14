@@ -1,5 +1,22 @@
 # Operations and production-readiness boundary
 
+## Sequenced-sample DPS hosted-test activation — completed October 14, 2026
+
+Matched API/UI/help source `10e0dc9e5c6b0b739fd7efd3d570451e7194cbad` is live
+under the [preserving activation plan](plans/PORTAL-DPS-TEST-ACTIVATION-20261014-PLAN.md).
+API run #106 succeeds and the exact ready frontend is promoted. The signed-in
+hosted Data assembly workspace shows Processing connected with
+`pseq_data_assembler` 0.1.0, Simulated. A private SSH tunnel binds only the API
+container's loopback; fresh discovery and existing-credential exact-version S3
+access pass. Simulation cannot enter scientific analysis, QC or Customer release.
+No migration, reset, identity/storage cutover or IAM change occurs. Website full
+records, database history, runtime settings outside the owned activation and
+S3/ClamAV are preserved. Health, authorization, asset/pin and bounded error checks
+pass; release holds are restored. There are no hosted complete FASTQ sets, so the
+sample execution/download journey remains unperformed. Historical recovery and
+the current S3 recovery deferral remain distinct. See the
+[completion receipt](operations/portal-dps-test-activation-20261014.md).
+
 ## Authenticator instruction layout hosted-test release - completed October 14, 2026
 
 Portal frontend source `43622eae11f6c229acf60a79d6b7fbd54baed104` is live

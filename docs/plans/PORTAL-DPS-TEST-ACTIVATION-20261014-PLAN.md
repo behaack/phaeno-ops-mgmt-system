@@ -7,6 +7,14 @@ help corpus to the existing hosted test environment, and enable the same
 Customer release remain prohibited for these attempts. Commercial activation,
 Trial contract changes and scientific recipe validation are outside this scope.
 
+Completed checkpoint: matched source `10e0dc9e5c6b0b739fd7efd3d570451e7194cbad`
+is deployed. API run #106 succeeds and the matching ready frontend is promoted.
+Hosted private discovery, authenticated connected UI, exact-version S3 access,
+data preservation, health, authorization and bounded errors pass. Release holds
+are restored. No complete hosted FASTQ sets exist, so actual sample execution
+remains a separate acceptance case. See the
+[completion receipt](../operations/portal-dps-test-activation-20261014.md).
+
 ## Target and preservation
 
 Target `/opt/phaeno.portal-green` on the existing deployment host, API

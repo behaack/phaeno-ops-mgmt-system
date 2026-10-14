@@ -7,6 +7,13 @@ identity, explicit simulation setting and rollback. The historical local-only
 checkpoints below retain their original scope; release evidence is recorded
 separately. Automatic deployment holds remain in place.
 
+Hosted checkpoint: matched API/UI source `10e0dc9e` is deployed and the signed-in
+workspace reports Processing connected, `pseq_data_assembler` 0.1.0, Simulated.
+The private tunnel rebinds to the replacement API container; fresh correlated
+discovery and existing-credential exact-version S3 access pass. Scientific guards
+remain active. See the [release receipt](portal-dps-test-activation-20261014.md)
+for exact identities, preservation, restored holds and remaining sample acceptance.
+
 Local connection checkpoint, October 14, 2026: the Owner selected the local API
 after an initial hosted-target discussion. The local API now connects through SSH
 to the EC2 broker at `127.0.0.1:11883`. Its own POMS-DPS 1.0 Describe request and

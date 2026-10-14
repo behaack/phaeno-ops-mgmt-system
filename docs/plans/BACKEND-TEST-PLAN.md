@@ -1,5 +1,14 @@
 # Backend Test Plan
 
+Hosted DPS checkpoint, October 14: the full Release solution builds with zero
+warnings/errors and EF comparison reports no model change. Protected API run
+#106 passes required health/scanner smoke checks; private correlated Describe,
+existing-credential exact-version S3 access, Website full-row preservation and
+anonymous assembly rejection pass. Automated suites remain deferred. Hosted
+FASTQ sets are empty; sample Start/Cancel, durable receipt/download and scientific
+guard acceptance remain outstanding. See the
+[release receipt](../operations/portal-dps-test-activation-20261014.md).
+
 ## Local DPS sample activation — October 14, 2026
 
 `DpsContractTests` now covers diagnostic mock provenance remaining invalid for

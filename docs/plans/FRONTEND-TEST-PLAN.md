@@ -1,5 +1,13 @@
 # Frontend Test Plan
 
+Hosted DPS checkpoint, October 14: type/lint and generated help checks pass.
+The promoted exact-source asset and signed-in Edge workspace show Processing
+connected with `pseq_data_assembler` 0.1.0 and Simulated. Prior browser pins load
+the new entry; captured browser and bounded frontend errors are empty. No hosted
+FASTQ sets exist, so Start/detail/download/control acceptance remains outstanding.
+Automated suites remain deferred. See the
+[release receipt](../operations/portal-dps-test-activation-20261014.md).
+
 ## Local DPS sample activation — October 14, 2026
 
 The assembly progress component has a regression source distinguishing
