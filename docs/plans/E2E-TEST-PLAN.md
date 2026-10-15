@@ -4522,3 +4522,14 @@ for smoke testing. Preserve exact source, migration and recovery evidence.
 
 See the [owning plan](LAB-SETUP-VISUAL-AUTHORING-PLAN.md) and
 [preserving release plan](LAB-AUTHORING-HOSTED-TEST-RELEASE-20261014-PLAN.md).
+
+## Procedure toolbar organization — October 15, 2026
+
+Local manual checks cover the grouped Revision/Presentation/Paper size settings,
+a separate procedure Actions region, overview/bench and Letter/A4 selection,
+keyboard menu opening and Escape focus return, equal control baselines at 1280 CSS
+pixels and no page/toolbar overflow at 390 CSS pixels. The viewport is restored.
+No scientific save, approval or print is performed. Typecheck, scoped lint,
+production build and documentation checks pass; automated suites are not run for
+this layout-only request. Screenshot capture is unreliable and no invalid capture
+is retained as acceptance evidence. See the [owning plan](LAB-SETUP-VISUAL-AUTHORING-PLAN.md).

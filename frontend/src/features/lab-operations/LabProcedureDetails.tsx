@@ -1,5 +1,5 @@
 import { useConfigurationDiscovery, type WorkflowKind } from './configuration-discovery'
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { getLabOperationsDashboard, getLabOperationsError } from '#/api/lab-operations'
@@ -18,11 +18,13 @@ import { ReagentProcedureEditor } from './ReagentWorkflowSettings'
 
 import { procedureDetailRoute } from './procedure-navigation'
 import { resolveWorkflowPresentation } from './workflow-presentation'
+import { PreparationField } from './preparation-ui'
 
 export function LabProcedureDetails({ kind, recordId, revision, edit }: { kind: string; recordId: string; revision?: number; edit?: boolean }) {
   const { session, authProvider } = usePhaenoSession()
   const navigate = useNavigate()
   const discovery = useConfigurationDiscovery()
+  const revisionId = useId()
   const workflowType: WorkflowKind = kind === 'masterMix' ? 'master-mix' : kind === 'kit' ? 'transportation-kit' : kind === 'reagent' ? 'reagent' : 'library'
   const [capturePreview, setCapturePreview] = useState<ProtocolDefinition | null>(null)
   const enabled = Boolean(session?.capabilities.canManageLabOperations || session?.capabilities.canManageLabProtocols) && authProvider !== 'mock'
@@ -73,9 +75,7 @@ export function LabProcedureDetails({ kind, recordId, revision, edit }: { kind: 
   const editing = canEdit && (edit || recordId === 'new')
   return <LabSettingsLayout backSearch={{ ...discovery, workflowType: isProtocol ? discovery.workflowType : workflowType }} section={isProtocol ? 'protocols' : 'workflows'} backLabel={isProtocol ? 'protocols' : 'workflows'}>
     {!enabled ? <p>Connect with authorized laboratory access to view this procedure.</p> : query.isPending || dashboard.isPending ? <p role="status">Loading procedure…</p> : query.error || dashboard.error ? <p role="alert">{getLabOperationsError(query.error ?? dashboard.error, 'The procedure could not be loaded.')}</p> : editing && kind === 'masterMix' && (mix || recordId === 'new') ? <MasterMixProcedureEditor key={recordId} workflow={mix} onClose={close} /> : editing && kind === 'kit' && (kit || recordId === 'new') ? <KitProcedureEditor key={recordId} workflow={kit} onClose={close} /> : editing && kind === 'reagent' && (reagent || recordId === 'new') ? <ReagentProcedureEditor key={recordId} workflow={reagent} definitions={dashboard.data?.materialDefinitions ?? []} onClose={close} /> : doc ? <div className="space-y-5">
-      <header className="flex flex-wrap items-center justify-between gap-3"><div><label className="mr-2 text-sm" htmlFor="procedure-revision">Viewed revision</label><NativeSelect id="procedure-revision" value={String(doc.revision)} onChange={e => void navigate({ to: procedureDetailRoute, params: { kind, recordId }, search: { ...discovery, revision: Number(e.target.value) } })}>{revisions.map(v => <option key={v.revision} value={v.revision}>Revision {v.revision} · {v.status}</option>)}</NativeSelect></div>
-      </header>
-      <ProcedurePresentation document={doc} actions={canEdit ? [{ label: 'Edit current draft / create revision', onClick: () => {
+      <ProcedurePresentation document={doc} revisionControl={<PreparationField id={revisionId} label="Revision"><NativeSelect id={revisionId} value={String(doc.revision)} onChange={e => void navigate({ to: procedureDetailRoute, params: { kind, recordId }, search: { ...discovery, revision: Number(e.target.value) } })}>{revisions.map(v => <option key={v.revision} value={v.revision}>Revision {v.revision} · {v.status}</option>)}</NativeSelect></PreparationField>} actions={canEdit ? [{ label: 'Edit current draft / create revision', onClick: () => {
         if (protocol && !protocol.retiredAtUtc) {
           const draft = protocol.versions.find(v => v.status === 'Draft')
           if (draft) void navigate({ to: '/lab-operations/protocols/$protocolId/versions/$versionId/edit', params: { protocolId: protocol.id, versionId: draft.id }, search: discovery })

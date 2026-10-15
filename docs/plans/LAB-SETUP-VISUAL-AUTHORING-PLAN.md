@@ -131,3 +131,40 @@ The [hosted-test release plan](LAB-AUTHORING-HOSTED-TEST-RELEASE-20261014-PLAN.m
 now owns publication, preserving migration, API pause/recovery and matching-source
 frontend promotion. The earlier local checkpoint remains dated implementation
 evidence. Manual file/PDF and physical/scientific acceptance limits remain open.
+
+## Procedure toolbar organization — October 15, 2026
+
+The Owner requested a clearer organization of the revision, presentation, paper
+and Actions controls. Use one compact, labeled toolbar: Revision, Presentation
+and Paper size are view/output settings; the single procedure Actions menu sits
+in its own area after a divider. In particular, do not visually group Actions
+with Paper size, which implies every command is a print operation. Keep existing
+edit, preview and print commands in the same contextual Actions menu.
+
+The revision selector is rendered inside the shared presentation toolbar on
+saved detail pages. Previews without a revision selector use the same layout
+without an empty column. Controls share Field/NativeSelect spacing and sizing,
+align on one baseline on desktop, and stack with a separate Actions region on
+narrow layouts. Procedure definitions, selected revision behavior, permissions,
+print behavior and scientific recording are unchanged. The Phaeno guide was
+reviewed and remains accurate: its revision, presentation, paper and Actions
+instructions still apply. Retain the existing guide/corpus version for this
+UI-only release so API-backed help search stays compatible. No dependency or
+persisted-model change is involved.
+
+Local source is complete. Frontend production build, TypeScript, scoped ESLint,
+documentation corpus check and whitespace checks pass. The guide corpus remains
+`1d0e7cb954a3` (56 guides). Existing authenticated local protocol content retains
+its revision, overview/bench selection and Letter/A4 options. Keyboard Arrow Down
+opens the single Actions menu with edit, print and preview commands; Escape returns
+focus after the menu closes. At 1280 CSS pixels the three selects and Actions
+share a 32-pixel baseline; at 390 CSS pixels the toolbar and page have no horizontal
+overflow. The viewport override is reset. No protocol save/approval or print occurs.
+
+Automated suites are not run for this presentation-only request. Browser screenshot
+capture produced invalid tiled/cropped images, which were discarded rather than
+used as visual evidence. Native PDF/print qualification remains separate. The
+Owner subsequently authorized commit, push and UI deployment. The
+[UI-only preserving release plan](PROCEDURE-TOOLBAR-TEST-RELEASE-20261015-PLAN.md)
+owns exact-source staging, promotion, rollback and hosted verification. Unrelated
+user-card edits are preserved and excluded from the release.

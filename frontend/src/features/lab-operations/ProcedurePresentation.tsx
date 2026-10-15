@@ -1,11 +1,11 @@
 import { ProcedureSource } from './ProcedureSource'
-import { useId, useRef, useState } from 'react'
+import { useId, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { Badge } from '#/components/ui/badge'
 import { NativeSelect } from '#/components/ui/native-select'
 import { ProcedureIllustration } from './ProcedureIllustrations'
 import type { InstructionIllustration, InstructionSource } from './procedure-types'
-import { PreparationActions } from './preparation-ui'
+import { PreparationActions, PreparationField } from './preparation-ui'
 import './procedure-print.css'
 
 export type PresentedInstruction = { key: string; name: string; instructions: string; illustrations?: InstructionIllustration[] | null; copiedFrom?: InstructionSource | null; labStepVersionId?: string | null; sourceLabStepVersionId?: string | null; repeatable?: boolean; operatorConfirmation?: boolean; required?: boolean; condition?: string | null; requiredRole?: string | null; captures?: { key: string; label: string; type: string; required?: boolean; options?: string[] | null; scope?: string | null; unit?: string | null; plannedQuantityText?: string | null; material?: { name: string } | null }[]; inputMaterials?: string[]; preparedOutputs?: string[]; equipmentTypes?: string[]; qcGate?: { criteria: string; scope?: string | null } | null; handoffCriteria?: string | null; protocolLabel?: string; sourceLabel?: string; attachmentRequired?: boolean; attachmentKind?: string | null }
@@ -49,7 +49,7 @@ function Content({ document: doc, view }: { document: ProcedureDocument; view: '
   </article>
 }
 
-export function ProcedurePresentation({ document: doc, onCapturePreview, actions = [] }: { document: ProcedureDocument; onCapturePreview?: () => void; actions?: { label: string; onClick: () => void; disabled?: boolean }[] }) {
+export function ProcedurePresentation({ document: doc, revisionControl, onCapturePreview, actions = [] }: { document: ProcedureDocument; revisionControl?: ReactNode; onCapturePreview?: () => void; actions?: { label: string; onClick: () => void; disabled?: boolean }[] }) {
   const id = useId()
   const [view, setView] = useState<'overview' | 'bench'>('overview')
   const [paper, setPaper] = useState('Letter')
@@ -70,13 +70,19 @@ export function ProcedurePresentation({ document: doc, onCapturePreview, actions
     finally { delete document.body.dataset.labProcedurePrint; setPrinting(null) }
   }
   return <section className="min-w-0 space-y-4" aria-label="Procedure presentation">
-    <div className="flex flex-wrap items-center justify-between gap-3">
-      <div><label className="sr-only" htmlFor={`${id}-presentation`}>Presentation</label><NativeSelect id={`${id}-presentation`} value={view} onChange={e => setView(e.target.value as typeof view)}><option value="overview">Process overview</option><option value="bench">Bench instructions</option></NativeSelect></div>
-      <div className="flex flex-wrap items-center gap-2"><label className="text-sm" htmlFor={`${id}-paper`}>Paper</label><NativeSelect id={`${id}-paper`} value={paper} onChange={e => setPaper(e.target.value)}><option>Letter</option><option>A4</option></NativeSelect><PreparationActions items={[...actions,
-        { label: 'Print overview / save PDF', onClick: () => void print('overview'), disabled: Boolean(printing) },
-        { label: 'Print bench instructions / save PDF', onClick: () => void print('bench'), disabled: Boolean(printing) },
-        ...(onCapturePreview ? [{ label: 'Preview recording controls', onClick: onCapturePreview }] : []),
-      ]} /></div>
+    <div role="group" aria-label="Procedure controls" className="grid min-w-0 gap-4 rounded-lg border bg-muted/20 p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+      <div role="group" aria-label="View and print settings" className={`grid min-w-0 gap-3 ${revisionControl ? 'sm:grid-cols-[minmax(0,16rem)_minmax(0,14rem)_7rem]' : 'sm:grid-cols-[minmax(0,16rem)_7rem]'}`}>
+        {revisionControl}
+        <PreparationField id={`${id}-presentation`} label="Presentation"><NativeSelect id={`${id}-presentation`} value={view} onChange={e => setView(e.target.value as typeof view)}><option value="overview">Process overview</option><option value="bench">Bench instructions</option></NativeSelect></PreparationField>
+        <PreparationField id={`${id}-paper`} label="Paper size"><NativeSelect id={`${id}-paper`} value={paper} onChange={e => setPaper(e.target.value)}><option>Letter</option><option>A4</option></NativeSelect></PreparationField>
+      </div>
+      <div role="group" aria-label="Procedure actions" className="flex items-end justify-end border-t pt-4 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-4">
+        <PreparationActions items={[...actions,
+          { label: 'Print overview / save PDF', onClick: () => void print('overview'), disabled: Boolean(printing) },
+          { label: 'Print bench instructions / save PDF', onClick: () => void print('bench'), disabled: Boolean(printing) },
+          ...(onCapturePreview ? [{ label: 'Preview recording controls', onClick: onCapturePreview }] : []),
+        ]} />
+      </div>
     </div>
     {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
     <div hidden={view !== 'overview'}><Content document={doc} view="overview" /></div>
