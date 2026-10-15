@@ -17,7 +17,7 @@ vi.mock('../use-order-draft-guard', () => ({ useOrderDraftGuard: () => vi.fn() }
 const kit = { ...standardKit, assemblyWorkflowRevisionId: 'workflow', tubes: [] }
 const run: KitAssemblyRun = {
   id: 'run', stockKitId: kit.id, kitNumber: kit.kitNumber, status: 'InProgress', version: 7,
-  workflowRevisionId: 'workflow', steps: [{ labStepVersionId: 'step-version', name: 'Pack RNA kit', instructions: 'Pack the scanned tubes and seal the shipper.' }], stepRecords: [], uses: [], startedAtUtc: '2026-09-28T00:00:00Z', finishedAtUtc: null, abandonmentReason: null,
+  workflowRevisionId: 'workflow', steps: [{ stepKey: 'step-version', name: 'Pack RNA kit', instructions: 'Pack the scanned tubes and seal the shipper.' }], stepRecords: [], uses: [], startedAtUtc: '2026-09-28T00:00:00Z', finishedAtUtc: null, abandonmentReason: null,
   components: [
     { supplierProductId: 'shipper', kind: 'ShippingContainer', quantity: 1, supplierName: 'Boxes', productNumber: 'Box', productDescription: '20-tube box' },
     { supplierProductId: 'tube', kind: 'Tube', quantity: 20, supplierName: 'Tubes', productNumber: 'Tube', productDescription: 'RNA tube' },
@@ -254,7 +254,7 @@ describe('combined physical-kit packing', () => {
     const { updateKit } = await mount()
     const codes = Array.from({ length: 20 }, (_, index) => `TUBE-${index.toString().padStart(4, '0')}`)
     scans(codes.join('\n'))
-    const savedRun = { ...run, version: 8, stepRecords: [{ sequence: 0, labStepVersionId: 'step-version', notes: 'Packed and sealed according to instructions.', performedByUserId: 'operator', performedAtUtc: '2026-09-28T00:00:00Z' }], uses: run.components.map(component => ({ id: component.supplierProductId, supplierProductId: component.supplierProductId, sourceMaterialLotId: null, quantity: component.quantity, quantityUnit: 'each', recordedByUserId: 'operator', recordedAtUtc: '2026-09-28T00:00:00Z' })) }
+    const savedRun = { ...run, version: 8, stepRecords: [{ sequence: 0, stepKey: 'step-version', notes: 'Packed and sealed according to instructions.', performedByUserId: 'operator', performedAtUtc: '2026-09-28T00:00:00Z' }], uses: run.components.map(component => ({ id: component.supplierProductId, supplierProductId: component.supplierProductId, sourceMaterialLotId: null, quantity: component.quantity, quantityUnit: 'each', recordedByUserId: 'operator', recordedAtUtc: '2026-09-28T00:00:00Z' })) }
     mocks.read.mockResolvedValue(savedRun)
     mocks.record.mockRejectedValue(new Error('Response lost.'))
     mocks.saved.mockImplementation(async () => { updateKit({ ...kit, version: 3, tubes: codes.map(code => ({ id: code, supplierBarcode: code })) }) })

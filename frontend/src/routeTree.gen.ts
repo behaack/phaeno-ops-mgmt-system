@@ -99,6 +99,7 @@ import { Route as ReagentOrdersOrderIdEditRouteImport } from './routes/reagent-o
 import { Route as SampleShippingSettingsKitSpecificationsContainerIdRouteImport } from './routes/sample-shipping-settings_.kit-specifications.$containerId'
 import { Route as SampleShippingShipmentIdPacketRouteImport } from './routes/sample-shipping.$shipmentId.packet'
 import { Route as TrialProjectsTrialIdScopeRouteImport } from './routes/trial-projects.$trialId.scope'
+import { Route as LabConfigurationProceduresKindRecordIdRouteImport } from './routes/lab-configuration_.procedures.$kind.$recordId'
 import { Route as LabOperationsWorkOrderIdContainersContainerIdRouteImport } from './routes/lab-operations.$workOrderId_.containers.$containerId'
 import { Route as LabOperationsWorkOrderIdSpecimensSpecimenIdRouteImport } from './routes/lab-operations.$workOrderId_.specimens.$specimenId'
 import { Route as LabOperationsAssemblyJobsJobIdQcRouteImport } from './routes/lab-operations.assembly-jobs.$jobId_.qc'
@@ -609,6 +610,12 @@ const TrialProjectsTrialIdScopeRoute =
     path: '/scope',
     getParentRoute: () => TrialProjectsTrialIdRoute,
   } as any)
+const LabConfigurationProceduresKindRecordIdRoute =
+  LabConfigurationProceduresKindRecordIdRouteImport.update({
+    id: '/lab-configuration_/procedures/$kind/$recordId',
+    path: '/lab-configuration/procedures/$kind/$recordId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LabOperationsWorkOrderIdContainersContainerIdRoute =
   LabOperationsWorkOrderIdContainersContainerIdRouteImport.update({
     id: '/$workOrderId_/containers/$containerId',
@@ -847,6 +854,7 @@ export interface FileRoutesByFullPath {
   '/sample-shipping-settings/kit-specifications/$containerId': typeof SampleShippingSettingsKitSpecificationsContainerIdRoute
   '/sample-shipping/$shipmentId/packet': typeof SampleShippingShipmentIdPacketRoute
   '/trial-projects/$trialId/scope': typeof TrialProjectsTrialIdScopeRoute
+  '/lab-configuration/procedures/$kind/$recordId': typeof LabConfigurationProceduresKindRecordIdRoute
   '/lab-operations/$workOrderId/containers/$containerId': typeof LabOperationsWorkOrderIdContainersContainerIdRoute
   '/lab-operations/$workOrderId/specimens/$specimenId': typeof LabOperationsWorkOrderIdSpecimensSpecimenIdRoute
   '/lab-operations/assembly-jobs/$jobId/qc': typeof LabOperationsAssemblyJobsJobIdQcRoute
@@ -963,6 +971,7 @@ export interface FileRoutesByTo {
   '/sample-shipping-settings/kit-specifications/$containerId': typeof SampleShippingSettingsKitSpecificationsContainerIdRoute
   '/sample-shipping/$shipmentId/packet': typeof SampleShippingShipmentIdPacketRoute
   '/trial-projects/$trialId/scope': typeof TrialProjectsTrialIdScopeRoute
+  '/lab-configuration/procedures/$kind/$recordId': typeof LabConfigurationProceduresKindRecordIdRoute
   '/lab-operations/$workOrderId/containers/$containerId': typeof LabOperationsWorkOrderIdContainersContainerIdRoute
   '/lab-operations/$workOrderId/specimens/$specimenId': typeof LabOperationsWorkOrderIdSpecimensSpecimenIdRoute
   '/lab-operations/assembly-jobs/$jobId/qc': typeof LabOperationsAssemblyJobsJobIdQcRoute
@@ -1080,6 +1089,7 @@ export interface FileRoutesById {
   '/sample-shipping-settings_/kit-specifications/$containerId': typeof SampleShippingSettingsKitSpecificationsContainerIdRoute
   '/sample-shipping/$shipmentId/packet': typeof SampleShippingShipmentIdPacketRoute
   '/trial-projects/$trialId/scope': typeof TrialProjectsTrialIdScopeRoute
+  '/lab-configuration_/procedures/$kind/$recordId': typeof LabConfigurationProceduresKindRecordIdRoute
   '/lab-operations/$workOrderId_/containers/$containerId': typeof LabOperationsWorkOrderIdContainersContainerIdRoute
   '/lab-operations/$workOrderId_/specimens/$specimenId': typeof LabOperationsWorkOrderIdSpecimensSpecimenIdRoute
   '/lab-operations/assembly-jobs/$jobId_/qc': typeof LabOperationsAssemblyJobsJobIdQcRoute
@@ -1198,6 +1208,7 @@ export interface FileRouteTypes {
     | '/sample-shipping-settings/kit-specifications/$containerId'
     | '/sample-shipping/$shipmentId/packet'
     | '/trial-projects/$trialId/scope'
+    | '/lab-configuration/procedures/$kind/$recordId'
     | '/lab-operations/$workOrderId/containers/$containerId'
     | '/lab-operations/$workOrderId/specimens/$specimenId'
     | '/lab-operations/assembly-jobs/$jobId/qc'
@@ -1314,6 +1325,7 @@ export interface FileRouteTypes {
     | '/sample-shipping-settings/kit-specifications/$containerId'
     | '/sample-shipping/$shipmentId/packet'
     | '/trial-projects/$trialId/scope'
+    | '/lab-configuration/procedures/$kind/$recordId'
     | '/lab-operations/$workOrderId/containers/$containerId'
     | '/lab-operations/$workOrderId/specimens/$specimenId'
     | '/lab-operations/assembly-jobs/$jobId/qc'
@@ -1430,6 +1442,7 @@ export interface FileRouteTypes {
     | '/sample-shipping-settings_/kit-specifications/$containerId'
     | '/sample-shipping/$shipmentId/packet'
     | '/trial-projects/$trialId/scope'
+    | '/lab-configuration_/procedures/$kind/$recordId'
     | '/lab-operations/$workOrderId_/containers/$containerId'
     | '/lab-operations/$workOrderId_/specimens/$specimenId'
     | '/lab-operations/assembly-jobs/$jobId_/qc'
@@ -1489,6 +1502,7 @@ export interface RootRouteChildren {
   DemoTanstackQueryRoute: typeof DemoTanstackQueryRoute
   SessionTasksSetupMfaRoute: typeof SessionTasksSetupMfaRoute
   SampleShippingSettingsKitSpecificationsContainerIdRoute: typeof SampleShippingSettingsKitSpecificationsContainerIdRoute
+  LabConfigurationProceduresKindRecordIdRoute: typeof LabConfigurationProceduresKindRecordIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -2122,6 +2136,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/trial-projects/$trialId/scope'
       preLoaderRoute: typeof TrialProjectsTrialIdScopeRouteImport
       parentRoute: typeof TrialProjectsTrialIdRoute
+    }
+    '/lab-configuration_/procedures/$kind/$recordId': {
+      id: '/lab-configuration_/procedures/$kind/$recordId'
+      path: '/lab-configuration/procedures/$kind/$recordId'
+      fullPath: '/lab-configuration/procedures/$kind/$recordId'
+      preLoaderRoute: typeof LabConfigurationProceduresKindRecordIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/lab-operations/$workOrderId_/containers/$containerId': {
       id: '/lab-operations/$workOrderId_/containers/$containerId'
@@ -2785,6 +2806,8 @@ const rootRouteChildren: RootRouteChildren = {
   SessionTasksSetupMfaRoute: SessionTasksSetupMfaRoute,
   SampleShippingSettingsKitSpecificationsContainerIdRoute:
     SampleShippingSettingsKitSpecificationsContainerIdRoute,
+  LabConfigurationProceduresKindRecordIdRoute:
+    LabConfigurationProceduresKindRecordIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

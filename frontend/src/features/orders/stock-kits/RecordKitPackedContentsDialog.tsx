@@ -1,3 +1,4 @@
+import { ProcedureIllustration } from '#/features/lab-operations/ProcedureIllustrations'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQuery } from '@tanstack/react-query'
@@ -40,8 +41,7 @@ export function RecordKitPackedContentsDialog({ kit, assembly, writesBlocked, pr
   const cancelButton = useRef<HTMLButtonElement>(null)
   const keepEditingButton = useRef<HTMLButtonElement>(null)
   const restoreCancelFocus = useRef(false)
-  const step = assembly.run!.steps[0]
-  const blocked = writesBlocked || !assembly.canEdit || assembly.run!.steps.length !== 1 || assembly.query.isFetching || inventory.isPending || inventory.isFetching || Boolean(inventory.error)
+  const blocked = writesBlocked || !assembly.canEdit || assembly.run!.steps.length === 0 || assembly.query.isFetching || inventory.isPending || inventory.isFetching || Boolean(inventory.error)
   function lotsFor(productId: string, quantity: number) {
     const all = (inventory.data?.materialLots ?? []).filter(lot => lot.supplierProductId === productId)
     const previousUses = assembly.run?.uses.filter(use => use.supplierProductId === productId) ?? []
@@ -151,7 +151,7 @@ export function RecordKitPackedContentsDialog({ kit, assembly, writesBlocked, pr
   return <Dialog open onOpenChange={open => { if (!open) close() }}><DialogContent className="max-w-2xl stock-kit-print-dialog" showCloseButton={!assembly.pending}>
     <DialogHeader><DialogTitle><CustomerSourceText source={"Assemble transportation kit"} /></DialogTitle><DialogDescription>{kit.container.commonName} · {kit.container.capacity} <CustomerSourceText source={"tubes. Save for later to resume; the kit enters Inventory only when completed."} /></DialogDescription></DialogHeader>
     <div className="stock-kit-print-surface hidden print:block"><p><CustomerSourceText source={"Phaeno ·"} /> {kit.container.commonName} <CustomerSourceText source={"· SKU"} /> {kit.container.sku}</p><ShippingBarcode value={kit.kitNumber} label="Container barcode" /></div>
-    {assembly.run!.steps.length !== 1 ? <Alert variant="destructive"><AlertTitle><CustomerSourceText source={"Assembly workflow needs review"} /></AlertTitle><AlertDescription><CustomerSourceText source={"This kit must have one approved assembly step before packed contents can be recorded."} /></AlertDescription></Alert> : null}
+    {assembly.run!.steps.length === 0 ? <Alert variant="destructive"><AlertTitle><CustomerSourceText source={"Assembly workflow needs review"} /></AlertTitle><AlertDescription><CustomerSourceText source={"This kit requires an approved assembly procedure before packed contents can be recorded."} /></AlertDescription></Alert> : null}
     {assembly.run!.status !== 'InProgress' ? <Alert variant="warning"><AlertTitle><CustomerSourceText source={"Assembly is no longer active"} /></AlertTitle><AlertDescription><CustomerSourceText source={"Close this modal to review the saved kit and its assembly history."} /></AlertDescription></Alert> : null}
     {mutation.error ? <Alert variant="destructive"><AlertTitle><CustomerSourceText source={"Packed contents need review"} /></AlertTitle><AlertDescription>{getLabOperationsError(mutation.error, 'The request could not be confirmed.')} <CustomerSourceText source={"Your entries are retained. Review refreshed quantities and source lots; remove any scans already registered before trying again."} /></AlertDescription></Alert> : null}
     {assembly.printLabel.error ? <Alert variant="destructive"><AlertTitle><CustomerSourceText source={"Label print request was not saved"} /></AlertTitle><AlertDescription>{getLabOperationsError(assembly.printLabel.error, 'Retry printing before completing this kit.')}</AlertDescription></Alert> : null}
@@ -167,12 +167,12 @@ export function RecordKitPackedContentsDialog({ kit, assembly, writesBlocked, pr
       }) }, { onSettled: () => { submitting.current = false; intent.current = 'save' } })
     }, () => { intent.current = 'save' })}>
       {inventory.isFetching || assembly.query.isFetching ? <p role="status" className="text-sm"><CustomerSourceText source={"Checking current quantities and component inventory…"} /></p> : null}
-      {step ? <section aria-labelledby="kit-packing-instructions" className="space-y-2 border-b pb-4">
-        <h3 id="kit-packing-instructions" className="text-sm font-medium"><CustomerSourceText source={"Assembly instructions"} /></h3>
-        <p className="text-sm font-medium wrap-anywhere">{step.name}</p>
-        <p className="whitespace-pre-wrap text-sm wrap-anywhere">{step.instructions}</p>
-        {assembly.run!.stepRecords[0]?.notes ? <p className="whitespace-pre-wrap text-xs text-muted-foreground"><CustomerSourceText source={"Recorded completion notes:"} /> {assembly.run!.stepRecords[0].notes}</p> : <p className="text-xs text-muted-foreground"><CustomerSourceText source={"Complete records the assembly step and makes this kit available in Inventory."} /></p>}
-      </section> : null}
+      {assembly.run!.steps.map((step, instructionIndex) => <section key={step.stepKey} aria-labelledby={`kit-packing-instructions-${instructionIndex}`} className="space-y-2 border-b pb-4">
+        <h3 id={`kit-packing-instructions-${instructionIndex}`} className="text-sm font-medium"><CustomerSourceText source={"Assembly instructions"} /></h3>
+        <p className="text-sm font-medium wrap-anywhere">{instructionIndex + 1}. {step.name}</p>
+        <p className="whitespace-pre-wrap text-sm wrap-anywhere">{step.instructions}</p>{(step.illustrations ?? []).map(image => <ProcedureIllustration key={image.assetId} image={image} />)}
+        {assembly.run!.stepRecords[0]?.notes ? <p className="whitespace-pre-wrap text-xs text-muted-foreground"><CustomerSourceText source={"Recorded completion notes:"} /> {assembly.run!.stepRecords[0].notes}</p> : <p className="text-xs text-muted-foreground"><CustomerSourceText source={"Complete confirms that every listed instruction has been performed and makes this kit available in Inventory."} /></p>}
+      </section>)}
       <section aria-labelledby="kit-label-heading" className="space-y-2 border-b pb-4">
         <div className="flex flex-wrap items-start justify-between gap-2"><h3 id="kit-label-heading" className="text-sm font-medium"><CustomerSourceText source={"Container label"} /></h3><Button type="button" variant="outline" disabled={assembly.pending || writesBlocked || !assembly.canEdit || assembly.query.isFetching} onClick={() => assembly.printLabel.mutate()}><Printer aria-hidden="true" />{assembly.printLabel.isPending ? <CustomerSourceText source={"Preparing label…"} /> : <CustomerSourceText source={"Print container barcode"} />}</Button></div>
         <p className="wrap-anywhere font-mono text-xs text-muted-foreground">{kit.kitNumber}</p>

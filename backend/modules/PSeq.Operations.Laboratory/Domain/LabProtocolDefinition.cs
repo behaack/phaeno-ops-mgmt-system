@@ -57,6 +57,8 @@ public sealed record LabProtocolDefinition
             if (step.AttachmentKind is not (null or "none" or "qc" or "preparation")) throw new ArgumentException("Choose a QC report, preparation worksheet, or no attachment.");
             if (step.AttachmentRequired && (step.AttachmentKind is not ("qc" or "preparation") || !PreparationBatchEnabled))
                 throw new ArgumentException("A required report needs a report type and preparation batch recording.");
+            LabConfigurationAsset.Validate(step.Illustrations);
+            LabInstructionSource.Validate(step.CopiedFrom);
             RequiredText(step.Name, 160, "Step name");
             RequiredText(step.Instructions, 4000, $"{step.Name}: instructions");
             if (step.Condition is not null)
@@ -202,6 +204,8 @@ public sealed record LabProtocolStepDefinition
     public required string Key { get; init; }
     public required string Name { get; init; }
     public required string Instructions { get; init; }
+    public IReadOnlyList<LabInstructionIllustration>? Illustrations { get; init; }
+    public LabInstructionSource? CopiedFrom { get; init; }
     public required bool Required { get; init; }
     public string? Condition { get; init; }
     public required bool Repeatable { get; init; }

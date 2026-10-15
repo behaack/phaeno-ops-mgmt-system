@@ -1,3 +1,4 @@
+import type { ProcedureInstruction } from '#/features/lab-operations/procedure-types'
 import { api } from './client'
 import { requireRecordPage } from './record-page'
 
@@ -7,7 +8,7 @@ const get = async <T>(path: string) => (await api.get<Envelope<T>>(`${base}${pat
 const post = async <T>(path: string, input: unknown) => (await api.post<Envelope<T>>(`${base}${path}`, input)).data.data
 const put = async <T>(path: string, input: unknown) => (await api.put<Envelope<T>>(`${base}${path}`, input)).data.data
 
-export type ReagentWorkflowStep = { key: string; name: string; instructions: string }
+export type ReagentWorkflowStep = ProcedureInstruction
 export type ReagentWorkflowRevision = { revision: number; name: string; steps: ReagentWorkflowStep[]; status: 'Draft' | 'Approved' | 'Retired'; authoredByUserId: string; approvedByUserId: string | null; approvedAtUtc: string | null; approvalOverrideReason: string | null }
 export type ReagentWorkflow = {
   id: string; name: string; materialDefinitionId: string; materialName: string; outputUnit: string | null

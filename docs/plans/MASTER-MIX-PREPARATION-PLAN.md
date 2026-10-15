@@ -1,5 +1,11 @@
 # Shared, single-use master mix for library preparation
 
+> October 14, 2026: the approved [protocol-first Lab setup plan](LAB-SETUP-VISUAL-AUTHORING-PLAN.md)
+> supersedes mandatory catalog-step authoring/approval and kit single-step constraints.
+> Current procedures own their instructions and approve the whole revision. Retained
+> catalog references are provenance; performed work and approved snapshots stay pinned.
+
+
 ## Library Lab step sources and demo setup — October 3, 2026
 
 The owner requires library preparation to include both specimen biological

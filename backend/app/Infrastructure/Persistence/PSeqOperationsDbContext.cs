@@ -593,6 +593,7 @@ public sealed partial class PSeqOperationsDbContext(
         LabFastqModelConfiguration.Configure(modelBuilder, this.persistenceOptions.LaboratorySchema);
         LabPreparationModelConfiguration.Configure(modelBuilder, this.persistenceOptions.LaboratorySchema);
         LabMasterMixModelConfiguration.Configure(modelBuilder, this.persistenceOptions.LaboratorySchema);
+        modelBuilder.ConfigureLabConfigurationAssets(this.persistenceOptions.LaboratorySchema);
         WebsiteModelConfiguration.Configure(modelBuilder, this.persistenceOptions.WebsiteSchema);
 
         ApplySchemaOwnership(modelBuilder);

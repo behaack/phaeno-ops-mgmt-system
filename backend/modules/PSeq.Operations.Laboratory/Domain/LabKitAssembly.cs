@@ -2,7 +2,9 @@ namespace PSeq.Operations.Laboratory.Domain;
 
 using System.Text.Json;
 
-public sealed record LabKitAssemblyStep(Guid LabStepVersionId, string Name, string Instructions);
+public sealed record LabKitAssemblyStep(Guid StepKey, string Name, string Instructions,
+    Guid? SourceLabStepVersionId = null, IReadOnlyList<LabInstructionIllustration>? Illustrations = null,
+    LabInstructionSource? CopiedFrom = null);
 public enum LabKitAssemblyRevisionStatus { Draft, Approved, Retired, Discarded }
 public enum LabKitAssemblyRunStatus { InProgress, Completed, Abandoned }
 
@@ -44,12 +46,13 @@ public sealed class LabKitAssemblyWorkflowRevision
     {
         if (workflowId == Guid.Empty || revision < 1 || authorId == Guid.Empty || utcNow.Kind != DateTimeKind.Utc)
             throw new ArgumentException("A workflow, revision, author, and UTC time are required.");
-        if (steps.Count is < 1 or > 100 || steps.Any(step => step.LabStepVersionId == Guid.Empty
+        if (steps is null || steps.Count is < 1 or > 100 || steps.Any(step => step is null || step.StepKey == Guid.Empty
             || string.IsNullOrWhiteSpace(step.Name) || string.IsNullOrWhiteSpace(step.Instructions))
-            || steps.Select(step => step.LabStepVersionId).Distinct().Count() != steps.Count)
-            throw new ArgumentException("Choose 1 to 100 distinct approved Lab step versions.");
+            || steps.Select(step => step.StepKey).Distinct().Count() != steps.Count)
+            throw new ArgumentException("Define 1 to 100 distinct workflow instructions.");
         WorkflowId = workflowId;
         Revision = revision;
+        foreach (var step in steps) { LabConfigurationAsset.Validate(step.Illustrations); LabInstructionSource.Validate(step.CopiedFrom); }
         StepsJson = JsonSerializer.Serialize(steps);
         AuthoredByUserId = authorId;
         AuthoredAtUtc = utcNow;
@@ -57,11 +60,12 @@ public sealed class LabKitAssemblyWorkflowRevision
     public IReadOnlyList<LabKitAssemblyStep> Steps() => JsonSerializer.Deserialize<List<LabKitAssemblyStep>>(StepsJson) ?? [];
     public void UpdateDraft(IReadOnlyList<LabKitAssemblyStep> steps, Guid actorId, DateTime utcNow)
     {
-        if (Status != LabKitAssemblyRevisionStatus.Draft || steps.Count is < 1 or > 100
-            || steps.Any(step => step.LabStepVersionId == Guid.Empty || string.IsNullOrWhiteSpace(step.Name)
+        if (Status != LabKitAssemblyRevisionStatus.Draft || steps is null || steps.Count is < 1 or > 100
+            || steps.Any(step => step is null || step.StepKey == Guid.Empty || string.IsNullOrWhiteSpace(step.Name)
                 || string.IsNullOrWhiteSpace(step.Instructions))
-            || steps.Select(step => step.LabStepVersionId).Distinct().Count() != steps.Count)
-            throw new InvalidOperationException("Only a draft can be changed with distinct approved Lab steps.");
+            || steps.Select(step => step.StepKey).Distinct().Count() != steps.Count)
+            throw new InvalidOperationException("Only a draft can be changed with distinct workflow instructions.");
+        foreach (var step in steps) { LabConfigurationAsset.Validate(step.Illustrations); LabInstructionSource.Validate(step.CopiedFrom); }
         StepsJson = JsonSerializer.Serialize(steps);
         AuthoredByUserId = actorId;
         AuthoredAtUtc = utcNow;
@@ -189,7 +193,7 @@ public sealed class LabKitAssemblyStepRecord
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid RunId { get; private set; }
     public int Sequence { get; private set; }
-    public Guid LabStepVersionId { get; private set; }
+    public Guid StepKey { get; private set; }
     public string Notes { get; private set; } = null!;
     public Guid PerformedByUserId { get; private set; }
     public DateTime PerformedAtUtc { get; private set; }
@@ -200,7 +204,7 @@ public sealed class LabKitAssemblyStepRecord
             throw new ArgumentException("Record an approved step, run, and operator.");
         RunId = runId;
         Sequence = sequence;
-        LabStepVersionId = stepVersionId;
+        StepKey = stepVersionId;
         Notes = notes?.Trim() ?? string.Empty;
         if (Notes.Length > 4000) throw new ArgumentException("Use 4,000 characters or fewer for assembly notes.", nameof(notes));
         PerformedByUserId = actorId;

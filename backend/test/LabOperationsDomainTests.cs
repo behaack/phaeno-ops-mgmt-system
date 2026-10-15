@@ -238,10 +238,10 @@ public class LabOperationsDomainTests
         var approvedVersion = new LabProtocolVersion(protocol.Id, 1, LabProtocolTestData.Definition(),
             Guid.NewGuid(), DateTime.UtcNow);
 
-        approvedVersion.UpdateDraft(LabProtocolTestData.Definition("verify"));
+        approvedVersion.UpdateDraft(LabProtocolTestData.Definition("verify"), Guid.NewGuid());
         approvedVersion.Approve(Guid.NewGuid(), DateTime.UtcNow);
         Assert.Throws<InvalidOperationException>(() =>
-            approvedVersion.UpdateDraft("""{"steps":[{"key":"changed-after-approval"}]}"""));
+            approvedVersion.UpdateDraft("""{"steps":[{"key":"changed-after-approval"}]}""", Guid.NewGuid()));
         Assert.Throws<InvalidOperationException>(approvedVersion.Discard);
 
         protocol.RecordVersion(2);

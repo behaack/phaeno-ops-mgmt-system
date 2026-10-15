@@ -55,7 +55,7 @@ public static class LabKitAssemblyModelConfiguration
             e.HasIndex(x => new { x.RunId, x.Sequence }).IsUnique();
             e.Property(x => x.Notes).HasMaxLength(4000).IsRequired();
             e.HasOne<LabKitAssemblyRun>().WithMany().HasForeignKey(x => x.RunId).OnDelete(DeleteBehavior.Restrict);
-            e.HasOne<LabStepVersion>().WithMany().HasForeignKey(x => x.LabStepVersionId).OnDelete(DeleteBehavior.Restrict);
+            e.Property(x => x.StepKey).IsRequired();
             e.HasOne<User>().WithMany().HasForeignKey(x => x.PerformedByUserId).OnDelete(DeleteBehavior.Restrict);
         });
         builder.Entity<LabKitAssemblyUse>(e =>

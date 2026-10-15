@@ -28,6 +28,7 @@
   "dependencies": {
     "@bwip-js/browser": "4.11.4",
     "@clerk/react": "^6.12.8",
+    "@dnd-kit/react": "0.5.0",
     "@fontsource-variable/geist": "^5.2.8",
     "@hookform/resolvers": "^5.2.2",
     "@microsoft/signalr": "10.0.11",

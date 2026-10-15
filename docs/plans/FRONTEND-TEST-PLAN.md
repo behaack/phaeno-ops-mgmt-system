@@ -4300,3 +4300,18 @@ scientific-review-queue-corrected.png. No records or scientific/provider state
 were mutated. Positive completed-package scenarios are covered in compiled
 regression sources but were not executed, and no qualifying live assembly fixture
 exists locally. Dark-theme and automated-suite acceptance remain unperformed.
+
+## Protocol-first Lab authoring — October 14, 2026
+
+Kit authoring submits owned instructions. ProcedureAuthoring checks non-drag
+move/duplicate identity, Draft marking and bench capture scope. ProcedureDefinition
+checks nullable structured API fields. workflow-presentation checks exact retained
+pins and blocks missing/unreadable/wrong revisions. Kit editor additionally checks
+that a background refresh cannot replace its loaded concurrency token.
+
+Seven focused files pass, 44 cases, in a serial run after review fixes. The parallel
+run timed out once under simultaneous build load; no global timeout was raised.
+Typecheck/lint pass. Full frontend/E2E suites were not run.
+
+See the [owning plan](LAB-SETUP-VISUAL-AUTHORING-PLAN.md) and
+[preserving release plan](LAB-AUTHORING-HOSTED-TEST-RELEASE-20261014-PLAN.md).

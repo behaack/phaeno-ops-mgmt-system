@@ -317,9 +317,7 @@ public sealed partial class LabOperationsController(
             throw Conflict("protocol_candidate_exists",
                 "Continue or discard the open protocol draft before creating another version.");
         }
-        var sourceJson = await dbContext.LabProtocolVersions.Where(v => v.LabProtocolId == protocolId && v.ApprovedAtUtc != null)
-            .OrderByDescending(v => v.ProtocolVersion).Select(v => v.DefinitionJson).FirstOrDefaultAsync(cancellationToken);
-        var definition = (await ResolveLabStepReferencesAsync(request.DefinitionJson, sourceJson, cancellationToken)).ToJson();
+        var definition = (await ResolveProcedureAsync(request.DefinitionJson, cancellationToken)).ToJson();
         var nextVersion = protocol.LatestVersion + 1;
         protocol.RecordVersion(nextVersion);
         dbContext.LabProtocolVersions.Add(new LabProtocolVersion(protocol.Id, nextVersion,
@@ -332,7 +330,7 @@ public sealed partial class LabOperationsController(
     public async Task<LabProtocolDto> UpdateProtocolVersion(Guid versionId,
         [FromBody] UpdateProtocolVersionRequest request, CancellationToken cancellationToken)
     {
-        await requestContext.RequireAsync(HttpContext, cancellationToken,
+        var actor = await requestContext.RequireAsync(HttpContext, cancellationToken,
             LabRole.ProtocolAdministrator);
         var version = await dbContext.LabProtocolVersions
             .SingleOrDefaultAsync(item => item.Id == versionId, cancellationToken)
@@ -342,8 +340,8 @@ public sealed partial class LabOperationsController(
             ?? throw Missing();
         EnsureVersion(protocol.Version, request.ProtocolVersion);
         Execute(protocol.RequireCurrent);
-        var definition = (await ResolveLabStepReferencesAsync(request.DefinitionJson, version.DefinitionJson, cancellationToken)).ToJson();
-        Execute(() => version.UpdateDraft(definition));
+        var definition = (await ResolveProcedureAsync(request.DefinitionJson, cancellationToken)).ToJson();
+        Execute(() => version.UpdateDraft(definition, actor.User.Id));
         MarkProtocolCandidateChanged(protocol);
         await dbContext.SaveChangesAsync(cancellationToken);
         return (await ReadProtocolsAsync(cancellationToken)).Single(item => item.Id == protocol.Id);
@@ -367,7 +365,7 @@ public sealed partial class LabOperationsController(
         switch (request.Action.Trim().ToLowerInvariant())
         {
             case "approve":
-                await ResolveLabStepReferencesAsync(version.DefinitionJson, version.DefinitionJson, cancellationToken);
+                await ResolveProcedureAsync(version.DefinitionJson, cancellationToken, verifyIllustrations: true);
                 var previousApprovedVersions = await dbContext.LabProtocolVersions
                     .Where(item => item.LabProtocolId == version.LabProtocolId
                         && item.Id != version.Id

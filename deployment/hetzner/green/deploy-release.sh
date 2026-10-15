@@ -113,6 +113,7 @@ readonly INVALID_RECAPTCHA_RESPONSE="$(mktemp /tmp/phaeno-portal-invalid-recaptc
 migration_dump=""
 migration_passphrase=""
 api_replaced=false
+api_paused=false
 migrations_ran=false
 
 cleanup() {
@@ -127,7 +128,7 @@ cleanup() {
             "${SCRIPT_DIR}/install-file-storage-runtime-config.sh" "${DEPLOY_ROOT}" >&2 || \
             printf 'Storage runtime recovery requires manual review; the protected rollback receipt is retained.\n' >&2
     fi
-    if [[ "${status}" -ne 0 && "${api_replaced}" == true && "${migrations_ran}" == false ]]; then
+    if [[ "${status}" -ne 0 && ( "${api_replaced}" == true || "${api_paused}" == true ) && "${migrations_ran}" == false ]]; then
         printf 'Deployment failed; restoring the previous green API image.\n' >&2
         docker compose \
             --env-file "${OLD_COMPOSE_ENV}" \
@@ -217,6 +218,14 @@ if grep -qx 'FileScanning__Provider=ClamAv' "${PORTAL_ENV}"; then
 fi
 compose up --detach --wait db
 
+website_intake_fingerprints() {
+    docker exec phaeno-portal-green-db psql --username phaeno_portal_green \
+        --dbname phaeno_portal_green --no-psqlrc --tuples-only --no-align --set ON_ERROR_STOP=1 \
+        --command "SELECT md5(coalesce(string_agg(md5(to_jsonb(t)::text), '' ORDER BY id), '')) FROM website.web_contacts t;
+                   SELECT md5(coalesce(string_agg(md5(to_jsonb(t)::text), '' ORDER BY id), '')) FROM website.web_orders t;"
+}
+website_fingerprints_before="$(website_intake_fingerprints)"
+
 website_counts_before="$(
     docker exec phaeno-portal-green-db \
         psql \
@@ -242,6 +251,12 @@ if [[ "${APPLY_MIGRATIONS}" == "true" ]]; then
         -pubin \
         -in "${PORTAL_MIGRATION_BACKUP_PUBLIC_KEY_PATH}" \
         -noout
+
+    # No old-model writer may overlap a preserving column/JSON conversion.
+    # Pause before the recovery snapshot so rollback does not omit later API writes.
+    api_paused=true
+    compose stop api
+    printf 'migration_api_paused_at=%s\n' "$(date -u +%FT%TZ)"
 
     readonly MIGRATION_TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
     readonly BACKUP_BASE="${BACKUP_ROOT}/pre-migration-${MIGRATION_TIMESTAMP}-${SOURCE_REVISION:0:12}"
@@ -303,8 +318,15 @@ if [[ "${APPLY_MIGRATIONS}" == "true" ]]; then
     migration_dump=""
     migration_passphrase=""
 
-    compose run --rm migrate
+    # A failed migration process may have committed work. Never restart the old
+    # model automatically once migration execution begins; inspect/repair first.
     migrations_ran=true
+    compose run --rm migrate
+    if [[ "${expected_backup_migration}" < 20261014234438_ProtocolFirstLabProcedures ]]; then
+        docker exec -i phaeno-portal-green-db psql --username phaeno_portal_green \
+            --dbname phaeno_portal_green --no-psqlrc --set ON_ERROR_STOP=1 \
+            < "${SCRIPT_DIR}/verify-procedure-conversion.sql"
+    fi
 fi
 
 if [[ "${CUTOVER_CLERK_IDENTITY}" == "true" ]]; then
@@ -396,6 +418,11 @@ website_counts_after="$(
 )"
 [[ "${website_counts_after}" == "${website_counts_before}" ]] \
     || fail "Website row counts changed during deployment smoke checks."
+
+website_fingerprints_after="$(website_intake_fingerprints)"
+[[ "${website_fingerprints_after}" == "${website_fingerprints_before}" ]] \
+    || fail "Website intake record contents changed during deployment; investigate before promotion."
+printf 'website_intake_full_contents=UNCHANGED\n'
 
 deployed_image="$(
     docker inspect phaeno-portal-green-api \

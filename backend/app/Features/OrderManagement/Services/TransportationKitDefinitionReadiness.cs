@@ -103,7 +103,7 @@ public static class TransportationKitDefinitionReadiness
             {
                 var assemblyReady = item.AssemblyWorkflowId.HasValue
                         && latestByWorkflow.TryGetValue(item.AssemblyWorkflowId.Value, out var workflowRevision)
-                        && workflowRevision.Steps().Count == 1
+                        && workflowRevision.Steps().Count > 0
                         && contentsByDefinition.TryGetValue(item.Id, out var contents)
                         && contents.Length >= 2
                         && contents.Select(component => component.SupplierProductId).Distinct().Count() == contents.Length

@@ -1,3 +1,4 @@
+import { parseConfigurationDiscovery, type ConfigurationDiscovery } from '#/features/lab-operations/configuration-discovery'
 import { parseRecordListSearch, type RecordListSearch } from '#/components/RecordPagination'
 import { parseSpecimenSearch, type SpecimenSearch } from '#/features/lab-operations/specimen-navigation'
 import { parseJobListSearch, type JobListSearch } from '#/features/lab-operations/job-deadlines'
@@ -14,7 +15,8 @@ import { parseShipmentHistorySearch, type ShipmentHistorySearch } from '#/featur
 import { parseAccessionSearch, type AccessionSearch } from '#/features/lab-operations/lab-accession-search'
 
 export const Route = createFileRoute('/lab-operations')({
-  validateSearch: (search: Record<string, unknown>): RecordListSearch & SpecimenSearch & StockKitListSearch & KitRequestListSearch & JobListSearch & ShipmentHistorySearch & AccessionSearch & { reagentPage?: number; reagentSearch?: string; reagentStatus?: string; section?: LabSection; resultState?: string; assemblyTab?: 'inputs' | 'jobs'; assemblySearch?: string; assemblyPage?: number; shipmentId?: string; receiptTab?: LabReceiptTab; labStepSearch?: string; labStepRetired?: boolean; labStepPage?: number; returnKitRequestId?: string } => ({
+  validateSearch: (search: Record<string, unknown>): ConfigurationDiscovery & RecordListSearch & SpecimenSearch & StockKitListSearch & KitRequestListSearch & JobListSearch & ShipmentHistorySearch & AccessionSearch & { reagentPage?: number; reagentSearch?: string; reagentStatus?: string; section?: LabSection; resultState?: string; assemblyTab?: 'inputs' | 'jobs'; assemblySearch?: string; assemblyPage?: number; shipmentId?: string; receiptTab?: LabReceiptTab; labStepSearch?: string; labStepRetired?: boolean; labStepPage?: number; returnKitRequestId?: string } => ({
+    ...parseConfigurationDiscovery(search),
     ...parseRecordListSearch(search),
     reagentPage: parseRecordListSearch({ listPage: search.reagentPage }).listPage,
     reagentSearch: typeof search.reagentSearch === 'string' ? search.reagentSearch.slice(0, 255) : undefined,

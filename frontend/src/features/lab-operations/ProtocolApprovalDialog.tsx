@@ -1,10 +1,11 @@
+import { ProcedureIllustration } from './ProcedureIllustrations'
 import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useBlocker } from '@tanstack/react-router'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/required-field'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import type { LabProtocol } from '#/api/lab-operations'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
@@ -44,6 +45,7 @@ export function ProtocolApprovalDialog({
   protocol: LabProtocol | null
   version: ProtocolVersion | null
 }) {
+  const cancelRef = useRef<HTMLButtonElement>(null)
   const [confirmed, setConfirmed] = useState(false)
   const form = useForm<{ reason: string }>({ resolver: zodResolver(z.object({ reason: z.string().trim().min(1, 'Enter a reason for bypassing independent review.').max(2000) })), defaultValues: { reason: '' } })
   const { isDirty } = form.formState
@@ -66,7 +68,7 @@ export function ProtocolApprovalDialog({
 
   return (
     <Dialog open={protocol !== null && version !== null} onOpenChange={open => { if (!open) close() }}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="max-w-3xl" onOpenAutoFocus={event => { event.preventDefault(); cancelRef.current?.focus() }}>
         <DialogHeader>
           <DialogTitle>
             {override ? 'Administrator protocol approval override' : 'Approve protocol'}
@@ -113,7 +115,7 @@ export function ProtocolApprovalDialog({
                       {step.requiredRole ? ` · ${step.requiredRole}` : ''}
                     </p>
                   </div>
-                  <p className="mt-2 whitespace-pre-wrap text-sm leading-6">{step.instructions}</p>
+                  <p className="mt-2 whitespace-pre-wrap text-sm leading-6">{step.instructions}</p>{(step.illustrations ?? []).map(image => <ProcedureIllustration key={image.assetId} image={image} />)}
                   {step.condition ? <ReviewDetail label="Condition" value={step.condition} /> : null}
                   {step.inputMaterials ? <ReviewDetail label="Inputs" value={step.inputMaterials} /> : null}
                   {step.preparedOutputs ? <ReviewDetail label="Outputs" value={step.preparedOutputs} /> : null}
@@ -172,7 +174,7 @@ export function ProtocolApprovalDialog({
         </div>
 
         <Footer>
-          <Button type="button" variant="outline" disabled={isPending} onClick={close}>
+          <Button ref={cancelRef} type="button" variant="outline" disabled={isPending} onClick={close}>
             Cancel
           </Button>
           <Button type={override ? "submit" : "button"} form={override ? "protocol-approval-override" : undefined} disabled={!confirmed || !definition || isPending} onClick={override ? undefined : () => onApprove()}>

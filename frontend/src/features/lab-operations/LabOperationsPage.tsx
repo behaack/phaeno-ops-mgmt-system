@@ -1,3 +1,5 @@
+import { useConfigurationDiscovery, useWorkflowDiscovery } from './configuration-discovery'
+import { procedureDetailRoute } from './procedure-navigation'
 import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 import { SequencingBatchList as BatchList } from './SequencingBatchList'
 import { StageDurations } from './StageDurations'
@@ -79,8 +81,10 @@ export function LabOperationsPage({ section, shipmentId, receiptTab, onReceiptTa
   const apiEnabled = canView && authProvider !== 'mock'
   const queryClient = useQueryClient()
   const [createKind, setCreateKind] = useState<CreateKind>(null)
-  const [localConfigurationTab, setLocalConfigurationTab] = useState<LabConfigurationTab>('steps')
-  const [workflowKind, setWorkflowKind] = useState<'library' | 'reagent' | 'master-mix' | 'transportation-kit'>('library')
+  const [localConfigurationTab, setLocalConfigurationTab] = useState<LabConfigurationTab>('protocols')
+  const discovery = useConfigurationDiscovery()
+  const workflowKind = discovery.workflowType ?? 'library'
+  const setWorkflowKind = (value: typeof workflowKind) => void navigate({ to: '/lab-configuration', search: previous => ({ ...previous, configurationTab: 'workflows', workflowType: value }) })
   const configuring = section === 'protocols'
   const activeConfiguration = configurationTab ?? localConfigurationTab
   const needsDashboard = configuring
@@ -182,7 +186,7 @@ export function LabOperationsPage({ section, shipmentId, receiptTab, onReceiptTa
 }
 
 export function ProtocolList({ protocols, canManage, canOverride = false, actorId, onCreate, refresh }: { protocols: LabProtocol[]; canManage: boolean; canOverride?: boolean; actorId?: string; onCreate: () => void; refresh: () => Promise<unknown> }) {
-  const [showRetired, setShowRetired] = useState(false)
+  const { discovery, showInactive: showRetired, setShowInactive: setShowRetired } = useWorkflowDiscovery('protocol')
   const retiredFilterRef = useRef<HTMLButtonElement>(null)
   const [retirementTarget, setRetirementTarget] = useState<LabProtocol | null>(null)
   const retirement = useMutation({
@@ -306,16 +310,15 @@ export function ProtocolList({ protocols, canManage, canOverride = false, actorI
                 <section key={protocol.id} className="rounded-lg border bg-background p-4 shadow-xs">
                   <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
                     <div className="min-w-0 wrap-anywhere">
-                      <h3 className="font-medium">{protocol.name}</h3>
+                      <h3 className="font-medium"><Link className="text-primary hover:underline" to={procedureDetailRoute} params={{ kind: 'protocol', recordId: protocol.id }} search={{ ...discovery, revision: approvedVersion?.protocolVersion ?? draft?.protocolVersion }}>{protocol.name}</Link></h3>
                       {protocol.description ? (
                         <p className="mt-1 text-sm text-muted-foreground">{protocol.description}</p>
                       ) : null}
                       <div className="mt-2 flex flex-wrap gap-2">
-                        <Status value={protocol.retiredAtUtc ? 'Retired' : draft
-                          ? `Draft v${draft.protocolVersion}`
-                          : approvedVersion
+                        <Status value={protocol.retiredAtUtc ? 'Retired' : approvedVersion
                             ? `Approved v${approvedVersion.protocolVersion}`
                             : protocol.versions.at(-1)?.status ?? 'Setup incomplete'} />
+                        {draft && approvedVersion ? <Link className="text-sm text-primary underline" to={procedureDetailRoute} params={{ kind: 'protocol', recordId: protocol.id }} search={{ ...discovery, revision: draft.protocolVersion }}>Pending Draft v{draft.protocolVersion}</Link> : null}
                       </div>
                       {!hasDefinition ? (
                         <p className="mt-2 text-xs text-muted-foreground">
@@ -336,8 +339,7 @@ export function ProtocolList({ protocols, canManage, canOverride = false, actorI
                             <DropdownMenuItem asChild>
                               <Link
                                 to="/lab-operations/protocols/$protocolId/versions/$versionId/edit"
-                                params={{ protocolId: protocol.id, versionId: draft.id }}
-                                search={{ section: undefined }}
+                                params={{ protocolId: protocol.id, versionId: draft.id }} search={{ ...discovery, section: undefined }}
                               >
                                 <Pencil /> Edit protocol
                               </Link>
@@ -346,8 +348,7 @@ export function ProtocolList({ protocols, canManage, canOverride = false, actorI
                             <DropdownMenuItem asChild>
                               <Link
                                 to="/lab-operations/protocols/$protocolId/versions/new"
-                                params={{ protocolId: protocol.id }}
-                                search={{ section: undefined }}
+                                params={{ protocolId: protocol.id }} search={{ ...discovery, section: undefined }}
                               >
                                 <Plus /> {hasDefinition ? 'Create new version' : 'Edit protocol'}
                               </Link>

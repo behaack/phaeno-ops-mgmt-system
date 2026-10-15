@@ -1,3 +1,4 @@
+import { ProcedureIllustration } from '#/features/lab-operations/ProcedureIllustrations'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { ChevronDown } from 'lucide-react'
 import { getLabOperationsError } from '#/api/lab-operations'
@@ -25,14 +26,14 @@ export function KitAssemblyRunPanel({ assembly }: { assembly: KitAssemblyState }
     <CardContent className="space-y-5 p-4">
       <section aria-labelledby="kit-steps-heading">
         <h3 id="kit-steps-heading" className="font-medium"><CustomerSourceText source={"Assembly instructions"} /></h3>
-        <ol className="mt-2 divide-y">{run.steps.map((step, index) => <li key={step.labStepVersionId} className="py-2 first:pt-0 last:pb-0">
+        <ol className="mt-2 divide-y">{run.steps.map((step, index) => <li key={step.stepKey} className="py-2 first:pt-0 last:pb-0">
           <details className="group" open={index === run.stepRecords.length}>
             <summary className="flex cursor-pointer items-center gap-2 rounded-sm text-sm focus-visible:outline-2 focus-visible:outline-ring">
               <ChevronDown aria-hidden="true" className="size-4 shrink-0 -rotate-90 transition-transform group-open:rotate-0 motion-reduce:transition-none" />
               <span className="min-w-0 flex-1 font-medium">{step.name}</span>
               <Badge variant={run.stepRecords[index] ? 'secondary' : 'outline'}>{run.stepRecords[index] ? <CustomerSourceText source={"Recorded"} /> : <CustomerSourceText source={"Pending"} />}</Badge>
             </summary>
-            <p className="mt-2 whitespace-pre-wrap pl-6 text-sm">{step.instructions}</p>
+            <p className="mt-2 whitespace-pre-wrap pl-6 text-sm">{step.instructions}</p>{(step.illustrations ?? []).map(image => <ProcedureIllustration key={image.assetId} image={image} />)}
             {run.stepRecords[index]?.notes ? <p className="mt-2 whitespace-pre-wrap pl-6 text-sm text-muted-foreground"><CustomerSourceText source={"Recorded notes:"} /> {run.stepRecords[index].notes}</p> : null}
           </details>
         </li>)}</ol>

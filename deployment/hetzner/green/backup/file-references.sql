@@ -1,5 +1,10 @@
 -- Temporary views allow recovery of pre-managed-file archives with their original schema.
 DO $$ BEGIN
+  IF to_regclass('lab_ops.lab_configuration_assets') IS NULL THEN
+    EXECUTE 'CREATE TEMP VIEW backup_configuration_assets AS SELECT NULL::text storage_key, NULL::text sha256, NULL::bigint size_bytes WHERE false';
+  ELSE
+    EXECUTE 'CREATE TEMP VIEW backup_configuration_assets AS SELECT storage_key, sha256, size_bytes FROM lab_ops.lab_configuration_assets';
+  END IF;
   IF to_regclass('lab_ops.lab_scientific_files') IS NULL THEN
     EXECUTE 'CREATE TEMP VIEW backup_scientific_files AS SELECT NULL::text storage_key, NULL::text sha256, NULL::bigint size_bytes WHERE false';
   ELSE
@@ -43,6 +48,9 @@ WITH deleted_managed AS (
     UNION ALL
     SELECT 'order-files/' || storage_key, lower(sha256), size_bytes::text, 'required'
       FROM backup_scientific_files
+    UNION ALL
+    SELECT 'order-files/' || storage_key, lower(sha256), size_bytes::text, 'required'
+      FROM backup_configuration_assets
     UNION ALL
     SELECT 'order-files/' || (chunk->>'Key'), lower(chunk->>'Sha256'), chunk->>'SizeBytes', 'required'
       FROM backup_upload_chunks CROSS JOIN LATERAL jsonb_array_elements(chunks_json) chunk

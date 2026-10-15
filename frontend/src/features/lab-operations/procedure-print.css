@@ -1,0 +1,14 @@
+.procedure-print-root { display: none; }
+@media print {
+  body[data-lab-procedure-print] > :not(.procedure-print-root) { display: none !important; }
+  body[data-lab-procedure-print] .procedure-print-root { display: block !important; color: #111; background: white; font-size: 10pt; }
+  .procedure-print-root * { box-shadow: none !important; text-shadow: none !important; }
+  .procedure-print-root h2, .procedure-print-root h3 { break-after: avoid; }
+  .procedure-print-root figure, .procedure-print-root thead, .procedure-print-root tr { break-inside: avoid; }
+  .procedure-print-root thead { display: table-header-group; }
+  .procedure-print-root img { max-height: 160mm; max-width: 100%; }
+  .procedure-print-root .procedure-flow > li { break-inside: avoid; }
+  .procedure-print-root .procedure-draft { border: 2px solid #111; padding: 8pt; }
+  .procedure-print-root [class*="bg-"] { background: white !important; }
+  .procedure-print-root [class*="text-"] { color: #111 !important; }
+}

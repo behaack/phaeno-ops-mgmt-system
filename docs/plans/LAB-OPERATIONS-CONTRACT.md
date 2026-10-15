@@ -1,5 +1,11 @@
 # Commercial to Lab Operations Contract
 
+> October 14, 2026: the approved [protocol-first Lab setup plan](LAB-SETUP-VISUAL-AUTHORING-PLAN.md)
+> supersedes mandatory catalog-step authoring/approval and kit single-step constraints.
+> Current procedures own their instructions and approve the whole revision. Retained
+> catalog references are provenance; performed work and approved snapshots stay pinned.
+
+
 ## Catalog sequencing volume and tube pairing — October 4, 2026
 
 The [pairing plan](CATALOG-SEQUENCING-TUBE-PAIRING-PLAN.md) supersedes batch-editable minimums. Catalog writes accept exact `minimumSequencingVolumeUlText` (positive, or null to leave the service unconfigured) through the existing administrator/versioned Catalog API. Batch creation accepts optional name and notes only. No operator batch-requirement endpoint remains.

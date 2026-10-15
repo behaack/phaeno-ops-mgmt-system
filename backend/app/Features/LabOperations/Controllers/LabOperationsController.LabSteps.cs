@@ -1,11 +1,9 @@
 namespace PhaenoPortal.App.Features.LabOperations.Controllers;
 
-using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Features.LabOperations.DTOs;
-using PhaenoPortal.App.Features.LabOperations.Services;
 
 public sealed partial class LabOperationsController
 {
@@ -45,7 +43,7 @@ public sealed partial class LabOperationsController
             if (material.MasterMixWorkflowId is Guid mixWorkflowId)
             {
                 if (capture.IncludeTracking) throw Invalid("master_mix_tracking_invalid", "Master mix uses its preparation record, not an inventory lot.");
-                var workflow = await dbContext.LabMasterMixWorkflows.AsNoTracking().SingleOrDefaultAsync(item =>
+                var workflow = await dbContext.LabMasterMixWorkflows.SingleOrDefaultAsync(item =>
                     item.Id == mixWorkflowId && item.Status != LabMasterMixWorkflowStatus.Retired, ct)
                     ?? throw Invalid("master_mix_workflow_unavailable", "Choose an available master-mix workflow.");
                 var revision = workflow.Revisions().SingleOrDefault(item =>
@@ -55,6 +53,8 @@ public sealed partial class LabOperationsController
                     throw Invalid("master_mix_unit_mismatch", $"Use the master-mix workflow unit ({revision.QuantityUnit}).");
                 material = new(revision.Name, MasterMixWorkflowId: workflow.Id,
                     MasterMixWorkflowRevision: revision.Revision);
+                // Join approval/save to the same optimistic-concurrency boundary as retirement.
+                dbContext.Entry(workflow).Property(item => item.UpdatedAt).IsModified = true;
             }
             else if (material.ProductId is Guid productId)
             {
@@ -113,150 +113,45 @@ public sealed partial class LabOperationsController
     [HttpPost("steps")]
     public async Task<LabStepDto> CreateLabStep(CreateProtocolRequest request, CancellationToken ct)
     {
-        var actor = await requestContext.RequireAsync(HttpContext, ct, LabRole.ProtocolAdministrator);
-        var normalizedName = NormalizeLabStepName(request.Name);
-        if (await dbContext.LabSteps.AnyAsync(s => s.NormalizedName == normalizedName, ct))
-            throw Conflict("step_name_taken", "A Lab step with this name already exists. Choose a unique name.");
-        var keys = await dbContext.LabSteps.Select(s => s.Key).ToListAsync(ct);
-        LabStep step = null!;
-        Execute(() => step = new LabStep(LabIdentifierService.CreateProtocolKey(request.Name, keys), request.Name, request.Description));
-        LabStepVersion draft = null!;
-        Execute(() =>
-        {
-            draft = LabStepVersion.CreateInitialDraft(step.Id, actor.User.Id, DateTime.UtcNow);
-            step.RecordVersion(1);
-        });
-        dbContext.AddRange(step, draft);
-        await SaveLabStepNameChangeAsync(ct);
-        return (await ReadLabStepsAsync(ct)).Single(s => s.Id == step.Id);
+        await requestContext.RequireAsync(HttpContext, ct, LabRole.ProtocolAdministrator);
+        throw CatalogArchived();
     }
 
     [HttpPut("steps/{id:guid}")]
     public async Task<LabStepDto> UpdateLabStep(Guid id, UpdateLabStepRequest request, CancellationToken ct)
     {
-        var actor = await requestContext.RequireAsync(HttpContext, ct, LabRole.ProtocolAdministrator);
-        var step = await dbContext.LabSteps.SingleOrDefaultAsync(s => s.Id == id, ct) ?? throw Missing();
-        EnsureVersion(step.Version, request.Version);
-        Execute(step.RequireCurrent);
-        var normalizedName = NormalizeLabStepName(request.Name);
-        if (await dbContext.LabSteps.AnyAsync(s => s.Id != id && s.NormalizedName == normalizedName, ct))
-            throw Conflict("step_name_taken", "A Lab step with this name already exists. Choose a unique name.");
-        var draft = await dbContext.LabStepVersions.SingleOrDefaultAsync(v => v.LabStepId == id && v.Status == LabProtocolStatus.Draft, ct);
-        Execute(() =>
-        {
-            step.UpdateDetails(request.Name, request.Description);
-            if (draft is not null && !draft.IsUnconfiguredDraft)
-            {
-                var definition = LabProtocolDefinition.Parse(draft.DefinitionJson);
-                draft.UpdateDraft((definition with { Steps = [definition.Steps.Single() with { Name = step.Name }] }).ToJson(), actor.User.Id);
-            }
-        });
-        await SaveLabStepNameChangeAsync(ct);
-        return (await ReadLabStepsAsync(ct)).Single(s => s.Id == id);
-    }
-
-    private static string NormalizeLabStepName(string name) => name?.Trim().ToUpperInvariant() ?? "";
-
-    private async Task SaveLabStepNameChangeAsync(CancellationToken ct)
-    {
-        try { await dbContext.SaveChangesAsync(ct); }
-        catch (DbUpdateException exception) when (exception.InnerException is Npgsql.PostgresException
-            { SqlState: Npgsql.PostgresErrorCodes.UniqueViolation, ConstraintName: "IX_lab_steps_normalized_name" })
-        {
-            throw Conflict("step_name_taken", "A Lab step with this name already exists. Choose a unique name.");
-        }
+        await requestContext.RequireAsync(HttpContext, ct, LabRole.ProtocolAdministrator);
+        throw CatalogArchived();
     }
 
     [HttpPost("steps/{id:guid}/versions")]
     public async Task<LabStepDto> SaveLabStepVersion(Guid id, SaveLabStepVersionRequest request, CancellationToken ct)
     {
-        var actor = await requestContext.RequireAsync(HttpContext, ct, LabRole.ProtocolAdministrator);
-        var step = await dbContext.LabSteps.SingleOrDefaultAsync(s => s.Id == id, ct) ?? throw Missing();
-        EnsureVersion(step.Version, request.Version);
-        Execute(step.RequireCurrent);
-        var draft = await dbContext.LabStepVersions.SingleOrDefaultAsync(v => v.LabStepId == id && v.Status == LabProtocolStatus.Draft, ct);
-        var definition = RequireProtocolDefinition(request.DefinitionJson);
-        var resolvedSteps = new List<LabProtocolStepDefinition>();
-        foreach (var entry in definition.Steps)
-            resolvedSteps.Add((await ResolveConfiguredMaterialsAsync(entry, ct)) with { Name = step.Name });
-        var definitionJson = (definition with { Steps = resolvedSteps }).ToJson();
-        if (request.DraftId.HasValue || draft?.IsUnconfiguredDraft == true)
-        {
-            if (draft is null || request.DraftId.HasValue && draft.Id != request.DraftId)
-                throw Conflict("step_draft_changed", "The draft changed. Refresh before editing.");
-            Execute(() => draft.UpdateDraft(definitionJson, actor.User.Id));
-            dbContext.Entry(step).Property(s => s.UpdatedAt).IsModified = true;
-        }
-        else
-        {
-            if (draft is not null) throw Conflict("step_draft_exists", "Continue or discard the existing draft.");
-            LabStepVersion version = null!;
-            Execute(() => version = new LabStepVersion(id, step.LatestVersion + 1, definitionJson, actor.User.Id, DateTime.UtcNow));
-            step.RecordVersion(version.StepVersion);
-            dbContext.LabStepVersions.Add(version);
-        }
-        await dbContext.SaveChangesAsync(ct);
-        return (await ReadLabStepsAsync(ct)).Single(s => s.Id == id);
+        await requestContext.RequireAsync(HttpContext, ct, LabRole.ProtocolAdministrator);
+        throw CatalogArchived();
     }
 
     [HttpPost("steps/{id:guid}/transition")]
     public async Task<LabStepDto> TransitionLabStep(Guid id, LabStepTransitionRequest request, CancellationToken ct)
     {
-        var actor = await requestContext.RequireAsync(HttpContext, ct, LabRole.ProtocolAdministrator);
-        var step = await dbContext.LabSteps.SingleOrDefaultAsync(s => s.Id == id, ct) ?? throw Missing();
-        EnsureVersion(step.Version, request.Version);
-        Execute(step.RequireCurrent);
-        if (request.ApprovalOverrideReason is not null && request.Action != "approve")
-            throw Invalid("step_override_invalid", "An approval override applies only to approval.");
-        if (request.Action == "retire") Execute(() => step.Retire(request.Reason ?? "", actor.User.Id, DateTime.UtcNow));
-        else
-        {
-            var version = await dbContext.LabStepVersions.SingleOrDefaultAsync(v => v.Id == request.VersionId && v.LabStepId == id, ct) ?? throw Missing();
-            if (request.Action == "discard") Execute(version.Discard);
-            else if (request.Action == "approve")
-            {
-                if (request.ApprovalOverrideReason is not null)
-                {
-                    RequireApprovalOverrideAdministrator(actor);
-                    Execute(() => version.ApproveWithOverride(actor.User.Id, DateTime.UtcNow, request.ApprovalOverrideReason));
-                }
-                else Execute(() => version.Approve(actor.User.Id, DateTime.UtcNow));
-                // Older approved versions remain selectable exact versions; adoption is always explicit.
-            }
-            else throw Invalid("step_transition_invalid", "Choose approve, discard or retire.");
-            dbContext.Entry(step).Property(s => s.UpdatedAt).IsModified = true;
-        }
-        await dbContext.SaveChangesAsync(ct);
-        return (await ReadLabStepsAsync(ct)).Single(s => s.Id == id);
+        await requestContext.RequireAsync(HttpContext, ct, LabRole.ProtocolAdministrator);
+        throw CatalogArchived();
     }
 
-    private async Task<LabProtocolDefinition> ResolveLabStepReferencesAsync(string json, string? previousJson, CancellationToken ct)
+    private async Task<LabProtocolDefinition> ResolveProcedureAsync(string json, CancellationToken ct, bool verifyIllustrations = false)
     {
         var definition = RequireProtocolDefinition(json);
-        var previous = previousJson is null ? null : RequireProtocolDefinition(previousJson);
         var resolved = new List<LabProtocolStepDefinition>();
-        foreach (var occurrence in definition.Steps)
+        foreach (var entry in definition.Steps)
         {
-            if (occurrence.LabStepVersionId is not Guid versionId)
-            {
-                if (previous?.Steps.Any(s => s.Key == occurrence.Key && s.LabStepVersionId.HasValue) == true)
-                    throw Invalid("step_provenance_removed", "A pinned occurrence cannot silently become an embedded step. Remove it and explicitly author a distinct step instead.");
-                resolved.Add(await ResolveConfiguredMaterialsAsync(occurrence, ct)); continue;
-            }
-            var version = await dbContext.LabStepVersions.SingleOrDefaultAsync(v => v.Id == versionId, ct) ?? throw Missing();
-            var identity = await dbContext.LabSteps.SingleAsync(s => s.Id == version.LabStepId, ct);
-            var retained = previous?.Steps.Any(s => s.Key == occurrence.Key && s.LabStepVersionId == versionId) == true;
-            if (version.Status != LabProtocolStatus.Approved || identity.RetiredAtUtc.HasValue && !retained)
-                throw Conflict("step_version_unavailable", "Select an approved version of a current Lab step. Existing retired references can be retained.");
-            Execute(version.RequireReleaseApproval);
-            var source = LabProtocolDefinition.Parse(version.DefinitionJson).Steps.Single();
-            var pinned = source with { Key = occurrence.Key, Required = occurrence.Required, Condition = occurrence.Condition, LabStepVersionId = versionId };
-            if (JsonSerializer.Serialize(pinned, JsonOptions) != JsonSerializer.Serialize(occurrence, JsonOptions))
-                throw Invalid("step_content_changed", "Pinned Lab step content cannot be overridden. Adopt a different approved version or author a new Lab step version.");
-            // Participate in identity concurrency so a racing retirement cannot admit a new selection.
-            dbContext.Entry(identity).Property(s => s.UpdatedAt).IsModified = true;
-            resolved.Add(pinned);
+            var step = await ResolveConfiguredMaterialsAsync(entry, ct);
+            await RequireIllustrationsAsync(step.Illustrations, ct, verifyIllustrations);
+            await RequireInstructionSourceAsync(step.CopiedFrom, "library", ct);
+            resolved.Add(step);
         }
         return definition with { Steps = resolved };
     }
+    private static PhaenoPortal.App.Features.OrderManagement.Services.OrderManagementException CatalogArchived() => Conflict("lab_step_catalog_archived",
+        "The Lab-step catalog is historical. Author and approve the complete procedure in Protocols or Workflows.");
+
 }

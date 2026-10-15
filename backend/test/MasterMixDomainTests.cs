@@ -74,10 +74,10 @@ public sealed class MasterMixDomainTests
         Assert.Throws<ArgumentException>(() => Workflow(Combine(amount: amount)));
 
     [Fact]
-    public void WorkflowRejectsUnpinnedStepsAndOptionalOrUntrackedReagents()
+    public void WorkflowAcceptsOwnedStepsAndRejectsOptionalOrUntrackedReagents()
     {
         var step = Combine();
-        Assert.Throws<ArgumentException>(() => Workflow(step with { LabStepVersionId = null }));
+        Assert.NotNull(Workflow(step with { LabStepVersionId = null }));
         Assert.Throws<ArgumentException>(() => Workflow(step with { Captures = [step.Captures[0] with { IncludeTracking = false }] }));
         Assert.Throws<ArgumentException>(() => Workflow(step with { Captures = [step.Captures[0] with { Required = false }] }));
         Assert.Throws<ArgumentException>(() => Workflow(step with { ProcessType = null }));

@@ -22,7 +22,7 @@ public sealed record KitAssemblySessionRequest(long Version, long StockKitVersio
 public sealed record KitAssemblyAbandonRequest(long Version, string Reason);
 public sealed record KitAssemblyUseDto(Guid Id, Guid SupplierProductId, Guid? SourceMaterialLotId,
     decimal Quantity, string QuantityUnit, Guid RecordedByUserId, DateTime RecordedAtUtc);
-public sealed record KitAssemblyStepRecordDto(int Sequence, Guid LabStepVersionId, string Notes,
+public sealed record KitAssemblyStepRecordDto(int Sequence, Guid StepKey, string Notes,
     Guid PerformedByUserId, DateTime PerformedAtUtc);
 public sealed record KitAssemblyRunDto(Guid Id, Guid StockKitId, string KitNumber, string Status,
     long Version, Guid WorkflowRevisionId, IReadOnlyList<LabKitAssemblyStep> Steps,
@@ -56,7 +56,7 @@ public sealed partial class LabOperationsController
             throw Invalid("kit_assembly_step_invalid", "Select the next approved assembly step.");
         Execute(() => run.RecordStep(request.Sequence));
         LabKitAssemblyStepRecord record;
-        try { record = new(run.Id, request.Sequence, steps[request.Sequence].LabStepVersionId,
+        try { record = new(run.Id, request.Sequence, steps[request.Sequence].StepKey,
             request.Notes, actor.User.Id, DateTime.UtcNow); }
         catch (ArgumentException error) { throw Invalid("kit_assembly_step_invalid", error.Message); }
         dbContext.LabKitAssemblyStepRecords.Add(record);
@@ -115,8 +115,8 @@ public sealed partial class LabOperationsController
             throw Conflict("kit_packing_unavailable", "This kit can no longer have packed contents recorded.");
         var contents = RequiredKitContents(kit);
         var steps = run.Steps();
-        if (steps.Count != 1)
-            throw Conflict("kit_assembly_step_invalid", "This physical kit must use an approved workflow with one assembly step.");
+        if (steps.Count == 0)
+            throw Conflict("kit_assembly_step_invalid", "This physical kit requires an approved assembly procedure.");
         var recordedUses = await dbContext.LabKitAssemblyUses.AsNoTracking()
             .Where(item => item.RunId == run.Id).ToListAsync(ct);
         var exactContents = contents.All(line => recordedUses.Where(use => use.SupplierProductId == line.SupplierProductId).Sum(use => use.Quantity)
@@ -125,7 +125,7 @@ public sealed partial class LabOperationsController
             && request.Components.All(component => contents.Any(line => line.SupplierProductId == component.SupplierProductId));
         if (session?.Complete == true && !exactContents)
             throw Conflict("kit_bom_incomplete", "Record the exact approved quantity of every component before completion.");
-        var recordStep = exactContents && run.RecordedStepCount == 0 && (session is null || session.Complete);
+        var recordStep = exactContents && run.RecordedStepCount < steps.Count && (session is null || session.Complete);
         if (session is null && request.Components.Count == 0 && !recordStep)
             throw Invalid("kit_components_invalid", "Record a packed component or complete the assembly step after all contents are recorded.");
         if (session is null && !recordStep && !string.IsNullOrWhiteSpace(request.AssemblyNotes))
@@ -231,9 +231,13 @@ public sealed partial class LabOperationsController
         }
         if (recordStep)
         {
-            Execute(() => run.RecordStep(0));
-            dbContext.LabKitAssemblyStepRecords.Add(new(run.Id, 0, steps[0].LabStepVersionId,
-                request.AssemblyNotes, actor.User.Id, now));
+            for (var sequence = run.RecordedStepCount; sequence < steps.Count; sequence++)
+            {
+                var current = sequence;
+                Execute(() => run.RecordStep(current));
+                dbContext.LabKitAssemblyStepRecords.Add(new(run.Id, sequence, steps[sequence].StepKey,
+                    request.AssemblyNotes, actor.User.Id, now));
+            }
         }
         if (session?.Complete == true)
         {
@@ -312,7 +316,7 @@ public sealed partial class LabOperationsController
                 item.Kind, item.SupplierName, item.ProductNumber, item.ProductDescription)).ToArray(),
             uses.Select(item => new KitAssemblyUseDto(item.Id, item.SupplierProductId, item.SourceMaterialLotId,
                 item.Quantity, item.QuantityUnit, item.RecordedByUserId, item.RecordedAtUtc)).ToArray(),
-            steps.Select(item => new KitAssemblyStepRecordDto(item.Sequence, item.LabStepVersionId,
+            steps.Select(item => new KitAssemblyStepRecordDto(item.Sequence, item.StepKey,
                 item.Notes, item.PerformedByUserId, item.PerformedAtUtc)).ToArray(),
             run.StartedAtUtc, run.FinishedAtUtc, run.AbandonmentReason, run.DraftNotes,
             string.IsNullOrWhiteSpace(run.DraftVerificationJson) ? [] : JsonSerializer.Deserialize<string[]>(run.DraftVerificationJson),

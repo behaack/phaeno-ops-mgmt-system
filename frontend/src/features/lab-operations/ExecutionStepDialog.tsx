@@ -1,3 +1,4 @@
+import { ProcedureIllustration } from './ProcedureIllustrations'
 import { NativeSelect } from '#/components/ui/native-select'
 import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -66,7 +67,7 @@ export function ExecutionStepDialog({ step, action, version, error, pending, onC
           if (!allowed) return
           try { await onSave(stepInput(definition, action, values, version)); form.reset(values); onClose() } catch { /* The persistent API feedback preserves these entered values. */ }
         })}>
-          <p className="whitespace-pre-wrap text-sm leading-6">{definition.instructions}</p>
+          <p className="whitespace-pre-wrap text-sm leading-6">{definition.instructions}</p>{(definition.illustrations ?? []).map(image => <ProcedureIllustration key={image.assetId} image={image} />)}
           {definition.condition ? <p className="rounded-lg bg-muted p-3 text-sm"><strong>Condition:</strong> {definition.condition}</p> : null}
           {canSkip ? <div className="space-y-1.5"><Label htmlFor="step-outcome"><RequiredFieldName>Step decision</RequiredFieldName></Label><NativeSelect id="step-outcome" className={selectClass} {...form.register('outcome')}><option value="recorded">Record performed step</option><option value="skipped">Skip with reason</option></NativeSelect></div> : null}
           {!skipped ? <>

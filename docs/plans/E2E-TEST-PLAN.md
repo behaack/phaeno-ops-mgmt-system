@@ -4505,3 +4505,20 @@ scientific-review-queue-corrected.png. No records or scientific/provider state
 were mutated. Positive completed-package scenarios are covered in compiled
 regression sources but were not executed, and no qualifying live assembly fixture
 exists locally. Dark-theme and automated-suite acceptance remain unperformed.
+
+## Protocol-first Lab authoring — October 14, 2026
+
+Authenticated local manual checks cover protocol-first navigation, context
+editors, exact revisions, whole-procedure review surfaces, copy ownership, dirty
+forms, keyboard/click ordering and narrow/light/dark views. These are separate
+from an automated E2E suite, which was not run. Authenticated illustration upload
+is blocked by extension file-access permission; native multipage Letter/A4 PDF,
+touch, 200% zoom and full assistive-technology qualification remain unperformed.
+
+Hosted acceptance is read-only: verify the current source in the actual signed-in
+browser, procedure/bench/help routes and anonymous authorization. Do not approve
+procedures, perform physical/scientific work or create hosted operational fixtures
+for smoke testing. Preserve exact source, migration and recovery evidence.
+
+See the [owning plan](LAB-SETUP-VISUAL-AUTHORING-PLAN.md) and
+[preserving release plan](LAB-AUTHORING-HOSTED-TEST-RELEASE-20261014-PLAN.md).

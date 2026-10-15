@@ -1,3 +1,4 @@
+import { ProcedureIllustration } from './ProcedureIllustrations'
 import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -113,7 +114,7 @@ export function LabExecutionWorkspace({ data, returnLink, reviewTubesLink, speci
           const def = step.definition
           return <li key={def.key} className="space-y-3 py-5">
             <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><h3 className="font-semibold break-words">{index + 1}. {def.name}</h3><p className="mt-1 text-xs text-muted-foreground">{def.condition ? 'Conditional' : def.required ? 'Required' : 'Optional'}{def.requiredRole ? ` · ${def.requiredRole}` : ''}{def.repeatable ? ' · Repeat allowed' : ''}</p></div><Badge variant="outline">{latest ? latest.outcome === 'skipped' ? 'Skipped' : latest.qcOutcome ? `QC ${latest.qcOutcome}` : 'Recorded' : 'Not recorded'}</Badge></div>
-            <p className="whitespace-pre-wrap text-sm leading-6">{def.instructions}</p>
+            <p className="whitespace-pre-wrap text-sm leading-6">{def.instructions}</p>{(def.illustrations ?? []).map(image => <ProcedureIllustration key={image.assetId} image={image} />)}
             {def.condition ? <p className="text-sm"><strong>Condition:</strong> {def.condition}</p> : null}
             {def.qcGate ? <p className="text-sm"><strong>QC:</strong> {def.qcGate.criteria}</p> : null}
             {def.inputMaterials.length > 0 ? <p className="text-sm"><strong>Inputs:</strong> {def.inputMaterials.join(', ')}</p> : null}

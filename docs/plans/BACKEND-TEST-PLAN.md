@@ -3262,3 +3262,20 @@ scientific-review-queue-corrected.png. No records or scientific/provider state
 were mutated. Positive completed-package scenarios are covered in compiled
 regression sources but were not executed, and no qualifying live assembly fixture
 exists locally. Dark-theme and automated-suite acceptance remain unperformed.
+
+## Protocol-first Lab authoring — October 14, 2026
+
+Owned procedure regressions cover catalog mutation rejection, source ownership,
+multi-instruction kits, recipe totals, illustration metadata/admission/dimension
+bounds and latest-editor independent approval. The focused LabProcedureDefinition,
+LabOperationsDomain and MasterMixDomain checks pass: 54 cases. PostgreSQL reference
+tests are updated/compiled but not executed; full suites were not run.
+
+The configured local preserving migration and hosted read-only conversion verifier
+check retained content, order, provenance and recorded occurrence identity. The
+release pauses the old API before the recovery snapshot/migration and compares
+Website intake full-record fingerprints. Actual hosted evidence belongs in the
+release receipt; a build or domain test does not establish that evidence.
+
+See the [owning plan](LAB-SETUP-VISUAL-AUTHORING-PLAN.md) and
+[preserving release plan](LAB-AUTHORING-HOSTED-TEST-RELEASE-20261014-PLAN.md).

@@ -12,49 +12,85 @@ source selection, an attempt, protocol execution or library creation, or while
 the job is on hold or cancelled. Reload and review the job if it changes before
 the correction is saved.
 
-**Lab settings → Workflows** has tabs for **Library preparation**, **Reagent manufacturing**, **Master mix**, and **Transportation kit assembly**. Search within each tab to find a workflow by its name or product identity. Retired workflows are hidden by default; select **Show inactive** to review them. Draft and approved workflows remain visible. The service workflow instructions below govern work on customer samples and tubes. A reagent is identified by its name and has at most one versioned manufacturing workflow; its runs record steps and source-lot use without a customer sample or tube. Master-mix workflows govern single-use mixes shared across library trays. Transportation kit assembly workflows define the ordered Lab steps for a finished Phaeno kit product; each Kit specification defines its required products and quantities. Select **New workflow** on the Transportation kit assembly tab, enter the workflow's own name, choose its finished product, and add approved Lab steps. **Add step** is beside the Ordered Lab steps heading. The list shows the workflow name with revision, status, and step-count badges, with the product name and SKU below. Use **Actions → Edit title** to change the workflow name without adding a revision. A Draft offers **Edit draft**, **Approve draft**, and **Discard draft**; a resolved latest revision offers **New version**. Discarded Drafts remain in revision history and their numbers are not reused. The linked product stays fixed. A product with an existing workflow is not offered when creating another workflow; use **Show inactive** and **New version** for a discarded workflow. See [Purchased Materials and equipment](/docs/phaeno/lab-materials-equipment) for reagent setup, stock deduction and finished-lot QC.
+**Lab settings → Protocols** is the starting point for library procedures. Open a
+protocol name to view its approved revision and revision history. A pending Draft
+has its own link. Use **Actions** to edit the current draft or create a revision.
+The dedicated editor shows the ordered outline beside one selected instruction.
+Write the instruction directly; it does not need a separate Lab-step approval.
 
-## Reusable Lab steps
+**Lab settings → Workflows** has **Library preparation**, **Reagent manufacturing**,
+**Master mix**, and **Transportation kit assembly** tabs. Each procedure keeps its
+scientific context. Library workflows arrange exact approved protocol versions;
+reagent procedures make an inventory reagent; master mixes are shared preparations
+with their own recipe and use history; kit procedures contain assembly instructions.
+Kit specifications supply the required products and quantities.
 
-Open **Lab settings → Lab steps** to find reusable procedures. Each Lab step has one unique name, entered when it is created and shown in the list and detail page. Creation also opens version 1 as an empty draft. Open the step to **Edit Lab step name and description** if its name needs correction, or choose **Edit draft** to add its procedure. The draft editor captures instructions, typed values and their scopes, optional PDF attachments, resources, outputs, operator confirmation, roles and QC criteria; it does not ask for a second step name. A new version can be started after approval.
+## Author complete procedures
+
+Select an instruction or recording field to edit it. Drag its handle to reorder
+it, or use **Actions → Move up / Move down** with a mouse or keyboard. **Duplicate**
+creates a separate occurrence; removing an instruction from a draft does not
+remove an earlier approved revision or performed work. Workflow stages use the
+same ordering controls.
+
+**Insert from an approved procedure** copies all instructions or one instruction
+from a compatible approved revision. The new copy belongs to this draft and
+retains its source revision. Editing the source later never changes a saved copy.
+Review every copied instruction before approving the receiving procedure.
+
+Optional **Illustrations** accept static PNG, JPEG or WebP images up to 10 MiB each,
+with up to 12 illustrations per instruction. Each requires descriptive alternative
+text and may have a caption. Uploads must pass file scanning. Approved revisions
+retain their exact image references; an author cannot replace a retained image by
+uploading another file. Bench operators see the pinned illustrations beside the
+instruction.
+
+Approve the **complete protocol or procedure revision** after reviewing its
+instructions, recording fields, resource requirements, illustrations and QC gates.
+Independent review and the explicit administrator override remain required.
+**Historical Lab steps** is a read-only source and approval archive. It has no
+create, edit or approve actions. Existing protocol provenance remains readable.
+
+## Present procedures on screen or paper
+
+Open a procedure name and choose **Process overview** or **Bench instructions**.
+The workflow overview shows its ordered protocol stages and handoffs. Bench
+instructions expand the exact pinned protocol content, including recording
+requirements, roles, conditions, resources, QC criteria, illustrations and captions.
+The revision selector opens the requested revision explicitly. If a pinned protocol
+is unavailable or unreadable, the complete presentation and printing are blocked;
+refresh and contact a Protocol Administrator if the problem continues.
+
+Choose **Letter** or **A4**, then **Actions → Print overview / save PDF** or
+**Print bench instructions / save PDF**. The browser print dialog provides PDF
+export. The overview uses landscape; bench instructions use portrait. Drafts carry
+an unapproved watermark. These are procedure references and contain no claim that
+laboratory work was performed. Wait for illustrations to load before printing.
+**Preview recording controls**, where available, opens fictional capture controls
+without creating operational evidence.
+
+Illustrations must be static PNG, JPEG or WebP, at most 10 MiB and 40 million
+pixels, with no edge above 16,384 pixels. Give every illustration descriptive
+alternative text. Instruction editing and movement pause while an upload is
+being scanned, so the image stays with the selected instruction. A procedure
+can contain up to 100 instructions; copying never silently truncates content.
 
 New configurations default to batch preparation. New captured values and QC gates default to one batch entry or outcome. Choose individual tube capture or shared values with tube exceptions where the procedure requires it; barcodes remain tube-specific. Recording a step automatically includes every eligible tube; individual tubes cannot be deselected. Existing saved definitions retain their configured scopes.
 
-For library preparation, add the source fields in the reusable **Lab step**, then assemble its approved version into a protocol. Choose **Biological material from specimen** to record each specimen's actual transfer from its selected accessioned source into its barcoded library tube. The source is taken from that sample's selected specimen; it is not a supplier product. Operators scan the source and destination, record the amount transferred and may explicitly mark the source exhausted. Leave the optional unit blank to use the selected source's unit.
+For library preparation, add source fields directly to the protocol instruction. Choose **Biological material from specimen** to record each specimen's actual transfer from its selected accessioned source into its barcoded library tube. The source is taken from that sample's selected specimen; it is not a supplier product. Operators scan the source and destination, record the amount transferred and may explicitly mark the source exhausted. Leave the optional unit blank to use the selected source's unit.
 
 Choose **Master mix** for a separate field. Select the exact **Approved master mix** revision; its quantity unit is fixed by that revision. Choose individual sample amounts, a common amount per sample, a total batch amount, or shared per-sample values with exceptions as the procedure requires. At execution, the operator selects a matching Ready preparation, scans its physical mix container and records the actual amount added. The same preparation can serve multiple library trays; each saved use retains its tray and preparation links and reduces the shared balance. **Material used** remains the field for purchased or internally prepared reagent lots.
 
 In a preparation tray, use **Open Master mixes** at the right end of the **Master mix** card header to open the master-mix workspace. Recorded uses appear below the description.
 
-Save the configured draft, review its configuration preview, and choose **Approve version** from its Actions menu. An empty first draft cannot be approved. A different Protocol Administrator approves it. A platform administrator approving their own draft must explicitly record an override reason. Approval locks that version. Renaming the catalog step or authoring a new version leaves earlier approved versions and existing protocol snapshots unchanged, including the step name saved in those snapshots.
-
-Cancelling an approval override with an unsaved reason asks whether to discard it. A rejected save retains the reason for review and retry.
-
-In a protocol editor, choose an exact **Approved Lab step version** and select **Add Lab step**. Its content is read-only. Set its required, optional or conditional placement and arrange the occurrences in order. Earlier occurrences remain prerequisites. Repeating a step creates a separate occurrence with independent evidence. Existing embedded protocol steps remain supported.
-
-When a newer approved Lab step version exists, the pinned occurrence offers **Adopt approved v…**. Adoption changes only the open protocol draft. Save and independently approve the assembled protocol before using that new version. Workflows and active batches keep their existing protocol versions. **Retire Lab step** prevents new selection; existing pinned occurrences, versions, usage and history remain available.
-
-In the editor, **Fields to record** defines the information operators enter. **Recorded for** specifies whether an entry applies to the batch or individual samples. Use **Units and symbols** beside a unit field to choose a common unit, or type a custom unit. **Insert symbol** beside text fields offers common mathematical notation, Greek letters, arrows, powers, and subscripts. It inserts the selected symbol at the cursor, replacing selected text when present. Selecting a common unit replaces the unit field. These controls preserve the entered symbols without converting measurements.
-
-In each step editor, **Batch report** lets you omit the upload control or include a QC report or preparation worksheet. When a report is included, **Report required** determines whether a performed step can be saved without its PDF. Required reports show a required marker and validation message in both preview and live recording. Allowed skips do not require a report. New steps start without a report; older definitions retain their existing report behavior until explicitly changed in a draft.
-
-**Batch only** fields apply to every eligible tube without showing a sample-entry list. For **Same entry with sample exceptions**, select **Record exception** to reveal the collapsed sample cards. Enter only the overrides that differ from the batch entry and give an exception reason. Turning **Record exception** off clears those overrides and their reasons. Fields configured for individual samples remain visible even when no shared exception is being recorded.
-
-Use **Material used**, **Equipment used**, and **Output created** in **Fields to record** to collect these entries with the step. In configuration, choose a vendor/product or an **Internally prepared reagent** under **Configured material**. For entries without lot tracking, you can instead define the material manually with its name and optional vendor. The saved version retains those details. Set **Quantity unit** in configuration using free text or **Units and symbols**; for tracked stock, use the selected product's or reagent's saved inventory unit because POMS does not convert units. During recording, the material and unit are fixed; the operator enters only the quantity. Enable **Include lot number** in configuration to request a released inventory lot at run time; only lots linked to the exact configured product, or prepared lots of the exact configured material definition, are offered. Older purchased lots need **Assign product** in Purchased Materials before they can be used in a product-specific step. Manual descriptions do not support lot tracking in new configurations. Saving the step records its stock use. Batch quantities default to an amount per sample; authors can instead specify a total batch amount. **Equipment used** always requires selecting an eligible registered instrument when recording the step. The selector shows its name and equipment barcode. Equipment fields have no optional barcode or Required setting; free-text equipment names are not accepted. Previously saved equipment records remain unchanged.
-
-Use **Biological material** to record sample material pipetted from the selected accessioned source into its assigned library tray tube. This field is recorded per tube and uses its configured quantity unit. During recording, scan both physical tubes and enter the actual amount transferred. The optional **Material exhausted** checkbox sets the source remainder to zero while preserving the actual transfer and separately recording any balance adjustment. Source exhaustion does not fail the specimen or prevent continuing with material already transferred. This field does not select or consume reagent lots. Add it through a new approved version; earlier approved definitions and their saved work remain unchanged.
-
-For a shared master mix, configure reusable **Lab steps** with **Process → Master-mix preparation**. Each **Reagent used** field selects a purchased Reagent product or an internally prepared reagent, its inventory quantity unit and the **Planned amount for one mix**. Actual lot numbers are required during preparation. Measurements, text, dates, choices, equipment, confirmation and QC are recorded for that mix. Approve the Lab step versions, then assemble them in order under **Lab settings → Workflows → Master mix**. The recipe is derived from every selected step occurrence; duplicate steps add their planned reagent amounts again. Use the row’s **Actions** to move, duplicate or remove an occurrence. Review the derived recipe and pinned step versions before independent workflow approval. Configure a **Material used** field to select that approved revision. Its revision and mix amount unit are retained in the Lab step; the prepared mix is not inventory stock. A revised workflow keeps earlier approved revisions available until the workflow is retired. Retirement is blocked while an active approved Lab step still selects the recipe. Once retired, no new mix preparation or library tray using that recipe may start. Open trays may use already Ready mixes until each mix's Los Angeles local-day cutoff; review their remaining amounts and complete those uses before that time.
-
-The configured unit appears in the quantity label, for example **Quantity per sample (µL)**. Tracked lots must use the same unit; units are not converted automatically. Enter the amount in that unit; the batch total appears below. Earlier approved configurations without a unit continue to use the selected lot's unit, or manual entry for untracked materials. Tracked **Material used** entries also offer **Material exhausted**. Enter the actual amount used first; the override records any remaining stock adjustment separately and prevents further use of that lot.
-
-When the step includes a QC or preparation report, attach it at the end of the step entries, before the final confirmation. The report applies to the included batch samples.
-
-An output field records the prepared-library quantity, unit and storage for each included sample. It uses the assigned library tube after its biological transfer has been recorded; earlier workflows without an assigned tube allocate their existing separate output container. Prepared yield does not consume the accessioned source again. For multiple samples, enter common quantity, unit and storage values once, with individual values where needed. For one sample, enter the output directly in its sample card; a redundant common-values section is omitted. Existing outputs retain their identity. **Save step record** saves these entries together. A correction retains previous resource use rather than consuming stock again; a repeat records new material/equipment use. An additional biological transfer must be explicitly selected and is available only before prepared yield is recorded. Existing resource requirements can be explicitly converted to these fields in a configuration draft using **Convert existing requirements to fields**.
+Save the draft explicitly. Review the complete revision before approval. A failed
+save retains the entered content. Leaving a dirty editor offers **Keep editing**
+or **Discard changes**. Previously approved procedure and run snapshots retain
+their own definitions.
 
 ## Configuration preview
 
-Use **Configuration preview** in a Lab step or protocol editor to inspect unsaved configuration, or from a saved Lab step version. It opens the Library prep capture form with clearly fictional example tubes. Preview does not approve a configuration or establish scientific validity.
+Use **Configuration preview** in a protocol editor to inspect unsaved recording controls, or **Preview recording controls** on a saved protocol or historical source revision. It opens the Library prep capture form with clearly fictional example tubes. Preview does not approve a configuration or establish scientific validity.
 
 Select any step directly, or use **Previous step** and **Next step**. No prior specimen or QC state is needed. Choose performed, repeat (when permitted), or correction presentation; optional and conditional steps also expose the performed/skip decision. These selections inspect form presentation and do not simulate workflow progression.
 
@@ -171,7 +207,7 @@ directly. POMS preserves the entered unit without converting quantities.
 
 The preparation workspace shows **Master-mix prerequisites** before you open the tray step. **Prepare required mix** carries the exact recipe revision into a bounded start action. Continue its preparation in a new tab while the waiting tray form and report selection remain in the original tab. Return to that tab after completion: Ready-mix choices refresh when the step opens and when you return. **Refresh ready mixes** updates the choices without clearing entered quantities or scans. A discarded or expired mix is removed from eligible choices and cannot be saved for a new use. Avoid reloading or closing the waiting page while its entries are unsaved.
 
-Open **Lab operations → Master mixes**. The header contains the name or full container barcode search and Status filter; choose **Search** to apply the text search. To prepare a new mix, choose **Start master mix** at the upper right of the header. Select the approved recipe revision configured in the library trays to be served. POMS assigns a unique **PH-MX** container barcode; print its label from the preparation record and attach it to the physical mix. On the record, compare the recipe derived from the pinned Lab steps, then use **Actions → Record reagent lot use** for the current step. Choose its configured reagent and a matching, released, in-date numbered lot in the required unit; record the amount actually dispensed. Multiple lots can fulfill one reagent entry. Tubes, containers and other products cannot be selected as reagents. Then choose **Record next step**, record its required fields and eligible equipment, confirm the work when requested and record its QC outcome. A Fail or Hold blocks subsequent work. A permitted repeat requires fresh reagent uses; a Supervisor correction preserves recorded consumption. Earlier and new evidence remain in history. Ingredient saves deduct the source lots. Before the ingredient steps are finished, the recipe shows incomplete capture and the remaining recipe amounts, including partially recorded reagents. It does not claim a deviation before capture. Once ingredient steps are finished, the combined recorded amounts must match each required material and unit exactly. If they differ, a different Supervisor reviews the actual uses and approves a documented deviation before the Operator can complete the mix. Recording another ingredient cancels that approval. Enter the positive amount actually made to mark the mix **Ready**; POMS does not create an inventory lot.
+Open **Lab operations → Master mixes**. The header contains the name or full container barcode search and Status filter; choose **Search** to apply the text search. To prepare a new mix, choose **Start master mix** at the upper right of the header. Select the approved recipe revision configured in the library trays to be served. POMS assigns a unique **PH-MX** container barcode; print its label from the preparation record and attach it to the physical mix. On the record, compare the recipe derived from the pinned procedure instructions, then use **Actions → Record reagent lot use** for the current step. Choose its configured reagent and a matching, released, in-date numbered lot in the required unit; record the amount actually dispensed. Multiple lots can fulfill one reagent entry. Tubes, containers and other products cannot be selected as reagents. Then choose **Record next step**, record its required fields and eligible equipment, confirm the work when requested and record its QC outcome. A Fail or Hold blocks subsequent work. A permitted repeat requires fresh reagent uses; a Supervisor correction preserves recorded consumption. Earlier and new evidence remain in history. Ingredient saves deduct the source lots. Before the ingredient steps are finished, the recipe shows incomplete capture and the remaining recipe amounts, including partially recorded reagents. It does not claim a deviation before capture. Once ingredient steps are finished, the combined recorded amounts must match each required material and unit exactly. If they differ, a different Supervisor reviews the actual uses and approves a documented deviation before the Operator can complete the mix. Recording another ingredient cancels that approval. Enter the positive amount actually made to mark the mix **Ready**; POMS does not create an inventory lot.
 
 In a compatible library preparation step, select the Ready mix, **scan the barcode on its physical container**, and enter the actual amount used. Use the same mix for all sample entries in that material field on one tray. The step save links the tray to that preparation and reduces its remaining amount. Other trays may select it while enough remains and before the end of the preparation's Los Angeles local calendar day. An overdue mix cannot be used or completed, even if it still appears as Ready; use the **Overdue — discard needed** list filter to find it. A skipped step does not consume the mix. If a tray save is uncertain, use the preparation step's recovery action before repeating physical work.
 
@@ -183,7 +219,7 @@ A Supervisor can correct an ingredient or tray-use entry. Choose **Verified void
 
 ## Build the service workflow
 
-In **Lab settings**, **Lab steps** opens by default. Use the sidebar for **Protocols**, **Workflows**, **Stage durations**, **Holiday calendar**, and **Library tray formats**. Each section has its own link, so refreshing or returning from a builder restores the relevant section. Retired protocols are hidden by default; select **Show retired** to include them. Protocols with only discarded versions are excluded from the working list, including when Show retired is selected. Discarded revisions remain labeled **Discarded** in the associated protocol's read-only version history, with no editing or creation actions on those revisions. Newly created protocols without a saved version remain visible.
+In **Lab settings**, **Protocols** opens by default. Use the sidebar for **Protocols**, **Workflows**, **Stage durations**, **Holiday calendar**, and **Library tray formats**. Each section has its own link, so refreshing or returning from a builder restores the relevant section. Retired protocols are hidden by default; select **Show retired** to include them. Protocols with only discarded versions are excluded from the working list, including when Show retired is selected. Discarded revisions remain labeled **Discarded** in the associated protocol's read-only version history, with no editing or creation actions on those revisions. Newly created protocols without a saved version remain visible.
 
 In the **Workflows** tab, create one **Controlled service workflow** for each active marketed laboratory service. POMS takes the service identity from the active Commercial catalog; do not type or maintain a separate product key.
 
@@ -205,7 +241,7 @@ For each step, enter a name and operator instructions, then choose whether the s
 
 Add captured values only when the approved procedure requires them. Captures may be numbers, text, dates, choices, file references, or barcodes. Number captures may identify a unit, and choice captures require their permitted choices. For a barcode that identifies the original specimen tube, select **Must match the selected source tube**. POMS then checks it against the attempt source. Existing approved definitions are unchanged; add this setting through a controlled new version when appropriate. Barcodes identifying recorded containers must belong to the current attempt’s lineage. Use Material used, Equipment used, and Output created fields for resource recording. Older comma- or line-separated requirements remain readable and can be converted explicitly in a draft. A QC gate records explicit Pass, Fail, or Hold outcomes and requires acceptance criteria.
 
-Use the collapsed JSON preview only to review or copy the portable representation; do not author protocol JSON directly. **Create protocol draft** validates the complete definition and reserves the next version number. Cancelling after edits warns before discarding the unsaved definition.
+Use the process overview, bench instructions and recording-controls preview to review the complete definition. **Create protocol draft** validates the complete definition and reserves the next version number. Cancelling after edits warns before discarding the unsaved definition.
 
 Each protocol can have only one Draft. While a Draft exists, **Edit protocol** replaces **Create new version**. Saving returns to the Protocols list, where the state is shown as **Draft vN** and the Actions menu exposes **Review and approve**.
 

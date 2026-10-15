@@ -190,15 +190,15 @@ public partial class SampleShippingPostgresTests
             var controller = scope.CreateLabController();
             var definition = new LabMaterialDefinition($"prepared-{scope.Suffix}", "TEST prepared buffer", LabMaterialLotKind.PreparedReagent);
             scope.DbContext.Add(definition); await scope.DbContext.SaveChangesAsync();
-            var step = await controller.CreateLabStep(new($"TEST prepared {scope.Suffix}", null), default);
+            var step = await controller.CreateProtocol(new($"TEST prepared {scope.Suffix}", null), default);
             var source = LabStepTests.Definition();
             var capture = new LabProtocolCaptureDefinition { Key = "buffer", Label = "Buffer", Type = "material", Unit = "µL", Required = true, Scope = "batch", IncludeTracking = true, Material = new("Wrong client name", MaterialDefinitionId: definition.Id) };
             var configured = source with { Steps = [source.Steps[0] with { Captures = [capture] }] };
-            var saved = await controller.SaveLabStepVersion(step.Id, new(configured.ToJson(), step.Version), default);
+            var saved = await controller.CreateProtocolVersion(step.Id, new(configured.ToJson(), step.Version), default);
             var material = LabProtocolDefinition.Parse(saved.Versions.Single().DefinitionJson).Steps[0].Captures[0].Material!;
             Assert.Equal(definition.Name, material.Name); Assert.Equal(definition.Id, material.MaterialDefinitionId); Assert.Null(material.ProductId);
             var manual = configured with { Steps = [source.Steps[0] with { Captures = [capture with { Material = new("Manual") }] }] };
-            await Assert.ThrowsAsync<OrderManagementException>(() => controller.SaveLabStepVersion(step.Id, new(manual.ToJson(), saved.Version, saved.Versions.Single().Id), default));
+            await Assert.ThrowsAsync<OrderManagementException>(() => controller.UpdateProtocolVersion(saved.Versions.Single().Id, new(manual.ToJson(), saved.Version), default));
         }
         finally { await transaction.RollbackAsync(); scope.ClearTrackedState(); }
     }

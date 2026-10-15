@@ -13,7 +13,7 @@ public sealed record LabMasterMixWorkflowDto(Guid Id, string Name, string Quanti
     Guid? ApprovedByUserId, DateTime? ApprovedAtUtc, string? ApprovalOverrideReason,
     long Version, IReadOnlyList<LabMasterMixWorkflowRevision> Revisions);
 public sealed record SaveLabMasterMixWorkflowRequest(string Name, string QuantityUnit,
-    IReadOnlyList<Guid> StepVersionIds, long Version = 0);
+    IReadOnlyList<LabProtocolStepDefinition> Steps, long Version = 0);
 public sealed record DecideLabMasterMixWorkflowRequest(long Version, string? ApprovalOverrideReason = null);
 
 public sealed partial class LabOperationsController
@@ -41,7 +41,7 @@ public sealed partial class LabOperationsController
         await using var transaction = await SampleShippingPackingData.BeginAsync(dbContext,
             "master-mix-workflow-name", ct);
         LabMasterMixWorkflow workflow;
-        var steps = await ResolveMasterMixStepsAsync(request.StepVersionIds, null, ct);
+        var steps = await ResolveMasterMixStepsAsync(request.Steps, ct);
         try { workflow = new(request.Name, request.QuantityUnit, steps, actor.User.Id); }
         catch (ArgumentException error) { throw Invalid("master_mix_workflow_invalid", error.Message); }
         await RequireUniqueMasterMixWorkflowNameAsync(workflow.Name, null, ct);
@@ -63,7 +63,7 @@ public sealed partial class LabOperationsController
         EnsureVersion(workflow.Version, request.Version);
         await SampleShippingPackingData.LockAsync(dbContext, "master-mix-workflow-name", ct);
         await RequireUniqueMasterMixWorkflowNameAsync(request.Name, id, ct);
-        var steps = await ResolveMasterMixStepsAsync(request.StepVersionIds, workflow.Steps(), ct);
+        var steps = await ResolveMasterMixStepsAsync(request.Steps, ct);
         try { workflow.Revise(request.Name, request.QuantityUnit, steps, actor.User.Id); }
         catch (ArgumentException error) { throw Invalid("master_mix_workflow_invalid", error.Message); }
         catch (InvalidOperationException error) { throw Conflict("master_mix_workflow_unavailable", error.Message); }
@@ -83,7 +83,7 @@ public sealed partial class LabOperationsController
         var workflow = await dbContext.LabMasterMixWorkflows.SingleOrDefaultAsync(item => item.Id == id, ct) ?? throw Missing();
         EnsureVersion(workflow.Version, request.Version);
         var ownApproval = workflow.AuthoredByUserId == actor.User.Id;
-        foreach (var step in workflow.Steps()) await RequireMasterMixReagentsAsync(step, ct);
+        foreach (var step in workflow.Steps()) { await RequireMasterMixReagentsAsync(step, ct); await RequireIllustrationsAsync(step.Illustrations, ct, verifyContents: true); }
         if (ownApproval && !actor.IsPlatformAdmin)
             throw Conflict("master_mix_independent_approval_required", "A different administrator must approve this workflow.");
         try { workflow.Approve(actor.User.Id, DateTime.UtcNow,
@@ -121,27 +121,20 @@ public sealed partial class LabOperationsController
     }
 
     private async Task<IReadOnlyList<LabProtocolStepDefinition>> ResolveMasterMixStepsAsync(
-        IReadOnlyList<Guid> versionIds, IReadOnlyList<LabProtocolStepDefinition>? previous, CancellationToken ct)
+        IReadOnlyList<LabProtocolStepDefinition> steps, CancellationToken ct)
     {
-        if (versionIds is null || versionIds.Count is < 1 or > 100 || versionIds.Any(id => id == Guid.Empty))
-            throw Invalid("master_mix_steps_required", "Assemble 1 to 100 approved master-mix Lab steps.");
-        var result = new List<LabProtocolStepDefinition>();
-        foreach (var id in versionIds)
+        if (steps is null || steps.Count is < 1 or > 100 || steps.Any(s => s is null) || steps.Select(s => s.Key).Distinct().Count() != steps.Count)
+            throw Invalid("master_mix_steps_required", "Define 1 to 100 distinct master-mix instructions.");
+        var definition = new LabProtocolDefinition { SchemaVersion = 1, PreparationBatchEnabled = true, Steps = steps };
+        Execute(() => LabProtocolDefinition.Parse(definition.ToJson()));
+        foreach (var source in steps)
         {
-            var version = await dbContext.LabStepVersions.SingleOrDefaultAsync(item => item.Id == id, ct) ?? throw Missing();
-            var identity = await dbContext.LabSteps.SingleAsync(item => item.Id == version.LabStepId, ct);
-            var retained = previous?.Any(step => step.LabStepVersionId == id) == true;
-            if (version.Status != LabProtocolStatus.Approved || identity.RetiredAtUtc.HasValue && !retained)
-                throw Conflict("master_mix_step_unavailable", "Select an approved version of a current master-mix Lab step.");
-            Execute(version.RequireReleaseApproval);
-            var source = LabProtocolDefinition.Parse(version.DefinitionJson).Steps.Single();
-            try { LabMasterMixDefinition.ValidateStep(source); }
-            catch (ArgumentException error) { throw Invalid("master_mix_step_invalid", error.Message); }
+            Execute(() => LabMasterMixDefinition.ValidateStep(source));
             await RequireMasterMixReagentsAsync(source, ct);
-            result.Add(source with { Name = identity.Name, Key = $"step-{result.Count + 1}", LabStepVersionId = id, Required = true, Condition = null });
-            dbContext.Entry(identity).Property(step => step.UpdatedAt).IsModified = true;
+            await RequireIllustrationsAsync(source.Illustrations, ct);
+            await RequireInstructionSourceAsync(source.CopiedFrom, "masterMix", ct);
         }
-        return result;
+        return steps;
     }
 
     private async Task RequireMasterMixReagentsAsync(LabProtocolStepDefinition step, CancellationToken ct)
@@ -169,14 +162,15 @@ public sealed partial class LabOperationsController
 
     private async Task RequireMasterMixRetirementSafeAsync(Guid workflowId, CancellationToken ct)
     {
-        var idText = workflowId.ToString();
-        var currentStepIds = await dbContext.LabSteps.AsNoTracking().Where(item => item.RetiredAtUtc == null)
-            .Select(item => item.Id).ToArrayAsync(ct);
-        var approvedSteps = await dbContext.LabStepVersions.AsNoTracking()
-            .Where(item => currentStepIds.Contains(item.LabStepId) && item.Status == LabProtocolStatus.Approved
-                && item.DefinitionJson.Contains(idText)).Select(item => item.DefinitionJson).ToArrayAsync(ct);
-        if (approvedSteps.Any(json => ReferencesMasterMixWorkflow(json, workflowId)))
-            throw Conflict("master_mix_workflow_in_use", "An approved Lab step still selects this master-mix workflow. Revise or retire that step before retiring the recipe.");
+        var currentProtocols = await dbContext.LabProtocols.AsNoTracking().Where(p => p.RetiredAtUtc == null).Select(p => p.Id).ToArrayAsync(ct);
+        var productionPins = dbContext.LabServiceWorkflowStages.Where(stage => dbContext.LabServiceWorkflowVersions
+                .Any(version => version.Id == stage.LabServiceWorkflowVersionId && version.Status == LabServiceWorkflowStatus.Production))
+            .Select(stage => stage.LabProtocolVersionId);
+        var definitions = await dbContext.LabProtocolVersions.AsNoTracking()
+            .Where(v => (currentProtocols.Contains(v.LabProtocolId) && (v.Status == LabProtocolStatus.Approved || v.Status == LabProtocolStatus.Active)
+                    || productionPins.Contains(v.Id))).Select(v => v.DefinitionJson).ToArrayAsync(ct);
+        if (definitions.Any(json => ReferencesMasterMixWorkflow(json, workflowId)))
+            throw Conflict("master_mix_workflow_in_use", "An approved protocol still selects this master mix. Revise or retire the protocol before retiring the recipe.");
     }
 
     private static bool ReferencesMasterMixWorkflow(string json, Guid workflowId)

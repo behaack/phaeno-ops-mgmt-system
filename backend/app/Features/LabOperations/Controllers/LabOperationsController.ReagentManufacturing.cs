@@ -74,6 +74,7 @@ public sealed partial class LabOperationsController
         try { definition.SetPreparedReagentUnit(product.DefaultQuantityUnit!); }
         catch (ArgumentException error) { throw Invalid("reagent_unit_invalid", error.Message); }
         catch (InvalidOperationException error) { throw Conflict("reagent_unit_conflict", error.Message); }
+        foreach (var step in request.Steps) { await RequireIllustrationsAsync(step.Illustrations, ct); await RequireInstructionSourceAsync(step.CopiedFrom, "reagent", ct); }
         LabReagentWorkflow workflow;
         try { workflow = new(request.Name, definition.Id, request.Steps, actor.User.Id); }
         catch (ArgumentException error) { throw Invalid("reagent_workflow_invalid", error.Message); }
@@ -111,6 +112,7 @@ public sealed partial class LabOperationsController
         try { definition.SetPreparedReagentUnit(product.DefaultQuantityUnit!); }
         catch (InvalidOperationException error) { throw Conflict("reagent_unit_conflict", error.Message); }
         await RequireUniqueReagentWorkflowNameAsync(request.Name, workflow.Id, ct);
+        foreach (var step in request.Steps) { await RequireIllustrationsAsync(step.Illustrations, ct); await RequireInstructionSourceAsync(step.CopiedFrom, "reagent", ct); }
         Execute(() => workflow.Revise(request.Name, definition.Id, request.Steps, actor.User.Id));
         await dbContext.SaveChangesAsync(ct);
         if (transaction is not null) await transaction.CommitAsync(ct);
@@ -134,6 +136,7 @@ public sealed partial class LabOperationsController
         if (ownApproval && !actor.IsPlatformAdmin)
             throw Conflict("reagent_workflow_independent_approval_required",
                 "A different administrator must approve this reagent workflow.");
+        foreach (var step in workflow.Steps()) await RequireIllustrationsAsync(step.Illustrations, ct, verifyContents: true);
         Execute(() => workflow.Approve(actor.User.Id, DateTime.UtcNow,
             ownApproval && actor.IsPlatformAdmin, request.ApprovalOverrideReason));
         await dbContext.SaveChangesAsync(ct);

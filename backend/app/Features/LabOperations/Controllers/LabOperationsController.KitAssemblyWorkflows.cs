@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Features.OrderManagement.Services;
 
-public sealed record SaveKitAssemblyWorkflowRequest(string Name, IReadOnlyList<Guid> StepVersionIds,
+public sealed record SaveKitAssemblyWorkflowRequest(string Name, IReadOnlyList<LabKitAssemblyStep> Steps,
     long? WorkflowVersion = null, Guid? WorkflowId = null);
 public sealed record ApproveKitAssemblyWorkflowRequest(long WorkflowVersion, string? OverrideReason = null);
 public sealed record RenameKitAssemblyWorkflowRequest(string Name, long WorkflowVersion);
@@ -37,24 +37,13 @@ public sealed partial class LabOperationsController
             throw Invalid("kit_workflow_name_invalid", "Enter a workflow name of 1 to 160 characters.");
         await using var transaction = await SampleShippingPackingData.BeginAsync(dbContext,
             $"kit-assembly-workflow:{request.WorkflowId}", ct);
-        if (request.StepVersionIds is null || request.StepVersionIds.Count != 1)
-            throw Invalid("kit_steps_invalid", "Choose exactly one approved Lab step for transportation kit assembly.");
-        var versions = await (from version in dbContext.LabStepVersions.AsNoTracking()
-            join step in dbContext.LabSteps.AsNoTracking() on version.LabStepId equals step.Id
-            where request.StepVersionIds.Contains(version.Id) && step.RetiredAtUtc == null
-            select version).ToDictionaryAsync(item => item.Id, ct);
-        if (versions.Count != request.StepVersionIds.Count || versions.Values.Any(item => item.Status is not (LabProtocolStatus.Approved or LabProtocolStatus.Active)))
-            throw Invalid("kit_steps_unavailable", "Each assembly step must be a current, approved Lab step version.");
-        var steps = new List<LabKitAssemblyStep>();
-        foreach (var id in request.StepVersionIds)
-        {
-            var definition = LabProtocolDefinition.Parse(versions[id].DefinitionJson);
-            var step = definition.Steps.Single();
-            if (step.Captures.Count != 0 || step.InputMaterials.Count != 0 || step.PreparedOutputs.Count != 0
-                || step.EquipmentTypes.Count != 0 || step.QcGate is not null || step.AttachmentRequired)
-                throw Invalid("kit_step_scope_invalid", "Select instruction-only Lab steps for physical kit assembly. Sample, batch, and tube captures cannot run in this context.");
-            steps.Add(new(id, step.Name, step.Instructions));
-        }
+        var steps = request.Steps;
+        if (steps is null || steps.Count is < 1 or > 100 || steps.Any(s => s is null || s.StepKey == Guid.Empty
+                || string.IsNullOrWhiteSpace(s.Name) || s.Name.Length > 160
+                || string.IsNullOrWhiteSpace(s.Instructions) || s.Instructions.Length > 4000)
+            || steps.Select(s => s.StepKey).Distinct().Count() != steps.Count)
+            throw Invalid("kit_steps_invalid", "Define 1 to 100 distinct assembly instructions.");
+        foreach (var step in steps) { await RequireIllustrationsAsync(step.Illustrations, ct); await RequireInstructionSourceAsync(step.CopiedFrom, "kit", ct); }
         var workflow = request.WorkflowId.HasValue
             ? await dbContext.LabKitAssemblyWorkflows.SingleOrDefaultAsync(item => item.Id == request.WorkflowId, ct) ?? throw Missing()
             : null;
@@ -144,16 +133,7 @@ public sealed partial class LabOperationsController
         if (revision.Revision != workflow.LatestRevision) throw Conflict("kit_workflow_superseded", "Approve the latest revision.");
         if (revision.AuthoredByUserId == actor.User.Id && !actor.IsPlatformAdmin)
             throw Conflict("kit_workflow_independent_approval_required", "A different administrator must approve this kit workflow.");
-        var stepIds = revision.Steps().Select(item => item.LabStepVersionId).ToArray();
-        if (stepIds.Length != 1)
-            throw Invalid("kit_steps_invalid", "Choose exactly one approved Lab step before approving this transportation kit workflow.");
-        var approvedSteps = await (from version in dbContext.LabStepVersions.AsNoTracking()
-            join step in dbContext.LabSteps.AsNoTracking() on version.LabStepId equals step.Id
-            where stepIds.Contains(version.Id) && step.RetiredAtUtc == null
-                && (version.Status == LabProtocolStatus.Approved || version.Status == LabProtocolStatus.Active)
-            select version.Id).CountAsync(ct);
-        if (approvedSteps != stepIds.Length)
-            throw Conflict("kit_steps_unavailable", "Every assembly step must still be current and approved.");
+        foreach (var step in revision.Steps()) await RequireIllustrationsAsync(step.Illustrations, ct, verifyContents: true);
         try { revision.Approve(actor.User.Id, DateTime.UtcNow, request.OverrideReason, actor.IsPlatformAdmin); }
         catch (InvalidOperationException error) { throw Conflict("kit_workflow_approval_blocked", error.Message); }
         catch (ArgumentException error) { throw Invalid("kit_workflow_approval_invalid", error.Message); }

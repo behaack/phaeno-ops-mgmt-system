@@ -1,3 +1,5 @@
+import { useWorkflowDiscovery } from './configuration-discovery'
+import { procedureDetailRoute } from './procedure-navigation'
 import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 import { WorkflowApprovalOverrideDialog } from './WorkflowApprovalOverrideDialog'
 import { useMutation } from '@tanstack/react-query'
@@ -65,8 +67,7 @@ export function ServiceWorkflowList({
 }) {
   const [overrideTarget, setOverrideTarget] = useState<{ workflow: LabServiceWorkflow; version: LabServiceWorkflow['versions'][number] } | null>(null)
   const [createOpen, setCreateOpen] = useState(false)
-  const [search, setSearch] = useState('')
-  const [showInactive, setShowInactive] = useState(false)
+  const { discovery, search, setSearch, showInactive, setShowInactive } = useWorkflowDiscovery('library')
   const [confirmation, setConfirmation] = useState<{
     workflow: LabServiceWorkflow
     versionId: string
@@ -123,10 +124,10 @@ export function ServiceWorkflowList({
               return (
                 <li key={workflow.id} className="py-4">
                   <div className="flex items-start justify-between gap-3">
-                    <h3 className="min-w-0 wrap-anywhere font-medium">{workflow.name}</h3>
+                    <h3 className="min-w-0 wrap-anywhere font-medium"><Link className="text-primary hover:underline" to={procedureDetailRoute} params={{ kind: 'library', recordId: workflow.id }} search={discovery}>{workflow.name}</Link></h3>
                     {canManage && !openCandidate ? (
                       <Button asChild size="sm" variant="outline" className="shrink-0">
-                        <Link to="/lab-operations/workflows/$workflowId/versions/new" params={{ workflowId: workflow.id }} search={{ section: undefined }}>
+                        <Link to="/lab-operations/workflows/$workflowId/versions/new" params={{ workflowId: workflow.id }} search={{ ...discovery, section: undefined }}>
                           Add version
                         </Link>
                       </Button>
@@ -156,7 +157,7 @@ export function ServiceWorkflowList({
                               {version.status === 'Draft' || version.status === 'Invalid' ? (
                                 <>
                                   <DropdownMenuItem asChild>
-                                    <Link to="/lab-operations/workflows/$workflowId/versions/$versionId/edit" params={{ workflowId: workflow.id, versionId: version.id }} search={{ section: undefined }}>
+                                    <Link to="/lab-operations/workflows/$workflowId/versions/$versionId/edit" params={{ workflowId: workflow.id, versionId: version.id }} search={{ ...discovery, section: undefined }}>
                                       {version.status === 'Invalid' ? 'Review workflow' : 'Continue editing'}
                                     </Link>
                                   </DropdownMenuItem>

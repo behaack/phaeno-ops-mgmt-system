@@ -20,8 +20,8 @@ export type MasterMix = MasterMixSummary & { preparedQuantity: number | null; pr
 export const masterMixWorkflowsKey = ['lab-master-mix-workflows'] as const
 export const masterMixesKey = ['lab-master-mixes'] as const
 export const listMasterMixWorkflows = () => get<MasterMixWorkflow[]>('/master-mix-workflows')
-export const createMasterMixWorkflow = (input: { name: string; quantityUnit: string; stepVersionIds: string[] }) => post<MasterMixWorkflow>('/master-mix-workflows', input)
-export const reviseMasterMixWorkflow = (item: MasterMixWorkflow, input: { name: string; quantityUnit: string; stepVersionIds: string[] }) => put<MasterMixWorkflow>(`/master-mix-workflows/${item.id}`, { ...input, version: item.version })
+export const createMasterMixWorkflow = (input: { name: string; quantityUnit: string; steps: MasterMixStep[] }) => post<MasterMixWorkflow>('/master-mix-workflows', input)
+export const reviseMasterMixWorkflow = (item: MasterMixWorkflow, input: { name: string; quantityUnit: string; steps: MasterMixStep[] }) => put<MasterMixWorkflow>(`/master-mix-workflows/${item.id}`, { ...input, version: item.version })
 export const approveMasterMixWorkflow = (item: MasterMixWorkflow, approvalOverrideReason?: string) => post<MasterMixWorkflow>(`/master-mix-workflows/${item.id}/approve`, { version: item.version, approvalOverrideReason })
 export const retireMasterMixWorkflow = (item: MasterMixWorkflow) => post<MasterMixWorkflow>(`/master-mix-workflows/${item.id}/retire`, { version: item.version })
 export const searchMasterMixes = (search = '', status = '', page = 1) => get<MasterMixPage>(`/master-mixes?${new URLSearchParams({ search, status, page: String(page) })}`)

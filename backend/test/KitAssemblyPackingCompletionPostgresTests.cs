@@ -37,7 +37,7 @@ public partial class SampleShippingPostgresTests
         var saved = await lab.RecordKitPackedContents(kit.Id, request with { AssemblyNotes = "Packed and sealed according to instructions." }, default);
         Assert.Equal(2, saved.Uses.Count);
         var step = Assert.Single(saved.StepRecords);
-        Assert.Equal(run.Steps[0].LabStepVersionId, step.LabStepVersionId);
+        Assert.Equal(run.Steps[0].StepKey, step.StepKey);
         Assert.Equal(scope.PlatformUser.Id, step.PerformedByUserId);
         Assert.Equal("Packed and sealed according to instructions.", step.Notes);
         scope.ClearTrackedState();
@@ -64,41 +64,27 @@ public partial class SampleShippingPostgresTests
     }
 
     [PostgreSqlReferenceFact]
-    public async Task TransportationKitWorkflowSaveAndApprovalRequireExactlyOneStep()
+    public async Task KitProcedureOwnsMultipleInstructionsAndRejectsDuplicateOccurrences()
     {
         await using var scope = await ShippingTestScope.CreateAsync();
-        var definition = await scope.CreateContainerAsync(await scope.CreateShipmentAsync(20), 20);
-        var lab = scope.CreateLabController();
-        var source = (await lab.ReadKitAssemblyWorkflows(default)).Single(item => item.Id == definition.AssemblyWorkflowId);
-        var step = Assert.Single(source.Revisions[0].Steps);
-        var name = $"TEST single-step workflow {scope.Suffix}";
-        foreach (var ids in new Guid[][] { [], [step.LabStepVersionId, Guid.NewGuid()] })
-        {
-            var error = await Assert.ThrowsAsync<OrderManagementException>(() => lab.SaveKitAssemblyWorkflow(new(name, ids), default));
-            Assert.Equal("kit_steps_invalid", error.ErrorCode);
-            scope.ClearTrackedState();
-        }
-        var saved = await lab.SaveKitAssemblyWorkflow(new(name, [step.LabStepVersionId]), default);
+        await using var transaction = await scope.DbContext.Database.BeginTransactionAsync();
         try
         {
-            Assert.Single(saved.Revisions[0].Steps);
-            var error = await Assert.ThrowsAsync<OrderManagementException>(() => lab.SaveKitAssemblyWorkflow(new(name,
-                [step.LabStepVersionId, Guid.NewGuid()], saved.Version, saved.Id), default));
-            Assert.Equal("kit_steps_invalid", error.ErrorCode);
-            scope.ClearTrackedState();
-            var draft = await scope.DbContext.LabKitAssemblyWorkflowRevisions.SingleAsync(item => item.WorkflowId == saved.Id);
-            draft.UpdateDraft([step, new(Guid.NewGuid(), "Second step", "Instructions.")], scope.PlatformUser.Id, DateTime.UtcNow);
-            await scope.DbContext.SaveChangesAsync();
-            scope.ClearTrackedState();
-            var invalidApproval = await Assert.ThrowsAsync<OrderManagementException>(() => lab.ApproveKitAssemblyWorkflow(saved.Id,
-                draft.Id, new(saved.Version, "TEST approval override"), default));
-            Assert.Equal("kit_steps_invalid", invalidApproval.ErrorCode);
+            var controller = scope.CreateLabController();
+            var first = new LabKitAssemblyStep(Guid.NewGuid(), "Pack", "Pack the specified contents.");
+            var second = new LabKitAssemblyStep(Guid.NewGuid(), "Seal", "Inspect and seal the kit.");
+            var invalid = await Assert.ThrowsAsync<OrderManagementException>(() => controller.SaveKitAssemblyWorkflow(new("TEST procedure", [first, first]), default));
+            Assert.Equal("kit_steps_invalid", invalid.ErrorCode);
+            var saved = await controller.SaveKitAssemblyWorkflow(new($"TEST complete procedure {scope.Suffix}", [first, second]), default);
+            var draft = Assert.Single(saved.Revisions);
+            Assert.Equal(new[] { first.StepKey, second.StepKey }, draft.Steps.Select(s => s.StepKey));
+            var approved = await controller.ApproveKitAssemblyWorkflow(saved.Id, draft.Id, new(saved.Version, "TEST ONLY explicit whole-procedure override"), default);
+            Assert.Equal("Approved", Assert.Single(approved.Revisions).Status);
+            var replacement = first with { Instructions = "Revised draft instruction." };
+            var revised = await controller.SaveKitAssemblyWorkflow(new(saved.Name, [replacement, second], approved.Version, saved.Id), default);
+            Assert.Equal(first.Instructions, revised.Revisions.Single(v => v.Status == "Approved").Steps[0].Instructions);
+            Assert.Equal(replacement.Instructions, revised.Revisions.Single(v => v.Status == "Draft").Steps[0].Instructions);
         }
-        finally
-        {
-            scope.ClearTrackedState();
-            await scope.DbContext.LabKitAssemblyWorkflowRevisions.Where(item => item.WorkflowId == saved.Id).ExecuteDeleteAsync();
-            await scope.DbContext.LabKitAssemblyWorkflows.Where(item => item.Id == saved.Id).ExecuteDeleteAsync();
-        }
+        finally { await transaction.RollbackAsync(); scope.ClearTrackedState(); }
     }
 }

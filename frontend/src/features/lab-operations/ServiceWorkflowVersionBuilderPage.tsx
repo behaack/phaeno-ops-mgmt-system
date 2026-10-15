@@ -1,9 +1,15 @@
+import { ProcedurePresentation } from './ProcedurePresentation'
+import { deserializeProtocolDefinition, serializeProtocolDefinition, type ProtocolDefinition } from './protocol-definition'
+import { Field as FieldContainer } from '#/components/ui/field'
+import { useConfigurationDiscovery } from './configuration-discovery'
+import { ProcedureSequence } from './ProcedureSequence'
+import { PreparationActions } from './preparation-ui'
 import { NativeSelect } from '#/components/ui/native-select'
 import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useBlocker, useNavigate } from '@tanstack/react-router'
-import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useFieldArray, useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -37,16 +43,18 @@ const stageSchema = z.object({
 const workflowSchema = z.object({ stages: z.array(stageSchema).min(1, 'Add at least one workflow stage.') })
 type WorkflowForm = z.infer<typeof workflowSchema>
 
-const selectClass = 'h-9 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50'
 const textareaClass = 'min-h-20 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50'
 const emptyStage = (): WorkflowForm['stages'][number] => ({ name: '', labProtocolVersionId: '', requirement: 'Required', condition: '', handoffCriteria: '' })
 
 export function ServiceWorkflowVersionBuilderPage({ workflowId, draftVersionId }: { workflowId: string; draftVersionId?: string }) {
   const { authProvider, session } = usePhaenoSession()
   const navigate = useNavigate()
+  const discovery = useConfigurationDiscovery()
   const leaveApproved = useRef(false)
   const queryClient = useQueryClient()
+  const [loadedVersion, setLoadedVersion] = useState<number>(0)
   const [loadedKey, setLoadedKey] = useState<string | null>(null)
+  const keepEditingRef = useRef<HTMLButtonElement>(null)
   const [discardOpen, setDiscardOpen] = useState(false)
   const canManage = Boolean(session?.capabilities.canManageLabProtocols)
   const apiEnabled = canManage && authProvider !== 'mock'
@@ -60,11 +68,12 @@ export function ServiceWorkflowVersionBuilderPage({ workflowId, draftVersionId }
   const form = useForm<WorkflowForm>({ resolver: zodResolver(workflowSchema), defaultValues: { stages: [] } })
   const { isDirty: __formDraftDirty } = form.formState
 
+  const previewStages = form.watch('stages')
   const stages = useFieldArray({ control: form.control, name: 'stages' })
   const mutation = useMutation({
     mutationFn: (values: WorkflowForm) => {
       const input = {
-        workflowVersion: workflow!.version,
+        workflowVersion: loadedVersion,
         stages: values.stages.map((stage) => ({
           ...stage,
           condition: stage.requirement === 'Conditional' ? stage.condition : null,
@@ -78,7 +87,7 @@ export function ServiceWorkflowVersionBuilderPage({ workflowId, draftVersionId }
     onSuccess: async () => {
       leaveApproved.current = true
       await queryClient.invalidateQueries({ queryKey: ['lab-operations'] })
-      await navigate({ to: '/lab-configuration', search: { configurationTab: 'workflows' } })
+      await navigate({ to: '/lab-configuration', search: { ...discovery, configurationTab: 'workflows' } })
     },
   })
 
@@ -96,6 +105,7 @@ export function ServiceWorkflowVersionBuilderPage({ workflowId, draftVersionId }
       condition: stage.condition ?? '',
       handoffCriteria: stage.handoffCriteria ?? '',
     })) ?? [emptyStage()] })
+    setLoadedVersion(workflow.version)
     setLoadedKey(formKey)
   }, [controlledSource, draft, draftVersionId, form, formKey, loadedKey, openCandidate, workflow])
 
@@ -109,7 +119,7 @@ export function ServiceWorkflowVersionBuilderPage({ workflowId, draftVersionId }
     return () => window.removeEventListener('beforeunload', warn)
   }, [__formDraftDirty, mutation.isSuccess])
 
-  const leave = () => navigate({ to: '/lab-configuration', search: { configurationTab: 'workflows' } })
+  const leave = () => navigate({ to: '/lab-configuration', search: { ...discovery, configurationTab: 'workflows' } })
   if (!canManage) return <PageAlert title="Workflow authoring unavailable" message="An active Protocol Administrator role is required." destructive />
   if (authProvider === 'mock') return <PageAlert title="Workflow authoring is paused" message="Connect a real Phaeno session to create a controlled workflow version." />
   if (dashboard.isLoading) return <main className="space-y-4"><p role="status">Loading service workflow…</p></main>
@@ -138,7 +148,9 @@ export function ServiceWorkflowVersionBuilderPage({ workflowId, draftVersionId }
         <Card>
           <CardHeader><CardTitle>Ordered protocol stages</CardTitle><CardDescription>Required stages are standard work; optional stages may be selected; conditional stages document exactly when they apply.</CardDescription></CardHeader>
           <CardContent className="space-y-4">
-            {stages.fields.map((stage, index) => {
+            {/* The outline keeps the operating sequence visible while one stage is edited. */}
+            <ProcedureSequence label="Workflow stages" items={stages.fields.map((stage, i) => ({ id: stage.id, title: form.watch(`stages.${i}.name`), summary: protocolOptions.find(p => p.value === form.watch(`stages.${i}.labProtocolVersionId`))?.label, invalid: Boolean(form.formState.errors.stages?.[i]) }))} onMove={stages.move}>{(index, moveInstruction) => {
+              const stage = stages.fields[index]
               const errors = form.formState.errors.stages?.[index]
               const requirement = form.watch(`stages.${index}.requirement`)
               return (
@@ -146,26 +158,32 @@ export function ServiceWorkflowVersionBuilderPage({ workflowId, draftVersionId }
                   <CardHeader className="border-b">
                     <CardTitle>Stage {index + 1}</CardTitle>
                     <CardDescription>One controlled protocol and the handoff needed to continue.</CardDescription>
-                    <CardAction><div className="flex gap-1">
-                      <Button type="button" variant="ghost" size="icon-sm" aria-label={`Move stage ${index + 1} up`} disabled={index === 0} onClick={() => stages.move(index, index - 1)}><ArrowUp /></Button>
-                      <Button type="button" variant="ghost" size="icon-sm" aria-label={`Move stage ${index + 1} down`} disabled={index === stages.fields.length - 1} onClick={() => stages.move(index, index + 1)}><ArrowDown /></Button>
-                      <Button type="button" variant="destructive" size="icon-sm" aria-label={`Remove stage ${index + 1}`} disabled={stages.fields.length === 1} onClick={() => stages.remove(index)}><Trash2 /></Button>
-                    </div></CardAction>
+                    <CardAction><PreparationActions items={[
+                      { label: 'Move up', disabled: index === 0, onClick: () => moveInstruction(index, index - 1) },
+                      { label: 'Move down', disabled: index === stages.fields.length - 1, onClick: () => moveInstruction(index, index + 1) },
+                      { label: 'Duplicate stage', onClick: () => stages.insert(index + 1, { ...form.getValues(`stages.${index}`) }) },
+                      { label: 'Remove stage', disabled: stages.fields.length === 1, onClick: () => stages.remove(index) },
+                    ]} /></CardAction>
                   </CardHeader>
                   <CardContent className="grid gap-4 lg:grid-cols-2">
                     <Field label="Stage name" id={`workflow-stage-${index}-name`} required error={errors?.name?.message}><Input id={`workflow-stage-${index}-name`} {...form.register(`stages.${index}.name`)} /></Field>
-                    <Field label="Protocol version" id={`workflow-stage-${index}-protocol`} required error={errors?.labProtocolVersionId?.message}><NativeSelect id={`workflow-stage-${index}-protocol`} className={selectClass} {...form.register(`stages.${index}.labProtocolVersionId`)}><option value="">Select…</option>{protocolOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</NativeSelect></Field>
-                    <Field label="Requirement" id={`workflow-stage-${index}-requirement`} required error={errors?.requirement?.message}><NativeSelect id={`workflow-stage-${index}-requirement`} className={selectClass} {...form.register(`stages.${index}.requirement`)}><option value="Required">Required</option><option value="Optional">Optional</option><option value="Conditional">Conditional</option></NativeSelect></Field>
+                    <Field label="Protocol version" id={`workflow-stage-${index}-protocol`} required error={errors?.labProtocolVersionId?.message}><NativeSelect id={`workflow-stage-${index}-protocol`} {...form.register(`stages.${index}.labProtocolVersionId`)}><option value="">Select…</option>{protocolOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</NativeSelect></Field>
+                    <Field label="Requirement" id={`workflow-stage-${index}-requirement`} required error={errors?.requirement?.message}><NativeSelect id={`workflow-stage-${index}-requirement`} {...form.register(`stages.${index}.requirement`)}><option value="Required">Required</option><option value="Optional">Optional</option><option value="Conditional">Conditional</option></NativeSelect></Field>
                     {requirement === 'Conditional' ? <Field label="When this stage applies" id={`workflow-stage-${index}-condition`} required error={errors?.condition?.message}><Input id={`workflow-stage-${index}-condition`} {...form.register(`stages.${index}.condition`)} /></Field> : <div />}
                     <div className="lg:col-span-2"><Field label="Handoff criteria" id={`workflow-stage-${index}-handoff`} error={errors?.handoffCriteria?.message}><textarea id={`workflow-stage-${index}-handoff`} className={textareaClass} {...form.register(`stages.${index}.handoffCriteria`)} placeholder="Evidence or state required before the next stage may begin" /></Field></div>
                   </CardContent>
                 </Card>
               )
-            })}
+            }}</ProcedureSequence>
             {form.formState.errors.stages?.root?.message ? <p className="text-sm text-destructive" role="alert">{form.formState.errors.stages.root.message}</p> : null}
             <Button type="button" variant="outline" onClick={() => stages.append(emptyStage())}><Plus data-icon="inline-start" /> Add stage</Button>
           </CardContent>
         </Card>
+        <details className="rounded-lg border p-4"><summary className="cursor-pointer font-medium">Review workflow presentation</summary><div className="mt-4"><ProcedurePresentation document={{ name: workflow.name, revision: 'Unsaved draft', status: 'Draft', overviewInstructions: previewStages.map((stage, i) => ({ key: String(i), name: stage.name, instructions: stage.handoffCriteria, required: stage.requirement === 'Required', condition: stage.condition, protocolLabel: protocolOptions.find(p => p.value === stage.labProtocolVersionId)?.label })), instructions: previewStages.flatMap((stage, i) => {
+          const protocol = dashboard.data?.protocols.flatMap(p => p.versions).find(v => v.id === stage.labProtocolVersionId)
+          const parsed = protocol ? deserializeProtocolDefinition(protocol.definitionJson) : null
+          return [{ key: `stage-${i}`, name: stage.name, instructions: stage.handoffCriteria, required: stage.requirement === 'Required', condition: stage.condition }, ...(parsed ? (JSON.parse(serializeProtocolDefinition(parsed)) as ProtocolDefinition).steps.map(step => ({ ...step, key: `${i}:${step.key}` })) : [])]
+        }) }} /></div></details>
         <div className="flex flex-wrap justify-end gap-2">
           <Button type="button" variant="outline" onClick={() => __formDraftDirty ? setDiscardOpen(true) : void leave()}>Cancel</Button>
           <Button type="submit" disabled={mutation.isPending}>{mutation.isPending ? 'Saving draft…' : draft ? 'Save draft' : 'Create workflow draft'}</Button>
@@ -173,14 +191,14 @@ export function ServiceWorkflowVersionBuilderPage({ workflowId, draftVersionId }
       </form>
 
       <Dialog open={discardOpen} onOpenChange={setDiscardOpen}>
-        <DialogContent><DialogHeader><DialogTitle>Discard workflow changes?</DialogTitle><DialogDescription>Unsaved stage order and selections will be lost. The previously saved workflow remains unchanged.</DialogDescription></DialogHeader><DialogFooter><DialogClose asChild><Button type="button" variant="outline">Keep editing</Button></DialogClose><Button type="button" variant="destructive" onClick={() => { leaveApproved.current = true; void leave() }}>Discard changes</Button></DialogFooter></DialogContent>
+        <DialogContent onOpenAutoFocus={event => { event.preventDefault(); keepEditingRef.current?.focus() }}><DialogHeader><DialogTitle>Discard workflow changes?</DialogTitle></DialogHeader><div><DialogDescription>Unsaved stage order and selections will be lost. The previously saved workflow remains unchanged.</DialogDescription></div><DialogFooter><DialogClose asChild><Button ref={keepEditingRef} data-keep-editing type="button" variant="outline">Keep editing</Button></DialogClose><Button type="button" variant="destructive" onClick={() => { leaveApproved.current = true; void leave() }}>Discard changes</Button></DialogFooter></DialogContent>
       </Dialog>
     </main>
   )
 }
 
 function Field({ label, id, required, error, children }: { label: string; id: string; required?: boolean; error?: string; children: React.ReactNode }) {
-  return <div><Label htmlFor={id}>{required ? <RequiredFieldName>{label}</RequiredFieldName> : label}</Label><div className="mt-2">{children}</div>{error ? <p className="mt-1 text-sm text-destructive" role="alert">{error}</p> : null}</div>
+  return <FieldContainer><Label htmlFor={id}>{required ? <RequiredFieldName>{label}</RequiredFieldName> : label}</Label>{children}{error ? <p className="mt-1 text-sm text-destructive" role="alert">{error}</p> : null}</FieldContainer>
 }
 
 function PageAlert({ title, message, destructive = false }: { title: string; message: string; destructive?: boolean }) {

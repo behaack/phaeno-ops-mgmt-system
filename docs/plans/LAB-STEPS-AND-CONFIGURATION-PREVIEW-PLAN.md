@@ -1,5 +1,11 @@
 # Lab steps and configuration preview
 
+> October 14, 2026: the approved [protocol-first Lab setup plan](LAB-SETUP-VISUAL-AUTHORING-PLAN.md)
+> supersedes mandatory catalog-step authoring/approval and kit single-step constraints.
+> Current procedures own their instructions and approve the whole revision. Retained
+> catalog references are provenance; performed work and approved snapshots stay pinned.
+
+
 Status: implemented locally; validation and live catalog acceptance tracked below. Owner authorized execution on September 17, 2026.
 Decision date: September 17, 2026.
 

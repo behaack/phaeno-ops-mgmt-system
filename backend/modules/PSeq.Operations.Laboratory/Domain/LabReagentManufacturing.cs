@@ -3,7 +3,8 @@ namespace PSeq.Operations.Laboratory.Domain;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
-public sealed record LabReagentStep(string Key, string Name, string Instructions);
+public sealed record LabReagentStep(string Key, string Name, string Instructions,
+    IReadOnlyList<LabInstructionIllustration>? Illustrations = null, LabInstructionSource? CopiedFrom = null);
 public sealed record LabReagentWorkflowRevisionSnapshot(int Revision, string Name,
     IReadOnlyList<LabReagentStep> Steps, string Status, Guid AuthoredByUserId,
     Guid? ApprovedByUserId, DateTime? ApprovedAtUtc, string? ApprovalOverrideReason);
@@ -106,6 +107,8 @@ public sealed class LabReagentWorkflow : LabAuditedEntity
                 || !Regex.IsMatch(step.Key, "^[a-z0-9]+(?:-[a-z0-9]+)*$", RegexOptions.CultureInvariant)
                 || step.Key.Length > 100 || !keys.Add(step.Key))
                 throw new ArgumentException("Every reagent step needs a unique readable key.");
+            LabConfigurationAsset.Validate(step.Illustrations);
+            LabInstructionSource.Validate(step.CopiedFrom);
             LabAuditedEntity.Required(step.Name, nameof(step.Name), 160);
             LabAuditedEntity.Required(step.Instructions, nameof(step.Instructions), 4000);
         }

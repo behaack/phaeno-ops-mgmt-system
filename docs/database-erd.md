@@ -6,18 +6,13 @@ Generated from [PSeqOperationsDbContextModelSnapshot.cs](../backend/app/Migratio
 
 The additive [step performance JSON contract](plans/LAB-STEP-PERFORMANCE-CONTRACT.md#persistence-and-reads) describes performer/time/offset/precision and correction-record references inside existing laboratory execution and preparation evidence columns. These are logical JSON references, not additional tables, columns or database foreign keys.
 
-The [DPS 1.0 contract](plans/POMS-DPS-DEVELOPER-CONTRACT.md) adds logical submission
-metadata inside the existing assembly job `inputs_json`: exact input manifest,
-scope/recipe/file mappings, pinned S3 versions and the parameters object locator.
-Command receipts use the existing assembly receipt ledger with provider event
-IDs prefixed `command:`; these control receipts are excluded from lifecycle
-sequence ordering. Verified outputs use existing scientific-file and analysis
-entities. No table, column, key, relationship, migration or historical row is
-changed by this implementation.
+The [DPS 1.0 contract](plans/POMS-DPS-DEVELOPER-CONTRACT.md) describes assembly submission metadata in inputs_json, command/lifecycle receipts and verified scientific outputs. Its messaging work does not change persisted fields; see that contract for the exact logical JSON and receipt mappings.
 
 The [material tracking contract](plans/LAB-OPERATIONS-CONTRACT.md#material-transfers-and-expiration--september-23-2026) describes per-tube declarations, quantity history and immutable transfer evidence. `sample_shipping_stock_kits.product_expiry_snapshot_json` and `sample_return_kits.product_expiry_snapshot_json` retain arrays of `{supplierProductId, supplierName, productNumber, canExpire, expirationDate}` objects; dates are date-only strings or null. A null historical snapshot means unknown, and later product edits do not rewrite it.
 
-The [master-mix step assembly contract](plans/MASTER-MIX-PREPARATION-PLAN.md#assemble-approved-lab-steps--october-3-2026) describes pinned LabStepVersionId snapshots, batch process fields and exact planned reagent amounts in steps_json, the derived ingredients_json recipe, typed preparation evidence_json, and step_sequence/field_key links on source withdrawals. Step input_json supports exact replay; per-entry evidence_json preserves lot and equipment snapshots, QC, repeats and corrections. JSON identities are application-validated references rather than database foreign keys.
+The [protocol-first procedure contract](plans/LAB-SETUP-VISUAL-AUTHORING-PLAN.md) defines owned instruction occurrences, copied-source metadata, protected illustration receipts and the original kit-definition archive. Kit step_key is an application-validated identity within its pinned run, not a catalog foreign key.
+
+The [master-mix step assembly contract](plans/MASTER-MIX-PREPARATION-PLAN.md#assemble-approved-lab-steps--october-3-2026) describes owned instruction snapshots, optional historical source attribution, batch process fields and exact planned reagent amounts in steps_json, the derived ingredients_json recipe, typed preparation evidence_json, and step_sequence/field_key links on source withdrawals. Step input_json supports exact replay; per-entry evidence_json preserves lot and equipment snapshots, QC, repeats and corrections. JSON identities are application-validated references rather than database foreign keys.
 
 ## Legend and totals
 
@@ -29,9 +24,9 @@ The [master-mix step assembly contract](plans/MASTER-MIX-PREPARATION-PLAN.md#ass
 | --- | ---: | ---: | ---: |
 | `public` | 1 | 2 | 0 |
 | `commercial_ops` | 147 | 2403 | 390 |
-| `lab_ops` | 88 | 1094 | 189 |
+| `lab_ops` | 90 | 1108 | 189 |
 | `website` | 5 | 51 | 4 |
-| **Total** | **241** | **3550** | **583** |
+| **Total** | **243** | **3564** | **583** |
 
 ## `public` schema
 
@@ -3280,6 +3275,24 @@ erDiagram
         uuid result_output_package_id FK,UK "not null"
         integer review_version UK "not null"
     }
+    lab_configuration_assets {
+        uuid id PK "not null"
+        character_varying_50 content_type "not null"
+        character_varying_255 file_name "not null"
+        timestamp_with_time_zone recorded_at_utc "not null"
+        uuid recorded_by_user_id FK "not null"
+        character_varying_64 sha256 "not null"
+        bigint size_bytes "not null"
+        character_varying_2048 storage_key "not null"
+    }
+    lab_configuration_definition_archives {
+        uuid id PK "not null"
+        timestamp_with_time_zone archived_at_utc "not null"
+        text definition_json "not null"
+        character_varying_100 source_column UK "not null"
+        uuid source_id UK "not null"
+        character_varying_100 source_table UK "not null"
+    }
     lab_fastq_archives {
         uuid id PK "not null"
         character_varying_64 chunk_manifest_sha256 "not null"
@@ -3378,6 +3391,7 @@ erDiagram
     lab_scientific_files ||--o{ lab_assembly_qc : "lab_scientific_file_id"
     users ||--o{ lab_assembly_qc : "recorded_by_user_id"
     result_output_packages ||--o{ lab_assembly_qc : "result_output_package_id"
+    users ||--o{ lab_configuration_assets : "recorded_by_user_id"
     lab_vendor_results_drafts ||--o{ lab_fastq_archives : "lab_vendor_results_draft_id"
     users ||--o{ lab_fastq_archives : "user_id"
     lab_batch_members ||--o{ lab_fastq_sets : "lab_batch_member_id"
@@ -4504,12 +4518,12 @@ erDiagram
     }
     lab_kit_assembly_step_records {
         uuid id PK "not null"
-        uuid lab_step_version_id FK "not null"
         character_varying_4000 notes "not null"
         timestamp_with_time_zone performed_at_utc "not null"
         uuid performed_by_user_id FK "not null"
         uuid run_id FK,UK "not null"
         integer sequence UK "not null"
+        uuid step_key "not null"
     }
     lab_kit_assembly_uses {
         uuid id PK "not null"
@@ -4549,7 +4563,6 @@ erDiagram
     users ||--o{ lab_kit_assembly_runs : "started_by_user_id"
     sample_shipping_stock_kits ||--o{ lab_kit_assembly_runs : "stock_kit_id"
     lab_kit_assembly_workflow_revisions ||--o{ lab_kit_assembly_runs : "workflow_revision_id"
-    lab_step_versions ||--o{ lab_kit_assembly_step_records : "lab_step_version_id"
     users ||--o{ lab_kit_assembly_step_records : "performed_by_user_id"
     lab_kit_assembly_runs ||--o{ lab_kit_assembly_step_records : "run_id"
     users ||--o{ lab_kit_assembly_uses : "recorded_by_user_id"

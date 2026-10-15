@@ -1643,9 +1643,9 @@
       "slug": "lab-protocol-execution",
       "parentSlug": "lab-operations",
       "title": "Service workflows, protocol control, and execution",
-      "summary": "Configure service, reagent, and master-mix workflows; record controlled Lab steps and material use.",
+      "summary": "Author, review and present complete laboratory procedures; control exact revisions and record scientific execution.",
       "order": 54,
-      "reviewedAt": "2026-10-09",
+      "reviewedAt": "2026-10-14",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [

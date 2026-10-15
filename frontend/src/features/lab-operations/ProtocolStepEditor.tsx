@@ -1,6 +1,10 @@
+import { ProcedureSource } from './ProcedureSource'
+import { Field as FieldContainer } from '#/components/ui/field'
+import { ProcedureSequence } from './ProcedureSequence'
+import { ProcedureIllustrationsEditor } from './ProcedureIllustrations'
 import { MasterMixConfigurationField, MaterialConfigurationField } from './MaterialConfigurationField'
 import { Controller, useFieldArray, type UseFormReturn } from 'react-hook-form'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 import { NativeSelect } from '#/components/ui/native-select'
@@ -54,7 +58,7 @@ export function ProtocolStepEditor({
             ...(!catalog ? [
               { label: 'Move up', onClick: onMoveUp, disabled: index === 0 },
               { label: 'Move down', onClick: onMoveDown, disabled: index === total - 1 },
-              { label: 'Duplicate step', onClick: onDuplicate },
+              { label: 'Duplicate step', onClick: onDuplicate, disabled: total >= 100 },
               { label: 'Remove step', onClick: onRemove, disabled: total === 1 },
             ] : []),
           ]} />
@@ -82,7 +86,7 @@ export function ProtocolStepEditor({
           {!catalog ? <Field label="Step name" id={`step-${index}-name`} required error={stepErrors?.name?.message}>
             <ScientificTextField id={`step-${index}-name`} control={form.control} name={`steps.${index}.name`} label="Step name" />
           </Field> : null}
-          {!catalog ? <Field label="Requirement" id={`step-${index}-requirement`} required error={stepErrors?.requirement?.message}>
+          {!catalog && !masterMix ? <Field label="Requirement" id={`step-${index}-requirement`} required error={stepErrors?.requirement?.message}>
             <NativeSelect id={`step-${index}-requirement`} {...form.register(`steps.${index}.requirement`)}>
               {protocolRequirementTypes.map((value) => <option key={value} value={value}>{sentenceCase(value)}</option>)}
             </NativeSelect>
@@ -93,7 +97,9 @@ export function ProtocolStepEditor({
           <ScientificTextField id={`step-${index}-instructions`} control={form.control} name={`steps.${index}.instructions`} label="Operator instructions" multiline describedBy={instructionError ? `step-${index}-instructions-error` : undefined} supportingText={instructionError ? <p id={`step-${index}-instructions-error`} role="alert" className="text-sm text-destructive">{instructionError}</p> : undefined} />
         </Field>
 
-        {requirement === 'conditional' ? (
+        <ProcedureSource source={form.watch(`steps.${index}.copiedFrom`)} />
+        <ProcedureIllustrationsEditor images={form.watch(`steps.${index}.illustrations`) ?? []} onChange={images => form.setValue(`steps.${index}.illustrations`, images, { shouldDirty: true, shouldValidate: true })} />
+        {!masterMix && requirement === 'conditional' ? (
           <Field label="When this step applies" id={`step-${index}-condition`} required error={stepErrors?.condition?.message}>
             <ScientificTextField id={`step-${index}-condition`} control={form.control} name={`steps.${index}.condition`} label="When this step applies" placeholder="For example: when the incoming concentration is below the approved threshold" />
           </Field>
@@ -146,12 +152,19 @@ export function ProtocolStepEditor({
             for (const key of ['inputMaterials', 'equipmentTypes', 'preparedOutputs'] as const) form.setValue(`steps.${index}.${key}`, '', { shouldDirty: true })
             form.setValue('preparationBatchEnabled', true, { shouldDirty: true })
           }}>Convert existing requirements to fields</Button><p>Only this draft changes. Previously approved versions retain their requirements.</p></div> : null}
-          {captures.fields.map((capture, captureIndex) => {
+          {captures.fields.length ? <ProcedureSequence label="Recording fields" items={captures.fields.map((capture, i) => ({ id: capture.id, title: form.watch(`steps.${index}.captures.${i}.label`) || `Field ${i + 1}`, summary: protocolCaptureLabel(form.watch(`steps.${index}.captures.${i}.type`)), invalid: Boolean(stepErrors?.captures?.[i]) }))} onMove={captures.move}>{(captureIndex, moveInstruction) => {
+            const capture = captures.fields[captureIndex]
             const captureType = form.watch(`steps.${index}.captures.${captureIndex}.type`)
             const materialField = ['material', 'masterMix'].includes(captureType)
             const captureErrors = stepErrors?.captures?.[captureIndex]
             return (
               <div key={capture.id} className="space-y-3 rounded-lg bg-muted/40 p-3">
+                <div className="flex justify-end"><PreparationActions items={[
+                  { label: 'Move up', onClick: () => moveInstruction(captureIndex, captureIndex - 1), disabled: captureIndex === 0 },
+                  { label: 'Move down', onClick: () => moveInstruction(captureIndex, captureIndex + 1), disabled: captureIndex === captures.fields.length - 1 },
+                  { label: 'Duplicate field', onClick: () => captures.insert(captureIndex + 1, { ...structuredClone(form.getValues(`steps.${index}.captures.${captureIndex}`)), key: `capture-${crypto.randomUUID()}` }) },
+                  { label: 'Remove field', onClick: () => captures.remove(captureIndex) },
+                ]} /></div>
                 <div className="grid gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
                   <Field label="Field label" id={`step-${index}-capture-${captureIndex}-label`} required error={captureErrors?.label?.message}>
                     <ScientificTextField id={`step-${index}-capture-${captureIndex}-label`} control={form.control} name={`steps.${index}.captures.${captureIndex}.label`} label="Field label" />
@@ -208,11 +221,11 @@ export function ProtocolStepEditor({
                     name={`steps.${index}.captures.${captureIndex}.required`}
                     compact
                   />}
-                  <Button type="button" variant="ghost" size="icon" aria-label={`Remove ${form.watch(`steps.${index}.captures.${captureIndex}.label`) || `capture ${captureIndex + 1}`}`} title="Remove field" onClick={() => captures.remove(captureIndex)}><Trash2 /></Button>
+
                 </div>
               </div>
             )
-          })}
+          }}</ProcedureSequence> : null}
         </section>
 
         {!masterMix ? <Field label="Batch report" id={`step-${index}-attachment`} error={stepErrors?.attachmentKind?.message}>
@@ -304,14 +317,14 @@ function Field({
   children: React.ReactNode
 }) {
   return (
-    <div>
+    <FieldContainer>
       <Label htmlFor={id}>
         {required ? <RequiredFieldName>{label}</RequiredFieldName> : label}
       </Label>
       {description ? <p id={`${id}-description`} className="mt-1 text-xs text-muted-foreground">{description}</p> : null}
-      <div className="mt-2">{children}</div>
+      {children}
       <FieldError message={error} />
-    </div>
+    </FieldContainer>
   )
 }
 

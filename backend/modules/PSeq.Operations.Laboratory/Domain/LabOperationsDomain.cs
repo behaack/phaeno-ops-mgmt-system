@@ -398,10 +398,12 @@ public sealed class LabProtocolVersion
         ApprovedAtUtc = utcNow;
     }
 
-    public void UpdateDraft(string definitionJson)
+    public void UpdateDraft(string definitionJson, Guid actorUserId)
     {
         if (Status != LabProtocolStatus.Draft) throw new InvalidOperationException("Only a draft protocol can be edited.");
+        if (actorUserId == Guid.Empty) throw new ArgumentException("An author is required.");
         DefinitionJson = RequiredDefinition(definitionJson);
+        AuthoredByUserId = actorUserId;
     }
 
     public void Discard()

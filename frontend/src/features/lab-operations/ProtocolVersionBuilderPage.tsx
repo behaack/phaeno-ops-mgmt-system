@@ -1,12 +1,15 @@
+import { useIllustrationUploadPending } from './ProcedureIllustrations'
+import { useConfigurationDiscovery } from './configuration-discovery'
 import { confirmPortal } from '#/components/PortalConfirmation'
-import { getLabSteps } from '#/api/lab-steps'
 import { ConfigurationPreview } from './ConfigurationPreview'
-import { LabStepPicker, PinnedLabStep } from './PinnedLabStep'
+import { ProcedureSequence } from './ProcedureSequence'
+import { ProcedureLibraryPicker } from './ProcedureLibraryPicker'
+import { ProcedurePresentation } from './ProcedurePresentation'
 import type { ProtocolDefinition } from './protocol-definition'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useBlocker, useNavigate } from '@tanstack/react-router'
-import { FileJson, Plus } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import {
   useFieldArray,
@@ -60,10 +63,14 @@ export function ProtocolVersionBuilderPage({
 }) {
   const { authProvider, session } = usePhaenoSession()
   const navigate = useNavigate()
+  const discovery = useConfigurationDiscovery()
   const leaveApproved = useRef(false)
   const queryClient = useQueryClient()
+  const imageUploadPending = useIllustrationUploadPending()
   const [capturePreview, setCapturePreview] = useState<{ definition: ProtocolDefinition; index: number }>()
+  const keepEditingRef = useRef<HTMLButtonElement>(null)
   const [discardOpen, setDiscardOpen] = useState(false)
+  const [loadedVersion, setLoadedVersion] = useState<number>(0)
   const [loadedDefinitionKey, setLoadedDefinitionKey] = useState<string | null>(null)
   const [definitionLoadErrorKey, setDefinitionLoadErrorKey] = useState<string | null>(null)
   const definitionKey = `${protocolId}:${draftVersionId ?? 'new'}`
@@ -74,7 +81,6 @@ export function ProtocolVersionBuilderPage({
     queryFn: getLabOperationsDashboard,
     enabled: apiEnabled,
   })
-  const catalog = useQuery({ queryKey: ['lab-steps'], queryFn: getLabSteps, enabled: apiEnabled })
   const protocol = dashboard.data?.protocols.find((item) => item.id === protocolId)
   const draft = draftVersionId
     ? protocol?.versions.find((item) => item.id === draftVersionId)
@@ -93,7 +99,6 @@ export function ProtocolVersionBuilderPage({
 
   const steps = useFieldArray({ control: form.control, name: 'steps' })
   const watchedValues = form.watch()
-  const preview = protocolDefinitionFormSchema.safeParse(watchedValues)
   const errorCount = countFormErrors(form.formState.errors)
   const formReady = loadedDefinitionKey === definitionKey
   const definitionLoadError = definitionLoadErrorKey === definitionKey
@@ -102,7 +107,7 @@ export function ProtocolVersionBuilderPage({
     mutationFn: (values: ProtocolDefinitionFormValues) => {
       const input = {
         definitionJson: serializeProtocolDefinition(values),
-        protocolVersion: protocol!.version,
+        protocolVersion: loadedVersion,
       }
       return draft
         ? updateLabProtocolVersion(draft.id, input)
@@ -111,11 +116,11 @@ export function ProtocolVersionBuilderPage({
     onSuccess: async () => {
       leaveApproved.current = true;
       await queryClient.invalidateQueries({ queryKey: ['lab-operations'] })
-      await navigate({ to: '/lab-configuration', search: { configurationTab: 'protocols' } })
+      await navigate({ to: '/lab-configuration', search: { ...discovery, configurationTab: 'protocols' } })
     },
   })
 
-  useBlocker({ shouldBlockFn: async () => !leaveApproved.current && (mutation.isPending || __formDraftDirty && !(await confirmPortal('Discard unsaved protocol changes?'))), enableBeforeUnload: false })
+  useBlocker({ shouldBlockFn: async () => !leaveApproved.current && (mutation.isPending || imageUploadPending || __formDraftDirty && !(await confirmPortal('Discard unsaved protocol changes?'))), enableBeforeUnload: false })
 
   useEffect(() => {
     if (!protocol || formReady || definitionLoadError) return
@@ -131,6 +136,7 @@ export function ProtocolVersionBuilderPage({
       return
     }
     form.reset(initialValues)
+    setLoadedVersion(protocol.version)
     setLoadedDefinitionKey(definitionKey)
   }, [
     controlledSource?.definitionJson,
@@ -150,19 +156,19 @@ export function ProtocolVersionBuilderPage({
 
   useEffect(() => {
     const warnBeforeUnload = (event: BeforeUnloadEvent) => {
-      if (!__formDraftDirty || mutation.isSuccess) return
+      if ((!__formDraftDirty && !imageUploadPending) || mutation.isSuccess) return
       event.preventDefault()
       event.returnValue = ''
     }
     window.addEventListener('beforeunload', warnBeforeUnload)
     return () => window.removeEventListener('beforeunload', warnBeforeUnload)
-  }, [__formDraftDirty, mutation.isSuccess])
+  }, [__formDraftDirty, imageUploadPending, mutation.isSuccess])
 
   const showPreview = (index = 0) => setCapturePreview({ definition: JSON.parse(serializeProtocolDefinition(form.getValues())) as ProtocolDefinition, index })
 
   const leaveBuilder = () => navigate({
     to: '/lab-configuration',
-    search: { configurationTab: 'protocols' },
+    search: { ...discovery, configurationTab: 'protocols' },
   })
 
   if (!canManage) {
@@ -316,7 +322,7 @@ export function ProtocolVersionBuilderPage({
       <form
         className="space-y-5"
         noValidate
-        onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
+        onSubmit={form.handleSubmit((values) => { if (!imageUploadPending) mutation.mutate(values) })}
       >
         <div className="flex items-center justify-between gap-3"><RequiredLegend /><Button type="button" variant="outline" onClick={() => showPreview()}>Configuration preview</Button></div>
         <label className="flex cursor-pointer items-start gap-2 text-sm leading-snug">
@@ -343,59 +349,20 @@ export function ProtocolVersionBuilderPage({
             ) : null}
           </CardHeader>
           <CardContent className="space-y-4">
-            {catalog.error ? <p role="alert">Lab step catalog could not be loaded. Existing pinned definitions remain unchanged.</p> : <LabStepPicker catalog={catalog.data ?? []} onAdd={step => { steps.append(step); form.setValue('preparationBatchEnabled', true, { shouldDirty: true }) }} />}
-            {steps.fields.map((step, index) => (
-              watchedValues.steps[index]?.labStepVersionId ? <PinnedLabStep key={step.id} form={form} index={index} total={steps.fields.length} catalog={catalog.data ?? []} onReplace={value => steps.update(index, value)} onMove={to => steps.move(index, to)} onPreview={() => showPreview(index)} onRemove={() => steps.remove(index)} onDuplicate={() => steps.insert(index + 1, { ...form.getValues(`steps.${index}`), key: `step-${crypto.randomUUID()}` })} /> : <ProtocolStepEditor
-                key={step.id}
-                form={form}
-                index={index}
-                onPreview={() => showPreview(index)}
-                total={steps.fields.length}
-                onMoveUp={() => steps.move(index, index - 1)}
-                onMoveDown={() => steps.move(index, index + 1)}
-                onDuplicate={() => {
-                  const current = form.getValues(`steps.${index}`)
-                  steps.insert(index + 1, {
-                    ...current,
-                    key: `step-${crypto.randomUUID()}`,
-                    name: current.name ? `${current.name} copy` : '',
-                    captures: current.captures.map((capture) => ({ ...capture })),
-                  })
-                }}
-                onRemove={() => steps.remove(index)}
-              />
-            ))}
+            <ProcedureLibraryPicker context="library" remaining={100 - steps.fields.length} onInsert={(source, selected) => {
+              const copied = source.steps.filter((_, i) => selected === null || selected === i).map(step => ({ ...step, key: `step-${crypto.randomUUID()}`, labStepVersionId: undefined, copiedFrom: { kind: source.kind, recordId: source.recordId, revision: source.revision, stepKey: step.key } }))
+              const definition = deserializeProtocolDefinition(JSON.stringify({ schemaVersion: 1, preparationBatchEnabled: true, steps: copied }))
+              if (definition) steps.append(definition.steps)
+            }} />
+            <ProcedureSequence items={steps.fields.map((step, index) => ({ id: step.id, title: watchedValues.steps[index]?.name ?? '', summary: watchedValues.steps[index]?.instructions, invalid: Boolean(form.formState.errors.steps?.[index]) }))} onMove={steps.move}>{(index, moveInstruction) => <ProtocolStepEditor key={steps.fields[index].id} form={form} index={index} total={steps.fields.length} onPreview={() => showPreview(index)} onMoveUp={() => moveInstruction(index, index - 1)} onMoveDown={() => moveInstruction(index, index + 1)} onDuplicate={() => steps.insert(index + 1, { ...structuredClone(form.getValues(`steps.${index}`)), key: `step-${crypto.randomUUID()}` })} onRemove={() => steps.remove(index)} />}</ProcedureSequence>
             <FieldError message={form.formState.errors.steps?.root?.message ?? form.formState.errors.steps?.message} />
-            <Button type="button" variant="outline" onClick={() => steps.append(createEmptyProtocolStep())}>
+            <Button type="button" variant="outline" disabled={imageUploadPending || steps.fields.length >= 100} onClick={() => steps.append(createEmptyProtocolStep())}>
               <Plus data-icon="inline-start" /> Add step
             </Button>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Review generated definition</CardTitle>
-            <CardDescription>
-              POMS stores this portable representation. The structured fields above remain the authoring surface.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <details className="rounded-lg border">
-              <summary className="flex cursor-pointer items-center gap-2 px-3 py-2 font-medium">
-                <FileJson className="size-4" /> JSON preview
-              </summary>
-              <div className="border-t p-3">
-                {preview.success ? (
-                  <pre className="max-h-96 overflow-auto whitespace-pre-wrap rounded-md bg-muted p-3 font-mono text-xs">
-                    {serializeProtocolDefinition(preview.data)}
-                  </pre>
-                ) : (
-                  <p className="m-0 text-sm text-muted-foreground">Complete the required fields to preview the definition.</p>
-                )}
-              </div>
-            </details>
-          </CardContent>
-        </Card>
+        <details className="rounded-lg border p-4"><summary className="cursor-pointer font-medium">Review overview and bench instructions</summary><div className="mt-4"><ProcedurePresentation document={{ name: protocol.name, revision: `${displayedVersion} · Unsaved draft`, status: 'Draft', instructions: JSON.parse(serializeProtocolDefinition(form.getValues())).steps }} onCapturePreview={() => showPreview()} /></div></details>
 
         <div className="flex flex-wrap justify-end gap-2">
           <Button
@@ -405,7 +372,7 @@ export function ProtocolVersionBuilderPage({
           >
             Cancel
           </Button>
-          <Button type="submit" disabled={mutation.isPending}>
+          <Button type="submit" disabled={imageUploadPending || mutation.isPending}>
             {mutation.isPending
               ? isEditing
                 ? 'Saving draft…'
@@ -424,17 +391,18 @@ export function ProtocolVersionBuilderPage({
       {capturePreview ? <ConfigurationPreview definition={capturePreview.definition} initialIndex={capturePreview.index} name={`${protocol.name} v${displayedVersion} · Unsaved draft`} onClose={() => setCapturePreview(undefined)} /> : null}
 
       <Dialog open={discardOpen} onOpenChange={setDiscardOpen}>
-        <DialogContent>
+        <DialogContent onOpenAutoFocus={event => { event.preventDefault(); keepEditingRef.current?.focus() }}>
           <DialogHeader>
             <DialogTitle>Discard protocol changes?</DialogTitle>
+          </DialogHeader><div>
             <DialogDescription>
               {isEditing
                 ? 'The unsaved changes will be lost. The previously saved draft will remain unchanged.'
                 : 'The unsaved step definition will be lost. No protocol version has been created yet.'}
             </DialogDescription>
-          </DialogHeader>
+          </div>
           <DialogFooter>
-            <DialogClose asChild><Button type="button" variant="outline">Keep editing</Button></DialogClose>
+            <DialogClose asChild><Button ref={keepEditingRef} data-keep-editing type="button" variant="outline">Keep editing</Button></DialogClose>
             <Button type="button" variant="destructive" onClick={() => { leaveApproved.current = true; void leaveBuilder() }}>Discard changes</Button>
           </DialogFooter>
         </DialogContent>

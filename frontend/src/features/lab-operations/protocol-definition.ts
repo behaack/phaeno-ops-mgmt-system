@@ -1,3 +1,4 @@
+import { illustrationSchema, instructionSourceSchema, type InstructionIllustration, type InstructionSource } from './procedure-types'
 import { z } from 'zod'
 import { isMasterMixDecimalQuantity } from './decimal-quantity'
 
@@ -73,6 +74,8 @@ const stepSchema = z.object({
   processType: z.enum(['', 'masterMix']).optional(),
   key: z.string().optional(),
   labStepVersionId: z.string().uuid().optional(),
+  illustrations: z.array(illustrationSchema).max(12).nullable().optional(),
+  copiedFrom: instructionSourceSchema.nullable().optional(),
   attachmentKind: z.enum(['', 'none', 'qc', 'preparation']).optional(),
   attachmentRequired: z.boolean().optional(),
   name: z.string().trim().min(1, 'Step name is required.').max(160),
@@ -149,6 +152,8 @@ export type ProtocolDefinition = {
     processType?: 'masterMix'
     key: string
     labStepVersionId?: string | null
+    illustrations?: InstructionIllustration[] | null
+    copiedFrom?: InstructionSource | null
     attachmentKind?: 'none' | 'qc' | 'preparation' | null
     attachmentRequired?: boolean
     name: string
@@ -193,7 +198,7 @@ const storedProtocolCaptureSchema = z.object({
   sourceTube: z.boolean().default(false),
   material: materialSchema.optional(),
   includeTracking: z.boolean().optional(),
-  quantityBasis: z.enum(['perSample', 'total']).optional(),
+  quantityBasis: z.enum(['perSample', 'total']).nullish(),
   unit: z.string().nullish(),
   options: z.array(z.string()).nullish(),
 }).passthrough()
@@ -202,6 +207,8 @@ const storedProtocolStepSchema = z.object({
   processType: z.enum(['masterMix']).optional(),
   key: z.string().optional(),
   labStepVersionId: z.string().uuid().nullish(),
+  illustrations: z.array(illustrationSchema).max(12).nullable().optional(),
+  copiedFrom: instructionSourceSchema.nullable().optional(),
   attachmentKind: z.enum(['none', 'qc', 'preparation']).nullish(),
   attachmentRequired: z.boolean().optional(),
   name: z.string().default(''),
@@ -227,6 +234,7 @@ const storedProtocolDefinitionSchema = z.object({
 }).passthrough()
 
 export const createEmptyProtocolStep = (): ProtocolStepFormValues => ({
+  key: `step-${crypto.randomUUID()}`,
   attachmentKind: 'none',
   name: '',
   instructions: '',
@@ -245,6 +253,7 @@ export const createEmptyProtocolStep = (): ProtocolStepFormValues => ({
 })
 
 export const createEmptyProtocolCapture = (): ProtocolStepFormValues['captures'][number] => ({
+  key: `capture-${crypto.randomUUID()}`,
   label: '',
   type: 'text',
   required: true,
@@ -320,6 +329,8 @@ export function deserializeProtocolDefinition(value: string): ProtocolDefinition
       ...(step.key ? { key: step.key } : {}),
       ...(step.processType ? { processType: step.processType } : {}),
       ...(step.labStepVersionId ? { labStepVersionId: step.labStepVersionId } : {}),
+      ...(step.illustrations?.length ? { illustrations: step.illustrations } : {}),
+      ...(step.copiedFrom ? { copiedFrom: step.copiedFrom } : {}),
       ...(step.attachmentKind ? { attachmentKind: step.attachmentKind } : {}),
       ...(step.attachmentRequired ? { attachmentRequired: true } : {}),
       name: step.name,
@@ -356,6 +367,15 @@ export function deserializeProtocolDefinition(value: string): ProtocolDefinition
   }
 }
 
+/** Saved procedures must contain actual instructions; never synthesize a blank replacement. */
+export function deserializeSavedProcedure(json: string): ProtocolDefinitionFormValues | null {
+  try {
+    const raw = JSON.parse(json) as { steps?: unknown[] }
+    if (!Array.isArray(raw.steps) || !raw.steps.length) return null
+    return deserializeProtocolDefinition(json)
+  } catch { return null }
+}
+
 export function serializeProtocolDefinition(values: ProtocolDefinitionFormValues): string {
   const usedStepKeys = new Set<string>()
   const definition: ProtocolDefinition = {
@@ -366,6 +386,8 @@ export function serializeProtocolDefinition(values: ProtocolDefinitionFormValues
       return {
         key: uniqueKey(step.key || step.name, usedStepKeys, 'step'),
         ...(step.labStepVersionId ? { labStepVersionId: step.labStepVersionId } : {}),
+      ...(step.illustrations?.length ? { illustrations: step.illustrations } : {}),
+      ...(step.copiedFrom ? { copiedFrom: step.copiedFrom } : {}),
         ...(step.attachmentKind ? { attachmentKind: step.attachmentKind } : {}),
         ...(step.attachmentRequired ? { attachmentRequired: true } : {}),
         name: step.name.trim(),

@@ -7,7 +7,7 @@ public static class LabMasterMixDefinition
 {
     public static void ValidateStep(LabProtocolStepDefinition step)
     {
-        if (step.ProcessType != "masterMix") throw new ArgumentException("Choose a Lab step configured for master-mix preparation.");
+        if (step.ProcessType != "masterMix") throw new ArgumentException("Use an instruction configured for master-mix preparation.");
         if (step.InputMaterials.Count != 0 || step.PreparedOutputs.Count != 0 || step.EquipmentTypes.Count != 0
             || step.AttachmentKind is not (null or "none") || step.AttachmentRequired)
             throw new ArgumentException("Master-mix steps record their resources through batch fields; sample outputs and reports do not apply.");
@@ -29,12 +29,12 @@ public static class LabMasterMixDefinition
 
     public static IReadOnlyList<LabMasterMixRecipeIngredient> Recipe(IReadOnlyList<LabProtocolStepDefinition> steps)
     {
-        if (steps.Count is < 1 or > 100) throw new ArgumentException("Assemble 1 to 100 approved Lab step occurrences.");
+        if (steps.Count is < 1 or > 100) throw new ArgumentException("Define 1 to 100 master-mix instructions.");
         foreach (var step in steps)
         {
             ValidateStep(step);
-            if (step.LabStepVersionId is null || step.LabStepVersionId == Guid.Empty || !step.Required || step.Condition is not null)
-                throw new ArgumentException("Every master-mix occurrence must pin an approved Lab step and be required.");
+            if (!step.Required || step.Condition is not null)
+                throw new ArgumentException("Every master-mix instruction must be required and unconditional.");
         }
         var recipe = steps.SelectMany(step => step.Captures).Where(field => field.Type == "material")
             .GroupBy(field => (field.Material!.MaterialDefinitionId, field.Material.ProductId, field.Unit))
