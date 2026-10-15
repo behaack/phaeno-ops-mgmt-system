@@ -1,11 +1,13 @@
 import type { ComponentProps, ElementType } from 'react'
 
 import { cn } from '#/lib/utils'
+import { DocumentationScreenshot } from './DocumentationScreenshot'
 
 export const documentationMdxComponents: Record<string, ElementType> = {
   a: DocumentationLink,
   blockquote: DocumentationNote,
   table: DocumentationTable,
+  img: DocumentationScreenshot,
 }
 
 function DocumentationLink({

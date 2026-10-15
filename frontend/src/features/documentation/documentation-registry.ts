@@ -26,6 +26,9 @@ export type DocumentationEntry = DocumentationMetadata & {
 }
 
 const documentationComponents: Record<string, DocumentationContent> = {
+  'phaeno/how-to-place-customer-order': lazy(() => import('#/content/docs/phaeno/how-to-place-customer-order.mdx')),
+  'phaeno/how-to-configure-samples-shipping': lazy(() => import('#/content/docs/phaeno/how-to-configure-samples-shipping.mdx')),
+  'phaeno/how-to-lab-protocol': lazy(() => import('#/content/docs/phaeno/how-to-lab-protocol.mdx')),
   'phaeno/trial-projects': lazy(() => import('#/content/docs/phaeno/trial-projects.mdx')),
   'partner/en-US/trial-history': lazy(() => import('#/content/docs/en-US/partner/trial-history.mdx')),
   'customer/en-US/trial-history': lazy(() => import('#/content/docs/en-US/customer/trial-history.mdx')),

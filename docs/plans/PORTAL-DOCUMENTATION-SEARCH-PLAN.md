@@ -6,6 +6,85 @@ on 2026-09-05. Release preparation is recorded below.
 
 Updated: 2026-09-05.
 
+## October 15, 2026: Phaeno navigation and illustrated how-to guides
+
+The Owner requested shorter Phaeno help labels, POMS user administration second
+after the operations guide, Trial Projects beneath Order operations, three major
+task guides and annotated screenshots. This refinement serves authorized Phaeno
+staff; external audiences keep their own navigation and permissions.
+
+Use CRM and POMS user administration consistently in metadata and headings while
+retaining stable guide URLs and familiar search aliases. Parent the existing
+Trial Projects guide under Order operations, classify it with Orders, and remove
+its separate home card/topic. Keep Trial content searchable and directly readable.
+Add How-to guides on the Phaeno documentation home with task guides for placing
+a Customer order, configuring samples/shipping and creating/reviewing a lab
+protocol. Parent those guides under Order operations or Laboratory operations.
+
+Guides must match current controls and role/readiness/approval rules, state their
+prerequisites and expected result, explain common blocked states, and link to the
+owning reference guides. Capture actual local screens using empty forms or
+explicitly fictional demonstration configuration. Static bundled images must
+contain no credentials, real customer/personal data or confidential operational
+records. Review each capture before publication. Use ordinary Markdown images
+with descriptive alt text and numbered explanations; a shared renderer adds
+visual numbered callouts from TypeScript metadata without baking fictional UI
+into raster images or introducing JSX/imports in MDX. Keep annotations readable
+in both themes and at phone widths, and preserve accessible text equivalents.
+
+Update the navigation/rendering regression coverage and living plans, but run
+automated suites only when requested. Verify metadata, corpus consistency,
+Markdown links/assets, TypeScript/lint/build and authenticated browser rendering.
+Generated API corpus and UI version must advance together before a later release
+so help search stays compatible. This implementation does not authorize Git
+publication, deployment, migrations, operational writes or changes to audience
+authorization. Preserve the existing uncommitted protocol-card and user-card work.
+
+Acceptance: Phaeno navigation starts operations guide, POMS user administration,
+CRM; Trial Projects appears within Order operations; the home has three how-to
+cards and no standalone Trial card/topic. Each task guide has a current, safe
+annotated screenshot and equivalent written steps. Preserve direct/history links,
+cross-audience denial and existing Customer documentation behavior.
+
+Implementation is complete locally. The catalog has 59 published guides and the
+new how-to group, stable URLs/aliases and matching generated API/UI corpus
+`50b53bdc8aa1` after the concurrent PSeq lot help is included. Three actual,
+privacy-reviewed JPEG captures total 192,518 bytes.
+The shared Markdown image renderer preserves alt text/captions, uses intrinsic
+dimensions and lazy loading, and keeps numbered markers inside image bounds on
+narrow layouts. Written numbered explanations remain in portable Markdown.
+
+Current-screen review corrected older order-entry labels and separated Draft,
+pricing submission, quote and Customer acceptance. It also corrected the new
+guide's settings-menu path and Add step/preview/save labels. A proposed Markdown
+table rendered as literal pipe text in the current pipeline, so the new guide
+uses an ordinary list without adding a dependency. Captures use empty forms or
+the explicitly fictional DEMO protocol; no order, Sample type or revision was saved.
+
+Final TypeScript, scoped ESLint, production build, corpus generation/check,
+guide/asset links and whitespace checks pass. Actual authenticated browser review
+confirms sidebar order, nested Trial Projects, three home how-to cards, all three
+loaded illustrations and numbered callouts, Enter-operated topic groups and the
+Phaeno-to-Customer audience denial. Light/dark review and 320/390 CSS-pixel reflow
+checks pass; the original Light preference and viewport overrides are restored.
+Valid light-order and dark-sample captures are retained with the local evidence.
+
+Registry/navigation and illustrated-guide E2E coverage are updated. Automated
+suites are not requested/run. The running search service still serves the prior
+corpus and returns the existing version-mismatch message for a new-guide search;
+matching-version search acceptance requires activation of the paired generated
+API/UI artifacts and index refresh. No compatibility bypass or auth change is
+added. These changes remain uncommitted/undeployed, preserving the prior protocol
+card refinement and concurrent user-card work.
+
+The Owner has now requested committing/pushing the remaining work and redeploying
+the UI. Eight documentation/protocol component cases and all 12 desktop/mobile
+documentation browser cases pass at this release checkpoint. The
+[preserving release plan](PSEQ-KIT-LOT-HOSTED-TEST-RELEASE-20261015-PLAN.md)
+requires the generated API corpus and UI to ship together, with no further
+migration, before matching-version search is accepted. The prior no-suite and
+uncommitted statements describe the initial local checkpoint.
+
 ## September 9 navigation refinement
 
 The Product Owner requested moving Docs into the user dropdown for every user

@@ -1,5 +1,14 @@
 # Frontend Test Plan
 
+## Remaining UI release checkpoint — October 15, 2026
+
+The requested release runs the documentation registry and protocol-list suites:
+eight cases pass across two files. The matched generated corpus contains 59
+guides, version `50b53bdc8aa1`. Desktop/mobile documentation browser coverage
+passes separately (12 cases). TypeScript, touched-source lint and the final
+production client/server build pass before publication.
+The earlier no-suite statements below describe their original local checkpoints.
+
 ## Independent Partner kit lot entry — October 15, 2026
 
 Executed `KitLotSubmission.test.tsx`, `BundledOrders.test.tsx`, `KitPurchaseReview.test.tsx` and `ExternalOrderDecisionDialogs.test.tsx`: **25 passed**. The Link mock preserves menu attributes. Connected browser coverage verified saved-lot reuse, actual use dates, submission from a saved draft and current recalls before analysis. Verification fixed the missing lot version on detail submission, dialog focus restoration and calendar-date shipment expiration; type check, touched-file ESLint and client/server build passed. See the [verification report](../testing/runs/2026-10-15-pseq-kit-lots-verification.md) and owning [lot plan](PSEQ-KIT-LOT-TRACEABILITY-PLAN.md).
@@ -4340,3 +4349,38 @@ the observed 1912 CSS-pixel viewport. A valid hosted screenshot is retained.
 Staged/canonical/previous-pin assets match, health/auth checks pass and the bounded
 UI error scan is empty. No automated suite, scientific write or native print was
 performed. See the [release receipt](../operations/procedure-toolbar-test-release-20261015.md).
+
+## Protocol summary redundancy — October 15, 2026
+
+Existing ProtocolList assertions now expect a single revision/status badge instead
+of a duplicate Approved or Draft label in a nested panel. Automated checks are not
+requested/run for this layout refinement. TypeScript, scoped ESLint and docs checks
+pass. Manual local review verifies the approved demo's single badge, exact link,
+retained override/date, omitted empty history and no card/page overflow at 390 CSS
+pixels. The viewport is restored. Pending drafts, retained history disclosure and
+retired/setup-only states are source-reviewed but not browser-exercised in this
+single-protocol fixture. No approval, record edit or Git/deployment operation occurs.
+See the [owning plan](LAB-SETUP-VISUAL-AUTHORING-PLAN.md).
+
+## Illustrated Phaeno how-to guides — October 15, 2026
+
+Registry coverage now preserves the operations-guide/POMS-user-administration/CRM
+order, nested Trial Projects, three owned how-to entries and external audience
+separation. Existing Phaeno navigation E2E assertions use the shortened CRM label,
+revised Order operations children and three how-to home cards. New E2E coverage
+checks the ordering guide's loaded screenshot, five decorative number markers,
+caption and written workflow. Suites are not requested/run.
+
+TypeScript, scoped ESLint, production build, docs generation/check and guide/image
+links pass. Actual signed-in local review verifies new labels/order, Trial Projects
+inside Order operations and absent from home cards/topics, all three loaded guide
+images with 5/3/3 markers, keyboard group opening and cross-audience denial. Light
+order and dark sample screenshots were reviewed. Home reflow at 320 CSS pixels and
+protocol-guide reflow/marker bounds at 390 CSS pixels pass. Original display
+preferences are restored. No operational form was saved or approved.
+
+The generated 59-guide API/UI corpus matches at `9e777ad983c9`; the running search
+service still has the prior version, so matching-version search acceptance remains
+pending a paired artifact activation/index refresh. The expected version guard
+was observed; do not count this as a successful new-guide search or bypass it.
+See the [owning plan](PORTAL-DOCUMENTATION-SEARCH-PLAN.md).

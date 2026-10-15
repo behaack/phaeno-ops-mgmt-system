@@ -94,7 +94,7 @@
         "en-US": "Partner work"
       },
       "customer-relationship-management": {
-        "en-US": "Customer relationship management"
+        "en-US": "CRM"
       },
       "platform-operations": {
         "en-US": "Platform operations"
@@ -121,6 +121,9 @@
       },
       "troubleshooting": {
         "en-US": "Troubleshooting"
+      },
+      "how-to": {
+        "en-US": "How-to guide"
       }
     },
     "roles": {
@@ -1445,10 +1448,10 @@
       "locale": null,
       "slug": "crm",
       "overviewTitle": "Overview and navigation",
-      "title": "Customer relationship management",
+      "title": "CRM",
       "summary": "Manage canonical Companies, Contacts, Leads, Opportunities, Portal access, Tasks, reporting, and data quality.",
       "order": 15,
-      "reviewedAt": "2026-10-03",
+      "reviewedAt": "2026-10-15",
       "navigationGroup": "customer-relationship-management",
       "contentType": "overview",
       "topicIds": [
@@ -1461,17 +1464,19 @@
         "Customer relationship management",
         "crm"
       ],
-      "aliases": [],
+      "aliases": [
+        "Customer relationship management"
+      ],
       "applicableRoles": [],
       "relatedGuideIds": [],
       "publicationStatus": "published",
       "id": "phaeno/crm",
       "route": "/docs/phaeno/crm",
-      "contentHash": "d50895646a8ec5895b704bfb084ac2466582e3918f540dd0c4d8059752ad9484",
+      "contentHash": "244824013b9c22dd3c826a0d2cde4003a3be084fa63c8d8be31268b52939ad35",
       "sections": [
         {
-          "heading": "Customer relationship management",
-          "anchor": "customer-relationship-management",
+          "heading": "CRM",
+          "anchor": "crm",
           "text": "The POMS CRM is Phaeno's first-party commercial and customer system of record. It runs without HubSpot or another external CRM and retains Companies, Contacts, Leads, Opportunities, Activities, Tasks, pipeline history, reporting, Portal access, and reviewed handoffs in POMS. CRM records are internal Phaeno records. The Company is the canonical Customer, Partner, or Prospect identity. Creating it does not grant membership, activate a service, authorize ordering, start laboratory work, or expose scientific data."
         },
         {
@@ -2371,6 +2376,209 @@
     {
       "audience": "phaeno",
       "locale": null,
+      "slug": "how-to-configure-samples-shipping",
+      "parentSlug": "order-operations",
+      "title": "How to configure samples and shipping",
+      "summary": "Prepare Shipping procedures, Sample types, Kit specifications and a Default receiving destination.",
+      "order": 43,
+      "reviewedAt": "2026-10-15",
+      "navigationGroup": "order-operations",
+      "contentType": "how-to",
+      "topicIds": [
+        "shipping",
+        "configuration"
+      ],
+      "workflowIds": [
+        "order-operations"
+      ],
+      "taskKeywords": [
+        "sample configuration",
+        "shipping setup",
+        "minimum sample amount",
+        "kit specification",
+        "Default destination"
+      ],
+      "aliases": [],
+      "applicableRoles": [],
+      "relatedGuideIds": [
+        "phaeno/configuration-and-recovery",
+        "phaeno/lab-receipt-accession"
+      ],
+      "publicationStatus": "published",
+      "id": "phaeno/how-to-configure-samples-shipping",
+      "route": "/docs/phaeno/how-to-configure-samples-shipping",
+      "contentHash": "fb5097f00b085d5b0315ca8a1b7899cf0d781f756e484921b76b0728c8d84307",
+      "sections": [
+        {
+          "heading": "How to configure samples and shipping",
+          "anchor": "how-to-configure-samples-and-shipping",
+          "text": "Use this guide to prepare the reusable configuration for new laboratory orders. Work in the Phaeno organization with samples/shipping configuration access. Open Samples & shipping settings from the user menu. On narrow layouts, expand Settings first. This setup defines what Customers may submit and how it reaches Phaeno; it does not record a shipment or assemble a physical kit."
+        },
+        {
+          "heading": "Understand the four records",
+          "anchor": "understand-the-four-records",
+          "text": "Shipping procedure: Customer-facing preparation, packing, transit and dispatch instructions. Sample type: scientific material, minimum amount, preservation, labeling and the selected Shipping procedure. Kit specification: products, quantities, capacity, Sample type and assembly method for a kit design. Phaeno ship-to destination: receiving address, hours, delivery restrictions and the Default destination for new work."
+        },
+        {
+          "heading": "1. Prepare the Shipping procedure",
+          "anchor": "1-prepare-the-shipping-procedure",
+          "text": "Choose Shipping procedures, then create a Draft with a clear name. Complete the required instruction sections: preparation and packing, transit handling, carrier guidance, dispatch timing, documents and exceptions. Explicitly say when no documents are needed. Save the Draft while collecting missing information. When complete, open its record and choose Actions → Activate. Review any missing-section messages before continuing. An authorized configuration administrator can activate shipping content; laboratory protocol approval is a separate process."
+        },
+        {
+          "heading": "2. Define the Sample type",
+          "anchor": "2-define-the-sample-type",
+          "text": "Choose Sample types → Add sample type. Define the material the Customer will send, rather than an individual specimen. Empty Sample type editor with the scientific requirements, minimum sample amount and Shipping procedure fields. Identity and material: use a recognizable name and describe the scientific material and submission requirements. Shared shipping procedure: select the shared procedure for this exact Sample type revision. A Draft can be saved while you finish its requirements. Quantity and handling: set the minimum sample amount and unit, container, preservation, labeling, safety and transit requirements. Check that the intended Tube product supports the amount and uses the same unit. Activate only after reviewing the complete content. Changing a released Sample type's Shipping procedure requires a successor Draft. It does not change instructions already pinned to placed Jobs."
+        },
+        {
+          "heading": "3. Prepare a compatible Kit specification",
+          "anchor": "3-prepare-a-compatible-kit-specification",
+          "text": "Choose Kit specifications and create a Draft. Enter its name and stable SKU, select the purchased Shipping Container and its supplier, and select the Sample type. Add the required products and quantities, including the correct Tube product and outer container. Check tube capacity, amount units and temperature handling. Choose the reusable Transportation kit assembly workflow from Lab settings. That workflow defines the assembly instructions; the specification defines the required products and quantities. Save incomplete work as Draft and activate the specification when its own required content is complete. A specification may be Active while a dependency still needs attention. New Orders require usable sample/shipping configuration, and physical kit assembly also requires a compatible approved assembly workflow. Review the record's readiness warnings rather than treating Active as proof that every downstream operation is ready."
+        },
+        {
+          "heading": "4. Set the receiving destination",
+          "anchor": "4-set-the-receiving-destination",
+          "text": "Choose Phaeno ship-to destinations. Create or revise the destination, review its address, time zone, hours, closures and carrier restrictions, and activate it. Use Actions → Set as default on the available destination to make it the Default for new work. Existing issued instructions retain their recorded address."
+        },
+        {
+          "heading": "Check readiness for a new order",
+          "anchor": "check-readiness-for-a-new-order",
+          "text": "Confirm an effective Active Sample type, an Active revision of its selected Shipping procedure, a usable compatible kit design and an available Default destination. Open the Sample type and kit records to resolve Needs attention messages. Activation can recheck dependencies and reject stale or incomplete work. Use Create revision for released-content changes. Continue editing the one open Draft, or discard it with its history retained; do not create several pending successors. Existing Jobs, packets, physical kits and shipment records retain their exact recorded revisions. Ordinary deactivation prevents new selection; an already placed Job needs a separate shipping safety hold to stop further packets. See Configuration and file retention for the detailed validation and revision rules, and Sample receipt and accession for receiving work."
+        }
+      ]
+    },
+    {
+      "audience": "phaeno",
+      "locale": null,
+      "slug": "how-to-lab-protocol",
+      "parentSlug": "lab-operations",
+      "title": "How to create and approve a lab protocol",
+      "summary": "Write ordered instructions, review the bench presentation and release a complete protocol revision.",
+      "order": 53.5,
+      "reviewedAt": "2026-10-15",
+      "navigationGroup": "laboratory-operations",
+      "contentType": "how-to",
+      "topicIds": [
+        "laboratory",
+        "configuration"
+      ],
+      "workflowIds": [
+        "lab-operations"
+      ],
+      "taskKeywords": [
+        "lab protocol",
+        "create protocol",
+        "approve protocol",
+        "instructions",
+        "SOP"
+      ],
+      "aliases": [],
+      "applicableRoles": [],
+      "relatedGuideIds": [
+        "phaeno/lab-protocol-execution",
+        "phaeno/lab-operations"
+      ],
+      "publicationStatus": "published",
+      "id": "phaeno/how-to-lab-protocol",
+      "route": "/docs/phaeno/how-to-lab-protocol",
+      "contentHash": "e551d219c7231338ae49e76904c8a3ca738c9385ed3450acbd81a743444012b9",
+      "sections": [
+        {
+          "heading": "How to create and approve a lab protocol",
+          "anchor": "how-to-create-and-approve-a-lab-protocol",
+          "text": "Use this guide to author a complete library protocol in Lab settings → Protocols. Work in the Phaeno organization with protocol-management access. The approved protocol is a configuration reference; it does not record performed laboratory work."
+        },
+        {
+          "heading": "1. Start a protocol or a revision",
+          "anchor": "1-start-a-protocol-or-a-revision",
+          "text": "Choose New protocol, enter its name and description, then continue to the definition editor. For an existing protocol, open Actions and edit its current Draft or create a new version. Keep a clear purpose and scientific scope in the description. Changes to an approved protocol belong in a new Draft; they do not rewrite an earlier approved revision or a run pinned to it."
+        },
+        {
+          "heading": "2. Write the complete procedure",
+          "anchor": "2-write-the-complete-procedure",
+          "text": "Top of the protocol editor showing the ordered instruction outline, selected instruction fields and Configuration preview button. Ordered outline: select an instruction to work on it. Use Add step for another instruction. Drag its handle, or choose Move up / Move down in its Actions menu, to put the procedure in execution order. Selected instruction: write the instruction directly and configure its required confirmations, recording fields, resources, QC criteria and handoffs. Each occurrence belongs to this protocol; a separate Lab-step approval is not required. Configuration preview: try the recording controls with fictional examples. The preview does not create laboratory records. Separately, expand Review overview and bench instructions below the editor to inspect the complete procedure and its recording requirements before saving. Use Insert from an approved procedure when reviewed source instructions can be reused. The copied instructions become independent content in this Draft and retain their source attribution. Review them in the receiving protocol's context; later edits to the source do not update this copy. Add optional illustrations where they clarify an instruction. Supply meaningful alternative text and any necessary caption. Use the supported static image types and review the uploaded image before approval. Do not place confidential data in a reusable procedure illustration."
+        },
+        {
+          "heading": "3. Save and review the Draft",
+          "anchor": "3-save-and-review-the-draft",
+          "text": "Choose Save initial draft for initial setup, Create protocol draft for a successor, or Save draft when editing a saved Draft. Return to Protocols and open its name or pending-Draft link. Check the exact revision, ordered content and recording requirements. In the presentation toolbar, choose Process overview or Bench instructions. Choose Letter or A4 before using the print commands in Actions. Where offered, Preview recording controls is a fictional preview and creates no laboratory execution evidence. If another user changes the Draft, reload and reconcile the saved content before trying again. Saving does not approve the protocol or make it ready for new runs."
+        },
+        {
+          "heading": "4. Approve the complete revision",
+          "anchor": "4-approve-the-complete-revision",
+          "text": "From the protocol's Actions, choose Review and approve. Review the complete revision, including copied content, illustrations and required capture fields. Independent approval is required. When permitted, a platform administrator may use the explicit administrator-override action and record the reason; ordinary authors cannot bypass independent review. After approval, confirm the Approved revision and approval evidence. Library workflows select exact approved protocol revisions. Existing workflows and performed work keep their pins when a later revision is approved. To prevent future use, use the controlled retirement flow and review its dependency impact. See Service workflows, protocol control, and execution for copying, illustration limits, execution and retirement rules, and Laboratory operations for the surrounding workflow."
+        }
+      ]
+    },
+    {
+      "audience": "phaeno",
+      "locale": null,
+      "slug": "how-to-place-customer-order",
+      "parentSlug": "order-operations",
+      "title": "How to place a Customer order",
+      "summary": "Enter Customer scope, save a Draft, submit for pricing and understand the quote/acceptance handoff.",
+      "order": 40.5,
+      "reviewedAt": "2026-10-15",
+      "navigationGroup": "order-operations",
+      "contentType": "how-to",
+      "topicIds": [
+        "orders"
+      ],
+      "workflowIds": [
+        "order-operations"
+      ],
+      "taskKeywords": [
+        "place an order",
+        "New Order",
+        "Customer order",
+        "save draft",
+        "Submit for pricing"
+      ],
+      "aliases": [],
+      "applicableRoles": [],
+      "relatedGuideIds": [
+        "phaeno/order-operations",
+        "phaeno/order-customer-lab-authorization"
+      ],
+      "publicationStatus": "published",
+      "id": "phaeno/how-to-place-customer-order",
+      "route": "/docs/phaeno/how-to-place-customer-order",
+      "contentHash": "c818631acbbfcf17b5db03685e2102f1c04eda88ba7449c9e920146e00753902",
+      "sections": [
+        {
+          "heading": "How to place a Customer order",
+          "anchor": "how-to-place-a-customer-order",
+          "text": "Use this guide when Phaeno is entering a paid laboratory order on behalf of a Customer. Work in the Phaeno organization with order-pricing access. For a no-charge evaluation, use Trial Projects under Order operations."
+        },
+        {
+          "heading": "Before you start",
+          "anchor": "before-you-start",
+          "text": "Have the Customer's Company and owning Department, a unique Job name, the agreed service, Sample type, biological sources, sample counts, sequencing runs and handling requirements. A proposed price is optional and will be reviewed before a quote is issued. Customer setup may be incomplete while you save a Draft; pricing submission requires the Customer and Department to pass the readiness checks shown on screen."
+        },
+        {
+          "heading": "1. Identify the Customer and work",
+          "anchor": "1-identify-the-customer-and-work",
+          "text": "Open Order ops → Order intake → New Order. This opens New Customer order. Empty New Customer order form showing Customer, Department, Job name, Catalog service and Sample type. Customer: search for and select the active Company. Review the readiness panel that appears after selection. Setup links let an authorized administrator complete missing setup without losing this form. Department: choose the Department that owns the Job. A sole available Department is selected automatically; choose explicitly when there are several. Job name: enter a unique, Customer-safe name for this work. Catalog service: choose the service for the whole order. It is required before pricing submission. Sample type: select the configured type that describes the material the Customer will submit. This also supplies the default storage requirements."
+        },
+        {
+          "heading": "2. Enter scope and handling",
+          "anchor": "2-enter-scope-and-handling",
+          "text": "Under Order scope, leave Use phases off for one delivery scope. Turn it on only for agreed sequential delivery cohorts, then set the phase count. For each scope or phase, enter every biological source and its sample count. Use Add source for another source. Enter Sequencing runs per sample; sample counts and run counts are different quantities. If Sales discussed pricing, choose Propose a price and enter the proposed prices. Additional sequencing runs are priced separately from the first run included per sample. Review the displayed subtotal; a proposal is not a quote. Complete Safety declaration. Use Insert “No known hazards” only when that statement applies, and review the inserted text. Use the Sample type's storage requirements, or select Use different storage requirements and explain the exception. Add Customer-safe Job notes as needed. Do not enter patient identifiers, individual sample IDs or tube barcodes here."
+        },
+        {
+          "heading": "3. Save, then submit for pricing",
+          "anchor": "3-save-then-submit-for-pricing",
+          "text": "Choose Save draft to retain incomplete work. Customer, Department and Job name are required to save. A Draft does not submit the order for pricing, expose it to the Customer or authorize laboratory work. Reopen it from intake and choose Actions → Edit draft to continue. When the scope is complete, review the summary and choose Submit for pricing. The portal rechecks configuration and Customer readiness. If submission is blocked, keep the saved Draft, follow the named setup or validation issue, then refresh readiness and review before trying again. A price proposal does not bypass pricing review or the independent quote controls."
+        },
+        {
+          "heading": "What happens next",
+          "anchor": "what-happens-next",
+          "text": "The order enters pricing review. Follow its Next step for Phaeno to prepare and issue the quote. The authorized Customer administrator accepts separately. Acceptance, kit requests, sample entry and laboratory authorization are later workflow steps; submitting for pricing does not complete them. See Order operations for phase pricing and queue triage, and Customer lab authorization for readiness, quote acceptance and additional scope."
+        }
+      ]
+    },
+    {
+      "audience": "phaeno",
+      "locale": null,
       "slug": "lab-exceptions-rework",
       "parentSlug": "lab-operations",
       "title": "Exceptions, rework, and cancellation",
@@ -2754,7 +2962,7 @@
       "title": "Service workflows, protocol control, and execution",
       "summary": "Author, review and present complete laboratory procedures; control exact revisions and record scientific execution.",
       "order": 54,
-      "reviewedAt": "2026-10-14",
+      "reviewedAt": "2026-10-15",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -3174,7 +3382,7 @@
       "title": "Customer lab authorization",
       "summary": "Start a Department Job, issue pricing, fulfill compatible kits, and authorize Lab work after exact sample and tube pairing.",
       "order": 41,
-      "reviewedAt": "2026-10-03",
+      "reviewedAt": "2026-10-15",
       "navigationGroup": "order-operations",
       "contentType": "guide",
       "topicIds": [
@@ -3195,7 +3403,7 @@
       "publicationStatus": "published",
       "id": "phaeno/order-customer-lab-authorization",
       "route": "/docs/phaeno/order-customer-lab-authorization",
-      "contentHash": "a5f13fee12ebfe7b2dd98d1b98751ae85199582f68f2bf0c6f9e772bee65b00c",
+      "contentHash": "ad65a30e7697b105d5a34547f84faadbf476d1456573a0f8fe966c5fc475183c",
       "sections": [
         {
           "heading": "Lab Service authorization",
@@ -3215,7 +3423,7 @@
         {
           "heading": "Initiate an order for a Customer",
           "anchor": "initiate-an-order-for-a-customer",
-          "text": "An authorized Phaeno order-pricing user can begin the pricing profile when the Customer is already known and does not need to create the request first. Open Order ops, select Order intake under LAB SERVICES, and choose New Customer order. Search by Company name and select the active Customer, then choose the Department that owns the Job. When the Customer has more than one Department, make the choice explicitly; the default Department is not selected for you. Use Clear Customer in the search field to choose a different Customer; this clears the Department and readiness selection while keeping the Job details you entered. A Customer selected by an approved CRM handoff stays fixed to that handoff. Customers remain visible even when setup is incomplete. Review Before starting pricing, Before issuing a quote, and Before invoicing for that Department. Starting pricing requires the active Customer, an effective Ready PSeq Lab Service entitlement, the active specimen offering, no operational block, and at least one active Customer user who can access the chosen Department. An organization administrator can access all Departments; a Department member can access only assigned Departments. The user need not be an administrator until quote approval is required. Setup links open in a separate tab so your order details remain here. Ask a platform administrator to complete setup if your role cannot change it, then return to the same order draft and select Refresh readiness at the end of the pricing-readiness panel. Enter a unique Job name, select one Sample type, every biological source and sample count, the total Sample-sequencing runs (leave blank for one per sample), the shared storage requirements and safety declaration, and any Customer-safe Job notes. If Sales discussed a price, select Propose a price, enter the proposed USD price per sample-sequencing run, and optionally add Customer-safe pricing context. A proposal is not a quote and does not authorize work. Do not enter individual sample IDs, tube barcodes, patient identifiers, or PHI. Confirm that the pricing details contain no patient identifiers, PHI, or unnecessary personal data, then select Start pricing. POMS creates the Customer-owned Job with one immutable submitted request revision and opens it in Quote in preparation. Review the committed sample count, source composition, storage, and safety facts on the operational detail. If a price was proposed, select Review and issue quote and compare the proposal, active catalog price, difference, and calculated subtotal. Approve it unchanged or amend the unit price; an amendment requires an internal reason. Before issuing the quote, complete every non-billing readiness blocker, including activating a Customer administrator who can receive and approve it. Billing readiness may be completed after acceptance but is required before invoicing. The editor preselects the required PSeq Lab Service, explains that it is priced per sample-sequencing run, and sets its read-only quantity from the Job's requested sample-sequencing run count. The required line cannot be removed. Additional active catalog lines may be added with a per-unit price and a quantity chosen for that quote. Permanent accounting codes remain available in Order settings but are not shown as quote-entry guidance. If the designated item is missing, inactive, or not priced per sample-sequencing run, quote issuance is paused until Order settings is corrected. POMS validates the item identity, unit, and committed quantity again on the server. POMS sends no Customer notice while a Phaeno-initiated Job remains Quote in preparation. Issuing or revising the quote rechecks ordering eligibility and the approver list, makes the quote available immediately, moves the Job to Quote issued, and notifies every active Customer administrator. The Customer can approve it; Phaeno cannot approve on the Customer's behalf. The accepting administrator becomes the Job's acting Customer contact for ordinary later notices. High-impact events, including cancellation by Phaeno and result release, continue to notify all active Customer administrators."
+          "text": "An authorized Phaeno order-pricing user can begin the pricing profile when the Customer is already known and does not need to create the request first. Open Order ops, select Order intake under LAB SERVICES, and choose New Order. Search by Company name and select the active Customer, then choose the Department that owns the Job. When the Customer has more than one Department, make the choice explicitly; the default Department is not selected for you. Use Clear Customer in the search field to choose a different Customer; this clears the Department and readiness selection while keeping the Job details you entered. A Customer selected by an approved CRM handoff stays fixed to that handoff. Customers remain visible even when setup is incomplete. Review Before starting pricing, Before issuing a quote, and Before invoicing for that Department. Starting pricing requires the active Customer, an effective Ready PSeq Lab Service entitlement, the active specimen offering, no operational block, and at least one active Customer user who can access the chosen Department. An organization administrator can access all Departments; a Department member can access only assigned Departments. The user need not be an administrator until quote approval is required. Setup links open in a separate tab so your order details remain here. Ask a platform administrator to complete setup if your role cannot change it, then return to the same order draft and select Refresh readiness at the end of the pricing-readiness panel. Enter a unique Job name, choose the Catalog service and Sample type, then enter each biological source, its sample count and Sequencing runs per sample. Use phases only for agreed sequential delivery cohorts. Complete the storage requirements, safety declaration and Customer-safe notes. If proposing prices, enter the proposed price per sample and the separate price per additional sequencing run where offered. A proposal is not a quote and does not authorize work. Do not enter individual sample IDs, tube barcodes, patient identifiers or PHI here. See How to place a Customer order for the current form walkthrough. Confirm that the pricing details contain no patient identifiers, PHI, or unnecessary personal data, then select Start pricing. POMS creates the Customer-owned Job with one immutable submitted request revision and opens it in Quote in preparation. Review the committed sample count, source composition, storage, and safety facts on the operational detail. If a price was proposed, select Review and issue quote and compare the proposal, active catalog price, difference, and calculated subtotal. Approve it unchanged or amend the unit price; an amendment requires an internal reason. Before issuing the quote, complete every non-billing readiness blocker, including activating a Customer administrator who can receive and approve it. Billing readiness may be completed after acceptance but is required before invoicing. The editor preselects the required PSeq Lab Service, explains that it is priced per sample-sequencing run, and sets its read-only quantity from the Job's requested sample-sequencing run count. The required line cannot be removed. Additional active catalog lines may be added with a per-unit price and a quantity chosen for that quote. Permanent accounting codes remain available in Order settings but are not shown as quote-entry guidance. If the designated item is missing, inactive, or not priced per sample-sequencing run, quote issuance is paused until Order settings is corrected. POMS validates the item identity, unit, and committed quantity again on the server. POMS sends no Customer notice while a Phaeno-initiated Job remains Quote in preparation. Issuing or revising the quote rechecks ordering eligibility and the approver list, makes the quote available immediately, moves the Job to Quote issued, and notifies every active Customer administrator. The Customer can approve it; Phaeno cannot approve on the Customer's behalf. The accepting administrator becomes the Job's acting Customer contact for ordinary later notices. High-impact events, including cancellation by Phaeno and result release, continue to notify all active Customer administrators."
         },
         {
           "heading": "Review the request",
@@ -3462,12 +3670,12 @@
       "publicationStatus": "published",
       "id": "phaeno/order-operations",
       "route": "/docs/phaeno/order-operations",
-      "contentHash": "e3fe075859bb448b414376682cde038f51f789552866c6196fff111f446d1312",
+      "contentHash": "9b3ef8808e577606397c584ffdce8735e1570d1ba22be04e3fe0dc288440cc0e",
       "sections": [
         {
           "heading": "Order operations",
           "anchor": "order-operations",
-          "text": "Open Order ops. Its sidebar groups Order intake and Trial projects under LAB SERVICES, and PSeq kits and Data assembly under PARTNER SERVICES, using the same group headings as CRM. Pricing and commercial decisions stay with the owning service. Reusable defaults and scientific offerings are maintained in Order settings. The Dashboard summarizes your assigned service work. Needs attention shows authorized unresolved items and CRM recovery; choose View all to assign or resolve work. More → Finance owns billing and cash. More → Legacy integrations owns retained connector and notification recovery. Lab ops → Result release owns governed PSeq publication, alongside the separate Results & scientific review scientific workspace. When starting a Customer Job, select its Company and Department. A single available Department is selected automatically. The Department owns the Job and determines Customer access and the applicable service rule; a Blocked Department rule cannot be bypassed by a Ready organization default. The Order operations sidebar contains two labeled groups, filtered by your roles. LAB SERVICES contains Order intake and Trial projects. PARTNER SERVICES contains PSeq kits and Data assembly. Order intake covers paid lab-service orders only; kit and Assembly records belong under PARTNER SERVICES. Eligible organizations can place a configured standard Lab Service bundle from their own Job; its accepted commitment appears on the same order. Trial projects handles no-charge evaluations. Prospect, Customer and Partner users retain their audience-specific Trial access. Choose New Order in Commercial order intake to open the order-entry page. Sales selects the active Customer and Department, enters a unique Job name, and chooses the Catalog service for the whole order. The service is optional for an incomplete Draft and required for pricing submission; inactive or unrelated catalog items are unavailable. Save draft retains incomplete entries as Draft without submitting them or making them visible to the Customer. Customer setup can be completed while the Draft is saved. Reopen its record from intake and choose Edit draft. The saved Draft shows bold labels with counts and proposed prices beside them, such as Samples: 5. Handling and notes remain below their labels. For Safety declaration, describe the handling risks or select Insert “No known hazards” beside the guidance above the empty field when that declaration applies. The shortcut fills editable text; review it before saving or submitting. An existing declaration is retained, and the shortcut is available again after clearing the field. The Use different storage requirements checkbox sits beside the Storage requirements heading. Leave it unchecked to use the Sample type default shown below, or check it to enter different requirements. After submission, Commercial scope uses bold labels for specimen counts, biological sources, handling, proposed pricing and the current quote. The default order has one scope. Check Use phases and enter the Phase count when the Customer agrees sequential delivery cohorts. For each phase, enter biological sources, the sample count for each source and sequencing runs per sample. Add source is at the right end of the Biological-source composition heading. Runs per sample can differ between phases. For both single-scope and phased orders, optionally propose a USD price per sample and a separate price per additional sequencing run. The sample price includes one library preparation, one run and data assembly. The additional-run field appears when runs per sample exceed one. The proposed subtotal is the sample count multiplied by the sample price, plus only the runs beyond the first per sample multiplied by the additional-run price. Three samples with three runs each means three standard services and six additional runs. Additional runs use existing prepared-library material while it remains available; the purchased run count does not establish material availability. Add a pricing note when needed. Storage requirements use the selected Sample type's Preservation requirements by default. Shared handling and notes shows that text. Check Use different storage requirements only when this order needs an exception, then edit the requirements. The choice and any entered exception are retained in the Draft. Pricing submission retains the selected requirements on the order. An empty exception blocks submission; clear the checkbox to use the Sample type default. The safety declaration and Job notes apply to the order. Do not enter patient names or identifying information in notes. Clearing Use phases, reducing the count or choosing Remove phase opens a POMS confirmation that explains which scope and proposed prices will be removed. Choose Cancel to retain all entries. Clearing Use phases keeps the first phase's scope and proposed pricing. Submit for pricing saves the entries and validates the complete scope and Customer readiness. The order moves to Submitted for pricing. If readiness blocks submission, the saved Draft remains available with the submission error. The pricing operator retains the selected catalog service, begins quote preparation and reviews each scope's sample price, additional-run price and business-day turnaround before issuing one Customer quote. Amending proposed prices requires a reason. Submission does not authorize laboratory work. Exact Sample IDs and tubes are prepared after Customer acceptance. Lab Service orders in Quote In Preparation show a bold Next step for Phaeno message in the intake list. Open the Job by selecting its name, then select Review and issue quote under Commercial control, or Issue quote if no price was proposed. Review the price and terms and issue the quote for Customer acceptance. Quote Issued means the quote is available for the Customer to review. The Customer dashboard lists each active Lab Service request in its selected Department with a Job name, next step and direct link. Issued quotes have a Review pricing link for administrators; other members see View pricing. Requests still being priced show Waiting for Phaeno. Customers can page through active requests or open View all lab services for history. The Customer dashboard's Items requiring attention and New results metrics cover the selected Department and filter the Jobs below. New results are released, downloadable laboratory result packages without a complete Department download; failed or partial transfers do not clear them. This count can include completed Jobs and can be larger than the number of Jobs containing the results. The sidebar header identifies Order operations and, on wider screens, provides the pin or unpin icon. Pointer users can preview an unpinned sidebar by approaching the left edge; keyboard and touch users open it from the edge tab. Choosing a section closes an unpinned sidebar."
+          "text": "For a task walkthrough, start with How to place a Customer order or How to configure samples and shipping. No-charge evaluations are covered by Trial Projects, within this Order operations group. Open Order ops. Its sidebar groups Order intake and Trial projects under LAB SERVICES, and PSeq kits and Data assembly under PARTNER SERVICES, using the same group headings as CRM. Pricing and commercial decisions stay with the owning service. Reusable defaults and scientific offerings are maintained in Order settings. The Dashboard summarizes your assigned service work. Needs attention shows authorized unresolved items and CRM recovery; choose View all to assign or resolve work. More → Finance owns billing and cash. More → Legacy integrations owns retained connector and notification recovery. Lab ops → Result release owns governed PSeq publication, alongside the separate Results & scientific review scientific workspace. When starting a Customer Job, select its Company and Department. A single available Department is selected automatically. The Department owns the Job and determines Customer access and the applicable service rule; a Blocked Department rule cannot be bypassed by a Ready organization default. The Order operations sidebar contains two labeled groups, filtered by your roles. LAB SERVICES contains Order intake and Trial projects. PARTNER SERVICES contains PSeq kits and Data assembly. Order intake covers paid lab-service orders only; kit and Assembly records belong under PARTNER SERVICES. Eligible organizations can place a configured standard Lab Service bundle from their own Job; its accepted commitment appears on the same order. Trial projects handles no-charge evaluations. Prospect, Customer and Partner users retain their audience-specific Trial access. Choose New Order in Commercial order intake to open the order-entry page. Sales selects the active Customer and Department, enters a unique Job name, and chooses the Catalog service for the whole order. The service is optional for an incomplete Draft and required for pricing submission; inactive or unrelated catalog items are unavailable. Save draft retains incomplete entries as Draft without submitting them or making them visible to the Customer. Customer setup can be completed while the Draft is saved. Reopen its record from intake and choose Edit draft. The saved Draft shows bold labels with counts and proposed prices beside them, such as Samples: 5. Handling and notes remain below their labels. For Safety declaration, describe the handling risks or select Insert “No known hazards” beside the guidance above the empty field when that declaration applies. The shortcut fills editable text; review it before saving or submitting. An existing declaration is retained, and the shortcut is available again after clearing the field. The Use different storage requirements checkbox sits beside the Storage requirements heading. Leave it unchecked to use the Sample type default shown below, or check it to enter different requirements. After submission, Commercial scope uses bold labels for specimen counts, biological sources, handling, proposed pricing and the current quote. The default order has one scope. Check Use phases and enter the Phase count when the Customer agrees sequential delivery cohorts. For each phase, enter biological sources, the sample count for each source and sequencing runs per sample. Add source is at the right end of the Biological-source composition heading. Runs per sample can differ between phases. For both single-scope and phased orders, optionally propose a USD price per sample and a separate price per additional sequencing run. The sample price includes one library preparation, one run and data assembly. The additional-run field appears when runs per sample exceed one. The proposed subtotal is the sample count multiplied by the sample price, plus only the runs beyond the first per sample multiplied by the additional-run price. Three samples with three runs each means three standard services and six additional runs. Additional runs use existing prepared-library material while it remains available; the purchased run count does not establish material availability. Add a pricing note when needed. Storage requirements use the selected Sample type's Preservation requirements by default. Shared handling and notes shows that text. Check Use different storage requirements only when this order needs an exception, then edit the requirements. The choice and any entered exception are retained in the Draft. Pricing submission retains the selected requirements on the order. An empty exception blocks submission; clear the checkbox to use the Sample type default. The safety declaration and Job notes apply to the order. Do not enter patient names or identifying information in notes. Clearing Use phases, reducing the count or choosing Remove phase opens a POMS confirmation that explains which scope and proposed prices will be removed. Choose Cancel to retain all entries. Clearing Use phases keeps the first phase's scope and proposed pricing. Submit for pricing saves the entries and validates the complete scope and Customer readiness. The order moves to Submitted for pricing. If readiness blocks submission, the saved Draft remains available with the submission error. The pricing operator retains the selected catalog service, begins quote preparation and reviews each scope's sample price, additional-run price and business-day turnaround before issuing one Customer quote. Amending proposed prices requires a reason. Submission does not authorize laboratory work. Exact Sample IDs and tubes are prepared after Customer acceptance. Lab Service orders in Quote In Preparation show a bold Next step for Phaeno message in the intake list. Open the Job by selecting its name, then select Review and issue quote under Commercial control, or Issue quote if no price was proposed. Review the price and terms and issue the quote for Customer acceptance. Quote Issued means the quote is available for the Customer to review. The Customer dashboard lists each active Lab Service request in its selected Department with a Job name, next step and direct link. Issued quotes have a Review pricing link for administrators; other members see View pricing. Requests still being priced show Waiting for Phaeno. Customers can page through active requests or open View all lab services for history. The Customer dashboard's Items requiring attention and New results metrics cover the selected Department and filter the Jobs below. New results are released, downloadable laboratory result packages without a complete Department download; failed or partial transfers do not clear them. This count can include completed Jobs and can be larger than the number of Jobs containing the results. The sidebar header identifies Order operations and, on wider screens, provides the pin or unpin icon. Pointer users can preview an unpinned sidebar by approaching the left edge; keyboard and touch users open it from the edge tab. Choosing a section closes an unpinned sidebar."
         },
         {
           "heading": "Find assigned and unassigned work",
@@ -3613,10 +3821,10 @@
       "audience": "phaeno",
       "locale": null,
       "slug": "organization-and-user-administration",
-      "title": "Company access and user administration",
+      "title": "POMS user administration",
       "summary": "Manage Company access and request completion, staged Department readiness, service entitlements, invitation recovery and membership lifecycle.",
-      "order": 25,
-      "reviewedAt": "2026-10-08",
+      "order": 12,
+      "reviewedAt": "2026-10-15",
       "navigationGroup": "platform-operations",
       "contentType": "guide",
       "topicIds": [
@@ -3634,18 +3842,19 @@
         "2FA",
         "admin",
         "administrator",
-        "permissions"
+        "permissions",
+        "Company access and user administration"
       ],
       "applicableRoles": [],
       "relatedGuideIds": [],
       "publicationStatus": "published",
       "id": "phaeno/organization-and-user-administration",
       "route": "/docs/phaeno/organization-and-user-administration",
-      "contentHash": "54d8855a8f63448e1e61bf78576d3c9124b5178a8b21208049362ff6ea3ecb1d",
+      "contentHash": "1136d181c3c5accbbeb138a48c7bba5f6e0415288103c62d0435a0f99e47d85c",
       "sections": [
         {
-          "heading": "Company access and user administration",
-          "anchor": "company-access-and-user-administration",
+          "heading": "POMS user administration",
+          "anchor": "poms-user-administration",
           "text": "An organization administrator is optional. A Company can operate through administrators of its active Departments. Department administrators act only within their assigned Departments; ask Phaeno to handle company-wide setup, invitations or roles when no organization administrator is available. Phaeno administrators manage Portal access, readiness, service entitlements, integration requests, and global access from the canonical CRM Company. Prospect, Customer, and Partner administrators manage membership only within their own access scope. Access is invitation-based and every durable administrative change is audited."
         },
         {
@@ -3767,12 +3976,12 @@
       "slug": "trial-projects",
       "title": "Trial Projects",
       "summary": "Configure authorities and deliverables, approve scope, oversee samples and Lab work, release results, and close Trials.",
-      "order": 26,
-      "reviewedAt": "2026-10-11",
-      "navigationGroup": "trial-project",
+      "order": 42,
+      "reviewedAt": "2026-10-15",
+      "navigationGroup": "order-operations",
       "contentType": "guide",
       "topicIds": [
-        "trials"
+        "orders"
       ],
       "workflowIds": [
         "trial-projects"
@@ -3788,6 +3997,7 @@
       "applicableRoles": [],
       "relatedGuideIds": [],
       "publicationStatus": "published",
+      "parentSlug": "order-operations",
       "id": "phaeno/trial-projects",
       "route": "/docs/phaeno/trial-projects",
       "contentHash": "19f7b4ab93bd29965b4949e016ff0d1117907a308878bbd2e5311d2f97f11fc3",
@@ -4331,5 +4541,5 @@
       ]
     }
   ],
-  "corpusHash": "1570388119bb9cac1e1348313604c716a994fd6cee4b187cb06af52761dfc7a0"
+  "corpusHash": "50b53bdc8aa1e909c2102835bcfd05aa4fac86287c098506493543d0acad0b14"
 }

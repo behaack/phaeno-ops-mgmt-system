@@ -54,7 +54,7 @@ describe('ProtocolList', () => {
     })
 
     expect(screen.getByText('Approved v1')).toBeTruthy()
-    expect(screen.getByText('Approved')).toBeTruthy()
+    expect(screen.queryByText('Approved')).toBeNull()
     expect(screen.queryByText(/production/i)).toBeNull()
     expect(screen.getByRole('button', { name: 'Actions' })).toBeTruthy()
   })
@@ -78,7 +78,7 @@ describe('ProtocolList', () => {
     })
 
     expect(screen.getByText('Draft v1')).toBeTruthy()
-    expect(screen.getByText('Draft')).toBeTruthy()
+    expect(screen.queryByText('Draft')).toBeNull()
     expect(screen.getByRole('button', { name: 'Actions' })).toBeTruthy()
   })
 })

@@ -39,6 +39,31 @@ Local evidence already covers 25 backend regressions, 25 frontend tests and four
 
 Record final commit, workflow run, API image, migration, frontend deployment, recovery hashes, data comparisons, routing checks, controls and remaining gates in the completion receipt. Keep private operational artifacts outside Git.
 
+## Owner scope expansion: remaining changes and final UI
+
+The Owner subsequently requested committing/pushing all remaining changes and
+redeploying the UI. Include the illustrated Phaeno help/navigation, protocol-card
+summary, associated regression sources and pending user-card release records in
+a separate source commit. These changes add no dependencies, authentication
+changes or persisted model changes. The final matched help corpus is 59 guides,
+`50b53bdc8aa1`.
+
+The lot API release already completed successfully from `5b6e10a4c98c` in run
+`38821018032`, including the guarded additive migration, encrypted backup and
+isolated restore rehearsal. All 242 baseline application tables retain identical
+row counts and full-record fingerprints; only migration history changes, with two
+new empty lot tables. The 12 Mailing-list and six Demo-request records are intact.
+
+Stage the expanded source as a new production-target frontend without assigning
+the canonical domain. Because documentation search rejects mismatched corpus
+versions, also publish that exact source's generated API help using the same
+bounded manual API workflow, with `apply_migrations=false` and all runtime inputs
+preserved. Verify the packaged 59-guide API corpus and index before promoting the
+final UI. Retain both prior frontend deployments and API images for coordinated,
+preserving recovery. No additional database migration, data reset or operational
+fixture is authorized or needed. Recheck preservation, health and release holds
+after this final matched deployment.
+
 ## Prepared release checkpoint
 
 The isolated staged source excludes the concurrent illustrated guides and Lab summary changes. Its matched API/UI help has 56 published guides, corpus `1570388119bb`; the earlier 59-guide working-tree verification remains recorded separately. The isolated Release API build has zero warnings/errors; frontend type checking, 25 relevant component tests and production client/server build pass. The staged lot-related hunks are checked independently of the remaining working-tree changes.

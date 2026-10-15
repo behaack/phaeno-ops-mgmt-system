@@ -86,6 +86,33 @@ Keep the following outside MDX:
 
 This profile keeps the content portable to another MDX renderer or a future standalone documentation site without coupling the help corpus to the current frontend framework.
 
+## Illustrated Phaeno task guides
+
+Phaeno help uses short task walkthroughs alongside its reference guides. Keep
+how-to guides under their owning workspace and feature them on the Phaeno help
+home. Trial Projects belongs under Order operations; keep its stable direct link
+and search identity without a separate Phaeno home card or Trial topic.
+
+Use actual local UI captures with empty forms or explicitly fictional data for
+screenshots. Review every pixel before adding an image to the browser-bundled
+help: no credentials, personal data, real customer records, confidential details
+or production identifiers. Do not generate or reconstruct a screen and describe
+it as actual application behavior. Keep dated assets in
+`frontend/public/docs/phaeno/screenshots/`, with capture notes in that directory.
+
+Use normal Markdown images with descriptive alternative text and an illustrative
+caption. Keep numbered, written callout explanations beside the image so the
+task remains understandable without seeing it. The shared image renderer overlays
+number markers using `documentation-screenshots.ts`; renderer logic, coordinates
+and dimensions stay outside MDX. Keep the original captured pixels intact, check
+the markers in light/dark themes and at narrow widths, and update the image and
+callouts together when the UI changes. Screenshots of demonstrations do not
+qualify physical workflows or scientific procedures.
+
+Navigation, metadata and body changes alter the search corpus. Regenerate both
+the packaged API corpus and UI version; release them together and refresh the
+documentation index before claiming matching-version search acceptance.
+
 ## Internationalization
 
 Customer UI messages are maintained in

@@ -1,0 +1,92 @@
+# How to configure samples and shipping
+
+Use this guide to prepare the reusable configuration for new laboratory orders.
+Work in the Phaeno organization with samples/shipping configuration access.
+Open **Samples & shipping settings** from the user menu. On narrow layouts,
+expand **Settings** first. This setup
+defines what Customers may submit and how it reaches Phaeno; it does not record
+a shipment or assemble a physical kit.
+
+## Understand the four records
+
+- **Shipping procedure:** Customer-facing preparation, packing, transit and
+  dispatch instructions.
+- **Sample type:** scientific material, minimum amount, preservation, labeling
+  and the selected Shipping procedure.
+- **Kit specification:** products, quantities, capacity, Sample type and assembly
+  method for a kit design.
+- **Phaeno ship-to destination:** receiving address, hours, delivery restrictions
+  and the Default destination for new work.
+
+## 1. Prepare the Shipping procedure
+
+Choose **Shipping procedures**, then create a Draft with a clear name. Complete
+the required instruction sections: preparation and packing, transit handling,
+carrier guidance, dispatch timing, documents and exceptions. Explicitly say when
+no documents are needed. Save the Draft while collecting missing information.
+
+When complete, open its record and choose **Actions → Activate**. Review any
+missing-section messages before continuing. An authorized configuration
+administrator can activate shipping content; laboratory protocol approval is a
+separate process.
+
+## 2. Define the Sample type
+
+Choose **Sample types → Add sample type**. Define the material the Customer will
+send, rather than an individual specimen.
+
+![Empty Sample type editor with the scientific requirements, minimum sample amount and Shipping procedure fields.](/docs/phaeno/screenshots/sample-type-20261015.jpg "Illustrative configuration form; enter scientifically reviewed requirements for your material.")
+
+1. **Identity and material:** use a recognizable name and describe the scientific
+   material and submission requirements.
+2. **Shared shipping procedure:** select the shared procedure for this exact
+   Sample type revision. A Draft can be saved while you finish its requirements.
+3. **Quantity and handling:** set the minimum sample amount and unit, container,
+   preservation, labeling, safety and transit requirements. Check that the intended
+   Tube product supports the amount and uses the same unit.
+   Activate only after reviewing the complete content.
+
+Changing a released Sample type's Shipping procedure requires a successor Draft.
+It does not change instructions already pinned to placed Jobs.
+
+## 3. Prepare a compatible Kit specification
+
+Choose **Kit specifications** and create a Draft. Enter its name and stable SKU,
+select the purchased Shipping Container and its supplier, and select the Sample
+type. Add the required products and quantities, including the correct Tube product
+and outer container. Check tube capacity, amount units and temperature handling.
+
+Choose the reusable Transportation kit assembly workflow from Lab settings.
+That workflow defines the assembly instructions; the specification defines the
+required products and quantities. Save incomplete work as Draft and activate the
+specification when its own required content is complete.
+
+A specification may be Active while a dependency still needs attention. New
+Orders require usable sample/shipping configuration, and physical kit assembly
+also requires a compatible approved assembly workflow. Review the record's
+readiness warnings rather than treating Active as proof that every downstream
+operation is ready.
+
+## 4. Set the receiving destination
+
+Choose **Phaeno ship-to destinations**. Create or revise the destination, review
+its address, time zone, hours, closures and carrier restrictions, and activate it.
+Use **Actions → Set as default** on the available destination to make it the
+Default for new work. Existing issued instructions retain their recorded address.
+
+## Check readiness for a new order
+
+Confirm an effective Active Sample type, an Active revision of its selected
+Shipping procedure, a usable compatible kit design and an available Default
+destination. Open the Sample type and kit records to resolve **Needs attention**
+messages. Activation can recheck dependencies and reject stale or incomplete work.
+
+Use **Create revision** for released-content changes. Continue editing the one
+open Draft, or discard it with its history retained; do not create several pending
+successors. Existing Jobs, packets, physical kits and shipment records retain their
+exact recorded revisions. Ordinary deactivation prevents new selection; an
+already placed Job needs a separate shipping safety hold to stop further packets.
+
+See [Configuration and file retention](/docs/phaeno/configuration-and-recovery)
+for the detailed validation and revision rules, and
+[Sample receipt and accession](/docs/phaeno/lab-receipt-accession) for receiving work.

@@ -44,6 +44,22 @@ sample execution/download journey remains unperformed. Historical recovery and
 the current S3 recovery deferral remain distinct. See the
 [completion receipt](operations/portal-dps-test-activation-20261014.md).
 
+## Phaeno user card hosted-test release - completed October 14, 2026
+
+Portal frontend source `0b0903cff9d714575e803511906b675f6e1dbd25` is live
+as deployment `dpl_9tuoG5YUr8ngaN93dPepB15UYmaj` under the
+[preserving frontend-only plan](plans/PORTAL-USER-CARD-TEST-RELEASE-20261014-PLAN.md).
+Account status/actions stay at the upper right; multiple commands use the visible
+Actions label. Actual-component phone/desktop/theme and keyboard previews pass.
+Canonical assets match staging; health, signed-out routes, authorization and
+bounded error checks pass. The API/database and release holds remain untouched.
+The Owner reported old rendering after refresh: Nitro document-session pins
+kept the existing browser on the preceding build. The release now retires old
+pins with version boundary `1791994479939`; current version protection remains.
+Previous-pin HTTP and the actual signed-in Edge page now load the new entry
+and visibly show first-row controls and Actions. Account writes remain untested.
+See the [receipt](operations/portal-user-card-test-release-20261014.md).
+
 ## Authenticator instruction layout hosted-test release - completed October 14, 2026
 
 Portal frontend source `43622eae11f6c229acf60a79d6b7fbd54baed104` is live

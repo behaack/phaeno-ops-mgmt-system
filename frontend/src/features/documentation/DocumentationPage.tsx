@@ -143,8 +143,9 @@ export function DocumentationPage({ audience, slug }: DocumentationPageProps) {
 function DocumentationIndex({ audience }: { audience: DocumentationAudience }) {
   const messages = useDocumentationMessages()
 
-  const entries = useDocumentationEntries(audience)
-    .filter((entry) => !entry.parentSlug)
+  const allEntries = useDocumentationEntries(audience)
+  const entries = allEntries.filter((entry) => !entry.parentSlug)
+  const howToEntries = allEntries.filter((entry) => entry.contentType === 'how-to')
   const audienceDetails = messages.audiences[audience]
 
   return (
@@ -162,42 +163,39 @@ function DocumentationIndex({ audience }: { audience: DocumentationAudience }) {
           </section>
 
           <DocumentationTopics audience={audience} />
+          {howToEntries.length > 0 ? <section aria-labelledby="how-to-guides-heading" className="mb-7">
+            <h2 id="how-to-guides-heading" className="mb-4 text-lg font-semibold">How-to guides</h2>
+            <DocumentationGuideCards audience={audience} entries={howToEntries} />
+          </section> : null}
           <section aria-labelledby="guide-list-heading">
             <h2 id="guide-list-heading" className="mb-4 text-lg font-semibold">
               {messages.guides}
             </h2>
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {entries.map((entry) => {
-                const Icon = getGuideIcon(entry.slug)
-
-                return (
-                  <Link
-                    key={entry.slug}
-                    to="/docs/$audience/$slug"
-                    params={{ audience, slug: entry.slug }}
-                    className="rounded-xl text-inherit no-underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-                  >
-                    <Card className="h-full transition-colors hover:bg-muted/30">
-                      <CardHeader>
-                        <div className="mb-2 flex size-9 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                          <Icon aria-hidden="true" className="size-4" />
-                        </div>
-                        <CardTitle>{entry.title}</CardTitle>
-                        <CardDescription>{entry.summary}</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <span className="text-xs font-medium text-muted-foreground">
-                          {entry.section}
-                        </span>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                )
-              })}
-            </div>
+            <DocumentationGuideCards audience={audience} entries={entries} />
           </section>
     </div>
   )
+}
+
+function DocumentationGuideCards({ audience, entries }: { audience: DocumentationAudience; entries: DocumentationEntry[] }) {
+  return <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+    {entries.map(entry => {
+      const Icon = getGuideIcon(entry.slug)
+      return <Link key={entry.slug} to="/docs/$audience/$slug" params={{ audience, slug: entry.slug }}
+        className="rounded-xl text-inherit no-underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none">
+        <Card className="h-full transition-colors hover:bg-muted/30">
+          <CardHeader>
+            <div className="mb-2 flex size-9 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+              <Icon aria-hidden="true" className="size-4" />
+            </div>
+            <CardTitle>{entry.title}</CardTitle>
+            <CardDescription>{entry.summary}</CardDescription>
+          </CardHeader>
+          <CardContent><span className="text-xs font-medium text-muted-foreground">{entry.section}</span></CardContent>
+        </Card>
+      </Link>
+    })}
+  </div>
 }
 
 function DocumentationArticle({

@@ -69,9 +69,16 @@ test('shows only Phaeno guides in expandable topic groups', async ({ page }) => 
   ).toHaveCount(0)
 
   const guideNavigation = page.getByRole('navigation', { name: 'Guides' })
+  const topLevelItems = guideNavigation.locator(':scope > ul > li')
+  await expect(topLevelItems.nth(0)).toContainText('Phaeno operations guide')
+  await expect(topLevelItems.nth(1)).toContainText('POMS user administration')
+  await expect(topLevelItems.nth(2)).toContainText('CRM')
+  await expect(page.getByRole('region', { name: 'How-to guides' }).getByRole('link')).toHaveCount(3)
+  await expect(page.getByRole('region', { name: 'Guides' }).getByRole('link', { name: 'Trial Projects', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('region', { name: 'Browse by topic' }).getByRole('link', { name: 'Trial Projects', exact: true })).toHaveCount(0)
   await expect(
     guideNavigation.getByRole('button', {
-      name: 'Expand Customer relationship management topics',
+      name: 'Expand CRM topics',
     }),
   ).toBeVisible()
   await expect(
@@ -91,7 +98,7 @@ test('shows only Phaeno guides in expandable topic groups', async ({ page }) => 
   ).toBeVisible()
 
   await guideNavigation.getByRole('button', {
-    name: 'Expand Customer relationship management topics',
+    name: 'Expand CRM topics',
   }).click()
   const crmTopics = page.locator('#documentation-topics-crm')
   await expect(crmTopics.getByRole('link')).toHaveCount(8)
@@ -108,7 +115,7 @@ test('shows only Phaeno guides in expandable topic groups', async ({ page }) => 
   await openSidebarIfCollapsed(page)
   await expect(
     page.getByRole('button', {
-      name: 'Collapse Customer relationship management topics',
+      name: 'Collapse CRM topics',
     }),
   ).toBeVisible()
 
@@ -125,8 +132,9 @@ test('shows only Phaeno guides in expandable topic groups', async ({ page }) => 
   }).click()
   await expect(dataTopics).toHaveCount(0)
   const orderTopics = page.locator('#documentation-topics-order-operations')
-  await expect(orderTopics.getByRole('link')).toHaveCount(5)
-  await expect(orderTopics.locator('a > svg')).toHaveCount(5)
+  await expect(orderTopics.getByRole('link')).toHaveCount(8)
+  await expect(orderTopics.locator('a > svg')).toHaveCount(8)
+  await expect(orderTopics.getByRole('link', { name: 'Trial Projects', exact: true })).toBeVisible()
   await orderTopics.getByRole('link', {
     name: 'PSeq billing, cash, and result release',
   }).click()
@@ -147,6 +155,19 @@ test('shows only Phaeno guides in expandable topic groups', async ({ page }) => 
   await expect(
     page.getByRole('heading', { name: 'Documentation unavailable' }),
   ).toBeVisible()
+})
+
+test('renders an illustrated Phaeno task guide with written callout explanations', async ({ page }) => {
+  await selectOrganization(page, 'phaeno')
+  await page.goto('/docs/phaeno/how-to-place-customer-order')
+  await expect(page.getByRole('heading', { name: 'How to place a Customer order', exact: true })).toBeVisible()
+  const screenshot = page.getByRole('img', { name: /Empty New Customer order form/ })
+  await screenshot.scrollIntoViewIfNeeded()
+  await expect(screenshot).toBeVisible()
+  await expect.poll(() => screenshot.evaluate(image => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0)
+  await expect(screenshot.locator('..').locator('[aria-hidden="true"]')).toHaveCount(5)
+  await expect(page.getByText('Illustrative empty form; no Customer has been selected.', { exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: '3. Save, then submit for pricing' })).toBeVisible()
 })
 
 test('shows Prospect guides and denies a cross-audience route', async ({ page }) => {

@@ -306,18 +306,21 @@ export function ProtocolList({ protocols, canManage, canOverride = false, actorI
               const approvedVersion = protocol.versions
                 .filter((version) => version.status === 'Approved' || version.status === 'Active')
                 .at(-1)
+              const displayedVersion = approvedVersion ?? draft ?? protocol.versions.at(-1)
+              const earlierVersions = [...protocol.versions].reverse().filter((version) =>
+                version.id !== displayedVersion?.id && version.id !== draft?.id)
               return (
                 <section key={protocol.id} className="rounded-lg border bg-background p-4 shadow-xs">
                   <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
                     <div className="min-w-0 wrap-anywhere">
-                      <h3 className="font-medium"><Link className="text-primary hover:underline" to={procedureDetailRoute} params={{ kind: 'protocol', recordId: protocol.id }} search={{ ...discovery, revision: approvedVersion?.protocolVersion ?? draft?.protocolVersion }}>{protocol.name}</Link></h3>
+                      <h3 className="font-medium"><Link className="text-primary hover:underline" to={procedureDetailRoute} params={{ kind: 'protocol', recordId: protocol.id }} search={{ ...discovery, revision: displayedVersion?.protocolVersion }}>{protocol.name}</Link></h3>
                       {protocol.description ? (
                         <p className="mt-1 text-sm text-muted-foreground">{protocol.description}</p>
                       ) : null}
                       <div className="mt-2 flex flex-wrap gap-2">
-                        <Status value={protocol.retiredAtUtc ? 'Retired' : approvedVersion
-                            ? `Approved v${approvedVersion.protocolVersion}`
-                            : protocol.versions.at(-1)?.status ?? 'Setup incomplete'} />
+                        <Status value={displayedVersion
+                            ? `${protocol.retiredAtUtc ? 'Retired' : protocolVersionStatusLabel(displayedVersion.status)} v${displayedVersion.protocolVersion}`
+                            : protocol.retiredAtUtc ? 'Retired' : 'Setup incomplete'} />
                         {draft && approvedVersion ? <Link className="text-sm text-primary underline" to={procedureDetailRoute} params={{ kind: 'protocol', recordId: protocol.id }} search={{ ...discovery, revision: draft.protocolVersion }}>Pending Draft v{draft.protocolVersion}</Link> : null}
                       </div>
                       {!hasDefinition ? (
@@ -408,21 +411,24 @@ export function ProtocolList({ protocols, canManage, canOverride = false, actorI
                     ) : null}
                   </div>
                   {protocol.retiredAtUtc ? <p className="mt-3 text-sm text-muted-foreground">Retired {formatDate(protocol.retiredAtUtc)} · {protocol.retirementReason}</p> : null}
-                  {hasDefinition ? (
-                    <div className="mt-3 divide-y rounded-md border bg-muted/30 px-3">
-                      {[...protocol.versions].reverse().map((version) => (
-                        <div key={version.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">Version {version.protocolVersion}</span>
-                            <Status value={protocolVersionStatusLabel(version.status)} />
-                          </div>
-                          {version.approvalOverrideReason ? <p className="w-full text-sm"><strong>Administrator override</strong> · {version.approvalOverrideReason}</p> : null}
-                          {version.approvedAtUtc ? (
-                            <span className="text-xs text-muted-foreground">Approved {formatDate(version.approvedAtUtc)}</span>
-                          ) : null}
-                        </div>
-                      ))}
-                    </div>
+                  {displayedVersion?.approvalOverrideReason ? <p className="mt-3 text-sm wrap-anywhere"><strong>Administrator override</strong> · {displayedVersion.approvalOverrideReason}</p> : null}
+                  {displayedVersion?.approvedAtUtc ? <p className="mt-2 text-xs text-muted-foreground">Approved {formatDate(displayedVersion.approvedAtUtc)}</p> : null}
+                  {earlierVersions.length > 0 ? (
+                    <details className="mt-3 text-sm">
+                      <summary className="cursor-pointer rounded-sm text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">Revision history ({earlierVersions.length})</summary>
+                      <ol className="mt-2 divide-y border-t">
+                        {earlierVersions.map((version) => (
+                          <li key={version.id} className="space-y-2 py-3">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Link className="font-medium text-primary hover:underline" to={procedureDetailRoute} params={{ kind: 'protocol', recordId: protocol.id }} search={{ ...discovery, revision: version.protocolVersion }}>Revision {version.protocolVersion}</Link>
+                              <Status value={protocolVersionStatusLabel(version.status)} />
+                            </div>
+                            {version.approvalOverrideReason ? <p className="wrap-anywhere"><strong>Administrator override</strong> · {version.approvalOverrideReason}</p> : null}
+                            {version.approvedAtUtc ? <p className="text-xs text-muted-foreground">Approved {formatDate(version.approvedAtUtc)}</p> : null}
+                          </li>
+                        ))}
+                      </ol>
+                    </details>
                   ) : null}
                 </section>
               )

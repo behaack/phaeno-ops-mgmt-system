@@ -94,7 +94,7 @@
         "en-US": "Partner work"
       },
       "customer-relationship-management": {
-        "en-US": "Customer relationship management"
+        "en-US": "CRM"
       },
       "platform-operations": {
         "en-US": "Platform operations"
@@ -121,6 +121,9 @@
       },
       "troubleshooting": {
         "en-US": "Troubleshooting"
+      },
+      "how-to": {
+        "en-US": "How-to guide"
       }
     },
     "roles": {
@@ -142,12 +145,12 @@
       "slug": "trial-projects",
       "title": "Trial Projects",
       "summary": "Configure authorities and deliverables, approve scope, oversee samples and Lab work, release results, and close Trials.",
-      "order": 26,
-      "reviewedAt": "2026-10-11",
-      "navigationGroup": "trial-project",
+      "order": 42,
+      "reviewedAt": "2026-10-15",
+      "navigationGroup": "order-operations",
       "contentType": "guide",
       "topicIds": [
-        "trials"
+        "orders"
       ],
       "workflowIds": [
         "trial-projects"
@@ -163,7 +166,8 @@
       "applicableRoles": [],
       "relatedGuideIds": [],
       "publicationStatus": "published",
-      "sourcePath": "src/content/docs/phaeno/trial-projects.mdx"
+      "sourcePath": "src/content/docs/phaeno/trial-projects.mdx",
+      "parentSlug": "order-operations"
     },
     {
       "audience": "partner",
@@ -895,10 +899,10 @@
       "locale": null,
       "slug": "crm",
       "overviewTitle": "Overview and navigation",
-      "title": "Customer relationship management",
+      "title": "CRM",
       "summary": "Manage canonical Companies, Contacts, Leads, Opportunities, Portal access, Tasks, reporting, and data quality.",
       "order": 15,
-      "reviewedAt": "2026-10-03",
+      "reviewedAt": "2026-10-15",
       "navigationGroup": "customer-relationship-management",
       "contentType": "overview",
       "topicIds": [
@@ -911,7 +915,9 @@
         "Customer relationship management",
         "crm"
       ],
-      "aliases": [],
+      "aliases": [
+        "Customer relationship management"
+      ],
       "applicableRoles": [],
       "relatedGuideIds": [],
       "publicationStatus": "published",
@@ -1136,10 +1142,10 @@
       "audience": "phaeno",
       "locale": null,
       "slug": "organization-and-user-administration",
-      "title": "Company access and user administration",
+      "title": "POMS user administration",
       "summary": "Manage Company access and request completion, staged Department readiness, service entitlements, invitation recovery and membership lifecycle.",
-      "order": 25,
-      "reviewedAt": "2026-10-08",
+      "order": 12,
+      "reviewedAt": "2026-10-15",
       "navigationGroup": "platform-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1157,7 +1163,8 @@
         "2FA",
         "admin",
         "administrator",
-        "permissions"
+        "permissions",
+        "Company access and user administration"
       ],
       "applicableRoles": [],
       "relatedGuideIds": [],
@@ -1378,7 +1385,7 @@
       "title": "Customer lab authorization",
       "summary": "Start a Department Job, issue pricing, fulfill compatible kits, and authorize Lab work after exact sample and tube pairing.",
       "order": 41,
-      "reviewedAt": "2026-10-03",
+      "reviewedAt": "2026-10-15",
       "navigationGroup": "order-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1645,7 +1652,7 @@
       "title": "Service workflows, protocol control, and execution",
       "summary": "Author, review and present complete laboratory procedures; control exact revisions and record scientific execution.",
       "order": 54,
-      "reviewedAt": "2026-10-14",
+      "reviewedAt": "2026-10-15",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1910,6 +1917,107 @@
       ],
       "publicationStatus": "published",
       "sourcePath": "src/content/docs/en-US/partner/lab-services.mdx"
+    },
+    {
+      "audience": "phaeno",
+      "locale": null,
+      "slug": "how-to-place-customer-order",
+      "parentSlug": "order-operations",
+      "title": "How to place a Customer order",
+      "summary": "Enter Customer scope, save a Draft, submit for pricing and understand the quote/acceptance handoff.",
+      "order": 40.5,
+      "reviewedAt": "2026-10-15",
+      "navigationGroup": "order-operations",
+      "contentType": "how-to",
+      "topicIds": [
+        "orders"
+      ],
+      "workflowIds": [
+        "order-operations"
+      ],
+      "taskKeywords": [
+        "place an order",
+        "New Order",
+        "Customer order",
+        "save draft",
+        "Submit for pricing"
+      ],
+      "aliases": [],
+      "applicableRoles": [],
+      "relatedGuideIds": [
+        "phaeno/order-operations",
+        "phaeno/order-customer-lab-authorization"
+      ],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/phaeno/how-to-place-customer-order.mdx"
+    },
+    {
+      "audience": "phaeno",
+      "locale": null,
+      "slug": "how-to-configure-samples-shipping",
+      "parentSlug": "order-operations",
+      "title": "How to configure samples and shipping",
+      "summary": "Prepare Shipping procedures, Sample types, Kit specifications and a Default receiving destination.",
+      "order": 43,
+      "reviewedAt": "2026-10-15",
+      "navigationGroup": "order-operations",
+      "contentType": "how-to",
+      "topicIds": [
+        "shipping",
+        "configuration"
+      ],
+      "workflowIds": [
+        "order-operations"
+      ],
+      "taskKeywords": [
+        "sample configuration",
+        "shipping setup",
+        "minimum sample amount",
+        "kit specification",
+        "Default destination"
+      ],
+      "aliases": [],
+      "applicableRoles": [],
+      "relatedGuideIds": [
+        "phaeno/configuration-and-recovery",
+        "phaeno/lab-receipt-accession"
+      ],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/phaeno/how-to-configure-samples-shipping.mdx"
+    },
+    {
+      "audience": "phaeno",
+      "locale": null,
+      "slug": "how-to-lab-protocol",
+      "parentSlug": "lab-operations",
+      "title": "How to create and approve a lab protocol",
+      "summary": "Write ordered instructions, review the bench presentation and release a complete protocol revision.",
+      "order": 53.5,
+      "reviewedAt": "2026-10-15",
+      "navigationGroup": "laboratory-operations",
+      "contentType": "how-to",
+      "topicIds": [
+        "laboratory",
+        "configuration"
+      ],
+      "workflowIds": [
+        "lab-operations"
+      ],
+      "taskKeywords": [
+        "lab protocol",
+        "create protocol",
+        "approve protocol",
+        "instructions",
+        "SOP"
+      ],
+      "aliases": [],
+      "applicableRoles": [],
+      "relatedGuideIds": [
+        "phaeno/lab-protocol-execution",
+        "phaeno/lab-operations"
+      ],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/phaeno/how-to-lab-protocol.mdx"
     }
   ]
 }

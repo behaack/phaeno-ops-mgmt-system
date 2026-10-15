@@ -1,0 +1,70 @@
+# How to place a Customer order
+
+Use this guide when Phaeno is entering a paid laboratory order on behalf of a
+Customer. Work in the Phaeno organization with order-pricing access. For a no-charge
+evaluation, use [Trial Projects](/docs/phaeno/trial-projects) under Order operations.
+
+## Before you start
+
+Have the Customer's Company and owning Department, a unique Job name, the agreed
+service, Sample type, biological sources, sample counts, sequencing runs and handling
+requirements. A proposed price is optional and will be reviewed before a quote is
+issued. Customer setup may be incomplete while you save a Draft; pricing submission
+requires the Customer and Department to pass the readiness checks shown on screen.
+
+## 1. Identify the Customer and work
+
+Open **Order ops → Order intake → New Order**. This opens **New Customer order**.
+
+![Empty New Customer order form showing Customer, Department, Job name, Catalog service and Sample type.](/docs/phaeno/screenshots/customer-order-20261015.jpg "Illustrative empty form; no Customer has been selected.")
+
+1. **Customer:** search for and select the active Company. Review the readiness
+   panel that appears after selection. Setup links let an authorized administrator
+   complete missing setup without losing this form.
+2. **Department:** choose the Department that owns the Job. A sole available
+   Department is selected automatically; choose explicitly when there are several.
+3. **Job name:** enter a unique, Customer-safe name for this work.
+4. **Catalog service:** choose the service for the whole order. It is required
+   before pricing submission.
+5. **Sample type:** select the configured type that describes the material the
+   Customer will submit. This also supplies the default storage requirements.
+
+## 2. Enter scope and handling
+
+- Under **Order scope**, leave **Use phases** off for one delivery scope. Turn it
+  on only for agreed sequential delivery cohorts, then set the phase count.
+- For each scope or phase, enter every biological source and its sample count.
+  Use **Add source** for another source. Enter **Sequencing runs per sample**;
+  sample counts and run counts are different quantities.
+- If Sales discussed pricing, choose **Propose a price** and enter the proposed
+  prices. Additional sequencing runs are priced separately from the first run
+  included per sample. Review the displayed subtotal; a proposal is not a quote.
+- Complete **Safety declaration**. Use **Insert “No known hazards”** only when
+  that statement applies, and review the inserted text.
+- Use the Sample type's storage requirements, or select **Use different storage
+  requirements** and explain the exception. Add Customer-safe Job notes as needed.
+  Do not enter patient identifiers, individual sample IDs or tube barcodes here.
+
+## 3. Save, then submit for pricing
+
+Choose **Save draft** to retain incomplete work. Customer, Department and Job name
+are required to save. A Draft does not submit the order for pricing, expose it to
+the Customer or authorize laboratory work. Reopen it from intake and choose
+**Actions → Edit draft** to continue.
+
+When the scope is complete, review the summary and choose **Submit for pricing**.
+The portal rechecks configuration and Customer readiness. If submission is blocked,
+keep the saved Draft, follow the named setup or validation issue, then refresh
+readiness and review before trying again. A price proposal does not bypass pricing
+review or the independent quote controls.
+
+## What happens next
+
+The order enters pricing review. Follow its **Next step for Phaeno** to prepare
+and issue the quote. The authorized Customer administrator accepts separately.
+Acceptance, kit requests, sample entry and laboratory authorization are later
+workflow steps; submitting for pricing does not complete them.
+
+See [Order operations](/docs/phaeno/order-operations) for phase pricing and queue
+triage, and [Customer lab authorization](/docs/phaeno/order-customer-lab-authorization)
+for readiness, quote acceptance and additional scope.

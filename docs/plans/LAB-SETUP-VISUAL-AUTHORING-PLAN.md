@@ -175,3 +175,27 @@ view/paper selection, keyboard menu/focus behavior and canonical/previous-pin
 asset checks pass. API and compatible help corpus remain unchanged. A valid
 hosted screenshot is retained; the earlier local capture limitation does not
 qualify native print/PDF behavior. See the [release receipt](../operations/procedure-toolbar-test-release-20261015.md).
+
+## Protocol card summary — October 15, 2026
+
+The Owner identified the repeated Approved v1 / Version 1 / Approved labels as
+redundant. A protocol discovery card now shows the displayed revision and status
+once. Keep its administrator-override note and approval date visible as plain
+metadata, without a second bordered version panel. A pending Draft retains its
+own exact-revision link beside the approved summary. Other retained revisions
+remain available under a collapsed, keyboard-operable Revision history section,
+with exact links, statuses and approval evidence. Omit that section when empty.
+
+Keep the existing record-level Actions menu, permissions, lifecycle, audit,
+retirement and pinned scientific history. No model/API change is involved. The
+Phaeno guide was reviewed and its revision/history/draft instructions remain
+accurate, so the compatible help corpus stays unchanged. Adjust existing summary
+assertions to expect one status rather than the duplicate. TypeScript, scoped
+ESLint and documentation/whitespace checks pass. The actual local approved demo
+card has one badge, its exact revision link and approval evidence, without an
+empty history section. It has no page/card overflow at 390 CSS pixels; the viewport
+override is restored. A valid local screenshot is retained. Other revision/draft
+states are source-reviewed but not manually exercised because the local list has
+one single-revision protocol. Automated suites are not requested/run. These
+refinements remain local and uncommitted; the preceding receipt still identifies
+the hosted UI.

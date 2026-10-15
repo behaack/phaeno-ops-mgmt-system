@@ -1,5 +1,15 @@
 # Playwright E2E Test Plan
 
+## Remaining documentation release checkpoint — October 15, 2026
+
+All 12 cases in `documentation.spec.ts` pass across desktop Chromium and Pixel 5
+emulation. Coverage includes audience-specific navigation/denial, Phaeno guide
+ordering and topic groups, nested Trial Projects, three how-to cards, loaded
+illustration/callouts and their written equivalents. Sessions and API responses
+are deterministic fixtures; hosted signed-in rendering and matching API corpus
+activation are separate release checks. Earlier deferred-suite statements remain
+historical checkpoints.
+
 ## PSeq kit lots and standalone Partner submission — October 15, 2026
 
 `pseq-kit-lots.connected.spec.ts` passed **four scenarios** (two journeys in desktop Chromium and Pixel 5 emulation), launched by the opt-in backend browser host. Feature requests use real HTTP controllers, tenant checks, domain services, EF and disposable PostgreSQL, with synthetic identities/session presentation and scanner/byte storage. Verified standalone early entry with no request/files/use date, persistence after reload, mismatch retention, anonymous/Department rejection, actual-use expiry, saved-draft reuse/submission, stale recall rejection/refresh at analysis start and immutable revision/run assessments. Light/dark warnings, keyboard focus return, no document overflow and Axe checks passed. The existing intercepted-API Partner Kit preparation/interrupted-upload test also passed in desktop Chromium. See the [report and screenshots](../testing/runs/2026-10-15-pseq-kit-lots-verification.md). Live Clerk/provider/storage/scientific/physical acceptance and the separate staff lot-catalog UI remain outside this run.
@@ -4547,3 +4557,34 @@ the observed 1912 CSS-pixel viewport. A valid hosted screenshot is retained.
 Staged/canonical/previous-pin assets match, health/auth checks pass and the bounded
 UI error scan is empty. No automated suite, scientific write or native print was
 performed. See the [release receipt](../operations/procedure-toolbar-test-release-20261015.md).
+
+## Protocol summary redundancy — October 15, 2026
+
+Read-only local browser review verifies one Approved v1 badge, the exact revision
+link, retained administrator override/date and no empty history section on the
+single-revision demo. At 390 CSS pixels the page and card do not overflow; the
+viewport is restored. Pending-draft and other-revision disclosure paths remain
+unexercised in this fixture, and the automated E2E suite is not requested/run.
+No operational write, save or approval occurs. This is local evidence; the existing
+hosted release is unchanged. See the [owning plan](LAB-SETUP-VISUAL-AUTHORING-PLAN.md).
+
+## Illustrated Phaeno help — October 15, 2026
+
+The maintained documentation scenario now checks CRM, POMS user administration
+second, Trial Projects under Order operations, no separate Trial home card/topic
+and three how-to cards. A new scenario checks the real ordering screenshot loads,
+five numbered callouts render and the written workflow/caption remain available.
+Automated E2E is not requested/run; these are maintained regression expectations.
+
+Actual local browser review confirms all three illustrated guides load, expected
+5/3/3 markers, Enter-operated topic groups, Phaeno-to-Customer guide denial,
+light/dark rendering and 320/390 CSS-pixel reflow checks. Phone markers stay within
+the image. The original Light preference and temporary viewport override are
+restored. Empty forms and a fictional unsaved protocol supplied the captures;
+no Customer order, Sample type, protocol revision or approval was created.
+
+New-guide search currently reaches the existing corpus-version guard because the
+running service has the previous help version. Generated API/UI artifacts match;
+paired activation and index refresh are required before search acceptance can pass.
+No authentication/session permissions, runtime or hosted deployment are changed.
+See the [owning plan](PORTAL-DOCUMENTATION-SEARCH-PLAN.md).

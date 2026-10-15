@@ -21,8 +21,19 @@ Acceptance: account badges and controls stay in the top-right first row at
 desktop/phone widths; long identity/role text cannot displace them or overflow.
 Multiple-action triggers visibly say Actions with one dropdown indicator; sole
 actions keep their direct labels. Preserve light/dark themes and keyboard menu
-opening, Escape dismissal and focus return. Verification is pending. Automated
-suites remain request-only. This new presentation change is local until released.
+opening, Escape dismissal and focus return. Actual-component previews with
+fictional cached accounts pass 320px light, 390px dark and 1280px dark, including
+long names/roles, direct Edit/Reactivate, one menu chevron and focus return.
+Targeted lint, TypeScript and whitespace checks pass; no account mutation or
+automated suite is performed. Existing guides do not specify the ellipsis or
+card placement and remain correct. The Owner requested the frontend-only release
+under the [preserving plan](PORTAL-USER-CARD-TEST-RELEASE-20261014-PLAN.md).
+Source `0b0903cff9d714575e803511906b675f6e1dbd25` is live; see the
+[release receipt](../operations/portal-user-card-test-release-20261014.md).
+The existing-session version pin was corrected after the Owner reported old
+rendering despite refresh. The actual signed-in Edge tab now verifies the
+new first-row controls and Actions label. Account-write acceptance remains
+separate; the receipt records the version boundary and visual proof.
 
 ## October 14, 2026 - Place the code instruction beneath the control
 

@@ -9,6 +9,23 @@ import {
 } from './documentation-registry'
 
 describe('documentation registry', () => {
+  it('organizes Phaeno staff tasks without a standalone Trial home entry', () => {
+    const entries = getDocumentationEntries('phaeno')
+    expect(entries.filter(entry => !entry.parentSlug).slice(0, 3).map(entry => entry.title))
+      .toEqual(['Phaeno operations guide', 'POMS user administration', 'CRM'])
+    const trial = getDocumentationEntry('phaeno', 'trial-projects')!
+    expect(trial.parentSlug).toBe('order-operations')
+    expect(trial.topicIds).toContain('orders')
+    expect(trial.topicIds).not.toContain('trials')
+    const howTos = entries.filter(entry => entry.contentType === 'how-to')
+    expect(howTos.map(entry => entry.slug)).toEqual([
+      'how-to-place-customer-order', 'how-to-configure-samples-shipping', 'how-to-lab-protocol',
+    ])
+    expect(howTos.every(entry => entry.parentSlug)).toBe(true)
+    expect(getDocumentationEntry('prospect', 'trial-projects')?.topicIds).toContain('trials')
+    expect(getDocumentationEntry('customer', 'how-to-place-customer-order')).toBeUndefined()
+  })
+
   it('provides ordered maintained guides for each supported audience', () => {
     for (const audience of documentationAudienceKeys) {
       const entries = getDocumentationEntries(audience)
@@ -16,10 +33,10 @@ describe('documentation registry', () => {
       expect(entries.map((entry) => entry.order)).toEqual([
         ...(audience === 'phaeno'
           ? [
-              10, 15, 16, 17, 18, 19, 20, 21, 22, 25, 26,
+              10, 12, 15, 16, 17, 18, 19, 20, 21, 22,
               30, 31, 32, 33, 34,
-              40, 41, 44, 45, 46,
-              50, 51, 52, 53, 54, 55, 56, 57, 58,
+              40, 40.5, 41, 42, 43, 44, 45, 46,
+              50, 51, 52, 53, 53.5, 54, 55, 56, 57, 58,
               60, 70,
             ]
           : audience === 'prospect'
