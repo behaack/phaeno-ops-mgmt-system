@@ -76,3 +76,13 @@ screenshots were discarded; do not present them as visual evidence. Native PDF,
 touch, 200% zoom, assistive-technology and physical/scientific acceptance remain
 separate from this release. Scan bounded hosted UI errors and verify the API/source
 identity and deployment holds are unchanged after promotion.
+
+## Completed release
+
+Source `010109b837b2db21192574bd17126091e928a2eb` is pushed and live as
+`dpl_4vQvdkHuFwKzQsyjhdZPFhssEewL`. The staged production build was promoted
+without rebuilding. Canonical alias, clean/previous-pin assets, health and
+anonymous authorization pass. The actual signed-in browser shows the separated
+Actions area, matching source, view/paper selection and keyboard focus return;
+a valid hosted screenshot is retained. API/help corpus and deployment holds
+remain unchanged. See the [completion receipt](../operations/procedure-toolbar-test-release-20261015.md).

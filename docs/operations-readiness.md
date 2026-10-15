@@ -1,5 +1,18 @@
 # Operations and production-readiness boundary
 
+## Procedure toolbar hosted-test UI release — completed October 15, 2026
+
+Portal UI source `010109b837b2db21192574bd17126091e928a2eb` is live as
+`dpl_4vQvdkHuFwKzQsyjhdZPFhssEewL` under the
+[preserving UI-only plan](plans/PROCEDURE-TOOLBAR-TEST-RELEASE-20261015-PLAN.md).
+Revision, Presentation and Paper size are grouped; procedure Actions has its own
+area and divider. The exact staged production build was promoted. Canonical and
+previous-pin assets, health/auth, actual signed-in view/paper/menu/focus checks and
+the bounded UI error scan pass. A valid hosted screenshot is retained. API/help
+corpus, database, files and release holds remain unchanged; native print and
+scientific/business acceptance remain separate. See the
+[release receipt](operations/procedure-toolbar-test-release-20261015.md).
+
 ## Lab procedure authoring hosted-test release — completed October 14, 2026
 
 API/UI source `573843a1e3cb40bbc207c865aace4c8d7debf727` is live under the

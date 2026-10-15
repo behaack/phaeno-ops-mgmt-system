@@ -168,3 +168,10 @@ Owner subsequently authorized commit, push and UI deployment. The
 [UI-only preserving release plan](PROCEDURE-TOOLBAR-TEST-RELEASE-20261015-PLAN.md)
 owns exact-source staging, promotion, rollback and hosted verification. Unrelated
 user-card edits are preserved and excluded from the release.
+
+Toolbar source `010109b837b2db21192574bd17126091e928a2eb` is now live as UI
+`dpl_4vQvdkHuFwKzQsyjhdZPFhssEewL`. Actual signed-in hosted rendering,
+view/paper selection, keyboard menu/focus behavior and canonical/previous-pin
+asset checks pass. API and compatible help corpus remain unchanged. A valid
+hosted screenshot is retained; the earlier local capture limitation does not
+qualify native print/PDF behavior. See the [release receipt](../operations/procedure-toolbar-test-release-20261015.md).

@@ -4533,3 +4533,12 @@ No scientific save, approval or print is performed. Typecheck, scoped lint,
 production build and documentation checks pass; automated suites are not run for
 this layout-only request. Screenshot capture is unreliable and no invalid capture
 is retained as acceptance evidence. See the [owning plan](LAB-SETUP-VISUAL-AUTHORING-PLAN.md).
+
+Hosted UI source `010109b8`, deployment `dpl_4vQvdkHuFwKzQsyjhdZPFhssEewL`,
+also passes actual signed-in overview/bench and Letter/A4 selection, Arrow Down
+menu opening and Escape focus return. Three selects and Actions share a 32-pixel
+baseline; Actions has its own divider and the page has no horizontal overflow at
+the observed 1912 CSS-pixel viewport. A valid hosted screenshot is retained.
+Staged/canonical/previous-pin assets match, health/auth checks pass and the bounded
+UI error scan is empty. No automated suite, scientific write or native print was
+performed. See the [release receipt](../operations/procedure-toolbar-test-release-20261015.md).
