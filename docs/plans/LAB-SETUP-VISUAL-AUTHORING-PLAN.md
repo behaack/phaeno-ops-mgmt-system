@@ -103,19 +103,19 @@ The two new tables and kit occurrence column are included in the complete ERD.
 
 ## Progress
 
-Local implementation and preserving migration are complete. Backend build,
-frontend build/typecheck/lint, documentation and EF model checks passed. Focused
-regression sources are added/updated; suites were not run. The authenticated local
-browser saved/reopened an explicitly fictional unapproved kit Draft and verified
-copy ownership, ordering, contexts, revision navigation, confirmation/focus and
-narrow/theme behavior. See the [implementation checkpoint](../operations/lab-setup-authoring-local-checkpoint-20261014.md)
-for exact preservation evidence and remaining acceptance.
+Implementation, review and the preserving hosted-test API/UI release are complete
+at source `573843a1e3cb40bbc207c865aace4c8d7debf727`. The paired help corpus is
+`1d0e7cb954a3`. Builds, typecheck/lint/docs and focused regressions pass. See the
+[release receipt](../operations/lab-authoring-hosted-test-release-20261014.md)
+for exact deployment/recovery identities, full-record preservation and actual
+signed-in browser evidence. The [local checkpoint](../operations/lab-setup-authoring-local-checkpoint-20261014.md)
+retains the earlier populated-history and fictional-authoring evidence.
 
-Authenticated illustration upload/read is pending because the browser extension's
-file-access permission is disabled. Browser-native PDF pagination/export, touch,
-200% zoom and complete assistive-technology acceptance remain unqualified. No Git
-publication or hosted deployment/migration was performed. These acceptance limits
-do not authorize changing browser permissions or existing release holds.
+Authenticated illustration upload/read is pending because browser file access
+is disabled. Native PDF pagination/export, touch, 200% zoom and full assistive
+technology qualification remain open. Release controls and the existing S3
+recovery deferral are preserved. Physical/scientific and business acceptance are
+separate from the completed software release.
 
 ## Review and authorized release follow-up
 

@@ -43,8 +43,67 @@ privately. Retain the existing S3 recovery deferral and Local bytes.
 
 ## Release evidence
 
-Publication/deployment identities and post-conversion preservation results are
-recorded here after each gate completes. A staged build alone is not a live release.
+Release source `573843a1e3cb40bbc207c865aace4c8d7debf727` was committed and
+pushed to main, with ordinary remote equality verified. The committed archive
+SHA-256 is `1c34bfd81d3d92c4471c213ec90a8368239da7f7e8af63160d999eb6457e4475`.
+Unrelated user-card documentation edits were excluded.
+
+API [deployment run 38668224349](https://github.com/behaack/phaeno-ops-mgmt-system/actions/runs/38668224349)
+succeeds with preserving migration enabled. Running image is
+`phaeno-portal-green-api:sha-573843a1e3cb-run-38668224349-1`, image identity
+`sha256:daa9700c9dcf81ad1af39732bbe1ee87c70385e070eda5003da4307f8ff3d17d`.
+Migration `20261014234438_ProtocolFirstLabProcedures` is applied. The old API
+paused at 01:59:19 UTC on October 15; the successful deployment manifest is
+01:59:40 UTC, approximately 21 seconds later.
+
+The custom-format recovery dump passed isolated restore rehearsal and cleanup
+before migration. Encrypted dump/key checksums pass on-server and after transfer
+to the owner-only local recovery folder. Recovery basename is
+`pre-migration-20261015T015919Z-573843a1e3cb`; encrypted dump SHA-256 is
+`28546df1aeeb58dfa1e1a0b692c7d7a99d32b9bee37290b655eba2a7eb81f5eb`.
+The private runtime archive checksum also passes. Recovery material is retained;
+no live destructive restore was performed.
+
+Post-conversion inventory has 245 table/metadata entries versus 243 before the
+migration. All 242 unaffected entries match exactly; only the expected kit
+workflow JSON conversion differs. One original approved kit revision is archived
+and its content/order/source identity verifies. There were no hosted kit runs or
+step records to convert; populated execution preservation was checked locally.
+Both Website intake full-record fingerprints match, preserving all 12 contacts
+and 6 demo requests. Approval/metadata fingerprints match. No reset, data deletion
+or hosted operational fixture was used. S3 selection and the existing recovery
+deferral remain unchanged; no illustration asset was created during smoke checks.
+
+Frontend `dpl_72xTuemmuELHyQeujcZhJPqU9KDy` is ready at that same source and
+promoted without rebuilding. Independent alias lookup confirms
+[portal.phaenobiotech.com](https://portal.phaenobiotech.com/lab-configuration)
+points to this deployment. Staged/live/previous-pin requests all load
+`/assets/index-DvWyiS2c.js`. Existing skew protection remains enabled; its version
+boundary advances from `1792010639159` to `1792029304727`, the exact staged
+build creation time, to retire older UI routing pins after the model cutover.
+
+The deployed API help corpus SHA-256 equals the committed file:
+`ac4c3d5bdce4ff3981789db7f5a5b7bcab221b53056a95e954be024e579a6527`.
+Portal, Lab Settings, help, Website and API health return 200; database ping is
+204. Direct protected illustration and proxied work-attention reads return 401
+when anonymous. Protected staging also passes 200/200/401 page/health/auth checks.
+The bounded deployment-scoped frontend error scan (30 minutes, at most 25 records)
+is empty; the newly running API has no error-level log entries in the checked
+10-minute window.
+
+The actual signed-in hosted browser reloads the new entry and shows Protocols,
+Workflows and Historical Lab steps. The retained approved mock kit revision opens
+in overview/bench presentation with exact revision/source attribution, and its
+editor loads the retained instruction without a save or approval. It returns to
+the read-only view. Screenshot evidence is retained privately as
+`hosted-lab-procedure-bench.jpg`. No authentication/session reset or browser
+permission change occurred.
+
+Deploy Portal Green is restored to `disabled_manually`. Both Portal and Website
+Vercel Git deployment holds remain false. The source deployment is complete;
+this receipt is published separately without rebuilding unchanged application
+code. Existing provider, storage, identity and commercial-activation boundaries
+remain in force.
 
 ## Remaining acceptance
 

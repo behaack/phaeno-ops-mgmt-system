@@ -86,3 +86,13 @@ The browser extension blocks local-file upload; its permissions are not changed.
 Record exact release, backup, migration, deployment and verification identities in
 the completion receipt. Physical/scientific and final business acceptance remain
 separate from this hosted-test software release.
+
+## Completed release
+
+Source `573843a1e3cb40bbc207c865aace4c8d7debf727` is live in both API run
+`38668224349` and frontend `dpl_72xTuemmuELHyQeujcZhJPqU9KDy`. The isolated
+restore rehearsal, encrypted/off-server checksum checks, preserving migration,
+242 unaffected inventory comparisons, Website full-content checks and actual
+signed-in procedure rendering pass. The API pause was approximately 21 seconds.
+Release controls are restored. See the [completion receipt](../operations/lab-authoring-hosted-test-release-20261014.md)
+for exact evidence and remaining qualification gates.

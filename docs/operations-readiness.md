@@ -1,5 +1,19 @@
 # Operations and production-readiness boundary
 
+## Lab procedure authoring hosted-test release — completed October 14, 2026
+
+API/UI source `573843a1e3cb40bbc207c865aace4c8d7debf727` is live under the
+[preserving release plan](plans/LAB-AUTHORING-HOSTED-TEST-RELEASE-20261014-PLAN.md).
+API run `38668224349`, frontend `dpl_72xTuemmuELHyQeujcZhJPqU9KDy` and the
+preserving procedure migration pass. Isolated recovery rehearsal and encrypted
+checksums pass; 242 unaffected table/metadata entries and all 12 Website contacts
+and 6 demo requests retain identical full-record fingerprints. The approximately
+21-second API pause prevents old-model writers during conversion. Signed-in
+procedure/bench/editor reads, source/pin routing, health/auth and error checks pass.
+Release holds are restored; S3 recovery deferral and file/PDF, physical/scientific
+and business qualification remain explicit. See the
+[release receipt](operations/lab-authoring-hosted-test-release-20261014.md).
+
 ## Sequenced-sample DPS hosted-test activation — completed October 14, 2026
 
 Matched API/UI/help source `10e0dc9e5c6b0b739fd7efd3d570451e7194cbad` is live
