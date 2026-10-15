@@ -1,5 +1,21 @@
 # Operations and production-readiness boundary
 
+## PSeq kit lots and remaining UI — completed October 15, 2026
+
+Final API/UI source `8c4ec7d73560b3062bf87b45d7d757ffa86e223b` is live at the
+existing hosted test environment. API runs `38821018032` and `38821899163` pass;
+the first applies the guarded additive lot migration, and the second activates
+the matching 59-guide help corpus without another migration. Current frontend is
+`dpl_E57hvRrJB1WeTWmVHGBSDZopLeZd`. All 242 baseline application tables and all
+12 Mailing-list/six Demo-request records preserve their full-row fingerprints.
+Isolated backup restore, encrypted off-server recovery checks, active help index,
+canonical/prior-pin assets, health/authorization and bounded error checks pass.
+The available hosted browser is signed out; authenticated hosted mutations/search
+and scientific/physical acceptance remain separate. Manual and Vercel Git holds
+are restored/preserved, with the existing S3 recovery deferral unchanged. See the
+[release receipt](operations/pseq-kit-lots-test-release-20261015.md) and
+[preserving plan](plans/PSEQ-KIT-LOT-HOSTED-TEST-RELEASE-20261015-PLAN.md).
+
 ## Procedure toolbar hosted-test UI release — completed October 15, 2026
 
 Portal UI source `010109b837b2db21192574bd17126091e928a2eb` is live as

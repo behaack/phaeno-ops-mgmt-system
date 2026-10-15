@@ -199,3 +199,9 @@ states are source-reviewed but not manually exercised because the local list has
 one single-revision protocol. Automated suites are not requested/run. These
 refinements remain local and uncommitted; the preceding receipt still identifies
 the hosted UI.
+
+The Owner subsequently requested committing/pushing the remaining changes and
+redeploying the UI. The two protocol-list component cases pass within the
+eight-case documentation/protocol batch. The summary refinement is now deployed
+from `8c4ec7d73560`; exact-source identity and preserving release checks are in the
+[completion receipt](../operations/pseq-kit-lots-test-release-20261015.md).

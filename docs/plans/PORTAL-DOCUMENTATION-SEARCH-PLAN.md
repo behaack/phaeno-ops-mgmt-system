@@ -85,6 +85,13 @@ requires the generated API corpus and UI to ship together, with no further
 migration, before matching-version search is accepted. The prior no-suite and
 uncommitted statements describe the initial local checkpoint.
 
+The matched final source `8c4ec7d73560` is now deployed. Packaged corpus and active
+Lucene generation both contain the final 59-guide hash; index publication passes.
+Canonical/prior-pin UI assets and illustration bytes match staging. Authenticated
+hosted search remains unexercised because the available browser is signed out;
+no guard bypass is used. See the
+[completion receipt](../operations/pseq-kit-lots-test-release-20261015.md).
+
 ## September 9 navigation refinement
 
 The Product Owner requested moving Docs into the user dropdown for every user

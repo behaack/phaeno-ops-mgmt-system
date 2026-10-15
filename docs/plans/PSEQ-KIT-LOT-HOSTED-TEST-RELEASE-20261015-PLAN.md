@@ -69,3 +69,16 @@ after this final matched deployment.
 The isolated staged source excludes the concurrent illustrated guides and Lab summary changes. Its matched API/UI help has 56 published guides, corpus `1570388119bb`; the earlier 59-guide working-tree verification remains recorded separately. The isolated Release API build has zero warnings/errors; frontend type checking, 25 relevant component tests and production client/server build pass. The staged lot-related hunks are checked independently of the remaining working-tree changes.
 
 Hosted preflight confirms latest migration `20261014234438_ProtocolFirstLabProcedures`, no affected kit history, unchanged Website counts and full-record fingerprints, no managed/configuration file references and an empty retained Local volume. Private runtime/Local archives pass content comparison, encryption round trip and matching off-server checksums. The protected deployment still must perform its fresh database recovery rehearsal under the API pause before applying the one pending lot migration.
+
+## Completed release
+
+Both API releases passed. The lot migration, isolated database restore rehearsal,
+encrypted off-server recovery, all 242 baseline table fingerprints and Website
+full contents are verified. Final API/UI source is `8c4ec7d73560`, frontend
+`dpl_E57hvRrJB1WeTWmVHGBSDZopLeZd`. The packaged 59-guide corpus and active index
+match. Canonical and old-pin assets, guide-image bytes, health and authorization
+checks pass. The available hosted browser is signed out; no hosted operational
+fixtures or authenticated mutation/search acceptance is claimed. All release
+holds and the S3 recovery deferral are preserved. Exact identities, checks and
+remaining acceptance boundaries are in the
+[completion receipt](../operations/pseq-kit-lots-test-release-20261015.md).

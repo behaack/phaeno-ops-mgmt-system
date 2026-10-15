@@ -80,3 +80,10 @@ Required behavior covered by the authored cases or pending connected acceptance:
 - Documentation generation/consistency: passed, 59 guides, corpus `50b53bdc8aa1`. Owning/test plans and Partner help updated. The previously verified migration/ERD remain unchanged.
 - Synthetic identities/session presentation, file scanning/storage, physical/scientific/provider work and live Clerk authentication are explicitly distinguished in the [verification report](../testing/runs/2026-10-15-pseq-kit-lots-verification.md). Staff lot-catalog UI acceptance is outside this browser run.
 - Disposable verification databases were removed. The configured application database and Website intake received no operational fixtures. No staging, commit, push, hosted migration or deployment was performed; unrelated workspace changes were preserved.
+
+The Owner subsequently authorized publication and preserving hosted-test
+deployment, then expanded the final UI to include all remaining changes. The
+guarded additive migration and matched final API/UI are now deployed, with all
+baseline data preserved and release holds restored. See the
+[completion receipt](../operations/pseq-kit-lots-test-release-20261015.md). The
+local-only statements above describe the earlier verification checkpoint.
