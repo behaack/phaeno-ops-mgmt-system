@@ -382,6 +382,7 @@ public sealed class ReagentShipment : IAudit, IConcurrency
 
 public sealed class ReagentShipmentLine
 {
+    public Guid KitLotId { get; private set; }
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid ReagentShipmentId { get; private set; }
     public Guid PartnerReagentOrderLineId { get; private set; }
@@ -390,9 +391,11 @@ public sealed class ReagentShipmentLine
     public DateTime? ExpiresAt { get; private set; }
 
     private ReagentShipmentLine() { }
-    public ReagentShipmentLine(Guid shipmentId, Guid orderLineId, decimal quantity, string lotBatchNumber, DateTime? expiresAt)
+    public ReagentShipmentLine(Guid shipmentId, Guid orderLineId, decimal quantity, string lotBatchNumber, DateTime? expiresAt, Guid kitLotId)
     {
         if (quantity <= 0) throw new ArgumentOutOfRangeException(nameof(quantity));
+        if (kitLotId == Guid.Empty) throw new ArgumentException("A registered kit lot is required.");
+        KitLotId = kitLotId;
         ReagentShipmentId = shipmentId;
         PartnerReagentOrderLineId = orderLineId;
         Quantity = quantity;

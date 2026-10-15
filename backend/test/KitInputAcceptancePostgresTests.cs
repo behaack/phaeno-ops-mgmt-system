@@ -59,17 +59,17 @@ public sealed partial class KitBundlePostgresTests
 
         var manifest = JsonSerializer.Serialize(new { files = new[] { new { id = first.Id }, new { id = second.Id } } });
         Assert.Equal("assembly_metadata_required", (await Assert.ThrowsAsync<OrderManagementException>(() =>
-            scope.Assembly().Submit(draft.Id, new(draft.Version, manifest), default))).ErrorCode);
+            scope.Assembly().Submit(draft.Id, new(draft.Version, manifest, KitLotVersion: 1), default))).ErrorCode);
         await AssertNoSubmission(scope, draft.Id);
         draft = await scope.Assembly().Update(draft.Id, new(draft.AssemblyProfileId, draft.ProjectReference,
             "{\"reference\":\"SIMULATED-ONLY\"}", draft.RequestedOutput, null, false, draft.Version), default);
         Assert.Equal("assembly_action_not_allowed", (await Assert.ThrowsAsync<OrderManagementException>(() =>
-            scope.Assembly().Submit(draft.Id, new(draft.Version, manifest), default))).ErrorCode);
+            scope.Assembly().Submit(draft.Id, new(draft.Version, manifest, KitLotVersion: 1), default))).ErrorCode);
         await AssertNoSubmission(scope, draft.Id);
         draft = await scope.Assembly().Update(draft.Id, new(draft.AssemblyProfileId, draft.ProjectReference,
             draft.MetadataJson, draft.RequestedOutput, null, true, draft.Version), default);
         Assert.Equal("assembly_manifest_invalid", (await Assert.ThrowsAsync<OrderManagementException>(() =>
-            scope.Assembly().Submit(draft.Id, new(draft.Version, "{\"files\":[]}"), default))).ErrorCode);
+            scope.Assembly().Submit(draft.Id, new(draft.Version, "{\"files\":[]}", KitLotVersion: 1), default))).ErrorCode);
         await AssertNoSubmission(scope, draft.Id);
 
         // Later catalog edits cannot replace the scope purchased for this case.
@@ -77,7 +77,7 @@ public sealed partial class KitBundlePostgresTests
         profile.Update("Changed catalog", "Different instructions", "{\"required\":[\"newField\"]}", "[\".txt\"]", "{}", 1, 1, false, false);
         await scope.Db.SaveChangesAsync();
         var submitKey = Guid.NewGuid().ToString();
-        var submit = new AssemblySubmitRequest(draft.Version, manifest);
+        var submit = new AssemblySubmitRequest(draft.Version, manifest, KitLotVersion: 1);
         var submitted = await scope.Assembly(submitKey).Submit(draft.Id, submit, default);
         var replay = await scope.Assembly(submitKey).Submit(draft.Id, submit, default);
         Assert.Equal(submitted.Version, replay.Version);
@@ -119,7 +119,7 @@ public sealed partial class KitBundlePostgresTests
             Assert.Equal(status.ToString(), file.ScanStatus);
             var manifest = JsonSerializer.Serialize(new { files = new[] { new { id = file.Id } } });
             Assert.Equal("assembly_input_not_clean", (await Assert.ThrowsAsync<OrderManagementException>(() =>
-                scope.Assembly().Submit(draft.Id, new(draft.Version, manifest), default))).ErrorCode);
+                scope.Assembly().Submit(draft.Id, new(draft.Version, manifest, KitLotVersion: 1), default))).ErrorCode);
             await AssertNoSubmission(scope, draft.Id);
             await scope.Assembly().DeleteInput(draft.Id, file.Id, file.Version, default);
         }
@@ -144,7 +144,7 @@ public sealed partial class KitBundlePostgresTests
         Assert.Equal("included_case_unavailable", (await Assert.ThrowsAsync<OrderManagementException>(() =>
             scope.Assembly().Update(draft.Id, new(draft.AssemblyProfileId, "Late change", "{}", draft.RequestedOutput, null, true, draft.Version), default))).ErrorCode);
         Assert.Equal("included_case_unavailable", (await Assert.ThrowsAsync<OrderManagementException>(() =>
-            scope.Assembly().Submit(draft.Id, new(draft.Version, JsonSerializer.Serialize(new { files = new[] { new { id = file.Id } } })), default))).ErrorCode);
+            scope.Assembly().Submit(draft.Id, new(draft.Version, JsonSerializer.Serialize(new { files = new[] { new { id = file.Id } } }), KitLotVersion: 1), default))).ErrorCode);
         await AssertNoSubmission(scope, draft.Id);
         Assert.Single(storage.Files);
         Assert.Equal(draft.ProjectReference, (await scope.Assembly().Get(draft.Id, default)).ProjectReference);

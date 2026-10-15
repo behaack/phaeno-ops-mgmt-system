@@ -1,7 +1,7 @@
 // Isolated UI fixture: every API call is intercepted by the companion browser test.
 // This exercises signed-in rendering, not Clerk authentication or production data.
 import { createRoot } from 'react-dom/client'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query'
 import {
   createRootRoute,
   createRoute,
@@ -17,7 +17,7 @@ import {
 } from '../../src/features/auth/session-context'
 import { noSessionCapabilities } from '../../src/test-helpers/session'
 import {
-  bundleIds,
+  bundleIds as staticBundleIds,
   bundleKitOrder,
   bundleTiming,
   bundleConfiguration,
@@ -31,12 +31,20 @@ import { ReagentConfigurationPanel } from '../../src/features/orders/configurati
 import { LabServiceTimingPanel } from '../../src/features/orders/LabServiceTimingPanel'
 import { KitAssemblyCasesPanel } from '../../src/features/orders/KitAssemblyCasesPanel'
 import { applyThemeMode } from '../../src/components/theme-mode'
+import { AssemblyOperationsPanel } from '../../src/features/orders/operations/AssemblyOperationsPanel'
+import { getLabManufacturingOrder } from '../../src/api/lab-operations'
+import type { DataAssemblyRequest } from '../../src/api/order-management'
 import '../../src/styles.css'
 
 applyThemeMode('auto')
 const screen =
   new URLSearchParams(window.location.search).get('screen') ?? 'lab'
-const staff = screen === 'staff' || screen === 'configuration'
+// Only the connected test supplies runtime fixture identities. Feature API calls
+// in that test are forwarded to the isolated real HTTP/PostgreSQL host.
+const connected = new URLSearchParams(window.location.search).has('connected')
+const runtime: Partial<typeof staticBundleIds> = connected ? await (await fetch('/api/verification/bootstrap')).json() : {}
+const bundleIds = { ...staticBundleIds, ...runtime }
+const staff = screen === 'staff' || screen === 'configuration' || screen === 'assembly-staff'
 const partner = screen === 'kit' || screen === 'partner-lab'
 configureApiAuth({
   getSelectedOrganizationId: () => bundleIds.organization,
@@ -132,12 +140,12 @@ const assemblyNew = createRoute({
 const assembly = createRoute({
   getParentRoute: () => root,
   path: '/data-assembly/$requestId',
-  component: () => <DataAssemblyDetailPage requestId={bundleIds.request} />,
+  component: () => <DataAssemblyDetailPage requestId={assembly.useParams().requestId} />,
 })
 const assemblyEdit = createRoute({
   getParentRoute: () => root,
   path: '/data-assembly/$requestId/edit',
-  component: () => <DataAssemblyCreatePage requestId={bundleIds.request} />,
+  component: () => <DataAssemblyCreatePage requestId={assemblyEdit.useParams().requestId} />,
 })
 const config = createRoute({
   getParentRoute: () => root,
@@ -167,7 +175,7 @@ const operations = createRoute({
         timing={bundleTiming}
         staff
       />
-      <KitAssemblyCasesPanel order={bundleKitOrder} staff />
+      {screen === 'assembly-staff' ? <ConnectedAssemblyOperations /> : <KitAssemblyCasesPanel order={bundleKitOrder} staff />}
     </main>
   ),
 })
@@ -176,7 +184,7 @@ const path =
     ? `/reagent-orders/${bundleIds.order}`
     : screen === 'configuration'
       ? '/configuration'
-      : screen === 'staff'
+      : screen === 'staff' || screen === 'assembly-staff'
         ? '/operations'
         : `/lab-services/${bundleIds.order}`
 const router = createRouter({
@@ -207,3 +215,8 @@ createRoot(document.getElementById('root')!).render(
     </PhaenoSessionContext.Provider>
   </QueryClientProvider>,
 )
+
+function ConnectedAssemblyOperations() {
+  const request = useQuery({ queryKey: ['connected-assembly', bundleIds.request], queryFn: async () => await getLabManufacturingOrder('assembly', bundleIds.request) as DataAssemblyRequest })
+  return request.data ? <AssemblyOperationsPanel request={request.data} onSaved={async () => { await request.refetch() }} /> : <p role="status">Loading assembly execution…</p>
+}

@@ -29,3 +29,11 @@ An output release is immutable and identifies:
 - the quality-review and approval facts.
 
 Approve a new release rather than replacing a prior release. Included outputs use the original Kit shipment commercial source; they create no second invoice, commercial source or sale. Historical standalone output approval retains its original accounting-source step. Both apply the appropriate recorded balance or Partner assembly-credit gate. Credit-approved work can be released under Net 30; work without approved credit remains on payment hold because manual payment confirmation is not yet implemented.
+
+## Check kit lots before analysis
+
+For included PSeq Kit requests, review **Kit lot check before analysis** first. Partners may have saved the lot before preparing or sequencing libraries, independently of the assembly workflow. The request reuses that saved entry and requires the actual kit-use date before input submission.
+
+Review the lot number, actual use date, labeled expiration, current recall status and any expiration warning. Expiry is assessed on the use date, with the labeled expiration day included. A missing expiration is explicitly unknown. Both recall and expiry warnings appear when applicable. Existing scientific intake review remains responsible for deciding how to handle affected data.
+
+Starting processing requires lot and use-date evidence in the exact submitted input revision. POMS checks the current lot again before recording the run. If a recall decision changes during review, refresh the work record and review the latest warnings before starting. Submission warnings are frozen with the input revision; the run separately records the lot assessment at analysis start. A replacement kit does not rewrite the prior revision's physical-kit evidence.

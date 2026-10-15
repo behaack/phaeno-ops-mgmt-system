@@ -64,9 +64,11 @@ public sealed partial class KitBundlePostgresTests
         var placed = await scope.PlaceOrder(3);
         var accepted = await scope.Platform().Accept(placed.Id, new(placed.Version), default);
         var firstAt = DateTime.UtcNow.AddDays(-2); firstAt = firstAt.AddTicks(-(firstAt.Ticks % 10));
-        var expiry = firstAt.AddMonths(2);
+        var expiry = firstAt.AddMonths(2).Date;
+        await scope.RegisterLot("LOT-FIRST", expiry);
+        await scope.RegisterLot("LOT-SECOND");
         var firstRequest = new CreateShipmentRequest(accepted.Version, "Fixture carrier", null, "FIRST", firstAt,
-            [new(Assert.Single(accepted.Lines).Id, 1, "LOT-FIRST", expiry)]);
+            [new(Assert.Single(accepted.Lines).Id, 1, "LOT-FIRST")]);
         var shipmentKey = Guid.NewGuid().ToString();
         var first = await scope.Platform(shipmentKey).CreateShipment(placed.Id, firstRequest, default);
         await scope.Platform(shipmentKey).CreateShipment(placed.Id, firstRequest, default);
@@ -74,7 +76,7 @@ public sealed partial class KitBundlePostgresTests
         Assert.Equal(1, first.KitUnits!.Count(x => x.Status == "Shipped"));
         var secondAt = firstAt.AddDays(1);
         var second = await scope.Platform().CreateShipment(placed.Id, new(first.Version, "Fixture carrier", null, "SECOND", secondAt,
-            [new(Assert.Single(first.Lines).Id, 2, "LOT-SECOND", null)]), default);
+            [new(Assert.Single(first.Lines).Id, 2, "LOT-SECOND")]), default);
         var fulfilled = await scope.Platform().Fulfill(placed.Id, new(second.Version), default);
         Assert.Equal("KitFulfilledAssemblyPending", fulfilled.Status);
         var cases = await scope.Db.KitAssemblyCases.AsNoTracking().Where(x => x.PartnerReagentOrderId == placed.Id).ToListAsync();
@@ -109,23 +111,25 @@ public sealed partial class KitBundlePostgresTests
             scope.Assembly(key).PrepareIncludedCase(Guid.NewGuid(), included.Id, start, default))).StatusCode);
         Assert.DoesNotContain("Attempted different outputs", draft.RequestedOutput);
         var input = await scope.AddFile(draft.Id, null, OperationalFilePurpose.AssemblyInput);
-        var submitted = await scope.Assembly().Submit(draft.Id, new(draft.Version, JsonSerializer.Serialize(new { files = new[] { new { id = input.Id } } })), default);
+        var submitted = await scope.Assembly().Submit(draft.Id, new(draft.Version, JsonSerializer.Serialize(new { files = new[] { new { id = input.Id } } }), KitLotVersion: 1), default);
         var validating = await scope.Scientific().BeginIntake(draft.Id, new(submitted.Version), default);
         var changes = await scope.Scientific().RequestChanges(draft.Id, new(validating.Version, "Replace affected inputs", null), default);
         var currentOrder = await scope.Platform().Get(order.Id, default);
         var currentCase = Assert.Single(currentOrder.AssemblyCases!);
+        await scope.RegisterLot("REPLACEMENT");
         var replaced = await scope.Platform().ReplaceKit(order.Id, included.Id,
-            new(currentCase.Version, "Synthetic damaged Kit replacement", "REPLACEMENT", null, DateTime.UtcNow, "Fixture carrier", "REPLACE"), default);
+            new(currentCase.Version, "Synthetic damaged Kit replacement", "REPLACEMENT", DateTime.UtcNow, "Fixture carrier", "REPLACE"), default);
         var replacement = Assert.Single(replaced.AssemblyCases!).CurrentKitUnitId;
         Assert.NotEqual(original, replacement);
-        var again = await scope.Assembly().Submit(draft.Id, new(changes.Version, JsonSerializer.Serialize(new { files = new[] { new { id = input.Id } } })), default);
+        await scope.SubmitLot(replaced, DateOnly.FromDateTime(DateTime.UtcNow));
+        var again = await scope.Assembly().Submit(draft.Id, new(changes.Version, JsonSerializer.Serialize(new { files = new[] { new { id = input.Id } } }), KitLotVersion: 1), default);
         var revisions = await scope.Db.AssemblyInputRevisions.AsNoTracking().Where(x => x.DataAssemblyRequestId == draft.Id).OrderBy(x => x.Revision).ToListAsync();
         Assert.Equal(2, revisions.Count); Assert.Equal(original, revisions[0].KitUnitId); Assert.Equal(replacement, revisions[1].KitUnitId);
         Assert.Equal(revisions[0].Id, revisions[1].PreviousRevisionId);
         var intake = await scope.Scientific().BeginIntake(draft.Id, new(again.Version), default);
         var queued = await scope.Scientific().AcceptIntake(draft.Id, new(intake.Version), default);
         Assert.Empty(queued.Quotes); Assert.False(queued.CanAcceptQuote);
-        var processing = await scope.Scientific().StartProcessing(draft.Id, new(queued.Version, "1", "fixture-pipeline", "Synthetic acceptance"), default);
+        var processing = await scope.Scientific().StartProcessing(draft.Id, new(queued.Version, "1", "fixture-pipeline", "Synthetic acceptance", KitLotVersion: 1), default);
         var run = Assert.Single(processing.ProcessingRuns);
         var review = await scope.Scientific().DecideProcessing(draft.Id, run.Id, new(processing.Version, run.Id, true, "Pass"), default);
         await scope.AddFile(draft.Id, run.Id, OperationalFilePurpose.AssemblyOutput);
@@ -164,11 +168,11 @@ public sealed partial class KitBundlePostgresTests
             new(included.Version, "Held output project", "{}", "Included outputs", null, true), default);
         var input = await scope.AddFile(draft.Id, null, OperationalFilePurpose.AssemblyInput);
         var submitted = await scope.Assembly().Submit(draft.Id,
-            new(draft.Version, JsonSerializer.Serialize(new { files = new[] { new { id = input.Id } } })), default);
+            new(draft.Version, JsonSerializer.Serialize(new { files = new[] { new { id = input.Id } } }), KitLotVersion: 1), default);
         var intake = await scope.Scientific().BeginIntake(draft.Id, new(submitted.Version), default);
         var queued = await scope.Scientific().AcceptIntake(draft.Id, new(intake.Version), default);
         var processing = await scope.Scientific().StartProcessing(draft.Id,
-            new(queued.Version, "1", "fixture-pipeline", "Synthetic held-output acceptance"), default);
+            new(queued.Version, "1", "fixture-pipeline", "Synthetic held-output acceptance", KitLotVersion: 1), default);
         var run = Assert.Single(processing.ProcessingRuns);
         var review = await scope.Scientific().DecideProcessing(draft.Id, run.Id,
             new(processing.Version, run.Id, true, "Pass"), default);
@@ -293,7 +297,7 @@ public sealed partial class KitBundlePostgresTests
         public AssemblyProfile Profile { get; private set; } = null!;
         public PartnerShippingAddress Address { get; private set; } = null!;
         public ExternalIdentity PartnerIdentity { get; } = Identity("partner");
-        private ExternalIdentity StaffIdentity { get; } = Identity("staff");
+        public ExternalIdentity StaffIdentity { get; } = Identity("staff");
         private Scope(NpgsqlConnection admin, string name, PSeqOperationsDbContext db) { Admin = admin; DatabaseName = name; Db = db; }
         public static async Task<Scope> Create()
         {
@@ -330,12 +334,31 @@ public sealed partial class KitBundlePostgresTests
         public async Task<PartnerReagentOrderDto> CreateOrder(decimal quantity) => await TenantController().Create(Writes(quantity), default);
         public async Task<PartnerReagentOrderDto> PlaceOrder(decimal quantity)
         { var draft = await CreateOrder(quantity); return await TenantController().Place(draft.Id, Placement(draft), default); }
-        public async Task<PartnerReagentOrderDto> ShipAndFulfill(decimal quantity)
+        public async Task<PartnerReagentOrderDto> ShipAndFulfill(decimal quantity, bool submitLot = true)
         {
+            await RegisterLot("LOT");
             var order = await PlaceOrder(quantity); order = await Platform().Accept(order.Id, new(order.Version), default);
             order = await Platform().CreateShipment(order.Id, new(order.Version, "Fixture", null, "TRACK", DateTime.UtcNow.AddDays(-1),
-                [new(Assert.Single(order.Lines).Id, quantity, "LOT", null)]), default);
-            return await Platform().Fulfill(order.Id, new(order.Version), default);
+                [new(Assert.Single(order.Lines).Id, quantity, "LOT")]), default);
+            order = await Platform().Fulfill(order.Id, new(order.Version), default);
+            if (submitLot) foreach (var included in order.AssemblyCases!) await SubmitLot(order, DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-1)), included.Id);
+            return await TenantController().Get(order.Id, default);
+        }
+        public async Task<PSeqKitLot> RegisterLot(string number, DateTime? expiration = null, Guid? productId = null)
+        {
+            Db.ChangeTracker.Clear();
+            var lot = new PSeqKitLot(productId ?? Offering.QboCatalogItemId, number, expiration.HasValue ? DateOnly.FromDateTime(expiration.Value) : null);
+            Db.PSeqKitLots.Add(lot); await Db.SaveChangesAsync(); return lot;
+        }
+        public PartnerKitLotsController Lots(string? key = null, Guid? department = null)
+            => Attach(new PartnerKitLotsController(Db, Context(PartnerIdentity), new(Db)), true, key, department);
+        public PSeqKitLotsController LotAdmin(string? key = null)
+            => Attach(new PSeqKitLotsController(Db, Context(StaffIdentity), new(Db)), false, key);
+        public async Task<KitLotSubmissionDto> SubmitLot(PartnerReagentOrderDto order, DateOnly? usedOn = null, Guid? caseId = null)
+        {
+            var included = caseId.HasValue ? order.AssemblyCases!.Single(x => x.Id == caseId) : Assert.Single(order.AssemblyCases!);
+            var kit = order.KitUnits!.Single(x => x.Id == included.CurrentKitUnitId);
+            return await Lots().Submit(order.Id, included.Id, new(included.Version, included.LotSubmission?.Version, kit.LotBatchNumber!, usedOn), default);
         }
         public ReagentOrdersController TenantController(string? key = null, Guid? department = null)
             => Attach(new ReagentOrdersController(Db, Context(PartnerIdentity), new(Db)), true, key, department);

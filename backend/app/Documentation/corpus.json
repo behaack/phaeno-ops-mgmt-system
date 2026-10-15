@@ -887,7 +887,7 @@
       "title": "Prepare included Assembly",
       "summary": "Prepare a purchased Kit case, correct inputs and download governed outputs without another purchase.",
       "order": 40,
-      "reviewedAt": "2026-09-15",
+      "reviewedAt": "2026-10-15",
       "navigationGroup": "partner-work",
       "contentType": "guide",
       "topicIds": [
@@ -909,7 +909,7 @@
       "publicationStatus": "published",
       "id": "partner/en-US/data-assembly",
       "route": "/docs/partner/data-assembly",
-      "contentHash": "59d7e053bbfd9b2466c27c18e3d253f1533cd12401e623b0c1acd1f96573fb32",
+      "contentHash": "493060d34833e79fe48b4d784c7826a27e859eca270ae0f7f961ca2f174c34a3",
       "sections": [
         {
           "heading": "Included assembly inputs and outputs",
@@ -945,6 +945,11 @@
           "heading": "Find and resume requests",
           "anchor": "find-and-resume-requests",
           "text": "If accepting a quote, withdrawing, or requesting cancellation fails, review the message in the open dialog. Your entries remain available to correct and retry. Closing the dialog does not confirm the action. You are asked before discarding changed entries. While saving, the dialog stays open and its entries and actions are unavailable until the save finishes. Successful changes refresh the request and its status in the list. The list provides search, status/date filters, Submitted by me, total counts, and Previous/Next. Opening a request and returning keeps the filtered page. Clear all removes filters. Failed loads offer retry instead of reporting that no requests exist. Closing a form with unsaved entries asks whether to discard them."
+        },
+        {
+          "heading": "Reuse your kit lot submission",
+          "anchor": "reuse-your-kit-lot-submission",
+          "text": "You can submit your lot earlier from the PSeq Kit order, before preparing or sequencing libraries and without assembly files. Open the included case's Actions → Submit kit lot. This saves and checks the lot independently and leaves the assembly entitlement available for later. The assembly preparation page reuses that saved lot. If you have not entered it yet, choose Submit kit lot in the Kit lot section. Add the actual kit-use date through Update kit lot submission before submitting the assembly inputs. Expiration is assessed against the date the kit was used; a kit used before expiry is not marked as expired merely because the data is submitted later. The assembly entitlement deadline remains separate. Review the current recall, expired-at-use, or unknown-expiration warnings. The server checks the lot again at submission and before processing starts. If lot information changes, refresh and review the updated warnings before trying again. Uploaded files and drafts remain available. Phaeno sees the warnings during intake; warning visibility does not replace scientific review. Each submitted input receipt includes its frozen kit lot assessment and use date. Later recall decisions do not rewrite earlier input receipts. The lot and use-date evidence cannot be changed after submission unless Phaeno requests corrected inputs. To submit a saved draft from its detail page, choose Actions → Submit for intake. This checks the displayed lot information again. If the lot has changed, review the refreshed warning before retrying; the saved draft and files remain available."
         }
       ]
     },
@@ -1162,7 +1167,7 @@
       "title": "Order PSeq Kits",
       "summary": "Review negotiated Kit bundles, track each shipped unit and prepare its included Assembly case.",
       "order": 30,
-      "reviewedAt": "2026-09-19",
+      "reviewedAt": "2026-10-15",
       "navigationGroup": "partner-work",
       "contentType": "guide",
       "topicIds": [
@@ -1181,7 +1186,7 @@
       "publicationStatus": "published",
       "id": "partner/en-US/reagent-orders",
       "route": "/docs/partner/reagent-orders",
-      "contentHash": "73028451cc6ade2aa629d2f0e7a413be99d2530dcd4a2c1a0981da215d56b853",
+      "contentHash": "4a15e4067292562f2b3dbd832c3e3ce02a66f7b93bdd57cf268b3020681a2e20",
       "sections": [
         {
           "heading": "Order PSeq Kits",
@@ -1222,6 +1227,11 @@
           "heading": "Resume after a problem",
           "anchor": "resume-after-a-problem",
           "text": "If cancellation cannot be saved, review the message in the open dialog. Your reason stays available to correct and retry; closing the dialog does not cancel the order. You are asked before discarding a changed reason. While saving, the dialog stays open and its entries and actions are unavailable until the save finishes. Successful changes refresh the order and its status in the list. If placement fails after a draft was saved, the page identifies that saved draft and provides Open saved draft. Retry continues that same order. An interrupted creation is recovered before a new draft can be created by the same form. Closing with unsaved entries asks whether to discard them. Search, status/date filters, Submitted by me, and Previous/Next apply to the complete matching list. Returning from an order preserves the filtered page. Use Clear all to reset filters or Retry records after a failed load."
+        },
+        {
+          "heading": "Submit a kit lot before sequencing",
+          "anchor": "submit-a-kit-lot-before-sequencing",
+          "text": "After Phaeno ships your kit, open its PSeq Kit order and find the included case. Choose Actions → Submit kit lot, enter the lot number printed on the label, and select Save and check lot. This is a separate action from data assembly: you do not need sequencing files, an assembly request, or a kit-use date. We recommend checking before library preparation and sequencing so you can catch recalled or expired product early. The kit order retains the submitted lot and shows current recall and expiration warnings. If the kit has already been used, record its actual use date; otherwise leave that date blank and add it later through Actions → Update kit lot submission. A lot that does not match the case's assigned physical kit needs correction or Phaeno support. Labeled expiration is a calendar date. The shipment and lot assessment show that same date regardless of your display time zone. When ready for assembly, choose Actions → Prepare inputs. The saved lot is reused automatically. Record the actual kit-use date before submitting inputs. A newer recall may appear even if an earlier check had no warning. Contact Phaeno about recalled product or unknown expiration before using the kit. Lot entry and checking are required before data assembly starts."
         }
       ]
     },
@@ -1335,7 +1345,7 @@
       "title": "Configuration and file retention",
       "summary": "Maintain reusable defaults, services, analyses, Partner rules, Sample types, Shipping procedures, Phaeno ship-to destinations, Transportation kits, and released-file retention.",
       "order": 60,
-      "reviewedAt": "2026-10-04",
+      "reviewedAt": "2026-10-15",
       "navigationGroup": "platform-operations",
       "contentType": "troubleshooting",
       "topicIds": [
@@ -1361,12 +1371,12 @@
       "publicationStatus": "published",
       "id": "phaeno/configuration-and-recovery",
       "route": "/docs/phaeno/configuration-and-recovery",
-      "contentHash": "45e2e7c0b07beb5bbb217f24af3ef51710ac7ae24ab2a9b57e9c46b84a24b125",
+      "contentHash": "928ba2eef79787b183f66a1e47eb185a0e5de0e5dc51d69c6c337d43b24cec63",
       "sections": [
         {
           "heading": "Configuration and file retention",
           "anchor": "configuration-and-file-retention",
-          "text": "Open the user menu, then choose Order settings. Order settings controls the active scientific, Partner, commercial, release, and integration rules used by new work. Changes must be audited and should not rewrite immutable order snapshots. The separate File retention policies page, after Order settings, Lab settings, CRM settings, and Samples & shipping settings in the user menu, controls the retention policy used by future released result and output packages. Only a Phaeno platform administrator can change these settings. In Samples & shipping settings → Phaeno ship-to destinations, open an available destination's Actions menu and choose Set as default. The Default badge shows the current choice. Ordering is blocked without an available Default. A new Job using a customer-held kit captures that Default; when new kits are sent, staff may choose the destination at first dispatch. Later changes to the Default do not redirect an Order whose destination is fixed. A Sample type also needs an Active shared procedure and at least one usable linked Transportation kit before new Orders can proceed. Existing issued shipping inserts keep their saved destination and instructions. Use the far-left Order settings sidebar to move among Quote & workflow, Service catalog, Analyses, PSeq kits, Assembly, Trial configuration, and Legacy links. Scientific service definitions are managed inside their catalog item. On wider screens the sidebar can remain pinned; when it is unpinned or the screen is narrow, open the same non-modal navigation from the edge tab. The selected subject appears in the main pane without duplicating the navigation above the configuration form."
+          "text": "Open the user menu, then choose Order settings. Order settings controls the active scientific, Partner, commercial, release, and integration rules used by new work. Changes must be audited and should not rewrite immutable order snapshots. The separate File retention policies page, after Order settings, Lab settings, CRM settings, and Samples & shipping settings in the user menu, controls the retention policy used by future released result and output packages. Only a Phaeno platform administrator can change these settings. In Samples & shipping settings → Phaeno ship-to destinations, open an available destination's Actions menu and choose Set as default. The Default badge shows the current choice. Ordering is blocked without an available Default. A new Job using a customer-held kit captures that Default; when new kits are sent, staff may choose the destination at first dispatch. Later changes to the Default do not redirect an Order whose destination is fixed. A Sample type also needs an Active shared procedure and at least one usable linked Transportation kit before new Orders can proceed. Existing issued shipping inserts keep their saved destination and instructions. Use the far-left Order settings sidebar to move among Quote & workflow, Service catalog, Analyses, PSeq kits, PSeq kit lots, Assembly, Trial configuration, and Legacy links. Scientific service definitions are managed inside their catalog item. On wider screens the sidebar can remain pinned; when it is unpinned or the screen is narrow, open the same non-modal navigation from the edge tab. The selected subject appears in the main pane without duplicating the navigation above the configuration form."
         },
         {
           "heading": "Maintain Trial configuration",
@@ -1422,6 +1432,11 @@
           "heading": "Customer standard-order limits and pricing",
           "anchor": "customer-standard-order-limits-and-pricing",
           "text": "In Order Settings → Service catalog, open the Lab service and use Edit catalog item to set Maximum Customer samples. This is the largest sample count Customers may place directly. Leaving it blank disables Customer standard placement until a limit is configured. Above the limit, Customers retain their Draft and contact Sales. The limit applies even when a negotiated unit price exists; additional runs and phases also go through Sales. Commercial staff maintain negotiated USD sample prices under Company → Services → Lab service pricing. Add price selects a service and either Organization scope or one active Department in that Company. Set the unit price, effective dates in UTC, and Active/Inactive status. End dates are exclusive. Overlapping active windows for the same scope and service are rejected. Use Edit to change the rate, dates or status; create a separate rate to change the service or scope. Existing accepted orders retain their recorded price and source. When both Organization and selected-Department negotiated prices apply, the lower negotiated price wins. One applicable negotiated rate overrides the standard catalog rate; without either, standard pricing applies. Another Department's rate does not apply. Negotiated prices do not enable service access or bypass readiness, billing, tax or sample limits."
+        },
+        {
+          "heading": "PSeq kit lot configuration",
+          "anchor": "pseq-kit-lot-configuration",
+          "text": "Use Order settings → PSeq kit lots to search registered lots, create a lot, and open a lot number for its product, labeled expiration and recall status. First configure a Partner kit offering for the active catalog product. Register the printed lot number once per product; the same lot is reused across Partner offerings and shipments. Lot identity and labeled expiration are fixed when registered. Recall lot or Lift recall requires a current record and a Partner-visible reason. Reopen a stale record before retrying. These changes preserve earlier lot assessments and do not automatically send emails. Partners can save their own label-lot submission before sequencing; assembly later reuses that evidence and checks current warnings again."
         }
       ]
     },
@@ -3242,7 +3257,7 @@
       "title": "Data assembly",
       "summary": "Coordinate commercial quotes and decisions with Lab-owned input validation, processing, QC, and output approval.",
       "order": 53,
-      "reviewedAt": "2026-10-09",
+      "reviewedAt": "2026-10-15",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -3263,7 +3278,7 @@
       "publicationStatus": "published",
       "id": "phaeno/order-data-assembly",
       "route": "/docs/phaeno/order-data-assembly",
-      "contentHash": "3fe4d075e334ddee7897e1bc69c110afbb2d74d6599c80bac9ad61e2b87dd417",
+      "contentHash": "299a59d173df69eba27374fa4141227c3c40bc752bafabcd7c65b8b8ee393b24",
       "sections": [
         {
           "heading": "Partner data assembly",
@@ -3289,6 +3304,11 @@
           "heading": "Approve an output release",
           "anchor": "approve-an-output-release",
           "text": "An output release is immutable and identifies: the exact source input revision; the assembly profile and version; the output manifest and included files; checksums, scan state, and generation time; and the quality-review and approval facts. Approve a new release rather than replacing a prior release. Included outputs use the original Kit shipment commercial source; they create no second invoice, commercial source or sale. Historical standalone output approval retains its original accounting-source step. Both apply the appropriate recorded balance or Partner assembly-credit gate. Credit-approved work can be released under Net 30; work without approved credit remains on payment hold because manual payment confirmation is not yet implemented."
+        },
+        {
+          "heading": "Check kit lots before analysis",
+          "anchor": "check-kit-lots-before-analysis",
+          "text": "For included PSeq Kit requests, review Kit lot check before analysis first. Partners may have saved the lot before preparing or sequencing libraries, independently of the assembly workflow. The request reuses that saved entry and requires the actual kit-use date before input submission. Review the lot number, actual use date, labeled expiration, current recall status and any expiration warning. Expiry is assessed on the use date, with the labeled expiration day included. A missing expiration is explicitly unknown. Both recall and expiry warnings appear when applicable. Existing scientific intake review remains responsible for deciding how to handle affected data. Starting processing requires lot and use-date evidence in the exact submitted input revision. POMS checks the current lot again before recording the run. If a recall decision changes during review, refresh the work record and review the latest warnings before starting. Submission warnings are frozen with the input revision; the run separately records the lot assessment at analysis start. A replacement kit does not rewrite the prior revision's physical-kit evidence."
         }
       ]
     },
@@ -3418,7 +3438,7 @@
       "title": "Order operations",
       "summary": "Use grouped Lab services and Partner services sections in Order Ops, with Dashboard attention, Finance and laboratory release in their owning workspaces.",
       "order": 40,
-      "reviewedAt": "2026-10-11",
+      "reviewedAt": "2026-10-15",
       "navigationGroup": "order-operations",
       "contentType": "overview",
       "topicIds": [
@@ -3442,7 +3462,7 @@
       "publicationStatus": "published",
       "id": "phaeno/order-operations",
       "route": "/docs/phaeno/order-operations",
-      "contentHash": "cc58261d9b4ec7385d6844eff195bf30a6212e684446b00c835b159b0f1ac77c",
+      "contentHash": "e3fe075859bb448b414376682cde038f51f789552866c6196fff111f446d1312",
       "sections": [
         {
           "heading": "Order operations",
@@ -3503,6 +3523,11 @@
           "heading": "On-demand transportation kits and phase preparation",
           "anchor": "on-demand-transportation-kits-and-phase-preparation",
           "text": "Before acceptance, the Customer or Partner sees Review and Accept Order, with scope, pricing and quote actions; the shipping step strip and next-step card are hidden. Job acceptance confirms commercial terms and Sample type without ordering kits. The Customer or entitled Partner then follows the earliest unfinished phase in the agreed order, identified by Shipping: Phase N · Phase name (X samples). Next step provides the action and its button; no phase selection is needed. Kits can be requested only for the current phase, with its Department delivery address confirmed at that time. Capacity is calculated from physical sample counts; sequencing runs do not increase the required sample-tube count. Received compatible stock is allocated to only one phase and new fulfillment covers the shortage. When previously received kits cover the entire phase, the Customer steps show Existing kits allocated and Received · existing stock, and explain that no new delivery is needed. Allocation alone does not establish physical receipt. An outstanding outbound request keeps the Customer at Receive kits until every requested kit is confirmed received. Before dispatch, Next step shows Wait for Phaeno to send kits, with no receipt action. Record kit receipt is available to an authorized Customer or Partner administrator only when a dispatched kit is awaiting receipt; if all kits in a partial dispatch are received, the next step returns to waiting for the remaining dispatch. The saved kit order remains viewable. Under Receive kits, the status shows Request received, Sent, or Received; partial dispatch and receipt show Partially sent or Partially received. Each phase repeats requesting, physical kit receipt, Sample ID/tube preparation and outbound sample shipping. Confirming a phase authorizes its exact specimens and creates its return shipments while future sample identities remain unentered. The next phase opens after every required result from the preceding phase is Portal-accessible; preparation or sending alone does not advance the phase. Approved cancelled phases are skipped. TAT remains tied to complete physical sample receipt. Review cancelled, superseded or changed phase scope before dispatching a pending request. Existing quote, request and dispatch histories stay unchanged."
+        },
+        {
+          "heading": "PSeq kit lot checks",
+          "anchor": "pseq-kit-lot-checks",
+          "text": "PSeq kit fulfillment uses registered product lots managed under Order settings → PSeq kit lots. Partners can submit and check their kit label lot from the kit order before sequencing or preparing assembly inputs. When assembly is later requested, the saved lot and actual kit-use date accompany the submitted input revision. Phaeno reviews the current lot warnings before analysis; earlier assessments remain preserved."
         }
       ]
     },
@@ -3514,7 +3539,7 @@
       "title": "PSeq kit fulfillment",
       "summary": "Review Partner kit orders commercially, then open Lab work for substitutions, backorders, and shipment fulfillment.",
       "order": 52,
-      "reviewedAt": "2026-10-12",
+      "reviewedAt": "2026-10-15",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -3535,7 +3560,7 @@
       "publicationStatus": "published",
       "id": "phaeno/order-reagent-fulfillment",
       "route": "/docs/phaeno/order-reagent-fulfillment",
-      "contentHash": "5da273bbf4624a02b6c957740c26b39ed00fe846c5d27f231a70e85a2557e80d",
+      "contentHash": "b93336cd54754fe7db7f98bd0e857d46247c0ee8aa2dbd542d307e6283b3993b",
       "sections": [
         {
           "heading": "Partner PSeq Kit fulfillment",
@@ -3576,6 +3601,11 @@
           "heading": "Manage the included cases",
           "anchor": "manage-the-included-cases",
           "text": "The Commercial order's Included assembly cases panel shows each purchased unit, current case, frozen profile, shipment facts, submission deadline and event history. After shipment, the Partner prepares inputs from that exact case. Input corrections preserve the case and request; intake validation and processing continue in the existing Lab Assembly workspace without another quote or sale. Unused cases expire 90 days after labeled kit expiration, or 12 months after shipment if no expiration was recorded. An authorized operator may Extend deadline, Replace kit, or Cancel unused case only when the case permits the action. Review the current case and deadline, and record a reason suitable for the Partner history. Replacement requires actual lot, ship date, carrier and tracking facts; it transfers the existing case to the replacement kit without another purchase, billing source or entitlement. The operational summary keeps fulfillment and assembly progress separate. A shipped Kit may still have pending assembly. Completion requires the included cases to finish or close; an unused expired or cancelled case does not automatically create a refund. Finance history remains separate."
+        },
+        {
+          "heading": "Register and fulfill kit lots",
+          "anchor": "register-and-fulfill-kit-lots",
+          "text": "A platform administrator registers lots under Order settings → PSeq kit lots → Create kit lot, selecting the active catalog product configured in a Partner kit offering, its printed lot number, and labeled expiration when known. The same product lot is shared across Partner offerings. Lot numbers are matched without case differences or surrounding spaces. The registered product, number and labeled expiration are fixed; recall changes are audited. During Record shipment or Replace kit, enter a registered lot for the exact product. Its labeled expiration supplies the shipment evidence. Unregistered, recalled, or expired-at-shipment lots cannot ship. Partial shipments and replacement units retain their own physical-kit lineage and the original commercial rules. Open a lot number in PSeq kit lots to view its details. Recall lot and Lift recall require confirmation and a Partner-visible reason. Recall status applies to every kit from that product lot and appears in Partner checks and Phaeno assembly review. Earlier shipment and input assessments remain preserved. These actions do not automatically send recall emails. Partners can submit their label lot independently from the kit order before library preparation or sequencing, without opening assembly work. Recommend this early check. The actual kit-use date is required only when assembly inputs are later submitted."
         }
       ]
     },
@@ -4301,5 +4331,5 @@
       ]
     }
   ],
-  "corpusHash": "1d0e7cb954a3274fc7f2e4e1ee1f5acafef44c0743a722de061a6c795a511f22"
+  "corpusHash": "1570388119bb9cac1e1348313604c716a994fd6cee4b187cb06af52761dfc7a0"
 }

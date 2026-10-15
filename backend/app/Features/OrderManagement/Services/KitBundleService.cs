@@ -77,7 +77,7 @@ public sealed class KitBundleService(PSeqOperationsDbContext dbContext)
             var cases = await dbContext.KitAssemblyCases.Include(x => x.History).Where(x => ids.Contains(x.CurrentKitUnitId)).ToDictionaryAsync(x => x.CurrentKitUnitId, cancellationToken);
             foreach (var unit in units)
             {
-                unit.Ship(shipment.Id, shipment.ShippedAt, allocation.ExpiresAt, allocation.LotBatchNumber, shipment.Carrier, shipment.TrackingNumber);
+                unit.Ship(shipment.Id, shipment.ShippedAt, allocation.ExpiresAt, allocation.LotBatchNumber, shipment.Carrier, shipment.TrackingNumber, allocation.KitLotId);
                 var included = cases[unit.Id]; included.RecordShipment(unit, actorId, DateTime.UtcNow); included.RecordBillingSource(billingDocumentId);
                 TrackNewHistory(dbContext, included);
             }
@@ -93,6 +93,11 @@ public sealed class KitBundleService(PSeqOperationsDbContext dbContext)
         var requestIds = cases.Where(x => x.AssemblyRequestId.HasValue).Select(x => x.AssemblyRequestId!.Value).ToList();
         var requests = await dbContext.DataAssemblyRequests.AsNoTracking().Where(x => requestIds.Contains(x.Id) && x.OrganizationId == dto.OrganizationId).ToDictionaryAsync(x => x.Id, cancellationToken);
         var now = DateTime.UtcNow;
+        var unitIds = units.Select(x => x.Id).ToList();
+        var lotSubmissions = await dbContext.PartnerKitLotSubmissions.AsNoTracking().Where(x => unitIds.Contains(x.KitUnitId)
+            && x.OrganizationId == dto.OrganizationId).ToDictionaryAsync(x => x.KitUnitId, cancellationToken);
+        var lotIds = lotSubmissions.Values.Select(x => x.KitLotId).Distinct().ToList();
+        var lots = await dbContext.PSeqKitLots.AsNoTracking().Where(x => lotIds.Contains(x.Id)).ToDictionaryAsync(x => x.Id, cancellationToken);
         return dto with
         {
             IsKitBundle = true,
@@ -108,7 +113,10 @@ public sealed class KitBundleService(PSeqOperationsDbContext dbContext)
                     platform && !x.FirstSubmittedAt.HasValue && x.Status is not (KitAssemblyCaseStatus.ResultsReleased or KitAssemblyCaseStatus.Cancelled or KitAssemblyCaseStatus.AwaitingShipment),
                     platform && unit.Status == KitUnitStatus.Shipped && x.Status is not (KitAssemblyCaseStatus.ResultsReleased or KitAssemblyCaseStatus.Cancelled),
                     platform && !x.FirstSubmittedAt.HasValue && x.Status is not (KitAssemblyCaseStatus.ResultsReleased or KitAssemblyCaseStatus.Cancelled),
-                    x.History.OrderBy(h => h.At).Select(h => new KitCaseEventDto(h.Id, h.EventType, h.At, h.Reason)).ToList());
+                    x.History.OrderBy(h => h.At).Select(h => new KitCaseEventDto(h.Id, h.EventType, h.At, h.Reason)).ToList(),
+                    lotSubmissions.TryGetValue(unit.Id, out var submittedLot) ? PSeqKitLotService.Map(submittedLot, lots[submittedLot.KitLotId]) : null,
+                    !platform && canManage && !x.IsTerminal && unit.Status == KitUnitStatus.Shipped
+                        && (request is null || request.Status is AssemblyRequestStatus.Draft or AssemblyRequestStatus.ChangesRequested));
             }).ToList()
         };
     }
@@ -119,8 +127,18 @@ public sealed class KitBundleService(PSeqOperationsDbContext dbContext)
         if (included is null) return dto;
         var orderNumber = await dbContext.PartnerReagentOrders.AsNoTracking().Where(x => x.Id == included.PartnerReagentOrderId && x.OrganizationId == included.OrganizationId).Select(x => x.OrderNumber).SingleAsync(cancellationToken);
         var editable = !included.IsTerminal && (included.FirstSubmittedAt.HasValue || included.CanPrepareAt(DateTime.UtcNow));
+        KitLotSubmissionDto? lotSubmission;
+        if (dto.Status is nameof(AssemblyRequestStatus.Draft) or nameof(AssemblyRequestStatus.ChangesRequested))
+            lotSubmission = await new PSeqKitLotService(dbContext).ReadSubmissionAsync(included, cancellationToken);
+        else
+        {
+            var savedId = await dbContext.AssemblyInputRevisions.Where(x => x.DataAssemblyRequestId == dto.Id && x.Revision == dto.InputRevision)
+                .Select(x => x.KitLotSubmissionId).SingleOrDefaultAsync(cancellationToken);
+            var saved = await dbContext.PartnerKitLotSubmissions.AsNoTracking().SingleOrDefaultAsync(x => x.Id == savedId, cancellationToken);
+            lotSubmission = saved is null ? null : PSeqKitLotService.Map(saved, await new PSeqKitLotService(dbContext).ReadLotAsync(saved.KitLotId, false, cancellationToken));
+        }
         return dto with { KitAssemblyCaseId = included.Id, KitOrderId = included.PartnerReagentOrderId, KitOrderNumber = orderNumber, KitCaseNumber = included.CaseNumber,
-            IsIncludedAssembly = true, CanAcceptQuote = false, CanEdit = dto.CanEdit && editable, CanSubmit = dto.CanSubmit && editable };
+            IsIncludedAssembly = true, CanAcceptQuote = false, CanEdit = dto.CanEdit && editable, CanSubmit = dto.CanSubmit && editable, KitLotSubmission = lotSubmission };
     }
 
     public async Task<AssemblyProfile> ReadProfileAsync(DataAssemblyRequest request, CancellationToken cancellationToken)

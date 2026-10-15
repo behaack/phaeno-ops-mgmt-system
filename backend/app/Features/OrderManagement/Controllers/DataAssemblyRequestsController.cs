@@ -207,6 +207,9 @@ public sealed partial class DataAssemblyRequestsController(
     {
         var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Partner, true, cancellationToken);
         var key = idempotency.RequireKey(HttpContext); var scope = $"assembly:{requestId}:submit";
+        var caseId = await dbContext.DataAssemblyRequests.AsNoTracking().Where(x => x.Id == requestId
+            && x.OrganizationId == tenant.Organization.Id && x.DepartmentId == tenant.Department.Id)
+            .Select(x => x.KitAssemblyCaseId).SingleOrDefaultAsync(cancellationToken);
         var execution = await idempotency.ExecuteAsync(
             tenant.Actor.Id,
             scope,
@@ -217,6 +220,8 @@ public sealed partial class DataAssemblyRequestsController(
                 var item = await ReadAsync(requestId, tenant, operationCancellationToken);
                 EnsureVersion(item.Version, request.Version);
                 var included = await RequireEditableIncludedCaseAsync(item, operationCancellationToken);
+                (PartnerKitLotSubmission Submission, KitLotAssessmentDto Assessment)? kitLot = included is null ? null : await new PSeqKitLotService(dbContext)
+                    .RequireAssemblyLotAsync(included, request.KitLotVersion, operationCancellationToken);
                 var profile = await new KitBundleService(dbContext).ReadProfileAsync(item, operationCancellationToken);
                 if (profile.IsSynthetic || (item.InputRevision == 0 && !profile.IsActive))
                     throw Invalid("assembly_profile_unavailable", "The selected assembly profile is not active for Partner submissions.");
@@ -237,6 +242,8 @@ public sealed partial class DataAssemblyRequestsController(
                 var revision = new AssemblyInputRevision(item.Id, item.InputRevision + 1, item.CurrentInputRevisionId,
                     request.ManifestJson, item.Status == AssemblyRequestStatus.ChangesRequested ? item.TenantSafeReason : null,
                     request.ValidationSummaryJson, tenant.Actor.Id, DateTime.UtcNow, included?.CurrentKitUnitId);
+                if (kitLot.HasValue) revision.RecordKitLot(kitLot.Value.Submission.KitLotId, kitLot.Value.Submission.Id,
+                    kitLot.Value.Submission.UsedOn!.Value, PSeqKitLotService.Snapshot(kitLot.Value.Assessment));
                 foreach (var input in inputs.Where(file => !file.ParentRecordId.HasValue)) input.AttachToParent(revision.Id);
                 item.InputRevisions.Add(revision);
                 dbContext.AssemblyInputRevisions.Add(revision);
@@ -252,7 +259,7 @@ public sealed partial class DataAssemblyRequestsController(
                 await dbContext.SaveChangesAsync(operationCancellationToken);
                 return await MapAsync(item, true, false, operationCancellationToken);
             },
-            cancellationToken: cancellationToken);
+            cancellationToken: cancellationToken, concurrencyScope: caseId.HasValue ? $"kit-case:{caseId.Value}" : scope);
         return execution.Response;
     }
 
@@ -501,11 +508,11 @@ public sealed partial class DataAssemblyRequestsController(
                 or AssemblyRequestStatus.ChangesRequested or AssemblyRequestStatus.QuoteInPreparation or AssemblyRequestStatus.QuoteIssued,
             canManage && item.Status is AssemblyRequestStatus.PlacedQueued or AssemblyRequestStatus.Processing or AssemblyRequestStatus.OutputReview or AssemblyRequestStatus.OutputAvailable or AssemblyRequestStatus.OnHold,
             item.InputRevisions.OrderByDescending(value => value.Revision).Select(value => new AssemblyInputRevisionDto(value.Id, value.Revision,
-                value.PreviousRevisionId, value.ManifestJson, value.CorrectionReason, value.ValidationSummaryJson, value.SubmittedAt)).ToList(),
+                value.PreviousRevisionId, value.ManifestJson, value.CorrectionReason, value.ValidationSummaryJson, value.SubmittedAt, value.KitLotAssessmentJson, value.KitUsedOn)).ToList(),
             item.Quotes.OrderByDescending(value => value.Revision).Select(value => value.ToDto()).ToList(),
             platform ? item.ProcessingRuns.OrderByDescending(value => value.RunNumber).Select(value => new AssemblyProcessingRunDto(value.Id,
                 value.InputRevisionId, value.RunNumber, value.ProfileVersion, value.PipelineVersion, value.Provenance, value.QcStatus,
-                value.StartedAt, value.CompletedAt, value.FailureReason, value.Version)).ToList() : [],
+                value.StartedAt, value.CompletedAt, value.FailureReason, value.Version, value.KitLotAssessmentJson)).ToList() : [],
             item.OutputReleases.Where(value => platform || value.ReleaseStatus == FileReleaseStatus.Released).OrderByDescending(value => value.ReleaseVersion)
                 .Select(value => MapRelease(
                     value,

@@ -1,0 +1,377 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="fd3dfbe8-027e-436d-ad51-bd2fae12aa3b" name="bhaac@HAACK-DESKTOP 2026-10-15 15:32:21" runUser="HAACK-DESKTOP\bhaac" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-10-15T15:32:21.2021561-07:00" queuing="2026-10-15T15:32:21.2021565-07:00" start="2026-10-15T15:32:20.2481758-07:00" finish="2026-10-15T15:36:32.6022743-07:00" />
+  <TestSettings name="default" id="a8c3037d-cfbc-426a-81ef-73560c13c7dd">
+    <Deployment runDeploymentRoot="bhaac_HAACK-DESKTOP_2026-10-15_15_32_21" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="77721a3f-f0ca-4be9-a29e-13756910c8dd" testId="e47eabf0-d1f6-cbce-2302-79ca90a41f4a" testName="PhaenoPortal.Test.KitBundlePostgresTests.SavedJsonbScopePlacesExactlyOnceAndChangedProfileRollsBackUntilDraftReview" computerName="HAACK-DESKTOP" duration="00:00:19.7630193" startTime="2026-10-15T15:32:21.1739406-07:00" endTime="2026-10-15T15:32:40.9145430-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="77721a3f-f0ca-4be9-a29e-13756910c8dd" />
+    <UnitTestResult executionId="1d3bdbaf-3a17-4103-b421-265a91fc8723" testId="6d6502d0-435f-c0b1-1cc4-ff2f904e2e10" testName="PhaenoPortal.Test.KitBundlePostgresTests.IncludedInputsResumeWithoutDuplicatesAndFreezeOneValidatedRevision" computerName="HAACK-DESKTOP" duration="00:00:14.5446764" startTime="2026-10-15T15:36:17.9188887-07:00" endTime="2026-10-15T15:36:32.4629605-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="1d3bdbaf-3a17-4103-b421-265a91fc8723" />
+    <UnitTestResult executionId="8be1a52d-9d13-48da-a464-2646e078a97a" testId="0b67a099-8432-ac28-dc76-0f8453daa738" testName="PhaenoPortal.Test.KitBundleDomainTests.EachCaseRetainsItsOwnShipmentAndDeadline" computerName="HAACK-DESKTOP" duration="00:00:00.0014242" startTime="2026-10-15T15:32:21.1240951-07:00" endTime="2026-10-15T15:32:21.1253883-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8be1a52d-9d13-48da-a464-2646e078a97a" />
+    <UnitTestResult executionId="d06b359c-71bf-4024-a70e-fe01dae02b04" testId="5529d0a0-9246-edaa-819e-ee8ab13c78bb" testName="PhaenoPortal.Test.KitBundlePostgresTests.LaterRecallIsRecheckedAtSubmissionAndAnalysisWithoutRewritingSnapshots" computerName="HAACK-DESKTOP" duration="00:00:09.9337088" startTime="2026-10-15T15:35:19.4580035-07:00" endTime="2026-10-15T15:35:29.3913083-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d06b359c-71bf-4024-a70e-fe01dae02b04" />
+    <UnitTestResult executionId="429a3b6e-0de3-46f7-bc62-13cc7a00d595" testId="23b7970a-3451-081d-7ca2-6f606fcef466" testName="PhaenoPortal.Test.KitBundleDomainTests.ExpiredDraftKeepsItsRequestAndCanResumeOnlyAfterAuditedExtension" computerName="HAACK-DESKTOP" duration="00:00:00.0047565" startTime="2026-10-15T15:32:21.1265474-07:00" endTime="2026-10-15T15:32:21.1312843-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="429a3b6e-0de3-46f7-bc62-13cc7a00d595" />
+    <UnitTestResult executionId="1b8edfc0-7e75-4014-9174-192ff406f8b5" testId="a3653757-2acb-5ee3-8fd1-4dafcebc5168" testName="PhaenoPortal.Test.KitBundlePostgresTests.PartnerSavesAndReplaysLotBeforeAssemblyWithoutFilesOrUseDate" computerName="HAACK-DESKTOP" duration="00:00:08.1383622" startTime="2026-10-15T15:34:39.8179110-07:00" endTime="2026-10-15T15:34:47.9558641-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="1b8edfc0-7e75-4014-9174-192ff406f8b5" />
+    <UnitTestResult executionId="5174aa92-3a77-4ee8-a2f9-ddec6853b77d" testId="6bef95a6-b881-4144-6f2e-3ab0e2220049" testName="PhaenoPortal.Test.KitBundlePostgresTests.PaidIncludedOutputWaitsForOperationalHoldAndCancellationDecision" computerName="HAACK-DESKTOP" duration="00:00:22.0522863" startTime="2026-10-15T15:35:55.8666419-07:00" endTime="2026-10-15T15:36:17.9182884-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="5174aa92-3a77-4ee8-a2f9-ddec6853b77d" />
+    <UnitTestResult executionId="357be697-510e-46f8-8a27-572fd60faa68" testId="47be1a98-dbff-7ff5-f439-a36fafc64dce" testName="PhaenoPortal.Test.PSeqKitLotDomainTests.ShippedKitsRequireRegisteredLotIdentity" computerName="HAACK-DESKTOP" duration="00:00:00.0020715" startTime="2026-10-15T15:32:21.1462308-07:00" endTime="2026-10-15T15:32:21.1480445-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="357be697-510e-46f8-8a27-572fd60faa68" />
+    <UnitTestResult executionId="f12e5f30-2efd-4f77-94d2-8fde91f42bb9" testId="be6e45da-c6ec-7d96-ab77-4020b8797431" testName="PhaenoPortal.Test.KitBundleDomainTests.IncludedAssemblySkipsSecondQuoteAndKeepsPurchasedOutputScope" computerName="HAACK-DESKTOP" duration="00:00:00.0074693" startTime="2026-10-15T15:32:21.1164440-07:00" endTime="2026-10-15T15:32:21.1239275-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="f12e5f30-2efd-4f77-94d2-8fde91f42bb9" />
+    <UnitTestResult executionId="2e58d224-b766-43c8-af63-cd1b2b55740d" testId="346440a2-0599-9ab3-e7e4-483239b4b48e" testName="PhaenoPortal.Test.KitBundleDomainTests.ReplacementCannotCrossTenantOrFollowReleasedResults" computerName="HAACK-DESKTOP" duration="00:00:00.0009970" startTime="2026-10-15T15:32:21.1255120-07:00" endTime="2026-10-15T15:32:21.1264333-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2e58d224-b766-43c8-af63-cd1b2b55740d" />
+    <UnitTestResult executionId="29f047df-79ac-41cb-a183-d3849263327f" testId="715470ff-5aad-cf7a-b2d6-2b2f09bcb14c" testName="PhaenoPortal.Test.KitBundlePostgresTests.MissingOrRecalledRegisteredLotCannotBeShipped" computerName="HAACK-DESKTOP" duration="00:00:05.8937769" startTime="2026-10-15T15:35:13.5638737-07:00" endTime="2026-10-15T15:35:19.4574333-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="29f047df-79ac-41cb-a183-d3849263327f" />
+    <UnitTestResult executionId="f245936b-fa6b-49c9-98d3-2b08404e39fa" testId="ffbae86d-be45-a469-c48d-5f572f4642e5" testName="PhaenoPortal.Test.KitBundlePostgresTests.IncludedInputsRejectEveryNonCleanScanWithoutCreatingARevision" computerName="HAACK-DESKTOP" duration="00:00:10.9962845" startTime="2026-10-15T15:34:15.2856799-07:00" endTime="2026-10-15T15:34:26.2716211-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="f245936b-fa6b-49c9-98d3-2b08404e39fa" />
+    <UnitTestResult executionId="09af5b81-bb8d-4f96-964a-4913e4a44cb7" testId="af068683-f7de-3a88-0d26-782ac0a93493" testName="PhaenoPortal.Test.KitBundlePostgresTests.ReplacementRetainsInputHistoryAndIncludedReleaseUsesKitBalanceWithoutSecondInvoice" computerName="HAACK-DESKTOP" duration="00:00:17.5947739" startTime="2026-10-15T15:32:40.9182186-07:00" endTime="2026-10-15T15:32:58.5112314-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="09af5b81-bb8d-4f96-964a-4913e4a44cb7" />
+    <UnitTestResult executionId="bcb93d19-3e46-45e2-a1c0-f3ccb67d4f1b" testId="9e659efa-7f0e-027c-d214-c65559327bc7" testName="PhaenoPortal.Test.KitBundlePostgresTests.ExplicitLifecycleCheckExpiresUnusedDraftOnceAndPreservesItsInputRequest" computerName="HAACK-DESKTOP" duration="00:00:07.7192610" startTime="2026-10-15T15:34:26.2723023-07:00" endTime="2026-10-15T15:34:33.9911118-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="bcb93d19-3e46-45e2-a1c0-f3ccb67d4f1b" />
+    <UnitTestResult executionId="7f52ba70-fabb-4141-b6b5-644b856affa7" testId="84ed38cd-0434-7fa6-d58f-11f2651b98bd" testName="PhaenoPortal.Test.KitBundlePostgresTests.SplitShipmentsFreezePerUnitDeadlinesAndOriginalBillingSources" computerName="HAACK-DESKTOP" duration="00:00:07.8762254" startTime="2026-10-15T15:35:47.9901973-07:00" endTime="2026-10-15T15:35:55.8661389-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="7f52ba70-fabb-4141-b6b5-644b856affa7" />
+    <UnitTestResult executionId="ab52d3af-98e9-4649-9a3a-38d00e6360d9" testId="e514ce54-b8be-4f20-79d7-eea7eef542e4" testName="PhaenoPortal.Test.KitBundlePostgresTests.SimulatedCorrectedKitOutputRetainsInputLineageAndCreditsMemberBytesUnderOriginalInvoice" computerName="HAACK-DESKTOP" duration="00:00:17.1227932" startTime="2026-10-15T15:34:56.4410585-07:00" endTime="2026-10-15T15:35:13.5634084-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ab52d3af-98e9-4649-9a3a-38d00e6360d9" />
+    <UnitTestResult executionId="a4379ecf-5b45-4889-a179-4a95c61ece3a" testId="a5b349db-dd5e-3469-6e0b-4c773fb2b8f2" testName="PhaenoPortal.Test.KitBundlePostgresTests.BrowserStandaloneLotThenAssemblyUsesRealHttpAndPostgres" computerName="HAACK-DESKTOP" duration="00:01:01.7838256" startTime="2026-10-15T15:33:13.4853997-07:00" endTime="2026-10-15T15:34:15.2759462-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a4379ecf-5b45-4889-a179-4a95c61ece3a">
+      <Output>
+        <ErrorInfo>
+          <Message>&#xD;
+Running 4 tests using 1 worker&#xD;
+&#xD;
+HTTP \u001b[33m400\u001b[39m /api/reagent-orders/8b51df69-8073-495f-a967-6e9fe2a3c559/assembly-cases/1bba88f8-128f-489d-a6ba-8b451d30bc19/lot&#xD;
+Browser console: Failed to load resource: the server responded with a status of 400 (Bad Request)&#xD;
+  x  1 [chromium] › e2e\pseq-kit-lots.connected.spec.ts:57:1 › standalone early lot persists, later assembly reuses it and analysis rechecks recall (14.6s)&#xD;
+  ok 2 [chromium] › e2e\pseq-kit-lots.connected.spec.ts:148:1 › early recalled and expired lot shows both warnings, keyboard cancel retains saved evidence (8.4s)&#xD;
+HTTP \u001b[33m400\u001b[39m /api/reagent-orders/ca399cff-43ae-4634-b78a-f1002d32698e/assembly-cases/e4cd7b0d-63b5-4620-9422-873adecc0e73/lot&#xD;
+Browser console: Failed to load resource: the server responded with a status of 400 (Bad Request)&#xD;
+  x  3 [mobile-chrome] › e2e\pseq-kit-lots.connected.spec.ts:57:1 › standalone early lot persists, later assembly reuses it and analysis rechecks recall (12.9s)&#xD;
+  ok 4 [mobile-chrome] › e2e\pseq-kit-lots.connected.spec.ts:148:1 › early recalled and expired lot shows both warnings, keyboard cancel retains saved evidence (7.0s)&#xD;
+&#xD;
+&#xD;
+  1) [chromium] › e2e\pseq-kit-lots.connected.spec.ts:57:1 › standalone early lot persists, later assembly reuses it and analysis rechecks recall &#xD;
+&#xD;
+    Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed&#xD;
+&#xD;
+    Locator: getByText(/Expires 2026-10-14$/)&#xD;
+    Expected: visible&#xD;
+    Timeout: 5000ms&#xD;
+    Error: element(s) not found&#xD;
+&#xD;
+    Call log:&#xD;
+    \u001b[2m  - Expect "toBeVisible" with timeout 5000ms\u001b[22m&#xD;
+    \u001b[2m  - waiting for getByText(/Expires 2026-10-14$/)\u001b[22m&#xD;
+&#xD;
+&#xD;
+      80 |   await saveLot(page, scenario.lotNumber)&#xD;
+      81 |   await expect(page.getByText('Kit lot has expired', { exact: true })).toBeVisible()&#xD;
+    &gt; 82 |   await expect(page.getByText(new RegExp(`Expires ${scenario.expirationDate}$`))).toBeVisible()&#xD;
+         |                                                                                   ^&#xD;
+      83 |   let evidence = await api(`/verification/evidence/${scenario.orderId}`)&#xD;
+      84 |   expect(evidence.submissions).toHaveLength(1)&#xD;
+      85 |   expect(evidence.submissions[0].usedOn).toBeNull()&#xD;
+        at D:\__dev\phaeno-portal\frontend\e2e\pseq-kit-lots.connected.spec.ts:82:83&#xD;
+&#xD;
+    Error Context: test-results\pseq-kit-lots.connected-st-f1f30-nd-analysis-rechecks-recall-chromium\error-context.md&#xD;
+&#xD;
+  2) [mobile-chrome] › e2e\pseq-kit-lots.connected.spec.ts:57:1 › standalone early lot persists, later assembly reuses it and analysis rechecks recall &#xD;
+&#xD;
+    Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed&#xD;
+&#xD;
+    Locator: getByText(/Expires 2026-10-14$/)&#xD;
+    Expected: visible&#xD;
+    Timeout: 5000ms&#xD;
+    Error: element(s) not found&#xD;
+&#xD;
+    Call log:&#xD;
+    \u001b[2m  - Expect "toBeVisible" with timeout 5000ms\u001b[22m&#xD;
+    \u001b[2m  - waiting for getByText(/Expires 2026-10-14$/)\u001b[22m&#xD;
+&#xD;
+&#xD;
+      80 |   await saveLot(page, scenario.lotNumber)&#xD;
+      81 |   await expect(page.getByText('Kit lot has expired', { exact: true })).toBeVisible()&#xD;
+    &gt; 82 |   await expect(page.getByText(new RegExp(`Expires ${scenario.expirationDate}$`))).toBeVisible()&#xD;
+         |                                                                                   ^&#xD;
+      83 |   let evidence = await api(`/verification/evidence/${scenario.orderId}`)&#xD;
+      84 |   expect(evidence.submissions).toHaveLength(1)&#xD;
+      85 |   expect(evidence.submissions[0].usedOn).toBeNull()&#xD;
+        at D:\__dev\phaeno-portal\frontend\e2e\pseq-kit-lots.connected.spec.ts:82:83&#xD;
+&#xD;
+    Error Context: test-results\pseq-kit-lots.connected-st-f1f30-nd-analysis-rechecks-recall-mobile-chrome\error-context.md&#xD;
+&#xD;
+  2 failed&#xD;
+    [chromium] › e2e\pseq-kit-lots.connected.spec.ts:57:1 › standalone early lot persists, later assembly reuses it and analysis rechecks recall &#xD;
+    [mobile-chrome] › e2e\pseq-kit-lots.connected.spec.ts:57:1 › standalone early lot persists, later assembly reuses it and analysis rechecks recall &#xD;
+  2 passed (55.4s)\u001b[2m[WebServer] \u001b[22m(node:43144) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.&#xD;
+\u001b[2m[WebServer] \u001b[22m(Use `node --trace-warnings ...` to show where the warning was created)&#xD;
+\u001b[2m[WebServer] \u001b[22m(node:43144) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.&#xD;
+\u001b[2m[WebServer] \u001b[22m(Use `node --trace-warnings ...` to show where the warning was created)&#xD;
+(node:37924) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.&#xD;
+(Use `node --trace-warnings ...` to show where the warning was created)&#xD;
+(node:37924) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.&#xD;
+(Use `node --trace-warnings ...` to show where the warning was created)&#xD;
+(node:4492) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.&#xD;
+(Use `node --trace-warnings ...` to show where the warning was created)&#xD;
+(node:4492) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.&#xD;
+(Use `node --trace-warnings ...` to show where the warning was created)&#xD;
+(node:39256) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.&#xD;
+(Use `node --trace-warnings ...` to show where the warning was created)&#xD;
+(node:39256) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.&#xD;
+(Use `node --trace-warnings ...` to show where the warning was created)&#xD;
+(node:32880) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.&#xD;
+(Use `node --trace-warnings ...` to show where the warning was created)&#xD;
+(node:32880) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.&#xD;
+(Use `node --trace-warnings ...` to show where the warning was created)</Message>
+          <StackTrace>   at PhaenoPortal.Test.KitBundlePostgresTests.BrowserStandaloneLotThenAssemblyUsesRealHttpAndPostgres() in D:\__dev\phaeno-portal\backend\test\PSeqKitLotBrowserPostgresTests.cs:line 110&#xD;
+   at PhaenoPortal.Test.KitBundlePostgresTests.BrowserStandaloneLotThenAssemblyUsesRealHttpAndPostgres() in D:\__dev\phaeno-portal\backend\test\PSeqKitLotBrowserPostgresTests.cs:line 111&#xD;
+   at PhaenoPortal.Test.KitBundlePostgresTests.BrowserStandaloneLotThenAssemblyUsesRealHttpAndPostgres() in D:\__dev\phaeno-portal\backend\test\PSeqKitLotBrowserPostgresTests.cs:line 111&#xD;
+   at PhaenoPortal.Test.KitBundlePostgresTests.BrowserStandaloneLotThenAssemblyUsesRealHttpAndPostgres() in D:\__dev\phaeno-portal\backend\test\PSeqKitLotBrowserPostgresTests.cs:line 111&#xD;
+--- End of stack trace from previous location ---</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="bbb38daa-8779-4c25-826d-3b21113645b5" testId="39e3b8e8-2980-a4a2-8816-8f98a2475699" testName="PhaenoPortal.Test.PSeqKitLotDomainTests.EarlyLotSubmissionNeedsNeitherAnAssemblyRequestNorAnActualUseDate" computerName="HAACK-DESKTOP" duration="00:00:00.0419064" startTime="2026-10-15T15:32:21.1156269-07:00" endTime="2026-10-15T15:32:21.1459392-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="bbb38daa-8779-4c25-826d-3b21113645b5" />
+    <UnitTestResult executionId="a4cab6c6-0815-4383-ba72-1d17005275b5" testId="d43bc77f-16ee-dd70-5107-c022f80ee13c" testName="PhaenoPortal.Test.KitBundlePostgresTests.SimulatedSubstitutionRequiresEligiblePartnerApprovalAndRetainsBothDecisions" computerName="HAACK-DESKTOP" duration="00:00:10.4758466" startTime="2026-10-15T15:35:29.3917346-07:00" endTime="2026-10-15T15:35:39.8673274-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a4cab6c6-0815-4383-ba72-1d17005275b5" />
+    <UnitTestResult executionId="fa30189f-2550-465d-b5fd-aae0e3100f61" testId="1589af31-d4d9-ae61-5c42-ba29e0fb2f05" testName="PhaenoPortal.Test.KitBundlePostgresTests.SimulatedTwoUnitShipmentRejectsEarlyAndExcessWritesAndKeepsIndependentSources" computerName="HAACK-DESKTOP" duration="00:00:08.1221631" startTime="2026-10-15T15:35:39.8677221-07:00" endTime="2026-10-15T15:35:47.9896879-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="fa30189f-2550-465d-b5fd-aae0e3100f61" />
+    <UnitTestResult executionId="3f77b063-046e-4d34-866d-6c7d86e17b3c" testId="365148a0-fc74-f45e-79e6-4d56649af2e8" testName="PhaenoPortal.Test.KitBundlePostgresTests.SimulatedCaseExtensionCancellationAndRepeatDraftPreserveBundleAndLegacyHistory" computerName="HAACK-DESKTOP" duration="00:00:14.9734650" startTime="2026-10-15T15:32:58.5119446-07:00" endTime="2026-10-15T15:33:13.4848154-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="3f77b063-046e-4d34-866d-6c7d86e17b3c" />
+    <UnitTestResult executionId="27cffc5a-cb20-4a46-beb2-a47b31b12c0e" testId="06e014b0-2633-970c-a9f3-48a74872fa74" testName="PhaenoPortal.Test.KitBundlePostgresTests.ExpiredIncludedDraftRejectsUploadUpdateAndSubmissionWhileRetainingFiles" computerName="HAACK-DESKTOP" duration="00:00:08.4845589" startTime="2026-10-15T15:34:47.9565934-07:00" endTime="2026-10-15T15:34:56.4406448-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="27cffc5a-cb20-4a46-beb2-a47b31b12c0e" />
+    <UnitTestResult executionId="fd1752da-64e8-4bb4-a54c-28aa689a41c3" testId="3089f608-7fa2-0c4c-d8fc-fb383128d232" testName="PhaenoPortal.Test.KitBundleDomainTests.ReplacementPreservesPurchaseBillingAndInputProvenanceWithoutShorteningExtension" computerName="HAACK-DESKTOP" duration="00:00:00.0210610" startTime="2026-10-15T15:32:21.0895494-07:00" endTime="2026-10-15T15:32:21.1156879-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="fd1752da-64e8-4bb4-a54c-28aa689a41c3" />
+    <UnitTestResult executionId="34eeeb6e-944f-400a-9679-334c05c001c5" testId="a1abc292-68b4-4771-e863-5cf116f92d12" testName="PhaenoPortal.Test.PSeqKitLotDomainTests.ExpiryUsesTheActualUseDateAndIncludesTheLabeledLastDay" computerName="HAACK-DESKTOP" duration="00:00:00.0060875" startTime="2026-10-15T15:32:21.0911040-07:00" endTime="2026-10-15T15:32:21.1033244-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="34eeeb6e-944f-400a-9679-334c05c001c5" />
+    <UnitTestResult executionId="55f21563-b195-44a8-9ff5-e9f9c4fc0d37" testId="758a3736-aaea-139a-0f0c-4f6e67b51af5" testName="PhaenoPortal.Test.KitBundleDomainTests.CorrectedInputReusesCaseAndCannotExpireAfterFirstSubmission" computerName="HAACK-DESKTOP" duration="00:00:00.0006403" startTime="2026-10-15T15:32:21.1163180-07:00" endTime="2026-10-15T15:32:21.1163530-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="55f21563-b195-44a8-9ff5-e9f9c4fc0d37" />
+    <UnitTestResult executionId="344b2eb0-9468-4329-a910-bef6aec93390" testId="e4b18092-88b2-cc24-2340-082c7f4b0653" testName="PhaenoPortal.Test.KitBundlePostgresTests.TenantDepartmentAndRoleAdmissionApplyToNewCommandsAndReplays" computerName="HAACK-DESKTOP" duration="00:00:05.8258373" startTime="2026-10-15T15:34:33.9916847-07:00" endTime="2026-10-15T15:34:39.8173409-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="344b2eb0-9468-4329-a910-bef6aec93390" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="PhaenoPortal.Test.KitBundlePostgresTests.SimulatedSubstitutionRequiresEligiblePartnerApprovalAndRetainsBothDecisions" storage="d:\__dev\phaeno-portal\backend\test\bin\debug\net10.0\pseq.operations.test.dll" id="d43bc77f-16ee-dd70-5107-c022f80ee13c">
+      <Execution id="a4cab6c6-0815-4383-ba72-1d17005275b5" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\Debug\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.KitBundlePostgresTests" name="SimulatedSubstitutionRequiresEligiblePartnerApprovalAndRetainsBothDecisions" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.KitBundlePostgresTests.SimulatedCorrectedKitOutputRetainsInputLineageAndCreditsMemberBytesUnderOriginalInvoice" storage="d:\__dev\phaeno-portal\backend\test\bin\debug\net10.0\pseq.operations.test.dll" id="e514ce54-b8be-4f20-79d7-eea7eef542e4">
+      <Execution id="ab52d3af-98e9-4649-9a3a-38d00e6360d9" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\Debug\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.KitBundlePostgresTests" name="SimulatedCorrectedKitOutputRetainsInputLineageAndCreditsMemberBytesUnderOriginalInvoice" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.PSeqKitLotDomainTests.ExpiryUsesTheActualUseDateAndIncludesTheLabeledLastDay" storage="d:\__dev\phaeno-portal\backend\test\bin\debug\net10.0\pseq.operations.test.dll" id="a1abc292-68b4-4771-e863-5cf116f92d12">
+      <Execution id="34eeeb6e-944f-400a-9679-334c05c001c5" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\Debug\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.PSeqKitLotDomainTests" name="ExpiryUsesTheActualUseDateAndIncludesTheLabeledLastDay" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.PSeqKitLotDomainTests.ShippedKitsRequireRegisteredLotIdentity" storage="d:\__dev\phaeno-portal\backend\test\bin\debug\net10.0\pseq.operations.test.dll" id="47be1a98-dbff-7ff5-f439-a36fafc64dce">
+      <Execution id="357be697-510e-46f8-8a27-572fd60faa68" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\Debug\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.PSeqKitLotDomainTests" name="ShippedKitsRequireRegisteredLotIdentity" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.KitBundleDomainTests.ReplacementCannotCrossTenantOrFollowReleasedResults" storage="d:\__dev\phaeno-portal\backend\test\bin\debug\net10.0\pseq.operations.test.dll" id="346440a2-0599-9ab3-e7e4-483239b4b48e">
+      <Execution id="2e58d224-b766-43c8-af63-cd1b2b55740d" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\Debug\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.KitBundleDomainTests" name="ReplacementCannotCrossTenantOrFollowReleasedResults" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.KitBundlePostgresTests.BrowserStandaloneLotThenAssemblyUsesRealHttpAndPostgres" storage="d:\__dev\phaeno-portal\backend\test\bin\debug\net10.0\pseq.operations.test.dll" id="a5b349db-dd5e-3469-6e0b-4c773fb2b8f2">
+      <Execution id="a4379ecf-5b45-4889-a179-4a95c61ece3a" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\Debug\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.KitBundlePostgresTests" name="BrowserStandaloneLotThenAssemblyUsesRealHttpAndPostgres" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.KitBundlePostgresTests.IncludedInputsResumeWithoutDuplicatesAndFreezeOneValidatedRevision" storage="d:\__dev\phaeno-portal\backend\test\bin\debug\net10.0\pseq.operations.test.dll" id="6d6502d0-435f-c0b1-1cc4-ff2f904e2e10">
+      <Execution id="1d3bdbaf-3a17-4103-b421-265a91fc8723" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\Debug\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.KitBundlePostgresTests" name="IncludedInputsResumeWithoutDuplicatesAndFreezeOneValidatedRevision" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.KitBundlePostgresTests.IncludedInputsRejectEveryNonCleanScanWithoutCreatingARevision" storage="d:\__dev\phaeno-portal\backend\test\bin\debug\net10.0\pseq.operations.test.dll" id="ffbae86d-be45-a469-c48d-5f572f4642e5">
+      <Execution id="f245936b-fa6b-49c9-98d3-2b08404e39fa" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\Debug\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.KitBundlePostgresTests" name="IncludedInputsRejectEveryNonCleanScanWithoutCreatingARevision" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.KitBundlePostgresTests.MissingOrRecalledRegisteredLotCannotBeShipped" storage="d:\__dev\phaeno-portal\backend\test\bin\debug\net10.0\pseq.operations.test.dll" id="715470ff-5aad-cf7a-b2d6-2b2f09bcb14c">
+      <Execution id="29f047df-79ac-41cb-a183-d3849263327f" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\Debug\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.KitBundlePostgresTests" name="MissingOrRecalledRegisteredLotCannotBeShipped" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.KitBundlePostgresTests.SimulatedCaseExtensionCancellationAndRepeatDraftPreserveBundleAndLegacyHistory" storage="d:\__dev\phaeno-portal\backend\test\bin\debug\net10.0\pseq.operations.test.dll" id="365148a0-fc74-f45e-79e6-4d56649af2e8">
+      <Execution id="3f77b063-046e-4d34-866d-6c7d86e17b3c" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\Debug\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.KitBundlePostgresTests" name="SimulatedCaseExtensionCancellationAndRepeatDraftPreserveBundleAndLegacyHistory" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.KitBundlePostgresTests.LaterRecallIsRecheckedAtSubmissionAndAnalysisWithoutRewritingSnapshots" storage="d:\__dev\phaeno-portal\backend\test\bin\debug\net10.0\pseq.operations.test.dll" id="5529d0a0-9246-edaa-819e-ee8ab13c78bb">
+      <Execution id="d06b359c-71bf-4024-a70e-fe01dae02b04" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\Debug\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.KitBundlePostgresTests" name="LaterRecallIsRecheckedAtSubmissionAndAnalysisWithoutRewritingSnapshots" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.KitBundlePostgresTests.ExplicitLifecycleCheckExpiresUnusedDraftOnceAndPreservesItsInputRequest" storage="d:\__dev\phaeno-portal\backend\test\bin\debug\net10.0\pseq.operations.test.dll" id="9e659efa-7f0e-027c-d214-c65559327bc7">
+      <Execution id="bcb93d19-3e46-45e2-a1c0-f3ccb67d4f1b" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\Debug\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.KitBundlePostgresTests" name="ExplicitLifecycleCheckExpiresUnusedDraftOnceAndPreservesItsInputRequest" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.KitBundlePostgresTests.PaidIncludedOutputWaitsForOperationalHoldAndCancellationDecision" storage="d:\__dev\phaeno-portal\backend\test\bin\debug\net10.0\pseq.operations.test.dll" id="6bef95a6-b881-4144-6f2e-3ab0e2220049">
+      <Execution id="5174aa92-3a77-4ee8-a2f9-ddec6853b77d" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\Debug\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.KitBundlePostgresTests" name="PaidIncludedOutputWaitsForOperationalHoldAndCancellationDecision" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.KitBundleDomainTests.ReplacementPreservesPurchaseBillingAndInputProvenanceWithoutShorteningExtension" storage="d:\__dev\phaeno-portal\backend\test\bin\debug\net10.0\pseq.operations.test.dll" id="3089f608-7fa2-0c4c-d8fc-fb383128d232">
+      <Execution id="fd1752da-64e8-4bb4-a54c-28aa689a41c3" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\Debug\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.KitBundleDomainTests" name="ReplacementPreservesPurchaseBillingAndInputProvenanceWithoutShorteningExtension" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.KitBundlePostgresTests.PartnerSavesAndReplaysLotBeforeAssemblyWithoutFilesOrUseDate" storage="d:\__dev\phaeno-portal\backend\test\bin\debug\net10.0\pseq.operations.test.dll" id="a3653757-2acb-5ee3-8fd1-4dafcebc5168">
+      <Execution id="1b8edfc0-7e75-4014-9174-192ff406f8b5" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\Debug\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.KitBundlePostgresTests" name="PartnerSavesAndReplaysLotBeforeAssemblyWithoutFilesOrUseDate" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.KitBundlePostgresTests.SavedJsonbScopePlacesExactlyOnceAndChangedProfileRollsBackUntilDraftReview" storage="d:\__dev\phaeno-portal\backend\test\bin\debug\net10.0\pseq.operations.test.dll" id="e47eabf0-d1f6-cbce-2302-79ca90a41f4a">
+      <Execution id="77721a3f-f0ca-4be9-a29e-13756910c8dd" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\Debug\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.KitBundlePostgresTests" name="SavedJsonbScopePlacesExactlyOnceAndChangedProfileRollsBackUntilDraftReview" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.KitBundlePostgresTests.TenantDepartmentAndRoleAdmissionApplyToNewCommandsAndReplays" storage="d:\__dev\phaeno-portal\backend\test\bin\debug\net10.0\pseq.operations.test.dll" id="e4b18092-88b2-cc24-2340-082c7f4b0653">
+      <Execution id="344b2eb0-9468-4329-a910-bef6aec93390" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\Debug\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.KitBundlePostgresTests" name="TenantDepartmentAndRoleAdmissionApplyToNewCommandsAndReplays" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.PSeqKitLotDomainTests.EarlyLotSubmissionNeedsNeitherAnAssemblyRequestNorAnActualUseDate" storage="d:\__dev\phaeno-portal\backend\test\bin\debug\net10.0\pseq.operations.test.dll" id="39e3b8e8-2980-a4a2-8816-8f98a2475699">
+      <Execution id="bbb38daa-8779-4c25-826d-3b21113645b5" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\Debug\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.PSeqKitLotDomainTests" name="EarlyLotSubmissionNeedsNeitherAnAssemblyRequestNorAnActualUseDate" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.KitBundlePostgresTests.SimulatedTwoUnitShipmentRejectsEarlyAndExcessWritesAndKeepsIndependentSources" storage="d:\__dev\phaeno-portal\backend\test\bin\debug\net10.0\pseq.operations.test.dll" id="1589af31-d4d9-ae61-5c42-ba29e0fb2f05">
+      <Execution id="fa30189f-2550-465d-b5fd-aae0e3100f61" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\Debug\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.KitBundlePostgresTests" name="SimulatedTwoUnitShipmentRejectsEarlyAndExcessWritesAndKeepsIndependentSources" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.KitBundlePostgresTests.ExpiredIncludedDraftRejectsUploadUpdateAndSubmissionWhileRetainingFiles" storage="d:\__dev\phaeno-portal\backend\test\bin\debug\net10.0\pseq.operations.test.dll" id="06e014b0-2633-970c-a9f3-48a74872fa74">
+      <Execution id="27cffc5a-cb20-4a46-beb2-a47b31b12c0e" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\Debug\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.KitBundlePostgresTests" name="ExpiredIncludedDraftRejectsUploadUpdateAndSubmissionWhileRetainingFiles" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.KitBundleDomainTests.CorrectedInputReusesCaseAndCannotExpireAfterFirstSubmission" storage="d:\__dev\phaeno-portal\backend\test\bin\debug\net10.0\pseq.operations.test.dll" id="758a3736-aaea-139a-0f0c-4f6e67b51af5">
+      <Execution id="55f21563-b195-44a8-9ff5-e9f9c4fc0d37" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\Debug\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.KitBundleDomainTests" name="CorrectedInputReusesCaseAndCannotExpireAfterFirstSubmission" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.KitBundleDomainTests.IncludedAssemblySkipsSecondQuoteAndKeepsPurchasedOutputScope" storage="d:\__dev\phaeno-portal\backend\test\bin\debug\net10.0\pseq.operations.test.dll" id="be6e45da-c6ec-7d96-ab77-4020b8797431">
+      <Execution id="f12e5f30-2efd-4f77-94d2-8fde91f42bb9" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\Debug\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.KitBundleDomainTests" name="IncludedAssemblySkipsSecondQuoteAndKeepsPurchasedOutputScope" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.KitBundleDomainTests.EachCaseRetainsItsOwnShipmentAndDeadline" storage="d:\__dev\phaeno-portal\backend\test\bin\debug\net10.0\pseq.operations.test.dll" id="0b67a099-8432-ac28-dc76-0f8453daa738">
+      <Execution id="8be1a52d-9d13-48da-a464-2646e078a97a" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\Debug\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.KitBundleDomainTests" name="EachCaseRetainsItsOwnShipmentAndDeadline" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.KitBundleDomainTests.ExpiredDraftKeepsItsRequestAndCanResumeOnlyAfterAuditedExtension" storage="d:\__dev\phaeno-portal\backend\test\bin\debug\net10.0\pseq.operations.test.dll" id="23b7970a-3451-081d-7ca2-6f606fcef466">
+      <Execution id="429a3b6e-0de3-46f7-bc62-13cc7a00d595" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\Debug\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.KitBundleDomainTests" name="ExpiredDraftKeepsItsRequestAndCanResumeOnlyAfterAuditedExtension" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.KitBundlePostgresTests.SplitShipmentsFreezePerUnitDeadlinesAndOriginalBillingSources" storage="d:\__dev\phaeno-portal\backend\test\bin\debug\net10.0\pseq.operations.test.dll" id="84ed38cd-0434-7fa6-d58f-11f2651b98bd">
+      <Execution id="7f52ba70-fabb-4141-b6b5-644b856affa7" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\Debug\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.KitBundlePostgresTests" name="SplitShipmentsFreezePerUnitDeadlinesAndOriginalBillingSources" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.KitBundlePostgresTests.ReplacementRetainsInputHistoryAndIncludedReleaseUsesKitBalanceWithoutSecondInvoice" storage="d:\__dev\phaeno-portal\backend\test\bin\debug\net10.0\pseq.operations.test.dll" id="af068683-f7de-3a88-0d26-782ac0a93493">
+      <Execution id="09af5b81-bb8d-4f96-964a-4913e4a44cb7" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\Debug\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.KitBundlePostgresTests" name="ReplacementRetainsInputHistoryAndIncludedReleaseUsesKitBalanceWithoutSecondInvoice" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="e47eabf0-d1f6-cbce-2302-79ca90a41f4a" executionId="77721a3f-f0ca-4be9-a29e-13756910c8dd" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="6d6502d0-435f-c0b1-1cc4-ff2f904e2e10" executionId="1d3bdbaf-3a17-4103-b421-265a91fc8723" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0b67a099-8432-ac28-dc76-0f8453daa738" executionId="8be1a52d-9d13-48da-a464-2646e078a97a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="5529d0a0-9246-edaa-819e-ee8ab13c78bb" executionId="d06b359c-71bf-4024-a70e-fe01dae02b04" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="23b7970a-3451-081d-7ca2-6f606fcef466" executionId="429a3b6e-0de3-46f7-bc62-13cc7a00d595" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="a3653757-2acb-5ee3-8fd1-4dafcebc5168" executionId="1b8edfc0-7e75-4014-9174-192ff406f8b5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="6bef95a6-b881-4144-6f2e-3ab0e2220049" executionId="5174aa92-3a77-4ee8-a2f9-ddec6853b77d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="47be1a98-dbff-7ff5-f439-a36fafc64dce" executionId="357be697-510e-46f8-8a27-572fd60faa68" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="be6e45da-c6ec-7d96-ab77-4020b8797431" executionId="f12e5f30-2efd-4f77-94d2-8fde91f42bb9" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="346440a2-0599-9ab3-e7e4-483239b4b48e" executionId="2e58d224-b766-43c8-af63-cd1b2b55740d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="715470ff-5aad-cf7a-b2d6-2b2f09bcb14c" executionId="29f047df-79ac-41cb-a183-d3849263327f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ffbae86d-be45-a469-c48d-5f572f4642e5" executionId="f245936b-fa6b-49c9-98d3-2b08404e39fa" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="af068683-f7de-3a88-0d26-782ac0a93493" executionId="09af5b81-bb8d-4f96-964a-4913e4a44cb7" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9e659efa-7f0e-027c-d214-c65559327bc7" executionId="bcb93d19-3e46-45e2-a1c0-f3ccb67d4f1b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="84ed38cd-0434-7fa6-d58f-11f2651b98bd" executionId="7f52ba70-fabb-4141-b6b5-644b856affa7" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="e514ce54-b8be-4f20-79d7-eea7eef542e4" executionId="ab52d3af-98e9-4649-9a3a-38d00e6360d9" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="a5b349db-dd5e-3469-6e0b-4c773fb2b8f2" executionId="a4379ecf-5b45-4889-a179-4a95c61ece3a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="39e3b8e8-2980-a4a2-8816-8f98a2475699" executionId="bbb38daa-8779-4c25-826d-3b21113645b5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="d43bc77f-16ee-dd70-5107-c022f80ee13c" executionId="a4cab6c6-0815-4383-ba72-1d17005275b5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1589af31-d4d9-ae61-5c42-ba29e0fb2f05" executionId="fa30189f-2550-465d-b5fd-aae0e3100f61" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="365148a0-fc74-f45e-79e6-4d56649af2e8" executionId="3f77b063-046e-4d34-866d-6c7d86e17b3c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="06e014b0-2633-970c-a9f3-48a74872fa74" executionId="27cffc5a-cb20-4a46-beb2-a47b31b12c0e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="3089f608-7fa2-0c4c-d8fc-fb383128d232" executionId="fd1752da-64e8-4bb4-a54c-28aa689a41c3" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="a1abc292-68b4-4771-e863-5cf116f92d12" executionId="34eeeb6e-944f-400a-9679-334c05c001c5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="758a3736-aaea-139a-0f0c-4f6e67b51af5" executionId="55f21563-b195-44a8-9ff5-e9f9c4fc0d37" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="e4b18092-88b2-cc24-2340-082c7f4b0653" executionId="344b2eb0-9468-4329-a910-bef6aec93390" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Failed">
+    <Counters total="26" executed="26" passed="25" failed="1" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.12)&#xD;
+[xUnit.net 00:00:00.18]   Discovering: PSeq.Operations.Test&#xD;
+[xUnit.net 00:00:00.35]   Discovered:  PSeq.Operations.Test&#xD;
+[xUnit.net 00:00:00.38]   Starting:    PSeq.Operations.Test&#xD;
+[xUnit.net 00:01:54.59]       &#xD;
+[xUnit.net 00:01:54.59]       Running 4 tests using 1 worker&#xD;
+[xUnit.net 00:01:54.59]       &#xD;
+[xUnit.net 00:01:54.59]       HTTP \u001b[33m400\u001b[39m /api/reagent-orders/8b51df69-8073-495f-a967-6e9fe2a3c559/assembly-cases/1bba88f8-128f-489d-a6ba-8b451d30bc19/lot&#xD;
+[xUnit.net 00:01:54.59]       Browser console: Failed to load resource: the server responded with a status of 400 (Bad Request)&#xD;
+[xUnit.net 00:01:54.59]         x  1 [chromium] › e2e\pseq-kit-lots.connected.spec.ts:57:1 › standalone early lot persists, later assembly reuses it and analysis rechecks recall (14.6s)&#xD;
+[xUnit.net 00:01:54.59]         ok 2 [chromium] › e2e\pseq-kit-lots.connected.spec.ts:148:1 › early recalled and expired lot shows both warnings, keyboard cancel retains saved evidence (8.4s)&#xD;
+[xUnit.net 00:01:54.59]       HTTP \u001b[33m400\u001b[39m /api/reagent-orders/ca399cff-43ae-4634-b78a-f1002d32698e/assembly-cases/e4cd7b0d-63b5-4620-9422-873adecc0e73/lot&#xD;
+[xUnit.net 00:01:54.59]       Browser console: Failed to load resource: the server responded with a status of 400 (Bad Request)&#xD;
+[xUnit.net 00:01:54.59]         x  3 [mobile-chrome] › e2e\pseq-kit-lots.connected.spec.ts:57:1 › standalone early lot persists, later assembly reuses it and analysis rechecks recall (12.9s)&#xD;
+[xUnit.net 00:01:54.59]         ok 4 [mobile-chrome] › e2e\pseq-kit-lots.connected.spec.ts:148:1 › early recalled and expired lot shows both warnings, keyboard cancel retains saved evidence (7.0s)&#xD;
+[xUnit.net 00:01:54.59]       &#xD;
+[xUnit.net 00:01:54.59]       &#xD;
+[xUnit.net 00:01:54.59]         1) [chromium] › e2e\pseq-kit-lots.connected.spec.ts:57:1 › standalone early lot persists, later assembly reuses it and analysis rechecks recall &#xD;
+[xUnit.net 00:01:54.59]       &#xD;
+[xUnit.net 00:01:54.59]           Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed&#xD;
+[xUnit.net 00:01:54.59]       &#xD;
+[xUnit.net 00:01:54.59]           Locator: getByText(/Expires 2026-10-14$/)&#xD;
+[xUnit.net 00:01:54.59]           Expected: visible&#xD;
+[xUnit.net 00:01:54.59]           Timeout: 5000ms&#xD;
+[xUnit.net 00:01:54.59]           Error: element(s) not found&#xD;
+[xUnit.net 00:01:54.59]       &#xD;
+[xUnit.net 00:01:54.59]           Call log:&#xD;
+[xUnit.net 00:01:54.59]           \u001b[2m  - Expect "toBeVisible" with timeout 5000ms\u001b[22m&#xD;
+[xUnit.net 00:01:54.59]           \u001b[2m  - waiting for getByText(/Expires 2026-10-14$/)\u001b[22m&#xD;
+[xUnit.net 00:01:54.59]       &#xD;
+[xUnit.net 00:01:54.59]       &#xD;
+[xUnit.net 00:01:54.59]             80 |   await saveLot(page, scenario.lotNumber)&#xD;
+[xUnit.net 00:01:54.59]             81 |   await expect(page.getByText('Kit lot has expired', { exact: true })).toBeVisible()&#xD;
+[xUnit.net 00:01:54.59]           &gt; 82 |   await expect(page.getByText(new RegExp(`Expires ${scenario.expirationDate}$`))).toBeVisible()&#xD;
+[xUnit.net 00:01:54.59]                |                                                                                   ^&#xD;
+[xUnit.net 00:01:54.59]             83 |   let evidence = await api(`/verification/evidence/${scenario.orderId}`)&#xD;
+[xUnit.net 00:01:54.59]             84 |   expect(evidence.submissions).toHaveLength(1)&#xD;
+[xUnit.net 00:01:54.59]             85 |   expect(evidence.submissions[0].usedOn).toBeNull()&#xD;
+[xUnit.net 00:01:54.59]               at D:\__dev\phaeno-portal\frontend\e2e\pseq-kit-lots.connected.spec.ts:82:83&#xD;
+[xUnit.net 00:01:54.59]       &#xD;
+[xUnit.net 00:01:54.59]           Error Context: test-results\pseq-kit-lots.connected-st-f1f30-nd-analysis-rechecks-recall-chromium\error-context.md&#xD;
+[xUnit.net 00:01:54.59]       &#xD;
+[xUnit.net 00:01:54.59]         2) [mobile-chrome] › e2e\pseq-kit-lots.connected.spec.ts:57:1 › standalone early lot persists, later assembly reuses it and analysis rechecks recall &#xD;
+[xUnit.net 00:01:54.59]       &#xD;
+[xUnit.net 00:01:54.59]           Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed&#xD;
+[xUnit.net 00:01:54.59]       &#xD;
+[xUnit.net 00:01:54.59]           Locator: getByText(/Expires 2026-10-14$/)&#xD;
+[xUnit.net 00:01:54.59]           Expected: visible&#xD;
+[xUnit.net 00:01:54.59]           Timeout: 5000ms&#xD;
+[xUnit.net 00:01:54.59]           Error: element(s) not found&#xD;
+[xUnit.net 00:01:54.60]       &#xD;
+[xUnit.net 00:01:54.60]           Call log:&#xD;
+[xUnit.net 00:01:54.60]           \u001b[2m  - Expect "toBeVisible" with timeout 5000ms\u001b[22m&#xD;
+[xUnit.net 00:01:54.60]           \u001b[2m  - waiting for getByText(/Expires 2026-10-14$/)\u001b[22m&#xD;
+[xUnit.net 00:01:54.60]       &#xD;
+[xUnit.net 00:01:54.60]       &#xD;
+[xUnit.net 00:01:54.60]             80 |   await saveLot(page, scenario.lotNumber)&#xD;
+[xUnit.net 00:01:54.60]             81 |   await expect(page.getByText('Kit lot has expired', { exact: true })).toBeVisible()&#xD;
+[xUnit.net 00:01:54.60]           &gt; 82 |   await expect(page.getByText(new RegExp(`Expires ${scenario.expirationDate}$`))).toBeVisible()&#xD;
+[xUnit.net 00:01:54.60]                |                                                                                   ^&#xD;
+[xUnit.net 00:01:54.60]             83 |   let evidence = await api(`/verification/evidence/${scenario.orderId}`)&#xD;
+[xUnit.net 00:01:54.60]             84 |   expect(evidence.submissions).toHaveLength(1)&#xD;
+[xUnit.net 00:01:54.60]             85 |   expect(evidence.submissions[0].usedOn).toBeNull()&#xD;
+[xUnit.net 00:01:54.60]               at D:\__dev\phaeno-portal\frontend\e2e\pseq-kit-lots.connected.spec.ts:82:83&#xD;
+[xUnit.net 00:01:54.60]       &#xD;
+[xUnit.net 00:01:54.60]           Error Context: test-results\pseq-kit-lots.connected-st-f1f30-nd-analysis-rechecks-recall-mobile-chrome\error-context.md&#xD;
+[xUnit.net 00:01:54.60]       &#xD;
+[xUnit.net 00:01:54.60]         2 failed&#xD;
+[xUnit.net 00:01:54.60]           [chromium] › e2e\pseq-kit-lots.connected.spec.ts:57:1 › standalone early lot persists, later assembly reuses it and analysis rechecks recall &#xD;
+[xUnit.net 00:01:54.60]           [mobile-chrome] › e2e\pseq-kit-lots.connected.spec.ts:57:1 › standalone early lot persists, later assembly reuses it and analysis rechecks recall &#xD;
+[xUnit.net 00:01:54.60]         2 passed (55.4s)\u001b[2m[WebServer] \u001b[22m(node:43144) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.&#xD;
+[xUnit.net 00:01:54.60]       \u001b[2m[WebServer] \u001b[22m(Use `node --trace-warnings ...` to show where the warning was created)&#xD;
+[xUnit.net 00:01:54.60]       \u001b[2m[WebServer] \u001b[22m(node:43144) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.&#xD;
+[xUnit.net 00:01:54.60]       \u001b[2m[WebServer] \u001b[22m(Use `node --trace-warnings ...` to show where the warning was created)&#xD;
+[xUnit.net 00:01:54.60]       (node:37924) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.&#xD;
+[xUnit.net 00:01:54.60]       (Use `node --trace-warnings ...` to show where the warning was created)&#xD;
+[xUnit.net 00:01:54.60]       (node:37924) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.&#xD;
+[xUnit.net 00:01:54.60]       (Use `node --trace-warnings ...` to show where the warning was created)&#xD;
+[xUnit.net 00:01:54.60]       (node:4492) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.&#xD;
+[xUnit.net 00:01:54.60]       (Use `node --trace-warnings ...` to show where the warning was created)&#xD;
+[xUnit.net 00:01:54.60]       (node:4492) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.&#xD;
+[xUnit.net 00:01:54.60]       (Use `node --trace-warnings ...` to show where the warning was created)&#xD;
+[xUnit.net 00:01:54.60]       (node:39256) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.&#xD;
+[xUnit.net 00:01:54.60]       (Use `node --trace-warnings ...` to show where the warning was created)&#xD;
+[xUnit.net 00:01:54.60]       (node:39256) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.&#xD;
+[xUnit.net 00:01:54.60]       (Use `node --trace-warnings ...` to show where the warning was created)&#xD;
+[xUnit.net 00:01:54.60]       (node:32880) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.&#xD;
+[xUnit.net 00:01:54.60]       (Use `node --trace-warnings ...` to show where the warning was created)&#xD;
+[xUnit.net 00:01:54.60]       (node:32880) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.&#xD;
+[xUnit.net 00:01:54.60]       (Use `node --trace-warnings ...` to show where the warning was created)&#xD;
+[xUnit.net 00:01:54.60]       Stack Trace:&#xD;
+[xUnit.net 00:01:54.60]         D:\__dev\phaeno-portal\backend\test\PSeqKitLotBrowserPostgresTests.cs(110,0): at PhaenoPortal.Test.KitBundlePostgresTests.BrowserStandaloneLotThenAssemblyUsesRealHttpAndPostgres()&#xD;
+[xUnit.net 00:01:54.60]         D:\__dev\phaeno-portal\backend\test\PSeqKitLotBrowserPostgresTests.cs(111,0): at PhaenoPortal.Test.KitBundlePostgresTests.BrowserStandaloneLotThenAssemblyUsesRealHttpAndPostgres()&#xD;
+[xUnit.net 00:01:54.60]         D:\__dev\phaeno-portal\backend\test\PSeqKitLotBrowserPostgresTests.cs(111,0): at PhaenoPortal.Test.KitBundlePostgresTests.BrowserStandaloneLotThenAssemblyUsesRealHttpAndPostgres()&#xD;
+[xUnit.net 00:01:54.60]         D:\__dev\phaeno-portal\backend\test\PSeqKitLotBrowserPostgresTests.cs(111,0): at PhaenoPortal.Test.KitBundlePostgresTests.BrowserStandaloneLotThenAssemblyUsesRealHttpAndPostgres()&#xD;
+[xUnit.net 00:01:54.60]         --- End of stack trace from previous location ---&#xD;
+[xUnit.net 00:04:11.80]   Finished:    PSeq.Operations.Test&#xD;
+</StdOut>
+    </Output>
+    <RunInfos>
+      <RunInfo computerName="HAACK-DESKTOP" outcome="Error" timestamp="2026-10-15T15:34:15.2791677-07:00">
+        <Text>[xUnit.net 00:01:54.59]     PhaenoPortal.Test.KitBundlePostgresTests.BrowserStandaloneLotThenAssemblyUsesRealHttpAndPostgres [FAIL]</Text>
+      </RunInfo>
+    </RunInfos>
+  </ResultSummary>
+</TestRun>

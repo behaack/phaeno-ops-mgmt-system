@@ -28,7 +28,7 @@ public sealed partial class KitBundlePostgresTests
         var storage = new InputBytes(); var scanner = new InputScanner();
         var first = await Upload(scope, draft.Id, storage, scanner, "original.fasta", Encoding.UTF8.GetBytes(">SIMULATED original\nAAAA\n"));
         static string Manifest(Guid id) => JsonSerializer.Serialize(new { files = new[] { new { id } } });
-        var submitted = await scope.Assembly().Submit(draft.Id, new(draft.Version, Manifest(first.Id)), default);
+        var submitted = await scope.Assembly().Submit(draft.Id, new(draft.Version, Manifest(first.Id), KitLotVersion: 1), default);
         var originalRevision = Assert.Single(submitted.InputRevisions);
         var validating = await scope.Scientific().BeginIntake(draft.Id, new(submitted.Version), default);
         var correction = await scope.Scientific().RequestChanges(draft.Id, new(validating.Version, "SIMULATED replace original.fasta and correct reference", null), default);
@@ -36,7 +36,7 @@ public sealed partial class KitBundlePostgresTests
         await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() => scope.Assembly().DeleteInput(draft.Id, first.Id, first.Version, default));
         await scope.Assembly().DeleteInput(draft.Id, first.Id, Assert.Single(correction.InputFiles).Version, default);
         var replacement = await Upload(scope, draft.Id, storage, scanner, "corrected.fasta", Encoding.UTF8.GetBytes(">SIMULATED corrected\nACGT\n"));
-        var resubmitted = await scope.Assembly().Submit(draft.Id, new(correction.Version, Manifest(replacement.Id)), default);
+        var resubmitted = await scope.Assembly().Submit(draft.Id, new(correction.Version, Manifest(replacement.Id), KitLotVersion: 1), default);
         var revisions = await scope.Db.AssemblyInputRevisions.AsNoTracking().Where(x => x.DataAssemblyRequestId == draft.Id).OrderBy(x => x.Revision).ToListAsync();
         Assert.Equal(2, revisions.Count); Assert.Equal(originalRevision.Id, revisions[1].PreviousRevisionId);
         Assert.Contains(first.Id.ToString(), revisions[0].ManifestJson); Assert.Contains(replacement.Id.ToString(), revisions[1].ManifestJson);
@@ -46,7 +46,7 @@ public sealed partial class KitBundlePostgresTests
         var intake = await scope.Scientific().BeginIntake(draft.Id, new(resubmitted.Version), default);
         var queued = await scope.Scientific().AcceptIntake(draft.Id, new(intake.Version), default);
         Assert.Empty(queued.Quotes);
-        var processing = await scope.Scientific().StartProcessing(draft.Id, new(queued.Version, "1", "SIMULATED-PIPELINE", "SIMULATED no scientific validity asserted"), default);
+        var processing = await scope.Scientific().StartProcessing(draft.Id, new(queued.Version, "1", "SIMULATED-PIPELINE", "SIMULATED no scientific validity asserted", KitLotVersion: 1), default);
         var run = Assert.Single(processing.ProcessingRuns); Assert.Equal(revisions[1].Id, run.InputRevisionId);
         var reviewed = await scope.Scientific().DecideProcessing(draft.Id, run.Id, new(processing.Version, run.Id, true, "SIMULATED Pass"), default);
         var bytes = Encoding.UTF8.GetBytes(">SIMULATED OUTPUT ONLY\nACGT\n");

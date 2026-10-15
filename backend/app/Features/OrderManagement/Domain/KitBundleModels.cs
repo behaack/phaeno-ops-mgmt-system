@@ -21,6 +21,7 @@ public sealed class PartnerKitUnit : IAudit, IConcurrency
     public Guid? ReplacedByKitUnitId { get; private set; }
     public DateTime? ShippedAt { get; private set; }
     public DateTime? ExpiresAt { get; private set; }
+    public Guid? KitLotId { get; private set; }
     public string? LotBatchNumber { get; private set; }
     public string? Carrier { get; private set; }
     public string? TrackingNumber { get; private set; }
@@ -36,12 +37,13 @@ public sealed class PartnerKitUnit : IAudit, IConcurrency
         PartnerReagentOrderId = orderId; PartnerReagentOrderLineId = lineId; OrganizationId = organizationId; DepartmentId = departmentId;
         Label = OrderText.Required(label, nameof(label), 100); ReplacesKitUnitId = replacesKitUnitId;
     }
-    public void Ship(Guid? shipmentId, DateTime shippedAt, DateTime? expiresAt, string lotBatchNumber, string carrier, string trackingNumber)
+    public void Ship(Guid? shipmentId, DateTime shippedAt, DateTime? expiresAt, string lotBatchNumber, string carrier, string trackingNumber, Guid kitLotId)
     {
         if (Status != KitUnitStatus.AwaitingShipment) throw new InvalidOperationException("Only an unshipped Kit unit may be shipped.");
+        if (kitLotId == Guid.Empty) throw new ArgumentException("A registered kit lot is required.");
         if (shippedAt.Kind != DateTimeKind.Utc || shippedAt > DateTime.UtcNow.AddMinutes(5)) throw new ArgumentException("Use a valid UTC shipment date.");
         if (expiresAt.HasValue && expiresAt.Value.Date < shippedAt.Date) throw new ArgumentException("A Kit cannot ship after its labeled expiration.");
-        ReagentShipmentId = shipmentId; ShippedAt = shippedAt; ExpiresAt = expiresAt;
+        ReagentShipmentId = shipmentId; ShippedAt = shippedAt; ExpiresAt = expiresAt; KitLotId = kitLotId;
         LotBatchNumber = OrderText.Required(lotBatchNumber, nameof(lotBatchNumber), 255);
         Carrier = OrderText.Required(carrier, nameof(carrier), 255); TrackingNumber = OrderText.Required(trackingNumber, nameof(trackingNumber), 255);
         Status = KitUnitStatus.Shipped;

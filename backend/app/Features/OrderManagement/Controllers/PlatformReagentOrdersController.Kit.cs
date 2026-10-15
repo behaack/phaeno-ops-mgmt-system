@@ -26,9 +26,12 @@ public sealed partial class PlatformReagentOrdersController
         => ChangeCaseAsync(orderId, caseId, request.Version, "replace", request, async (included, actor, operationToken) =>
         {
             var original = await dbContext.PartnerKitUnits.SingleAsync(x => x.Id == included.CurrentKitUnitId, operationToken);
+            var productId = await dbContext.PartnerReagentOrderLines.Where(x => x.Id == original.PartnerReagentOrderLineId)
+                .Select(x => x.QboCatalogItemId).SingleAsync(operationToken);
+            var lot = await new PSeqKitLotService(dbContext).RequireShipmentLotAsync(productId, request.LotBatchNumber, request.ShippedAt, operationToken);
             var replacement = new PartnerKitUnit(orderId, original.PartnerReagentOrderLineId, included.OrganizationId, included.DepartmentId,
                 $"{original.Label.Split("-R")[0]}-R{Guid.NewGuid():N}", original.Id);
-            Execute(() => replacement.Ship(null, request.ShippedAt, request.ExpiresAt, request.LotBatchNumber, request.Carrier, request.TrackingNumber));
+            Execute(() => replacement.Ship(null, request.ShippedAt, lot.ExpirationDate?.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc), lot.LotNumber, request.Carrier, request.TrackingNumber, lot.Id));
             Execute(() => original.Replace(replacement.Id));
             Execute(() => included.Transfer(replacement, request.Reason, actor, DateTime.UtcNow));
             dbContext.PartnerKitUnits.Add(replacement);

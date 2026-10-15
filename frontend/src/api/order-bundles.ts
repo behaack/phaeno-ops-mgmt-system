@@ -1,3 +1,4 @@
+import type { KitLotSubmission } from './pseq-kit-lots'
 import { api } from './client'
 import type {
   AssemblyProfile,
@@ -164,6 +165,8 @@ export type KitUnit = {
   version: number
 }
 export type KitAssemblyCase = {
+  lotSubmission?: KitLotSubmission | null
+  canSubmitLot?: boolean
   id: string
   caseNumber: string
   originalKitUnitId: string
@@ -317,7 +320,6 @@ export type KitCaseActionInput = {
   reason: string
   submissionDeadlineAt?: string
   lotBatchNumber?: string
-  expiresAt?: string | null
   shippedAt?: string
   carrier?: string
   trackingNumber?: string

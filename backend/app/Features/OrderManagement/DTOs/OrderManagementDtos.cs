@@ -411,7 +411,7 @@ public sealed record AssemblyInputRevisionDto(
     string ManifestJson,
     string? CorrectionReason,
     string ValidationSummaryJson,
-    DateTime SubmittedAt);
+    DateTime SubmittedAt, string? KitLotAssessmentJson = null, DateOnly? KitUsedOn = null);
 
 public sealed record AssemblyProcessingRunDto(
     Guid Id,
@@ -424,7 +424,7 @@ public sealed record AssemblyProcessingRunDto(
     DateTime StartedAt,
     DateTime? CompletedAt,
     string? FailureReason,
-    long Version);
+    long Version, string? KitLotAssessmentJson = null);
 
 public sealed record AssemblyOutputReleaseDto(
     Guid Id,
@@ -486,7 +486,7 @@ public sealed record DataAssemblyRequestDto(
     Guid? KitOrderId = null,
     string? KitOrderNumber = null,
     string? KitCaseNumber = null,
-    bool IsIncludedAssembly = false);
+    bool IsIncludedAssembly = false, KitLotSubmissionDto? KitLotSubmission = null);
 
 public sealed record AnalysisDefinitionDto(
     Guid Id,
@@ -689,14 +689,14 @@ public sealed record ReagentOrderWriteRequest(IReadOnlyList<ReagentLineWriteRequ
     ReagentDraftDetailsRequest? Details = null);
 public sealed record PlaceReagentOrderRequest(long Version, string PurchaseOrderNumber, Guid ShippingAddressId, DateTime? RequestedDeliveryDate, string? ShippingInstructions);
 public sealed record ShippingAddressWriteRequest(string Label, string Recipient, string Line1, string? Line2, string City, string Region, string PostalCode, string CountryCode, string? Phone, long? Version = null);
-public sealed record ShipmentAllocationRequest(Guid OrderLineId, decimal Quantity, string LotBatchNumber, DateTime? ExpiresAt);
+public sealed record ShipmentAllocationRequest(Guid OrderLineId, decimal Quantity, string LotBatchNumber);
 public sealed record CreateShipmentRequest(long Version, string Carrier, string? Service, string TrackingNumber, DateTime ShippedAt, IReadOnlyList<ShipmentAllocationRequest> Lines);
 public sealed record ReagentAdjustmentDecisionRequest(long Version, bool Approved);
 public sealed record ProposeReagentAdjustmentRequest(long Version, Guid OriginalLineId, Guid ProposedOfferingId, decimal Quantity, string Reason);
 
 public sealed record AssemblyWriteRequest(Guid AssemblyProfileId, string ProjectReference, string MetadataJson, string RequestedOutput, string? ProcessingNotes, bool ProhibitedDataConfirmed, long? Version = null);
-public sealed record AssemblySubmitRequest(long Version, string ManifestJson, string ValidationSummaryJson = "{}");
-public sealed record AssemblyProcessingRequest(long Version, string ProfileVersion, string PipelineVersion, string Provenance);
+public sealed record AssemblySubmitRequest(long Version, string ManifestJson, string ValidationSummaryJson = "{}", long? KitLotVersion = null);
+public sealed record AssemblyProcessingRequest(long Version, string ProfileVersion, string PipelineVersion, string Provenance, long? KitLotVersion = null);
 public sealed record AssemblyProcessingDecisionRequest(long Version, Guid RunId, bool Succeeded, string QcStatusOrReason);
 public sealed record AssemblyOutputReviewRequest(long Version, Guid RunId, string ManifestJson, string PipelineVersion, string Provenance, string QcStatus);
 

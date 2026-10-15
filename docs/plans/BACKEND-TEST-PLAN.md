@@ -1,5 +1,10 @@
 # Backend Test Plan
 
+## PSeq kit lot traceability — October 15, 2026
+
+Executed the focused lot/domain and Kit bundle PostgreSQL regressions: **25 passed, zero skipped**. Coverage includes inclusive calendar expiry, independent early save/replay without files/request/use date, mismatch/Department isolation, missing use date, current-lot versions at submission/start, immutable snapshots, registered shipment/replacement lineage and existing lifecycle/input/release acceptance. PostgreSQL JSONB snapshots are compared by value. The opt-in `PSeqKitLotBrowserPostgresTests` host separately passed its real HTTP/PostgreSQL browser wrapper. All test databases were disposable and removed; the application database received no operational fixtures. See the [verification report](../testing/runs/2026-10-15-pseq-kit-lots-verification.md) for raw results and simulated identity/storage boundaries.
+
+
 Hosted DPS checkpoint, October 14: the full Release solution builds with zero
 warnings/errors and EF comparison reports no model change. Protected API run
 #106 passes required health/scanner smoke checks; private correlated Describe,

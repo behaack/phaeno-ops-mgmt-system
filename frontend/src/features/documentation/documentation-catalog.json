@@ -758,7 +758,7 @@
       "title": "Order PSeq Kits",
       "summary": "Review negotiated Kit bundles, track each shipped unit and prepare its included Assembly case.",
       "order": 30,
-      "reviewedAt": "2026-09-19",
+      "reviewedAt": "2026-10-15",
       "navigationGroup": "partner-work",
       "contentType": "guide",
       "topicIds": [
@@ -784,7 +784,7 @@
       "title": "Prepare included Assembly",
       "summary": "Prepare a purchased Kit case, correct inputs and download governed outputs without another purchase.",
       "order": 40,
-      "reviewedAt": "2026-09-15",
+      "reviewedAt": "2026-10-15",
       "navigationGroup": "partner-work",
       "contentType": "guide",
       "topicIds": [
@@ -1346,7 +1346,7 @@
       "title": "Order operations",
       "summary": "Use grouped Lab services and Partner services sections in Order Ops, with Dashboard attention, Finance and laboratory release in their owning workspaces.",
       "order": 40,
-      "reviewedAt": "2026-10-11",
+      "reviewedAt": "2026-10-15",
       "navigationGroup": "order-operations",
       "contentType": "overview",
       "topicIds": [
@@ -1407,7 +1407,7 @@
       "title": "PSeq kit fulfillment",
       "summary": "Review Partner kit orders commercially, then open Lab work for substitutions, backorders, and shipment fulfillment.",
       "order": 52,
-      "reviewedAt": "2026-10-12",
+      "reviewedAt": "2026-10-15",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1436,7 +1436,7 @@
       "title": "Data assembly",
       "summary": "Coordinate commercial quotes and decisions with Lab-owned input validation, processing, QC, and output approval.",
       "order": 53,
-      "reviewedAt": "2026-10-09",
+      "reviewedAt": "2026-10-15",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1820,7 +1820,7 @@
       "title": "Configuration and file retention",
       "summary": "Maintain reusable defaults, services, analyses, Partner rules, Sample types, Shipping procedures, Phaeno ship-to destinations, Transportation kits, and released-file retention.",
       "order": 60,
-      "reviewedAt": "2026-10-04",
+      "reviewedAt": "2026-10-15",
       "navigationGroup": "platform-operations",
       "contentType": "troubleshooting",
       "topicIds": [

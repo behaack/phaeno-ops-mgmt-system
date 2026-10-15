@@ -22,11 +22,12 @@ import { AnalysisConfigurationPanel } from './AnalysisConfigurationPanel'
 import { AssemblyConfigurationPanel } from './AssemblyConfigurationPanel'
 import { CommercialConfigurationPanel } from './CommercialConfigurationPanel'
 import { ReagentConfigurationPanel } from './ReagentConfigurationPanel'
+import { PSeqKitLotsPanel } from './PSeqKitLotsPanel'
 import { CatalogConfigurationPanel } from './CatalogConfigurationPanel'
 import { SystemConfigurationPanel } from './SystemConfigurationPanel'
 
-export type ConfigurationSection = 'system' | 'catalog' | 'analyses' | 'reagents' | 'assembly' | 'trials' | 'commercial'
-export function parseConfigurationSection(value: unknown): ConfigurationSection { return ['system', 'catalog', 'analyses', 'reagents', 'assembly', 'trials', 'commercial'].includes(String(value)) ? value as ConfigurationSection : 'system' }
+export type ConfigurationSection = 'system' | 'catalog' | 'analyses' | 'reagents' | 'kit-lots' | 'assembly' | 'trials' | 'commercial'
+export function parseConfigurationSection(value: unknown): ConfigurationSection { return ['system', 'catalog', 'analyses', 'reagents', 'kit-lots', 'assembly', 'trials', 'commercial'].includes(String(value)) ? value as ConfigurationSection : 'system' }
 
 const configurationSections: ReadonlyArray<WorkspaceSidebarItem<ConfigurationSection>> = [
   {
@@ -48,6 +49,7 @@ const configurationSections: ReadonlyArray<WorkspaceSidebarItem<ConfigurationSec
     description: 'Partner kit offerings and negotiated prices',
     icon: Boxes,
   },
+  { value: 'kit-lots', label: 'PSeq kit lots', description: 'Lot registration, expiration and recalls', icon: Boxes },
   {
     value: 'assembly',
     label: 'Assembly',
@@ -68,7 +70,7 @@ const configurationSections: ReadonlyArray<WorkspaceSidebarItem<ConfigurationSec
   },
 ]
 
-export function OrderConfigurationPage({ catalogItemId }: { catalogItemId?: string } = {}) {
+export function OrderConfigurationPage({ catalogItemId, kitLotId }: { catalogItemId?: string; kitLotId?: string } = {}) {
   const { authProvider, session } = usePhaenoSession()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
@@ -76,7 +78,7 @@ export function OrderConfigurationPage({ catalogItemId }: { catalogItemId?: stri
   const canManage = Boolean(session?.capabilities.canManageOrderConfiguration)
   const canManageTrials = Boolean(session?.capabilities.canManageTrialProjects)
   const sections = configurationSections.filter(item => item.value === 'trials' ? canManageTrials || canManage : canManage)
-  const requestedSection = catalogItemId ? 'catalog' : parseConfigurationSection(search.configurationSection)
+  const requestedSection = kitLotId ? 'kit-lots' : catalogItemId ? 'catalog' : parseConfigurationSection(search.configurationSection)
   const section = sections.find(item => item.value === requestedSection)?.value ?? sections[0]?.value
   const showingOrders = Boolean(section && section !== 'trials')
   const setSection = (value: ConfigurationSection) => { void navigate({ to: '/order-configuration', search: { configurationSection: value } }) }
@@ -125,6 +127,7 @@ export function OrderConfigurationPage({ catalogItemId }: { catalogItemId?: stri
           {configuration.data && section === 'system' ? <SystemConfigurationPanel configuration={configuration.data} /> : null}
           {configuration.data && section === 'analyses' ? <AnalysisConfigurationPanel configuration={configuration.data} /> : null}
           {configuration.data && section === 'reagents' ? <ReagentConfigurationPanel configuration={configuration.data} /> : null}
+          {configuration.data && section === 'kit-lots' ? <PSeqKitLotsPanel configuration={configuration.data} lotId={kitLotId} enabled={apiEnabled} /> : null}
           {configuration.data && section === 'assembly' ? <AssemblyConfigurationPanel configuration={configuration.data} /> : null}
           {configuration.data && section === 'commercial' ? <CommercialConfigurationPanel configuration={configuration.data} /> : null}
         </div>

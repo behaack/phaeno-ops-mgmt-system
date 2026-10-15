@@ -66,7 +66,7 @@ async function headerAction(name: string) {
   await waitFor(() => expect(screen.queryByRole('button', { name }) ?? screen.queryAllByRole('button', { name: 'Actions' })[0]).toBeTruthy())
   const direct = screen.queryByRole('button', { name })
   if (direct) return direct
-  const quoteActions = name === 'Accept quote' ? screen.getByRole('group', { name: 'Quote actions' }) : null
+  const quoteActions = name === 'Accept quote' ? screen.queryByRole('group', { name: 'Quote actions' }) : null
   fireEvent.pointerDown(quoteActions ? within(quoteActions).getByRole('button', { name: 'Actions' }) : screen.getAllByRole('button', { name: 'Actions' })[0], { button: 0, ctrlKey: false })
   return screen.findByRole('menuitem', { name })
 }

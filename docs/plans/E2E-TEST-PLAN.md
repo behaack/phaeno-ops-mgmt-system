@@ -1,5 +1,10 @@
 # Playwright E2E Test Plan
 
+## PSeq kit lots and standalone Partner submission — October 15, 2026
+
+`pseq-kit-lots.connected.spec.ts` passed **four scenarios** (two journeys in desktop Chromium and Pixel 5 emulation), launched by the opt-in backend browser host. Feature requests use real HTTP controllers, tenant checks, domain services, EF and disposable PostgreSQL, with synthetic identities/session presentation and scanner/byte storage. Verified standalone early entry with no request/files/use date, persistence after reload, mismatch retention, anonymous/Department rejection, actual-use expiry, saved-draft reuse/submission, stale recall rejection/refresh at analysis start and immutable revision/run assessments. Light/dark warnings, keyboard focus return, no document overflow and Axe checks passed. The existing intercepted-API Partner Kit preparation/interrupted-upload test also passed in desktop Chromium. See the [report and screenshots](../testing/runs/2026-10-15-pseq-kit-lots-verification.md). Live Clerk/provider/storage/scientific/physical acceptance and the separate staff lot-catalog UI remain outside this run.
+
+
 Hosted DPS checkpoint, October 14: manual signed-in inspection reaches the
 deployed connected Data assembly workspace with the exact Simulated recipe.
 Canonical/prior-pin assets, API/database health, anonymous authorization and

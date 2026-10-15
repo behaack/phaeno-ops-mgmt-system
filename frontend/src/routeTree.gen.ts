@@ -88,6 +88,7 @@ import { Route as LabOperationsStepsStepIdRouteImport } from './routes/lab-opera
 import { Route as LabOperationsStockKitsKitIdRouteImport } from './routes/lab-operations.stock-kits.$kitId'
 import { Route as LabServicesOrderIdEditRouteImport } from './routes/lab-services.$orderId.edit'
 import { Route as OrderConfigurationCatalogCatalogItemIdRouteImport } from './routes/order-configuration.catalog.$catalogItemId'
+import { Route as OrderConfigurationPseqKitLotsLotIdRouteImport } from './routes/order-configuration.pseq-kit-lots.$lotId'
 import { Route as OrderOperationsWorkflowOrderIdRouteImport } from './routes/order-operations.$workflow.$orderId'
 import { Route as OrderOperationsIntakeOrderIdRouteImport } from './routes/order-operations.intake.$orderId'
 import { Route as OrderOperationsLabServicesTrialsRouteImport } from './routes/order-operations.lab-services.trials'
@@ -544,6 +545,12 @@ const OrderConfigurationCatalogCatalogItemIdRoute =
     path: '/catalog/$catalogItemId',
     getParentRoute: () => OrderConfigurationRoute,
   } as any)
+const OrderConfigurationPseqKitLotsLotIdRoute =
+  OrderConfigurationPseqKitLotsLotIdRouteImport.update({
+    id: '/pseq-kit-lots/$lotId',
+    path: '/pseq-kit-lots/$lotId',
+    getParentRoute: () => OrderConfigurationRoute,
+  } as any)
 const OrderOperationsWorkflowOrderIdRoute =
   OrderOperationsWorkflowOrderIdRouteImport.update({
     id: '/$workflow/$orderId',
@@ -843,6 +850,7 @@ export interface FileRoutesByFullPath {
   '/lab-operations/stock-kits/$kitId': typeof LabOperationsStockKitsKitIdRoute
   '/lab-services/$orderId/edit': typeof LabServicesOrderIdEditRoute
   '/order-configuration/catalog/$catalogItemId': typeof OrderConfigurationCatalogCatalogItemIdRoute
+  '/order-configuration/pseq-kit-lots/$lotId': typeof OrderConfigurationPseqKitLotsLotIdRoute
   '/order-operations/$workflow/$orderId': typeof OrderOperationsWorkflowOrderIdRoute
   '/order-operations/intake/$orderId': typeof OrderOperationsIntakeOrderIdRoute
   '/order-operations/lab-services/trials': typeof OrderOperationsLabServicesTrialsRouteWithChildren
@@ -960,6 +968,7 @@ export interface FileRoutesByTo {
   '/lab-operations/stock-kits/$kitId': typeof LabOperationsStockKitsKitIdRoute
   '/lab-services/$orderId/edit': typeof LabServicesOrderIdEditRoute
   '/order-configuration/catalog/$catalogItemId': typeof OrderConfigurationCatalogCatalogItemIdRoute
+  '/order-configuration/pseq-kit-lots/$lotId': typeof OrderConfigurationPseqKitLotsLotIdRoute
   '/order-operations/$workflow/$orderId': typeof OrderOperationsWorkflowOrderIdRoute
   '/order-operations/intake/$orderId': typeof OrderOperationsIntakeOrderIdRoute
   '/order-operations/lab-services/trials': typeof OrderOperationsLabServicesTrialsRouteWithChildren
@@ -1078,6 +1087,7 @@ export interface FileRoutesById {
   '/lab-operations/stock-kits/$kitId': typeof LabOperationsStockKitsKitIdRoute
   '/lab-services/$orderId/edit': typeof LabServicesOrderIdEditRoute
   '/order-configuration/catalog/$catalogItemId': typeof OrderConfigurationCatalogCatalogItemIdRoute
+  '/order-configuration/pseq-kit-lots/$lotId': typeof OrderConfigurationPseqKitLotsLotIdRoute
   '/order-operations/$workflow/$orderId': typeof OrderOperationsWorkflowOrderIdRoute
   '/order-operations/intake/$orderId': typeof OrderOperationsIntakeOrderIdRoute
   '/order-operations/lab-services/trials': typeof OrderOperationsLabServicesTrialsRouteWithChildren
@@ -1197,6 +1207,7 @@ export interface FileRouteTypes {
     | '/lab-operations/stock-kits/$kitId'
     | '/lab-services/$orderId/edit'
     | '/order-configuration/catalog/$catalogItemId'
+    | '/order-configuration/pseq-kit-lots/$lotId'
     | '/order-operations/$workflow/$orderId'
     | '/order-operations/intake/$orderId'
     | '/order-operations/lab-services/trials'
@@ -1314,6 +1325,7 @@ export interface FileRouteTypes {
     | '/lab-operations/stock-kits/$kitId'
     | '/lab-services/$orderId/edit'
     | '/order-configuration/catalog/$catalogItemId'
+    | '/order-configuration/pseq-kit-lots/$lotId'
     | '/order-operations/$workflow/$orderId'
     | '/order-operations/intake/$orderId'
     | '/order-operations/lab-services/trials'
@@ -1431,6 +1443,7 @@ export interface FileRouteTypes {
     | '/lab-operations/stock-kits/$kitId'
     | '/lab-services/$orderId/edit'
     | '/order-configuration/catalog/$catalogItemId'
+    | '/order-configuration/pseq-kit-lots/$lotId'
     | '/order-operations/$workflow/$orderId'
     | '/order-operations/intake/$orderId'
     | '/order-operations/lab-services/trials'
@@ -2060,6 +2073,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrderConfigurationCatalogCatalogItemIdRouteImport
       parentRoute: typeof OrderConfigurationRoute
     }
+    '/order-configuration/pseq-kit-lots/$lotId': {
+      id: '/order-configuration/pseq-kit-lots/$lotId'
+      path: '/pseq-kit-lots/$lotId'
+      fullPath: '/order-configuration/pseq-kit-lots/$lotId'
+      preLoaderRoute: typeof OrderConfigurationPseqKitLotsLotIdRouteImport
+      parentRoute: typeof OrderConfigurationRoute
+    }
     '/order-operations/$workflow/$orderId': {
       id: '/order-operations/$workflow/$orderId'
       path: '/$workflow/$orderId'
@@ -2548,11 +2568,14 @@ const LabServicesRouteWithChildren = LabServicesRoute._addFileChildren(
 
 interface OrderConfigurationRouteChildren {
   OrderConfigurationCatalogCatalogItemIdRoute: typeof OrderConfigurationCatalogCatalogItemIdRoute
+  OrderConfigurationPseqKitLotsLotIdRoute: typeof OrderConfigurationPseqKitLotsLotIdRoute
 }
 
 const OrderConfigurationRouteChildren: OrderConfigurationRouteChildren = {
   OrderConfigurationCatalogCatalogItemIdRoute:
     OrderConfigurationCatalogCatalogItemIdRoute,
+  OrderConfigurationPseqKitLotsLotIdRoute:
+    OrderConfigurationPseqKitLotsLotIdRoute,
 }
 
 const OrderConfigurationRouteWithChildren =

@@ -49,3 +49,13 @@ The Commercial order's **Included assembly cases** panel shows each purchased un
 Unused cases expire 90 days after labeled kit expiration, or 12 months after shipment if no expiration was recorded. An authorized operator may **Extend deadline**, **Replace kit**, or **Cancel unused case** only when the case permits the action. Review the current case and deadline, and record a reason suitable for the Partner history. Replacement requires actual lot, ship date, carrier and tracking facts; it transfers the existing case to the replacement kit without another purchase, billing source or entitlement.
 
 The operational summary keeps fulfillment and assembly progress separate. A shipped Kit may still have pending assembly. Completion requires the included cases to finish or close; an unused expired or cancelled case does not automatically create a refund. Finance history remains separate.
+
+## Register and fulfill kit lots
+
+A platform administrator registers lots under **Order settings → PSeq kit lots → Create kit lot**, selecting the active catalog product configured in a Partner kit offering, its printed lot number, and labeled expiration when known. The same product lot is shared across Partner offerings. Lot numbers are matched without case differences or surrounding spaces. The registered product, number and labeled expiration are fixed; recall changes are audited.
+
+During **Record shipment** or **Replace kit**, enter a registered lot for the exact product. Its labeled expiration supplies the shipment evidence. Unregistered, recalled, or expired-at-shipment lots cannot ship. Partial shipments and replacement units retain their own physical-kit lineage and the original commercial rules.
+
+Open a lot number in **PSeq kit lots** to view its details. **Recall lot** and **Lift recall** require confirmation and a Partner-visible reason. Recall status applies to every kit from that product lot and appears in Partner checks and Phaeno assembly review. Earlier shipment and input assessments remain preserved. These actions do not automatically send recall emails.
+
+Partners can submit their label lot independently from the kit order before library preparation or sequencing, without opening assembly work. Recommend this early check. The actual kit-use date is required only when assembly inputs are later submitted.

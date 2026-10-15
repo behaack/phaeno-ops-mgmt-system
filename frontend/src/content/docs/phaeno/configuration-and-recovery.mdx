@@ -8,7 +8,7 @@ The separate **File retention policies** page, after **Order settings**, **Lab s
 
 In **Samples & shipping settings → Phaeno ship-to destinations**, open an available destination's **Actions** menu and choose **Set as default**. The **Default** badge shows the current choice. Ordering is blocked without an available Default. A new Job using a customer-held kit captures that Default; when new kits are sent, staff may choose the destination at first dispatch. Later changes to the Default do not redirect an Order whose destination is fixed. A Sample type also needs an Active shared procedure and at least one usable linked Transportation kit before new Orders can proceed. Existing issued shipping inserts keep their saved destination and instructions.
 
-Use the far-left **Order settings** sidebar to move among **Quote & workflow**, **Service catalog**, **Analyses**, **PSeq kits**, **Assembly**, **Trial configuration**, and **Legacy links**. Scientific service definitions are managed inside their catalog item. On wider screens the sidebar can remain pinned; when it is unpinned or the screen is narrow, open the same non-modal navigation from the edge tab. The selected subject appears in the main pane without duplicating the navigation above the configuration form.
+Use the far-left **Order settings** sidebar to move among **Quote & workflow**, **Service catalog**, **Analyses**, **PSeq kits**, **PSeq kit lots**, **Assembly**, **Trial configuration**, and **Legacy links**. Scientific service definitions are managed inside their catalog item. On wider screens the sidebar can remain pinned; when it is unpinned or the screen is narrow, open the same non-modal navigation from the edge tab. The selected subject appears in the main pane without duplicating the navigation above the configuration form.
 
 ## Maintain Trial configuration
 
@@ -159,3 +159,9 @@ In **Order Settings → Service catalog**, open the Lab service and use **Edit c
 Commercial staff maintain negotiated USD sample prices under **Company → Services → Lab service pricing**. **Add price** selects a service and either Organization scope or one active Department in that Company. Set the unit price, effective dates in UTC, and Active/Inactive status. End dates are exclusive. Overlapping active windows for the same scope and service are rejected. Use **Edit** to change the rate, dates or status; create a separate rate to change the service or scope. Existing accepted orders retain their recorded price and source.
 
 When both Organization and selected-Department negotiated prices apply, the lower negotiated price wins. One applicable negotiated rate overrides the standard catalog rate; without either, standard pricing applies. Another Department's rate does not apply. Negotiated prices do not enable service access or bypass readiness, billing, tax or sample limits.
+
+## PSeq kit lot configuration
+
+Use **Order settings → PSeq kit lots** to search registered lots, create a lot, and open a lot number for its product, labeled expiration and recall status. First configure a Partner kit offering for the active catalog product. Register the printed lot number once per product; the same lot is reused across Partner offerings and shipments.
+
+Lot identity and labeled expiration are fixed when registered. **Recall lot** or **Lift recall** requires a current record and a Partner-visible reason. Reopen a stale record before retrying. These changes preserve earlier lot assessments and do not automatically send emails. Partners can save their own label-lot submission before sequencing; assembly later reuses that evidence and checks current warnings again.

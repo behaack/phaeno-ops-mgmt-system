@@ -181,6 +181,8 @@ public sealed partial class PSeqOperationsDbContext(
     public DbSet<PartnerShippingAddress> PartnerShippingAddresses { get; set; }
     public DbSet<PartnerReagentOrder> PartnerReagentOrders { get; set; }
     public DbSet<PartnerKitUnit> PartnerKitUnits { get; set; }
+    public DbSet<PSeqKitLot> PSeqKitLots { get; set; }
+    public DbSet<PartnerKitLotSubmission> PartnerKitLotSubmissions { get; set; }
     public DbSet<KitAssemblyCase> KitAssemblyCases { get; set; }
     public DbSet<KitCaseEvent> KitCaseEvents { get; set; }
     public DbSet<LabServiceOffering> LabServiceOfferings { get; set; }
@@ -582,6 +584,7 @@ public sealed partial class PSeqOperationsDbContext(
         CustomerDeliveryLocationModelConfiguration.Configure(modelBuilder, this.persistenceOptions.CommercialSchema);
         TransportationKitRequestModelConfiguration.Configure(modelBuilder, this.persistenceOptions.CommercialSchema);
         KitBundleModelConfiguration.Configure(modelBuilder, this.persistenceOptions.CommercialSchema);
+        PSeqKitLotModelConfiguration.Configure(modelBuilder, this.persistenceOptions.CommercialSchema);
         LabServiceBundleModelConfiguration.Configure(modelBuilder, this.persistenceOptions.CommercialSchema, this.persistenceOptions.LaboratorySchema);
         CommercialLabOperationsModelConfiguration.Configure(modelBuilder, this.persistenceOptions.CommercialSchema);
         CrmModelConfiguration.Configure(modelBuilder);

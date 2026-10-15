@@ -7649,6 +7649,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("expires_at");
 
+                    b.Property<Guid>("KitLotId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("kit_lot_id");
+
                     b.Property<string>("LotBatchNumber")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -7669,6 +7673,8 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnName("reagent_shipment_id");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("KitLotId");
 
                     b.HasIndex("PartnerReagentOrderLineId");
 
@@ -17627,9 +17633,25 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("data_assembly_request_id");
 
+                    b.Property<string>("KitLotAssessmentJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("kit_lot_assessment_json");
+
+                    b.Property<Guid?>("KitLotId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("kit_lot_id");
+
+                    b.Property<Guid?>("KitLotSubmissionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("kit_lot_submission_id");
+
                     b.Property<Guid?>("KitUnitId")
                         .HasColumnType("uuid")
                         .HasColumnName("kit_unit_id");
+
+                    b.Property<DateOnly?>("KitUsedOn")
+                        .HasColumnType("date")
+                        .HasColumnName("kit_used_on");
 
                     b.Property<string>("ManifestJson")
                         .IsRequired()
@@ -17658,6 +17680,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnName("validation_summary_json");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("KitLotId");
+
+                    b.HasIndex("KitLotSubmissionId");
 
                     b.HasIndex("KitUnitId");
 
@@ -17801,6 +17827,10 @@ namespace PSeq.Operations.Api.Migrations
                     b.Property<Guid>("InputRevisionId")
                         .HasColumnType("uuid")
                         .HasColumnName("input_revision_id");
+
+                    b.Property<string>("KitLotAssessmentJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("kit_lot_assessment_json");
 
                     b.Property<string>("PipelineVersion")
                         .IsRequired()
@@ -19757,6 +19787,166 @@ namespace PSeq.Operations.Api.Migrations
                     b.ToTable("managed_operational_files", "commercial_ops");
                 });
 
+            modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.PSeqKitLot", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CatalogItemId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("catalog_item_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<DateOnly?>("ExpirationDate")
+                        .HasColumnType("date")
+                        .HasColumnName("expiration_date");
+
+                    b.Property<bool>("IsRecalled")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_recalled");
+
+                    b.Property<string>("LotNumber")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("lot_number");
+
+                    b.Property<string>("NormalizedLotNumber")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("normalized_lot_number");
+
+                    b.Property<DateTime?>("RecallChangedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("recall_changed_at");
+
+                    b.Property<string>("RecallReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("recall_reason");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("UpdatedByUserId");
+
+                    b.HasIndex("CatalogItemId", "NormalizedLotNumber")
+                        .IsUnique();
+
+                    b.ToTable("pseq_kit_lots", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.PartnerKitLotSubmission", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AssessmentJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("assessment_json");
+
+                    b.Property<DateTime>("CheckedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("checked_at");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid>("DepartmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("department_id");
+
+                    b.Property<string>("EnteredLotNumber")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("entered_lot_number");
+
+                    b.Property<Guid>("KitAssemblyCaseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("kit_assembly_case_id");
+
+                    b.Property<Guid>("KitLotId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("kit_lot_id");
+
+                    b.Property<Guid>("KitUnitId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("kit_unit_id");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<DateOnly?>("UsedOn")
+                        .HasColumnType("date")
+                        .HasColumnName("used_on");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("KitLotId");
+
+                    b.HasIndex("KitUnitId");
+
+                    b.HasIndex("UpdatedByUserId");
+
+                    b.HasIndex("KitAssemblyCaseId", "KitUnitId")
+                        .IsUnique();
+
+                    b.HasIndex("OrganizationId", "DepartmentId");
+
+                    b.ToTable("partner_kit_lot_submissions", "commercial_ops");
+                });
+
             modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.PartnerKitUnit", b =>
                 {
                     b.Property<Guid>("Id")
@@ -19784,6 +19974,10 @@ namespace PSeq.Operations.Api.Migrations
                     b.Property<DateTime?>("ExpiresAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("expires_at");
+
+                    b.Property<Guid?>("KitLotId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("kit_lot_id");
 
                     b.Property<string>("Label")
                         .IsRequired()
@@ -19854,6 +20048,8 @@ namespace PSeq.Operations.Api.Migrations
 
                     b.HasIndex("DepartmentId");
 
+                    b.HasIndex("KitLotId");
+
                     b.HasIndex("Label")
                         .IsUnique();
 
@@ -19872,7 +20068,10 @@ namespace PSeq.Operations.Api.Migrations
 
                     b.HasIndex("PartnerReagentOrderId", "PartnerReagentOrderLineId", "Status");
 
-                    b.ToTable("partner_kit_units", "commercial_ops");
+                    b.ToTable("partner_kit_units", "commercial_ops", t =>
+                        {
+                            t.HasCheckConstraint("ck_partner_kit_units_shipped_lot", "status NOT IN ('Shipped', 'Replaced') OR kit_lot_id IS NOT NULL");
+                        });
                 });
 
             modelBuilder.Entity("PhaenoPortal.App.Features.Website.Entities.WebContact", b =>
@@ -21578,6 +21777,12 @@ namespace PSeq.Operations.Api.Migrations
 
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.ReagentShipmentLine", b =>
                 {
+                    b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.PSeqKitLot", null)
+                        .WithMany()
+                        .HasForeignKey("KitLotId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.PartnerReagentOrderLine", null)
                         .WithMany()
                         .HasForeignKey("PartnerReagentOrderLineId")
@@ -23806,6 +24011,16 @@ namespace PSeq.Operations.Api.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.PSeqKitLot", null)
+                        .WithMany()
+                        .HasForeignKey("KitLotId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.PartnerKitLotSubmission", null)
+                        .WithMany()
+                        .HasForeignKey("KitLotSubmissionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.PartnerKitUnit", null)
                         .WithMany()
                         .HasForeignKey("KitUnitId")
@@ -24270,6 +24485,68 @@ namespace PSeq.Operations.Api.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.PSeqKitLot", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.QboCatalogItem", null)
+                        .WithMany()
+                        .HasForeignKey("CatalogItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.PartnerKitLotSubmission", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.OrganizationDepartment", null)
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.KitAssemblyCase", null)
+                        .WithMany()
+                        .HasForeignKey("KitAssemblyCaseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.PSeqKitLot", null)
+                        .WithMany()
+                        .HasForeignKey("KitLotId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.PartnerKitUnit", null)
+                        .WithMany()
+                        .HasForeignKey("KitUnitId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
             modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.PartnerKitUnit", b =>
                 {
                     b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
@@ -24282,6 +24559,11 @@ namespace PSeq.Operations.Api.Migrations
                         .HasForeignKey("DepartmentId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.PSeqKitLot", null)
+                        .WithMany()
+                        .HasForeignKey("KitLotId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.Organization", null)
                         .WithMany()

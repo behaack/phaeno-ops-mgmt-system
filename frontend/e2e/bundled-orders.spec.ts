@@ -339,9 +339,10 @@ test('Partner Kit preparation and interrupted upload reuse the purchased assembl
   page,
 }, info) => {
   const state = await fixture(page, 'kit')
-  await expect(page.getByRole('link', { name: 'Prepare inputs' })).toBeVisible()
+  await page.getByRole('button', { name: 'Actions', exact: true }).last().click()
+  await expect(page.getByRole('menuitem', { name: 'Prepare inputs' })).toBeVisible()
   await capture(page, info, 'kit-included-case')
-  await page.getByRole('link', { name: 'Prepare inputs' }).click()
+  await page.getByRole('menuitem', { name: 'Prepare inputs' }).click()
   await page
     .getByRole('textbox', { name: /Partner project or reference/ })
     .fill('Training transcript study')
@@ -439,9 +440,8 @@ test('staff timing and case decisions display original targets and reviewed impa
     .getByRole('dialog')
     .getByRole('button', { name: 'Cancel', exact: true })
     .click()
-  await page
-    .getByRole('button', { name: 'Extend deadline', exact: true })
-    .click()
+  await page.getByRole('button', { name: 'Actions', exact: true }).last().click()
+  await page.getByRole('menuitem', { name: 'Extend deadline', exact: true }).click()
   await capture(page, info, 'kit-case-extension')
   await page
     .getByRole('dialog')

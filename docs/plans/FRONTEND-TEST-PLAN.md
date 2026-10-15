@@ -1,5 +1,10 @@
 # Frontend Test Plan
 
+## Independent Partner kit lot entry — October 15, 2026
+
+Executed `KitLotSubmission.test.tsx`, `BundledOrders.test.tsx`, `KitPurchaseReview.test.tsx` and `ExternalOrderDecisionDialogs.test.tsx`: **25 passed**. The Link mock preserves menu attributes. Connected browser coverage verified saved-lot reuse, actual use dates, submission from a saved draft and current recalls before analysis. Verification fixed the missing lot version on detail submission, dialog focus restoration and calendar-date shipment expiration; type check, touched-file ESLint and client/server build passed. See the [verification report](../testing/runs/2026-10-15-pseq-kit-lots-verification.md) and owning [lot plan](PSEQ-KIT-LOT-TRACEABILITY-PLAN.md).
+
+
 Hosted DPS checkpoint, October 14: type/lint and generated help checks pass.
 The promoted exact-source asset and signed-in Edge workspace show Processing
 connected with `pseq_data_assembler` 0.1.0 and Simulated. Prior browser pins load

@@ -216,6 +216,17 @@ public sealed class DataAssemblyRequest : IAudit, IConcurrency
 
 public sealed class AssemblyInputRevision
 {
+    public Guid? KitLotId { get; private set; }
+    public Guid? KitLotSubmissionId { get; private set; }
+    public DateOnly? KitUsedOn { get; private set; }
+    public string? KitLotAssessmentJson { get; private set; }
+    public void RecordKitLot(Guid lotId, Guid submissionId, DateOnly usedOn, string assessmentJson)
+    {
+        if (!KitUnitId.HasValue || KitLotId.HasValue || lotId == Guid.Empty || submissionId == Guid.Empty)
+            throw new InvalidOperationException("Record lot evidence once for the submitted physical kit.");
+        KitLotId = lotId; KitLotSubmissionId = submissionId; KitUsedOn = usedOn;
+        KitLotAssessmentJson = OrderText.Json(assessmentJson);
+    }
     public Guid? KitUnitId { get; private set; }
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid DataAssemblyRequestId { get; private set; }
@@ -245,6 +256,12 @@ public sealed class AssemblyInputRevision
 
 public sealed class AssemblyProcessingRun : IAudit, IConcurrency
 {
+    public string? KitLotAssessmentJson { get; private set; }
+    public void RecordKitLotCheck(string assessmentJson)
+    {
+        if (KitLotAssessmentJson is not null) throw new InvalidOperationException("The analysis lot check is immutable.");
+        KitLotAssessmentJson = OrderText.Json(assessmentJson);
+    }
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid DataAssemblyRequestId { get; private set; }
     public Guid InputRevisionId { get; private set; }

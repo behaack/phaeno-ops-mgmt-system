@@ -5,6 +5,7 @@ import type { CustomerStandardDraft } from './customer-standard-orders';
 export type LabOrderPhaseScope = { id: string; position: number; name: string; sampleCount: number; scope: { sources: Array<{ biologicalSource: string; specimenCount: number }>; runsPerSample: number | null; sequencingRunCount: number }; turnaroundBusinessDays: number | null; proposedUnitPrice: number | null; proposedAdditionalRunPrice: number | null; pricingNote: string | null };
 
 import { api } from "./client";
+import type { KitLotSubmission } from './pseq-kit-lots';
 import type { KitAssemblyCase, KitUnit, LabServiceCommercialSnapshot, LabServiceOffering, LabServiceTiming } from './order-bundles';
 
 type ApiEnvelope<T> = {
@@ -537,6 +538,7 @@ export type AssemblyOutputRelease = {
 };
 
 export type DataAssemblyRequest = {
+  kitLotSubmission?: KitLotSubmission | null;
   kitAssemblyCaseId?: string | null;
   kitOrderId?: string | null;
   kitOrderNumber?: string | null;
@@ -578,6 +580,8 @@ export type DataAssemblyRequest = {
     correctionReason: string | null;
     validationSummaryJson: string;
     submittedAt: string;
+    kitLotAssessmentJson?: string | null;
+    kitUsedOn?: string | null;
   }>;
   quotes: Quote[];
   processingRuns: Array<{
@@ -1150,6 +1154,7 @@ export async function submitAssemblyRequest(
   id: string,
   version: number,
   files: OperationalFile[],
+  kitLotVersion?: number,
 ) {
   return post<DataAssemblyRequest>(
     `/data-assembly-requests/${id}/submit`,
@@ -1159,6 +1164,7 @@ export async function submitAssemblyRequest(
         files: files.map((file) => ({ id: file.id, name: file.fileName })),
       }),
       validationSummaryJson: "{}",
+      kitLotVersion,
     },
     true,
   );

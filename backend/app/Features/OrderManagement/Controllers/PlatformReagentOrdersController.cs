@@ -153,8 +153,11 @@ public sealed partial class PlatformReagentOrdersController(
                 foreach (var allocation in request.Lines)
                 {
                     var line = order.Lines.SingleOrDefault(item => item.Id == allocation.OrderLineId) ?? throw Invalid("shipment_line_invalid", "A shipment line does not belong to this order.");
+                    var lot = await new PSeqKitLotService(dbContext).RequireShipmentLotAsync(line.QboCatalogItemId,
+                        allocation.LotBatchNumber, shipment.ShippedAt, operationCancellationToken);
                     Execute(() => line.AllocateShipment(allocation.Quantity));
-                    shipment.Lines.Add(new ReagentShipmentLine(shipment.Id, line.Id, allocation.Quantity, allocation.LotBatchNumber, allocation.ExpiresAt));
+                    var expiration = lot.ExpirationDate?.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+                    shipment.Lines.Add(new ReagentShipmentLine(shipment.Id, line.Id, allocation.Quantity, lot.LotNumber, expiration, lot.Id));
                     invoiceTotal += decimal.Round(allocation.Quantity * line.UnitPrice, 2, MidpointRounding.AwayFromZero);
                 }
                 order.Shipments.Add(shipment);

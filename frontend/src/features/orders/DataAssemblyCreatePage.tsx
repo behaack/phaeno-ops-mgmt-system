@@ -1,3 +1,4 @@
+import { KitLotSubmissionSummary, PartnerKitLotDialog } from './KitLotSubmission'
 import { CustomerSourceText, useCustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { NativeSelect } from '#/components/ui/native-select'
 import { confirmPortal } from '#/components/PortalConfirmation'
@@ -41,6 +42,8 @@ export function DataAssemblyCreatePage({ requestId, kitOrderId, kitCaseId }: { r
   const { authProvider, session } = usePhaenoSession()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const [lotDialogOpen, setLotDialogOpen] = useState(false)
+  const lotSubmissionButton = useRef<HTMLButtonElement>(null)
   const [savedRequestId, setSavedRequestId] = useState<string | null>(null)
   const effectiveRequestId = requestId ?? savedRequestId
   const [files, setFiles] = useState<File[]>([])
@@ -82,7 +85,7 @@ export function DataAssemblyCreatePage({ requestId, kitOrderId, kitCaseId }: { r
   const draftSession = useRef(new ResumableDraft<DraftInput, DataAssemblyRequest>())
   const uploadKeys = useRef(new WeakMap<File, string>())
   const refresh = async () => {
-    await Promise.all(['assembly-request', 'data-assembly-request', 'data-assembly-requests'].map(key =>
+    await Promise.all(['assembly-request', 'data-assembly-request', 'data-assembly-requests', 'reagent-order'].map(key =>
       queryClient.invalidateQueries({ queryKey: [key] })))
   }
   const removeInput = useMutation({
@@ -91,6 +94,7 @@ export function DataAssemblyCreatePage({ requestId, kitOrderId, kitCaseId }: { r
   })
   const submitMutation = useMutation({
     mutationFn: async ({ values, submit }: { values: Values; submit: boolean }) => {
+      if (submit && includedCase && !includedCase.lotSubmission?.usedOn) throw new Error('Save the kit lot and actual kit-use date before submitting assembly inputs. You can still save your draft.')
       const missing = profileMetadataFields.find((field) => field.required && !metadataValues[field.name]?.trim())
       if (missing) throw new Error(`${missing.label} is required.`)
       const metadataJson = profileMetadataFields.length
@@ -115,7 +119,7 @@ export function DataAssemblyCreatePage({ requestId, kitOrderId, kitCaseId }: { r
       const saved = await getAssemblyRequest(id)
       if (!submit) return saved
       if (!saved.inputFiles.length) throw new Error('Add at least one input file before submitting. Your draft is saved.')
-      return submitAssemblyRequest(id, saved.version, saved.inputFiles)
+      return submitAssemblyRequest(id, saved.version, saved.inputFiles, includedCase?.lotSubmission?.currentAssessment.lotVersion)
     },
     onSuccess: async (request) => {
       form.reset(form.getValues())
@@ -141,6 +145,8 @@ export function DataAssemblyCreatePage({ requestId, kitOrderId, kitCaseId }: { r
     {existingRequest.data?.isIncludedAssembly && !includedCase && !linkedKit.error ? <p role="status"><CustomerSourceText source={"Loading the included profile…"} /></p> : null}
     {submitMutation.error ? <Alert variant="destructive" className="mb-5"><AlertTitle>{savedRequestId ? <CustomerSourceText source={"Draft saved; submission needs attention"} /> : <CustomerSourceText source={"Assembly request was not saved"} />}</AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(submitMutation.error, 'Review the request and try again.')} />}{savedRequestId ? <Link to="/data-assembly/$requestId" params={{ requestId: savedRequestId }} className="ml-2 underline"><CustomerSourceText source={"Open saved draft"} /></Link> : null}</AlertDescription></Alert> : null}
     {profiles.error || existingRequest.error || linkedKit.error || removeInput.error ? <Alert variant="destructive" className="mb-5"><AlertTitle><CustomerSourceText source={"Inputs could not be updated"} /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(profiles.error ?? existingRequest.error ?? linkedKit.error ?? removeInput.error, 'Retry without leaving your draft.')} />} <Button type="button" variant="outline" onClick={() => { if (!existingRequest.data?.isIncludedAssembly) void profiles.refetch(); if (existingRequest.data?.kitOrderId) void linkedKit.refetch(); if (effectiveRequestId) void existingRequest.refetch() }}><CustomerSourceText source={"Retry"} /></Button></AlertDescription></Alert> : null}
+    {includedCase ? <Card className="mb-5"><CardHeader><CardTitle>Kit lot</CardTitle><CardDescription>Your earlier lot submission is reused here. Record the actual kit-use date before submitting assembly inputs.</CardDescription></CardHeader><CardContent className="space-y-4"><KitLotSubmissionSummary submission={includedCase.lotSubmission} />{includedCase.canSubmitLot ? <Button ref={lotSubmissionButton} type="button" variant="outline" disabled={submitMutation.isPending} onClick={() => setLotDialogOpen(true)}>{includedCase.lotSubmission ? 'Update kit lot submission' : 'Submit kit lot'}</Button> : null}</CardContent></Card> : null}
+    {lotDialogOpen && includedCase ? <PartnerKitLotDialog key={includedCase.currentKitUnitId} orderId={kitOrderId ?? existingRequest.data!.kitOrderId!} kitCase={includedCase} onClose={() => setLotDialogOpen(false)} restoreFocus={() => lotSubmissionButton.current?.focus()} /> : null}
     <form noValidate onSubmit={form.handleSubmit((values) => submitMutation.mutate({ values, submit: true }))} className="space-y-5">
       <fieldset disabled={submitMutation.isPending} className="contents">
       <RequiredLegend />

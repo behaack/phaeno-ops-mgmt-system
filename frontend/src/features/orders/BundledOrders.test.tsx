@@ -7,7 +7,7 @@ import {
   waitFor,
   within,
 } from '@testing-library/react'
-import type { ReactNode } from 'react'
+import type { ComponentProps, ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { StandardLabServicePanel } from './StandardLabServicePanel'
 import { KitAssemblyCasesPanel } from './KitAssemblyCasesPanel'
@@ -45,12 +45,14 @@ vi.mock('@tanstack/react-router', () => ({
     children,
     to,
     search,
+    ...props
   }: {
     children: ReactNode
     to: string
     search?: unknown
-  }) => (
+  } & ComponentProps<'a'>) => (
     <a
+      {...props}
       href={to}
       data-search={
         typeof search === 'object' ? JSON.stringify(search) : undefined
@@ -284,15 +286,17 @@ describe('included Kit assembly', () => {
     expect(mocks.upload.mock.calls.map(call => call[1])).toEqual([first, second, second])
     expect(mocks.upload.mock.calls[2][2]).toBe(interruptedKey)
     expect(saved.inputFiles.map(file => file.fileName)).toEqual(['first.fastq', 'second.fastq'])
-    expect(mocks.submit).toHaveBeenCalledWith(bundleIds.request, saved.version, saved.inputFiles)
+    expect(mocks.submit).toHaveBeenCalledWith(bundleIds.request, saved.version, saved.inputFiles, 1)
     expect(mocks.prepare).not.toHaveBeenCalled()
   })
 
-  it('links preparation to the exact case and never offers a second purchase', () => {
+  it('links preparation to the exact case and never offers a second purchase', async () => {
     show(<KitAssemblyCasesPanel order={bundleKitOrder} />)
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Actions' }), { button: 0, ctrlKey: false })
+    await screen.findByRole('menuitem', { name: 'Prepare inputs' })
     expect(
       screen
-        .getByRole('link', { name: 'Prepare inputs' })
+        .getByRole('menuitem', { name: 'Prepare inputs' })
         .getAttribute('data-search'),
     ).toBe(
       JSON.stringify({
@@ -305,7 +309,8 @@ describe('included Kit assembly', () => {
   })
   it('preserves reviewed case version and unsaved extension after a stale write', async () => {
     const view = show(<KitAssemblyCasesPanel order={bundleKitOrder} staff />)
-    fireEvent.click(screen.getByRole('button', { name: 'Extend deadline' }))
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Actions' }), { button: 0, ctrlKey: false })
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Extend deadline' }))
     const dialog = within(screen.getByRole('dialog'))
     fireEvent.change(dialog.getByLabelText(/New submission deadline/), {
       target: { value: '2027-02-01T10:00' },

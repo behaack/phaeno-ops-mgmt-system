@@ -1,0 +1,148 @@
+{
+  "backendRegressions": [
+    {
+      "name": "PhaenoPortal.Test.KitBundlePostgresTests.SavedJsonbScopePlacesExactlyOnceAndChangedProfileRollsBackUntilDraftReview",
+      "outcome": "Passed",
+      "duration": "00:00:19.7630193"
+    },
+    {
+      "name": "PhaenoPortal.Test.KitBundlePostgresTests.IncludedInputsResumeWithoutDuplicatesAndFreezeOneValidatedRevision",
+      "outcome": "Passed",
+      "duration": "00:00:14.5446764"
+    },
+    {
+      "name": "PhaenoPortal.Test.KitBundleDomainTests.EachCaseRetainsItsOwnShipmentAndDeadline",
+      "outcome": "Passed",
+      "duration": "00:00:00.0014242"
+    },
+    {
+      "name": "PhaenoPortal.Test.KitBundlePostgresTests.LaterRecallIsRecheckedAtSubmissionAndAnalysisWithoutRewritingSnapshots",
+      "outcome": "Passed",
+      "duration": "00:00:09.9337088"
+    },
+    {
+      "name": "PhaenoPortal.Test.KitBundleDomainTests.ExpiredDraftKeepsItsRequestAndCanResumeOnlyAfterAuditedExtension",
+      "outcome": "Passed",
+      "duration": "00:00:00.0047565"
+    },
+    {
+      "name": "PhaenoPortal.Test.KitBundlePostgresTests.PartnerSavesAndReplaysLotBeforeAssemblyWithoutFilesOrUseDate",
+      "outcome": "Passed",
+      "duration": "00:00:08.1383622"
+    },
+    {
+      "name": "PhaenoPortal.Test.KitBundlePostgresTests.PaidIncludedOutputWaitsForOperationalHoldAndCancellationDecision",
+      "outcome": "Passed",
+      "duration": "00:00:22.0522863"
+    },
+    {
+      "name": "PhaenoPortal.Test.PSeqKitLotDomainTests.ShippedKitsRequireRegisteredLotIdentity",
+      "outcome": "Passed",
+      "duration": "00:00:00.0020715"
+    },
+    {
+      "name": "PhaenoPortal.Test.KitBundleDomainTests.IncludedAssemblySkipsSecondQuoteAndKeepsPurchasedOutputScope",
+      "outcome": "Passed",
+      "duration": "00:00:00.0074693"
+    },
+    {
+      "name": "PhaenoPortal.Test.KitBundleDomainTests.ReplacementCannotCrossTenantOrFollowReleasedResults",
+      "outcome": "Passed",
+      "duration": "00:00:00.0009970"
+    },
+    {
+      "name": "PhaenoPortal.Test.KitBundlePostgresTests.MissingOrRecalledRegisteredLotCannotBeShipped",
+      "outcome": "Passed",
+      "duration": "00:00:05.8937769"
+    },
+    {
+      "name": "PhaenoPortal.Test.KitBundlePostgresTests.IncludedInputsRejectEveryNonCleanScanWithoutCreatingARevision",
+      "outcome": "Passed",
+      "duration": "00:00:10.9962845"
+    },
+    {
+      "name": "PhaenoPortal.Test.KitBundlePostgresTests.ReplacementRetainsInputHistoryAndIncludedReleaseUsesKitBalanceWithoutSecondInvoice",
+      "outcome": "Passed",
+      "duration": "00:00:17.5947739"
+    },
+    {
+      "name": "PhaenoPortal.Test.KitBundlePostgresTests.ExplicitLifecycleCheckExpiresUnusedDraftOnceAndPreservesItsInputRequest",
+      "outcome": "Passed",
+      "duration": "00:00:07.7192610"
+    },
+    {
+      "name": "PhaenoPortal.Test.KitBundlePostgresTests.SplitShipmentsFreezePerUnitDeadlinesAndOriginalBillingSources",
+      "outcome": "Passed",
+      "duration": "00:00:07.8762254"
+    },
+    {
+      "name": "PhaenoPortal.Test.KitBundlePostgresTests.SimulatedCorrectedKitOutputRetainsInputLineageAndCreditsMemberBytesUnderOriginalInvoice",
+      "outcome": "Passed",
+      "duration": "00:00:17.1227932"
+    },
+    {
+      "name": "PhaenoPortal.Test.PSeqKitLotDomainTests.EarlyLotSubmissionNeedsNeitherAnAssemblyRequestNorAnActualUseDate",
+      "outcome": "Passed",
+      "duration": "00:00:00.0419064"
+    },
+    {
+      "name": "PhaenoPortal.Test.KitBundlePostgresTests.SimulatedSubstitutionRequiresEligiblePartnerApprovalAndRetainsBothDecisions",
+      "outcome": "Passed",
+      "duration": "00:00:10.4758466"
+    },
+    {
+      "name": "PhaenoPortal.Test.KitBundlePostgresTests.SimulatedTwoUnitShipmentRejectsEarlyAndExcessWritesAndKeepsIndependentSources",
+      "outcome": "Passed",
+      "duration": "00:00:08.1221631"
+    },
+    {
+      "name": "PhaenoPortal.Test.KitBundlePostgresTests.SimulatedCaseExtensionCancellationAndRepeatDraftPreserveBundleAndLegacyHistory",
+      "outcome": "Passed",
+      "duration": "00:00:14.9734650"
+    },
+    {
+      "name": "PhaenoPortal.Test.KitBundlePostgresTests.ExpiredIncludedDraftRejectsUploadUpdateAndSubmissionWhileRetainingFiles",
+      "outcome": "Passed",
+      "duration": "00:00:08.4845589"
+    },
+    {
+      "name": "PhaenoPortal.Test.KitBundleDomainTests.ReplacementPreservesPurchaseBillingAndInputProvenanceWithoutShorteningExtension",
+      "outcome": "Passed",
+      "duration": "00:00:00.0210610"
+    },
+    {
+      "name": "PhaenoPortal.Test.PSeqKitLotDomainTests.ExpiryUsesTheActualUseDateAndIncludesTheLabeledLastDay",
+      "outcome": "Passed",
+      "duration": "00:00:00.0060875"
+    },
+    {
+      "name": "PhaenoPortal.Test.KitBundleDomainTests.CorrectedInputReusesCaseAndCannotExpireAfterFirstSubmission",
+      "outcome": "Passed",
+      "duration": "00:00:00.0006403"
+    },
+    {
+      "name": "PhaenoPortal.Test.KitBundlePostgresTests.TenantDepartmentAndRoleAdmissionApplyToNewCommandsAndReplays",
+      "outcome": "Passed",
+      "duration": "00:00:05.8258373"
+    }
+  ],
+  "frontend": {
+    "passed": 25,
+    "files": [
+      "KitLotSubmission.test.tsx",
+      "BundledOrders.test.tsx",
+      "KitPurchaseReview.test.tsx",
+      "ExternalOrderDecisionDialogs.test.tsx"
+    ]
+  },
+  "connectedBrowser": {
+    "wrapperOutcome": "Passed",
+    "scenariosPassed": 4,
+    "projects": [
+      "chromium",
+      "mobile-chrome"
+    ],
+    "rawResult": "final-browser.trx"
+  },
+  "history": "The combined regression TRX contains a superseded browser failure for the expiration display. All 25 other tests passed; final-browser.trx verifies the corrected browser suite."
+}

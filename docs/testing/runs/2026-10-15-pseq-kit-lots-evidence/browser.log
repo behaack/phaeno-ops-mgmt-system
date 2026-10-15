@@ -1,0 +1,33 @@
+[WebServer] (node:14104) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:14104) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 4 tests using 1 worker
+
+(node:31976) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:31976) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+HTTP 400 /api/reagent-orders/7ca9f3ee-4373-44e4-8360-0eddf1fb8595/assembly-cases/39169d6d-76cf-42cc-9a9d-d35bbb0c1b85/lot
+Browser console: Failed to load resource: the server responded with a status of 400 (Bad Request)
+HTTP 409 /api/platform/lab-operations/data-assembly-requests/16f6486e-754c-4b1c-9a13-f9f3a01c5e7f/processing-runs
+HTTP 409 /api/platform/lab-operations/data-assembly-requests/16f6486e-754c-4b1c-9a13-f9f3a01c5e7f/processing-runs
+Browser console: Failed to load resource: the server responded with a status of 409 (Conflict)
+Browser console: Failed to load resource: the server responded with a status of 409 (Conflict)
+  ok 1 [chromium] › e2e\pseq-kit-lots.connected.spec.ts:57:1 › standalone early lot persists, later assembly reuses it and analysis rechecks recall (36.7s)
+  ok 2 [chromium] › e2e\pseq-kit-lots.connected.spec.ts:148:1 › early recalled and expired lot shows both warnings, keyboard cancel retains saved evidence (7.9s)
+(node:37708) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:37708) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+HTTP 400 /api/reagent-orders/bd82f750-e929-405d-90db-0e6d4a9fd758/assembly-cases/22810ba7-eb11-4826-a97d-6e1885b0c673/lot
+Browser console: Failed to load resource: the server responded with a status of 400 (Bad Request)
+HTTP 409 /api/platform/lab-operations/data-assembly-requests/bb4a33f5-b471-4369-a48a-e812e091b31c/processing-runs
+HTTP 409 /api/platform/lab-operations/data-assembly-requests/bb4a33f5-b471-4369-a48a-e812e091b31c/processing-runs
+Browser console: Failed to load resource: the server responded with a status of 409 (Conflict)
+Browser console: Failed to load resource: the server responded with a status of 409 (Conflict)
+  ok 3 [mobile-chrome] › e2e\pseq-kit-lots.connected.spec.ts:57:1 › standalone early lot persists, later assembly reuses it and analysis rechecks recall (32.0s)
+  ok 4 [mobile-chrome] › e2e\pseq-kit-lots.connected.spec.ts:148:1 › early recalled and expired lot shows both warnings, keyboard cancel retains saved evidence (6.7s)
+
+  4 passed (1.6m)

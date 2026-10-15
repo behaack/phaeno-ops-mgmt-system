@@ -1,5 +1,20 @@
 # Order Management Plan
 
+## PSeq kit lots and standalone Partner submission — implemented locally, October 15, 2026
+
+The [lot traceability plan](PSEQ-KIT-LOT-TRACEABILITY-PLAN.md) records the approved
+standalone Partner lot action, shared registered product lots, recall/expiration
+warnings, saved-lot reuse and actual use dates for later assembly, and immutable
+input/run assessments. Lot entry/checking is available before sequencing without
+assembly files or a request, and is required before assembly. Staff fulfillment
+and replacement require a registered eligible lot; Phaeno checks submitted lots
+again before analysis. There is no additional flagged-lot approval gate. Local
+migration `20261015215237_AddPSeqKitLotTraceability` was applied after verifying no
+affected kit history; populated databases require reviewed conversion first.
+Focused backend/frontend tests and connected desktop/mobile browser acceptance
+through analysis start passed; evidence and simulation boundaries are recorded in
+the owning plan. No Git publication or deployment was performed.
+
 ## October 12 final review repairs
 
 REVIEW-01/02/05/08 in [System gap closure](SYSTEM-GAP-CLOSURE-PLAN.md) retain phase

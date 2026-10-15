@@ -23,10 +23,10 @@ The [master-mix step assembly contract](plans/MASTER-MIX-PREPARATION-PLAN.md#ass
 | Schema | Entities | Fields | Foreign keys |
 | --- | ---: | ---: | ---: |
 | `public` | 1 | 2 | 0 |
-| `commercial_ops` | 147 | 2403 | 390 |
+| `commercial_ops` | 149 | 2438 | 404 |
 | `lab_ops` | 90 | 1108 | 189 |
 | `website` | 5 | 51 | 4 |
-| **Total** | **243** | **3564** | **583** |
+| **Total** | **245** | **3599** | **597** |
 
 ## `public` schema
 
@@ -562,7 +562,11 @@ erDiagram
         uuid id PK "not null"
         character_varying_2000 correction_reason "nullable"
         uuid data_assembly_request_id FK,UK "not null"
+        jsonb kit_lot_assessment_json "nullable"
+        uuid kit_lot_id FK "nullable"
+        uuid kit_lot_submission_id FK "nullable"
         uuid kit_unit_id FK "nullable"
+        date kit_used_on "nullable"
         jsonb manifest_json "not null"
         uuid previous_revision_id FK "nullable"
         integer revision UK "not null"
@@ -598,6 +602,7 @@ erDiagram
         uuid data_assembly_request_id FK,UK "not null"
         character_varying_2000 failure_reason "nullable"
         uuid input_revision_id FK "not null"
+        jsonb kit_lot_assessment_json "nullable"
         character_varying_255 pipeline_version "not null"
         character_varying_255 profile_version "not null"
         character_varying_4000 provenance "not null"
@@ -688,6 +693,8 @@ erDiagram
         bigint version "not null"
     }
     data_assembly_requests ||--o{ assembly_input_revisions : "data_assembly_request_id"
+    pseq_kit_lots o|--o{ assembly_input_revisions : "kit_lot_id"
+    partner_kit_lot_submissions o|--o{ assembly_input_revisions : "kit_lot_submission_id"
     partner_kit_units o|--o{ assembly_input_revisions : "kit_unit_id"
     assembly_input_revisions o|--o{ assembly_input_revisions : "previous_revision_id"
     users ||--o{ assembly_input_revisions : "submitted_by_user_id"
@@ -1650,9 +1657,51 @@ erDiagram
         uuid updated_by_user_id "nullable"
         bigint version "not null"
     }
+    partner_kit_lot_submissions {
+        uuid id PK "not null"
+        jsonb assessment_json "not null"
+        timestamp_with_time_zone checked_at "not null"
+        timestamp_with_time_zone created_at "not null"
+        uuid created_by_user_id FK "nullable"
+        uuid department_id FK "not null"
+        character_varying_255 entered_lot_number "not null"
+        uuid kit_assembly_case_id FK,UK "not null"
+        uuid kit_lot_id FK "not null"
+        uuid kit_unit_id FK,UK "not null"
+        uuid organization_id FK "not null"
+        timestamp_with_time_zone updated_at "not null"
+        uuid updated_by_user_id FK "nullable"
+        date used_on "nullable"
+        bigint version "not null"
+    }
+    pseq_kit_lots {
+        uuid id PK "not null"
+        uuid catalog_item_id FK,UK "not null"
+        timestamp_with_time_zone created_at "not null"
+        uuid created_by_user_id FK "nullable"
+        date expiration_date "nullable"
+        boolean is_recalled "not null"
+        character_varying_255 lot_number "not null"
+        character_varying_255 normalized_lot_number UK "not null"
+        timestamp_with_time_zone recall_changed_at "nullable"
+        character_varying_2000 recall_reason "nullable"
+        timestamp_with_time_zone updated_at "not null"
+        uuid updated_by_user_id FK "nullable"
+        bigint version "not null"
+    }
     qbo_catalog_items ||--o{ lab_service_negotiated_prices : "catalog_item_id"
     organization_departments o|--o{ lab_service_negotiated_prices : "department_id"
     organizations ||--o{ lab_service_negotiated_prices : "organization_id"
+    users o|--o{ partner_kit_lot_submissions : "created_by_user_id"
+    organization_departments ||--o{ partner_kit_lot_submissions : "department_id"
+    kit_assembly_cases ||--o{ partner_kit_lot_submissions : "kit_assembly_case_id"
+    pseq_kit_lots ||--o{ partner_kit_lot_submissions : "kit_lot_id"
+    partner_kit_units ||--o{ partner_kit_lot_submissions : "kit_unit_id"
+    organizations ||--o{ partner_kit_lot_submissions : "organization_id"
+    users o|--o{ partner_kit_lot_submissions : "updated_by_user_id"
+    qbo_catalog_items ||--o{ pseq_kit_lots : "catalog_item_id"
+    users o|--o{ pseq_kit_lots : "created_by_user_id"
+    users o|--o{ pseq_kit_lots : "updated_by_user_id"
 ```
 
 ### OrderManagement (1) (1)
@@ -1935,6 +1984,7 @@ erDiagram
         uuid created_by_user_id FK "nullable"
         uuid department_id FK "not null"
         timestamp_with_time_zone expires_at "nullable"
+        uuid kit_lot_id FK "nullable"
         character_varying_100 label UK "not null"
         character_varying_255 lot_batch_number "nullable"
         uuid organization_id FK "not null"
@@ -2036,6 +2086,7 @@ erDiagram
     operational_file_downloads ||--o{ operational_download_commit_evidence : "operational_file_download_id"
     users o|--o{ partner_kit_units : "created_by_user_id"
     organization_departments ||--o{ partner_kit_units : "department_id"
+    pseq_kit_lots o|--o{ partner_kit_units : "kit_lot_id"
     organizations ||--o{ partner_kit_units : "organization_id"
     partner_reagent_orders ||--o{ partner_kit_units : "partner_reagent_order_id"
     partner_reagent_order_lines ||--o{ partner_kit_units : "partner_reagent_order_line_id"
@@ -2496,6 +2547,7 @@ erDiagram
     reagent_shipment_lines {
         uuid id PK "not null"
         timestamp_with_time_zone expires_at "nullable"
+        uuid kit_lot_id FK "not null"
         character_varying_255 lot_batch_number "not null"
         uuid partner_reagent_order_line_id FK "not null"
         numeric_18_6 quantity "not null"
@@ -2532,6 +2584,7 @@ erDiagram
     partner_reagent_order_lines ||--o{ reagent_order_adjustments : "original_line_id"
     partner_reagent_orders ||--o{ reagent_order_adjustments : "partner_reagent_order_id"
     partner_reagent_offerings ||--o{ reagent_order_adjustments : "proposed_offering_id"
+    pseq_kit_lots ||--o{ reagent_shipment_lines : "kit_lot_id"
     partner_reagent_order_lines ||--o{ reagent_shipment_lines : "partner_reagent_order_line_id"
     reagent_shipments ||--o{ reagent_shipment_lines : "reagent_shipment_id"
     partner_reagent_orders ||--o{ reagent_shipments : "partner_reagent_order_id"

@@ -3,7 +3,10 @@ import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import { ActionMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '#/components/ui/dropdown-menu'
+import { KitLotSubmissionSummary, PartnerKitLotDialog } from './KitLotSubmission'
+import { RegisteredKitLotField } from './RegisteredKitLotField'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import {
@@ -28,6 +31,7 @@ import {
   DialogTitle,
 } from '#/components/ui/dialog'
 import { Input } from '#/components/ui/input'
+import { Field } from '#/components/ui/field'
 import { Label } from '#/components/ui/label'
 import {
   RequiredDialogFooter,
@@ -49,7 +53,6 @@ export const kitCaseSchema = z
     reason: z.string().trim().min(1, 'Explain this change.').max(4000),
     submissionDeadlineAt: validDate,
     lotBatchNumber: z.string().trim().max(255),
-    expiresAt: validDate,
     shippedAt: validDate,
     carrier: z.string().trim().max(255),
     trackingNumber: z.string().trim().max(255),
@@ -68,17 +71,6 @@ export const kitCaseSchema = z
           path: [name],
           message: 'Complete this required field.',
         })
-    if (
-      value.action === 'replace' &&
-      value.expiresAt &&
-      value.shippedAt &&
-      Date.parse(value.expiresAt) <= Date.parse(value.shippedAt)
-    )
-      context.addIssue({
-        code: 'custom',
-        path: ['expiresAt'],
-        message: 'The replacement must expire after shipment.',
-      })
   })
 type Values = z.infer<typeof kitCaseSchema>
 const empty: Values = {
@@ -86,7 +78,6 @@ const empty: Values = {
   reason: '',
   submissionDeadlineAt: '',
   lotBatchNumber: '',
-  expiresAt: '',
   shippedAt: '',
   carrier: '',
   trackingNumber: '',
@@ -107,6 +98,8 @@ export function KitAssemblyCasesPanel({
   staff?: boolean
 }) {
   const client = useQueryClient()
+  const [lotCase, setLotCase] = useState<KitAssemblyCase | null>(null)
+  const caseActionButtons = useRef(new Map<string, HTMLButtonElement>())
   const [reviewed, setReviewed] = useState<{
     item: KitAssemblyCase
     action: Values['action']
@@ -144,9 +137,6 @@ export function KitAssemblyCasesPanel({
           ? {
               lotBatchNumber: values.lotBatchNumber,
               shippedAt: new Date(values.shippedAt).toISOString(),
-              expiresAt: values.expiresAt
-                ? new Date(values.expiresAt).toISOString()
-                : null,
               carrier: values.carrier,
               trackingNumber: values.trackingNumber,
             }
@@ -190,7 +180,7 @@ export function KitAssemblyCasesPanel({
     required = true,
   ) {
     return (
-      <div>
+      <Field>
         <Label htmlFor={`kit-case-${name}`}>
           {required ? (
             <RequiredFieldName>{label}</RequiredFieldName>
@@ -201,7 +191,6 @@ export function KitAssemblyCasesPanel({
         <Input
           id={`kit-case-${name}`}
           type={type}
-          className="mt-2"
           aria-invalid={Boolean(form.formState.errors[name])}
           {...form.register(name)}
         />
@@ -210,7 +199,7 @@ export function KitAssemblyCasesPanel({
             {<CustomerSourceText source={form.formState.errors[name]?.message} />}
           </p>
         ) : null}
-      </div>
+      </Field>
     )
   }
   if (!order.isKitBundle) return null
@@ -278,64 +267,14 @@ export function KitAssemblyCasesPanel({
                     </dd>
                   </div>
                 </dl>
-                <div className="flex flex-wrap gap-2">
-                  {item.assemblyRequestId ? (
-                    <Button variant="outline" asChild>
-                      {staff ? (
-                        <Link
-                          to="/lab-operations/data-assembly/$orderId"
-                          params={{ orderId: item.assemblyRequestId }}
-                          search={{ section: undefined }}
-                        >
-                          <CustomerSourceText source={"Open assembly work"} />
-                        </Link>
-                      ) : (
-                        <Link
-                          to="/data-assembly/$requestId"
-                          params={{ requestId: item.assemblyRequestId }}
-                          search={(previous) => previous}
-                        >
-                          {item.status === 'ResultsReleased'
-                            ? <CustomerSourceText source={"View results"} />
-                            : <CustomerSourceText source={"Open assembly case"} />}
-                        </Link>
-                      )}
-                    </Button>
-                  ) : !staff && item.canPrepare ? (
-                    <Button asChild>
-                      <Link
-                        to="/data-assembly/new"
-                        search={{ kitOrderId: order.id, kitCaseId: item.id }}
-                      >
-                        <CustomerSourceText source={"Prepare inputs"} />
-                      </Link>
-                    </Button>
-                  ) : null}
-                  {staff && item.canExtend ? (
-                    <Button
-                      variant="outline"
-                      onClick={() => open(item, 'extend')}
-                    >
-                      <CustomerSourceText source={"Extend deadline"} />
-                    </Button>
-                  ) : null}
-                  {staff && item.canReplace ? (
-                    <Button
-                      variant="outline"
-                      onClick={() => open(item, 'replace')}
-                    >
-                      <CustomerSourceText source={"Replace kit"} />
-                    </Button>
-                  ) : null}
-                  {staff && item.canCancel ? (
-                    <Button
-                      variant="outline"
-                      onClick={() => open(item, 'cancel')}
-                    >
-                      <CustomerSourceText source={"Cancel unused case"} />
-                    </Button>
-                  ) : null}
-                </div>
+                <KitLotSubmissionSummary submission={item.lotSubmission} />
+                <ActionMenu><DropdownMenuTrigger asChild><Button type="button" variant="outline" ref={node => { if (node) caseActionButtons.current.set(item.id, node); else caseActionButtons.current.delete(item.id) }}>Actions</Button></DropdownMenuTrigger><DropdownMenuContent align="end">
+                  {item.canSubmitLot ? <DropdownMenuItem onSelect={() => setLotCase(item)}>{item.lotSubmission ? 'Update kit lot submission' : 'Submit kit lot'}</DropdownMenuItem> : null}
+                  {item.assemblyRequestId ? <DropdownMenuItem asChild>{staff ? <Link to="/lab-operations/data-assembly/$orderId" params={{ orderId: item.assemblyRequestId }} search={{ section: undefined }}>Open assembly work</Link> : <Link to="/data-assembly/$requestId" params={{ requestId: item.assemblyRequestId }} search={previous => previous}>{item.status === 'ResultsReleased' ? 'View results' : 'Open assembly case'}</Link>}</DropdownMenuItem> : !staff && item.canPrepare ? <DropdownMenuItem asChild><Link to="/data-assembly/new" search={{ kitOrderId: order.id, kitCaseId: item.id }}>Prepare inputs</Link></DropdownMenuItem> : null}
+                  {staff && item.canExtend ? <DropdownMenuItem onSelect={() => open(item, 'extend')}>Extend deadline</DropdownMenuItem> : null}
+                  {staff && item.canReplace ? <DropdownMenuItem onSelect={() => open(item, 'replace')}>Replace kit</DropdownMenuItem> : null}
+                  {staff && item.canCancel ? <DropdownMenuItem variant="destructive" onSelect={() => open(item, 'cancel')}>Cancel unused case</DropdownMenuItem> : null}
+                </DropdownMenuContent></ActionMenu>
                 <details className="text-sm">
                   <summary className="cursor-pointer font-medium">
                     <CustomerSourceText source={"Included outputs and case history"} />
@@ -379,6 +318,8 @@ export function KitAssemblyCasesPanel({
                 {reviewed ? titles[reviewed.action] : ''} ·{' '}
                 {reviewed?.item.caseNumber}
               </DialogTitle>
+            </DialogHeader>
+            <div>
               <DialogDescription>
                 {reviewed?.action === 'replace'
                   ? <CustomerSourceText source={"The existing assembly case transfers to the replacement kit. This records the actual replacement shipment without creating another entitlement, sale or invoice."} />
@@ -386,7 +327,7 @@ export function KitAssemblyCasesPanel({
                     ? 'This closes the unused assembly entitlement. It does not cancel shipped kits or automatically issue a refund.'
                     : `Current deadline: ${display(reviewed?.item.submissionDeadlineAt)}. This extension preserves the original purchase and records your reason.`}
               </DialogDescription>
-            </DialogHeader>
+            </div>
             {mutation.error ? (
               <Alert variant="destructive">
                 <AlertTitle><CustomerSourceText source={"Case was not changed"} /></AlertTitle>
@@ -414,17 +355,11 @@ export function KitAssemblyCasesPanel({
                   : null}
                 {reviewed?.action === 'replace' ? (
                   <>
-                    {field('lotBatchNumber', 'Replacement lot or batch')}
+                    <RegisteredKitLotField productId={order.lines.find(line => line.id === order.kitUnits?.find(unit => unit.id === reviewed.item.currentKitUnitId)?.orderLineId)?.qboCatalogItemId} value={form.watch('lotBatchNumber')} onChange={value => form.setValue('lotBatchNumber', value, { shouldDirty: true, shouldValidate: true })} error={form.formState.errors.lotBatchNumber?.message} disabled={mutation.isPending} />
                     {field(
                       'shippedAt',
                       'Actual shipment time',
                       'datetime-local',
-                    )}
-                    {field(
-                      'expiresAt',
-                      'Labeled expiration',
-                      'datetime-local',
-                      false,
                     )}
                     {field('carrier', 'Carrier')}
                     {field('trackingNumber', 'Tracking number')}
@@ -476,6 +411,7 @@ export function KitAssemblyCasesPanel({
             </RequiredDialogFooter>
           </DialogContent>
         </Dialog>
+        {lotCase ? <PartnerKitLotDialog key={lotCase.currentKitUnitId} orderId={order.id} kitCase={lotCase} onClose={() => setLotCase(null)} restoreFocus={() => caseActionButtons.current.get(lotCase.id)?.focus()} /> : null}
       </CardContent>
     </Card>
   )

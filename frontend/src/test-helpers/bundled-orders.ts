@@ -144,7 +144,11 @@ export const bundleProfile: AssemblyProfile = {
   isSynthetic: false,
   version: 4,
 }
+const bundleLotAssessment = { lotId: bundleIds.unit, lotNumber: 'TRAINING-LOT', expirationDate: '2026-10-03', isRecalled: false, recallReason: null, isExpired: false, expirationUnknown: false, assessedOn: '2026-09-08', lotVersion: 1 }
+export const bundleLotSubmission = { id: bundleIds.case, enteredLotNumber: 'TRAINING-LOT', usedOn: '2026-09-08', checkedAt: '2026-09-08T10:00:00Z', version: 1, savedAssessment: bundleLotAssessment, currentAssessment: bundleLotAssessment }
 export const bundleCase: KitAssemblyCase = {
+  lotSubmission: bundleLotSubmission,
+  canSubmitLot: true,
   id: bundleIds.case,
   caseNumber: 'TRAINING-CASE-1',
   originalKitUnitId: bundleIds.unit,
@@ -219,6 +223,7 @@ export const bundleKitOrder: ReagentOrder = {
   assemblyCases: [bundleCase],
 }
 export const bundleAssembly: DataAssemblyRequest = {
+  kitLotSubmission: bundleLotSubmission,
   id: bundleIds.request,
   organizationId: bundleIds.organization,
   requestNumber: 'TRAINING-ASSEMBLY-1',

@@ -13,8 +13,8 @@ public sealed class KitBundleDomainTests
         var first = Unit(); var second = Unit();
         var a = new KitAssemblyCase(first, Guid.NewGuid(), "{}"); var b = new KitAssemblyCase(second, Guid.NewGuid(), "{}");
         Assert.False(a.CanPrepareAt(Shipped));
-        first.Ship(Guid.NewGuid(), Shipped, Shipped.AddMonths(2), "LOT-A", "Carrier", "TRACK-A");
-        second.Ship(Guid.NewGuid(), Shipped.AddDays(8), null, "LOT-B", "Carrier", "TRACK-B");
+        first.Ship(Guid.NewGuid(), Shipped, Shipped.AddMonths(2), "LOT-A", "Carrier", "TRACK-A", Guid.NewGuid());
+        second.Ship(Guid.NewGuid(), Shipped.AddDays(8), null, "LOT-B", "Carrier", "TRACK-B", Guid.NewGuid());
         a.RecordShipment(first, null, Shipped); b.RecordShipment(second, null, Shipped.AddDays(8));
         Assert.Equal(Shipped.AddMonths(2).AddDays(90), a.SubmissionDeadlineAt);
         Assert.Equal(Shipped.AddDays(8).AddMonths(12), b.SubmissionDeadlineAt);
@@ -60,7 +60,7 @@ public sealed class KitBundleDomainTests
         included.AttachRequest(request, actor, Shipped); included.Submit(request, actor, Shipped);
         var revision = new AssemblyInputRevision(request, 1, null, "{}", null, "{}", actor, Shipped, unit.Id);
         var replacement = new PartnerKitUnit(unit.PartnerReagentOrderId, unit.PartnerReagentOrderLineId, unit.OrganizationId, unit.DepartmentId, "REPLACEMENT", unit.Id);
-        replacement.Ship(null, Shipped.AddDays(1), null, "NEW-LOT", "Carrier", "NEW-TRACK");
+        replacement.Ship(null, Shipped.AddDays(1), null, "NEW-LOT", "Carrier", "NEW-TRACK", Guid.NewGuid());
         unit.Replace(replacement.Id); included.Transfer(replacement, "Replacement for damaged Kit.", actor, Shipped.AddDays(1));
         Assert.Equal(unit.Id, included.OriginalKitUnitId); Assert.Equal(replacement.Id, included.CurrentKitUnitId);
         Assert.Equal(unit.Id, revision.KitUnitId); Assert.Equal(invoice, included.BillingDocumentId);
@@ -76,7 +76,7 @@ public sealed class KitBundleDomainTests
     {
         var (unit, included) = ShippedCase(); var actor = Guid.NewGuid(); var request = Guid.NewGuid();
         var wrongTenant = new PartnerKitUnit(unit.PartnerReagentOrderId, unit.PartnerReagentOrderLineId, Guid.NewGuid(), unit.DepartmentId, "WRONG", unit.Id);
-        wrongTenant.Ship(null, Shipped, null, "LOT", "Carrier", "TRACK");
+        wrongTenant.Ship(null, Shipped, null, "LOT", "Carrier", "TRACK", Guid.NewGuid());
         Assert.Throws<InvalidOperationException>(() => included.Transfer(wrongTenant, "Reason", actor, Shipped));
         included.AttachRequest(request, actor, Shipped); included.Submit(request, actor, Shipped); included.MarkResultsReleased(Shipped);
         Assert.True(included.IsTerminal);
@@ -103,7 +103,7 @@ public sealed class KitBundleDomainTests
     private static (PartnerKitUnit, KitAssemblyCase) ShippedCase()
     {
         var unit = Unit(); var included = new KitAssemblyCase(unit, Guid.NewGuid(), "{}");
-        unit.Ship(Guid.NewGuid(), Shipped, null, "LOT", "Carrier", "TRACK"); included.RecordShipment(unit, null, Shipped);
+        unit.Ship(Guid.NewGuid(), Shipped, null, "LOT", "Carrier", "TRACK", Guid.NewGuid()); included.RecordShipment(unit, null, Shipped);
         return (unit, included);
     }
 }

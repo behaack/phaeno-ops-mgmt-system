@@ -154,11 +154,13 @@ public sealed class PlatformDataAssemblyRequestsController(
                 var item = await ReadAsync(requestId, operationCancellationToken);
                 EnsureVersion(item.Version, request.Version);
                 if (!item.CurrentInputRevisionId.HasValue) throw Conflict("assembly_input_revision_missing", "The accepted input revision is unavailable.");
+                var kitAssessment = await new PSeqKitLotService(dbContext).CheckBeforeProcessingAsync(item, request.KitLotVersion, operationCancellationToken);
                 var before = item.Status.ToString();
                 Execute(item.StartProcessing);
                 var run = new AssemblyProcessingRun(item.Id, item.CurrentInputRevisionId.Value,
                     item.ProcessingRuns.Count == 0 ? 1 : item.ProcessingRuns.Max(value => value.RunNumber) + 1,
                     request.ProfileVersion, request.PipelineVersion, request.Provenance, DateTime.UtcNow);
+                if (kitAssessment is not null) run.RecordKitLotCheck(PSeqKitLotService.Snapshot(kitAssessment));
                 item.ProcessingRuns.Add(run);
                 dbContext.AssemblyProcessingRuns.Add(run);
                 Event(item, before, item.Status.ToString(), actor.Id);
@@ -375,10 +377,10 @@ public sealed class PlatformDataAssemblyRequestsController(
             item.ProcessingNotes, item.ProhibitedDataConfirmed, item.Status.ToString(), item.InputRevision, item.PurchaseOrderNumber,
             item.SubmittedAt, item.PlacedAt, item.CompletedAt, item.TenantSafeReason, item.InternalNote, item.CreatedAt, item.UpdatedAt,
             item.Version, false, false, false, false, false, item.InputRevisions.OrderByDescending(value => value.Revision).Select(value => new AssemblyInputRevisionDto(value.Id,
-                value.Revision, value.PreviousRevisionId, value.ManifestJson, value.CorrectionReason, value.ValidationSummaryJson, value.SubmittedAt)).ToList(),
+                value.Revision, value.PreviousRevisionId, value.ManifestJson, value.CorrectionReason, value.ValidationSummaryJson, value.SubmittedAt, value.KitLotAssessmentJson, value.KitUsedOn)).ToList(),
             item.Quotes.OrderByDescending(value => value.Revision).Select(value => value.ToDto()).ToList(), item.ProcessingRuns.OrderByDescending(value => value.RunNumber)
                 .Select(value => new AssemblyProcessingRunDto(value.Id, value.InputRevisionId, value.RunNumber, value.ProfileVersion, value.PipelineVersion,
-                    value.Provenance, value.QcStatus, value.StartedAt, value.CompletedAt, value.FailureReason, value.Version)).ToList(),
+                    value.Provenance, value.QcStatus, value.StartedAt, value.CompletedAt, value.FailureReason, value.Version, value.KitLotAssessmentJson)).ToList(),
             item.OutputReleases.OrderByDescending(value => value.ReleaseVersion).Select(value => new AssemblyOutputReleaseDto(value.Id, value.InputRevisionId,
                 value.ProcessingRunId, value.ReleaseVersion, value.ManifestJson, value.PipelineVersion, value.Provenance, value.QcStatus, value.ReleaseStatus.ToString(),
                 value.GeneratedAt, value.ReleasedAt, files.Where(file => file.ParentRecordId == value.Id).Select(file => file.ToDto()).ToList(),
