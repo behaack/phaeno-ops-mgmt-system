@@ -2018,6 +2018,53 @@
       ],
       "publicationStatus": "published",
       "sourcePath": "src/content/docs/phaeno/how-to-lab-protocol.mdx"
+    },
+    {
+      "audience": "phaeno",
+      "locale": null,
+      "slug": "how-to-onboard-customer",
+      "parentSlug": "crm",
+      "title": "How to onboard a Customer",
+      "summary": "Request and approve online access, invite an administrator, enable the approved service, finish billing and tax review, and close both requests.",
+      "order": 15.5,
+      "reviewedAt": "2026-10-15",
+      "navigationGroup": "customer-relationship-management",
+      "contentType": "how-to",
+      "topicIds": [
+        "crm",
+        "access",
+        "billing"
+      ],
+      "workflowIds": [
+        "onboarding",
+        "crm"
+      ],
+      "taskKeywords": [
+        "onboard a customer",
+        "online access",
+        "Company request",
+        "approve and enable access",
+        "send invitation",
+        "accept invitation",
+        "products and services",
+        "service entitlement",
+        "Customer billing",
+        "Finance tax approval",
+        "complete request"
+      ],
+      "aliases": [
+        "Customer onboarding checklist"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [
+        "phaeno/crm-portal-handoffs",
+        "phaeno/organization-and-user-administration",
+        "phaeno/order-customer-lab-authorization",
+        "phaeno/order-billing-payment-release",
+        "phaeno/how-to-place-customer-order"
+      ],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/phaeno/how-to-onboard-customer.mdx"
     }
   ]
 }

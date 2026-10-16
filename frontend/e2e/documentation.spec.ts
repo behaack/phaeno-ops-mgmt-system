@@ -73,7 +73,8 @@ test('shows only Phaeno guides in expandable topic groups', async ({ page }) => 
   await expect(topLevelItems.nth(0)).toContainText('Phaeno operations guide')
   await expect(topLevelItems.nth(1)).toContainText('POMS user administration')
   await expect(topLevelItems.nth(2)).toContainText('CRM')
-  await expect(page.getByRole('region', { name: 'How-to guides' }).getByRole('link')).toHaveCount(3)
+  await expect(page.getByRole('region', { name: 'How-to guides' }).getByRole('link')).toHaveCount(4)
+  await expect(page.getByRole('region', { name: 'How-to guides' }).getByRole('link', { name: /How to onboard a Customer/ })).toBeVisible()
   await expect(page.getByRole('region', { name: 'Guides' }).getByRole('link', { name: 'Trial Projects', exact: true })).toHaveCount(0)
   await expect(page.getByRole('region', { name: 'Browse by topic' }).getByRole('link', { name: 'Trial Projects', exact: true })).toHaveCount(0)
   await expect(
@@ -101,8 +102,8 @@ test('shows only Phaeno guides in expandable topic groups', async ({ page }) => 
     name: 'Expand CRM topics',
   }).click()
   const crmTopics = page.locator('#documentation-topics-crm')
-  await expect(crmTopics.getByRole('link')).toHaveCount(8)
-  await expect(crmTopics.locator('a > svg')).toHaveCount(8)
+  await expect(crmTopics.getByRole('link')).toHaveCount(9)
+  await expect(crmTopics.locator('a > svg')).toHaveCount(9)
   await crmTopics.getByRole('link', {
     name: 'Reports and administration',
   }).click()

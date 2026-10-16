@@ -1,5 +1,15 @@
 # Frontend Test Plan
 
+## Customer onboarding how-to — October 15, 2026
+
+Registry expectations now include the CRM-parented Customer onboarding how-to as
+the first of four Phaeno task guides. Its 15 actual-component demonstration
+screenshots have 73 shared-renderer callouts and equivalent written explanations.
+Manual guide rendering, audience-specific navigation, image loading, responsive
+layout and light/dark callouts are checked at the documentation checkpoint.
+TypeScript, touched-source lint and build are compilation/static checks;
+automated suites are not requested for this guide addition and remain unexecuted.
+
 ## Remaining UI release checkpoint — October 15, 2026
 
 The requested release runs the documentation registry and protocol-list suites:

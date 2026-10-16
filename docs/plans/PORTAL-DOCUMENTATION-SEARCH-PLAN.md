@@ -6,6 +6,56 @@ on 2026-09-05. Release preparation is recorded below.
 
 Updated: 2026-09-05.
 
+## October 15, 2026: Customer onboarding how-to
+
+The Owner requests an additional Phaeno how-to covering the complete Customer
+onboarding process: online-access request and approval, invitation and accepted
+administrator access, the separate product/service request and dated permission,
+operational readiness, billing/tax setup and Finance approval, and request
+completion. Include generously annotated screenshots for each step with matching
+written callout explanations. The guide belongs beneath CRM and appears with the
+existing how-to cards. Preserve audience isolation and existing direct URLs.
+
+Trace current controls and backend completion rules rather than historical plans.
+Company/Department setup does not itself grant access. Online-access approval
+does not grant a service; sending an invitation does not mean it was accepted.
+Access-only onboarding completes automatically after active administrator
+acceptance. Customer PSeq service completion additionally checks effective Ready
+permissions and operational readiness, including Finance-approved billing/tax.
+Keep the pricing/quote/invoice stages distinct and link their owning guides.
+
+Capture actual application components with empty or explicitly fictional
+demonstration data; never capture real contacts, invitation tokens or credentials,
+send mail or change customer access to create the illustrations. Reuse the shared
+numbered-callout renderer and retain accessible written equivalents. Update guide
+metadata, matching API/UI corpus, navigation regression sources and living plans.
+Run documentation/link/asset consistency and compile/lint/build checks; automated
+suites remain request-only. This change does not include Git publication or
+hosted deployment without release authorization. The Owner subsequently requested
+commit/push to GitHub and deployment when this guide is done. The
+[preserving release plan](CUSTOMER-ONBOARDING-HOWTO-TEST-RELEASE-20261015-PLAN.md)
+covers the matched UI and generated help-index activation, with no migration.
+
+Success: Phaeno staff can follow each role's action through both completed
+requests, identify each saved prerequisite and recover from waiting/blocked/stale
+states, with a current annotated screenshot at every numbered workflow step.
+
+Implementation checkpoint: the guide contains 13 workflow steps, 15 actual-component
+JPEG captures (under 1 MB total) and 73 numbered callouts with written equivalents.
+All pixels were reviewed for fictional-only content. The fourth how-to card opens
+the CRM-parented guide in the full help interface; all images load. Desktop,
+390px dark and 320px reflow checks pass. Annotation geometry is checked down to a
+256px rendered image width; callouts stay within bounds and do not overlap. The
+original System theme and viewport are restored. A stale development preview
+required restarting its intentionally non-hot-reloading server after coordinate
+edits; final source is reloaded and checked.
+
+Guide links/assets, documentation generation/check, TypeScript, touched-source
+lint and production client/server build pass. Matching API/UI corpus is 60 guides,
+`4f0652813a53`. Registry/navigation regression expectations are updated; automated
+suites remain unexecuted for this addition. Screenshots are demonstration
+instructions, not operational acceptance of actual invitations or billing writes.
+
 ## October 15, 2026: Phaeno navigation and illustrated how-to guides
 
 The Owner requested shorter Phaeno help labels, POMS user administration second

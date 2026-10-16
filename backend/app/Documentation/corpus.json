@@ -2512,6 +2512,132 @@
     {
       "audience": "phaeno",
       "locale": null,
+      "slug": "how-to-onboard-customer",
+      "parentSlug": "crm",
+      "title": "How to onboard a Customer",
+      "summary": "Request and approve online access, invite an administrator, enable the approved service, finish billing and tax review, and close both requests.",
+      "order": 15.5,
+      "reviewedAt": "2026-10-15",
+      "navigationGroup": "customer-relationship-management",
+      "contentType": "how-to",
+      "topicIds": [
+        "crm",
+        "access",
+        "billing"
+      ],
+      "workflowIds": [
+        "onboarding",
+        "crm"
+      ],
+      "taskKeywords": [
+        "onboard a customer",
+        "online access",
+        "Company request",
+        "approve and enable access",
+        "send invitation",
+        "accept invitation",
+        "products and services",
+        "service entitlement",
+        "Customer billing",
+        "Finance tax approval",
+        "complete request"
+      ],
+      "aliases": [
+        "Customer onboarding checklist"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [
+        "phaeno/crm-portal-handoffs",
+        "phaeno/organization-and-user-administration",
+        "phaeno/order-customer-lab-authorization",
+        "phaeno/order-billing-payment-release",
+        "phaeno/how-to-place-customer-order"
+      ],
+      "publicationStatus": "published",
+      "id": "phaeno/how-to-onboard-customer",
+      "route": "/docs/phaeno/how-to-onboard-customer",
+      "contentHash": "04589ae614980b475fce77936c02df78d72fc81febc00f3a86f984524f93266c",
+      "sections": [
+        {
+          "heading": "How to onboard a Customer",
+          "anchor": "how-to-onboard-a-customer",
+          "text": "Use this walkthrough to take a Company from CRM setup to accepted online access and an approved, usable PSeq Lab Service permission. It follows two separate Company requests: Online access and Products and services. Keep their request numbers so you can verify both outcomes."
+        },
+        {
+          "heading": "Before you start",
+          "anchor": "before-you-start",
+          "text": "Work in the Phaeno organization. A platform administrator creates and reviews Company access/service requests and manages invitations. Commercial staff can prepare the Company and contact information within their permissions; involve an administrator for the controlled access steps. Finance staff with billing access own the billing profile and tax approval. The invited Customer administrator accepts their own access. Have the correct Company, intended administrator's name and email, Department scope, approved service and dates, billing contact/address, agreed payment terms and Finance's tax decision. Check for existing Companies, people, access and service permissions before adding records. Every screenshot below renders actual application components with explicitly fictional demonstration records. The numbered markers correspond to the written explanations immediately below each image. No invitation or email was sent and no Customer records were changed to make these illustrations. Example names, dates, terms and tax choices are illustrations, not values to copy into real work."
+        },
+        {
+          "heading": "1. Prepare the Company, people and Departments",
+          "anchor": "1-prepare-the-company-people-and-departments",
+          "text": "Open CRM → Companies, search for the Company, and open its name. Use New company only when it does not already exist. Save its identity and commercial context, then open People. Fictional Company People workspace showing Company identity, New person, an existing contact, Departments and Requests. Company identity: verify the active Company and its current Portal access status. Creating a CRM Company alone grants no sign-in or service access. New person: add the intended contact when missing, including the correct name and email. Use Add existing person to associate an existing contact. Person record: review the Company relationship and intended administrator. A CRM Contact is not automatically a Portal user. Departments: prepare the operational units and settings before requesting online access; no access request is required to add a Department. Requests: this Company tab is where the two requests in this guide begin. In Departments, review existing units or choose Add department. Add department form for the fictional Research Department, showing name, description, inherited settings guidance and Add department. Name: enter a recognizable operational Department name. Description: record its purpose when helpful. The reference is assigned automatically on save. Optional settings: leave overrides blank to use applicable Company/system defaults; enter only reviewed Department-specific instructions. Add department: save the unit and review its record. Later access approval reuses the Company's setup and preserves its Department identities/settings."
+        },
+        {
+          "heading": "2. Request Customer online access",
+          "anchor": "2-request-customer-online-access",
+          "text": "Open Company → Requests → Create request. Create Company request form with online access, Onboarding, Customer relationship, a fictional summary and Create pending request. What does this Company need?: select Enable or change online access. Request type: choose Onboarding for new Customer access. Requested relationship: choose Customer. If an existing Prospect must become a Customer, use its reviewed relationship-change process rather than creating a second Company or a duplicate onboarding request. Summary: optionally explain the business purpose and intended contact. Keep credentials, patient identifiers and scientific results out of CRM notes. Create pending request: save one request and retain its number. It is awaiting a decision; no invitation, service or order is created. If the outcome is uncertain, check the Company's request history before retrying with another new request. For an already enabled Company, review its existing access and use the appropriate change request."
+        },
+        {
+          "heading": "3. Approve and enable the Company's access",
+          "anchor": "3-approve-and-enable-the-companys-access",
+          "text": "Open CRM → Requests → Needs decision, identify that Company and request number, and choose Actions → Approve and enable access. Approve and enable Portal access dialog for the fictional online-access request, with its consequence, optional note and approval action. Decision: confirm you are approving online access for the intended Company. Consequence and request identity: review the Company and request number. Approval enables the access scope with pending readiness; it does not activate a person, grant service permission or create an order. Approval note (optional): add context when useful; a note is not required for this approval. Declining or cancelling instead requires a reason. Approve and enable access: record the decision. Continue in Approved / needs work and follow Work needed. If approval is recorded but access setup did not finish, use the request's Complete access enablement recovery action. If an existing access scope is offered for reuse, verify the named scope and preserve its users/history. Do not create a replacement Company to work around setup failure."
+        },
+        {
+          "heading": "4. Invite the approved administrator",
+          "anchor": "4-invite-the-approved-administrator",
+          "text": "Open Company → People, find the intended person, and choose Invite to Portal from their actions. If they already have accepted access, review Manage access instead of issuing a duplicate invitation. Invite Alex Example to Portal form showing the fictional recipient, Member role, Research Department, Department administrator selection and Send invitation. Recipient: verify the name, invited email and Company before sending. Role: choose the approved scope. An Organization administrator can manage all Departments; this is optional. Member restricts access to the selected Departments and can include Department administrator permission. Department access: select each approved active Department. Department administrator: enable this for the Department the person must administer. An ordinary Department member does not satisfy administrator acceptance readiness. Send invitation: queue the invitation email. This does not activate access. Review invitation and email-delivery status in People. Provider acceptance is not proof that the person received or accepted the invitation. Resend invite issues a renewed link and invalidates the previous link. If an invitation expired, renew it; for a hard bounce, correct the contact through the supported revoke and new-invitation flow. Do not ask the recipient to share passwords or sign-in codes."
+        },
+        {
+          "heading": "5. Have the Customer administrator accept",
+          "anchor": "5-have-the-customer-administrator-accept",
+          "text": "The recipient opens the newest invitation email and follows its link. They review the proposed access and follow the prompted acceptance/sign-in or account-setup steps using the invited email, including required verification or authenticator setup. An acceptance chosen before sign-in can finish automatically afterward when the reviewed invitation is unchanged. Customer invitation acceptance review for Alex Example, showing the fictional Company, Research Department administrator access, signed-in review and Accept invitation. Company and recipient: verify the invitation is for the intended Company and email. Use the correct account if another email is signed in. Access after acceptance: review the Organization or Department scope and administrator permissions. Ready to join: confirm the invited account is signed in. Complete missing name fields if requested. Accept invitation: accept the reviewed access. Viewing the link alone grants nothing. If permissions changed, review the updated access and accept again; do not rely on an earlier review. The recipient then enters Portal with their accepted access. Phaeno can verify the person's active role in Company People. Department administrators remain limited to their assigned active Departments."
+        },
+        {
+          "heading": "6. Verify the online-access request completed automatically",
+          "anchor": "6-verify-the-online-access-request-completed-automatically",
+          "text": "Return to CRM → Requests → Completed / history. Completed online-access request showing the history tab, Completed status, automatic completion explanation and No service change. Completed / history: open the completed-request view; search by Company or request number if needed. Completed: verify the exact online-access request reached this state. Completed work: review the automatic-completion explanation. Company access must be enabled and an Organization or active-Department administrator must have accepted and gained active access. No service change: this access request did not enable a product/service. Access-only onboarding has no manual Complete request action. While an invitation is pending, it remains Waiting for acceptance. Expired/revoked invitations or inactive access require attention. If active administrator access already exists, approval can complete the request immediately. Progress normally refreshes every 15 seconds while Requests is open and when you return; use the displayed retry action if progress or automatic completion failed."
+        },
+        {
+          "heading": "7. Request the approved product or service",
+          "anchor": "7-request-the-approved-product-or-service",
+          "text": "Return to Company → Requests → Create request for a separate service request. Create Company request form with products and services selected, Customer relationship, P-Seq Lab Service, a fictional scope summary and Create pending request. What does this Company need?: choose Add or change products and services. This creates a service-change request. Requested relationship: verify the existing Customer relationship. Requested products and services: select the approved Customer service, P-Seq Lab Service in the picker. Customer commercial access currently uses PSeq Lab Service; PSeq Kit permissions belong to the Partner workflow. Summary: describe the approved purpose, Department scope and timing so the reviewer can configure the correct permission. Create pending request: save and retain this second request number. The service remains unavailable until its reviewed permission is saved and usable."
+        },
+        {
+          "heading": "8. Approve and save the service permission",
+          "anchor": "8-approve-and-save-the-service-permission",
+          "text": "In CRM → Requests → Needs decision, open this request's Actions → Approve and set up services. Approve and set up services dialog showing Research scope, effective dates, Ready to use, optional approval note and Approve and save services. Applies to: select the approved Department, or All departments (Company default) when Company-wide permission is authorized. Effective from: enter the approved start date and time. A future start leaves the request waiting until that date. Effective to (optional): enter the approved end, or leave it blank if none was agreed. An expired permission cannot clear current service readiness. Service configuration: select Ready to use when setup is complete. Pending setup or Blocked keeps the service step unfinished. Approval note (optional): retain useful decision context if needed. Approve and save services: record the approval and permission, linked to this source request automatically. A usable permission does not create an order. When a matching Existing permission is offered, review/update it instead of adding an overlapping permission. If the decision was approved before Company access existed, finish access setup, then use Actions → Set up approved services → Save services on the approved request. Use that same action to finish an older Pending/Blocked permission. Review permissions in Company → Services → Entitlements; avoid an unlinked duplicate that cannot clear this request."
+        },
+        {
+          "heading": "9. Resolve the request's Work needed checklist",
+          "anchor": "9-resolve-the-requests-work-needed-checklist",
+          "text": "Open Approved / needs work and expand the relevant Instructions. Approved service request with the correct request number, verified Company access and service permission, remaining offering/billing blockers and expanded Finance instructions. Approved / needs work: approval and completion are separate states. Request number: follow the service request, not the completed access request. Service permission — Done: verify the permission is current, Ready, linked to this request and scoped to the Company or an active Department. Shared offering setup: a Phaeno configuration owner resolves missing shared service definitions; changing the Company permission alone cannot do this. Company billing: Finance completes the named Customer-specific fields. Expanded Instructions: follow the owner, destination, fields, save action and completion condition for each remaining item. The exact blockers depend on current saved configuration. For Customer PSeq requests, review all displayed requirements: Company and people: active Customer access, an accepted eligible administrator and current service permission; verify the intended Department. Order settings → Service catalog: an active, approved PSeq Lab Service offering using the supported sales unit. Quote & workflow supplies valid quote settings and supported sample/result workflows. Samples & shipping settings: effective Active Sample types, their usable Shipping procedures and kit configuration, an available Default receiving destination, and saved Order submission guidance. More → Finance → Customer billing: complete billing contact/address, agreed payment terms, effective tax decision and Finance approval. Manual operational block: resolve the recorded reason with its owner and have authorized staff clear the block. Completing other fields does not remove it. Use How to configure samples and shipping for shared shipping setup. Customer readiness in Company → Services also separates Before starting pricing, Before issuing a quote and Before invoicing. Billing may be finished after order acceptance but must be ready before invoicing; closing this service request requires its full readiness checklist. Do not treat a started pricing draft as proof onboarding is complete."
+        },
+        {
+          "heading": "10. Complete and save Customer billing and tax",
+          "anchor": "10-complete-and-save-customer-billing-and-tax",
+          "text": "Finance opens More → Finance → Customer billing, opens the Customer name, then chooses Edit billing and tax. Customer billing and tax editor showing fictional contact/address, payment terms, Exempt tax decision and demonstration evidence. Billing contact name: record the billing person or team. Billing contact email: use the confirmed billing address. A CRM contact or invited user does not automatically populate this profile. Invoice address: complete Address line 1, City, State or region, Postal code and two-letter Country code. Address line 2 is optional. Billing and shipping addresses may differ. Payment terms (days): enter the agreed whole number from 0 to 365. Tax decision: select Finance's Taxable, Exempt or Non-taxable decision. For Taxable, enter the approved rate; do not infer a tax decision from the form's initial selection. Exemption evidence: required when Exempt is selected. Record the applicable evidence; the demonstration text is not a valid exemption record. Choose Save changes. Resolve validation errors and confirm the save before approving tax. Every billing/tax edit resets Finance approval, including a later correction to an already approved profile."
+        },
+        {
+          "heading": "11. Approve the saved tax decision in Finance",
+          "anchor": "11-approve-the-saved-tax-decision-in-finance",
+          "text": "Review the saved profile in the same Customer billing and tax dialog. Save any corrections before approving. Lower part of the saved Customer billing and tax form, showing tax decision, evidence, Finance approval notes and Approve current tax decision. Saved tax decision: verify it against the Customer's reviewed billing facts. Rate or evidence: check the applicable approved rate or exemption evidence. Finance approval notes: record the required basis for Finance's review. Approve current tax decision: approve the saved version and confirm Finance approved is shown afterward. Unsaved billing edits must be saved first. A stale-version rejection requires reloading and reviewing the current facts, not repeatedly approving the older screen. Close the dialog and return to the service request. Allow the checklist to refresh. Billing approval does not accept a Customer quote, create an invoice or record payment; those are separate commercial actions."
+        },
+        {
+          "heading": "12. Record completion of the service request",
+          "anchor": "12-record-completion-of-the-service-request",
+          "text": "Return to CRM → Requests → Approved / needs work and review the saved progress. Service request showing Company access, current service permission and Customer operational readiness all Done, with the Complete request action. Approved / needs work: open the same service request again. Company Portal access — Done: the access scope is active. Service permission — Done: its dates, scope, configuration and source link pass. Customer operational readiness — Done: the required saved setup passes. All checklist items are complete: review any Needs review items as well; manual reviews cannot be attested by an automated check. Actions → Complete request: open the final completion dialog. If disabled, resolve the remaining items or retry progress verification first. Complete Company request dialog with the exact service request, completion consequence, optional completed-work note and Complete request button. Complete Company request: confirm the intended action. Company and request: verify the service request's identity and the work being confirmed. Completed work (optional): add useful closeout context; blank notes are allowed. Complete request: record completion. POMS rechecks current prerequisites. If another change blocks completion, refresh, resolve it and review again."
+        },
+        {
+          "heading": "13. Verify both requests and hand off to ordering",
+          "anchor": "13-verify-both-requests-and-hand-off-to-ordering",
+          "text": "Open Completed / history and find the Company or retained request numbers. Completed request history with the separate online-access and PSeq Lab Service requests, their Completed statuses and retained completion details. Completed / history: verify the final history view. Search completed requests: use the Company name or request number. Online access — Completed: acceptance of eligible administrator access is recorded. Service change — Completed: approved service setup and readiness are recorded. Completed work: review the retained closeout context for the correct request. Confirm the person's active Department/admin access in Company People, the current permission in Services, and the Finance-approved billing profile. The Customer is now prepared for its permitted service workflow. Follow How to place a Customer order for Draft/pricing/quote/acceptance steps; onboarding completion creates no order, specimen, laboratory execution or scientific-data grant. For recovery, see Company requests and approvals, POMS user administration, Customer lab authorization and Billing, cash and result release."
+        }
+      ]
+    },
+    {
+      "audience": "phaeno",
+      "locale": null,
       "slug": "how-to-place-customer-order",
       "parentSlug": "order-operations",
       "title": "How to place a Customer order",
@@ -4541,5 +4667,5 @@
       ]
     }
   ],
-  "corpusHash": "50b53bdc8aa1e909c2102835bcfd05aa4fac86287c098506493543d0acad0b14"
+  "corpusHash": "4f0652813a53325d7aeed83f16416a040dcf811a02d210d9b4d090fd5f7f3a51"
 }

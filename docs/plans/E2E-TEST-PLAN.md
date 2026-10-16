@@ -1,5 +1,15 @@
 # Playwright E2E Test Plan
 
+## Customer onboarding how-to — October 15, 2026
+
+Existing Phaeno documentation expectations now require four how-to cards, a visible
+Customer onboarding link and nine CRM-topic links/icons. Manual browser review
+covers the new guide's 15 loaded screenshots, 73 numbered annotations and written
+steps, light/dark display and narrow-screen reflow. The captures use actual
+components and fictional read-only data; they are instructions, not live
+Company/request/invitation/billing acceptance evidence. Automated execution is
+deferred under the request-only policy for this addition.
+
 ## Remaining documentation release checkpoint — October 15, 2026
 
 All 12 cases in `documentation.spec.ts` pass across desktop Chromium and Pixel 5
