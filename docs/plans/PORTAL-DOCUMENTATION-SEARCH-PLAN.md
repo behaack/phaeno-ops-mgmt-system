@@ -1,10 +1,11 @@
 # Portal Documentation Search and Metadata Plan
 
-Status: implemented and verified locally; production deployment/hosted acceptance
-pending. The Product Owner authorized execution, then commit, push and deployment
-on 2026-09-05. Release preparation is recorded below.
+Status: implemented and deployed to the existing hosted test environment. The
+October 15, 2026 release verifies the matching active 60-guide index and actual
+authenticated Phaeno guide/search. Historical checkpoints and remaining broader
+acceptance boundaries are recorded below.
 
-Updated: 2026-09-05.
+Updated: 2026-10-15.
 
 ## October 15, 2026: Customer onboarding how-to
 
@@ -55,6 +56,13 @@ lint and production client/server build pass. Matching API/UI corpus is 60 guide
 `4f0652813a53`. Registry/navigation regression expectations are updated; automated
 suites remain unexecuted for this addition. Screenshots are demonstration
 instructions, not operational acceptance of actual invitations or billing writes.
+
+Hosted checkpoint: source `a88cc73853fd`, API run `38829715412` and UI
+`dpl_GVgngTrETWtYjxV8HXcjKnz9uzDT` are live. Actual signed-in Phaeno search
+returns the guide first; the card/guide, all 15 images and 73 callouts load without
+captured console errors. Full fingerprints for all 245 tables remain unchanged,
+fresh isolated recovery passes, and release holds are preserved. See the
+[release receipt](../operations/customer-onboarding-howto-test-release-20261015.md).
 
 ## October 15, 2026: Phaeno navigation and illustrated how-to guides
 

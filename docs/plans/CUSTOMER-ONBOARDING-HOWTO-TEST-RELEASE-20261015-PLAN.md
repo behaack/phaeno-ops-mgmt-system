@@ -1,5 +1,11 @@
 # Customer onboarding how-to: preserving hosted-test release
 
+Status: completed October 15, 2026. Source `a88cc73853fd` is live as API run
+`38829715412` and UI `dpl_GVgngTrETWtYjxV8HXcjKnz9uzDT`. The 60-guide active
+index, signed-in guide/search, all screenshots, recovery and unchanged-table
+checks pass. See the [release receipt](../operations/customer-onboarding-howto-test-release-20261015.md)
+for exact identities, evidence and acceptance limits.
+
 The Owner requested the complete Phaeno Customer-onboarding how-to, generously
 annotated screenshots at each step, then commit/push to GitHub and UI deployment.
 Release only this guide, its 15 illustrations/73 callouts, metadata/navigation,

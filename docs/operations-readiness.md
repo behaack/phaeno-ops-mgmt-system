@@ -1,5 +1,18 @@
 # Operations and production-readiness boundary
 
+## Customer onboarding how-to — completed October 15, 2026
+
+Source `a88cc73853fd6f9dd446ee6b082422e1cecf13bb` is live at the existing
+hosted test environment as API run `38829715412` and UI
+`dpl_GVgngTrETWtYjxV8HXcjKnz9uzDT`. The guide contains 13 steps, 15 actual-component
+demonstration screenshots and 73 callouts. Signed-in Phaeno guide/search, image
+bytes, matching active 60-guide index, assets/pins, health/auth and error checks
+pass. Fresh isolated recovery passes and all 245 table fingerprints, including
+all Website intake records, remain unchanged; no migration or operational
+fixture writes occur. Release holds and the S3 recovery deferral remain. See the
+[receipt](operations/customer-onboarding-howto-test-release-20261015.md) and
+[preserving plan](plans/CUSTOMER-ONBOARDING-HOWTO-TEST-RELEASE-20261015-PLAN.md).
+
 ## PSeq kit lots and remaining UI — completed October 15, 2026
 
 Final API/UI source `8c4ec7d73560b3062bf87b45d7d757ffa86e223b` is live at the
