@@ -1,6 +1,6 @@
 # R&D electronic notebook
 
-Status: implemented locally, October 16, 2026. Automated test execution and authenticated browser acceptance remain deferred. No deployment authorized.
+Status: implemented and pushed with the illustrated how-to on October 17, 2026. The Owner authorized deployment. Exact-source frontend is staged READY, but API dispatch is unresolved in GitHub before job creation; the hosted release is unchanged. Local simulated UI/help inspection passes; automated suites and hosted R&D acceptance remain deferred. See [the release checkpoint](../operations/research-notebook-howto-test-release-20261017.md).
 
 ## October 17 review corrections
 

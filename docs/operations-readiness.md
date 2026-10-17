@@ -1,5 +1,19 @@
 # Operations and production-readiness boundary
 
+## R&D notebooks and illustrated how-to — deployment blocked October 17, 2026
+
+R&D source `e5c0804c90dfcf68931cc2f3d48525964ea6b419` is pushed, with 14 original
+screenshots and 53 callouts in the new Phaeno how-to. Exact-source frontend
+`dpl_GLcRkfnnMCU6TY1v86eajqQqxPqA` is staged READY with custom-domain assignment
+disabled. API dispatch `39056745064` is stuck queued with zero jobs; GitHub rejects
+normal and force cancellation as not-yet-queued. No competing run or promotion
+was issued. Actual API and canonical UI remain on the prior release; the R&D
+migration has not run. Fresh isolated database recovery and encrypted off-server
+verification pass. All release holds, Website intake preservation and S3 recovery
+deferral remain. Reconcile the existing run and host before retrying. See the
+[checkpoint](operations/research-notebook-howto-test-release-20261017.md) and
+[preserving plan](plans/RD-NOTEBOOK-HOSTED-TEST-RELEASE-20261017-PLAN.md).
+
 ## Customer onboarding how-to — completed October 15, 2026
 
 Source `a88cc73853fd6f9dd446ee6b082422e1cecf13bb` is live at the existing
