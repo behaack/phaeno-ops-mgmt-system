@@ -1,5 +1,10 @@
 # Auth and User System Plan
 
+## R&D researcher access - October 16, 2026
+
+Added Researcher to the existing business-role assignment/invitation model and Phaeno role picker. The new session capability and Research API require an active selected-Phaeno membership plus the explicit role or platform administration, independently of commercial feature flags. Researcher grants no Lab/CRM/commercial capability. Only platform administrators can change the Researcher assignment or offer it on an invitation; Lab role administrators see it disabled. All authorized researchers share notebooks across Departments. Clerk authentication and existing other-role enforcement are unchanged. See [R&D notebooks](RD-NOTEBOOK-PLAN.md) for the additive schema, local migration, test sources and remaining acceptance.
+
+
 ## October 14, 2026 - Phaeno user card status and actions
 
 The Owner supplied the narrow-screen User management account list and requested

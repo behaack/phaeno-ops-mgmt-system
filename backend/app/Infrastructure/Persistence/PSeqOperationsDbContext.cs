@@ -597,6 +597,7 @@ public sealed partial class PSeqOperationsDbContext(
         LabPreparationModelConfiguration.Configure(modelBuilder, this.persistenceOptions.LaboratorySchema);
         LabMasterMixModelConfiguration.Configure(modelBuilder, this.persistenceOptions.LaboratorySchema);
         modelBuilder.ConfigureLabConfigurationAssets(this.persistenceOptions.LaboratorySchema);
+        PhaenoPortal.App.Features.Research.ResearchModelConfiguration.ConfigureResearch(modelBuilder);
         WebsiteModelConfiguration.Configure(modelBuilder, this.persistenceOptions.WebsiteSchema);
 
         ApplySchemaOwnership(modelBuilder);
@@ -625,8 +626,11 @@ public sealed partial class PSeqOperationsDbContext(
                         + $"'{this.persistenceOptions.CommercialSchema}', not '{configuredSchema}'.");
                 }
 
+                var laboratorySchema = entityType.ClrType.Namespace == "PSeq.Operations.Laboratory.Research"
+                    ? PhaenoPortal.App.Features.Research.ResearchModelConfiguration.Schema
+                    : this.persistenceOptions.LaboratorySchema;
                 if (entityType.ClrType.Assembly == laboratoryAssembly
-                    && configuredSchema != this.persistenceOptions.LaboratorySchema)
+                    && configuredSchema != laboratorySchema)
                 {
                     throw new InvalidOperationException(
                         $"Laboratory entity '{entityType.DisplayName()}' must map to "

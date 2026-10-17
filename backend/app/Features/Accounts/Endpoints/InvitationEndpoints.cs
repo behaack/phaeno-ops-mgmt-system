@@ -127,6 +127,8 @@ public static partial class InvitationEndpoints
         }
 
         var intendedBusinessRoles = request.BusinessRoles.Distinct().ToArray();
+        if (intendedBusinessRoles.Contains(BusinessRole.Researcher) && !AccountAuthorization.IsPlatformAdmin(actor))
+            return TypedResults.Forbid();
         if (intendedBusinessRoles.Length != request.BusinessRoles.Count)
         {
             throw new BadRequestException("A business role cannot appear more than once.");

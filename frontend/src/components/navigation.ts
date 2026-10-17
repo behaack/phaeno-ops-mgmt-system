@@ -94,6 +94,15 @@ export const mainMenuItems: readonly MainMenuItem[] = [
       Boolean(session?.capabilities.canManageLabOperations || session?.capabilities.canReleasePSeqResults),
   },
   {
+    label: 'R&D',
+    to: '/research',
+    icon: BookOpenText,
+    group: 'workspace',
+    visibleWhen: (session, context) => session?.state === 'ready'
+      && context.selectedOrganizationKind === 'Phaeno'
+      && Boolean(session.capabilities.canAccessResearch),
+  },
+  {
     label: 'CRM',
     to: '/crm',
     icon: Handshake,

@@ -1,5 +1,19 @@
 # Frontend Test Plan
 
+## R&D illustrated how-to and release preparation — October 17, 2026
+
+Registry expectations include the fifth Phaeno How-to card, the R&D child guide at order 59.5, and its audience boundary. Fourteen original captures use the shared numbered-overlay renderer. TypeScript and scoped lint cover screenshot metadata and the opt-in in-memory illustration transport. Automated suites remain deferred unless requested.
+
+## R&D review corrections — October 17, 2026
+
+Expanded entry-editor regression sources to use actual TanStack Query invalidation and mocked HTTP transport. Cover retained notes across Active conflicts, completion and in-editor reopening, reopening elsewhere, refreshed version review, specific invalid-label errors/focus/revalidation, and cancellation of the create-entry dialog without a write. Entry pagination parsing is covered. The new view-first entry route and paged summary contract replace full-experiment notebook downloads. Automated execution is deferred unless requested; source compilation/static-check results are recorded in the owning R&D plan.
+
+## R&D notebook — October 16, 2026
+
+Added independent URL-state parsing and navigation-permission regressions, plus an entry-editor regression preserving scientific input across a 409 and requiring explicit review before resubmission with refreshed versions. Documentation registry coverage includes the Phaeno-only R&D guide and its order. Typecheck and scoped lint include new source and test/fixture code.
+
+Automated execution is deferred unless requested. Manual/connected acceptance remains for project/experiment creation, tables/reordering, upload/scanning errors, historical image/download access, scope changes with dirty drafts, and complete role administration. Desktop/narrow themes, keyboard/focus, single Actions indicators and required legends are included in browser acceptance.
+
 ## Customer onboarding how-to — October 15, 2026
 
 Registry expectations now include the CRM-parented Customer onboarding how-to as

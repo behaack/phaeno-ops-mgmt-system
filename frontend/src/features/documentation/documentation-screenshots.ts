@@ -1,3 +1,4 @@
+import { researchDocumentationScreenshots } from './research-screenshots'
 import { onboardingDocumentationScreenshots } from './onboarding-screenshots'
 
 // Actual local captures, reviewed October 15, 2026. Keep explanations in portable MDX.
@@ -9,6 +10,7 @@ export type DocumentationScreenshotMetadata = {
 
 export const documentationScreenshots: Readonly<Partial<Record<string, DocumentationScreenshotMetadata>>> = {
   ...onboardingDocumentationScreenshots,
+  ...researchDocumentationScreenshots,
   "/docs/phaeno/screenshots/customer-order-20261015.jpg": {
     "width": 1156,
     "height": 354,

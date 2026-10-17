@@ -116,6 +116,14 @@ Phaeno's platform-admin protection is unchanged.
   Portal identity only through an explicit invite or audited link action; an
   email match alone never links the records.
 
+## R&D notebook access and evidence
+
+- R&D is a shared Phaeno research workspace, accessible to active selected-Phaeno members with the Researcher role or platform administration. Platform administrators manage that role; it does not grant Lab, CRM or commercial authority. There are no external collaborators or project-specific restrictions in this version.
+- Projects contain experiments and dated entries with optional scientific sections, custom tables and private attachments. No approved protocol or mandatory scientific outline is required. Explicit saves preserve authorship, recording times and prior content; dates of the experiment/entry remain distinct from server times.
+- Completion makes an experiment's notebook read-only until reopened without approval. Completion is a tracking state, not scientific approval or Customer release. Both transitions remain in history.
+- Setup copying preserves section layout, Purpose/Method text and empty table structures only. Prior outcomes, custom text, attachment references and history are cleared from the new experiment.
+- Retain saved notebooks, revisions and uploaded files indefinitely, including detached attachments used by older revisions. There is no delete/purge operation. Standalone R&D does not record operational resource consumption.
+
 ## Lifecycle, audit, and concurrency
 
 - Users and organizations are deactivated rather than hard-deleted in normal workflows.

@@ -5,7 +5,7 @@
 Phaeno Portal is a multi-tenant application for invite-only organization access,
 Phaeno-owned curated-data provisioning, Customer laboratory services, Partner
 reagent orders, Partner data assembly, Phaeno operational/configuration work,
-  an internal Lab Operations application, and a manual journal-entry source
+  an internal Lab Operations application, shared R&D experiment notebooks, and a manual journal-entry source
   report for Phaeno Finance. QuickBooks Online integration is deferred. The API also serves the anonymous Phaeno Website search,
 contact, and inquiry contract. The repository contains a .NET API, a responsive
 React/TanStack Portal frontend, and the independently built Astro company

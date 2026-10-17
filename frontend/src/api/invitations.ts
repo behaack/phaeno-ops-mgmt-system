@@ -3,6 +3,7 @@ import type { OrganizationKind } from './session'
 
 export type InvitationStatus = 'Pending' | 'Accepted' | 'Revoked' | 'Declined'
 export type BusinessRole =
+  | 'Researcher'
   | 'CommercialOperator'
   | 'ResultReleaseManager'
   | 'BillingOperator'

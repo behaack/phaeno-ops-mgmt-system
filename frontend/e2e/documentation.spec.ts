@@ -73,8 +73,9 @@ test('shows only Phaeno guides in expandable topic groups', async ({ page }) => 
   await expect(topLevelItems.nth(0)).toContainText('Phaeno operations guide')
   await expect(topLevelItems.nth(1)).toContainText('POMS user administration')
   await expect(topLevelItems.nth(2)).toContainText('CRM')
-  await expect(page.getByRole('region', { name: 'How-to guides' }).getByRole('link')).toHaveCount(4)
+  await expect(page.getByRole('region', { name: 'How-to guides' }).getByRole('link')).toHaveCount(5)
   await expect(page.getByRole('region', { name: 'How-to guides' }).getByRole('link', { name: /How to onboard a Customer/ })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'How-to guides' }).getByRole('link', { name: /How to record an R&D experiment/ })).toBeVisible()
   await expect(page.getByRole('region', { name: 'Guides' }).getByRole('link', { name: 'Trial Projects', exact: true })).toHaveCount(0)
   await expect(page.getByRole('region', { name: 'Browse by topic' }).getByRole('link', { name: 'Trial Projects', exact: true })).toHaveCount(0)
   await expect(
@@ -243,3 +244,16 @@ async function openSidebarIfCollapsed(page: import('@playwright/test').Page) {
     }).toPass()
   }
 }
+
+
+test('renders the R&D walkthrough and its annotated original captures', async ({ page }) => {
+  await selectOrganization(page, 'phaeno')
+  await page.goto('/docs/phaeno/how-to-record-research')
+  await expect(page.getByRole('heading', { name: 'How to record an R&D experiment', exact: true })).toBeVisible()
+  await expect(page.locator('img[src*="research-20261017/"]')).toHaveCount(14)
+  const first = page.getByRole('img', { name: /R&D Projects showing/ })
+  await first.scrollIntoViewIfNeeded()
+  await expect.poll(() => first.evaluate(image => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0)
+  await expect(first.locator('..').locator('[aria-hidden="true"]')).toHaveCount(4)
+  await expect(page.getByRole('heading', { name: '11. Find earlier work' })).toBeVisible()
+})

@@ -14,6 +14,12 @@ public sealed partial class PSeqOperationsDbContext
     private void ProtectLineageHistory()
     {
         ChangeTracker.DetectChanges();
+        if (ChangeTracker.Entries().Any(e => e.State is EntityState.Modified or EntityState.Deleted
+            && e.Entity is PSeq.Operations.Laboratory.Research.ResearchRevision or PSeq.Operations.Laboratory.Research.ResearchAttachment))
+            throw new InvalidOperationException("Research revisions and attachment receipts are immutable.");
+        if (ChangeTracker.Entries().Any(e => e.State == EntityState.Deleted
+            && e.Entity is PSeq.Operations.Laboratory.Research.ResearchProject or PSeq.Operations.Laboratory.Research.ResearchExperiment or PSeq.Operations.Laboratory.Research.ResearchEntry))
+            throw new InvalidOperationException("Research notebook records are retained and cannot be deleted.");
         if (ChangeTracker.Entries().Any(e => e.State == EntityState.Deleted && e.Entity is LabCustomerHold or LabWorkOrder or LabSpecimen
             or LabContainer or LabSpecimenAttempt or LabProtocolExecution or LabWorkEvent or LabPreparationBatch or LabPreparationMember
             or LabPreparationRecord or LabLibrary or LabNgsSendout or LabAssemblyJob))

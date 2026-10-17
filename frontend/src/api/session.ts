@@ -97,6 +97,7 @@ export type SessionCapabilities = {
   canManageFileManagementConfiguration: boolean
   canQuoteLabServiceWork: boolean
   canManageLabOperations: boolean
+  canAccessResearch?: boolean
   canOperateLabWork: boolean
   canSuperviseLabWork: boolean
   canManageLabProtocols: boolean

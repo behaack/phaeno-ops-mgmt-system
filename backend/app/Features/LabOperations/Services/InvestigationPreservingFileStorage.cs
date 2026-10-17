@@ -15,6 +15,9 @@ public sealed class InvestigationPreservingFileStorage(IOperationalFileStorage s
     public async Task DeleteIfExistsAsync(string key, CancellationToken ct)
     {
         await using var transaction = await SampleShippingPackingData.BeginAsync(db, "investigation-file:" + key, ct);
+        if (await db.Set<PSeq.Operations.Laboratory.Research.ResearchAttachment>().AsNoTracking().AnyAsync(f => f.StorageKey == key, ct)
+            || db.ChangeTracker.Entries<PSeq.Operations.Laboratory.Research.ResearchAttachment>().Any(f => f.Entity.StorageKey == key))
+            throw new OrderManagementException("research_file_preserved", "Research notebook attachments are retained with their history and cannot be deleted by file retention.", 409);
         if (await db.LabScientificFiles.AsNoTracking().AnyAsync(f => f.StorageKey == key, ct)
             || db.ChangeTracker.Entries<PSeq.Operations.Laboratory.Domain.LabScientificFile>().Any(f => f.Entity.StorageKey == key))
             throw new OrderManagementException("scientific_file_preserved", "Scientific files are retained as internal evidence and cannot be deleted by customer file retention.", 409);

@@ -15,6 +15,11 @@ DO $$ BEGIN
   ELSE
     EXECUTE 'CREATE TEMP VIEW backup_upload_chunks AS SELECT chunks_json FROM lab_ops.lab_scientific_uploads';
   END IF;
+  IF to_regclass('research.attachments') IS NULL THEN
+    EXECUTE 'CREATE TEMP VIEW backup_research_attachments AS SELECT NULL::text storage_key, NULL::text sha256, NULL::bigint size_bytes WHERE false';
+  ELSE
+    EXECUTE 'CREATE TEMP VIEW backup_research_attachments AS SELECT storage_key, sha256, size_bytes FROM research.attachments';
+  END IF;
 END $$;
 -- Executed ONLY against the isolated restored database. Output remains private
 -- inside the encrypted backup; no names, contact data, or freeform notes.
@@ -51,6 +56,9 @@ WITH deleted_managed AS (
     UNION ALL
     SELECT 'order-files/' || storage_key, lower(sha256), size_bytes::text, 'required'
       FROM backup_configuration_assets
+    UNION ALL
+    SELECT 'order-files/' || storage_key, lower(sha256), size_bytes::text, 'required'
+      FROM backup_research_attachments
     UNION ALL
     SELECT 'order-files/' || (chunk->>'Key'), lower(chunk->>'Sha256'), chunk->>'SizeBytes', 'required'
       FROM backup_upload_chunks CROSS JOIN LATERAL jsonb_array_elements(chunks_json) chunk

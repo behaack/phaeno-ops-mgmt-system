@@ -8,6 +8,13 @@ import {
 import type { OrganizationKind, SessionResponse } from '#/api/session'
 
 describe('data navigation permissions', () => {
+  it('shows R&D only for authorized Phaeno context', () => {
+    const session = createSession('Phaeno', { canAccessResearch: true })
+    expect(getVisibleMainMenuItems(session, { selectedOrganizationKind: 'Phaeno', selectedMembership: session.memberships[0] }).map(item => item.label)).toContain('R&D')
+    expect(getVisibleMainMenuItems(session, { selectedOrganizationKind: 'Customer' }).map(item => item.label)).not.toContain('R&D')
+    session.capabilities.canAccessResearch = false
+    expect(getVisibleMainMenuItems(session, { selectedOrganizationKind: 'Phaeno' }).map(item => item.label)).not.toContain('R&D')
+  })
   it('shows CRM for Commercial staff without giving them administration navigation', () => {
     const session = createSession('Phaeno', { canAccessCrm: true, canAdministerCrm: false, canManageOrganizations: false, canManageAllUsers: false, canViewDatasetConfiguration: false })
     session.isPlatformAdmin = false

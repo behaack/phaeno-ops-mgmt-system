@@ -160,6 +160,8 @@ public sealed record SessionCapabilitiesDto
 
     public required bool CanManageLabOperations { get; init; }
 
+    public bool CanAccessResearch { get; init; }
+
     public required bool CanOperateLabWork { get; init; }
 
     public required bool CanSuperviseLabWork { get; init; }

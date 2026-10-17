@@ -111,6 +111,14 @@ bench workflow, label/scanner and degraded-mode validation, database-backed Lab
 journeys, external NGS operating details, deployment, and operational content
 approval remain activation gates.
 
+## R&D notebooks
+
+The Phaeno-only `/research` workspace and `/api/research` API own standalone research projects, experiments, dated entries, immutable content/status revisions and retained attachment receipts. Domain entities live under `PSeq.Operations.Laboratory.Research` and map to the separate `research` schema in the shared context. No Lab execution or Commercial provider contract is involved. Composite scope keys enforce project/experiment/entry/attachment organization consistency; actor and revision record identifiers are logical audited references.
+
+The explicit Researcher business role or active Phaeno platform administration grants shared team access only in the selected active Phaeno organization, independently of commercial rollout flags. Platform administrators manage Researcher assignments. Notebook writes retain snapshots atomically and use central audit/version stamping; entry changes advance the parent version so completion and edits cannot silently race. Saved revisions, receipts and notebooks cannot be deleted through EF. Research files use the existing private operational storage/scanner with a research directory, verified downloads and preservation against file-retention cleanup. See [the owning plan](plans/RD-NOTEBOOK-PLAN.md).
+
+Experiment reads return metadata and entry counts. Entry lists project 25 summaries without notebook blocks; a dedicated entry route reads one notebook on demand. Entry mutations return that entry only. Revision snapshots are deferred until centralized audit stamping completes, then persisted in the same transaction as their records; an ambient transaction uses a savepoint to preserve atomic failure behavior.
+
 ## Identity and authorization
 
 Clerk is the external identity provider in the current code. The API validates Clerk JWTs and resolves provider plus subject to an internal `User`. Product authorization comes from active internal organization memberships; external identity claims do not replace tenant checks.

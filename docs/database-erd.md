@@ -25,8 +25,9 @@ The [master-mix step assembly contract](plans/MASTER-MIX-PREPARATION-PLAN.md#ass
 | `public` | 1 | 2 | 0 |
 | `commercial_ops` | 149 | 2438 | 404 |
 | `lab_ops` | 90 | 1108 | 189 |
+| `research` | 5 | 53 | 3 |
 | `website` | 5 | 51 | 4 |
-| **Total** | **245** | **3599** | **597** |
+| **Total** | **250** | **3652** | **600** |
 
 ## `public` schema
 
@@ -4869,6 +4870,80 @@ erDiagram
         bigint version "not null"
     }
     lab_service_workflow_versions o|--o{ lab_work_orders : "lab_service_workflow_version_id"
+```
+
+## `research` schema
+
+### Research
+
+```mermaid
+erDiagram
+    attachments {
+        uuid id PK "not null"
+        character_varying_100 content_type "not null"
+        character_varying_255 file_name "not null"
+        uuid organization_id FK "not null"
+        timestamp_with_time_zone recorded_at_utc "not null"
+        uuid recorded_by_user_id "not null"
+        uuid research_entry_id FK "not null"
+        uuid research_experiment_id FK "not null"
+        character_varying_64 sha256 "not null"
+        bigint size_bytes "not null"
+        character_varying_2048 storage_key "not null"
+    }
+    entries {
+        uuid id PK "not null"
+        jsonb content_json "not null"
+        timestamp_with_time_zone created_at "not null"
+        uuid created_by_user_id "nullable"
+        date entry_date "not null"
+        uuid organization_id FK "not null"
+        uuid research_experiment_id FK "not null"
+        character_varying_255 title "not null"
+        timestamp_with_time_zone updated_at "not null"
+        uuid updated_by_user_id "nullable"
+        bigint version "not null"
+    }
+    experiments {
+        uuid id PK "not null"
+        timestamp_with_time_zone created_at "not null"
+        uuid created_by_user_id "nullable"
+        date experiment_date "nullable"
+        timestamp_with_time_zone last_activity_at_utc "not null"
+        uuid organization_id FK "not null"
+        uuid research_project_id FK "not null"
+        text search_text "not null"
+        character_varying_30 status "not null"
+        character_varying_255 title "not null"
+        timestamp_with_time_zone updated_at "not null"
+        uuid updated_by_user_id "nullable"
+        bigint version "not null"
+    }
+    projects {
+        uuid id PK "not null"
+        timestamp_with_time_zone created_at "not null"
+        uuid created_by_user_id "nullable"
+        character_varying_10000 description "nullable"
+        character_varying_255 name "not null"
+        uuid organization_id "not null"
+        timestamp_with_time_zone updated_at "not null"
+        uuid updated_by_user_id "nullable"
+        bigint version "not null"
+    }
+    revisions {
+        uuid id PK "not null"
+        character_varying_50 action "not null"
+        uuid organization_id UK "not null"
+        uuid record_id UK "not null"
+        character_varying_30 record_kind UK "not null"
+        timestamp_with_time_zone recorded_at_utc "not null"
+        uuid recorded_by_user_id "not null"
+        bigint revision UK "not null"
+        jsonb snapshot_json "not null"
+    }
+    entries ||--o{ attachments : "organization_id, research_experiment_id, research_entry_id"
+    experiments ||--o{ entries : "organization_id, research_experiment_id"
+    projects ||--o{ experiments : "organization_id, research_project_id"
 ```
 
 ## `website` schema

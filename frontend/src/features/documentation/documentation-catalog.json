@@ -37,6 +37,9 @@
       },
       "basics": {
         "en-US": "Getting started"
+      },
+      "research": {
+        "en-US": "Research and development"
       }
     },
     "workflows": {
@@ -66,6 +69,9 @@
       },
       "platform-administration": {
         "en-US": "Platform administration"
+      },
+      "research": {
+        "en-US": "R&D notebooks"
       }
     },
     "navigationGroups": {
@@ -107,6 +113,9 @@
       },
       "laboratory-operations": {
         "en-US": "Laboratory operations"
+      },
+      "research": {
+        "en-US": "Research and development"
       }
     },
     "contentTypes": {
@@ -875,7 +884,7 @@
       "title": "Phaeno operations guide",
       "summary": "Find each workflow, its owning workspace, reusable configuration, and the roles needed to act.",
       "order": 10,
-      "reviewedAt": "2026-10-13",
+      "reviewedAt": "2026-10-16",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [
@@ -1145,7 +1154,7 @@
       "title": "POMS user administration",
       "summary": "Manage Company access and request completion, staged Department readiness, service entitlements, invitation recovery and membership lifecycle.",
       "order": 12,
-      "reviewedAt": "2026-10-15",
+      "reviewedAt": "2026-10-16",
       "navigationGroup": "platform-operations",
       "contentType": "guide",
       "topicIds": [
@@ -2065,6 +2074,85 @@
       ],
       "publicationStatus": "published",
       "sourcePath": "src/content/docs/phaeno/how-to-onboard-customer.mdx"
+    },
+    {
+      "audience": "phaeno",
+      "locale": null,
+      "slug": "research-notebooks",
+      "title": "R&D notebooks",
+      "summary": "Create shared research projects and experiments, capture flexible notes, tables and files, review history, and repeat an experiment setup.",
+      "navigationGroup": "research",
+      "order": 59,
+      "reviewedAt": "2026-10-17",
+      "contentType": "guide",
+      "topicIds": [
+        "research"
+      ],
+      "workflowIds": [
+        "research"
+      ],
+      "taskKeywords": [
+        "R&D",
+        "electronic notebook",
+        "experiment",
+        "researcher",
+        "method",
+        "observations",
+        "results table",
+        "copy setup"
+      ],
+      "aliases": [
+        "Electronic laboratory notebook",
+        "Research notebook"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [
+        "phaeno/getting-started",
+        "phaeno/organization-and-user-administration",
+        "phaeno/how-to-record-research"
+      ],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/phaeno/research-notebooks.mdx",
+      "overviewTitle": "R&D overview"
+    },
+    {
+      "audience": "phaeno",
+      "locale": null,
+      "slug": "how-to-record-research",
+      "title": "How to record an R&D experiment",
+      "summary": "Follow an illustrated notebook workflow: projects, experiments, dated notes, tables, files, history, completion and repeat setups.",
+      "navigationGroup": "research",
+      "order": 59.5,
+      "reviewedAt": "2026-10-17",
+      "contentType": "how-to",
+      "topicIds": [
+        "research"
+      ],
+      "workflowIds": [
+        "research"
+      ],
+      "taskKeywords": [
+        "R&D",
+        "electronic notebook",
+        "experiment",
+        "researcher",
+        "method",
+        "observations",
+        "results table",
+        "copy setup"
+      ],
+      "aliases": [
+        "R&D walkthrough",
+        "How to use the electronic notebook"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [
+        "phaeno/research-notebooks",
+        "phaeno/organization-and-user-administration"
+      ],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/phaeno/how-to-record-research.mdx",
+      "parentSlug": "research-notebooks"
     }
   ]
 }

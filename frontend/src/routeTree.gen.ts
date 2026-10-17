@@ -33,6 +33,7 @@ import { Route as PhaenoUsersRouteImport } from './routes/phaeno-users'
 import { Route as PurchasingRouteImport } from './routes/purchasing'
 import { Route as ReagentOrdersRouteImport } from './routes/reagent-orders'
 import { Route as ReleasedDeliverablesRouteImport } from './routes/released-deliverables'
+import { Route as ResearchRouteImport } from './routes/research'
 import { Route as SampleShippingRouteImport } from './routes/sample-shipping'
 import { Route as SampleShippingSettingsRouteImport } from './routes/sample-shipping-settings'
 import { Route as TrialProjectsRouteImport } from './routes/trial-projects'
@@ -62,6 +63,8 @@ import { Route as OrderOperationsPartnerServicesRouteImport } from './routes/ord
 import { Route as ReagentOrdersOrderIdRouteImport } from './routes/reagent-orders.$orderId'
 import { Route as ReagentOrdersNewRouteImport } from './routes/reagent-orders.new'
 import { Route as ReleasedDeliverablesSnapshotIdRouteImport } from './routes/released-deliverables.$snapshotId'
+import { Route as ResearchIndexRouteImport } from './routes/research.index'
+import { Route as ResearchExperimentsRouteImport } from './routes/research.experiments'
 import { Route as SampleShippingShipmentIdRouteImport } from './routes/sample-shipping.$shipmentId'
 import { Route as SessionTasksSetupMfaRouteImport } from './routes/session-tasks.setup-mfa'
 import { Route as TrialProjectsTrialIdRouteImport } from './routes/trial-projects.$trialId'
@@ -97,6 +100,8 @@ import { Route as PurchasingMaterialsMaterialLotIdRouteImport } from './routes/p
 import { Route as PurchasingProductTypesProductTypeIdRouteImport } from './routes/purchasing.product-types.$productTypeId'
 import { Route as PurchasingSuppliersSupplierIdRouteImport } from './routes/purchasing.suppliers.$supplierId'
 import { Route as ReagentOrdersOrderIdEditRouteImport } from './routes/reagent-orders.$orderId.edit'
+import { Route as ResearchExperimentsExperimentIdRouteImport } from './routes/research.experiments_.$experimentId'
+import { Route as ResearchProjectsProjectIdRouteImport } from './routes/research.projects.$projectId'
 import { Route as SampleShippingSettingsKitSpecificationsContainerIdRouteImport } from './routes/sample-shipping-settings_.kit-specifications.$containerId'
 import { Route as SampleShippingShipmentIdPacketRouteImport } from './routes/sample-shipping.$shipmentId.packet'
 import { Route as TrialProjectsTrialIdScopeRouteImport } from './routes/trial-projects.$trialId.scope'
@@ -122,8 +127,10 @@ import { Route as LabOperationsProtocolsProtocolIdVersionsNewRouteImport } from 
 import { Route as LabOperationsWorkflowsWorkflowIdVersionsNewRouteImport } from './routes/lab-operations.workflows.$workflowId.versions.new'
 import { Route as OrderOperationsLabServicesDraftsOrderIdEditRouteImport } from './routes/order-operations.lab-services.drafts.$orderId.edit'
 import { Route as OrderOperationsLabServicesTrialsTrialIdScopeRouteImport } from './routes/order-operations.lab-services.trials.$trialId.scope'
+import { Route as ResearchExperimentsExperimentIdEntriesEntryIdRouteImport } from './routes/research.experiments_.$experimentId_.entries_.$entryId'
 import { Route as LabOperationsProtocolsProtocolIdVersionsVersionIdEditRouteImport } from './routes/lab-operations.protocols.$protocolId.versions.$versionId.edit'
 import { Route as LabOperationsWorkflowsWorkflowIdVersionsVersionIdEditRouteImport } from './routes/lab-operations.workflows.$workflowId.versions.$versionId.edit'
+import { Route as ResearchExperimentsExperimentIdEntriesEntryIdEditRouteImport } from './routes/research.experiments_.$experimentId_.entries.$entryId.edit'
 import { Route as LabOperationsWorkOrderIdSpecimensSpecimenIdEvidenceKindRecordIdRouteImport } from './routes/lab-operations.$workOrderId_.specimens.$specimenId_.evidence.$kind.$recordId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -244,6 +251,11 @@ const ReagentOrdersRoute = ReagentOrdersRouteImport.update({
 const ReleasedDeliverablesRoute = ReleasedDeliverablesRouteImport.update({
   id: '/released-deliverables',
   path: '/released-deliverables',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResearchRoute = ResearchRouteImport.update({
+  id: '/research',
+  path: '/research',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SampleShippingRoute = SampleShippingRouteImport.update({
@@ -397,6 +409,16 @@ const ReleasedDeliverablesSnapshotIdRoute =
     path: '/$snapshotId',
     getParentRoute: () => ReleasedDeliverablesRoute,
   } as any)
+const ResearchIndexRoute = ResearchIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ResearchRoute,
+} as any)
+const ResearchExperimentsRoute = ResearchExperimentsRouteImport.update({
+  id: '/experiments',
+  path: '/experiments',
+  getParentRoute: () => ResearchRoute,
+} as any)
 const SampleShippingShipmentIdRoute =
   SampleShippingShipmentIdRouteImport.update({
     id: '/$shipmentId',
@@ -599,6 +621,18 @@ const ReagentOrdersOrderIdEditRoute =
     path: '/edit',
     getParentRoute: () => ReagentOrdersOrderIdRoute,
   } as any)
+const ResearchExperimentsExperimentIdRoute =
+  ResearchExperimentsExperimentIdRouteImport.update({
+    id: '/experiments_/$experimentId',
+    path: '/experiments/$experimentId',
+    getParentRoute: () => ResearchRoute,
+  } as any)
+const ResearchProjectsProjectIdRoute =
+  ResearchProjectsProjectIdRouteImport.update({
+    id: '/projects/$projectId',
+    path: '/projects/$projectId',
+    getParentRoute: () => ResearchRoute,
+  } as any)
 const SampleShippingSettingsKitSpecificationsContainerIdRoute =
   SampleShippingSettingsKitSpecificationsContainerIdRouteImport.update({
     id: '/sample-shipping-settings_/kit-specifications/$containerId',
@@ -749,6 +783,12 @@ const OrderOperationsLabServicesTrialsTrialIdScopeRoute =
     path: '/scope',
     getParentRoute: () => OrderOperationsLabServicesTrialsTrialIdRoute,
   } as any)
+const ResearchExperimentsExperimentIdEntriesEntryIdRoute =
+  ResearchExperimentsExperimentIdEntriesEntryIdRouteImport.update({
+    id: '/experiments_/$experimentId_/entries_/$entryId',
+    path: '/experiments/$experimentId/entries/$entryId',
+    getParentRoute: () => ResearchRoute,
+  } as any)
 const LabOperationsProtocolsProtocolIdVersionsVersionIdEditRoute =
   LabOperationsProtocolsProtocolIdVersionsVersionIdEditRouteImport.update({
     id: '/protocols/$protocolId/versions/$versionId/edit',
@@ -760,6 +800,12 @@ const LabOperationsWorkflowsWorkflowIdVersionsVersionIdEditRoute =
     id: '/workflows/$workflowId/versions/$versionId/edit',
     path: '/workflows/$workflowId/versions/$versionId/edit',
     getParentRoute: () => LabOperationsRoute,
+  } as any)
+const ResearchExperimentsExperimentIdEntriesEntryIdEditRoute =
+  ResearchExperimentsExperimentIdEntriesEntryIdEditRouteImport.update({
+    id: '/experiments_/$experimentId_/entries/$entryId/edit',
+    path: '/experiments/$experimentId/entries/$entryId/edit',
+    getParentRoute: () => ResearchRoute,
   } as any)
 const LabOperationsWorkOrderIdSpecimensSpecimenIdEvidenceKindRecordIdRoute =
   LabOperationsWorkOrderIdSpecimensSpecimenIdEvidenceKindRecordIdRouteImport.update(
@@ -795,6 +841,7 @@ export interface FileRoutesByFullPath {
   '/purchasing': typeof PurchasingRouteWithChildren
   '/reagent-orders': typeof ReagentOrdersRouteWithChildren
   '/released-deliverables': typeof ReleasedDeliverablesRouteWithChildren
+  '/research': typeof ResearchRouteWithChildren
   '/sample-shipping': typeof SampleShippingRouteWithChildren
   '/sample-shipping-settings': typeof SampleShippingSettingsRoute
   '/trial-projects': typeof TrialProjectsRouteWithChildren
@@ -824,10 +871,12 @@ export interface FileRoutesByFullPath {
   '/reagent-orders/$orderId': typeof ReagentOrdersOrderIdRouteWithChildren
   '/reagent-orders/new': typeof ReagentOrdersNewRoute
   '/released-deliverables/$snapshotId': typeof ReleasedDeliverablesSnapshotIdRoute
+  '/research/experiments': typeof ResearchExperimentsRoute
   '/sample-shipping/$shipmentId': typeof SampleShippingShipmentIdRouteWithChildren
   '/session-tasks/setup-mfa': typeof SessionTasksSetupMfaRoute
   '/trial-projects/$trialId': typeof TrialProjectsTrialIdRouteWithChildren
   '/trial-projects/configuration': typeof TrialProjectsConfigurationRoute
+  '/research/': typeof ResearchIndexRoute
   '/crm/companies/$companyId': typeof CrmCompaniesCompanyIdRoute
   '/crm/contacts/$contactId': typeof CrmContactsContactIdRoute
   '/crm/leads/$leadId': typeof CrmLeadsLeadIdRoute
@@ -859,6 +908,8 @@ export interface FileRoutesByFullPath {
   '/purchasing/product-types/$productTypeId': typeof PurchasingProductTypesProductTypeIdRoute
   '/purchasing/suppliers/$supplierId': typeof PurchasingSuppliersSupplierIdRoute
   '/reagent-orders/$orderId/edit': typeof ReagentOrdersOrderIdEditRoute
+  '/research/experiments/$experimentId': typeof ResearchExperimentsExperimentIdRoute
+  '/research/projects/$projectId': typeof ResearchProjectsProjectIdRoute
   '/sample-shipping-settings/kit-specifications/$containerId': typeof SampleShippingSettingsKitSpecificationsContainerIdRoute
   '/sample-shipping/$shipmentId/packet': typeof SampleShippingShipmentIdPacketRoute
   '/trial-projects/$trialId/scope': typeof TrialProjectsTrialIdScopeRoute
@@ -884,8 +935,10 @@ export interface FileRoutesByFullPath {
   '/lab-operations/workflows/$workflowId/versions/new': typeof LabOperationsWorkflowsWorkflowIdVersionsNewRoute
   '/order-operations/lab-services/drafts/$orderId/edit': typeof OrderOperationsLabServicesDraftsOrderIdEditRoute
   '/order-operations/lab-services/trials/$trialId/scope': typeof OrderOperationsLabServicesTrialsTrialIdScopeRoute
+  '/research/experiments/$experimentId/entries/$entryId': typeof ResearchExperimentsExperimentIdEntriesEntryIdRoute
   '/lab-operations/protocols/$protocolId/versions/$versionId/edit': typeof LabOperationsProtocolsProtocolIdVersionsVersionIdEditRoute
   '/lab-operations/workflows/$workflowId/versions/$versionId/edit': typeof LabOperationsWorkflowsWorkflowIdVersionsVersionIdEditRoute
+  '/research/experiments/$experimentId/entries/$entryId/edit': typeof ResearchExperimentsExperimentIdEntriesEntryIdEditRoute
   '/lab-operations/$workOrderId/specimens/$specimenId/evidence/$kind/$recordId': typeof LabOperationsWorkOrderIdSpecimensSpecimenIdEvidenceKindRecordIdRoute
 }
 export interface FileRoutesByTo {
@@ -942,10 +995,12 @@ export interface FileRoutesByTo {
   '/reagent-orders/$orderId': typeof ReagentOrdersOrderIdRouteWithChildren
   '/reagent-orders/new': typeof ReagentOrdersNewRoute
   '/released-deliverables/$snapshotId': typeof ReleasedDeliverablesSnapshotIdRoute
+  '/research/experiments': typeof ResearchExperimentsRoute
   '/sample-shipping/$shipmentId': typeof SampleShippingShipmentIdRouteWithChildren
   '/session-tasks/setup-mfa': typeof SessionTasksSetupMfaRoute
   '/trial-projects/$trialId': typeof TrialProjectsTrialIdRouteWithChildren
   '/trial-projects/configuration': typeof TrialProjectsConfigurationRoute
+  '/research': typeof ResearchIndexRoute
   '/crm/companies/$companyId': typeof CrmCompaniesCompanyIdRoute
   '/crm/contacts/$contactId': typeof CrmContactsContactIdRoute
   '/crm/leads/$leadId': typeof CrmLeadsLeadIdRoute
@@ -977,6 +1032,8 @@ export interface FileRoutesByTo {
   '/purchasing/product-types/$productTypeId': typeof PurchasingProductTypesProductTypeIdRoute
   '/purchasing/suppliers/$supplierId': typeof PurchasingSuppliersSupplierIdRoute
   '/reagent-orders/$orderId/edit': typeof ReagentOrdersOrderIdEditRoute
+  '/research/experiments/$experimentId': typeof ResearchExperimentsExperimentIdRoute
+  '/research/projects/$projectId': typeof ResearchProjectsProjectIdRoute
   '/sample-shipping-settings/kit-specifications/$containerId': typeof SampleShippingSettingsKitSpecificationsContainerIdRoute
   '/sample-shipping/$shipmentId/packet': typeof SampleShippingShipmentIdPacketRoute
   '/trial-projects/$trialId/scope': typeof TrialProjectsTrialIdScopeRoute
@@ -1002,8 +1059,10 @@ export interface FileRoutesByTo {
   '/lab-operations/workflows/$workflowId/versions/new': typeof LabOperationsWorkflowsWorkflowIdVersionsNewRoute
   '/order-operations/lab-services/drafts/$orderId/edit': typeof OrderOperationsLabServicesDraftsOrderIdEditRoute
   '/order-operations/lab-services/trials/$trialId/scope': typeof OrderOperationsLabServicesTrialsTrialIdScopeRoute
+  '/research/experiments/$experimentId/entries/$entryId': typeof ResearchExperimentsExperimentIdEntriesEntryIdRoute
   '/lab-operations/protocols/$protocolId/versions/$versionId/edit': typeof LabOperationsProtocolsProtocolIdVersionsVersionIdEditRoute
   '/lab-operations/workflows/$workflowId/versions/$versionId/edit': typeof LabOperationsWorkflowsWorkflowIdVersionsVersionIdEditRoute
+  '/research/experiments/$experimentId/entries/$entryId/edit': typeof ResearchExperimentsExperimentIdEntriesEntryIdEditRoute
   '/lab-operations/$workOrderId/specimens/$specimenId/evidence/$kind/$recordId': typeof LabOperationsWorkOrderIdSpecimensSpecimenIdEvidenceKindRecordIdRoute
 }
 export interface FileRoutesById {
@@ -1032,6 +1091,7 @@ export interface FileRoutesById {
   '/purchasing': typeof PurchasingRouteWithChildren
   '/reagent-orders': typeof ReagentOrdersRouteWithChildren
   '/released-deliverables': typeof ReleasedDeliverablesRouteWithChildren
+  '/research': typeof ResearchRouteWithChildren
   '/sample-shipping': typeof SampleShippingRouteWithChildren
   '/sample-shipping-settings': typeof SampleShippingSettingsRoute
   '/trial-projects': typeof TrialProjectsRouteWithChildren
@@ -1061,10 +1121,12 @@ export interface FileRoutesById {
   '/reagent-orders/$orderId': typeof ReagentOrdersOrderIdRouteWithChildren
   '/reagent-orders/new': typeof ReagentOrdersNewRoute
   '/released-deliverables/$snapshotId': typeof ReleasedDeliverablesSnapshotIdRoute
+  '/research/experiments': typeof ResearchExperimentsRoute
   '/sample-shipping/$shipmentId': typeof SampleShippingShipmentIdRouteWithChildren
   '/session-tasks/setup-mfa': typeof SessionTasksSetupMfaRoute
   '/trial-projects/$trialId': typeof TrialProjectsTrialIdRouteWithChildren
   '/trial-projects/configuration': typeof TrialProjectsConfigurationRoute
+  '/research/': typeof ResearchIndexRoute
   '/crm/companies_/$companyId': typeof CrmCompaniesCompanyIdRoute
   '/crm/contacts_/$contactId': typeof CrmContactsContactIdRoute
   '/crm/leads_/$leadId': typeof CrmLeadsLeadIdRoute
@@ -1096,6 +1158,8 @@ export interface FileRoutesById {
   '/purchasing/product-types/$productTypeId': typeof PurchasingProductTypesProductTypeIdRoute
   '/purchasing/suppliers/$supplierId': typeof PurchasingSuppliersSupplierIdRoute
   '/reagent-orders/$orderId/edit': typeof ReagentOrdersOrderIdEditRoute
+  '/research/experiments_/$experimentId': typeof ResearchExperimentsExperimentIdRoute
+  '/research/projects/$projectId': typeof ResearchProjectsProjectIdRoute
   '/sample-shipping-settings_/kit-specifications/$containerId': typeof SampleShippingSettingsKitSpecificationsContainerIdRoute
   '/sample-shipping/$shipmentId/packet': typeof SampleShippingShipmentIdPacketRoute
   '/trial-projects/$trialId/scope': typeof TrialProjectsTrialIdScopeRoute
@@ -1121,8 +1185,10 @@ export interface FileRoutesById {
   '/lab-operations/workflows/$workflowId/versions/new': typeof LabOperationsWorkflowsWorkflowIdVersionsNewRoute
   '/order-operations/lab-services/drafts/$orderId/edit': typeof OrderOperationsLabServicesDraftsOrderIdEditRoute
   '/order-operations/lab-services/trials/$trialId/scope': typeof OrderOperationsLabServicesTrialsTrialIdScopeRoute
+  '/research/experiments_/$experimentId_/entries_/$entryId': typeof ResearchExperimentsExperimentIdEntriesEntryIdRoute
   '/lab-operations/protocols/$protocolId/versions/$versionId/edit': typeof LabOperationsProtocolsProtocolIdVersionsVersionIdEditRoute
   '/lab-operations/workflows/$workflowId/versions/$versionId/edit': typeof LabOperationsWorkflowsWorkflowIdVersionsVersionIdEditRoute
+  '/research/experiments_/$experimentId_/entries/$entryId/edit': typeof ResearchExperimentsExperimentIdEntriesEntryIdEditRoute
   '/lab-operations/$workOrderId_/specimens/$specimenId_/evidence/$kind/$recordId': typeof LabOperationsWorkOrderIdSpecimensSpecimenIdEvidenceKindRecordIdRoute
 }
 export interface FileRouteTypes {
@@ -1152,6 +1218,7 @@ export interface FileRouteTypes {
     | '/purchasing'
     | '/reagent-orders'
     | '/released-deliverables'
+    | '/research'
     | '/sample-shipping'
     | '/sample-shipping-settings'
     | '/trial-projects'
@@ -1181,10 +1248,12 @@ export interface FileRouteTypes {
     | '/reagent-orders/$orderId'
     | '/reagent-orders/new'
     | '/released-deliverables/$snapshotId'
+    | '/research/experiments'
     | '/sample-shipping/$shipmentId'
     | '/session-tasks/setup-mfa'
     | '/trial-projects/$trialId'
     | '/trial-projects/configuration'
+    | '/research/'
     | '/crm/companies/$companyId'
     | '/crm/contacts/$contactId'
     | '/crm/leads/$leadId'
@@ -1216,6 +1285,8 @@ export interface FileRouteTypes {
     | '/purchasing/product-types/$productTypeId'
     | '/purchasing/suppliers/$supplierId'
     | '/reagent-orders/$orderId/edit'
+    | '/research/experiments/$experimentId'
+    | '/research/projects/$projectId'
     | '/sample-shipping-settings/kit-specifications/$containerId'
     | '/sample-shipping/$shipmentId/packet'
     | '/trial-projects/$trialId/scope'
@@ -1241,8 +1312,10 @@ export interface FileRouteTypes {
     | '/lab-operations/workflows/$workflowId/versions/new'
     | '/order-operations/lab-services/drafts/$orderId/edit'
     | '/order-operations/lab-services/trials/$trialId/scope'
+    | '/research/experiments/$experimentId/entries/$entryId'
     | '/lab-operations/protocols/$protocolId/versions/$versionId/edit'
     | '/lab-operations/workflows/$workflowId/versions/$versionId/edit'
+    | '/research/experiments/$experimentId/entries/$entryId/edit'
     | '/lab-operations/$workOrderId/specimens/$specimenId/evidence/$kind/$recordId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -1299,10 +1372,12 @@ export interface FileRouteTypes {
     | '/reagent-orders/$orderId'
     | '/reagent-orders/new'
     | '/released-deliverables/$snapshotId'
+    | '/research/experiments'
     | '/sample-shipping/$shipmentId'
     | '/session-tasks/setup-mfa'
     | '/trial-projects/$trialId'
     | '/trial-projects/configuration'
+    | '/research'
     | '/crm/companies/$companyId'
     | '/crm/contacts/$contactId'
     | '/crm/leads/$leadId'
@@ -1334,6 +1409,8 @@ export interface FileRouteTypes {
     | '/purchasing/product-types/$productTypeId'
     | '/purchasing/suppliers/$supplierId'
     | '/reagent-orders/$orderId/edit'
+    | '/research/experiments/$experimentId'
+    | '/research/projects/$projectId'
     | '/sample-shipping-settings/kit-specifications/$containerId'
     | '/sample-shipping/$shipmentId/packet'
     | '/trial-projects/$trialId/scope'
@@ -1359,8 +1436,10 @@ export interface FileRouteTypes {
     | '/lab-operations/workflows/$workflowId/versions/new'
     | '/order-operations/lab-services/drafts/$orderId/edit'
     | '/order-operations/lab-services/trials/$trialId/scope'
+    | '/research/experiments/$experimentId/entries/$entryId'
     | '/lab-operations/protocols/$protocolId/versions/$versionId/edit'
     | '/lab-operations/workflows/$workflowId/versions/$versionId/edit'
+    | '/research/experiments/$experimentId/entries/$entryId/edit'
     | '/lab-operations/$workOrderId/specimens/$specimenId/evidence/$kind/$recordId'
   id:
     | '__root__'
@@ -1388,6 +1467,7 @@ export interface FileRouteTypes {
     | '/purchasing'
     | '/reagent-orders'
     | '/released-deliverables'
+    | '/research'
     | '/sample-shipping'
     | '/sample-shipping-settings'
     | '/trial-projects'
@@ -1417,10 +1497,12 @@ export interface FileRouteTypes {
     | '/reagent-orders/$orderId'
     | '/reagent-orders/new'
     | '/released-deliverables/$snapshotId'
+    | '/research/experiments'
     | '/sample-shipping/$shipmentId'
     | '/session-tasks/setup-mfa'
     | '/trial-projects/$trialId'
     | '/trial-projects/configuration'
+    | '/research/'
     | '/crm/companies_/$companyId'
     | '/crm/contacts_/$contactId'
     | '/crm/leads_/$leadId'
@@ -1452,6 +1534,8 @@ export interface FileRouteTypes {
     | '/purchasing/product-types/$productTypeId'
     | '/purchasing/suppliers/$supplierId'
     | '/reagent-orders/$orderId/edit'
+    | '/research/experiments_/$experimentId'
+    | '/research/projects/$projectId'
     | '/sample-shipping-settings_/kit-specifications/$containerId'
     | '/sample-shipping/$shipmentId/packet'
     | '/trial-projects/$trialId/scope'
@@ -1477,8 +1561,10 @@ export interface FileRouteTypes {
     | '/lab-operations/workflows/$workflowId/versions/new'
     | '/order-operations/lab-services/drafts/$orderId/edit'
     | '/order-operations/lab-services/trials/$trialId/scope'
+    | '/research/experiments_/$experimentId_/entries_/$entryId'
     | '/lab-operations/protocols/$protocolId/versions/$versionId/edit'
     | '/lab-operations/workflows/$workflowId/versions/$versionId/edit'
+    | '/research/experiments_/$experimentId_/entries/$entryId/edit'
     | '/lab-operations/$workOrderId_/specimens/$specimenId_/evidence/$kind/$recordId'
   fileRoutesById: FileRoutesById
 }
@@ -1507,6 +1593,7 @@ export interface RootRouteChildren {
   PurchasingRoute: typeof PurchasingRouteWithChildren
   ReagentOrdersRoute: typeof ReagentOrdersRouteWithChildren
   ReleasedDeliverablesRoute: typeof ReleasedDeliverablesRouteWithChildren
+  ResearchRoute: typeof ResearchRouteWithChildren
   SampleShippingRoute: typeof SampleShippingRouteWithChildren
   SampleShippingSettingsRoute: typeof SampleShippingSettingsRoute
   TrialProjectsRoute: typeof TrialProjectsRouteWithChildren
@@ -1686,6 +1773,13 @@ declare module '@tanstack/react-router' {
       path: '/released-deliverables'
       fullPath: '/released-deliverables'
       preLoaderRoute: typeof ReleasedDeliverablesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/research': {
+      id: '/research'
+      path: '/research'
+      fullPath: '/research'
+      preLoaderRoute: typeof ResearchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sample-shipping': {
@@ -1890,6 +1984,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/released-deliverables/$snapshotId'
       preLoaderRoute: typeof ReleasedDeliverablesSnapshotIdRouteImport
       parentRoute: typeof ReleasedDeliverablesRoute
+    }
+    '/research/': {
+      id: '/research/'
+      path: '/'
+      fullPath: '/research/'
+      preLoaderRoute: typeof ResearchIndexRouteImport
+      parentRoute: typeof ResearchRoute
+    }
+    '/research/experiments': {
+      id: '/research/experiments'
+      path: '/experiments'
+      fullPath: '/research/experiments'
+      preLoaderRoute: typeof ResearchExperimentsRouteImport
+      parentRoute: typeof ResearchRoute
     }
     '/sample-shipping/$shipmentId': {
       id: '/sample-shipping/$shipmentId'
@@ -2136,6 +2244,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReagentOrdersOrderIdEditRouteImport
       parentRoute: typeof ReagentOrdersOrderIdRoute
     }
+    '/research/experiments_/$experimentId': {
+      id: '/research/experiments_/$experimentId'
+      path: '/experiments/$experimentId'
+      fullPath: '/research/experiments/$experimentId'
+      preLoaderRoute: typeof ResearchExperimentsExperimentIdRouteImport
+      parentRoute: typeof ResearchRoute
+    }
+    '/research/projects/$projectId': {
+      id: '/research/projects/$projectId'
+      path: '/projects/$projectId'
+      fullPath: '/research/projects/$projectId'
+      preLoaderRoute: typeof ResearchProjectsProjectIdRouteImport
+      parentRoute: typeof ResearchRoute
+    }
     '/sample-shipping-settings_/kit-specifications/$containerId': {
       id: '/sample-shipping-settings_/kit-specifications/$containerId'
       path: '/sample-shipping-settings/kit-specifications/$containerId'
@@ -2311,6 +2433,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrderOperationsLabServicesTrialsTrialIdScopeRouteImport
       parentRoute: typeof OrderOperationsLabServicesTrialsTrialIdRoute
     }
+    '/research/experiments_/$experimentId_/entries_/$entryId': {
+      id: '/research/experiments_/$experimentId_/entries_/$entryId'
+      path: '/experiments/$experimentId/entries/$entryId'
+      fullPath: '/research/experiments/$experimentId/entries/$entryId'
+      preLoaderRoute: typeof ResearchExperimentsExperimentIdEntriesEntryIdRouteImport
+      parentRoute: typeof ResearchRoute
+    }
     '/lab-operations/protocols/$protocolId/versions/$versionId/edit': {
       id: '/lab-operations/protocols/$protocolId/versions/$versionId/edit'
       path: '/protocols/$protocolId/versions/$versionId/edit'
@@ -2324,6 +2453,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/lab-operations/workflows/$workflowId/versions/$versionId/edit'
       preLoaderRoute: typeof LabOperationsWorkflowsWorkflowIdVersionsVersionIdEditRouteImport
       parentRoute: typeof LabOperationsRoute
+    }
+    '/research/experiments_/$experimentId_/entries/$entryId/edit': {
+      id: '/research/experiments_/$experimentId_/entries/$entryId/edit'
+      path: '/experiments/$experimentId/entries/$entryId/edit'
+      fullPath: '/research/experiments/$experimentId/entries/$entryId/edit'
+      preLoaderRoute: typeof ResearchExperimentsExperimentIdEntriesEntryIdEditRouteImport
+      parentRoute: typeof ResearchRoute
     }
     '/lab-operations/$workOrderId_/specimens/$specimenId_/evidence/$kind/$recordId': {
       id: '/lab-operations/$workOrderId_/specimens/$specimenId_/evidence/$kind/$recordId'
@@ -2744,6 +2880,30 @@ const ReleasedDeliverablesRouteChildren: ReleasedDeliverablesRouteChildren = {
 const ReleasedDeliverablesRouteWithChildren =
   ReleasedDeliverablesRoute._addFileChildren(ReleasedDeliverablesRouteChildren)
 
+interface ResearchRouteChildren {
+  ResearchExperimentsRoute: typeof ResearchExperimentsRoute
+  ResearchIndexRoute: typeof ResearchIndexRoute
+  ResearchExperimentsExperimentIdRoute: typeof ResearchExperimentsExperimentIdRoute
+  ResearchProjectsProjectIdRoute: typeof ResearchProjectsProjectIdRoute
+  ResearchExperimentsExperimentIdEntriesEntryIdRoute: typeof ResearchExperimentsExperimentIdEntriesEntryIdRoute
+  ResearchExperimentsExperimentIdEntriesEntryIdEditRoute: typeof ResearchExperimentsExperimentIdEntriesEntryIdEditRoute
+}
+
+const ResearchRouteChildren: ResearchRouteChildren = {
+  ResearchExperimentsRoute: ResearchExperimentsRoute,
+  ResearchIndexRoute: ResearchIndexRoute,
+  ResearchExperimentsExperimentIdRoute: ResearchExperimentsExperimentIdRoute,
+  ResearchProjectsProjectIdRoute: ResearchProjectsProjectIdRoute,
+  ResearchExperimentsExperimentIdEntriesEntryIdRoute:
+    ResearchExperimentsExperimentIdEntriesEntryIdRoute,
+  ResearchExperimentsExperimentIdEntriesEntryIdEditRoute:
+    ResearchExperimentsExperimentIdEntriesEntryIdEditRoute,
+}
+
+const ResearchRouteWithChildren = ResearchRoute._addFileChildren(
+  ResearchRouteChildren,
+)
+
 interface SampleShippingShipmentIdRouteChildren {
   SampleShippingShipmentIdPacketRoute: typeof SampleShippingShipmentIdPacketRoute
 }
@@ -2820,6 +2980,7 @@ const rootRouteChildren: RootRouteChildren = {
   PurchasingRoute: PurchasingRouteWithChildren,
   ReagentOrdersRoute: ReagentOrdersRouteWithChildren,
   ReleasedDeliverablesRoute: ReleasedDeliverablesRouteWithChildren,
+  ResearchRoute: ResearchRouteWithChildren,
   SampleShippingRoute: SampleShippingRouteWithChildren,
   SampleShippingSettingsRoute: SampleShippingSettingsRoute,
   TrialProjectsRoute: TrialProjectsRouteWithChildren,

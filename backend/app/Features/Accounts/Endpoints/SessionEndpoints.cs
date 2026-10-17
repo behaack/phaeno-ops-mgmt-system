@@ -380,6 +380,8 @@ public static class SessionEndpoints
             CanQuoteLabServiceWork = canOperateCommercialWork,
             CanManageFileManagementConfiguration = isPlatformAdmin,
                 CanManageLabOperations = labCapabilities.CanManageLabOperations,
+                CanAccessResearch = state == "ready" && PhaenoPortal.App.Features.Research.ResearchAccess.CanAccess(
+                    user, selectedMembership, businessRoles ?? []),
                 CanOperateLabWork = labCapabilities.CanOperateLabWork,
                 CanSuperviseLabWork = labCapabilities.CanSuperviseLabWork,
                 CanManageLabProtocols = labCapabilities.CanManageLabProtocols,

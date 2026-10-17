@@ -20,7 +20,7 @@ describe('documentation registry', () => {
     const howTos = entries.filter(entry => entry.contentType === 'how-to')
     expect(howTos.map(entry => entry.slug)).toEqual([
       'how-to-onboard-customer',
-      'how-to-place-customer-order', 'how-to-configure-samples-shipping', 'how-to-lab-protocol',
+      'how-to-place-customer-order', 'how-to-configure-samples-shipping', 'how-to-lab-protocol', 'how-to-record-research',
     ])
     expect(howTos.every(entry => entry.parentSlug)).toBe(true)
     expect(getDocumentationEntry('prospect', 'trial-projects')?.topicIds).toContain('trials')
@@ -37,7 +37,7 @@ describe('documentation registry', () => {
               10, 12, 15, 15.5, 16, 17, 18, 19, 20, 21, 22,
               30, 31, 32, 33, 34,
               40, 40.5, 41, 42, 43, 44, 45, 46,
-              50, 51, 52, 53, 53.5, 54, 55, 56, 57, 58,
+              50, 51, 52, 53, 53.5, 54, 55, 56, 57, 58, 59, 59.5,
               60, 70,
             ]
           : audience === 'prospect'
@@ -89,6 +89,8 @@ describe('documentation registry', () => {
   })
 
   it('resolves a guide only within its audience', () => {
+    expect(getDocumentationEntry('phaeno', 'research-notebooks')?.title).toBe('R&D notebooks')
+    expect(getDocumentationEntry('customer', 'research-notebooks')).toBeUndefined()
     expect(getDocumentationEntry('prospect', 'data-library')?.title).toBe(
       'Use the Data Library',
     )

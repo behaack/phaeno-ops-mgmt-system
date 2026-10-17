@@ -37,6 +37,9 @@
       },
       "basics": {
         "en-US": "Getting started"
+      },
+      "research": {
+        "en-US": "Research and development"
       }
     },
     "workflows": {
@@ -66,6 +69,9 @@
       },
       "platform-administration": {
         "en-US": "Platform administration"
+      },
+      "research": {
+        "en-US": "R&D notebooks"
       }
     },
     "navigationGroups": {
@@ -107,6 +113,9 @@
       },
       "laboratory-operations": {
         "en-US": "Laboratory operations"
+      },
+      "research": {
+        "en-US": "Research and development"
       }
     },
     "contentTypes": {
@@ -2305,7 +2314,7 @@
       "title": "Phaeno operations guide",
       "summary": "Find each workflow, its owning workspace, reusable configuration, and the roles needed to act.",
       "order": 10,
-      "reviewedAt": "2026-10-13",
+      "reviewedAt": "2026-10-16",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [
@@ -2324,7 +2333,7 @@
       "publicationStatus": "published",
       "id": "phaeno/getting-started",
       "route": "/docs/phaeno/getting-started",
-      "contentHash": "bb7a8ca7d81580c5b19e2c5d0291245a9b9f5ba46c277b46921cc0831430d78f",
+      "contentHash": "80e7189e307770e2f1b3dcb70f9aadeb62f5aa6363dc710170aefa44d0a1aab6",
       "sections": [
         {
           "heading": "Phaeno operations guide",
@@ -2349,7 +2358,7 @@
         {
           "heading": "Find platform work",
           "anchor": "find-platform-work",
-          "text": "Dashboard shows your assigned actions plus unassigned work you are authorized to perform. The bell and category counts remain personal when you select Team work or Unassigned work; the list's total and pages describe the selected view. Work area and Work priority narrow the list. View all work opens the full queue. Opening an item does not complete it. Retry work refreshes failed summary and list reads; First page recovers a saved page beyond the last page. CRM opens the complete first-party relationship, sales, and customer-access workspace. Its sidebar groups Companies and Contacts under Relationships; Leads and Opportunities under Sales; Tasks and Requests under Follow-up; Reports under Insights. CRM configuration is available from CRM settings in the user menu, immediately below Lab settings. The Company is the canonical Customer, Partner, or Prospect record. Its workspace separates Overview, People, Sales, Departments, Services, Requests, and Activity so you can focus on one kind of work at a time. Creating a Company does not grant access. Use the central Requests queue to review Needs decision, carry out Approved / needs work, and review Completed / history; use People for Company contacts, Portal identities, invitations, and reviewed access, Departments for department settings and delivery locations, and Services for readiness, service entitlements, and retention. Online-access approval creates only the internal tenant scope required for sign-in; product and service entitlements are managed separately, and approval never creates another customer record or a user. More → Website operations is a Phaeno platform-administrator workspace of active public Website intake. Choose Mailing list or Demo requests in the sidebar to show one queue at a time. Email delivery remains a separate sidebar section for recovery. Dashboard and bell links open the matching queue and intake. Mailing list shows the newest active signups and identifies technical-brief requests; use Unsubscribe and confirm to remove a contact from that active list. Demo requests shows the inquiry contact, organization, email, and submitted description; use Mark complete and confirm after the inquiry has been handled. Completed or unsubscribed items leave their active list immediately, but the original Website intake and action audit remain in POMS. Each panel paginates independently in groups of 10; its footer paginator appears only when the list has more than one page. These actions preserve Website intake history; create a CRM Company or Company request separately when commercial follow-up requires one. User management is the durable employee-access workspace. Invite a named Phaeno user with their intended Platform administrator and additive laboratory roles, edit accepted users and their roles, deactivate or reactivate accounts, and manage pending invitations there. Data provisioning manages source samples, curated packages, grants, and governance. Order ops uses CRM-style group headings: LAB SERVICES contains Order intake and Trial projects; PARTNER SERVICES contains PSeq kits and Data assembly. These routes remain beneath /order-operations. Company decisions remain in CRM; execution remains in Lab ops. Needs attention, Waiting on others, and Available results and updates keep required actions separate from responsibility elsewhere and informational updates. Organization and Department changes return to Dashboard after the draft check; keep editing to retain the current scope, or discard explicitly to switch. A save in progress must finish first. PSeq Kit orders appear in Needs attention for authorized Commercial review or Lab preparation, dispatch and fulfillment. These links open the corresponding PSeq kits or PSeq kit fulfillment workspace. My work includes your assignments and eligible unassigned orders; Team includes other assignments within your permissions. Completed or discarded orders leave the actionable feed. Finance and Legacy integrations are under More. Lab operations contains Phaeno-only work orders for receipt, accession, protocol execution, materials and equipment, libraries and batches, outsourced sequencing, exceptions, scientific approval, and governed Result release beside Results & scientific review. Its sidebar contains operational work rather than role administration. Lab execution requires an effective Lab role or platform-administrator bootstrap access. Release Managers can access only their release section without broader Lab access. Order settings in the user menu maintains Quote & workflow settings, the Service catalog, Analyses, PSeq kits, Assembly, Trial configuration, and Legacy links. The next menu item, Lab settings, opens laboratory configuration with its own sidebar. CRM settings follows Lab settings, then Samples & shipping settings provides Sample types, Shipping procedures, Phaeno ship-to destinations, Transportation kits, and order submission guidance. File retention policies follows as a separate page for future-release policies. Menu items follow your access permissions. Trial configuration is reached from the Order settings sidebar and owns Scientific Operations authorities and Trial deliverable definitions. Trial staff can access this section; other Order settings sections remain restricted to Platform administrators. Documentation in the user menu opens the guide set for the current organization."
+          "text": "Dashboard shows your assigned actions plus unassigned work you are authorized to perform. The bell and category counts remain personal when you select Team work or Unassigned work; the list's total and pages describe the selected view. Work area and Work priority narrow the list. View all work opens the full queue. Opening an item does not complete it. Retry work refreshes failed summary and list reads; First page recovers a saved page beyond the last page. CRM opens the complete first-party relationship, sales, and customer-access workspace. Its sidebar groups Companies and Contacts under Relationships; Leads and Opportunities under Sales; Tasks and Requests under Follow-up; Reports under Insights. CRM configuration is available from CRM settings in the user menu, immediately below Lab settings. The Company is the canonical Customer, Partner, or Prospect record. Its workspace separates Overview, People, Sales, Departments, Services, Requests, and Activity so you can focus on one kind of work at a time. Creating a Company does not grant access. Use the central Requests queue to review Needs decision, carry out Approved / needs work, and review Completed / history; use People for Company contacts, Portal identities, invitations, and reviewed access, Departments for department settings and delivery locations, and Services for readiness, service entitlements, and retention. Online-access approval creates only the internal tenant scope required for sign-in; product and service entitlements are managed separately, and approval never creates another customer record or a user. More → Website operations is a Phaeno platform-administrator workspace of active public Website intake. Choose Mailing list or Demo requests in the sidebar to show one queue at a time. Email delivery remains a separate sidebar section for recovery. Dashboard and bell links open the matching queue and intake. Mailing list shows the newest active signups and identifies technical-brief requests; use Unsubscribe and confirm to remove a contact from that active list. Demo requests shows the inquiry contact, organization, email, and submitted description; use Mark complete and confirm after the inquiry has been handled. Completed or unsubscribed items leave their active list immediately, but the original Website intake and action audit remain in POMS. Each panel paginates independently in groups of 10; its footer paginator appears only when the list has more than one page. These actions preserve Website intake history; create a CRM Company or Company request separately when commercial follow-up requires one. User management is the durable employee-access workspace. Invite a named Phaeno user with their intended Platform administrator and additive laboratory/business roles, including R&D researcher, edit accepted users and their roles, deactivate or reactivate accounts, and manage pending invitations there. R&D contains shared Projects and Experiments for exploratory scientific notebooks, structured tables and retained attachments. It requires the R&D researcher role or platform administrator access. See R&D notebooks. Data provisioning manages source samples, curated packages, grants, and governance. Order ops uses CRM-style group headings: LAB SERVICES contains Order intake and Trial projects; PARTNER SERVICES contains PSeq kits and Data assembly. These routes remain beneath /order-operations. Company decisions remain in CRM; execution remains in Lab ops. Needs attention, Waiting on others, and Available results and updates keep required actions separate from responsibility elsewhere and informational updates. Organization and Department changes return to Dashboard after the draft check; keep editing to retain the current scope, or discard explicitly to switch. A save in progress must finish first. PSeq Kit orders appear in Needs attention for authorized Commercial review or Lab preparation, dispatch and fulfillment. These links open the corresponding PSeq kits or PSeq kit fulfillment workspace. My work includes your assignments and eligible unassigned orders; Team includes other assignments within your permissions. Completed or discarded orders leave the actionable feed. Finance and Legacy integrations are under More. Lab operations contains Phaeno-only work orders for receipt, accession, protocol execution, materials and equipment, libraries and batches, outsourced sequencing, exceptions, scientific approval, and governed Result release beside Results & scientific review. Its sidebar contains operational work rather than role administration. Lab execution requires an effective Lab role or platform-administrator bootstrap access. Release Managers can access only their release section without broader Lab access. Order settings in the user menu maintains Quote & workflow settings, the Service catalog, Analyses, PSeq kits, Assembly, Trial configuration, and Legacy links. The next menu item, Lab settings, opens laboratory configuration with its own sidebar. CRM settings follows Lab settings, then Samples & shipping settings provides Sample types, Shipping procedures, Phaeno ship-to destinations, Transportation kits, and order submission guidance. File retention policies follows as a separate page for future-release policies. Menu items follow your access permissions. Trial configuration is reached from the Order settings sidebar and owns Scientific Operations authorities and Trial deliverable definitions. Trial staff can access this section; other Order settings sections remain restricted to Platform administrators. Documentation in the user menu opens the guide set for the current organization."
         },
         {
           "heading": "Recover Website email",
@@ -2699,6 +2708,114 @@
           "heading": "What happens next",
           "anchor": "what-happens-next",
           "text": "The order enters pricing review. Follow its Next step for Phaeno to prepare and issue the quote. The authorized Customer administrator accepts separately. Acceptance, kit requests, sample entry and laboratory authorization are later workflow steps; submitting for pricing does not complete them. See Order operations for phase pricing and queue triage, and Customer lab authorization for readiness, quote acceptance and additional scope."
+        }
+      ]
+    },
+    {
+      "audience": "phaeno",
+      "locale": null,
+      "slug": "how-to-record-research",
+      "title": "How to record an R&D experiment",
+      "summary": "Follow an illustrated notebook workflow: projects, experiments, dated notes, tables, files, history, completion and repeat setups.",
+      "navigationGroup": "research",
+      "order": 59.5,
+      "reviewedAt": "2026-10-17",
+      "contentType": "how-to",
+      "topicIds": [
+        "research"
+      ],
+      "workflowIds": [
+        "research"
+      ],
+      "taskKeywords": [
+        "R&D",
+        "electronic notebook",
+        "experiment",
+        "researcher",
+        "method",
+        "observations",
+        "results table",
+        "copy setup"
+      ],
+      "aliases": [
+        "R&D walkthrough",
+        "How to use the electronic notebook"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [
+        "phaeno/research-notebooks",
+        "phaeno/organization-and-user-administration"
+      ],
+      "publicationStatus": "published",
+      "parentSlug": "research-notebooks",
+      "id": "phaeno/how-to-record-research",
+      "route": "/docs/phaeno/how-to-record-research",
+      "contentHash": "b826264c185edf792838b2594e4964b29d4f2a84cb3c8a05caf1d167c060f251",
+      "sections": [
+        {
+          "heading": "How to record an R&D experiment",
+          "anchor": "how-to-record-an-rd-experiment",
+          "text": "Use this walkthrough to organize exploratory work, capture dated notes and measurements, and retain the history of an experiment. R&D is a shared electronic notebook. You can adapt its sections as the work develops."
+        },
+        {
+          "heading": "Before you start",
+          "anchor": "before-you-start",
+          "text": "Select the Phaeno organization and open R&D in the POMS toolbar. On a narrow screen, open it from the user menu. You need an active Phaeno membership with the R&D researcher role, or platform administrator access. Ask a platform administrator to assign the role through User management if needed. All authorized researchers can read and edit the team's notebooks. There are no private projects. Department selection does not restrict access. Record information suitable for that shared audience, without credentials or confidential Customer records. These screenshots show actual application components with fictional demonstration records. Numbered markers match the explanations below each image. The example values illustrate recording a notebook; they are not a validated experimental method or scientific evidence. No hosted records were created to make the illustrations."
+        },
+        {
+          "heading": "1. Find or create a project",
+          "anchor": "1-find-or-create-a-project",
+          "text": "Open Projects and search before creating another project. A project groups related experiments. R&D Projects showing the Projects and Experiments sidebar, Create project, search and fictional project links. Projects: browse the team's project groups. Experiments: find experiments across projects, including completed work. Create project: open the project form. Project name: open the project's dedicated workspace. The list also shows its description and experiment count. Choose Create project when the work needs a new group. Create project dialog with a fictional project name, optional description and Create project action. Project name: enter a name that colleagues can find again. Description: optionally explain the research question or scope. Create project: save the project, then open its name to add an experiment. Cancel closes the form without creating one; discard any unsaved changes when prompted."
+        },
+        {
+          "heading": "2. Create an experiment",
+          "anchor": "2-create-an-experiment",
+          "text": "From the project, choose Create experiment. You can also create one from Experiments and select its project there. Create experiment dialog showing the title, selected project, optional experiment date and Create experiment button. Experiment title: describe the specific investigation or run. Project: confirm where the experiment belongs. Experiment date: optionally record the date of the work. The first entry uses this date; when it is blank, the first entry uses today's date in your browser's local time. Create experiment: save the experiment and its first notebook entry."
+        },
+        {
+          "heading": "3. Open the notebook entry",
+          "anchor": "3-open-the-notebook-entry",
+          "text": "An experiment opens as an overview of dated entry summaries. A new experiment starts with one entry; the screenshot shows the same entry after it has been renamed and saved. Active demonstration experiment with project and date context, the notebook entry title, Add entry and experiment Actions. Experiment context: check the project, Active or Completed status, and experiment date. Entry title: open the saved notebook. The card identifies the entry date and who recorded and last saved it. Add entry: create another dated entry when the work continues. Actions: manage the experiment, including completion, copying setup and history. The entry first opens for reading. Choose Actions → Edit entry to change it. Saved notebook entry with its Actions menu open, showing Edit entry and View history. Edit entry: open the editor while the experiment is Active. View history: inspect previous saved revisions without changing the entry. Back to experiment: return to the overview and its entry page."
+        },
+        {
+          "heading": "4. Adapt the sections to the work",
+          "anchor": "4-adapt-the-sections-to-the-work",
+          "text": "The initial entry offers Purpose, Method, Observations, Results and Conclusions. Use as many or as few as the experiment needs. Entry editor showing the entry title and date, editable Purpose label, Scientific section selection, Notes and a section Actions menu. Title and entry date: identify this particular session of work. The entry date describes the experiment; it does not change the recorded save times. Section label: rename a section in language appropriate to the experiment. Scientific section: choose its meaning independently of its label. Purpose and Method text are retained by Copy setup; other text is cleared. Notes: record multiline text, scientific characters, conditions, deviations and observations. Section Actions: move a section up or down, or remove it from the draft. Add more text sections or tables at the bottom of the editor. Sections are optional, but every section you keep needs a label. Required fields have an asterisk, and validation identifies what to correct. Changes stay in the editor until you save."
+        },
+        {
+          "heading": "5. Add measurements and supporting files",
+          "anchor": "5-add-measurements-and-supporting-files",
+          "text": "Choose Add table for structured observations. Give it a meaningful label and Scientific section, then edit its headings and cells. Results table editor with column headings and units, two fictional measurement rows, table Actions, Add section controls, file upload and Save changes. Column headings: name each measurement and include units where appropriate. Table cells: enter the observed values. The notebook does not calculate, convert units or judge scientific validity. Table Actions: add rows or columns. Individual removal controls appear beside existing rows and columns. A table supports up to 1,000 rows and 30 columns. Add text section / Add table: extend the entry when the experiment needs more structure. Attach a file: choose a supporting file, up to 100 MiB each. Wait for upload, verification and scanning. Then save the entry to record the attachment in its notebook. If an upload fails, your notes remain available to save independently. Save changes: persist the entry and its revision history. There is no automatic save. Cancel discards your draft only after confirmation when changes are present. A save or upload in progress must finish before leaving. If file storage or scanning is temporarily unavailable, retry the upload when service is restored. Uploaded files are retained even when not subsequently attached to an entry."
+        },
+        {
+          "heading": "6. Check the saved entry",
+          "anchor": "6-check-the-saved-entry",
+          "text": "After saving, read the entry to confirm that the intended notes, values and files were recorded. Saved demonstration notebook with recorded and last-saved attribution, scientific sections and the two-row results table. Attribution: Recorded by and Last saved by identify the people and application save times separately from the entry date. Sections: review the saved narrative and any deviations or conclusions. Table: verify the headings, units and entered values. Use an attachment's action to download it. Supported verified images also offer a preview. Other formats download for their original applications. Removing a file section from a later draft does not delete its original bytes; older saved revisions retain the attachment."
+        },
+        {
+          "heading": "7. Add the next dated entry",
+          "anchor": "7-add-the-next-dated-entry",
+          "text": "Return to the experiment and choose Add entry when you need another dated record in the same experiment. Add notebook entry dialog explaining permanent entry creation, with title, date, Cancel and Create entry. Creation explanation: read what will be recorded before confirming. Entry title: describe the session or stage of work. Entry date: review the date; it initially uses today's date in your browser's local time. Create entry: permanently record the entry and open its editor. Canceling this dialog creates nothing. Canceling the editor afterward keeps the entry that you already confirmed. Each experiment lists 25 entry summaries per page. Use Previous and Next to reach older entries, then open the relevant title."
+        },
+        {
+          "heading": "8. Review history and reconcile shared edits",
+          "anchor": "8-review-history-and-reconcile-shared-edits",
+          "text": "Choose View history from the entry's Actions menu, then select a revision. Projects and experiments also have their own history. Entry history dialog showing two saved revisions, a selected revision's dated content and Close history. Revision list: select a save by its revision number, action, author and time. Use the history page controls when needed. Saved snapshot: read that revision's title, date, sections, tables and retained attachments. History does not restore a previous revision automatically. Close history: return to the current record. If another researcher saves first, your input stays in the editor. Review the latest saved entry. Its Actions let you keep your edits against that revision or use the latest saved entry. Keeping your edits requires another explicit save and can replace the other researcher's values, so reconcile the work before saving. Refresh latest saved entry reloads the saved version while retaining your draft. If the experiment is completed during editing, use Reopen experiment inside the editor and confirm. Your draft stays in place. Review the latest entry and choose I reviewed the latest entry; keep my edits before saving. The same review becomes available when a colleague reopens the experiment elsewhere."
+        },
+        {
+          "heading": "9. Complete or reopen the experiment",
+          "anchor": "9-complete-or-reopen-the-experiment",
+          "text": "When recording is finished, choose Actions → Complete experiment from the experiment overview. Complete experiment confirmation with a body explaining the read-only notebook and retained evidence, plus Cancel and Complete experiment. Consequence: check the named experiment and read the effect on editing. Cancel: keep the experiment Active. Complete experiment: confirm completion. Saved evidence and history remain available. Completion requires no approval or filled scientific sections. It is a recording status, not a scientific sign-off or Customer release. Completed experiment with Actions showing Reopen experiment, Copy setup and View history. Completed status: the notebook can be read, but entries cannot be added or edited. Reopen experiment: confirm to let the research team edit again. The action retains its actor and time. Copy setup: start another experiment from this notebook's structure."
+        },
+        {
+          "heading": "10. Repeat the setup without carrying forward results",
+          "anchor": "10-repeat-the-setup-without-carrying-forward-results",
+          "text": "Choose Copy setup from the experiment's Actions menu. This works from Active and Completed experiments. Copy experiment setup dialog showing a new title, destination project, optional date, clearing explanation and Copy setup. New title: identify the next experiment. Review and rename copied entry titles as needed. Project: select the destination project. Experiment date: optionally set the next experiment's date. Its initial entries use this date, otherwise today's browser-local date. Copy setup: retain section labels and order, Purpose and Method text, and table headings with no rows. Clear observations, results, conclusions, custom text, files and previous history. Review the copied method before starting the next experiment."
+        },
+        {
+          "heading": "11. Find earlier work",
+          "anchor": "11-find-earlier-work",
+          "text": "Open Experiments to search across the team's work. Experiment discovery showing a buffer search, status and project filters, Active and Completed results, and result pagination. Search: match experiment titles and saved notebook text or table content. Attachment contents are not searched. Status and project: narrow the results to the relevant group or Active/Completed work. Clear all removes the filters. Experiment title: open its overview, then the relevant entry. Returning to the list preserves your filters and page. Result count and pages: check the full matching count and use Previous/Next when there is more than one page. R&D is currently standalone. It does not run approved Lab protocols, record operational sample or reagent consumption, or automatically link notebook content to Lab records. Use the appropriate Lab workflow for those operations. Saved notebooks and attachments have no permanent-delete action or automatic expiry. See R&D notebooks for the reference guide and POMS user administration for role administration."
         }
       ]
     },
@@ -3950,7 +4067,7 @@
       "title": "POMS user administration",
       "summary": "Manage Company access and request completion, staged Department readiness, service entitlements, invitation recovery and membership lifecycle.",
       "order": 12,
-      "reviewedAt": "2026-10-15",
+      "reviewedAt": "2026-10-16",
       "navigationGroup": "platform-operations",
       "contentType": "guide",
       "topicIds": [
@@ -3976,7 +4093,7 @@
       "publicationStatus": "published",
       "id": "phaeno/organization-and-user-administration",
       "route": "/docs/phaeno/organization-and-user-administration",
-      "contentHash": "1136d181c3c5accbbeb138a48c7bba5f6e0415288103c62d0435a0f99e47d85c",
+      "contentHash": "8adc5de57ef4f090e4fdf91dac8844b5e0679802b3236297fff5b262163a07b1",
       "sections": [
         {
           "heading": "POMS user administration",
@@ -3986,7 +4103,7 @@
         {
           "heading": "Know which administration surface owns each record",
           "anchor": "know-which-administration-surface-owns-each-record",
-          "text": "The CRM Companies directory is the only customer directory. A Company may exist before Portal access is approved. After approval, the same Company workspace displays its relationship type, readiness, services, members, invitations, requests, and retention settings. The internal Organization identifier used for tenant isolation is not a second customer record and does not appear in a separate directory. User management is also connected to durable account APIs. In the Phaeno context, active accounts and invited people appear in one list alongside global account status and every enforced Phaeno role. A Pending invitation status means the invitation has not been accepted and has not activated the offered access; the person may already have a sign-in account. Open a card’s actions menu to edit an active user, deactivate another active user, reactivate a disabled user, or resend or revoke a pending invitation. A Phaeno administrator cannot deactivate their own account. Edit one active user to update their name, Platform administrator assignment, and additive laboratory and business roles together. Platform administrators retain bootstrap access to every laboratory capability even when no explicit laboratory role is assigned. The role picker contains enforced Platform administrator, laboratory and commercial roles, including Business Development and Commercial leadership. Choose the narrowest roles needed; the Trial business roles are explained below. Authentication-provider metadata and unsupported job-title labels do not grant Portal access. Cards marked Pending invitation still represent invitation records, not accepted user records. Enter the person’s first name, last name, and exact sign-in email, then select the Platform administrator and additive laboratory/business roles they should receive. The pending role intent grants no access. It becomes active only when the recipient accepts and becomes an active Phaeno member."
+          "text": "The CRM Companies directory is the only customer directory. A Company may exist before Portal access is approved. After approval, the same Company workspace displays its relationship type, readiness, services, members, invitations, requests, and retention settings. The internal Organization identifier used for tenant isolation is not a second customer record and does not appear in a separate directory. User management is also connected to durable account APIs. In the Phaeno context, active accounts and invited people appear in one list alongside global account status and every enforced Phaeno role. A Pending invitation status means the invitation has not been accepted and has not activated the offered access; the person may already have a sign-in account. Open a card’s actions menu to edit an active user, deactivate another active user, reactivate a disabled user, or resend or revoke a pending invitation. A Phaeno administrator cannot deactivate their own account. Edit one active user to update their name, Platform administrator assignment, and additive laboratory and business roles together. Platform administrators retain bootstrap access to every laboratory capability even when no explicit laboratory role is assigned. The role picker contains enforced Platform administrator, laboratory and business roles, including Business Development, Commercial leadership, and R&D researcher. Choose the narrowest roles needed; the Trial business roles are explained below. Authentication-provider metadata and unsupported job-title labels do not grant Portal access. The R&D researcher role grants shared access to all R&D projects and experiment notebooks while Phaeno is selected. It does not grant Lab, CRM or commercial authority and does not depend on commercial role rollout settings. Platform administrators assign or remove this role; Lab role administrators cannot change it. See R&D notebooks. Cards marked Pending invitation still represent invitation records, not accepted user records. Enter the person’s first name, last name, and exact sign-in email, then select the Platform administrator and additive laboratory/business roles they should receive. The pending role intent grants no access. It becomes active only when the recipient accepts and becomes an active Phaeno member."
         },
         {
           "heading": "Review and maintain Companies",
@@ -4027,6 +4144,85 @@
           "heading": "Trial business roles",
           "anchor": "trial-business-roles",
           "text": "Assign Business Development to Phaeno Sales staff who create Trial projects and submit scope for leadership review. Commercial leadership can create Trials, approve complete scope on submission, or approve, request changes to, or decline submitted scope. Platform administrators can create Trials and approve complete scope on submission without adding either business role. Both business roles provide CRM and Trial access. They do not grant Company access approval, user administration, service pricing, billing, cash handling, laboratory execution, or result release. Those permissions retain their existing roles. Invitations can include these intended roles; they take effect only after acceptance. Removing a role prevents future Trial actions and preserves past decisions."
+        }
+      ]
+    },
+    {
+      "audience": "phaeno",
+      "locale": null,
+      "slug": "research-notebooks",
+      "title": "R&D notebooks",
+      "summary": "Create shared research projects and experiments, capture flexible notes, tables and files, review history, and repeat an experiment setup.",
+      "navigationGroup": "research",
+      "order": 59,
+      "reviewedAt": "2026-10-17",
+      "contentType": "guide",
+      "topicIds": [
+        "research"
+      ],
+      "workflowIds": [
+        "research"
+      ],
+      "taskKeywords": [
+        "R&D",
+        "electronic notebook",
+        "experiment",
+        "researcher",
+        "method",
+        "observations",
+        "results table",
+        "copy setup"
+      ],
+      "aliases": [
+        "Electronic laboratory notebook",
+        "Research notebook"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [
+        "phaeno/getting-started",
+        "phaeno/organization-and-user-administration",
+        "phaeno/how-to-record-research"
+      ],
+      "publicationStatus": "published",
+      "overviewTitle": "R&D overview",
+      "id": "phaeno/research-notebooks",
+      "route": "/docs/phaeno/research-notebooks",
+      "contentHash": "90b79d5b56d35b006a3555502cacfe300a98d0260af3b76373116c45f3612ab5",
+      "sections": [
+        {
+          "heading": "R&D notebooks",
+          "anchor": "rd-notebooks",
+          "text": "Use R&D in POMS to record exploratory work without configuring an approved laboratory protocol. Its sidebar contains Projects and Experiments. On narrow screens, open R&D from the user menu. For a step-by-step walkthrough with annotated screenshots, see How to record an R&D experiment."
+        },
+        {
+          "heading": "Access and shared work",
+          "anchor": "access-and-shared-work",
+          "text": "Select the Phaeno organization. An active Phaeno user needs the R&D researcher role or platform administrator access. A platform administrator assigns the role through User management, including on a new Phaeno invitation. Other Phaeno staff and external organizations cannot access the notebooks. Every authorized researcher can read and edit the team's projects and experiments. There are no private projects or experiment-specific collaborator lists. Department selection does not restrict this shared research workspace. Use the notebook for information appropriate to that audience; do not enter credentials or confidential customer records."
+        },
+        {
+          "heading": "Start a project and experiment",
+          "anchor": "start-a-project-and-experiment",
+          "text": "Open Projects and choose Create project. Enter a project name; its description is optional. Open the project's name and choose Create experiment. Enter an experiment title; an experiment date is optional. Open the experiment's first notebook entry by its title, then choose Edit entry from its Actions menu. Record the entry title and date, then capture the work. The first entry offers Purpose, Method, Observations, Results and Conclusions. These sections are optional: remove, rename or reorder them, or add text sections and tables. To add a dated entry, choose Add entry, review its title and date, then choose Create entry. Canceling this dialog creates nothing. Create entry permanently records the entry and opens its editor; canceling that editor later keeps the confirmed entry. An entry date describes the work; recorded and last-saved times identify when the application received each save. Initial and copied entries use the experiment date when provided, otherwise today's date in your browser's local time. The Add entry dialog also defaults to your local date."
+        },
+        {
+          "heading": "Record notes, tables and files",
+          "anchor": "record-notes-tables-and-files",
+          "text": "Text sections preserve multiline notes and scientific characters. Give each section a label. The Scientific section selection identifies its meaning independently of its label and controls which text is retained when copying setup. Tables have editable column headings and cells. Include units in headings where appropriate. Add or remove rows and columns as the experiment changes. The notebook retains entered values; it does not calculate, convert units or judge scientific validity. Choose a file under Attach a file. The displayed limit applies to each upload. Wait for upload, verification and scanning, then choose Save changes to include the attachment in the saved entry. If a file fails, the notes remain in the form and can be saved independently. File storage or scanning may be unavailable in an environment; retry when service is restored. Use an attachment's action to download it. Supported verified images also offer an image preview. Other files download for use in their original applications. Removing a file section from a later draft does not delete the original bytes: older saved revisions still retain that attachment. Uploaded files remain retained even if not subsequently attached to an entry. Save changes records the entry and its history. Cancel or navigate away only after explicitly deciding whether to discard unsaved edits. A save or upload in progress must finish before leaving. Changes are not saved automatically."
+        },
+        {
+          "heading": "Review and resolve concurrent edits",
+          "anchor": "review-and-resolve-concurrent-edits",
+          "text": "Every saved entry retains its previous content, author and time. Choose View history on an entry, experiment or project, then select a revision. History is read-only; it is not an approved protocol revision or scientific sign-off. If another researcher saves first, your input stays in the editor. Review the latest saved entry, then use its Actions menu to keep your edits against that revision or use the latest saved entry. Keeping your edits requires another explicit save and can replace the other researcher's values; reconcile the work before doing so. Refresh latest saved entry reloads the saved version while retaining your draft. If the experiment is completed during editing, choose Reopen experiment inside the editor and confirm. Your draft stays in place. Review the latest saved entry and choose I reviewed the latest entry; keep my edits before saving. The same review becomes available if another researcher reopens it elsewhere."
+        },
+        {
+          "heading": "Complete, reopen and repeat",
+          "anchor": "complete-reopen-and-repeat",
+          "text": "Choose Actions â†’ Complete experiment when the experiment is finished. Completion requires no approval or filled scientific sections; it makes the notebook read-only. Use Reopen experiment to continue recording or correct it. Both actions retain their actor and time. Completion does not establish a scientific result or release anything to a Customer. Choose Copy setup to start a new Active experiment. The copy retains section labels and order, Purpose and Method text, and table headings with no rows. It clears observations, results, conclusions, custom text, files and the previous entry history. Review the copied method before beginning the next experiment."
+        },
+        {
+          "heading": "Find earlier work",
+          "anchor": "find-earlier-work",
+          "text": "Projects supports name and description search. Experiments supports title, saved notebook text and table-content search, with project and status filters. Results are paged, with complete matching counts. Each experiment lists 25 entry summaries per page. Open an entry's title to read its notebook, files and history. Returning to the experiment retains the entry page. Search does not inspect attachment contents. Returning from an experiment preserves your list filters and page. R&D is currently standalone. It does not record operational sample or reagent consumption, run Lab protocols, or automatically connect notebook content to Lab records. Saved notebooks and attachments have no permanent-delete action or automatic expiry."
         }
       ]
     },
@@ -4667,5 +4863,5 @@
       ]
     }
   ],
-  "corpusHash": "4f0652813a53325d7aeed83f16416a040dcf811a02d210d9b4d090fd5f7f3a51"
+  "corpusHash": "8c6701d4675a8e563a7e65d6ae3ceef48f2f274ac393a8f440c7182f5f6ee620"
 }

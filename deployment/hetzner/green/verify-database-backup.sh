@@ -177,6 +177,10 @@ tables=(
 scientific_table="$(query "SELECT to_regclass('lab_ops.lab_scientific_files') IS NOT NULL;")" || fail
 if [[ "$scientific_table" == t ]]; then tables+=(lab_ops.lab_scientific_files);
 elif [[ "$expected_migration" > 20260920041906 ]]; then fail; fi
+research_table="$(query "SELECT to_regclass('research.attachments') IS NOT NULL;")" || fail
+if [[ "$research_table" == t ]]; then
+    tables+=(research.projects research.experiments research.entries research.revisions research.attachments)
+elif [[ "$expected_migration" > 20261016204012 ]]; then fail; fi
 phase=compare_dump_counts
 for qualified_table in "${tables[@]}"; do
     schema="${qualified_table%%.*}"
@@ -214,6 +218,11 @@ if [[ "$scientific_table" == t ]]; then
 scientific_references="$(query "SELECT count(*) FROM lab_ops.lab_scientific_files WHERE nullif(btrim(storage_key), '') IS NOT NULL;")" || fail
 [[ "$scientific_references" =~ ^[0-9]+$ ]] || fail
 printf 'backup_restore_file_refs.lab_scientific_files=%s\n' "$scientific_references"
+fi
+if [[ "$research_table" == t ]]; then
+research_references="$(query "SELECT count(*) FROM research.attachments WHERE nullif(btrim(storage_key), '') IS NOT NULL;")" || fail
+[[ "$research_references" =~ ^[0-9]+$ ]] || fail
+printf 'backup_restore_file_refs.research_attachments=%s\n' "$research_references"
 fi
 if [[ -n "$reference_output" ]]; then
     phase=private_file_reference_manifest

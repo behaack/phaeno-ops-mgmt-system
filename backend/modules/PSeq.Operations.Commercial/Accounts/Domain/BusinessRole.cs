@@ -10,7 +10,8 @@ public enum BusinessRole
     CashOperator,
     CashReconciler,
     BusinessDevelopment,
-    CommercialLeadership
+    CommercialLeadership,
+    Researcher
 }
 
 public sealed class BusinessRoleAssignment : IAudit, IConcurrency

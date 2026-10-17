@@ -178,6 +178,7 @@ Use these owning surfaces consistently across overviews, task guides, and troubl
 | Each new Customer pricing request | Order intake → New Customer order; Customer self-service uses Lab services. |
 | Reusable commercial and shipping rules | Order configuration; Company Departments & services for scope and service access; Finance for Customer billing. |
 | No-charge Trial scope, approvals, and closure | Trial projects under Order ops; Trial configuration owns authorities and deliverables. |
+| Exploratory research projects and experiment notebooks | R&D; shared team access requires the Researcher role or platform administration. Reference: R&D notebooks. Illustrated task guide: How to record an R&D experiment, with 14 annotated local captures. |
 | Physical receipt, kit fulfillment, Assembly execution, and scientific review | Lab operations; commercial details link to the same work. |
 | PSeq result publication | Result release package detail; scientific approval and file-retention authority remain distinct. |
 | Customer operational results | The Job's Files and results; curated datasets remain in Data Library. |

@@ -661,6 +661,7 @@ const mockSession: SessionResponse = {
     canLeaveOrganization: false,
     canManageOrganizations: true,
     canAccessCrm: true,
+    canAccessResearch: true,
     canAdministerCrm: true,
     canManageAllUsers: true,
     canDisableUsers: true,

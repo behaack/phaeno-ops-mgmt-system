@@ -314,6 +314,12 @@ public static class UserEndpoints
         }
 
         var isPlatformAdministrator = AccountAuthorization.IsPlatformAdmin(actor);
+        if (!isPlatformAdministrator && requestedBusinessRoles.TryGetValue(BusinessRole.Researcher, out var requestedResearcher))
+        {
+            var currentResearcher = await dbContext.BusinessRoleAssignments.AsNoTracking().AnyAsync(
+                value => value.UserId == user.Id && value.Role == BusinessRole.Researcher && value.IsActive, cancellationToken);
+            if (currentResearcher != requestedResearcher.IsActive) return TypedResults.Forbid();
+        }
         var firstName = request.FirstName.Trim();
         var lastName = request.LastName.Trim();
         if (firstName.Length is 0 or > 100 || lastName.Length is 0 or > 100)

@@ -70,6 +70,7 @@ const labRoleOptions = [
 ] as const satisfies ReadonlyArray<{ value: LabRole; label: string }>
 
 const businessRoleOptions = [
+  { value: 'Researcher', label: 'R&D researcher' },
   { value: 'BusinessDevelopment', label: 'Business Development' },
   { value: 'CommercialLeadership', label: 'Commercial leadership' },
   { value: 'CommercialOperator', label: 'Commercial operator' },
@@ -628,6 +629,7 @@ function PhaenoUserEditDialog({
                 checked={selectedRoles.includes(role.value)}
                 id={`role-${role.value}`}
                 label={role.label}
+                disabled={role.value === 'Researcher' && !canManageAccounts}
                 onCheckedChange={(checked) => toggleRole(role.value, checked)}
               />
             ))}

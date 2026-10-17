@@ -1,5 +1,19 @@
 # Playwright E2E Test Plan
 
+## R&D illustrated how-to and release preparation — October 17, 2026
+
+Added a maintained R&D how-to navigation/rendering scenario: fifth How-to card, dedicated guide route, 14 original JPEGs, loaded first image and four corresponding annotations. Local browser documentation/reflow review is recorded in the release receipt. Illustration state is fictional and local; it proves UI presentation only. No automated suite or hosted experimental write is requested.
+
+## R&D review corrections — October 17, 2026
+
+Adapted the simulated research fixture to paged metadata, single-entry responses and the view-first entry route. Added scenarios for in-editor reopen with retained scientific text and confirmation focus, canceled/confirmed entry creation, Pacific-evening local dates for added/copied entries, invalid-label focus/announcements/recovery, and entry-content requests only after opening a paged summary. Updated existing conflict/completion flows for Actions menus and dedicated entry viewing. Desktop/mobile runs and authenticated browser acceptance remain unrun; these sources do not establish live acceptance.
+
+## R&D notebook — October 16, 2026
+
+Added `e2e/research.spec.ts` and a deterministic fixture using the actual R&D screens. Scenarios cover a custom result table and retained 409 draft, explicit latest-version review/resave, completion dialog body/Cancel focus/focus return, completed read-only entries, external/unauthorized contexts, accessibility and narrow reflow. Desktop and mobile projects inherit the existing runner configuration; the mobile editor uses dark mode. These are simulated identity/API scenarios, not authenticated live-server or physical/scientific acceptance.
+
+Automated execution is deferred unless requested. Remaining browser scenarios include project search/page return across both sidebar destinations, new/copy forms, role invitation acceptance, two live editors, rejected/interrupted/unavailable uploads and historical attachment previews/downloads. Do not treat added coverage as executed evidence.
+
 ## Customer onboarding how-to — October 15, 2026
 
 Existing Phaeno documentation expectations now require four how-to cards, a visible

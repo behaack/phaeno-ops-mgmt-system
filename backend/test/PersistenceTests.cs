@@ -148,13 +148,13 @@ public class PersistenceTests
         Assert.All(
             entityTypes,
             entityType => Assert.True(
-                entityType.GetSchema() is "commercial_ops" or "lab_ops" or "website"));
+                entityType.GetSchema() is "commercial_ops" or "lab_ops" or "website" or "research"));
         Assert.All(
             entityTypes.Where(entityType => entityType.ClrType.Assembly == commercialAssembly),
             entityType => Assert.Equal("commercial_ops", entityType.GetSchema()));
         Assert.All(
             entityTypes.Where(entityType => entityType.ClrType.Assembly == laboratoryAssembly),
-            entityType => Assert.Equal("lab_ops", entityType.GetSchema()));
+            entityType => Assert.Equal(entityType.ClrType.Namespace == "PSeq.Operations.Laboratory.Research" ? "research" : "lab_ops", entityType.GetSchema()));
         Assert.All(
             entityTypes.Where(entityType =>
                 entityType.ClrType.Namespace?.StartsWith(
@@ -210,7 +210,7 @@ public class PersistenceTests
         using var dbContext = CreateDbContext();
         var laboratoryAssembly = typeof(LaboratoryAssembly).Assembly;
         var laboratoryEntities = dbContext.Model.GetEntityTypes()
-            .Where(entityType => entityType.ClrType.Assembly == laboratoryAssembly)
+            .Where(entityType => entityType.ClrType.Assembly == laboratoryAssembly && entityType.ClrType.Namespace != "PSeq.Operations.Laboratory.Research")
             .ToList();
 
         Assert.Equal(87, laboratoryEntities.Count);

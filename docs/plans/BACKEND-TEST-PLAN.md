@@ -1,5 +1,19 @@
 # Backend Test Plan
 
+## R&D illustrated how-to and release preparation — October 17, 2026
+
+Added a PostgreSQL recovery-manifest regression source that records an unattached retained research upload and executes the actual backup file-reference SQL inside a rollback transaction. The immutable receipt must appear as a required order-files reference with its hash and size. Database restore verification now checks all five research tables and retained attachment counts. Automated execution remains deferred unless requested.
+
+## R&D review corrections — October 17, 2026
+
+Updated the rollback-only research journey for metadata-only experiment responses and single-entry reads. Added PostgreSQL regression sources for a 57-entry notebook (25-summary pages, omitted blocks, one selected content read), selected-organization denial on the new endpoints, explicit local initial/copy dates and rejection of absent dates. An actor-stamped context compares immutable snapshots with persisted author IDs, timestamps and versions; an injected revision-save failure checks primary-write rollback through an ambient savepoint. These sources remain unrun unless requested. No schema change or migration is needed.
+
+## R&D notebook — October 16, 2026
+
+Added `ResearchNotebookTests` for explicit selected-Phaeno Researcher access independent of commercial flags, no accidental Lab/CRM privilege, completion/reopening, safe setup copying, typed content validation and immutable receipts/schema ownership. Added the rollback-only `ResearchNotebookPostgresTests` reference journey for saved revisions, stale/completed write rejection, reopening/copying and external-scope rejection. Updated persistence ownership expectations for the five research tables while retaining the existing Lab-only model assertions. Existing verified-download integrity coverage also applies to reused attachment retrieval.
+
+Automated execution is deferred under the repository rule. Release solution compilation checks test sources. Remaining acceptance includes two real concurrent HTTP clients, upload interruption/rejected/unavailable scanning, retained detached/historical downloads, and explicit role/invitation actor coverage. Local migration application is separate from hosted release acceptance.
+
 ## PSeq kit lot traceability — October 15, 2026
 
 Executed the focused lot/domain and Kit bundle PostgreSQL regressions: **25 passed, zero skipped**. Coverage includes inclusive calendar expiry, independent early save/replay without files/request/use date, mismatch/Department isolation, missing use date, current-lot versions at submission/start, immutable snapshots, registered shipment/replacement lineage and existing lifecycle/input/release acceptance. PostgreSQL JSONB snapshots are compared by value. The opt-in `PSeqKitLotBrowserPostgresTests` host separately passed its real HTTP/PostgreSQL browser wrapper. All test databases were disposable and removed; the application database received no operational fixtures. See the [verification report](../testing/runs/2026-10-15-pseq-kit-lots-verification.md) for raw results and simulated identity/storage boundaries.
