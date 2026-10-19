@@ -1,5 +1,19 @@
 # Operations and production-readiness boundary
 
+## Order notes and R&D hosted-test release — completed October 19, 2026
+
+Matched API/UI source `390341dd9ba913f6f5a416de827ad4de99c8f380` is live at
+the existing hosted test environment. The approved preserving order-note and
+additive R&D migrations pass; all 250 hosted table fingerprints match isolated
+rehearsal, including unchanged Website intake history. Encrypted off-server
+recovery, health/scanner/auth, canonical/prior-pin assets and signed-in
+order/editor/R&D/help/search reads pass. The stale GitHub run remains queued but
+is fenced at its verified release-path guard; deployment used the same protected
+host script directly. Release holds and S3 recovery deferral remain. This
+supersedes the incomplete R&D checkpoint below. See the
+[release receipt](operations/order-notes-test-release-20261019.md) and
+[preserving plan](plans/ORDER-NOTES-HOSTED-TEST-RELEASE-20261019-PLAN.md).
+
 ## R&D notebooks and illustrated how-to — deployment blocked October 17, 2026
 
 R&D source `e5c0804c90dfcf68931cc2f3d48525964ea6b419` is pushed, with 14 original

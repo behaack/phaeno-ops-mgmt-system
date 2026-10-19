@@ -1,5 +1,12 @@
 # R&D notebooks and illustrated how-to: preserving hosted-test release
 
+Completed October 19 as part of the approved order-note release, source
+`390341dd9ba913f6f5a416de827ad4de99c8f380`. The original dispatch is quarantined
+against deployment; the same protected host script completed both migrations.
+See the [completed release receipt](../operations/order-notes-test-release-20261019.md)
+for current identities, preservation, recovery, verification and remaining gates.
+The execution status below is the historical October 17 checkpoint.
+
 The Owner requested updated user documentation, an annotated R&D how-to, commit/push to GitHub and deployment on October 17, 2026. Release the R&D module, its six review corrections, research attachment recovery enumeration, Phaeno-only help and regression sources together. This request includes the necessary preserving additive R&D migration. It authorizes no reset, history rewrite, identity/storage/provider cutover, external collaborator access or commercial/scientific activation.
 
 ## Verified baseline and target

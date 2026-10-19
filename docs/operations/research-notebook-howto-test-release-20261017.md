@@ -1,5 +1,11 @@
 # R&D notebook and illustrated how-to: release checkpoint — October 17, 2026
 
+Superseded October 19: R&D is now released with the approved order-note batch
+as source `390341dd9ba913f6f5a416de827ad4de99c8f380`. The old dispatch is fenced
+against execution; the protected host deployment, migration and preservation
+checks completed. See the [completed release receipt](order-notes-test-release-20261019.md).
+The remainder records the historical incomplete checkpoint.
+
 The Owner requested updated R&D user documentation, an annotated how-to, GitHub commit/push and deployment. The implementation and guide are committed and pushed. **Deployment is blocked by an unresolved GitHub Actions dispatch; the new frontend has not been promoted and the hosted API has not changed.** This is a preparation checkpoint, not a completed-release receipt.
 
 ## Delivered source and help

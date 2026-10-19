@@ -1,5 +1,10 @@
 # Order notes hosted-test release — October 19, 2026
 
+Completed: exact API/UI source `390341dd9ba913f6f5a416de827ad4de99c8f380` is
+live with both approved migrations. See the
+[release receipt](../operations/order-notes-test-release-20261019.md) for
+preservation, recovery, stale-run containment, verification and remaining gates.
+
 The Owner requested commit, push and deployment of all pending changes. Publish
 the private/public rich-text order notes implementation, migration, regression
 sources and matching help together. Automated suites remain request-only.
