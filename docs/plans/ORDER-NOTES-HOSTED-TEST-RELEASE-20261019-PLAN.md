@@ -12,14 +12,24 @@ The public Website frontend and OCIA are outside this release.
 ## Required gates
 
 The earlier API run `39056745064` still reports queued with no jobs on October 19.
-Cancellation returns HTTP 409, stating it has not been queued yet. Confirm a
-terminal outcome before dispatching a competing release. Keep workflow and
-Vercel Git holds in place while unresolved.
+Cancellation returns HTTP 409, stating it has not been queued yet; deletion also
+fails. The Owner approved resolution and the preserving hosted migration on
+October 19. The exact old workflow was inspected: extraction fails under
+`set -Eeuo pipefail` if its release path already exists, before runtime installers
+or deployment execute. A root-only quarantine directory now occupies
+`/opt/phaeno.portal-green/releases/e5c0804c90dfcf68931cc2f3d48525964ea6b419-39056745064-1`.
+The failed absence check and absence of executable deployment content were
+verified. Retain that fence while the orphan remains queued; never rerun that
+old source. GitHub's queue state remains unresolved, but the stale deployment is
+neutralized. Do not dispatch another Actions run. Execute the same protected
+`deploy-release.sh` directly against an exact Git archive while the workflow
+remains disabled, preserving its deployment lock, backup/isolated restore,
+scanner, migration, health and intake checks. Vercel Git holds remain in place.
 
 `20261017190934_SplitInternalOrderNotes` adds private/public columns, moves
 existing internal descriptions into escaped private rich text, rewrites Draft
 JSON and sanitizes cached command responses. It changes existing hosted data
-and requires explicit Owner authorization before application. The recommended
+and received explicit Owner authorization before application. The recommended
 remedy is this one-time preserving conversion after verified recovery; resetting
 affected orders would lose history and is not recommended or authorized.
 Local conversion evidence is in [the owning plan](ORDER-MANAGEMENT-PLAN.md).
@@ -34,9 +44,9 @@ Local conversion evidence is in [the owning plan](ORDER-MANAGEMENT-PLAN.md).
    off-server copy. Preserve all schemas, files and settings. Explicitly compare
    complete `website.web_contacts` and `website.web_orders` records, including
    historical states, identities, timestamps and actors. No email replay.
-3. Stage the exact pushed frontend with domain assignment disabled. Temporarily
-   enable the manual API workflow, deploy that same source using approved
-   migrations and Preserve inputs, and disable it again even on failure.
+3. Stage the exact pushed frontend with domain assignment disabled. Deploy the
+   same Git archive with the protected host script and approved migrations,
+   preserving installed runtime settings. Keep the manual workflow disabled.
 4. Verify text-preserving conversion, unchanged unrelated order/replay/audit and
    intake fingerprints, migration history, matching API source/help, scanner,
    health and authorization. Promote the staged frontend only after these pass.
