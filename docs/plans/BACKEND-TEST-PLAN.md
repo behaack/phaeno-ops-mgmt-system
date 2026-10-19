@@ -1,5 +1,17 @@
 # Backend Test Plan
 
+## Internal order formatted notes — October 17, 2026
+
+Added domain regression sources for separate private/public persistence through
+pricing submission, canonical formatting, active-content/attribute removal,
+empty notes, size limits, and historical snapshot redaction. Added a PostgreSQL
+controller regression in `OrderNotesPrivacyPostgresTests.cs` proving Customer
+JSON excludes both current and historical private text while Phaeno retains it.
+Execution is deferred under the Owner's no-tests-unless-requested rule.
+Compilation/static checks and the local preserving migration are separate
+verification recorded in the Order Management plan.
+
+
 ## R&D illustrated how-to and release preparation — October 17, 2026
 
 Added a PostgreSQL recovery-manifest regression source that records an unattached retained research upload and executes the actual backup file-reference SQL inside a rollback transaction. The immutable receipt must appear as a required order-files reference with its hash and size. Database restore verification now checks all five research tables and retained attachment counts. Automated execution remains deferred unless requested.

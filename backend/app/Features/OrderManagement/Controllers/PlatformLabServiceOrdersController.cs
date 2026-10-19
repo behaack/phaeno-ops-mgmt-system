@@ -1074,6 +1074,8 @@ public sealed partial class PlatformLabServiceOrdersController(
             CanProposeChange: orderToCashOptions.Value.NativePSeqAccountsReceivable && order.CanProposeChange,
             SampleTypeDefinitionId: order.SampleTypeDefinitionId,
             CommercialDraft: order.ReadCommercialDraft(),
+            PrivateNotes: order.PrivateNotes,
+            PublicNotes: order.PublicNotes,
             RequestedCatalogItemId: requestedCatalogId,
             RequestedServiceName: requestedCatalogId.HasValue ? catalogNames.GetValueOrDefault(requestedCatalogId.Value) : null,
             SampleTypeName: order.SampleTypeDefinitionId.HasValue
@@ -1176,6 +1178,7 @@ public sealed partial class PlatformLabServiceOrdersController(
             order.CustomerReference,
             order.RequestedCatalogItemId,
             jobNotes = order.Description,
+            order.PublicNotes,
             order.HasMixedBiologicalSources,
             order.SharedBiologicalSource,
             order.RequestedSpecimenCount, order.RequestedSequencingRunCount,

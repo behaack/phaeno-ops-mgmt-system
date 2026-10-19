@@ -1,5 +1,56 @@
 # Order Management Plan
 
+## Internal order private/public formatted notes — October 17, 2026
+
+Owner-approved scope: employees creating Customer orders need separate optional
+Private notes and Public notes. Earlier internal Notes become private. Formatting
+is in-Portal only, with no RTF file import/export. Both fields support bold,
+italic, underline, paragraphs, bullets and numbered lists. Public notes appear
+on Customer Order review; private notes are available only through authorized
+Phaeno responses and internal order detail. Customer-authored plain Job notes
+retain their existing contract. Notes remain editable within the existing
+commercial Draft workflow; no post-submission amendment workflow is introduced.
+
+Engineering: use the existing browser editing controls and the existing
+AngleSharp dependency with an attribute-free formatting allowlist. Readers
+render React elements rather than injecting stored HTML. Limit each field to
+2,000 text characters and 16,000 serialized characters. Draft save normalizes
+and persists both fields; pricing submission retains them independently of
+commercial Draft JSON. Tenant responses omit Private notes, and redact old
+jobNotes/privateNotes from returned internal-order revision snapshots without
+modifying audit records. Customer-authored Job notes remain in their own history.
+No authorization-policy, dependency, invitation or cross-app changes.
+Existing audit, concurrency, tenant scoping and idempotency remain in force.
+
+Migration `20261017190934_SplitInternalOrderNotes` adds private_notes/public_notes
+and performs a one-time text-preserving conversion. Internal order identity is
+an existing commercial Draft, Sales handoff, or Phaeno membership of its creating
+actor, including inactive memberships. Original internal descriptions are moved
+to escaped private rich text; Draft JSON is rewritten to the current fields.
+Historical idempotency responses are also projected so command retries cannot
+re-expose old internal descriptions/revision notes. No fallback or dual write
+remains in runtime code. No Website intake, customer-entered description, order
+scope, scientific data, or stored revision audit is deleted.
+
+Local preflight found seven internal orders, three with notes, no unowned
+orders with notes, and no pending earlier migration. Migration was applied to
+the configured localhost development database. Recovery copies of all seven
+orders and 39 replay records are retained under ignored `.tmp/order-notes-20261017/`.
+Full-record comparisons verified exact preservation of the three note values,
+unchanged other order facts, correct privacy conversion of 29 affected replay
+responses, unchanged unrelated replay records, and unchanged full-record
+fingerprints for stored revision audits and both Website intake tables. The
+first migration attempt rolled back on SQL precedence; corrected application
+and readback completed successfully. Backend solution compilation (including
+regression sources), frontend typecheck, scoped lint, generated-help and Customer
+message-reference checks passed. No automated tests or connected browser
+acceptance were executed. No Git mutation or deployment was performed.
+Success criteria covered by implementation and added regression sources: both
+fields survive save/submission, formatting is retained safely, public content
+is shown on Order review, and customer responses contain no private text.
+The order how-to text is current; its existing illustrative
+form screenshots predate the two-editor layout and need a future capture refresh.
+
 ## PSeq kit lots and standalone Partner submission — implemented locally, October 15, 2026
 
 The [lot traceability plan](PSEQ-KIT-LOT-TRACEABILITY-PLAN.md) records the approved

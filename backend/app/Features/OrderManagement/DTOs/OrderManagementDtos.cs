@@ -298,7 +298,9 @@ public sealed record LabServiceOrderDto(
     bool UsesPairedPreparation = false, int PhaseCount = 1,
     CommercialLabOrderDraft? CommercialDraft = null, IReadOnlyList<LabOrderPhaseScopeDto>? PhaseScopes = null, Guid DepartmentId = default,
     CustomerStandardOrderDraft? CustomerDraft = null, Guid? RequestedCatalogItemId = null, string? RequestedServiceName = null,
-    bool CanProposeQuoteChanges = false, bool CanDeclineQuote = false, QuoteChangeProposalDto? QuoteChangeProposal = null);
+    bool CanProposeQuoteChanges = false, bool CanDeclineQuote = false, QuoteChangeProposalDto? QuoteChangeProposal = null,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] string? PrivateNotes = null,
+    string? PublicNotes = null);
 
 public sealed record QuoteChangeProposalDto(Guid QuoteId, int QuoteRevision, string Reason, DateTime ProposedAt);
 

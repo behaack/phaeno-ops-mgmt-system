@@ -1,5 +1,6 @@
 // Customer UI English catalog. Scientific identifiers and entered data are not messages.
 export const customerEnglishMessages = {
+  "order_public_notes": "Public notes",
   "auth_authenticator_app_code": "Authenticator app code",
   "auth_authenticator_app_code_help": "Enter the current 6-digit code from the authenticator app you linked to your account.",
   "change_quote_actions": "Actions for Change quote {p0}",

@@ -1,5 +1,19 @@
 # Playwright E2E Test Plan
 
+## Internal order formatted notes — October 17, 2026
+
+Deferred browser acceptance: create/save/reopen a Phaeno commercial Draft with
+both notes fields, select text and apply each formatting button using pointer
+and keyboard, use paragraphs/lists/paste/undo, trigger and recover from each
+field's length error, and retain notes through pricing submission. Read the
+same order as Customer: public formatting appears on Order review; private text
+must be absent from the DOM and all response JSON, including revision history
+and historical idempotent replays. Check narrow/light/dark reflow, visible focus,
+tab order, error focus, dirty navigation and unchanged Actions controls. Existing
+single-textarea customer-entry coverage stays applicable. No browser suite was
+requested or executed; sources do not establish connected acceptance.
+
+
 ## R&D illustrated how-to and release preparation — October 17, 2026
 
 Added a maintained R&D how-to navigation/rendering scenario: fifth How-to card, dedicated guide route, 14 original JPEGs, loaded first image and four corresponding annotations. Local browser documentation/reflow review is recorded in the release receipt. Illustration state is fictional and local; it proves UI presentation only. No automated suite or hosted experimental write is requested.

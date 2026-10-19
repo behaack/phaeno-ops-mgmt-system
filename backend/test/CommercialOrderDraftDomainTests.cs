@@ -7,6 +7,43 @@ using PSeq.Operations.Commercial.OrderManagement.Domain;
 public sealed class CommercialOrderDraftDomainTests
 {
     [Fact]
+    public void RichNotesRemainSeparateAndSurvivePricingSubmission()
+    {
+        var order = Create(CompleteDraft() with { PrivateNotes = "<b>Staff only</b>", PublicNotes = "<p>Customer <i>instructions</i></p><ul><li>Keep frozen</li></ul>" });
+        Assert.Null(order.Description);
+        Assert.Equal("<strong>Staff only</strong>", order.PrivateNotes);
+        Assert.Equal(order.PrivateNotes, order.ReadCommercialDraft()!.PrivateNotes);
+        Assert.Contains("<em>instructions</em>", order.PublicNotes);
+        order.MaterializeCommercialDraft(Guid.NewGuid(), DateTime.UtcNow, "Frozen");
+        Assert.Null(order.ReadCommercialDraft());
+        Assert.Null(order.Description);
+        Assert.Equal("<strong>Staff only</strong>", order.PrivateNotes);
+        Assert.Contains("<li>Keep frozen</li>", order.PublicNotes);
+    }
+
+    [Theory]
+    [InlineData("<p onclick='alert(1)'>Safe<script>alert(2)</script><img src=x onerror='alert(3)'></p>", "<p>Safe</p>")]
+    [InlineData("<iframe>Hidden</iframe><svg><script>Hidden</script></svg><u>Visible</u>", "<u>Visible</u>")]
+    [InlineData("<p><br></p>", null)]
+    public void NotesNormalizeToAttributeFreeFormatting(string input, string? expected)
+        => Assert.Equal(expected, OrderRichText.Normalize(input));
+
+    [Fact]
+    public void NotesEnforceTextLimitsAndCustomerSnapshotsRedactHistoricalCopies()
+    {
+        Assert.Throws<ArgumentException>(() => OrderRichText.Normalize($"<p>{new string('x', 2001)}</p>"));
+        Assert.Throws<ArgumentException>(() => OrderRichText.Normalize(new string('x', 16001)));
+        var snapshot = OrderRichText.CustomerSnapshot("""{"jobNotes":"Old private text","PrivateNotes":"Secret","publicNotes":"<p>Share</p>","scope":{"jobNotes":"Nested private","count":2}}""");
+        Assert.DoesNotContain("private", snapshot, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Secret", snapshot);
+        Assert.Contains("publicNotes", snapshot);
+        Assert.Contains("count", snapshot);
+        var customerSnapshot = OrderRichText.CustomerSnapshot("""{"jobNotes":"Customer-entered history","privateNotes":"Secret"}""", internallyPlaced: false);
+        Assert.Contains("Customer-entered history", customerSnapshot);
+        Assert.DoesNotContain("Secret", customerSnapshot);
+    }
+
+    [Fact]
     public void IncompleteDraftCanBeSavedWithoutSubmittingOrCreatingOperationalPhases()
     {
         var draft = CompleteDraft() with { SampleTypeDefinitionId = null, StorageRequirements = "", SafetyDeclaration = "",

@@ -5,6 +5,7 @@ import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '#/components/ui/card'
 import { draftTotals, phaseTotals } from './commercial-draft'
 import { OrderStatusBadge } from './OrderStatusBadge'
+import { OrderRichText } from './order-rich-text'
 
 export function CommercialDraftDetails({ order, canEdit }: { order: LabServiceOrder; canEdit: boolean }) {
   const draft = order.commercialDraft!
@@ -33,7 +34,7 @@ export function CommercialDraftDetails({ order, canEdit }: { order: LabServiceOr
         </CardContent>
       </Card>
     })}
-    <Card><CardHeader><CardTitle><CustomerSourceText source={"Handling and notes"} /></CardTitle></CardHeader><CardContent><dl className="space-y-4">{(['storageRequirements', 'safetyDeclaration', 'notes'] as const).map(key => <div key={key}><dt className="font-bold">{key === 'storageRequirements' ? <CustomerSourceText source={"Storage requirements"} /> : key === 'safetyDeclaration' ? 'Safety declaration' : 'Job notes'}</dt><dd className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{key === 'storageRequirements' && draft[key] === null ? <CustomerSourceText source={"Use Sample type requirements"} /> : draft[key] || 'Not entered'}</dd></div>)}</dl></CardContent></Card>
+    <Card><CardHeader><CardTitle><CustomerSourceText source={"Handling and notes"} /></CardTitle></CardHeader><CardContent><dl className="space-y-4">{(['storageRequirements', 'safetyDeclaration'] as const).map(key => <div key={key}><dt className="font-bold">{key === 'storageRequirements' ? <CustomerSourceText source={"Storage requirements"} /> : 'Safety declaration'}</dt><dd className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{key === 'storageRequirements' && draft[key] === null ? <CustomerSourceText source={"Use Sample type requirements"} /> : draft[key] || 'Not entered'}</dd></div>)}{(['privateNotes', 'publicNotes'] as const).map(key => <div key={key}><dt className="font-bold">{key === 'privateNotes' ? 'Private notes · Phaeno only' : 'Public notes · visible to the customer'}</dt><dd className="mt-1 text-sm text-muted-foreground">{draft[key] ? <OrderRichText value={draft[key]} /> : 'Not entered'}</dd></div>)}</dl></CardContent></Card>
   </main>
 }
 function money(value: number) { return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value) }

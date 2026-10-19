@@ -278,6 +278,8 @@ export type LabServiceOrder = {
   requestedServiceName?: string | null;
   departmentId: string;
   commercialDraft?: CommercialDraftForm | null;
+  privateNotes?: string | null;
+  publicNotes?: string | null;
   customerDraft?: CustomerStandardDraft | null;
   phaseScopes?: LabOrderPhaseScope[] | null;
   phaseCount?: number;

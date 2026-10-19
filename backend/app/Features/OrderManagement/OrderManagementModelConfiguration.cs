@@ -777,6 +777,8 @@ public static class OrderManagementModelConfiguration
             Text(entity.Property(e => e.CustomerReference), 255);
             Text(entity.Property(e => e.NormalizedJobName), 255);
             Text(entity.Property(e => e.Description), 2000, false);
+            Text(entity.Property(e => e.PrivateNotes), OrderRichText.MaximumMarkupLength, false);
+            Text(entity.Property(e => e.PublicNotes), OrderRichText.MaximumMarkupLength, false);
             Text(entity.Property(e => e.SharedBiologicalSource), 500, false);
             entity.HasOne<SampleTypeDefinition>().WithMany().HasForeignKey(e => e.SampleTypeDefinitionId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<SampleShippingProcedure>().WithMany().HasForeignKey(e => e.ShippingProcedureRevisionId)

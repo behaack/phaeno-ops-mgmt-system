@@ -9,8 +9,8 @@ public sealed record CommercialDraftPhase(string Name, IReadOnlyList<PhaseSource
     int? RunsPerSample, int? TurnaroundBusinessDays, decimal? ProposedUnitPrice, string? PricingNote, bool ProposePrice = false,
     decimal? ProposedAdditionalRunPrice = null);
 public sealed record CommercialLabOrderDraft(string JobName, Guid? SampleTypeDefinitionId,
-    string? StorageRequirements, string? SafetyDeclaration, string? Notes, bool UsesPhases,
-    IReadOnlyList<CommercialDraftPhase> Phases, Guid? CatalogItemId = null);
+    string? StorageRequirements, string? SafetyDeclaration, string? PrivateNotes, bool UsesPhases,
+    IReadOnlyList<CommercialDraftPhase> Phases, Guid? CatalogItemId = null, string? PublicNotes = null);
 
 public static class CommercialDraftRules
 {
@@ -23,8 +23,10 @@ public static class CommercialDraftRules
         if (draft.Phases is null || draft.Phases.Count is < 1 or > 100 || !draft.UsesPhases && draft.Phases.Count != 1
             || draft.UsesPhases && draft.Phases.Count < 2)
             throw new ArgumentException("Use one scope, or enable phases and choose between 2 and 100 phases.");
-        if (new[] { draft.StorageRequirements, draft.SafetyDeclaration, draft.Notes }.Any(x => x?.Length > 2000))
-            throw new ArgumentException("Job notes, storage requirements and safety declarations allow up to 2,000 characters each.");
+        if (new[] { draft.StorageRequirements, draft.SafetyDeclaration }.Any(x => x?.Length > 2000))
+            throw new ArgumentException("Storage requirements and safety declarations allow up to 2,000 characters each.");
+        OrderRichText.Normalize(draft.PrivateNotes);
+        OrderRichText.Normalize(draft.PublicNotes);
         if (submission && (!draft.SampleTypeDefinitionId.HasValue || string.IsNullOrWhiteSpace(draft.SafetyDeclaration)))
             throw new ArgumentException("Select a Sample type and complete the safety declaration before submitting for pricing.");
         if (submission && draft.StorageRequirements is not null && string.IsNullOrWhiteSpace(draft.StorageRequirements))

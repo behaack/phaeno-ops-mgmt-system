@@ -38,6 +38,7 @@ import { humanizeStatus, OrderStatusBadge } from './OrderStatusBadge'
 import { CommercialOrderIntakePanel } from './CommercialOrderIntakePanel'
 import { CancellationDecisionPanel } from './operations/CancellationDecisionPanel'
 import { CommercialDraftDetails } from './CommercialDraftDetails'
+import { OrderRichText } from './order-rich-text'
 import { PhaseQuoteDialog } from './operations/PhaseQuoteDialog'
 import { PlatformQuoteDialog } from './operations/PlatformQuoteDialog'
 import { IssueLabChangeQuote } from './LabChangeQuotes'
@@ -417,6 +418,10 @@ export function CommercialControlPanel({
   return (
     <div className="mt-5 space-y-5">
       {labOrder ? <LabPhasesPanel order={labOrder} internal onSaved={onSaved} /> : null}
+      {labOrder && (labOrder.privateNotes || labOrder.publicNotes) ? <Card><CardHeader><CardTitle>Order notes</CardTitle></CardHeader><CardContent className="grid gap-4 md:grid-cols-2">
+        <div><h3 className="mb-2 text-sm font-bold">Private notes · Phaeno only</h3>{labOrder.privateNotes ? <OrderRichText value={labOrder.privateNotes} /> : <p className="text-sm text-muted-foreground">Not entered</p>}</div>
+        <div><h3 className="mb-2 text-sm font-bold">Public notes · visible to the customer</h3>{labOrder.publicNotes ? <OrderRichText value={labOrder.publicNotes} /> : <p className="text-sm text-muted-foreground">Not entered</p>}</div>
+      </CardContent></Card> : null}
       <Card>
         <CardHeader>
           <div className="flex flex-wrap items-start justify-between gap-3">

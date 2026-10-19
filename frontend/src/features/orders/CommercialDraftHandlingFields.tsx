@@ -9,6 +9,7 @@ import { Label } from '#/components/ui/label'
 import { RequiredFieldName } from '#/components/ui/required-field'
 import { Textarea } from '#/components/ui/textarea'
 import type { CommercialDraftForm } from './commercial-draft'
+import { OrderNotesEditor } from './OrderNotesEditor'
 
 export function CommercialDraftHandlingFields({ form, sampleType }: {
   form: UseFormReturn<CommercialDraftForm>
@@ -21,12 +22,8 @@ export function CommercialDraftHandlingFields({ form, sampleType }: {
   return <Card size="sm">
     <CardHeader><CardTitle><CustomerSourceText source={"Shared handling and notes"} /></CardTitle></CardHeader>
     <CardContent className="grid gap-x-4 gap-y-3 md:grid-cols-2">
-      <Field>
-        <Label htmlFor="draft-notes"><CustomerSourceText source={"Job notes (optional)"} /></Label>
-        <FieldDescription><CustomerSourceText source={"Do not enter patient names or identifying information."} /></FieldDescription>
-        <Textarea id="draft-notes" rows={2} className="min-h-16 resize-y" {...form.register('notes')} aria-invalid={Boolean(form.formState.errors.notes)} aria-describedby="draft-notes-error" />
-        <FieldError id="draft-notes-error">{form.formState.errors.notes?.message}</FieldError>
-      </Field>
+      <OrderNotesEditor form={form} name="privateNotes" />
+      <OrderNotesEditor form={form} name="publicNotes" />
       <Field>
         <Label htmlFor="draft-safetyDeclaration"><RequiredFieldName><CustomerSourceText source={"Safety declaration"} /></RequiredFieldName> <CustomerSourceText source={"· required for pricing"} /></Label>
         <FieldDescription id="draft-safetyDeclaration-help" className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-[3px]">

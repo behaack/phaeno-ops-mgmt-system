@@ -16,6 +16,8 @@ public sealed partial class LabServiceOrder : IAudit, IConcurrency
     public string CustomerReference { get; private set; } = null!;
     public string NormalizedJobName { get; private set; } = null!;
     public string? Description { get; private set; }
+    public string? PrivateNotes { get; private set; }
+    public string? PublicNotes { get; private set; }
     public bool HasMixedBiologicalSources { get; private set; }
     public string? SharedBiologicalSource { get; private set; }
     public Guid? SampleTypeDefinitionId { get; private set; }
@@ -153,12 +155,14 @@ public sealed partial class LabServiceOrder : IAudit, IConcurrency
         if (SubmittedAt.HasValue || Phases.Count > 0 || Samples.Count > 0) throw new InvalidOperationException("Only an unsubmitted commercial Draft can be edited here.");
         CommercialDraftRules.Validate(draft, false);
         CustomerReference = draft.JobName.Trim(); NormalizedJobName = NormalizeJobName(CustomerReference);
-        Description = OrderText.Optional(draft.Notes, 2000);
+        PrivateNotes = OrderRichText.Normalize(draft.PrivateNotes);
+        PublicNotes = OrderRichText.Normalize(draft.PublicNotes);
+        Description = null;
         StorageRequirements = draft.StorageRequirements?.Trim() ?? "";
         SafetyDeclaration = draft.SafetyDeclaration?.Trim() ?? "";
         RequestedSpecimenCount = draft.Phases.Sum(p => p.Sources.Sum(s => s.SpecimenCount));
         SequencingRunCount = draft.Phases.Sum(p => p.Sources.Sum(s => s.SpecimenCount) * (p.RunsPerSample ?? 0));
-        CommercialDraftJson = JsonSerializer.Serialize(draft, CommercialDraftRules.Json);
+        CommercialDraftJson = JsonSerializer.Serialize(draft with { PrivateNotes = PrivateNotes, PublicNotes = PublicNotes }, CommercialDraftRules.Json);
     }
 
     public void MaterializeCommercialDraft(Guid actorId, DateTime now, string sampleTypeStorageRequirements)

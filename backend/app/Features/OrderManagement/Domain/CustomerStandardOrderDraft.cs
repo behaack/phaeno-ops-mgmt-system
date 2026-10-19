@@ -10,7 +10,8 @@ public sealed record CustomerStandardOrderDraft(string JobName, Guid? OfferingId
     {
         // Reuse the scope validation while fixing Customer orders to exactly one run and one scope.
         CommercialDraftRules.Validate(new(JobName, SampleTypeDefinitionId, StorageRequirements,
-            SafetyDeclaration, Notes, false, [new("Scope", Sources, 1, null, null, null)]), review);
+            SafetyDeclaration, null, false, [new("Scope", Sources, 1, null, null, null)]), review);
+        if (Notes?.Length > 2000) throw new ArgumentException("Job notes allow up to 2,000 characters.");
         if (review && (!OfferingId.HasValue || OfferingId == Guid.Empty))
             throw new ArgumentException("Select an available service before reviewing this order.");
     }

@@ -1,5 +1,16 @@
 # Frontend Test Plan
 
+## Internal order formatted notes — October 17, 2026
+
+Updated commercial Draft fixtures for separate private/public fields. Added
+regression sources for pasted-content sanitization, safe React rendering of
+scientific text/lists, independent text-length validation, and formatted public
+notes with no private rendering in Customer Order review. Execution is deferred
+unless requested. Static review covers Controller focus registration, validation
+messages, labels, toolbar pressed states, native formatting shortcuts, visible
+focus and wrapping controls. Browser behavior remains an acceptance gate.
+
+
 ## R&D illustrated how-to and release preparation — October 17, 2026
 
 Registry expectations include the fifth Phaeno How-to card, the R&D child guide at order 59.5, and its audience boundary. Fourteen original captures use the shared numbered-overlay renderer. TypeScript and scoped lint cover screenshot metadata and the opt-in in-memory illustration transport. Automated suites remain deferred unless requested.

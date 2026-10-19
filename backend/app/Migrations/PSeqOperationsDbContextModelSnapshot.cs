@@ -19654,10 +19654,20 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("price_proposed_by_user_id");
 
+                    b.Property<string>("PrivateNotes")
+                        .HasMaxLength(16000)
+                        .HasColumnType("character varying(16000)")
+                        .HasColumnName("private_notes");
+
                     b.Property<decimal?>("ProposedUnitPrice")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)")
                         .HasColumnName("proposed_unit_price");
+
+                    b.Property<string>("PublicNotes")
+                        .HasMaxLength(16000)
+                        .HasColumnType("character varying(16000)")
+                        .HasColumnName("public_notes");
 
                     b.Property<int>("RequestRevision")
                         .HasColumnType("integer")

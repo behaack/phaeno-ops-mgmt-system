@@ -1,11 +1,14 @@
 import { z } from 'zod'
 import { sampleServicePricing } from './sample-service-pricing'
+import { richTextPlainText } from './order-rich-text'
+
+const notesSchema = z.string().max(16000, 'Notes formatting is too long.').refine(value => richTextPlainText(value).length <= 2000, 'Use up to 2,000 text characters.').nullable().optional()
 
 export const commercialDraftSchema = z.object({
   jobName: z.string().trim().min(1, 'Enter a Job name before saving.').max(255),
   sampleTypeDefinitionId: z.string().nullable(),
   catalogItemId: z.string().uuid('Select an available catalog service.').nullable().optional(),
-  storageRequirements: z.string().max(2000).nullable(), safetyDeclaration: z.string().max(2000), notes: z.string().max(2000),
+  storageRequirements: z.string().max(2000).nullable(), safetyDeclaration: z.string().max(2000), privateNotes: notesSchema, publicNotes: notesSchema,
   usesPhases: z.boolean(),
   phases: z.array(z.object({
     name: z.string().max(150),

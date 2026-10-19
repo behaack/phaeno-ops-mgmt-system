@@ -63,7 +63,7 @@ function DraftEditor({ order, initialOrganizationId, sourceRequestId }: { order?
   const data = useCommercialDraftData(undefined, organizationId, departmentId, true)
   const mutation = useCommercialDraftWrite()
   const form = useForm<CommercialDraftForm>({ resolver: zodResolver(commercialDraftSchema), mode: 'onBlur', defaultValues: order?.commercialDraft ?? {
-    jobName: '', sampleTypeDefinitionId: null, catalogItemId: null, storageRequirements: null, safetyDeclaration: '', notes: '', usesPhases: false, phases: [newDraftPhase(1)],
+    jobName: '', sampleTypeDefinitionId: null, catalogItemId: null, storageRequirements: null, safetyDeclaration: '', privateNotes: '', publicNotes: '', usesPhases: false, phases: [newDraftPhase(1)],
   } })
   const { isDirty: __formDraftDirty } = form.formState
 

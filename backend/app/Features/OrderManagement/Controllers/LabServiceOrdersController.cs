@@ -1255,6 +1255,12 @@ public sealed partial class LabServiceOrdersController(
 
     private async Task<LabServiceOrderDto> MapAsync(LabServiceOrder order, bool canManage, bool platform, CancellationToken cancellationToken)
     {
+        var internallyPlaced = order.PrivateNotes is not null || order.PublicNotes is not null
+            || order.SourceRequestId.HasValue || order.CommercialDraftJson is not null;
+        if (!platform && !internallyPlaced && order.Revisions.Count > 0 && order.CreatedByUserId.HasValue)
+            internallyPlaced = await dbContext.OrganizationMemberships.AsNoTracking().AnyAsync(membership =>
+                membership.UserId == order.CreatedByUserId && membership.Organization!.Kind == OrganizationKind.Phaeno,
+                cancellationToken);
         var files = await dbContext.ManagedOperationalFiles.AsNoTracking().Where(file => file.WorkflowId == order.Id
             && file.WorkflowType == OrderWorkflowTypes.LabService && (platform || file.ReleaseStatus == FileReleaseStatus.Released))
             .OrderBy(file => file.CreatedAt).ToListAsync(cancellationToken);
@@ -1346,7 +1352,7 @@ public sealed partial class LabServiceOrdersController(
             files.Select(item => item.ToDto(downloadByFileId.GetValueOrDefault(item.Id))).ToList(), documents.Select(item => item.ToDto(platform)).ToList(),
             cancellationRequests.Select(item => item.ToDto()).ToList(), timeline.Select(item => item.ToDto(platform)).ToList(),
             RequestRevisions: order.Revisions.OrderByDescending(item => item.Revision).Select(item => new LabRequestRevisionDto(item.Id,
-                item.Revision, item.PreviousRevisionId, item.SnapshotJson, item.CorrectionReason, item.SubmittedByUserId, item.SubmittedAt)).ToList(),
+                item.Revision, item.PreviousRevisionId, platform ? item.SnapshotJson : OrderRichText.CustomerSnapshot(item.SnapshotJson, internallyPlaced), item.CorrectionReason, item.SubmittedByUserId, item.SubmittedAt)).ToList(),
             LaboratoryProgress: (await new LabCustomerProgressService(dbContext).ReadAsync(order.OrganizationId,
                 [order.Id], cancellationToken)).GetValueOrDefault(order.Id),
             LabMilestone: projection?.Milestone,
@@ -1361,6 +1367,8 @@ public sealed partial class LabServiceOrdersController(
             RequestedSequencingRunCount: order.RequestedSequencingRunCount,
             DepartmentId: order.DepartmentId,
             CustomerDraft: order.ReadCustomerDraft(),
+            PrivateNotes: platform ? order.PrivateNotes : null,
+            PublicNotes: order.PublicNotes,
             PhaseCount: order.Phases.Count(p => p.SupersededAtUtc == null),
             PhaseScopes: order.Phases.Where(p => p.SupersededAtUtc == null && p.ScopeJson != null).OrderBy(p => p.Position)
                 .Select(p => new LabOrderPhaseScopeDto(p.Id, p.Position, p.Name, p.SampleCount, p.ReadScope()!, p.TurnaroundBusinessDays, p.ProposedUnitPrice, p.PriceProposalNote, p.ProposedAdditionalRunPrice)).ToArray(),
@@ -1409,6 +1417,7 @@ public sealed partial class LabServiceOrdersController(
         {
             order.CustomerReference,
             jobNotes = order.Description,
+            order.PublicNotes,
             order.HasMixedBiologicalSources,
             order.SharedBiologicalSource,
             order.RequestedSpecimenCount, order.RequestedSequencingRunCount,

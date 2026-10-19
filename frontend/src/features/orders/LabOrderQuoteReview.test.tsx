@@ -5,6 +5,12 @@ import { LabOrderQuoteReview } from './LabOrderQuoteReview'
 import { readPhaseRunBreakdown, readQuotePhaseReview, readQuoteService } from './quote-phase-review'
 
 describe('phase quote review', () => {
+  it('shows formatted public notes and never renders private notes, even when present in an internal DTO', () => {
+    render(<LabOrderQuoteReview order={{ ...phasedLabOrder, description: null, privateNotes: '<p>Staff-only context</p>', publicNotes: '<p><strong>Keep frozen</strong></p><ul><li>Contact us before shipping</li></ul>' }} quote={phasedLabQuote} />)
+    expect(screen.getByText('Keep frozen').tagName).toBe('STRONG')
+    expect(screen.getByText('Contact us before shipping').tagName).toBe('LI')
+    expect(screen.queryByText('Staff-only context')).toBeNull()
+  })
   it('shows one service and its sample quantity from the quote, keeping additional runs within phase pricing', () => {
     render(<LabOrderQuoteReview order={{ ...phasedLabOrder, requestedSpecimenCount: 100, requestedServiceName: 'Later service choice' }} quote={phasedLabQuote} />)
     const scope = screen.getByRole('region', { name: 'Order scope' })

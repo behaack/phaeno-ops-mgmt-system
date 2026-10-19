@@ -1306,6 +1306,8 @@ erDiagram
         timestamp_with_time_zone placed_at "nullable"
         jsonb placement_snapshot_json "nullable"
         character_varying_1000 price_proposal_note "nullable"
+        character_varying_16000 private_notes "nullable; formatted text; Phaeno only"
+        character_varying_16000 public_notes "nullable; formatted text; Customer Order review"
         timestamp_with_time_zone price_proposed_at "nullable"
         uuid price_proposed_by_user_id FK "nullable"
         numeric_18_2 proposed_unit_price "nullable"

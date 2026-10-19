@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { commercialDraftSchema, draftTotals, newDraftPhase, submissionIssues, type CommercialDraftForm } from './commercial-draft'
 
 function incompleteDraft(): CommercialDraftForm {
-  return { jobName: 'Study', sampleTypeDefinitionId: null, storageRequirements: '', safetyDeclaration: '', notes: '', usesPhases: false, phases: [newDraftPhase(1)] }
+  return { jobName: 'Study', sampleTypeDefinitionId: null, storageRequirements: '', safetyDeclaration: '', privateNotes: '', publicNotes: '', usesPhases: false, phases: [newDraftPhase(1)] }
 }
 
 describe('commercial Draft scope', () => {

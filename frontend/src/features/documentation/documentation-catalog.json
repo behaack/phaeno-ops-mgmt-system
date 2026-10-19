@@ -555,7 +555,7 @@
       "title": "Request laboratory services",
       "summary": "Accept pricing, request phase kits, wait for dispatch before recording receipt, prepare and send samples, and follow Progress and results.",
       "order": 30,
-      "reviewedAt": "2026-10-12",
+      "reviewedAt": "2026-10-17",
       "navigationGroup": "laboratory-work",
       "contentType": "guide",
       "topicIds": [
@@ -1362,7 +1362,7 @@
       "title": "Order operations",
       "summary": "Use grouped Lab services and Partner services sections in Order Ops, with Dashboard attention, Finance and laboratory release in their owning workspaces.",
       "order": 40,
-      "reviewedAt": "2026-10-15",
+      "reviewedAt": "2026-10-17",
       "navigationGroup": "order-operations",
       "contentType": "overview",
       "topicIds": [
@@ -1935,7 +1935,7 @@
       "title": "How to place a Customer order",
       "summary": "Enter Customer scope, save a Draft, submit for pricing and understand the quote/acceptance handoff.",
       "order": 40.5,
-      "reviewedAt": "2026-10-15",
+      "reviewedAt": "2026-10-17",
       "navigationGroup": "order-operations",
       "contentType": "how-to",
       "topicIds": [
