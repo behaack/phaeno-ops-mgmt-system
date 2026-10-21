@@ -1,0 +1,31 @@
+{
+  "started_at_utc": "2026-10-21T22:41:32.2472438Z",
+  "completed_at_utc": "2026-10-21T22:43:15.628704Z",
+  "shared_database_used": false,
+  "exit_code": 0,
+  "filter": "FullyQualifiedName~PhaenoPortal.Test.DpsContractTests|FullyQualifiedName~PhaenoPortal.Test.LabAssemblyTests|FullyQualifiedName~PhaenoPortal.Test.LabAssemblyMessagingTests|FullyQualifiedName~DpsWholeSecondStartAndRunningCommitAndReplayWithoutChangingExecutionTimes|FullyQualifiedName~DpsWholeSecondCancelReceiptReplaysAfterTerminationWithoutAnotherDelivery|FullyQualifiedName~DpsTimestampPrecisionDoesNotAdmitOldForeignFutureOrConflictingEvidence|FullyQualifiedName~AssemblyRecoveryRetainsStartStopAndOutcomeWithoutWritingPercentageHistory|FullyQualifiedName~NotificationsReadCommittedStateAndStopAfterAccessRevocationOrTokenExpiry|FullyQualifiedName~LifecycleReceiptCommitsBeforeAckAndDeduplicatesAcrossReceiverRestart|FullyQualifiedName~DeliveryDeadlinesPersistEscalationAndActualStartClearsUnconfirmedWarning|FullyQualifiedName~FinalReceiptWinsCancellationRaceAndLateProgressCannotRewriteOutcome|FullyQualifiedName~ReceiptsRejectWrongProviderAndForeignEventIdentityAndOuterTransactions|FullyQualifiedName~MalformedLifecycleManifestIsHeldWithoutChangingExecutionFacts",
+  "isolated_database": true,
+  "platform": "Windows",
+  "postgres": "postgres (PostgreSQL) 18.3",
+  "applied_migrations": 29,
+  "hosted_runtime_changed": false,
+  "source_files": [
+    {
+      "path": "backend/app/Features/LabOperations/Services/DpsContract.cs",
+      "sha256": "9ddb023d5dd73cc3fe251a79854c7b79ec6bf0295d1c21bf712e798ca0aa3e7c"
+    },
+    {
+      "path": "backend/app/Features/LabOperations/Services/DpsEventReceiver.cs",
+      "sha256": "ab48fa9d7d354bb212300ca7750e3201da47b7382c4c7f8e570d6866d29fdaed"
+    },
+    {
+      "path": "backend/test/DpsContractTests.cs",
+      "sha256": "24391826a22dadaaa175e4c33b12e008bafbe7acf39f56d40d9430ef8b627519"
+    },
+    {
+      "path": "backend/test/DpsEventReceiverPostgresTests.cs",
+      "sha256": "cce7268d59b909648484909ee6393207d7a4788c2b81e65b02bc4c7fb022e5a1"
+    }
+  ],
+  "temporary_cluster_removed": true
+}

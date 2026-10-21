@@ -46,6 +46,11 @@ NotAccepted and Unavailable replies are alternatives with different meanings.
   Stream/hash complete bytes and apply configured file/set/manifest limits.
 - UTC execution times are chronologically consistent, not future-dated, and do
   not change during replay. Cancellation-before-start has no execution times.
+  When comparing DPS occurrence/start evidence against a saved POMS request,
+  whole-second evidence uses the request's second boundary because fractional
+  seconds are optional. Fractional evidence uses exact ordering. Earlier seconds
+  remain invalid; this adds no general clock-skew allowance and never rewrites
+  the supplied or saved timestamps. Provider-internal chronology stays strict.
 - Nested event/receipt IDs in a Query reply match the outer queried job and
   environment. A Found reply reflects a real durable ledger entry.
 - Committed ACK follows the POMS transaction commit. Conflict/rejected ACK does

@@ -17,7 +17,8 @@ public sealed class DpsEventReceiver(PSeqOperationsDbContext db, LabAssemblyRece
         var now = time.GetUtcNow().UtcDateTime;
         DpsContract.RequireUtc(evidence.OccurredAtUtc, now); DpsContract.RequireUtc(evidence.StartedAtUtc, now);
         DpsContract.RequireUtc(evidence.StoppedAtUtc, now); DpsContract.RequireUtc(evidence.DispositionAtUtc, now);
-        if (evidence.OccurredAtUtc < job.RequestedAtUtc || evidence.StartedAtUtc < job.RequestedAtUtc
+        if (DpsContract.PrecedesRequest(evidence.OccurredAtUtc, job.RequestedAtUtc)
+            || DpsContract.PrecedesRequest(evidence.StartedAtUtc, job.RequestedAtUtc)
             || evidence.StartedAtUtc > evidence.OccurredAtUtc || evidence.StartedAtUtc > evidence.StoppedAtUtc
             || evidence.StoppedAtUtc > evidence.DispositionAtUtc || evidence.DispositionAtUtc > evidence.OccurredAtUtc) throw DpsContract.Invalid();
         if (evidence.EventType == "Progress") {
@@ -50,7 +51,8 @@ public sealed class DpsEventReceiver(PSeqOperationsDbContext db, LabAssemblyRece
         var command = await db.Set<LabAssemblyCommand>().SingleAsync(c => c.Id == evidence.CommandId && c.LabAssemblyJobId == job.Id
             && c.Kind == (evidence.CommandKind == "Start" ? "Run" : "Cancel"), ct);
         await db.Entry(command).ReloadAsync(ct);
-        if (evidence.OccurredAtUtc < command.RequestedAtUtc || evidence.ProviderJobId is not null && job.ProviderJobId is not null
+        if (DpsContract.PrecedesRequest(evidence.OccurredAtUtc, command.RequestedAtUtc)
+            || evidence.ProviderJobId is not null && job.ProviderJobId is not null
             && evidence.ProviderJobId != job.ProviderJobId) throw DpsContract.Invalid();
         var key = "command:" + evidence.ReceiptId.ToString("D");
         var json = JsonSerializer.Serialize(evidence, DpsContract.Json);

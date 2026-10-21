@@ -1,0 +1,30 @@
+{
+  "job_id": "0d730ada-b761-4c6d-97cf-2c421e00dd12",
+  "provider_terminal_state": "Terminated",
+  "saved_cancel_command": {
+    "id": "c939d7ce-5899-4f23-9db2-2794db42d60b",
+    "kind": "Cancel",
+    "requested_at_utc": "2026-10-21T21:31:27.197347+00:00",
+    "last_attempt_at_utc": "2026-10-21T21:31:27.270528+00:00",
+    "received_at_utc": null,
+    "confirmed_at_utc": "2026-10-21T21:31:27.354391+00:00",
+    "attempt_count": 1,
+    "suppressed": false
+  },
+  "provider_cancel_receipt": {
+    "contract_version": "poms-dps/1.0",
+    "environment": "local",
+    "dto_id": 108,
+    "receipt_id": "2872f20b-fe7c-40f8-abb9-8bd8b1e7afb5",
+    "command_id": "c939d7ce-5899-4f23-9db2-2794db42d60b",
+    "job_id": "0d730ada-b761-4c6d-97cf-2c421e00dd12",
+    "command_kind": "Cancel",
+    "outcome": "Accepted",
+    "provider_job_id": "dps-0d730ada-b761-4c6d-97cf-2c421e00dd12",
+    "occurred_at_utc": "2026-10-21T21:31:27Z",
+    "reason": null
+  },
+  "receipt_precedes_saved_request": true,
+  "difference_ms": 197.347,
+  "live_messages_modified": false
+}

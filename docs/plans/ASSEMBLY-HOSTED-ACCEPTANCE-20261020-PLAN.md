@@ -1,5 +1,41 @@
 # Hosted assembly acceptance — October 20, 2026
 
+## Local correction verified; hosted release pending — October 21, 2026
+
+The Owner subsequently authorized correcting Portal validation without commit
+or deployment. Whole-second command receipts and lifecycle occurrence/start
+times now compare against the saved request's second boundary. Earlier seconds,
+earlier fractional timestamps, future evidence and foreign/conflicting identities
+remain rejected; original timestamps remain unchanged. See the implementation
+scope in the [messaging plan](POMS-DPS-MQTT-MESSAGING-PLAN.md#whole-second-request-ordering-repair--october-21-2026).
+Regression sources cover command/event admission and restart/replay, including
+the existing Terminated-attempt recovery path. Full solution compilation passes
+with zero warnings/errors and diff/whitespace review passes. The Owner-requested
+local timestamp/cancellation/recovery batch passes **54/54, zero failed/skipped**
+against isolated Windows/PostgreSQL 18.3 with all 29 migrations. The temporary
+cluster and credentials were removed. See the
+[regression receipt](../testing/runs/2026-10-21-dps-timestamp-regression.md).
+No commit/deployment or hosted reconciliation occurred; the failed hosted
+acceptance below is unchanged.
+
+## Current retry outcome — October 21, 2026
+
+The Owner requested a retry after the server correction. The original attempt
+now reconciles to Succeeded with its original execution times and one Start.
+Strict validation confirms null lifecycle percentages, and both authenticated
+Portal diagnostic downloads pass exact byte/size/hash checks. A fresh running
+attempt stops and persists Terminated after one Cancel delivery, but cancellation
+confirmation still fails: DPS reports the receipt at `21:31:27Z`, earlier than
+the stored request at `21:31:27.197347Z`. This valid-schema timestamp is rejected
+by the Portal's strict ordering comparison. Attention remains on the latest
+attempt, blocking further repeat/recovery/queued-cancellation cases. No new
+interruption or application change was performed during this retry. Full
+acceptance remains **failed/blocked**. Recipe Simulated and TLS 18883 remain;
+all original 610 non-fixture rows are unchanged. See the
+[retry receipt](../testing/runs/2026-10-21-hosted-assembly-acceptance-retry.md).
+
+## Original October 20 scope and results
+
 The Owner requested full hosted-test assembly acceptance, including cancellation
 and recovery, with the recipe kept **Simulated**. After inventory confirmed an
 empty Laboratory workspace, the Owner explicitly approved isolated synthetic

@@ -1,0 +1,14 @@
+[
+  {
+    "PortalDownload": true,
+    "FileName": "SIMULATED-assembly-output.fasta",
+    "Sha256": "91f8fa5fc104dceebc0268d7424761d09f18df165ad162f1f0b8eb21dd4b48cd",
+    "Size": 56
+  },
+  {
+    "PortalDownload": true,
+    "FileName": "SIMULATED-provenance-report.json",
+    "Sha256": "21b8f79bd92e97f1243df58dfa9a3e9f31b9b8a67461f6a842933a1c04854a8c",
+    "Size": 280
+  }
+]

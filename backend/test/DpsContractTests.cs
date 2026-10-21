@@ -1,5 +1,6 @@
 namespace PhaenoPortal.Test;
 
+using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using PhaenoPortal.App.Features.LabOperations.Services;
@@ -36,6 +37,32 @@ public sealed class DpsContractTests
         var source = Start().GetRawText();
         using var repeated = JsonDocument.Parse(source[..^1] + ",\"dto_id\":100}");
         Assert.Throws<OrderManagementException>(() => DpsContract.Validate("start", repeated.RootElement));
+    }
+    [Theory]
+    [InlineData("2026-10-21T21:31:27Z", "2026-10-21T21:31:27.197347Z", false)]
+    [InlineData("2026-10-21T21:31:27.0000000Z", "2026-10-21T21:31:27.9999999Z", false)]
+    [InlineData("2026-10-21T21:31:26Z", "2026-10-21T21:31:27.0000001Z", true)]
+    [InlineData("2026-10-21T21:31:26.9999999Z", "2026-10-21T21:31:27Z", true)]
+    [InlineData("2026-10-21T21:31:27.1973469Z", "2026-10-21T21:31:27.197347Z", true)]
+    [InlineData("2026-10-21T21:31:27.197347Z", "2026-10-21T21:31:27.197347Z", false)]
+    [InlineData("2026-10-21T21:31:27.1973471Z", "2026-10-21T21:31:27.197347Z", false)]
+    [InlineData("2026-10-21T21:31:28Z", "2026-10-21T21:31:27.197347Z", false)]
+    [InlineData("2026-10-22T00:00:00Z", "2026-10-22T00:00:00.9999999Z", false)]
+    [InlineData("2026-10-21T23:59:59Z", "2026-10-22T00:00:00.0000001Z", true)]
+    public void Request_ordering_respects_whole_seconds_without_a_general_clock_skew_allowance(
+        string occurred, string requested, bool precedes)
+    {
+        var evidence = DateTime.Parse(occurred, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind);
+        var request = DateTime.Parse(requested, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind);
+        Assert.Equal(precedes, DpsContract.PrecedesRequest(evidence, request));
+    }
+    [Fact]
+    public void Optional_start_stays_absent_and_future_or_non_utc_evidence_stays_invalid()
+    {
+        var now = new DateTime(2026, 10, 21, 21, 31, 27, DateTimeKind.Utc).AddTicks(1973470);
+        Assert.False(DpsContract.PrecedesRequest(null, now));
+        Assert.Throws<OrderManagementException>(() => DpsContract.RequireUtc(now.AddSeconds(1), now));
+        Assert.Throws<OrderManagementException>(() => DpsContract.RequireUtc(DateTime.SpecifyKind(now, DateTimeKind.Unspecified), now));
     }
     [Fact]
     public void Unsupported_schema_under_negation_does_not_approve_parameters()

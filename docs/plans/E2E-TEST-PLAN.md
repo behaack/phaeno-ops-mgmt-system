@@ -1,5 +1,32 @@
 # Playwright E2E Test Plan
 
+## Pending hosted timestamp repair acceptance — October 21, 2026
+
+Portal source now admits valid whole-second request-bound evidence without
+changing execution times or identity/conflict checks. This is uncommitted and
+undeployed; no new browser test ran. The local software regression batch passes
+54/54, including cancellation/recovery against an isolated database; this does
+not replace hosted browser acceptance. See the
+[regression receipt](../testing/runs/2026-10-21-dps-timestamp-regression.md).
+After a separately authorized release,
+reconcile existing Terminated attempt `0d730ada-b761-4c6d-97cf-2c421e00dd12`:
+verify Accepted cancellation receipt admission, attention clearance, unchanged
+actual times and one Start/Cancel delivery, then resume before-start cancellation,
+active tunnel/API recovery and request replay. Keep the recipe Simulated and TLS
+18883. The failed hosted retry below remains the current live result.
+
+## Hosted assembly retry — October 21, 2026
+
+After operator sign-in, the original simulation displays completed with actual
+execution times; both Portal downloads have SIMULATED filenames and matching
+sizes/SHA-256 values. A normal Repeat starts and displays Running/progress.
+Cancellation actually terminates the provider job and persists Terminated, but
+the form reports a confirmation error because the whole-second receipt appears
+197.347 ms earlier than the request. Attention remains and blocks additional
+attempts; active-execution recovery and queued-cancellation cases were not run.
+Recipe remains Simulated on TLS 18883. No new full-acceptance pass is claimed.
+See the [retry receipt](../testing/runs/2026-10-21-hosted-assembly-acceptance-retry.md).
+
 ## Hosted assembly acceptance — October 20, 2026
 
 The approved synthetic fixture was exercised through the signed-in Portal with

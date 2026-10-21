@@ -1,5 +1,41 @@
 # POMS–DPS MQTT messaging plan
 
+## Whole-second request ordering repair — October 21, 2026
+
+The Owner authorized the Portal timestamp-validation correction only, with no
+commit or deployment. Phaeno operators must be able to confirm and reconcile
+valid DPS evidence without inventing execution times or repeating a Start/Cancel.
+The hosted cancellation receipt at `21:31:27Z` was rejected against its saved
+request at `21:31:27.197347Z`, although fractional seconds are optional in the
+existing contract.
+
+Use one comparison for command receipt occurrence and lifecycle occurrence/start
+against the corresponding saved Portal request. Whole-second evidence compares
+against that request's whole-second boundary; fractional evidence retains the
+exact comparison. This admits only the same second, not a general clock-skew
+allowance. Keep original timestamps, receipt hashes, identity/environment checks,
+future rejection, provider-internal chronology, commit-before-ACK and conflict
+handling unchanged. Live messages and authoritative Query replay use the same
+receiver paths. No schema, model, migration, dependency, TLS or recipe change.
+
+Acceptance sources cover the observed cancellation, whole-second Start/Running,
+restart/replay without redelivery, immutable saved execution times, terminal
+reconciliation and rejection of prior-second, earlier fractional, foreign,
+future and conflicting evidence. The Owner subsequently requested the focused
+regression run, including cancellation/recovery: **54/54 pass, zero failed or
+skipped**, using an isolated Windows/PostgreSQL 18.3 database with all 29 existing
+migrations. All three new receiver cases and eleven new contract cases pass.
+The temporary database/credentials were removed; no source correction was needed.
+See the [regression receipt](../testing/runs/2026-10-21-dps-timestamp-regression.md).
+Hosted reconciliation of the
+existing Terminated attempt and the remaining Simulated acceptance cases require
+a separately authorized release. The Phaeno guide was reviewed: existing
+execution/reconciliation instructions remain applicable, so no help or UI change
+is needed. Full solution compilation passes with zero warnings/errors and
+diff/whitespace review passes. No commit or deployment occurred. Current hosted
+evidence remains in the
+[acceptance plan](ASSEMBLY-HOSTED-ACCEPTANCE-20261020-PLAN.md).
+
 Latest release checkpoint, October 20: the Owner subsequently authorized
 commit/push and hosted-test deployment. TLS source `859f3605` is active after
 authenticated discovery of the instance's changed public address and a verified

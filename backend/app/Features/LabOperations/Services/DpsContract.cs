@@ -90,6 +90,17 @@ public static class DpsContract
     {
         if (value.HasValue && (value.Value == default || value.Value.Kind != DateTimeKind.Utc || value.Value > now)) throw Invalid();
     }
+    /// <summary>Compare DPS evidence with a Portal request without inventing fractional execution times.</summary>
+    public static bool PrecedesRequest(DateTime? value, DateTime requestedAtUtc)
+    {
+        if (!value.HasValue) return false;
+        // The contract permits whole seconds. Only whole-second evidence compares against the
+        // request's second boundary; fractional evidence retains the exact ordering check.
+        var minimumTicks = value.Value.Ticks % TimeSpan.TicksPerSecond == 0
+            ? requestedAtUtc.Ticks - requestedAtUtc.Ticks % TimeSpan.TicksPerSecond
+            : requestedAtUtc.Ticks;
+        return value.Value.Ticks < minimumTicks;
+    }
     public static OrderManagementException Invalid() => new("dps_contract_invalid",
         "DPS returned invalid or inconsistent contract evidence. The saved attempt requires reconciliation.", 409);
     private static void RejectDuplicateProperties(JsonElement value)

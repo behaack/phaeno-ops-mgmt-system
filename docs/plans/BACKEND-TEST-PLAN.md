@@ -1,5 +1,42 @@
 # Backend Test Plan
 
+## DPS whole-second request ordering — October 21, 2026
+
+Local implementation only; no commit/deployment or hosted reconciliation.
+`DpsContractTests` adds ten ordering boundaries, including the observed
+`21:31:27Z` versus `21:31:27.197347Z`, fractional precision and midnight, plus
+absent-start and retained UTC/future guards. `DpsEventReceiverPostgresTests`
+adds three connected cases: Start/Running admission with commit-before-ACK and
+restart replay; Cancel receipt replay after Terminated and normal processor
+reconciliation without redelivery or rewritten execution times; and rejection
+of older whole-second/fractional, future, foreign and conflicting evidence.
+Both command receipt and lifecycle request-bound checks use the same helper;
+provider-internal chronology and stored receipt identity/hash rules remain strict.
+The Owner subsequently requested execution, including cancellation/recovery.
+The focused batch passed **54/54, zero failed/skipped** on Windows with an
+isolated native PostgreSQL 18.3 database and all 29 migrations: 27 DPS contract,
+11 assembly-domain, 6 messaging-domain and 10 connected PostgreSQL cases.
+This includes all 14 newly added regression cases. The temporary cluster and
+credentials were removed. No application/test-source fix, hosted change,
+commit or deployment was needed. Full solution compilation previously passed
+with zero warnings/errors; diff/whitespace review passes. See the
+[run receipt](../testing/runs/2026-10-21-dps-timestamp-regression.md).
+Full hosted acceptance remains blocked until an authorized release and retest
+of the saved Terminated attempt.
+
+## Hosted assembly retry — October 21, 2026
+
+The actual corrected Succeeded Query/event/capabilities and new Terminated
+Query/event/capabilities pass the unchanged contract validator. The original
+attempt reconciles without another Start. New running cancellation sends one
+Cancel and persists Terminated, but its Accepted command receipt is rejected:
+whole-second `21:31:27Z` precedes stored request `21:31:27.197347Z` by 197.347 ms.
+Attention blocks further live cases. This is a separate precision/ordering
+failure, not a remaining percentage-schema mismatch. The prior 51/51 batch was
+not rerun. All original 610 non-fixture rows remain unchanged; no scientific
+analysis/package or application change. See the
+[retry receipt](../testing/runs/2026-10-21-hosted-assembly-acceptance-retry.md).
+
 ## Hosted assembly acceptance — October 20, 2026
 
 The requested assembly batch passed **51/51, zero skipped** on hosted Linux
