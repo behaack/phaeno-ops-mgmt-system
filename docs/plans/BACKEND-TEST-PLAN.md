@@ -1,8 +1,24 @@
 # Backend Test Plan
 
+## Hosted timestamp release and acceptance — October 21, 2026
+
+API source `79b0338f` is active. Normal processing admits the original
+whole-second Cancel receipt and clears attention without changing execution
+times or adding deliveries. Fresh running cancellations pass, as do controlled
+pre-dispatch cancellation, real hosted Start service exact-request replay and
+changed/active-request rejection. Active tunnel/API recovery retains one
+execution/Start and completes with verified downloaded outputs. The recovery
+window includes an external DPS replacement, so isolated interruption attribution
+is qualified. The earlier provider ledger failure/conflicting terminal outcome
+remains preserved. Literal HTTP replay is not claimed. The pre-release 54/54
+regression result is unchanged; no new shared-database suite or application fix.
+All 610 original rows remain, zero active/scientific assemblies, TLS 18883 and
+Simulated retained. See the
+[final receipt](../testing/runs/2026-10-21-hosted-assembly-final.md).
+
 ## DPS whole-second request ordering — October 21, 2026
 
-Local implementation only; no commit/deployment or hosted reconciliation.
+Historical pre-release implementation/verification checkpoint:
 `DpsContractTests` adds ten ordering boundaries, including the observed
 `21:31:27Z` versus `21:31:27.197347Z`, fractional precision and midnight, plus
 absent-start and retained UTC/future guards. `DpsEventReceiverPostgresTests`
@@ -21,8 +37,8 @@ credentials were removed. No application/test-source fix, hosted change,
 commit or deployment was needed. Full solution compilation previously passed
 with zero warnings/errors; diff/whitespace review passes. See the
 [run receipt](../testing/runs/2026-10-21-dps-timestamp-regression.md).
-Full hosted acceptance remains blocked until an authorized release and retest
-of the saved Terminated attempt.
+The authorized release/retest is recorded above; historical hosted failures below
+are retained for traceability.
 
 ## Hosted assembly retry — October 21, 2026
 

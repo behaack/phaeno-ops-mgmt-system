@@ -1,0 +1,26 @@
+{
+  "at_utc": "2026-10-21T23:22:20.492582+00:00",
+  "removed_temporary_helpers": [
+    "seed",
+    "probe",
+    "probe-v2",
+    "probe-v3",
+    "seed.tar.gz",
+    "probe.tar.gz",
+    "probe-v2.tar.gz",
+    "probe-v3.tar.gz",
+    "source.tar.gz"
+  ],
+  "helper_containers_absent": true,
+  "private_helper_settings_absent": true,
+  "retained_evidence": true,
+  "services": {
+    "phaeno-portal-green-api": "healthy",
+    "phaeno-portal-green-db": "healthy",
+    "phaeno-portal-green-scanner": "healthy"
+  },
+  "tunnel": "active",
+  "backup_timer_enabled_state": "disabled",
+  "backup_timer_active_state": "inactive",
+  "backup_timer_unit": "phaeno-portal-backup.timer"
+}

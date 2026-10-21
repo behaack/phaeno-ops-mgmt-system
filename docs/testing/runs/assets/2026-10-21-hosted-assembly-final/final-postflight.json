@@ -1,0 +1,100 @@
+{
+  "at_utc": "2026-10-21T23:21:02.127803+00:00",
+  "source": "79b0338f5f96b3a5fcbea24b86db89906e922f84",
+  "image_id": "sha256:3ced49a630f3596d79c1ddc31810dbca966bc617159a97c205b33b96cb101127",
+  "original_nonfixture_rows_preserved": 610,
+  "changed_baseline_rows_by_table": {
+    "lab_ops.lab_assembly_commands": 1,
+    "lab_ops.lab_assembly_jobs": 1,
+    "lab_ops.lab_work_orders": 1
+  },
+  "unrelated_files_preserved": 115,
+  "active_assemblies": 0,
+  "science": {
+    "analyses": 0,
+    "qc": 0,
+    "packages": 0
+  },
+  "jobs": [
+    {
+      "id": "bddca743-b19b-40ab-ba3c-ec1d552bb342",
+      "work": "46b38b3a-0c54-463e-b048-eb37b9787c75",
+      "state": "Succeeded",
+      "start": "2026-10-21T03:41:29+00:00",
+      "stop": "2026-10-21T03:44:00+00:00",
+      "attention": null,
+      "simulated": "true"
+    },
+    {
+      "id": "0d730ada-b761-4c6d-97cf-2c421e00dd12",
+      "work": "46b38b3a-0c54-463e-b048-eb37b9787c75",
+      "state": "Terminated",
+      "start": "2026-10-21T21:30:52+00:00",
+      "stop": "2026-10-21T21:31:27+00:00",
+      "attention": null,
+      "simulated": "true"
+    },
+    {
+      "id": "b6e1291d-1a40-4aff-aa14-fc9622a45849",
+      "work": "46b38b3a-0c54-463e-b048-eb37b9787c75",
+      "state": "Terminated",
+      "start": "2026-10-21T22:57:15+00:00",
+      "stop": "2026-10-21T22:58:06+00:00",
+      "attention": null,
+      "simulated": "true"
+    },
+    {
+      "id": "41e26472-16b3-41d2-9130-c041216a3da4",
+      "work": "46b38b3a-0c54-463e-b048-eb37b9787c75",
+      "state": "Failed",
+      "start": "2026-10-21T22:59:18.12374+00:00",
+      "stop": "2026-10-21T23:00:10.791873+00:00",
+      "attention": "Conflicting processing evidence requires Operations reconciliation. Saved execution facts remain unchanged.",
+      "simulated": "true"
+    },
+    {
+      "id": "60e1e783-ac75-4dd6-bd5a-c0d4c146aa8a",
+      "work": "7722f311-e4ec-4d29-a533-29d5e97800f5",
+      "state": "CancelledBeforeStart",
+      "start": null,
+      "stop": null,
+      "attention": null,
+      "simulated": "true"
+    },
+    {
+      "id": "d5e17b8d-45e9-4016-853e-1515832a6668",
+      "work": "7722f311-e4ec-4d29-a533-29d5e97800f5",
+      "state": "Succeeded",
+      "start": "2026-10-21T23:14:04.592632+00:00",
+      "stop": "2026-10-21T23:16:47.814883+00:00",
+      "attention": null,
+      "simulated": "true"
+    },
+    {
+      "id": "986dbb01-2ca7-4e8d-82a1-3bb4f8d58ee1",
+      "work": "7722f311-e4ec-4d29-a533-29d5e97800f5",
+      "state": "Terminated",
+      "start": "2026-10-21T23:20:18.393595+00:00",
+      "stop": "2026-10-21T23:20:35.229315+00:00",
+      "attention": null,
+      "simulated": "true"
+    }
+  ],
+  "services": {
+    "phaeno-portal-green-api": "healthy",
+    "phaeno-portal-green-db": "healthy",
+    "phaeno-portal-green-scanner": "healthy"
+  },
+  "http": {
+    "health": 200,
+    "anonymous_assembly": 401,
+    "portal": 200,
+    "website": 200
+  },
+  "port": 18883,
+  "tls": true,
+  "simulated": true,
+  "migration_count": 29,
+  "private_helper_settings_removed": true,
+  "quarantine_preserved": true
+}

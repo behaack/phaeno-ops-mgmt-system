@@ -1,0 +1,25 @@
+{
+  "job": "d5e17b8d-45e9-4016-853e-1515832a6668",
+  "method": "Signed-in Portal download controls, then local byte count and SHA-256 comparison to immutable manifest",
+  "artifacts": [
+    {
+      "artifact_id": "9f30b742-36e4-4bfe-8f12-ce6433988f29",
+      "file_name": "SIMULATED-assembly-output (1).fasta",
+      "bytes": 56,
+      "sha256": "a313748484a17c710a4e6e35c00fd0c8a302396dbacbfab629e0a553a49c2dd3",
+      "version_pinned": true,
+      "downloaded_at_utc": "2026-10-21T23:19:48.6701784Z",
+      "match": true
+    },
+    {
+      "artifact_id": "865f3e0d-2db7-4bb2-9e85-d0ac2cc8410b",
+      "file_name": "SIMULATED-provenance-report (1).json",
+      "bytes": 280,
+      "sha256": "2b6bcf249608b2aed2def503e93d923770541dba472aea1da11c4e905c7cc3dd",
+      "version_pinned": true,
+      "downloaded_at_utc": "2026-10-21T23:19:54.6733482Z",
+      "match": true
+    }
+  ],
+  "scientific_admission": false
+}

@@ -1,6 +1,36 @@
 # Hosted assembly acceptance — October 20, 2026
 
-## Local correction verified; hosted release pending — October 21, 2026
+## Released correction and resumed acceptance — October 21, 2026
+
+Source `79b0338f5f96b3a5fcbea24b86db89906e922f84` is committed/pushed and
+active. The original whole-second cancellation reconciles without another
+delivery or changed times. Fresh running cancellation, controlled cancellation
+before dispatch, service request replay/active guards, active tunnel/API recovery,
+success and both authenticated exact-byte/hash downloads pass. The final normal
+running cancellation also passes. Keep Simulated and TLS 18883. All 610 original
+rows and 115 unrelated files remain unchanged; services healthy, zero active
+assemblies, no scientific analysis/QC/output packages.
+
+The first active recovery encountered a separate DPS ledger failure and two
+incompatible Failed outcomes. Preserve that conflict and its blocked specimen.
+After the Owner authorized stopping the stale duplicate DPS process, precheck
+found it already exited; no signal was sent. A fresh verified recovery preceded
+the second approved isolated fixture, `SIMULATED ASSEMBLY ACCEPTANCE 20261021R`,
+where the remaining journeys passed. A later external DPS process replacement
+overlapped successful recovery, qualifying attribution to each interruption.
+Service replay is not HTTP Start payload replay; no live DPS pre-start event or
+automatic post-restart browser refresh is claimed. The retained old conflict,
+HTTP payload replay and HTTP scientific-link denial remain explicit exceptions
+to an unqualified full-protocol acceptance. See the
+[final receipt](../testing/runs/2026-10-21-hosted-assembly-final.md) for the
+case-by-case ledger, exact identities and evidence, and the
+[release receipt](../operations/dps-timestamp-test-release-20261021.md).
+
+The checkpoints below are historical and superseded where the final ledger
+records a completed case. Scientific/physical acceptance, populated-S3 recovery
+and Customer/commercial activation remain outside this run.
+
+## Historical local correction; release then pending — October 21, 2026
 
 The Owner subsequently authorized correcting Portal validation without commit
 or deployment. Whole-second command receipts and lifecycle occurrence/start
@@ -18,7 +48,7 @@ cluster and credentials were removed. See the
 No commit/deployment or hosted reconciliation occurred; the failed hosted
 acceptance below is unchanged.
 
-## Current retry outcome — October 21, 2026
+## Historical retry outcome — October 21, 2026
 
 The Owner requested a retry after the server correction. The original attempt
 now reconciles to Succeeded with its original execution times and one Start.

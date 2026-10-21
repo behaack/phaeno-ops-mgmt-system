@@ -1,5 +1,22 @@
 # POMS–DPS MQTT messaging plan
 
+## Timestamp hosted-test release and acceptance — October 21, 2026
+
+Timestamp source `79b0338f5f96b3a5fcbea24b86db89906e922f84` is committed,
+pushed and active with mutual TLS 18883 and Simulated unchanged. The original
+whole-second Cancel receipt now reconciles without rewritten times/redelivery.
+Fresh running cancellations, controlled cancellation before dispatch, real
+hosted service replay/guards, active recovery, completion and authenticated
+checksum-verified output downloads pass. The successful recovery includes an
+external DPS process replacement; browser reload showed the final authoritative
+state. A preceding provider ledger failure/conflicting outcome remains retained.
+Literal HTTP payload replay and HTTP scientific-link denial were not rerun; a
+live DPS before-start event and independent interruption attribution are not
+claimed. See the [final acceptance receipt](../testing/runs/2026-10-21-hosted-assembly-final.md)
+and [release receipt](../operations/dps-timestamp-test-release-20261021.md).
+The following implementation checkpoint is historical; its release prerequisites
+were subsequently authorized and carried out.
+
 ## Whole-second request ordering repair — October 21, 2026
 
 The Owner authorized the Portal timestamp-validation correction only, with no
@@ -36,7 +53,7 @@ diff/whitespace review passes. No commit or deployment occurred. Current hosted
 evidence remains in the
 [acceptance plan](ASSEMBLY-HOSTED-ACCEPTANCE-20261020-PLAN.md).
 
-Latest release checkpoint, October 20: the Owner subsequently authorized
+Historical release checkpoint, October 20: the Owner subsequently authorized
 commit/push and hosted-test deployment. TLS source `859f3605` is active after
 authenticated discovery of the instance's changed public address and a verified
 retry. Actual API TLS discovery on port 18883 and independent TLS 1.3

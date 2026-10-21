@@ -1,0 +1,41 @@
+{
+  "checked_at_utc": "2026-10-21T23:22:58.620879+00:00",
+  "processes": [
+    {
+      "pid": 20071,
+      "comm": "dps",
+      "executable": "/home/ubuntu/development/pipeline/apps/MQTT_Test/dps/bin/Debug/net9.0/dps",
+      "working_directory": "/home/ubuntu/development/pipeline/apps/MQTT_Test/dps",
+      "started_server_local": "Wed Oct 21 23:14:14 2026"
+    }
+  ],
+  "service_units": [],
+  "ledger_directory_exists": true,
+  "ledger_files": [
+    {
+      "name": "pseq-recipe-0.1.0-20261014-b7219a44.log",
+      "size": 1804908,
+      "mtime_utc": "2026-10-15T04:20:15.593859+00:00"
+    },
+    {
+      "name": "ledger.json",
+      "size": 1076498,
+      "mtime_utc": "2026-10-21T23:22:58.331334+00:00"
+    },
+    {
+      "name": "alerts.log",
+      "size": 189,
+      "mtime_utc": "2026-10-21T04:14:02.245421+00:00"
+    },
+    {
+      "name": "endpoint-test-20261014-c708b65e.log",
+      "size": 81669,
+      "mtime_utc": "2026-10-14T19:19:36.652001+00:00"
+    },
+    {
+      "name": "pseq-data-assembler-0.1.0.env",
+      "size": 132,
+      "mtime_utc": "2026-10-14T19:19:37.035850+00:00"
+    }
+  ]
+}

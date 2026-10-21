@@ -1,0 +1,27 @@
+{
+  "job": {
+    "id": "d5e17b8d-45e9-4016-853e-1515832a6668",
+    "state": "Running",
+    "provider": "dps-d5e17b8d-45e9-4016-853e-1515832a6668",
+    "start": "2026-10-21T23:14:04.592632+00:00"
+  },
+  "started_at_utc": "2026-10-21T23:14:09.957110+00:00",
+  "before_image": "sha256:3ced49a630f3596d79c1ddc31810dbca966bc617159a97c205b33b96cb101127",
+  "before_api_started": "2026-10-21T22:59:50.364230779Z",
+  "tunnel_outage_seconds": 12,
+  "running_after_tunnel_outage": true,
+  "finished_at_utc": "2026-10-21T23:14:27.858551+00:00",
+  "after_image": "sha256:3ced49a630f3596d79c1ddc31810dbca966bc617159a97c205b33b96cb101127",
+  "after_api_started": "2026-10-21T23:14:22.356514817Z",
+  "api_healthy": true,
+  "tls_18883_restored": true,
+  "same_execution": true,
+  "start_deliveries": 1,
+  "saved_after_recovery": {
+    "id": "d5e17b8d-45e9-4016-853e-1515832a6668",
+    "state": "Running",
+    "provider": "dps-d5e17b8d-45e9-4016-853e-1515832a6668",
+    "start": "2026-10-21T23:14:04.592632+00:00",
+    "attention": null
+  }
+}

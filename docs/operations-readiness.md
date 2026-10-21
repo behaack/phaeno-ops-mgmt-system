@@ -1,5 +1,24 @@
 # Operations and production-readiness boundary
 
+## DPS timestamp hosted-test release — completed October 21, 2026
+
+API source `79b0338f5f96b3a5fcbea24b86db89906e922f84` is active, with
+Simulated and mutual TLS 18883 retained. Original cancellation reconciliation,
+fresh cancellation, controlled before-dispatch cancellation, active recovery,
+completion and authenticated output downloads pass. All original 610 records,
+115 unrelated files, Website history and 29 migrations remain preserved; zero
+active assemblies or scientific outputs, all services healthy. Fresh isolated
+recovery/off-server verification and temporary-helper cleanup pass. Release
+holds, orphan-run fence and S3 recovery deferral remain.
+
+The earlier provider ledger failure/conflicting outcome is retained. Successful
+recovery also overlaps an external DPS replacement; literal HTTP Start replay,
+automatic browser refresh and other qualification limits remain explicit. This
+is a hosted simulated acceptance result, not scientific/commercial activation.
+See the [release receipt](operations/dps-timestamp-test-release-20261021.md),
+[final acceptance ledger](testing/runs/2026-10-21-hosted-assembly-final.md) and
+[preserving plan](plans/DPS-TIMESTAMP-HOSTED-TEST-RELEASE-20261021-PLAN.md).
+
 ## DPS TLS hosted-test release — completed October 20, 2026
 
 TLS source `859f36055ac4ef668b3023065ecfbd3d8ee0067a` is active after verified

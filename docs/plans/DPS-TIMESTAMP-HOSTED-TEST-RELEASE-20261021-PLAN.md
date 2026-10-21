@@ -1,5 +1,51 @@
 # DPS timestamp hosted-test release and acceptance — October 21, 2026
 
+## Completed release and scoped acceptance
+
+Source `79b0338f5f96b3a5fcbea24b86db89906e922f84` is committed/pushed and
+active as image `sha256:3ced49a630f3596d79c1ddc31810dbca966bc617159a97c205b33b96cb101127`.
+Original cancellation recovery, fresh running cancellation, Portal cancellation
+before dispatch, hosted service replay/guards, active recovery, success and both
+authenticated output downloads pass. Another fresh running cancellation passes
+after completion. Zero active assemblies remain. All original 610 rows, 115
+unrelated files, Website intake history, runtime settings and 29 migrations are
+preserved. Recovery restore/decryption and healthy service readback pass.
+
+The prior provider conflict remains protected, and the successful recovery
+overlaps an external DPS process replacement. Literal HTTP Start replay,
+HTTP scientific-link denial, live DPS pre-start cancellation and automatic
+browser refresh are not separately qualified. See the
+[final acceptance receipt](../testing/runs/2026-10-21-hosted-assembly-final.md)
+and [release receipt](../operations/dps-timestamp-test-release-20261021.md).
+Temporary helper builds/settings were removed, evidence/recovery retained,
+and deployment holds, quarantine and S3 recovery deferral preserved. Completion
+documentation is committed/pushed separately without another API deployment.
+
+## Recorded live checkpoint and isolated resumption
+
+Source `79b0338f5f96b3a5fcbea24b86db89906e922f84` is pushed and active. Original
+whole-second cancellation reconciles, and fresh running cancellation passes.
+Active tunnel/API recovery preserves the execution and one Start, but the
+provider subsequently reports conflicting Failed outcomes for missing
+`ledger.json` and `ledger.json.tmp`. Read-only inspection found two DPS processes
+in the same directory; PID 11234 used a replaced/deleted executable, PID 16624
+the current one. The Owner authorized stopping only the stale instance and
+retrying. It had already exited at the stop precheck, so no signal was sent;
+readback confirms only PID 16624 remains. Competing ledger writers are an
+inference, not established by source inspection.
+
+Retain the original failed/conflicted attempt without changing its evidence or
+clearing its safety guard. The existing synthetic-record authorization covers
+a second clearly labelled isolated fixture, `SIMULATED ASSEMBLY ACCEPTANCE
+20261021R`, created through the same domain-based setup helper. Its Lab Job is
+`7722f311-e4ec-4d29-a533-29d5e97800f5`; no unrelated configuration or notifications.
+A fresh database recovery including the conflict history passes isolated restore
+and independent off-server decryption before this setup. Remaining checks resumed
+only in this new fixture. Queue-boundary setup uses the real Start service
+and dispatcher lease, normal signed-in Portal cancellation, and exact/changed
+service-request replay; label this accurately rather than claiming HTTP Start
+replay or a live DPS CancelledBeforeStart event.
+
 ## Authorized scope
 
 The Owner requested commit/push of the reviewed Portal timestamp correction,

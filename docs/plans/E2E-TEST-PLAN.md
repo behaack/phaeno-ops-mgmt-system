@@ -1,6 +1,25 @@
 # Playwright E2E Test Plan
 
-## Pending hosted timestamp repair acceptance — October 21, 2026
+## Hosted timestamp release acceptance — October 21, 2026
+
+The signed-in Portal on API source `79b0338f` confirms original cancellation
+reconciliation, fresh running cancellation, controlled cancellation before
+dispatch, recovered completion and both simulated output downloads. A final
+normal Repeat/cancel confirms one Run/Cancel delivery and Terminated without
+attention. Saved screenshot and independent size/SHA-256 checks accompany the
+[final receipt](../testing/runs/2026-10-21-hosted-assembly-final.md).
+Recipe remains Simulated, TLS 18883, zero active assemblies or scientific
+outputs, original rows preserved. No frontend deployment or suite was run.
+
+The first active recovery retains a DPS ledger/conflicting-outcome failure.
+The clean fixture passes recovery/completion but an external DPS replacement
+overlaps its tunnel/API outage, and browser reload was used to show completion.
+Automatic browser refresh is not separately passed. Exact Start replay/409
+guards were checked at the actual hosted service, not literal HTTP payload
+replay; HTTP scientific-link denial and live DPS pre-start event are not claimed.
+These remain qualification boundaries, not silent all-cases passes.
+
+## Historical pending hosted timestamp repair — October 21, 2026
 
 Portal source now admits valid whole-second request-bound evidence without
 changing execution times or identity/conflict checks. This is uncommitted and
