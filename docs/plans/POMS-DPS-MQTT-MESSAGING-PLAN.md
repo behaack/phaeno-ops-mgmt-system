@@ -1,5 +1,59 @@
 # POMS–DPS MQTT messaging plan
 
+## Certificate-secured connection — October 20, 2026
+
+The Owner approved implementing the connection plan with TLS on port 18883 and
+the verified Windows PFX-loading correction, with **no commit or deployment**.
+Users remain authorized Phaeno assembly operators; Operations configures the
+server connection. The problem is the broker's new mutual-TLS requirement.
+Sample/run identity, scientific workflows, Start/Cancel semantics, browser
+authentication and release permissions do not change.
+
+The supplied `phaeno-datapipeline-ssh.sh` resolves the EC2 DNS name and forwards
+local 18883 to EC2 localhost 18883. POMS uses TCP host `127.0.0.1` and TLS server
+name `localhost`. The supplied CA validates the observed server certificate,
+whose SANs include localhost/loopback. The PFX CN `PSeq-client-01` becomes the
+broker username through `use_identity_as_username`; MQTT client IDs remain
+unique. There is no reported identity-enrollment registry. Start/Cancel topic
+permissions and full hosted API activation remain separate verification cases.
+
+Implementation adds `Dps:CaCertificatePath` and `Dps:TlsServerName`, default port
+18883, strict connection-scoped CA/name validation and pre-connect certificate
+checks. A disposable connection owner retains CA/client certificates until the
+connection ends and reloads them for reconnect. Windows uses `UserKeySet`
+without `PersistKeySet` because its Schannel handshake failed with the previous
+`EphemeralKeySet`; Linux retains ephemeral loading. No dependencies, database
+model/migration, Clerk authentication or MQTT wire-contract changes are needed.
+
+Both owned tunnel helpers use loopback 18883 to remote localhost 18883. The
+Windows launcher maps the supplied `MQTT_*` certificate settings to the API's
+`Dps` configuration, restores the caller's environment and supports an explicit
+existing-tunnel mode without stopping that external tunnel. Runtime integration,
+dispatch, simulation and scientific-release settings are preserved. Certificate
+files/passwords remain outside source. Hosted configuration will reuse the
+existing private read-only secrets mount during a separately authorized release;
+this implementation does not install credentials or restart any runtime.
+
+Acceptance: successful certificate-authenticated MQTT plus correlated current
+Describe and unused-ID Query; rejection of wrong hostname/CA and absent or
+unusable client identity; reload/disposal and isolated fixture checks; both
+launchers target TLS without opening public ports. No assembly is launched for
+connection verification. The pre-implementation live test and its Windows
+loading diagnosis are recorded in the [TLS run](../testing/runs/2026-10-20-dps-mtls-connection.md).
+Implementation validation is recorded there and in the backend living test plan.
+
+Implementation checkpoint: full solution compilation and 25 focused Windows
+TLS/contract checks pass, as do three synthetic launcher lifecycle/configuration
+checks, PowerShell/Bash syntax, configuration JSON and whitespace. Certificate
+and script fixtures are cleaned; no runtime was restarted or assembly started.
+All source changes remain uncommitted and undeployed. The Owner subsequently
+requested hosted Linux connection verification: it passes using the exact live
+API image/network with an isolated probe compiled from the implemented loader.
+Linux ephemeral PFX loading, real Describe/Query and all three certificate
+rejections pass. API/configuration preservation and test-resource cleanup are
+verified in the TLS run. The existing service/settings were not replaced or
+restarted. Complete worker/ACL/scientific acceptance retain their separate gates.
+
 ## Hosted-test release scope — October 14, 2026
 
 The Owner subsequently authorized documents, commit/push and API/UI deployment.
@@ -362,7 +416,14 @@ Success means every actually started job and DPS terminal outcome is attributabl
 
 ## Current implementation boundary
 
-The [provider boundary](../../backend/app/Features/LabOperations/Services/LabAssemblyProvider.cs) still registers an unavailable external provider through [Program.cs](../../backend/app/Program.cs), with processing default off. The Portal API has no MQTT runtime client or broker configuration; the standalone plumbing probe above supplies the isolated connection-test evidence.
+The earlier foundation-only statement that no MQTT runtime/provider existed is
+superseded by current code: [Program.cs](../../backend/app/Program.cs) registers
+`DpsMqttClient` and `DpsAssemblyProvider`. October 14 implemented and activated
+the hosted-test simulation under its preserving plan. October 20 adds the
+certificate-secured connection source described above, without deployment.
+Shared integration/worker defaults remain off; runtime overrides require
+explicit configuration. Historical checklist rows below and above are evidence
+for their dated phases, not a claim that the current adapter is absent.
 
 - [Delivery recovery](../../backend/app/Features/LabOperations/Services/LabAssemblyDelivery.cs) persists Run/Cancel identities before provider attempts, bounded retry schedules, receipt/start/cancellation deadlines and escalation. Default deadlines are 5 minutes for Run receipt, 10 minutes after receipt for start, 5 minutes for cancellation outcome, and 30 minutes for escalation. Recovery starts at 5 seconds and caps at 60 seconds. Options are under `LabAssembly`; dispatch reconciliation is bounded by `PollSeconds`. A receipt never establishes execution. Unavailable reconciliation before the first publish also ages into attention; queued work does not falsely age into an execution deadline.
 - [Normalized receipts](../../backend/app/Features/LabOperations/Services/LabAssemblyReceiptService.cs) validate saved attempt/provider/execution identity, serialize application using advisory locks, deduplicate provider event IDs and retain conflicting evidence without replacing saved outcomes. Acknowledgment eligibility is returned only after the receiver's owned transaction commits. Late nonterminal evidence is ignored; compatible terminal replay is idempotent. Percentages do not enter receipt hashes or persisted payloads. Conflicts pause automatic application pending a future authorized Operations reconciliation workflow.

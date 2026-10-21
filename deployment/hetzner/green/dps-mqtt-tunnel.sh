@@ -37,7 +37,7 @@ while true; do
         -o "UserKnownHostsFile=$DPS_KNOWN_HOSTS_FILE" -o UpdateHostKeys=no \
         -o ExitOnForwardFailure=yes -o ConnectTimeout=10 \
         -o ServerAliveInterval=15 -o ServerAliveCountMax=2 \
-        -i "$DPS_IDENTITY_FILE" -L 127.0.0.1:11883:127.0.0.1:1883 "ubuntu@$address" &
+        -i "$DPS_IDENTITY_FILE" -L 127.0.0.1:18883:localhost:18883 "ubuntu@$address" &
     tunnel_pid=$!
     while kill -0 "$tunnel_pid" 2>/dev/null; do
         current="$(docker inspect --format '{{.Id}} {{.State.Pid}} {{.State.Running}}' phaeno-portal-green-api 2>/dev/null || true)"

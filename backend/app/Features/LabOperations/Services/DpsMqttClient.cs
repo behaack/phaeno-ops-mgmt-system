@@ -1,7 +1,6 @@
 namespace PhaenoPortal.App.Features.LabOperations.Services;
 
 using System.Collections.Concurrent;
-using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using System.Threading.Channels;
 using Microsoft.Extensions.Options;
@@ -26,7 +25,7 @@ public sealed class DpsMqttClient(IOptions<DpsOptions> options, IOptions<LabAsse
     private DateTime capabilitiesAt;
     private readonly object capabilityGate = new();
     private bool subscribed;
-    private X509Certificate2? connectionCertificate;
+    private DpsMqttTls? connectionTls;
     private CancellationToken shutdown;
     private DpsOptions Settings => options.Value;
     public bool Connected => client.IsConnected && Volatile.Read(ref subscribed);
@@ -76,31 +75,34 @@ public sealed class DpsMqttClient(IOptions<DpsOptions> options, IOptions<LabAsse
         try {
             while (!ct.IsCancellationRequested) {
                 if (!Settings.Enabled || !assembly.Value.WorkerEnabled || !Settings.IsConfigured()) { await Task.Delay(TimeSpan.FromSeconds(5), ct); continue; }
-                X509Certificate2? certificate = null;
+                DpsMqttTls? tls = null;
                 try {
+                    var newlyConnected = false;
                     if (!client.IsConnected) {
                         var builder = new MqttClientOptionsBuilder().WithClientId(string.IsNullOrWhiteSpace(Settings.ClientId)
                             ? instanceClientId : Settings.ClientId)
                             .WithTcpServer(Settings.Host, Settings.Port).WithProtocolVersion(MqttProtocolVersion.V311)
                             .WithCleanSession().WithoutPacketFragmentation().WithKeepAlivePeriod(TimeSpan.FromSeconds(20));
                         if (!string.IsNullOrEmpty(Settings.Username)) builder.WithCredentials(Settings.Username, Settings.Password);
-                        if (!string.IsNullOrEmpty(Settings.ClientCertificatePath)) certificate = X509CertificateLoader.LoadPkcs12FromFile(
-                            Settings.ClientCertificatePath, Settings.ClientCertificatePassword, X509KeyStorageFlags.EphemeralKeySet);
-                        builder.WithTlsOptions(tls => { tls.UseTls(Settings.UseTls); if (certificate is not null) tls.WithClientCertificates(new[] { certificate }); });
+                        tls = new DpsMqttTls(Settings, time);
+                        tls.Configure(builder);
                         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct); timeout.CancelAfter(TimeSpan.FromSeconds(Settings.RequestTimeoutSeconds));
                         await client.ConnectAsync(builder.Build(), timeout.Token);
-                        connectionCertificate?.Dispose(); connectionCertificate = certificate; certificate = null;
+                        connectionTls?.Dispose(); connectionTls = tls; tls = null;
                         var subscription = factory.CreateSubscribeOptionsBuilder();
                         foreach (var suffix in new[] { "jobs/+/events", "jobs/+/receipts", "jobs/+/queries/+", "service/replies/+" })
                             subscription.WithTopicFilter(filter => filter.WithTopic(Settings.TopicRoot + "/" + suffix).WithAtLeastOnceQoS());
                         var result = await client.SubscribeAsync(subscription.Build(), timeout.Token);
                         if (result.Items.Count != 4 || result.Items.Any(item => (int)item.ResultCode > 2)) throw Unavailable();
                         Volatile.Write(ref subscribed, true); retry = 1;
+                        newlyConnected = true;
                     }
                     var id = Guid.NewGuid();
                     var response = await RequestAsync("describe", "service/describe", 106, new { request_id = id },
                         Settings.TopicRoot + $"/service/replies/{id:D}", id, ct);
                     lock (capabilityGate) { capabilities = response.Clone(); capabilitiesAt = time.GetUtcNow().UtcDateTime; }
+                    if (newlyConnected) logger.LogInformation("DPS MQTT discovery confirmed (TLS: {UseTls}, Port: {Port}, Available: {Available}).",
+                        Settings.UseTls, Settings.Port, response.GetProperty("available").GetBoolean());
                     await Task.Delay(TimeSpan.FromSeconds(30), ct);
                 } catch (OperationCanceledException) when (ct.IsCancellationRequested) { break; }
                 catch (Exception error) when (error is not OutOfMemoryException) {
@@ -108,14 +110,16 @@ public sealed class DpsMqttClient(IOptions<DpsOptions> options, IOptions<LabAsse
                     logger.LogWarning("DPS connection or discovery is unavailable ({ErrorType}).", error.GetType().Name);
                     Volatile.Write(ref subscribed, false); FailPending();
                     if (client.IsConnected) { using var close = new CancellationTokenSource(TimeSpan.FromSeconds(5)); try { await client.DisconnectAsync(factory.CreateClientDisconnectOptionsBuilder().Build(), close.Token); } catch { } }
+                    if (!client.IsConnected) { connectionTls?.Dispose(); connectionTls = null; }
                     await Task.Delay(TimeSpan.FromSeconds(Math.Min(retry, 30)), ct); retry = Math.Min(retry * 2, 30);
-                } finally { certificate?.Dispose(); }
+                } finally { tls?.Dispose(); }
             }
         } catch (OperationCanceledException) when (ct.IsCancellationRequested) { }
         finally {
             incoming.Writer.TryComplete(); FailPending();
             try { await consume; } catch (OperationCanceledException) when (ct.IsCancellationRequested) { }
             if (client.IsConnected) { using var close = new CancellationTokenSource(TimeSpan.FromSeconds(5)); try { await client.DisconnectAsync(factory.CreateClientDisconnectOptionsBuilder().Build(), close.Token); } catch { } }
+            connectionTls?.Dispose(); connectionTls = null;
         }
     }
     private async Task ConsumeAsync(CancellationToken ct)
@@ -184,5 +188,5 @@ public sealed class DpsMqttClient(IOptions<DpsOptions> options, IOptions<LabAsse
     private void FailPending() { foreach (var item in pending.Values) item.TrySetException(Unavailable()); }
     public static OrderManagementException Unavailable() => new("dps_dispatch_unavailable",
         "DPS dispatch failed or no correlated acceptance arrived. Any saved attempt remains unconfirmed; reconcile its original ID before retrying.", 503);
-    public override void Dispose() { client.Dispose(); connectionCertificate?.Dispose(); requestSlots.Dispose(); base.Dispose(); }
+    public override void Dispose() { client.Dispose(); connectionTls?.Dispose(); requestSlots.Dispose(); base.Dispose(); }
 }

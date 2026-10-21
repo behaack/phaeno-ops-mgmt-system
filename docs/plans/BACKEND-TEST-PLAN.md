@@ -1,5 +1,41 @@
 # Backend Test Plan
 
+## DPS mutual TLS connection — October 20, 2026
+
+`DpsMqttTlsTests` uses generated CA/server/client identities, a bounded local TLS
+listener and the real MQTTnet client. Coverage includes successful PFX client
+authentication with TCP loopback plus certificate name localhost, wrong server
+name/CA, missing client identity, wrong PFX password, missing private key,
+expired client identity, server-only EKU and a non-CA trust file. Certificates
+and listener resources are task-owned and disposed; no Portal database, external
+broker, scientific inputs or assembly commands are involved. Windows exercises
+temporary user key loading; other platforms use ephemeral keys.
+
+`DpsContractTests` adds the 18883/TLS defaults, malformed TLS server-name rejection
+and rejection of certificate settings with plaintext loopback. Check the focused
+DPS security/contract cases, solution compilation, launcher syntax, configuration
+JSON and whitespace at the implementation checkpoint. Full regression,
+worker dispatch/recovery and Start/Cancel ACL checks remain outside this
+connection-only acceptance. Results are recorded in the
+[TLS run](../testing/runs/2026-10-20-dps-mtls-connection.md).
+
+Checkpoint: full solution compilation passes with zero warnings/errors. Focused
+Windows TLS/contract checks pass **25/25, zero skipped**. The existing diagnostic
+provenance fixture now declares a synthetic tool to meet the unchanged schema's
+minimum tool count; scientific admission rules are unchanged. Three simulated
+launcher checks pass, including caller-environment restoration on child failure
+and preservation of the external tunnel. PowerShell/Bash syntax, JSON and
+whitespace pass. No API/database/assembly execution, commit or deployment occurs.
+
+Hosted Linux checkpoint: the Owner-requested isolated probe passes in the exact
+running API image/network on Ubuntu 24.04.5/.NET 10.0.12, using the implemented
+loader and ephemeral PFX keys. Real Describe/unused-ID Query and wrong-name,
+untrusted-CA and missing-client rejection pass. Container/start/configuration,
+runtime file hashes and original tunnel are preserved; all test resources and
+credential copies are removed. No live API integration/dispatch is activated.
+The run records the Docker mount-order fingerprint warning and its exact
+order-normalized preservation proof separately from the passing connection.
+
 ## Internal order formatted notes — October 17, 2026
 
 Added domain regression sources for separate private/public persistence through

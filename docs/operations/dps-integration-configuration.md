@@ -1,5 +1,23 @@
 # DPS integration configuration
 
+October 20, 2026: the secured connection uses MQTT mutual TLS through SSH,
+local `127.0.0.1:18883` to EC2 `localhost:18883`, with certificate hostname
+`localhost`. The supplied private CA and PFX authenticated successfully in an
+isolated .NET/MQTTnet test; Describe and an unused-ID Query received correlated
+responses. Incorrect hostname, unrelated CA and missing client certificate were
+rejected. See the [TLS verification record](../testing/runs/2026-10-20-dps-mtls-connection.md).
+The source now supports this configuration; it has not been deployed or used to
+start an assembly. October 14 connection settings below are historical.
+
+Hosted Linux verification also passes on the exact live API image/network
+(Ubuntu 24.04.5, .NET 10.0.12) using an isolated probe compiled from the new
+connection source. Linux ephemeral key loading, real DPS Describe/Query and
+all three certificate rejection cases pass. The running API, original tunnel
+service and protected settings are unchanged; temporary probe/tunnel/certificate
+copies are removed. This connection acceptance does not activate the new source
+or test assembly execution. See the same verification record for preservation
+evidence and the remaining worker/ACL/scientific boundaries.
+
 The Owner authorized API/UI deployment and hosted-test simulation activation on
 October 14, 2026. Follow the [preserving hosted release plan](../plans/PORTAL-DPS-TEST-ACTIVATION-20261014-PLAN.md)
 for the exact target, private container-loopback SSH connection, protected host
@@ -48,14 +66,23 @@ No Clerk authentication or authorization rule is changed.
 
 ## Local development startup
 
-The ignored `backend/app/appsettings.Development.json` holds this computer's
-enabled DPS settings: local environment, host `127.0.0.1`, port `11883`, TLS off
-on the loopback connection, the declared test recipe, and the assembly worker
-enabled. The remote part of the connection is encrypted by SSH. Shared defaults
-remain disabled/unconfigured. `Dps:S3` supplies the separate handoff bucket,
-region, prefix and protected server-side credential profile. Application files
-remain in Local storage. The S3 guard now applies to that explicit processing
-destination rather than requiring an application-wide storage cutover.
+Keep `dps-ca.crt`, `PSeq-client-01.pfx` and its `.pfx.pass` file in an
+account-restricted `%USERPROFILE%\.phaeno\certs` directory. The supplied Windows
+certificate installer can prepare that directory. Never commit these files.
+The launcher also accepts `-CertificateDirectory`, or the supplied
+`MQTT_CA_CERT_PATH`, `MQTT_CLIENT_CERT_PATH` and `MQTT_CLIENT_CERT_PASSWORD`
+environment variables. It maps these values into `Dps` settings for the child
+API process and restores the caller's environment after the API stops. The API
+itself binds `Dps` configuration, not the `MQTT_*` names.
+
+The launcher overrides the former plaintext connection with host `127.0.0.1`,
+port `18883`, TLS enabled and certificate hostname `localhost`. It preserves
+the existing integration/assembly enablement, approved recipes, simulation,
+storage and concurrency settings. Review pending work before starting an enabled
+worker. Shared defaults remain disabled/unconfigured. Existing Local application
+files and the separate `Dps:S3` handoff are unchanged. Direct API launches must
+set the same secure `Dps` configuration explicitly; ignored older development
+settings are not rewritten by this change.
 
 Build the API, then use [the local launcher](../../backend/tools/Start-LocalDpsApi.ps1)
 with the current EC2 hostname, private-key path and trusted-host file. From the
@@ -71,15 +98,23 @@ dotnet build backend/app/PSeq.Operations.Api.csproj --no-restore
 
 The launcher uses the frontend's existing `https://localhost:44399` API target
 and `http://localhost:48056`, opens a loopback-only SSH forward from local port
-11883 to the EC2 broker's port 1883, and removes its account-restricted temporary key copy when the API
-stops. It rejects an occupied tunnel port and never changes the original key's
-permissions. The EC2 hostname can change when the instance is restarted. Do not
-start a second API instance on these ports while the launcher is running.
+18883 to the EC2 broker's localhost port 18883, and removes its account-restricted
+temporary SSH key copy when the API stops. It preserves pinned SSH host-key
+checking and never changes the original key's permissions. The current EC2 DNS
+name is resolved by the supplied `phaeno-datapipeline-ssh.sh` using AWS profile
+`phaeno` and instance `i-0dd6c94e169e58a75`; the DNS name can change after restart.
 
-The EC2 Mosquitto process currently listens on both 1883 and 11883. DPS uses
-`127.0.0.1:11883` on EC2; the local API uses `127.0.0.1:11883` on this computer.
-The supplied `-L 11883:localhost:1883` convention forwards local 11883 to remote
-1883. Both remote ports reach the same broker.
+When that supplied script already owns the tunnel, use:
+
+```powershell
+./backend/tools/Start-LocalDpsApi.ps1 -UseExistingTunnel
+```
+
+This mode requires a listening port and leaves the external tunnel running.
+The API still verifies the broker's TLS identity; a listening port alone proves
+no server identity. Managed mode rejects an occupied port. Do not run two API
+instances on the same API ports. Only the TLS forward is required by the Portal;
+the supplied script's PostgreSQL/plaintext forwards are independent.
 
 ## Required configuration
 
@@ -94,11 +129,13 @@ automatic deployment holds remain in place.
 | Setting | Meaning |
 | --- | --- |
 | `Dps:Environment` | `local`, `staging` or `production`; selects the isolated `phaeno/dps/v1/{environment}` topic root |
-| `Dps:Host`, `Dps:Port` | Explicit bare broker host/IP and port; default port 8883 |
+| `Dps:Host`, `Dps:Port` | Explicit bare broker host/IP and port; default port 18883. The SSH connection uses `127.0.0.1:18883`. |
 | `Dps:UseTls` | True by default; plaintext is restricted to a loopback broker in `local` |
+| `Dps:CaCertificatePath` | Optional PEM trust-root file. For this private broker, configure `dps-ca.crt`; trust is scoped to this connection, without changing the machine trust store. |
+| `Dps:TlsServerName` | Certificate hostname and TLS SNI, separate from the TCP endpoint. Set `localhost` for this broker through SSH. Empty uses the TCP host. |
 | `Dps:ClientId` | Unique per concurrently running API instance; blank generates a process-instance identity stable across reconnects |
 | `Dps:Username`, `Dps:Password` | Optional matching credential pair, supplied outside source |
-| `Dps:ClientCertificatePath`, `Dps:ClientCertificatePassword` | Optional PKCS#12 identity, loaded with ephemeral key storage; supplied outside source |
+| `Dps:ClientCertificatePath`, `Dps:ClientCertificatePassword` | PKCS#12/PFX identity and password, supplied outside source. Required for this mutual-TLS broker. Windows uses temporary user key storage without `PersistKeySet`; other platforms use `EphemeralKeySet`. |
 | `Dps:RequestTimeoutSeconds` | Correlated MQTT response deadline, 1–30 seconds; default 15 |
 | `Dps:OperationTimeoutSeconds` | Processing/reconciliation operation deadline, 30–900 seconds; default 300 |
 | `Dps:MaximumOutputFileBytes` | Output-admission file bound; default 1 GiB; actual scanning/storage limits also apply |
@@ -111,10 +148,40 @@ automatic deployment holds remain in place.
 
 Non-loopback brokers require a configured client certificate or credentials.
 TLS uses standard server-certificate verification; there is no bypass switch.
+Configuring TLS certificate material or a TLS server name with TLS disabled is
+rejected, including on loopback. CA/client validity, CA signing constraints,
+client private-key presence and declared client-authentication purpose are
+checked before connecting. Certificates are reloaded on a new connection
+attempt, retained for the connected lifetime and disposed on failure/shutdown.
 The complete secret settings belong in the environment's existing secret
 configuration mechanism, never in a recipe, manifest, browser payload or log.
 Invalid/missing DPS configuration leaves assembly unavailable without preventing
 the rest of the API from starting.
+
+The supplied client's actual CN is `PSeq-client-01`; Mosquitto's
+`use_identity_as_username=true` derives the broker username from that CN.
+Leave optional MQTT username/password settings unset for this broker. MQTT client
+IDs remain unique per process instance; they are separate from certificate CNs.
+There is no developer-reported identity enrollment registry. Topic ACL grants
+must still be checked against the adapter's required publish/subscription paths;
+Describe/Query access alone does not establish Start/Cancel permissions.
+
+For a later authorized hosted release, use the existing private read-only mount:
+host `/opt/phaeno.portal-green/documents/private/secrets/dps` maps to
+`/app/__DOCUMENTS/private/secrets/dps`. Restrict the host directory and private
+files to the runtime owner, set `Dps__CaCertificatePath` and
+`Dps__ClientCertificatePath` to those container paths, and provide the password
+through protected `portal.env`. Also set `Dps__Host=127.0.0.1`,
+`Dps__Port=18883`, `Dps__UseTls=true`, and `Dps__TlsServerName=localhost`.
+The reviewed host helper now forwards 18883 to 18883; it has not been installed
+or restarted. Preserve existing worker/simulation settings and release holds.
+
+The supplied client expires March 3, 2028; the observed broker certificate
+expires January 17, 2029. Renew before expiry, retain a protected recovery copy,
+verify the replacement CA/identity and private-key match, and reconnect through
+the normal controlled restart. Keep the prior valid identity for rollback until
+the replacement is verified. Revocation and broader topic-policy acceptance
+remain broker-operational checks; this connection test does not prove them.
 
 A compatible approved recipe must match a fresh DPS Describe reply by key and
 version. Parameters must satisfy the advertised local schema, output roles must

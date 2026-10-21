@@ -19,8 +19,10 @@ public sealed class DpsOptions
     public bool AllowHostedTestSimulation { get; set; }
     public string Environment { get; set; } = "local";
     public string Host { get; set; } = "";
-    public int Port { get; set; } = 8883;
+    public int Port { get; set; } = 18883;
     public bool UseTls { get; set; } = true;
+    public string CaCertificatePath { get; set; } = "";
+    public string TlsServerName { get; set; } = "";
     public string ClientId { get; set; } = "";
     public string Username { get; set; } = "";
     public string Password { get; set; } = "";
@@ -45,6 +47,10 @@ public sealed class DpsOptions
             && RequestTimeoutSeconds is >= 1 and <= 30 && OperationTimeoutSeconds is >= 30 and <= 900
             && MaximumOutputFileBytes > 0 && MaximumOutputSetBytes >= MaximumOutputFileBytes
             && (UseTls || Environment == "local" && loopback)
+            && (UseTls || CaCertificatePath.Length == 0 && ClientCertificatePath.Length == 0 && TlsServerName.Length == 0)
+            && (TlsServerName.Length == 0 || TlsServerName == TlsServerName.Trim()
+                && Uri.CheckHostName(TlsServerName) != UriHostNameType.Unknown)
+            && (ClientCertificatePassword.Length == 0 || !string.IsNullOrWhiteSpace(ClientCertificatePath))
             && (loopback || !string.IsNullOrWhiteSpace(ClientCertificatePath) || !string.IsNullOrWhiteSpace(Username))
             && string.IsNullOrEmpty(Username) == string.IsNullOrEmpty(Password)
             && ClientId.Length <= 128 && !ClientId.Any(char.IsControl);

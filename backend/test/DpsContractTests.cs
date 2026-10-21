@@ -5,7 +5,7 @@ using System.Text.Json.Nodes;
 using PhaenoPortal.App.Features.LabOperations.Services;
 using PhaenoPortal.App.Features.OrderManagement.Services;
 
-// Regression sources only: execution is deferred at the Owner's request.
+// Synthetic contract fixtures only; never submitted to a processing service.
 public sealed class DpsContractTests
 {
     private static DpsObject Object() => new("example-bucket", "us-east-2", "fixture/input.json", "exact-version", new string('a', 64), 100);
@@ -77,6 +77,22 @@ public sealed class DpsContractTests
         var options = new DpsOptions(); Assert.False(options.Enabled); Assert.False(options.IsConfigured());
         Assert.Empty(options.Recipes); Assert.Empty(options.Host);
         Assert.False(options.AllowHostedTestSimulation);
+        Assert.Equal(18883, options.Port);
+        Assert.True(options.UseTls);
+    }
+    [Theory]
+    [InlineData("https://localhost")]
+    [InlineData("localhost:18883")]
+    [InlineData(" localhost")]
+    public void Invalid_tls_server_name_is_unavailable(string name)
+    {
+        Assert.False(new DpsOptions { Host = "127.0.0.1", TlsServerName = name }.IsConfigured());
+    }
+    [Fact]
+    public void Certificate_configuration_cannot_silently_use_plaintext_loopback()
+    {
+        Assert.False(new DpsOptions { Host = "127.0.0.1", UseTls = false, ClientCertificatePath = "client.pfx" }.IsConfigured());
+        Assert.False(new DpsOptions { Host = "127.0.0.1", UseTls = false, CaCertificatePath = "ca.crt" }.IsConfigured());
     }
     [Fact]
     public void Mock_provenance_is_diagnostic_only_and_never_passes_scientific_validation()
@@ -100,7 +116,7 @@ public sealed class DpsContractTests
         var at = new DateTime(2026, 10, 14, 18, 0, 0, DateTimeKind.Utc);
         var output = new DpsOutputManifest(DpsContract.Version, "local", "output_manifest", Guid.NewGuid(), "dps-test", scope,
             recipe, new string('a', 64), at, at.AddMinutes(1), at.AddMinutes(1),
-            new("mock", "0.1.0", [], [], [], null), [new(Guid.NewGuid(), "assembly_output", "FASTA", "placeholder.fasta", Object())]);
+            new("mock", "0.1.0", [new("fixture-tool", "0.1.0")], [], [], null), [new(Guid.NewGuid(), "assembly_output", "FASTA", "placeholder.fasta", Object())]);
         var body = JsonSerializer.SerializeToNode(output, DpsContract.Json)!.AsObject();
         body["provenance"]!.AsObject().Remove("reference_data");
         body["provenance"]!.AsObject().Remove("reference_data_not_applicable");
