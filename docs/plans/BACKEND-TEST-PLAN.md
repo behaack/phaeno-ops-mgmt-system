@@ -1,5 +1,20 @@
 # Backend Test Plan
 
+## Hosted assembly acceptance — October 20, 2026
+
+The requested assembly batch passed **51/51, zero skipped** on hosted Linux
+against disposable PostgreSQL 18.6: 11 assembly-domain, 6 messaging-domain,
+16 DPS contract, 9 mutual-TLS and 9 connected PostgreSQL cases. Coverage includes
+queued cancellation, final/cancel races, restart/query recovery, commit-before-ACK,
+duplicate/conflicting receipts, transient progress and current FASTQ consistency.
+The shared hosted database was not the regression target. A separate real
+Portal/DPS attempt failed lifecycle admission because DPS sends `percentage: 0`
+on Running/Succeeded events where the contract requires null; this also blocks
+Query reconciliation and Cancel delivery. The hosted Simulated analysis-link
+service guard passed with no scientific records created. Successful full live
+cancellation, actively running recovery and Portal downloads remain blocked.
+See the [acceptance receipt](../testing/runs/2026-10-20-hosted-assembly-acceptance.md).
+
 ## DPS mutual TLS connection — October 20, 2026
 
 `DpsMqttTlsTests` uses generated CA/server/client identities, a bounded local TLS

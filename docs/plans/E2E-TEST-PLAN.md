@@ -1,5 +1,21 @@
 # Playwright E2E Test Plan
 
+## Hosted assembly acceptance — October 20, 2026
+
+The approved synthetic fixture was exercised through the signed-in Portal with
+Simulated retained and TLS 18883. Start saved one attempt with provider acceptance;
+progress appeared and a second Start was disabled. Cancellation saved its reason
+and command but could not dispatch: server Running/Succeeded events contain
+`percentage: 0` where the contract requires null, also invalidating Query.
+A bounded tunnel interruption/API restart restored healthy transport with the
+original attempt and one Start; lifecycle reconciliation still fails. Provider
+output bytes verified independently in S3; Portal downloads remain blocked.
+All 610 pre-existing rows were unchanged. Overall live acceptance **failed**.
+Live queued cancellation, active-execution interruption, HTTP replay and successful
+completion/download require the server correction and reconciliation of the
+original attempt first. The separate Linux software batch passed 51/51. See the
+[run receipt](../testing/runs/2026-10-20-hosted-assembly-acceptance.md).
+
 ## Internal order formatted notes — October 17, 2026
 
 Deferred browser acceptance: create/save/reopen a Phaeno commercial Draft with
