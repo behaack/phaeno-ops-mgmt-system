@@ -1,12 +1,13 @@
 # DPS integration configuration
 
-Latest release checkpoint, October 20: the Owner authorized commit/push and
-hosted deployment. Source `859f3605` is pushed, but the attempted TLS release
-was rolled back when actual discovery did not arrive. The known EC2 SSH
-endpoint now times out from Windows and the hosted host. The preceding API,
-settings and helper are restored and data preservation is verified. TLS is not
-active on the hosted API; instance status/current address and successful live
-acceptance remain pending. See the [release receipt](dps-tls-test-release-20261020.md).
+Latest release checkpoint, October 20: source `859f3605` is active on the hosted
+test API with mutual TLS on port 18883. The actual API confirms fresh discovery;
+independent TLS 1.3 Describe/unused-ID Query and full preservation checks pass.
+AWS profile `phaeno` identifies the running instance's new public DNS as
+`ec2-3-15-181-172.us-east-2.compute.amazonaws.com`; the existing verified server
+key and client identity are preserved. jq, the local AWS profile and protected
+SSH key are configured. The first attempt's rollback during the address change
+is historical. See the [release receipt](dps-tls-test-release-20261020.md).
 
 October 20, 2026: the secured connection uses MQTT mutual TLS through SSH,
 local `127.0.0.1:18883` to EC2 `localhost:18883`, with certificate hostname
@@ -14,9 +15,8 @@ local `127.0.0.1:18883` to EC2 `localhost:18883`, with certificate hostname
 isolated .NET/MQTTnet test; Describe and an unused-ID Query received correlated
 responses. Incorrect hostname, unrelated CA and missing client certificate were
 rejected. See the [TLS verification record](../testing/runs/2026-10-20-dps-mtls-connection.md).
-The source supports this configuration; the later deployment attempt above
-was rolled back. No assembly was started. October 14 connection settings below
-are historical.
+The source is now deployed under the completed release above. No assembly was
+started. October 14 connection settings below are historical.
 
 The earlier isolated hosted Linux verification passed on the exact live API
 image/network

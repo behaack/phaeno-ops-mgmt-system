@@ -1,5 +1,15 @@
 # DPS mutual TLS connection — October 20, 2026
 
+## Subsequent hosted release — completed
+
+The Owner separately authorized commit/push and hosted deployment. API source
+`859f3605` is now active with actual correlated TLS discovery on port 18883.
+Independent TLS 1.3 Describe/unused-ID Query, all 250 unchanged table fingerprints,
+fresh recovery, public health/auth, scanner, unchanged frontend assets and
+preserved release holds pass. No assembly was started. The earlier isolated
+test scopes below remain historical. See the
+[completed release receipt](../../operations/dps-tls-test-release-20261020.md).
+
 ## Scope and authorization
 
 The Owner requested a connection test before code changes, then authorized the

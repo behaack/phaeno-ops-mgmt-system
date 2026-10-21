@@ -1,12 +1,13 @@
 # POMS–DPS MQTT messaging plan
 
 Latest release checkpoint, October 20: the Owner subsequently authorized
-commit/push and hosted-test deployment. TLS source `859f3605` is pushed; the
-candidate passed protected release checks but was rolled back when actual API
-TLS discovery did not confirm. The known EC2 SSH endpoint now times out from
-Windows and the hosted host. The preceding API/runtime/helper and all hosted
-data are preserved. Live instance/address confirmation and connection acceptance
-remain pending; this does not mark TLS activation complete. See the
+commit/push and hosted-test deployment. TLS source `859f3605` is active after
+authenticated discovery of the instance's changed public address and a verified
+retry. Actual API TLS discovery on port 18883 and independent TLS 1.3
+Describe/unused-ID Query pass. All 250 table fingerprints, migrations, Website
+history and unrelated files/settings are preserved. Recovery, public health/auth,
+scanner, unchanged frontend assets and preserved release holds pass. The first
+attempt's rollback is historical; assembly/scientific acceptance remains separate. See the
 [release receipt](../operations/dps-tls-test-release-20261020.md) and
 [preserving release plan](DPS-TLS-HOSTED-TEST-RELEASE-20261020-PLAN.md).
 

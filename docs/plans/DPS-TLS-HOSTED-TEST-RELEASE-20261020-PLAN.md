@@ -1,17 +1,44 @@
 # DPS TLS hosted-test release — October 20, 2026
 
-## Current outcome — external connection blocked; preceding API restored
+## Current outcome — completed
+
+The retry is complete on API source `859f36055ac4ef668b3023065ecfbd3d8ee0067a`.
+The actual API confirms TLS discovery on port 18883, and independent TLS 1.3
+Describe/unused-ID Query passes through its network namespace. All 250 full
+record fingerprints, unchanged migrations, Website history and unrelated files
+and settings are preserved. Public health/auth, scanner, unchanged frontend
+assets and all release holds pass. Fresh isolated recovery and off-server
+decryption pass; task-owned hosted secret copies are removed. See the
+[completed release receipt](../operations/dps-tls-test-release-20261020.md).
+
+## First attempt and retry preparation history
 
 Source `859f36055ac4ef668b3023065ecfbd3d8ee0067a` is committed/pushed and the
 candidate passed protected build/health/scanner/storage/preservation checks.
 Actual API TLS discovery did not arrive before the connection guard deadline,
 so the preceding API, runtime and helper were restored. The known EC2 endpoint
 now times out on SSH from Windows and the hosted host; its current instance
-status/address is pending confirmation. All 250 tables and all 115 preexisting
+status/address was pending confirmation. All 250 tables and all 115 preexisting
 runtime/document files preserve their full contents after rollback. This plan
-is not complete, and the TLS candidate is not active. See the
+was not complete, and the TLS candidate was not active at that checkpoint. See the
 [attempt and rollback receipt](../operations/dps-tls-test-release-20261020.md)
 for exact identities, verified recovery, preserved holds and resumption gate.
+
+The Owner resumed configuration and deployment. jq 1.8.2 is installed, the
+local SSH identity matches the hosted identity, and browser sign-in has
+authenticated the `phaeno` AWS profile in `us-east-2`. Authoritative EC2 lookup
+reports the same running instance at
+`ec2-3-15-181-172.us-east-2.compute.amazonaws.com` (`3.15.181.172`). Both Windows
+and the actual API network namespace authenticate using the unchanged identity
+and previously verified server key. No new server key is trusted from the network.
+
+The retry took fresh recovery and verified the retained exact-source release
+before reusing it. In addition to the seven Portal TLS settings and committed
+helper, it owns only `DPS_SSH_HOST` in `dps-tunnel.env` and a new hostname alias
+for the same existing server key in the dedicated known-hosts file. Preserve
+all original pins and unrelated environment lines; back up both files for
+rollback. No key rotation, IAM permission change or application auth change is
+included. The completed receipt records full preservation and live acceptance.
 
 ## Authorization and target
 
