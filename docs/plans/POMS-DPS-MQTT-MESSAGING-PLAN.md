@@ -1,5 +1,15 @@
 # POMS–DPS MQTT messaging plan
 
+Latest release checkpoint, October 20: the Owner subsequently authorized
+commit/push and hosted-test deployment. TLS source `859f3605` is pushed; the
+candidate passed protected release checks but was rolled back when actual API
+TLS discovery did not confirm. The known EC2 SSH endpoint now times out from
+Windows and the hosted host. The preceding API/runtime/helper and all hosted
+data are preserved. Live instance/address confirmation and connection acceptance
+remain pending; this does not mark TLS activation complete. See the
+[release receipt](../operations/dps-tls-test-release-20261020.md) and
+[preserving release plan](DPS-TLS-HOSTED-TEST-RELEASE-20261020-PLAN.md).
+
 ## Certificate-secured connection — October 20, 2026
 
 The Owner approved implementing the connection plan with TLS on port 18883 and
@@ -46,7 +56,8 @@ Implementation checkpoint: full solution compilation and 25 focused Windows
 TLS/contract checks pass, as do three synthetic launcher lifecycle/configuration
 checks, PowerShell/Bash syntax, configuration JSON and whitespace. Certificate
 and script fixtures are cleaned; no runtime was restarted or assembly started.
-All source changes remain uncommitted and undeployed. The Owner subsequently
+At that checkpoint, source changes were uncommitted and undeployed. The Owner
+subsequently
 requested hosted Linux connection verification: it passes using the exact live
 API image/network with an isolated probe compiled from the implemented loader.
 Linux ephemeral PFX loading, real Describe/Query and all three certificate

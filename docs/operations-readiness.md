@@ -1,5 +1,19 @@
 # Operations and production-readiness boundary
 
+## DPS TLS hosted-test release — rolled back October 20, 2026
+
+TLS source `859f36055ac4ef668b3023065ecfbd3d8ee0067a` is committed/pushed.
+The candidate passed protected build/health/scanner/storage checks, but actual
+TLS discovery did not confirm because the known data-pipeline SSH endpoint is
+now unreachable from both Windows and the hosted host. The connection guard
+restored the preceding API/settings/helper. All 250 table fingerprints and 115
+preexisting runtime/document file hashes and permissions are preserved; public
+health/auth, scanner and unchanged frontend asset checks pass. The TLS candidate
+is retained but not active, pending instance/address confirmation and live
+connection acceptance. Release holds, orphan-run fence and S3 recovery deferral
+remain. See the [receipt](operations/dps-tls-test-release-20261020.md) and
+[preserving plan](plans/DPS-TLS-HOSTED-TEST-RELEASE-20261020-PLAN.md).
+
 ## Order notes and R&D hosted-test release — completed October 19, 2026
 
 Matched API/UI source `390341dd9ba913f6f5a416de827ad4de99c8f380` is live at

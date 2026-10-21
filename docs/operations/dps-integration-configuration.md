@@ -1,20 +1,31 @@
 # DPS integration configuration
 
+Latest release checkpoint, October 20: the Owner authorized commit/push and
+hosted deployment. Source `859f3605` is pushed, but the attempted TLS release
+was rolled back when actual discovery did not arrive. The known EC2 SSH
+endpoint now times out from Windows and the hosted host. The preceding API,
+settings and helper are restored and data preservation is verified. TLS is not
+active on the hosted API; instance status/current address and successful live
+acceptance remain pending. See the [release receipt](dps-tls-test-release-20261020.md).
+
 October 20, 2026: the secured connection uses MQTT mutual TLS through SSH,
 local `127.0.0.1:18883` to EC2 `localhost:18883`, with certificate hostname
 `localhost`. The supplied private CA and PFX authenticated successfully in an
 isolated .NET/MQTTnet test; Describe and an unused-ID Query received correlated
 responses. Incorrect hostname, unrelated CA and missing client certificate were
 rejected. See the [TLS verification record](../testing/runs/2026-10-20-dps-mtls-connection.md).
-The source now supports this configuration; it has not been deployed or used to
-start an assembly. October 14 connection settings below are historical.
+The source supports this configuration; the later deployment attempt above
+was rolled back. No assembly was started. October 14 connection settings below
+are historical.
 
-Hosted Linux verification also passes on the exact live API image/network
+The earlier isolated hosted Linux verification passed on the exact live API
+image/network
 (Ubuntu 24.04.5, .NET 10.0.12) using an isolated probe compiled from the new
 connection source. Linux ephemeral key loading, real DPS Describe/Query and
-all three certificate rejection cases pass. The running API, original tunnel
-service and protected settings are unchanged; temporary probe/tunnel/certificate
-copies are removed. This connection acceptance does not activate the new source
+all three certificate rejection cases passed. That isolated verification left
+the running API, original tunnel service and protected settings unchanged;
+temporary probe/tunnel/certificate copies were removed. That connection
+acceptance did not activate the new source
 or test assembly execution. See the same verification record for preservation
 evidence and the remaining worker/ACL/scientific boundaries.
 

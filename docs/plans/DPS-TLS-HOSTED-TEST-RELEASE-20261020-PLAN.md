@@ -1,5 +1,18 @@
 # DPS TLS hosted-test release — October 20, 2026
 
+## Current outcome — external connection blocked; preceding API restored
+
+Source `859f36055ac4ef668b3023065ecfbd3d8ee0067a` is committed/pushed and the
+candidate passed protected build/health/scanner/storage/preservation checks.
+Actual API TLS discovery did not arrive before the connection guard deadline,
+so the preceding API, runtime and helper were restored. The known EC2 endpoint
+now times out on SSH from Windows and the hosted host; its current instance
+status/address is pending confirmation. All 250 tables and all 115 preexisting
+runtime/document files preserve their full contents after rollback. This plan
+is not complete, and the TLS candidate is not active. See the
+[attempt and rollback receipt](../operations/dps-tls-test-release-20261020.md)
+for exact identities, verified recovery, preserved holds and resumption gate.
+
 ## Authorization and target
 
 The Owner requested committing/pushing the reviewed TLS connection changes and
