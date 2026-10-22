@@ -2,7 +2,6 @@ import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import { ChevronDown } from 'lucide-react'
 import { deleteCatalogItem, getCatalogItemDeletion, getOrderErrorMessage, type OrderConfiguration } from '#/api/order-management'
 import { Button } from '#/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '#/components/ui/dialog'
@@ -33,7 +32,7 @@ export function CatalogItemActions({ item, apiEnabled, onEdit }: {
       await client.invalidateQueries({ queryKey: ['order-configuration'] })
     } })
   return <div className="col-start-2 row-start-1 justify-self-end">
-    <ActionMenu><DropdownMenuTrigger asChild><Button ref={trigger} variant="outline" disabled={!apiEnabled}><CustomerSourceText source={"Actions"} /> <ChevronDown aria-hidden="true" /></Button></DropdownMenuTrigger>
+    <ActionMenu><DropdownMenuTrigger asChild><Button ref={trigger} variant="outline" disabled={!apiEnabled}><CustomerSourceText source={"Actions"} /> </Button></DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="max-w-80">
         <DropdownMenuItem onSelect={() => onEdit(trigger.current)}><CustomerSourceText source={"Edit item"} /></DropdownMenuItem>
         {!item.isActive ? <DropdownMenuItem variant="destructive" disabled={!canDelete} onSelect={() => { deletion.reset(); setConfirm({ id: item.id, name: item.name, version: item.version }) }}><CustomerSourceText source={"Delete item"} /></DropdownMenuItem> : null}

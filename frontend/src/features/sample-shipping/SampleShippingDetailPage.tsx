@@ -1,3 +1,4 @@
+import { BackLink } from '#/components/ui/back-link'
 import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { NativeSelect } from '#/components/ui/native-select'
@@ -6,7 +7,7 @@ import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useBlocker } from '@tanstack/react-router'
-import { ArrowLeft, Download, Printer, type LucideIcon } from 'lucide-react'
+import { Download, Printer, type LucideIcon } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -239,20 +240,17 @@ export function SampleShippingDetailPage({ shipmentId, autoOpenKitOrder = false,
     <Workspace className={workspaceClassName}>
       {embedded ? embedded.renderActions(headerActions, headerActionRef, dialogOpen) : <section className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
-          {returnList ? <Link to="/sample-shipping" search={returnList} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft aria-hidden="true" className="size-4" /><CustomerText message="shipment_return_list" /></Link> : shipment.authorizationSource === 'CustomerPromotionalOrder' || shipment.authorizationSource === 'CustomerLabServiceOrder' ? (
-            <Link
+          {returnList ? <BackLink asChild><Link to="/sample-shipping" search={returnList}><CustomerText message="shipment_return_list" /></Link></BackLink> : shipment.authorizationSource === 'CustomerPromotionalOrder' || shipment.authorizationSource === 'CustomerLabServiceOrder' ? (
+            <BackLink asChild><Link
               to="/lab-services/$orderId"
               params={{ orderId: shipment.authorizationSourceId }}
-              className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
             >
-              <ArrowLeft aria-hidden="true" className="size-4" />
               <CustomerText message="m_5125f85c806e" />{shipment.authorizationReference}
-            </Link>
+            </Link></BackLink>
           ) : (
-            <Link to="/order-operations/lab-services/trials/$trialId" params={{ trialId: shipment.authorizationSourceId }} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-              <ArrowLeft aria-hidden="true" className="size-4" />
+            <BackLink asChild><Link to="/order-operations/lab-services/trials/$trialId" params={{ trialId: shipment.authorizationSourceId }}>
               <CustomerText message="m_9ecc2242d329" />{shipment.authorizationReference}
-            </Link>
+            </Link></BackLink>
           )}
           <div className="mt-3 flex flex-wrap items-center gap-3">
             <h1 className="wrap-anywhere text-3xl font-semibold">{shipment.shipmentNumber}</h1>

@@ -1,3 +1,4 @@
+import { BackLink } from '#/components/ui/back-link'
 import { NativeSelect } from '#/components/ui/native-select'
 import { RecordPagination, useRecordListState } from '#/components/RecordPagination'
 import { submissionDateLabel } from './trial-submission-dates'
@@ -32,7 +33,7 @@ export function TrialProjectsPage({ search, status, owner, fromCompanyId, onFilt
   const navigate = useNavigate()
   if (!queries.allowed) return <p className="p-6">Trial projects are unavailable for this organization and department.</p>
   return <main className="page-wrap space-y-6 px-4 py-8">
-    {fromCompanyId && queries.staff ? <Link to="/crm/companies/$companyId" params={{ companyId: fromCompanyId }} className="text-primary underline">Back to Company</Link> : null}
+    {fromCompanyId && queries.staff ? <BackLink asChild><Link to="/crm/companies/$companyId" params={{ companyId: fromCompanyId }}>Back to Company</Link></BackLink> : null}
     <header className="flex flex-wrap items-start justify-between gap-3"><div><h1 className="text-3xl font-semibold">Trial projects</h1><p className="mt-2 text-sm leading-6 text-muted-foreground">No-charge PSeq evaluations with an agreed scope and submission window.</p></div>
       {queries.staff && queries.canCreate ? <Button onClick={() => setCreating(true)}>Create Trial</Button> : null}</header>
     <section aria-label="Trial project filters" className="space-y-3 rounded-xl border bg-card p-4">

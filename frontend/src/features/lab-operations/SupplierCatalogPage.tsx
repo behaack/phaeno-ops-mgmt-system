@@ -1,3 +1,4 @@
+import { BackLink } from '#/components/ui/back-link'
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Plus } from 'lucide-react'
@@ -35,7 +36,7 @@ export function SupplierCatalogPage({ supplierId, tab, onTabChange }: { supplier
   if (query.isError && !query.data) return <div className="space-y-3"><p role="alert">{getLabOperationsError(query.error, 'The catalog could not be loaded.')}</p><Button onClick={() => void query.refetch()}>Try again</Button></div>
   const data = query.data ?? []
   const supplier = supplierId ? data.find(item => item.id === supplierId) : undefined
-  if (supplierId && !supplier) return <div><Link to="/purchasing" search={{ section: 'suppliers', supplierSearch: savedFilters.supplierSearch, supplierInactive: savedFilters.supplierInactive }}>Back to suppliers</Link><p>Supplier not found.</p></div>
+  if (supplierId && !supplier) return <div><BackLink asChild><Link to="/purchasing" search={{ section: 'suppliers', supplierSearch: savedFilters.supplierSearch, supplierInactive: savedFilters.supplierInactive }}>Back to suppliers</Link></BackLink><p>Supplier not found.</p></div>
   const term = search.trim().toLocaleLowerCase()
   const suppliers = data.filter(item => (showInactive || item.isActive) && `${item.name} ${item.products.map(p => `${p.productNumber} ${p.description} ${p.productTypeName}`).join(' ')} ${item.shipmentAddresses.map(a => `${a.label} ${a.city} ${a.countryCode}`).join(' ')}`.toLocaleLowerCase().includes(term))
   const products = supplier?.products.filter(item => (showInactive || item.isActive) && `${item.productNumber} ${item.description}`.toLocaleLowerCase().includes(term)) ?? []
@@ -50,7 +51,7 @@ export function SupplierCatalogPage({ supplierId, tab, onTabChange }: { supplier
   return <div className={'space-y-5'}>
     {query.isError ? <p role="alert" className="text-sm text-destructive">Catalog refresh failed. Your current edits are retained. <button className="cursor-pointer underline" onClick={() => void query.refetch()}>Retry</button></p> : null}
     {supplier ? <>
-      <Link className="text-sm text-primary underline" to="/purchasing" search={{ section: 'suppliers', supplierSearch: savedFilters.supplierSearch, supplierInactive: savedFilters.supplierInactive }}>← Back to suppliers</Link>
+      <BackLink asChild><Link to="/purchasing" search={{ section: 'suppliers', supplierSearch: savedFilters.supplierSearch, supplierInactive: savedFilters.supplierInactive }}>Back to suppliers</Link></BackLink>
       <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="text-2xl font-semibold wrap-anywhere">{supplier.name}</h2><div className="mt-2 flex gap-2"><Badge variant="secondary">{supplier.isActive ? 'Active' : 'Inactive'}</Badge>{supplier.isInternalProducer ? <Badge variant="outline">Internal producer</Badge> : null}</div></div>{supplier.isInternalProducer ? null : <CatalogActions id={`supplier-actions-${supplier.id}`} name={supplier.name} isActive={supplier.isActive} onEdit={() => setSupplierEditor(supplier)} onStatus={() => setStatusTarget({ kind: 'supplier', supplier })} />}</div>
       {!supplier.isActive ? <p className="text-sm text-muted-foreground">This supplier and its products are unavailable for new shipments, kits and inventory selections. Saved records are preserved.</p> : null}
     </> : null}

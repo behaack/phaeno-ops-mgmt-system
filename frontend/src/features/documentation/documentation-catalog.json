@@ -280,7 +280,7 @@
       "title": "Getting started",
       "summary": "Find approved Trials, authorized shipping, curated data, and access for the selected Department.",
       "order": 10,
-      "reviewedAt": "2026-10-11",
+      "reviewedAt": "2026-10-22",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [
@@ -497,7 +497,7 @@
       "title": "Getting started",
       "summary": "Find current actions, responsibility and available updates for your Department, then open Customer Jobs, samples, data and retained Trials.",
       "order": 10,
-      "reviewedAt": "2026-10-12",
+      "reviewedAt": "2026-10-22",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [
@@ -713,7 +713,7 @@
       "title": "Getting started",
       "summary": "Find reagent orders, Assembly requests, curated data, and retained Trials in the selected Department.",
       "order": 10,
-      "reviewedAt": "2026-10-12",
+      "reviewedAt": "2026-10-22",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [
@@ -884,7 +884,7 @@
       "title": "Phaeno operations guide",
       "summary": "Find each workflow, its owning workspace, reusable configuration, and the roles needed to act.",
       "order": 10,
-      "reviewedAt": "2026-10-16",
+      "reviewedAt": "2026-10-22",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [

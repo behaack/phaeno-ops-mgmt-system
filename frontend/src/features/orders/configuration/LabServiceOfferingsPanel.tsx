@@ -4,7 +4,6 @@ import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRef, useState } from 'react'
-import { ChevronDown } from 'lucide-react'
 import { getSampleShippingConfiguration } from '#/api/sample-shipping'
 import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 import { useForm } from 'react-hook-form'
@@ -361,7 +360,7 @@ export function LabServiceOfferingsPanel({
                 .
               </p>
             </details>
-            <div className="mt-3 flex justify-end"><ActionMenu><DropdownMenuTrigger asChild><Button variant="outline" size="sm" disabled={!apiEnabled} onPointerDown={event => { actionRef.current = event.currentTarget }} onFocus={event => { actionRef.current = event.currentTarget }}><CustomerSourceText source={"Actions"} /> <ChevronDown className="size-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-52"><DropdownMenuItem onSelect={() => open(item, true)}><CustomerSourceText source={"Edit availability"} /></DropdownMenuItem><DropdownMenuItem disabled={versions.some(version => version.familyId === item.familyId && version.offeringVersion > item.offeringVersion)} onSelect={() => open(item)}><CustomerSourceText source={"Create new version"} /></DropdownMenuItem></DropdownMenuContent></ActionMenu></div>
+            <div className="mt-3 flex justify-end"><ActionMenu><DropdownMenuTrigger asChild><Button variant="outline" size="sm" disabled={!apiEnabled} onPointerDown={event => { actionRef.current = event.currentTarget }} onFocus={event => { actionRef.current = event.currentTarget }}><CustomerSourceText source={"Actions"} /> </Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-52"><DropdownMenuItem onSelect={() => open(item, true)}><CustomerSourceText source={"Edit availability"} /></DropdownMenuItem><DropdownMenuItem disabled={versions.some(version => version.familyId === item.familyId && version.offeringVersion > item.offeringVersion)} onSelect={() => open(item)}><CustomerSourceText source={"Create new version"} /></DropdownMenuItem></DropdownMenuContent></ActionMenu></div>
           </article>
         ))}
       </div>

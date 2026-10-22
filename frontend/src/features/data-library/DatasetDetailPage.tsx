@@ -1,8 +1,9 @@
+import { BackLink } from '#/components/ui/back-link'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { ArrowLeft, Download, FileArchive, LockKeyhole } from 'lucide-react'
+import { Download, FileArchive, LockKeyhole } from 'lucide-react'
 
 import {
   downloadTenantArchive,
@@ -43,19 +44,19 @@ export function DatasetDetailPage({ datasetId }: { datasetId: string }) {
   const dataset = datasetQuery.data
 
   if (!apiEnabled) {
-    return <main className="page-wrap px-4 py-8"><BackLink /><Alert className="mt-4"><AlertTitle><CustomerText message="m_ebb08438dc3c" /></AlertTitle><AlertDescription><CustomerText message="m_ebefce8e5318" /></AlertDescription></Alert></main>
+    return <main className="page-wrap px-4 py-8"><LibraryReturnLink /><Alert className="mt-4"><AlertTitle><CustomerText message="m_ebb08438dc3c" /></AlertTitle><AlertDescription><CustomerText message="m_ebefce8e5318" /></AlertDescription></Alert></main>
   }
   if (datasetQuery.isLoading) {
     return <main className="page-wrap px-4 py-8"><p><CustomerText message="m_59e2daab594e" /></p></main>
   }
   if (!dataset || datasetQuery.error) {
-    return <main className="page-wrap px-4 py-8"><BackLink /><Alert variant="destructive" className="mt-4" role="alert"><AlertTitle><CustomerText message="m_8949b1570015" /></AlertTitle><AlertDescription><CustomerSourceText source={getApiErrorMessage(datasetQuery.error, 'This package is not available to the selected organization.')} /></AlertDescription></Alert></main>
+    return <main className="page-wrap px-4 py-8"><LibraryReturnLink /><Alert variant="destructive" className="mt-4" role="alert"><AlertTitle><CustomerText message="m_8949b1570015" /></AlertTitle><AlertDescription><CustomerSourceText source={getApiErrorMessage(datasetQuery.error, 'This package is not available to the selected organization.')} /></AlertDescription></Alert></main>
   }
 
   const downloadError = fileMutation.error ?? archiveMutation.error
   return (
     <main className="page-wrap px-4 py-8">
-      <BackLink />
+      <LibraryReturnLink />
       <section className="mt-5 mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-2">
@@ -122,8 +123,8 @@ function Definition({ label, value }: { label: string; value: string }) {
   return <div><p className="m-0 text-xs font-semibold tracking-wide text-muted-foreground uppercase">{label}</p><p className="m-0 mt-1 text-sm leading-6">{value}</p></div>
 }
 
-function BackLink() {
-  return <Link to="/data-library" className="inline-flex items-center gap-2 text-sm font-medium text-foreground underline underline-offset-4 hover:no-underline"><ArrowLeft aria-hidden="true" className="size-4" /><CustomerText message="m_844de73c889e" /></Link>
+function LibraryReturnLink() {
+  return <BackLink asChild><Link to="/data-library"><CustomerText message="m_844de73c889e" /></Link></BackLink>
 }
 
 function formatDate(value: string) {

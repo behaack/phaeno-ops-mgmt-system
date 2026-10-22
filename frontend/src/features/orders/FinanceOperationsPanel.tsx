@@ -1,3 +1,4 @@
+import { BackLink } from '#/components/ui/back-link'
 import { CustomerSourceText, useCustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { RecordPagination, useRecordListState } from '#/components/RecordPagination'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -85,9 +86,9 @@ export function FinanceOperationsPanel({ apiEnabled, canBill, canManageCash, can
   const actionError = exportReport.error ?? downloadEvidence.error ?? changeBatch.error
   const title = invoice?.invoiceNumber ?? payment?.receiptNumber ?? customer?.organizationName ?? batch?.batchNumber
   const recordLink = (kind: FinanceRecord['kind'], id: string, label: string) => <Link className="font-medium text-primary hover:underline" to="/finance/$kind/$recordId" params={{ kind, recordId: id }} search={previous => ({ ...previous, financeSection: section, financeCustomer: customerId || undefined })}>{label}</Link>
-  if (!recordAllowed) return <div className="space-y-4"><Button asChild variant="outline"><Link to="/finance" search={previous => ({ ...previous,  })}><CustomerSourceText source={"Back to Finance"} /></Link></Button><p><CustomerSourceText source={"This record is unavailable in your current Finance view."} /></p></div>
+  if (!recordAllowed) return <div className="space-y-4"><BackLink asChild><Link to="/finance" search={previous => ({ ...previous,  })}><CustomerSourceText source={"Back to Finance"} /></Link></BackLink><p><CustomerSourceText source={"This record is unavailable in your current Finance view."} /></p></div>
   return <div className="space-y-5">
-    {record ? <Button asChild variant="outline"><Link to="/finance" search={previous => previous}><CustomerSourceText source={"Back to Finance"} /></Link></Button> : null}
+    {record ? <BackLink asChild><Link to="/finance" search={previous => previous}><CustomerSourceText source={"Back to Finance"} /></Link></BackLink> : null}
     <section aria-label={record ? 'Finance record' : available.find(item => item.value === section)?.label ?? 'Finance information'} className="space-y-5">
     {error ? <Failure title={__customerSource("Finance information is unavailable")} error={error} retry={() => { void currentQuery.refetch() }} retrying={currentQuery.isFetching} /> : null}
     {customers.error && currentQuery !== customers ? <Failure title={__customerSource("Customer information is unavailable")} error={customers.error} retry={() => { void customers.refetch() }} retrying={customers.isFetching} /> : null}

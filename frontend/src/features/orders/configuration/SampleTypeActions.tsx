@@ -1,7 +1,7 @@
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ChevronDown, FilePenLine } from 'lucide-react'
+import { FilePenLine } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { getOrderErrorMessage } from '#/api/order-management'
 import { discardSampleTypeDraft, setSampleTypeStatus, type SampleTypeDefinition } from '#/api/sample-shipping'
@@ -46,7 +46,7 @@ export function SampleTypeActions({ item, revisions, onCreateRevision, onStatusC
   const affected = change && !change.isActive ? (kits.data ?? []).filter(kit => kit.sampleTypeAnchorId && revisions.some(revision => revision.id === kit.sampleTypeAnchorId) && kit.isActive) : []
   if (!latest && !item.isActive && latestReleased?.id !== item.id) return null
   return <div ref={fallback} tabIndex={-1} aria-label={__customerText('m_e6887baa4a66', { p0: String(item.name) })} className="shrink-0">
-    <ActionMenu><DropdownMenuTrigger asChild><Button ref={trigger} type="button" variant="outline"><CustomerText message="m_ff8059dc6752" /><ChevronDown data-icon="inline-end" /></Button></DropdownMenuTrigger>
+    <ActionMenu><DropdownMenuTrigger asChild><Button ref={trigger} type="button" variant="outline"><CustomerText message="m_ff8059dc6752" /></Button></DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-max max-w-[calc(100vw-2rem)]">
         {draft ? <DropdownMenuItem onSelect={() => onCreateRevision(draft)}><FilePenLine aria-hidden="true" /><CustomerText message="m_439cdd5d5ae6" />{draft.revision}</DropdownMenuItem> : latest || latestReleased?.id === item.id ? <DropdownMenuItem onSelect={() => onCreateRevision(latestReleased ?? item)}><FilePenLine aria-hidden="true" /><CustomerText message="m_68bf5426f2b3" /></DropdownMenuItem> : null}
         {item.lifecycle === 'Draft' && hasNotEnded(item) ? <DropdownMenuItem onSelect={() => choose(item, true)}><CustomerText message="m_24433c70eba5" /></DropdownMenuItem> : null}

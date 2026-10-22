@@ -1,3 +1,4 @@
+import { BackLink } from '#/components/ui/back-link'
 import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 import { useSpecimenHolds } from '#/features/orders/use-specimen-holds'
 import { DeadlineBadge } from './JobsList'
@@ -114,7 +115,7 @@ export function LabWorkOrderPage({ workOrderId, packetBarcode, supplierTubeBarco
   return (
     <main className="page-wrap px-4 py-8">
       <section className="mb-6 flex flex-wrap items-start justify-between gap-4">
-        <div><p className="text-sm text-muted-foreground"><Link to="/lab-operations" search={previous => ({ ...previous, section: returnSection ?? (data.workOrder.status === 'AwaitingSpecimens' ? 'receipt' : 'jobs'), shipmentId: returnShipmentId, receiptTab: previous.receiptTab === 'kit-requests' ? 'kit-requests' : previous.receiptView === 'received' ? 'receiving' : 'accession' })} className="hover:underline">Lab operations</Link> / {labWorkOrderLabel(data.workOrder)}</p><div className="mt-2 flex items-center gap-3"><h1 className="wrap-anywhere text-3xl font-semibold">{labWorkOrderLabel(data.workOrder)}</h1><Status value={data.workOrder.status} /></div><p className="mt-2 text-sm text-muted-foreground">{data.specimens.length} specimen(s)</p>
+        <div><p className="text-sm text-muted-foreground"><BackLink asChild><Link to="/lab-operations" search={previous => ({ ...previous, section: returnSection ?? (data.workOrder.status === 'AwaitingSpecimens' ? 'receipt' : 'jobs'), shipmentId: returnShipmentId, receiptTab: previous.receiptTab === 'kit-requests' ? 'kit-requests' : previous.receiptView === 'received' ? 'receiving' : 'accession' })}>Lab operations</Link></BackLink> / {labWorkOrderLabel(data.workOrder)}</p><div className="mt-2 flex items-center gap-3"><h1 className="wrap-anywhere text-3xl font-semibold">{labWorkOrderLabel(data.workOrder)}</h1><Status value={data.workOrder.status} /></div><p className="mt-2 text-sm text-muted-foreground">{data.specimens.length} specimen(s)</p>
           <div aria-label="Job status summary" className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
             <Link to="/lab-operations/$workOrderId" params={{ workOrderId }} search={previous => ({ ...previous, section: parseLabSection(previous.section), tab: 'overview' })} className="flex flex-wrap items-center gap-2 underline-offset-4 hover:underline">
               {deadline.data ? <><span>Delivery due: {deadlineDate(deadline.data.summary.job.dueAtUtc)}</span><DeadlineBadge status={deadline.data.summary.deadlineStatus} /></> : <span>{deadline.error ? 'Delivery timing unavailable' : 'Checking delivery timing…'}</span>}

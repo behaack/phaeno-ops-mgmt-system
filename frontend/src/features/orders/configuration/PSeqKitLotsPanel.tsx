@@ -1,3 +1,4 @@
+import { BackLink } from '#/components/ui/back-link'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useSearch } from '@tanstack/react-router'
@@ -39,7 +40,7 @@ export function PSeqKitLotsPanel({ configuration, lotId, enabled }: { configurat
   const error = lotId ? detail.error : list.error
   return <>
     <Card><CardHeader><div className="flex flex-wrap items-start justify-between gap-3"><div><CardTitle>{lotId ? `Kit lot ${detail.data?.lotNumber ?? ''}` : 'PSeq kit lots'}</CardTitle><CardDescription>Registered lots provide shared recall and expiration information across Partner kit orders.</CardDescription></div>
-      {lotId ? <Button asChild variant="outline"><Link to="/order-configuration" search={previous => ({ ...previous, configurationSection: 'kit-lots' })}>Back to kit lots</Link></Button> : <Button disabled={!enabled || !products.length} onClick={() => setDialog('create')}>Create kit lot</Button>}</div></CardHeader>
+      {lotId ? <BackLink asChild><Link to="/order-configuration" search={previous => ({ ...previous, configurationSection: 'kit-lots' })}>Back to kit lots</Link></BackLink> : <Button disabled={!enabled || !products.length} onClick={() => setDialog('create')}>Create kit lot</Button>}</div></CardHeader>
       <CardContent className="space-y-4">
         {error ? <Alert variant="destructive"><AlertTitle>Kit lots could not be loaded</AlertTitle><AlertDescription>{getOrderErrorMessage(error, 'Try again.')} <Button variant="outline" onClick={() => void (lotId ? detail.refetch() : list.refetch())}>Retry</Button></AlertDescription></Alert> : null}
         {(lotId ? detail.isLoading : list.isLoading) ? <p role="status">Loading kit lots…</p> : null}

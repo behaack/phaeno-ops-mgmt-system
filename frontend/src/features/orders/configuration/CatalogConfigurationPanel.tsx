@@ -1,3 +1,4 @@
+import { BackLink } from '#/components/ui/back-link'
 import { CustomerSourceText, useCustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -211,7 +212,7 @@ export function CatalogConfigurationPanel({
 
   return (
     <>
-      {catalogItemId ? <div className="mb-4"><Link className="text-sm text-primary underline" to="/order-configuration" search={{ ...listSearch, configurationSection: 'catalog' }}><CustomerSourceText source={"Back to service catalog"} /></Link></div> : null}
+      {catalogItemId ? <div className="mb-4"><BackLink asChild><Link to="/order-configuration" search={{ ...listSearch, configurationSection: 'catalog' }}><CustomerSourceText source={"Back to service catalog"} /></Link></BackLink></div> : null}
       {catalogItemId && !selected ? <Alert variant="destructive"><AlertTitle><CustomerSourceText source={"Service item not found"} /></AlertTitle><AlertDescription><CustomerSourceText source={"Return to the catalog and select an available item."} /></AlertDescription></Alert> : selected ? <div className="space-y-5">
         <Card className="gap-0 py-0">
           <CardHeader className="grid-cols-[minmax(0,1fr)_auto] gap-x-3 border-b bg-muted/50 p-4">

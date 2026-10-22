@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "allowances": [
+    {
+      "file": "src/features/orders/LabJobSamplesPanel.tsx",
+      "rule": "shared-back-link",
+      "fingerprint": "8e563f6170bb7a0e1ea9",
+      "count": 1,
+      "reason": "Existing Return to active tube control restores the active scanner row inside the current Job; it does not navigate to a parent page."
+    },
+    {
+      "file": "src/features/sample-shipping/SampleTubeScanner.tsx",
+      "rule": "shared-back-link",
+      "fingerprint": "a1041768dcedea02c027",
+      "count": 1,
+      "reason": "Existing Return to active tube control changes the scanner page and focuses its input; it does not leave the shipment."
+    }
+  ]
+}

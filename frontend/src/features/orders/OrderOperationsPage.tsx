@@ -1,3 +1,4 @@
+import { BackLink } from '#/components/ui/back-link'
 import { CustomerSourceText, useCustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { NativeSelect } from '#/components/ui/native-select'
 import { confirmPortal } from '#/components/PortalConfirmation'
@@ -9,7 +10,7 @@ import { KitAssemblyCasesPanel } from './KitAssemblyCasesPanel'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query'
 import { Link, Navigate, useNavigate, useSearch } from '@tanstack/react-router'
-import { ChevronDown, RefreshCw } from 'lucide-react'
+import { RefreshCw } from 'lucide-react'
 import { useRef, useState, type ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -78,7 +79,7 @@ function OperationalQueues({ apiEnabled, mock, userId, capabilities, initialSect
       <ServiceWorkspaceLayout section={section} onSectionChange={setSection}>
         <div className="page-wrap px-4">
           <section className="mb-6 max-w-3xl">
-            {workspace === 'attention' ? <Link to="/" className="text-sm text-primary hover:underline"><CustomerSourceText source={"Back to Dashboard"} /></Link> : null}
+            {workspace === 'attention' ? <BackLink asChild><Link to="/"><CustomerSourceText source={"Back to Dashboard"} /></Link></BackLink> : null}
             <h1 className="text-3xl font-semibold">{definition.title}</h1>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
               {definition.description}
@@ -206,7 +207,7 @@ function OperationalDetail({ workflow, orderId, apiEnabled, userId }: { workflow
   const breadcrumb = workflow === 'lab' ? 'Order intake' : humanizeStatus(workflow)
   function renderHeaderActions(openCompletion?: () => void, completionOpen = false) {
     return <ActionMenu>
-      <DropdownMenuTrigger asChild><Button ref={actionsTrigger} type="button" variant="outline"><CustomerSourceText source={"Actions"} /><ChevronDown aria-hidden="true" data-icon="inline-end" /></Button></DropdownMenuTrigger>
+      <DropdownMenuTrigger asChild><Button ref={actionsTrigger} type="button" variant="outline"><CustomerSourceText source={"Actions"} /></Button></DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56 max-w-[calc(100vw-2rem)]" onCloseAutoFocus={event => { if (assignmentOpen || reasonDialog || completionOpen) event.preventDefault() }}>
         {openCompletion ? <DropdownMenuItem onSelect={openCompletion}><CustomerSourceText source={"Complete Job"} /></DropdownMenuItem> : null}
         {canAdminister ? <DropdownMenuItem onSelect={() => { assignment.reset(); setAssignmentOpen(true) }}><CustomerSourceText source={"Assignment"} /></DropdownMenuItem> : null}

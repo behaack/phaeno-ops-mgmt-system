@@ -1,3 +1,4 @@
+import { BackLink } from '#/components/ui/back-link'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { NativeSelect } from '#/components/ui/native-select'
 import { RecordPagination, useRecordListState } from '#/components/RecordPagination'
@@ -69,7 +70,7 @@ export function ResultPackageDetailPage({ packageId }: { packageId: string }) {
   function open(next: 'release' | 'withdraw' | 'reissue') { mutation.reset(); setReason(''); setAction(next) }
   if (!canView || authProvider === 'mock') return <main className="page-wrap p-8"><Alert><AlertTitle><CustomerSourceText source={"Result package unavailable"} /></AlertTitle><AlertDescription><CustomerSourceText source={"Use a connected Phaeno session with result release or file-management access."} /></AlertDescription></Alert></main>
   if (query.isPending) return <main className="page-wrap p-8" role="status"><CustomerSourceText source={"Loading result package…"} /></main>
-  if (isOrderFeatureDisabled(query.error, 'governed_results_disabled')) return <main className="page-wrap space-y-4 p-8"><Link to="/lab-operations/result-release" search={{  }} className="text-primary underline"><CustomerSourceText source={"Back to result packages"} /></Link><OrderFeatureNotEnabled feature="Result release" /></main>
+  if (isOrderFeatureDisabled(query.error, 'governed_results_disabled')) return <main className="page-wrap space-y-4 p-8"><BackLink asChild><Link to="/lab-operations/result-release" search={{  }}><CustomerSourceText source={"Back to result packages"} /></Link></BackLink><OrderFeatureNotEnabled feature="Result release" /></main>
   if (query.error || !query.data) return <main className="page-wrap p-8"><Alert variant="destructive"><AlertTitle><CustomerSourceText source={"Result package could not be loaded"} /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(query.error, 'Return to the package queue and try again.')} />}</AlertDescription></Alert></main>
   const item = query.data
   const context = item.context

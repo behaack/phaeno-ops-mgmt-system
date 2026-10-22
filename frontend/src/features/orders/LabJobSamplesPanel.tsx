@@ -124,7 +124,7 @@ export function LabJobSamplesPanel({ order, embedded = false, page, onPageChange
   const finalizeAction = <Button type="button" disabled={navigationLocked || change.isPending || !readyForReview || !order.canFinalizeSamples}
     onClick={() => { setConfirm('finalize'); setConfirmedVersion(null) }}><CustomerText message="m_e81c648b8da6" /></Button>
   const rosterHelpId = `${order.id}-sample-roster-help`
-  const actions = order.canEditSamples ? readyForReview ? finalizeAction : <ActionMenu><DropdownMenuTrigger asChild><Button variant="outline" disabled={navigationLocked} aria-label={__customerText('m_e06ed54d9c35')}><CustomerText message="m_ff8059dc6752" /><ChevronDown aria-hidden="true" /></Button></DropdownMenuTrigger>
+  const actions = order.canEditSamples ? readyForReview ? finalizeAction : <ActionMenu><DropdownMenuTrigger asChild><Button variant="outline" disabled={navigationLocked} aria-label={__customerText('m_e06ed54d9c35')}><CustomerText message="m_ff8059dc6752" /></Button></DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-60 max-w-[calc(100vw-2rem)]">
             <DropdownMenuItem disabled={template.isPending || entryLocked} onSelect={() => template.mutate()}><CustomerText message="m_67f46a1d5a5d" /></DropdownMenuItem>
             <DropdownMenuItem disabled={order.samples.length > 0 || hasUnsavedEntries || entryLocked} onSelect={() => { setConfirm('import'); setPreview(null); setFile(null) }}><CustomerText message="m_d8c79f209f9a" /></DropdownMenuItem>
@@ -194,7 +194,7 @@ export function LabJobSamplesPanel({ order, embedded = false, page, onPageChange
               </div>
               {order.canEditSamples && !order.authorizedSampleIds?.includes(value.id) ? (
                 <div className="col-start-2 row-start-1 justify-self-end sm:col-start-3"><ActionMenu>
-                  <DropdownMenuTrigger asChild><Button id={`${order.id}-${value.id}-sample-actions`} type="button" size="sm" variant="outline" aria-label={__customerText('m_57eae120ccf9', { p0: String(value.customerSampleId) })}><CustomerText message="m_ff8059dc6752" /><ChevronDown aria-hidden="true" /></Button></DropdownMenuTrigger>
+                  <DropdownMenuTrigger asChild><Button id={`${order.id}-${value.id}-sample-actions`} type="button" size="sm" variant="outline" aria-label={__customerText('m_57eae120ccf9', { p0: String(value.customerSampleId) })}><CustomerText message="m_ff8059dc6752" /></Button></DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-52 max-w-[calc(100vw-2rem)]" aria-labelledby={`${order.id}-${value.id}-sample-actions-label`}>
                     <DropdownMenuLabel id={`${order.id}-${value.id}-sample-actions-label`} className="wrap-anywhere"><CustomerText message="m_e589f8643ea5" />{value.customerSampleId}</DropdownMenuLabel>
                     <DropdownMenuSeparator />

@@ -1,3 +1,4 @@
+import { BackLink } from '#/components/ui/back-link'
 import { useEffect, useRef, useState } from 'react'
 import { useFieldArray, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -39,7 +40,7 @@ export function VendorResultsWorkspacePage({ batchId }: { batchId: string }) {
   if (!permitted) return <main className="page-wrap px-4 py-8"><h1>Laboratory operator access required</h1></main>
   if (query.error || intake.error) return <main className="page-wrap space-y-3 px-4 py-8"><h1>Results workspace unavailable</h1><p role="alert">{getLabOperationsError(query.error ?? intake.error, 'Reload the current batch before recording results.')}</p><Button onClick={() => { void query.refetch(); void intake.refetch() }}>Reload</Button></main>
   if (!query.data || intake.isPending) return <main className="page-wrap px-4 py-8" role="status">Loading results and upload workspace…</main>
-  if (!canRecordVendorResults(query.data.batch) || !query.data.sendout || !intake.data) return <main className="page-wrap px-4 py-8"><h1>Results are not ready to record</h1><Link to="/lab-operations/batches/$batchId" params={{ batchId }}>Return to batch</Link></main>
+  if (!canRecordVendorResults(query.data.batch) || !query.data.sendout || !intake.data) return <main className="page-wrap px-4 py-8"><h1>Results are not ready to record</h1><BackLink asChild><Link to="/lab-operations/batches/$batchId" params={{ batchId }}>Return to batch</Link></BackLink></main>
   return <VendorResultsForm key={recoveryGeneration} focusOnRecovery={recoveryGeneration > 0} workspace={query.data} intake={intake.data} refreshFiles={() => intake.refetch()} onRestarted={async () => { await Promise.all([query.refetch(), intake.refetch()]); setRecoveryGeneration(v => v + 1) }} close={() => void navigate({ to: '/lab-operations/batches/$batchId', params: { batchId }, search: p => ({ ...p, section: 'batches' }) })} />
 }
 
@@ -126,7 +127,7 @@ function VendorResultsForm({ workspace, intake, refreshFiles, onRestarted, close
   const dismissal = useOrderDecisionDismissal(__formDraftDirty, busy, close, { scope: 'results changes', description: 'Unsaved form changes will be discarded. Saved drafts and verified uploaded files are retained.' })
   const clock = (key: 'start' | 'end' | 'receipt', label: string) => <PreparationField id={`results-${key}`} label={label} required error={form.formState.errors[key]?.message}><Input id={`results-${key}`} type="datetime-local" step="1" disabled={busy} {...form.register(key)} /></PreparationField>
   return <main className="page-wrap space-y-5 px-4 py-8">
-    <button className="cursor-pointer text-sm text-primary underline focus-visible:outline-ring" onClick={dismissal.close}>← Back to batch</button>
+    <BackLink onClick={dismissal.close}>Back to batch</BackLink>
     <header><h1 className="text-2xl font-semibold">{recorded ? 'Edit results' : 'Record results'}</h1><p className="mt-1 text-sm">{batch.batchNumber} · {tubes.members.length} libraries{recorded ? ` · Results v${batch.resultsVersion} → v${batch.resultsVersion! + 1}` : ''}</p><p className="mt-2 text-sm text-muted-foreground">Save the vendor report and verified FASTQ files together. Scientific approval and Customer release follow assembly and QC.</p></header>
     {needsRestart ? <section className="space-y-3 rounded-lg border p-4" aria-label="Draft recovery"><p role="alert" className="text-sm">This draft is outdated or expired. Restart against the current submission to preserve your entries and retain complete verified file sets for review. Incomplete sets require a new upload.</p><Button ref={restartTrigger} type="button" variant="outline" disabled={busy || !intake.draft} onClick={() => setRestartOpen(true)}>Restart draft</Button>{!intake.draft ? <Button type="button" variant="outline" disabled={busy} onClick={() => void onRestarted()}>Reload submission</Button> : null}</section> : null}
     {intake.draft?.payload.recoveredFromDraftId ? <p role="status" className="text-sm">Draft restarted. Review the retained run details, outcomes and file mappings against the current saved result before saving.</p> : null}

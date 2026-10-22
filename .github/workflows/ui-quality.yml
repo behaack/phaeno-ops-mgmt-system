@@ -1,0 +1,55 @@
+name: Portal UI quality
+
+on:
+  pull_request:
+    paths:
+      - 'frontend/**'
+      - 'docs/ui-ux-principles.md'
+      - '.github/workflows/ui-quality.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+      - 'docs/ui-ux-principles.md'
+      - '.github/workflows/ui-quality.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: portal-ui-quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ui-quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.24.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm ui:test
+      - run: pnpm lint:ci
+      - run: pnpm typecheck
+      - run: pnpm docs:check
+      - run: pnpm ui:gallery:build
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm ui:test:browser
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: portal-ui-gallery-evidence
+          path: frontend/test-results/ui-gallery
+          if-no-files-found: ignore
+          retention-days: 7

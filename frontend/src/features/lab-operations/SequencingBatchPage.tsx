@@ -1,3 +1,4 @@
+import { BackLink } from '#/components/ui/back-link'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { ChevronRight, FolderPlus } from 'lucide-react'
@@ -49,7 +50,7 @@ export function SequencingBatchPage({ batchId }: { batchId: string }) {
   const fastqSets = results.data?.snapshot.fastqSets ?? []
   const successfulWithoutData = sendout?.outcome && (!resultsVersion || results.isSuccess) ? tubes.members.filter(member => (libraryExceptions.find(e => e.memberId === member.id)?.outcome ?? sendout.outcome) === 'Success' && !fastqSets.some(set => set.memberId === member.id && set.files.length > 0) && !resultReferences.some(r => !r.memberId || r.memberId === member.id)).length : 0
   return <main className="page-wrap space-y-5 py-8">
-    <Link to="/lab-operations" search={{ section: 'batches' }} className="text-sm text-primary underline">← Sequencing batches</Link>
+    <BackLink asChild><Link to="/lab-operations" search={{ section: 'batches' }}>Back to sequencing batches</Link></BackLink>
     <div className="space-y-3">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1"><h1 className="break-words text-2xl font-semibold">{batch.batchNumber}</h1><p className="mt-1 break-words text-sm text-muted-foreground">{batch.name !== batch.batchNumber ? `${batch.name} · ` : ''}{labCount(batch.memberCount, 'library', 'libraries')} · {labStatus(batch.batchType)}</p></div>

@@ -1,3 +1,4 @@
+import { BackLink } from '#/components/ui/back-link'
 import { CustomerSourceText, useCustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Link, useNavigate } from '@tanstack/react-router'
@@ -131,7 +132,7 @@ function DraftEditor({ order, initialOrganizationId, sourceRequestId }: { order?
   }
   const busy = mutation.isPending
   return <main className="page-wrap px-4 py-8">
-    <header className="mb-6"><Link to="/order-operations/lab-services" search={previous => ({ ...previous })} className="text-sm text-primary hover:underline"><CustomerSourceText source={"Order intake"} /></Link><h1 className="mt-2 text-3xl font-semibold">{savedOrder ? `Edit Draft · ${savedOrder.orderNumber}` : <CustomerSourceText source={"New Customer order"} />}</h1><p className="mt-2 text-sm text-muted-foreground"><CustomerSourceText source={"Record the Customer’s scope and optional proposed prices. Save a Draft, then submit the completed order for pricing."} /></p></header>
+    <header className="mb-6"><BackLink asChild><Link to="/order-operations/lab-services" search={previous => ({ ...previous })}><CustomerSourceText source={"Order intake"} /></Link></BackLink><h1 className="mt-2 text-3xl font-semibold">{savedOrder ? `Edit Draft · ${savedOrder.orderNumber}` : <CustomerSourceText source={"New Customer order"} />}</h1><p className="mt-2 text-sm text-muted-foreground"><CustomerSourceText source={"Record the Customer’s scope and optional proposed prices. Save a Draft, then submit the completed order for pricing."} /></p></header>
     {ownerError || mutation.error || submissionError || issueSummary.length ? <Alert variant="destructive" className="mb-5" role="alert"><AlertTitle>{submissionError ? <CustomerSourceText source={"Draft saved; pricing submission needs attention"} /> : <CustomerSourceText source={"Review the order entries"} />}</AlertTitle><AlertDescription>{ownerError || getOrderErrorMessage(submissionError ?? mutation.error, '')}{issueSummary.length ? <ul className="list-disc space-y-1 pl-5">{issueSummary.map((issue, index) => <li key={`${issue.path}-${index}`}><button type="button" className="cursor-pointer text-left underline" onClick={() => form.setFocus(issue.path as FieldPath<CommercialDraftForm>)}>{<CustomerSourceText source={issue.message} />}</button></li>)}</ul> : null}<p><CustomerSourceText source={"Your entries are retained. If another user changed the Draft, reopen its saved details before reconciling your changes."} /></p></AlertDescription></Alert> : null}
     <form noValidate onSubmit={event => { event.preventDefault(); void save(false) }} className="space-y-5">
       <fieldset disabled={busy} className="space-y-5">

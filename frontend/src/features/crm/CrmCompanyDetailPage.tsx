@@ -1,17 +1,9 @@
+import { BackLink } from '#/components/ui/back-link'
 import { useCrmPermissions } from './use-crm-permissions';
 import { CrmProvisioningReturn } from "./CrmListNavigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import {
-  ArrowLeft,
-  ChevronDown,
-  Combine,
-  ExternalLink,
-  Pencil,
-  Power,
-  PowerOff,
-  UserRoundCog,
-} from "lucide-react";
+import { Combine, ExternalLink, Pencil, Power, PowerOff, UserRoundCog } from "lucide-react";
 import { useRef, useState } from "react";
 import axios from "axios";
 
@@ -205,12 +197,11 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
                 </AlertDescription>
               </Alert>
             ) : null}
-            <Button asChild variant="outline">
+            <BackLink asChild>
               <Link to="/crm/companies" search={previous => previous}>
-                <ArrowLeft data-icon="inline-start" />
                 Back to companies
               </Link>
-            </Button>
+            </BackLink>
           </CardContent>
         </Card>
       </main>
@@ -219,13 +210,12 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
 
   return (
     <main className="page-wrap space-y-6 px-4 py-8">
-      <CrmProvisioningReturn />
-      <Button asChild variant="ghost" size="sm">
-        <Link to="/crm/companies" search={previous => previous}>
-          <ArrowLeft data-icon="inline-start" />
-          Back to companies
-        </Link>
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        <CrmProvisioningReturn />
+        <BackLink asChild>
+          <Link to="/crm/companies" search={previous => previous}>Back to companies</Link>
+        </BackLink>
+      </div>
 
       <section className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
@@ -252,7 +242,7 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
         <ActionMenu>
           <DropdownMenuTrigger asChild>
             <Button ref={actionsTrigger} variant="outline" className="shrink-0 self-start" aria-label={`Actions for ${company.name}`}>
-              Actions <ChevronDown aria-hidden="true" />
+              Actions
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-max min-w-48 max-w-[calc(100vw-2rem)]" onCloseAutoFocus={(event) => {

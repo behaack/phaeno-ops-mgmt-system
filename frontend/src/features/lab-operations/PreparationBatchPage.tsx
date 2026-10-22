@@ -1,3 +1,4 @@
+import { BackLink } from '#/components/ui/back-link'
 import { labAmount, labCount, labStatus } from './lab-presentation'
 import { stepResourceFields } from './preparation-resource-fields'
 import { PrepareRequiredMixDialog, type RequiredMix } from './PrepareRequiredMixDialog'
@@ -133,8 +134,8 @@ export function PreparationBatchPage({ batchId }: { batchId: string }) {
   }, [automaticSkipAvailable, save.isPending, action, stepAction, uncertainStep, recovery.data, recovery.isFetched, batchId, batchVersion, reconcileConditions])
   const open = (target: Action) => { if (target.key === 'sequencing' && !canAssignSequencing) return; save.reset(); handoff.reset(); if (target.key === 'sequencing') setSequencingSelection(''); setAction(target.key === 'output' && !target.memberId ? { ...target, key: 'outputs' } : target) }
   if (!session) return <main className="page-wrap p-6"><p role="status">Checking laboratory access…</p></main>
-  if (!canAccess) return <main className="page-wrap space-y-4 p-6"><h1 className="text-2xl font-semibold">Preparation unavailable</h1><p role="alert">An assigned Phaeno laboratory role is required.</p><Link to="/" className="underline">Back to dashboard</Link></main>
-  if (!query.data) return <main className="page-wrap space-y-4 p-6"><Link to="/lab-operations" search={{ section: 'work' }} className="underline">Library prep</Link><p role={query.isError ? 'alert' : 'status'}>{query.isError ? getLabOperationsError(query.error, 'Batch could not be loaded.') : 'Loading preparation batch…'}</p><Button variant="outline" onClick={() => void query.refetch()}>Reload</Button></main>
+  if (!canAccess) return <main className="page-wrap space-y-4 p-6"><h1 className="text-2xl font-semibold">Preparation unavailable</h1><p role="alert">An assigned Phaeno laboratory role is required.</p><BackLink asChild><Link to="/">Back to dashboard</Link></BackLink></main>
+  if (!query.data) return <main className="page-wrap space-y-4 p-6"><BackLink asChild><Link to="/lab-operations" search={{ section: 'work' }}>Library prep</Link></BackLink><p role={query.isError ? 'alert' : 'status'}>{query.isError ? getLabOperationsError(query.error, 'Batch could not be loaded.') : 'Loading preparation batch…'}</p><Button variant="outline" onClick={() => void query.refetch()}>Reload</Button></main>
   const data = query.data
   const mixRequirements = Array.from(new Map(data.stages.flatMap(stage => stage.definition.steps.flatMap(step => stepResourceFields(step))).filter(field => field.material?.masterMixWorkflowId).map(field => [`${field.material!.masterMixWorkflowId}:${field.material!.masterMixWorkflowRevision}`, field])).values())
   const recorders = new Map(data.recorders?.map(person => [person.id, person.name]) ?? [])
@@ -263,7 +264,7 @@ export function PreparationBatchPage({ batchId }: { batchId: string }) {
       </div>
     </details> : null
   return <main className="page-wrap space-y-5 px-4 py-6 sm:px-6">
-    <div className="flex flex-wrap items-start justify-between gap-4"><div><Link className="text-sm underline" to="/lab-operations" search={{ section: 'work' }}>Library prep</Link><h1 className="mt-2 text-2xl font-semibold">{data.displayName ?? data.name}</h1><p className="mt-1 break-all text-xs text-muted-foreground">Saved identifier: {data.name}</p><p className="mt-2 text-sm text-muted-foreground">{data.layout.name} · {labCount(data.members.length, 'tube')} · {labCount(data.layout.rows * data.layout.columns, 'position')} · <Badge variant="secondary">{human(data.status)}</Badge></p>{data.notes ? <p className="mt-2 whitespace-pre-wrap break-words text-sm">{data.notes}</p> : null}</div>
+    <div className="flex flex-wrap items-start justify-between gap-4"><div><BackLink asChild><Link to="/lab-operations" search={{ section: 'work' }}>Library prep</Link></BackLink><h1 className="mt-2 text-2xl font-semibold">{data.displayName ?? data.name}</h1><p className="mt-1 break-all text-xs text-muted-foreground">Saved identifier: {data.name}</p><p className="mt-2 text-sm text-muted-foreground">{data.layout.name} · {labCount(data.members.length, 'tube')} · {labCount(data.layout.rows * data.layout.columns, 'position')} · <Badge variant="secondary">{human(data.status)}</Badge></p>{data.notes ? <p className="mt-2 whitespace-pre-wrap break-words text-sm">{data.notes}</p> : null}</div>
       <PreparationActions items={data.status === 'Draft' && data.canOperate ? [
         ...(data.trayConfirmed ? [{ label: 'Edit tray', onClick: () => open({ key: 'reopen-tray' }), disabled: save.isPending }] : []),
         { label: 'Cancel draft batch', onClick: () => open({ key: 'cancel' }), disabled: save.isPending },

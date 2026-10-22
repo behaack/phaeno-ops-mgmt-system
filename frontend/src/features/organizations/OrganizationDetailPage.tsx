@@ -1,10 +1,11 @@
+import { BackLink } from '#/components/ui/back-link'
 import { CustomerSourceText, useCustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { NativeSelect } from '#/components/ui/native-select'
 import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { ArrowLeft, ChevronDown, Copy, Pencil, Plus, UserPlus, Users } from 'lucide-react'
+import { Copy, Pencil, Plus, UserPlus, Users } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -137,6 +138,7 @@ export function OrganizationDetailPage({
   const Root = embedded ? 'section' : 'main'
   return (
     <Root className={embedded ? 'space-y-6' : 'page-wrap space-y-6 px-4 py-8'}>
+      {!embedded ? <BackLink asChild><Link to="/crm/companies"><CustomerSourceText source={"Back to Companies"} /></Link></BackLink> : null}
       {embedded ? (
         <section className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
@@ -152,7 +154,7 @@ export function OrganizationDetailPage({
           {showUsers ? <Button variant="outline" onClick={() => setActiveTab('members')}><Users data-icon="inline-start" /><CustomerSourceText source={"Manage users"} /></Button> : null}
         </section>
       ) : (
-        <section className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"><div><Badge variant="secondary" className="mb-3">{organization.kind}</Badge><h1 className="text-3xl font-semibold leading-tight">{organization.name}</h1><p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground sm:text-base">{organization.description || 'No account description has been recorded.'}</p></div><div className="flex flex-wrap gap-2"><Button asChild variant="outline"><Link to="/crm/companies"><ArrowLeft data-icon="inline-start" /><CustomerSourceText source={"Back to Companies"} /></Link></Button><Button variant="outline" onClick={() => setActiveTab('members')}><Users data-icon="inline-start" /><CustomerSourceText source={"Manage users"} /></Button><Button onClick={() => setEditOpen(true)}><Pencil data-icon="inline-start" /><CustomerSourceText source={"Edit access settings"} /></Button></div></section>
+        <section className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"><div><Badge variant="secondary" className="mb-3">{organization.kind}</Badge><h1 className="text-3xl font-semibold leading-tight">{organization.name}</h1><p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground sm:text-base">{organization.description || 'No account description has been recorded.'}</p></div><ActionMenu><DropdownMenuTrigger asChild><Button variant="outline"><CustomerSourceText source={"Actions"} /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onSelect={() => setActiveTab('members')}><Users aria-hidden="true" /><CustomerSourceText source={"Manage users"} /></DropdownMenuItem><DropdownMenuItem onSelect={() => setEditOpen(true)}><Pencil aria-hidden="true" /><CustomerSourceText source={"Edit access settings"} /></DropdownMenuItem></DropdownMenuContent></ActionMenu></section>
       )}
       {errorState ? <Alert variant="destructive"><AlertTitle>{errorState.label} <CustomerSourceText source={"could not be loaded"} /></AlertTitle><AlertDescription>{<CustomerSourceText source={apiErrorMessage(errorState.error)} />}</AlertDescription></Alert> : null}
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><Summary label="Start pricing" value={organization.kind !== 'Customer' ? 'Not applicable' : pricingReadiness.isPending ? 'Checking…' : pricingReadiness.data ? pricingReadiness.data.canStartPricing ? 'Ready' : 'Setup required' : 'Unavailable'} /><Summary label="Administrator" value={summary?.administratorStatus ?? 'Loading'} /><Summary label="Active users" value={`${summary?.activeMemberCount ?? 0}`} /><Summary label="Usable services" value={`${summary?.effectiveServices.length ?? 0}`} /></section>
@@ -208,7 +210,7 @@ export function OrganizationDetailPage({
                 <ActionMenu modal={false}>
                   <DropdownMenuTrigger asChild>
                     <Button size="sm" variant="outline" aria-label={`Actions for ${serviceLabel(value.service)}`}>
-                      <CustomerSourceText source={"Actions"} /> <ChevronDown aria-hidden="true" />
+                      <CustomerSourceText source={"Actions"} />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-max min-w-40 max-w-[calc(100vw-2rem)]">
@@ -399,4 +401,4 @@ function Summary({ label, value }: { label: string; value: string }) { return <C
 function Info({ label, value }: { label: string; value: string }) { return <div className="rounded-lg border p-4"><dt className="text-xs font-medium text-muted-foreground">{label}</dt><dd className="mt-1 text-sm font-medium">{value}</dd></div> }
 function formatDate(value: string) { return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(value)) }
 function serviceLabel(value: string) { return value === 'PSeqLabService' ? 'PSeq Lab Service' : 'PSeq Kit + data assembly' }
-function NotFound() { return <main className="page-wrap px-4 py-8"><Card className="max-w-2xl"><CardHeader><CardTitle><CustomerSourceText source={"Portal access not found"} /></CardTitle><CardDescription><CustomerSourceText source={"The Company's access settings could not be loaded."} /></CardDescription></CardHeader><CardContent><Button asChild variant="outline"><Link to="/crm/companies"><ArrowLeft data-icon="inline-start" /><CustomerSourceText source={"Back to Companies"} /></Link></Button></CardContent></Card></main> }
+function NotFound() { return <main className="page-wrap px-4 py-8"><Card className="max-w-2xl"><CardHeader><CardTitle><CustomerSourceText source={"Portal access not found"} /></CardTitle><CardDescription><CustomerSourceText source={"The Company's access settings could not be loaded."} /></CardDescription></CardHeader><CardContent><BackLink asChild><Link to="/crm/companies"><CustomerSourceText source={"Back to Companies"} /></Link></BackLink></CardContent></Card></main> }

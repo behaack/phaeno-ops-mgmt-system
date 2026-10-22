@@ -1,10 +1,10 @@
+import { BackLink } from '#/components/ui/back-link'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { ArrowLeft, ChevronDown } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -23,7 +23,7 @@ import { recordLinkClassName } from '#/components/ui/record-link'
 import { Textarea } from '#/components/ui/textarea'
 import { useOrderDraftGuard } from '../use-order-draft-guard'
 import { affectedSampleTypesAfterProcedureDeactivation } from './shipping-dependency-health'
-import { shippingSettingsBackLinkClassName } from './shipping-settings-navigation'
+
 import { sampleTypeChoices } from './sample-type-options'
 
 export const procedureFields = [
@@ -94,7 +94,7 @@ export function ShippingProceduresPanel({ procedures, procedureId, configuration
   function openStatusChange(item: SampleShippingProcedure, isActive: boolean, sourceId: string) { returnFocusId.current = sourceId; changeStatus.reset(); setStatusChange({ item, isActive }) }
   return <div className="space-y-5">
     {procedureId ? <>
-      <Link className={shippingSettingsBackLinkClassName} to="/sample-shipping-settings" search={{ shippingSection: "procedures" }}><ArrowLeft aria-hidden="true" className="size-4" /><CustomerText message="m_591c91511daa" /></Link>
+      <BackLink asChild><Link to="/sample-shipping-settings" search={{ shippingSection: "procedures" }}><CustomerText message="m_591c91511daa" /></Link></BackLink>
       {selected ? <><Card className="gap-0 py-0">
         <CardHeader className="border-b bg-muted/50 p-4"><div className="flex flex-wrap items-start justify-between gap-3">
           <div><CardTitle id={`shipping-procedure-${selected.id}`} role="heading" aria-level={2} tabIndex={-1}>{selected.name}</CardTitle><div className="mt-2 flex flex-wrap items-center gap-2"><Badge variant="outline"><CustomerText message="m_e330d85ff901" />{selected.revision}</Badge><ProcedureStatusBadge item={selected} revisions={selectedFamily} /></div></div>
@@ -157,7 +157,7 @@ function ProcedureActions({ item, revisions, onRevise, onDiscard, onStatusChange
   const latest = !revisions.some(value => value.revision > item.revision)
   const latestReleased = [...revisions].filter(value => value.lifecycle === 'Released' || value.lifecycle === 'Superseded' || value.lifecycle === 'Deactivated').sort((a, b) => b.revision - a.revision)[0]
   if (!latest && !item.isActive && latestReleased?.id !== item.id) return null
-  return <ActionMenu><DropdownMenuTrigger asChild><Button type="button" variant="outline" aria-label={__customerText('m_e78d9a50658a', { p0: String(item.name) })} onPointerDown={event => { triggerRef.current = event.currentTarget }} onFocus={event => { triggerRef.current = event.currentTarget }}><CustomerText message="m_ff8059dc6752" /><ChevronDown aria-hidden="true" className="size-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-max max-w-[calc(100vw-2rem)]">
+  return <ActionMenu><DropdownMenuTrigger asChild><Button type="button" variant="outline" aria-label={__customerText('m_e78d9a50658a', { p0: String(item.name) })} onPointerDown={event => { triggerRef.current = event.currentTarget }} onFocus={event => { triggerRef.current = event.currentTarget }}><CustomerText message="m_ff8059dc6752" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-max max-w-[calc(100vw-2rem)]">
     {draft ? <DropdownMenuItem onSelect={() => onRevise(draft)}><CustomerText message="m_439cdd5d5ae6" />{draft.revision}</DropdownMenuItem> : <DropdownMenuItem onSelect={() => onRevise(latestReleased ?? item)}><CustomerText message="m_68bf5426f2b3" /></DropdownMenuItem>}
     {item.lifecycle === 'Draft' ? <><DropdownMenuItem onSelect={() => onStatusChange(item, true)}><CustomerText message="m_24433c70eba5" /></DropdownMenuItem><DropdownMenuItem variant="destructive" onSelect={() => onDiscard(item)}><CustomerText message="m_eb1a70e39274" /></DropdownMenuItem></> : null}
     {item.isActive ? <DropdownMenuItem variant="destructive" onSelect={() => onStatusChange(item, false)}><CustomerText message="m_fb1e6fa55327" /></DropdownMenuItem> : null}

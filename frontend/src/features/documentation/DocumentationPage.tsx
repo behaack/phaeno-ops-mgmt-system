@@ -1,3 +1,4 @@
+import { BackLink } from '#/components/ui/back-link'
 import { Link, useRouterState } from '@tanstack/react-router'
 import {
   ArrowRightLeft,
@@ -217,13 +218,11 @@ function DocumentationArticle({
   return (
     <div>
           <div className="mb-6">
-            <Link
+            <BackLink asChild><Link
               to="/docs"
-              className="inline-flex items-center gap-1 rounded-sm text-sm font-medium text-muted-foreground no-underline hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
             >
-              <ChevronLeft aria-hidden="true" className="size-4" />
               {messages.documentation}
-            </Link>
+            </Link></BackLink>
           </div>
 
           <article className="min-w-0">

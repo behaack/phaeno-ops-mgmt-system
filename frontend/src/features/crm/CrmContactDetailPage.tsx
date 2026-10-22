@@ -1,8 +1,9 @@
+import { BackLink } from '#/components/ui/back-link'
 import { confirmPortal } from '#/components/PortalConfirmation'
 import { useCrmPermissions } from './use-crm-permissions';
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Combine, Pencil, Plus, Power, PowerOff } from "lucide-react";
+import { Combine, Pencil, Plus, Power, PowerOff } from "lucide-react";
 import { useState } from "react";
 
 import {
@@ -169,18 +170,17 @@ export function CrmContactDetailPage({ contactId }: { contactId: string }) {
   if (!contact)
     return (
       <main className="page-wrap space-y-6 px-4 py-8">
-        <Button asChild variant="ghost" size="sm"><Link to="/crm/contacts" search={previous => previous}><ArrowLeft data-icon="inline-start" />Back to contacts</Link></Button>
+        <BackLink asChild><Link to="/crm/contacts" search={previous => previous}>Back to contacts</Link></BackLink>
         <CrmCollectionFeedback name="Contact" query={query} />
       </main>
     );
   return (
     <main className="page-wrap space-y-6 px-4 py-8">
-      <Button asChild variant="ghost" size="sm">
+      <BackLink asChild>
         <Link to="/crm/contacts" search={previous => previous}>
-          <ArrowLeft data-icon="inline-start" />
           Back to contacts
         </Link>
-      </Button>
+      </BackLink>
       <section className="flex flex-col gap-4 sm:flex-row sm:justify-between">
         <div>
           <div className="mb-3 flex gap-2">

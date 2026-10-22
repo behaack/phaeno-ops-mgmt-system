@@ -1,3 +1,4 @@
+import { BackLink } from '#/components/ui/back-link'
 import { CustomerSourceText, useCustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery } from '@tanstack/react-query'
@@ -120,7 +121,7 @@ export function LabServiceCreatePage({ orderId }: { orderId?: string }) {
   return (
     <main className="page-wrap px-4 py-8">
       <section className="mb-6 max-w-3xl">
-        <p className="text-sm text-muted-foreground"><Link to="/lab-services" className="hover:underline"><CustomerSourceText source={"Lab services"} /></Link> / {orderId ? <CustomerSourceText source={"Edit request"} /> : <CustomerSourceText source={"New request"} />}</p>
+        <p className="text-sm text-muted-foreground"><BackLink asChild><Link to="/lab-services"><CustomerSourceText source={"Lab services"} /></Link></BackLink> / {orderId ? <CustomerSourceText source={"Edit request"} /> : <CustomerSourceText source={"New request"} />}</p>
         <h1 className="mt-2 text-3xl font-semibold">{orderId ? <CustomerSourceText source={"Edit laboratory request"} /> : <CustomerSourceText source={"Request laboratory service"} />}</h1>
         <p className="mt-2 text-sm leading-6 text-muted-foreground"><CustomerSourceText source={"Describe the job and each physical sample. Phaeno will review the scientific scope and issue job-specific pricing before work is placed."} /></p>
       </section>

@@ -1,9 +1,10 @@
+import { BackLink } from '#/components/ui/back-link'
 import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useSearch } from '@tanstack/react-router'
-import { ArrowLeft, FilePenLine, SearchCheck } from 'lucide-react'
+import { FilePenLine, SearchCheck } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { getOrderErrorMessage } from '#/api/order-management'
 import { getKitAssemblyWorkflows, kitAssemblyWorkflowsKey } from '#/api/lab-kit-assembly'
@@ -25,7 +26,7 @@ import { ShippingKitContents } from './ShippingKitContents'
 import { parseShippingContainerListSearch } from './shipping-container-navigation'
 import { containerDateTime, containerEffectiveState } from './shipping-container-utils'
 import { containerDependencyWarnings } from './shipping-dependency-health'
-import { shippingSettingsBackLinkClassName } from './shipping-settings-navigation'
+
 
 export function ShippingContainerDetailPage({ containerId }: { containerId: string }) {
   const __customerText = useCustomerText()
@@ -65,7 +66,7 @@ export function ShippingContainerDetailPage({ containerId }: { containerId: stri
   if (!canManage) return <main className="page-wrap px-4 py-8"><Alert variant="destructive"><AlertTitle><CustomerText message="m_5f214a1c0398" /></AlertTitle><AlertDescription><CustomerText message="m_ad3dc379faf7" /></AlertDescription></Alert></main>
   if (!enabled) return inSettings(<p><CustomerText message="m_9170f00b6f21" /></p>)
   if (query.isLoading) return inSettings(<p role="status"><CustomerText message="m_7125f0e63f95" /></p>)
-  if (!query.data || query.error) return inSettings(<><Link className={shippingSettingsBackLinkClassName} to="/sample-shipping-settings" search={{ ...parseShippingContainerListSearch(search), shippingSection: "containers" }} hash="container-sizes"><ArrowLeft aria-hidden="true" className="size-4" /><CustomerText message="m_ab9535c2ffcd" /></Link><Alert variant="destructive" className="mt-5"><AlertTitle><CustomerText message="m_b78602b36d44" /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(query.error, 'The requested kit specification could not be loaded.')} />} <Button variant="outline" onClick={() => void query.refetch()}><CustomerText message="m_942087cc2d41" /></Button></AlertDescription></Alert></>)
+  if (!query.data || query.error) return inSettings(<><BackLink asChild><Link to="/sample-shipping-settings" search={{ ...parseShippingContainerListSearch(search), shippingSection: "containers" }} hash="container-sizes"><CustomerText message="m_ab9535c2ffcd" /></Link></BackLink><Alert variant="destructive" className="mt-5"><AlertTitle><CustomerText message="m_b78602b36d44" /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(query.error, 'The requested kit specification could not be loaded.')} />} <Button variant="outline" onClick={() => void query.refetch()}><CustomerText message="m_942087cc2d41" /></Button></AlertDescription></Alert></>)
   const item = query.data
   const currentWorkflow = workflows.data?.find(value => value.id === item.assemblyWorkflowId)?.revisions
     .filter(value => value.status === 'Approved').sort((a, b) => b.revision - a.revision)[0]
@@ -82,7 +83,7 @@ export function ShippingContainerDetailPage({ containerId }: { containerId: stri
     await Promise.all([client.invalidateQueries({ queryKey: ['shipping-container-definitions'] }), client.invalidateQueries({ queryKey: ['shipping-container'] }), client.invalidateQueries({ queryKey: ['shipping-container-revisions'] })])
     await navigate({ to: '/sample-shipping-settings/kit-specifications/$containerId', params: { containerId: value.id }, search })
   }
-  return inSettings(<><Link className={shippingSettingsBackLinkClassName} to="/sample-shipping-settings" search={{ ...parseShippingContainerListSearch(search), shippingSection: "containers" }} hash="container-sizes"><ArrowLeft aria-hidden="true" className="size-4" /><CustomerText message="m_ab9535c2ffcd" /></Link>
+  return inSettings(<><BackLink asChild><Link to="/sample-shipping-settings" search={{ ...parseShippingContainerListSearch(search), shippingSection: "containers" }} hash="container-sizes"><CustomerText message="m_ab9535c2ffcd" /></Link></BackLink>
     <header className="my-5 flex flex-wrap items-start justify-between gap-4"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h2 className="wrap-anywhere text-2xl font-semibold">{item.commonName}</h2><Badge variant="outline">{containerEffectiveState(item)}</Badge></div><p className="mt-2 wrap-anywhere text-sm text-muted-foreground"><CustomerText message="m_7370f6c81297" />{item.sku} <CustomerText message="m_3b0e4579f573" />{item.revision} · {item.tubeCapacity} <CustomerText message="m_0f4552851513" /></p></div><ActionMenu><DropdownMenuTrigger asChild><Button variant="outline"><CustomerText message="m_ff8059dc6752" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-max max-w-[calc(100vw-2rem)]"><DropdownMenuItem disabled={!configuration.data || !catalog.data} onSelect={() => setPreview(item)}><SearchCheck aria-hidden="true" /><CustomerText message="m_83efd961fce9" /></DropdownMenuItem>{draft ? <DropdownMenuItem disabled={!configuration.data} onSelect={() => setEditing(draft)}><FilePenLine aria-hidden="true" /><CustomerText message="m_439cdd5d5ae6" />{draft.revision}</DropdownMenuItem> : isLatest || latestReleased?.id === item.id ? <DropdownMenuItem disabled={!configuration.data} onSelect={() => setEditing(latestReleased ?? item)}><FilePenLine aria-hidden="true" /><CustomerText message="m_68bf5426f2b3" /></DropdownMenuItem> : null}{item.lifecycle === 'Draft' && isLatest ? <><DropdownMenuItem disabled={!item.sampleTypeAnchorId} onSelect={() => { activate.reset(); setActivation(item) }}>{item.sampleTypeAnchorId ? <CustomerSourceText source={"Activate"} /> : __customerText('m_773ffeb9a1a0')}</DropdownMenuItem><DropdownMenuItem variant="destructive" onSelect={() => setDiscarding(true)}><CustomerText message="m_eb1a70e39274" /></DropdownMenuItem></> : null}{deactivationTargets.map(target => <DropdownMenuItem key={target.id} variant="destructive" onSelect={() => { deactivate.reset(); setDeactivation(target) }}>{target.id === item.id ? <CustomerSourceText source={"Deactivate"} /> : __customerText('m_707f2e7f2163', { p0: String(target.revision) })}</DropdownMenuItem>)}</DropdownMenuContent></ActionMenu></header>
     {configuration.error || history.error || catalog.error ? <Alert variant="destructive" className="mb-5"><AlertTitle><CustomerText message="m_54c5b0702130" /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(configuration.error ?? history.error ?? catalog.error, 'Refresh before creating a revision or previewing a recommendation.')} />}</AlertDescription></Alert> : null}
     {dependencyWarnings.length ? <Alert variant="warning" className="mb-5"><AlertTitle><CustomerText message="m_a5a68ddc4e55" /></AlertTitle><AlertDescription><p><CustomerText message="m_d4aea6c66fd6" /></p><ul className="mt-2 list-disc pl-5">{dependencyWarnings.map((warning, index) => <li key={index}>{<CustomerSourceText source={warning.message} />}</li>)}</ul></AlertDescription></Alert> : null}

@@ -1,3 +1,4 @@
+import { BackLink } from '#/components/ui/back-link'
 import { useState, type ReactNode } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useSearch } from '@tanstack/react-router'
@@ -56,7 +57,7 @@ export function ProductCatalogPage({ supplierId, productId }: { supplierId?: str
 
   return <div className="space-y-5">
     {query.isError ? <p role="alert" className="text-sm text-destructive">Catalog refresh failed. <button className="cursor-pointer underline" onClick={() => void query.refetch()}>Retry</button></p> : null}
-    {productId ? <Link className="text-sm text-primary underline underline-offset-2" to="/purchasing" search={{ section: 'products', productSearch: filters.productSearch, productInactive: filters.productInactive, productTypeFilter: productTypeFilter || undefined }}>← Back to products</Link> : null}
+    {productId ? <BackLink asChild><Link to="/purchasing" search={{ section: 'products', productSearch: filters.productSearch, productInactive: filters.productInactive, productTypeFilter: productTypeFilter || undefined }}>Back to products</Link></BackLink> : null}
     {productId && !current ? <p>Product not found.</p> : current ? <>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div><h2 className="text-2xl font-semibold">{current.product.productNumber}</h2><p className="mt-1 text-sm text-muted-foreground">{current.supplier.name} · {current.product.productTypeName}</p></div>

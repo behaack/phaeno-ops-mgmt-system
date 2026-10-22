@@ -1,5 +1,4 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ChevronDown } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { downloadInvestigationReport, generateInvestigationReport, getInvestigationReports } from '#/api/lab-investigation'
 import { Button } from '#/components/ui/button'
@@ -28,7 +27,7 @@ export function InvestigationReports({ workOrderId, specimenId, canGenerate }: {
     {generation.isSuccess ? <p role="status" className="text-sm">Investigation report saved.</p> : null}
     {generation.isError ? <EvidenceError error={generation.error} /> : null}{download.isError ? <EvidenceError error={download.error} /> : null}
     {reports.isError ? <EvidenceError error={reports.error} /> : reports.isPending ? <p role="status">Loading reports…</p> : <>
-      {reports.data.slice(0, 25).map(report => <div key={report.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3"><div className="min-w-0"><p className="text-sm">{evidenceDate(report.generatedAtUtc)}</p><p className="break-all text-xs text-muted-foreground">SHA-256: {report.sha256}</p></div><ActionMenu><DropdownMenuTrigger asChild><Button size="sm" variant="outline" disabled={download.isPending}>Actions <ChevronDown aria-hidden="true" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onSelect={() => download.mutate({ id: report.id, format: 'html' })}>Download readable report</DropdownMenuItem><DropdownMenuItem onSelect={() => download.mutate({ id: report.id, format: 'json' })}>Download evidence manifest</DropdownMenuItem></DropdownMenuContent></ActionMenu></div>)}
+      {reports.data.slice(0, 25).map(report => <div key={report.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3"><div className="min-w-0"><p className="text-sm">{evidenceDate(report.generatedAtUtc)}</p><p className="break-all text-xs text-muted-foreground">SHA-256: {report.sha256}</p></div><ActionMenu><DropdownMenuTrigger asChild><Button size="sm" variant="outline" disabled={download.isPending}>Actions </Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onSelect={() => download.mutate({ id: report.id, format: 'html' })}>Download readable report</DropdownMenuItem><DropdownMenuItem onSelect={() => download.mutate({ id: report.id, format: 'json' })}>Download evidence manifest</DropdownMenuItem></DropdownMenuContent></ActionMenu></div>)}
       {!reports.data.length ? <p className="text-sm text-muted-foreground">No saved reports.</p> : null}{page > 0 || reports.data.length > 25 ? <EvidencePages page={page} next={reports.data.length > 25} onChange={setPage} /> : null}
     </>}
   </section>

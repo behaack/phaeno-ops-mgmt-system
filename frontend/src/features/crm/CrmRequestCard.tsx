@@ -60,7 +60,7 @@ export function CrmRequestCard({ request, isPending, onAction, onRecover }: {
         <ActionMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="shrink-0" aria-label={'Actions for ' + request.requestNumber}>
-              Actions <ChevronDown aria-hidden="true" />
+              Actions
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-64">

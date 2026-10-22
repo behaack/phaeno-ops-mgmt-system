@@ -11,8 +11,8 @@
     "dev:https": "vite dev --host 127.0.0.1 --port 3000",
     "build": "node scripts/generate-documentation.mjs --ui-only && vite build",
     "preview": "vite preview",
-    "lint": "eslint .",
-    "lint:ci": "eslint . --max-warnings=0",
+    "lint": "eslint . && pnpm ui:check",
+    "lint:ci": "eslint . --max-warnings=0 && pnpm ui:check",
     "lint:fix": "eslint . --fix",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -23,7 +23,12 @@
     "typecheck": "tsc --noEmit",
     "docs:generate": "node scripts/generate-documentation.mjs",
     "docs:check": "node scripts/generate-documentation.mjs --check",
-    "predev": "node scripts/generate-documentation.mjs --ui-only"
+    "predev": "node scripts/generate-documentation.mjs --ui-only",
+    "ui:gallery": "vite --config ui-gallery/vite.config.ts",
+    "ui:gallery:build": "vite build --config ui-gallery/vite.config.ts",
+    "ui:check": "node scripts/check-ui-drift.mjs",
+    "ui:test": "node --test scripts/ui-drift.test.mjs",
+    "ui:test:browser": "playwright test --config playwright.ui-gallery.config.ts"
   },
   "dependencies": {
     "@bwip-js/browser": "4.11.4",

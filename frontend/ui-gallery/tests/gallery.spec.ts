@@ -1,0 +1,124 @@
+import AxeBuilder from '@axe-core/playwright'
+import { expect, test } from '@playwright/test'
+
+test.beforeEach(async ({ page }, info) => {
+  await page.goto('/')
+  await page.getByLabel('Theme', { exact: true }).selectOption(info.project.use.colorScheme === 'dark' ? 'dark' : 'light')
+  await expect(page.getByRole('heading', { name: 'Component gallery', exact: true })).toBeVisible()
+})
+
+test('theme, reflow and accessible gallery remain consistent at narrow widths', async ({ page }, info) => {
+  expect(await page.locator('html').evaluate(el => el.classList.contains('dark'))).toBe(info.project.use.colorScheme === 'dark')
+  for (const width of ['full', '320']) {
+    await page.getByLabel('Content width', { exact: true }).selectOption(width)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    expect(await page.getByTestId('gallery-preview').evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true)
+  }
+  await page.getByLabel('Content width', { exact: true }).selectOption('full')
+  const accessibility = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()
+  expect(accessibility.violations).toEqual([])
+  await page.screenshot({ path: info.outputPath('gallery.png'), fullPage: true })
+  await page.setViewportSize({ width: 320, height: 900 })
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+})
+
+test('return controls keep semantics, style, focus, wrapping and destination', async ({ page }) => {
+  const company = page.getByRole('link', { name: 'Back to companies', exact: true })
+  const assembly = page.getByRole('link', { name: 'Back to sequencing assembly', exact: true })
+  for (const link of [company, assembly]) {
+    await expect(link.locator('svg[aria-hidden="true"]')).toHaveCount(1)
+    await expect(link.locator('a, button')).toHaveCount(0)
+    await expect(link).toHaveCSS('text-decoration-line', 'none')
+  }
+  const styles = await page.locator('#navigation a[data-slot="back-link"]').evaluateAll(elements => elements.slice(0, 2).map(el => {
+    const s = getComputedStyle(el)
+    return [s.fontSize, s.fontWeight, s.padding, s.gap, s.color, s.minHeight]
+  }))
+  expect(styles[0]).toEqual(styles[1])
+  await company.focus()
+  await page.keyboard.press('Tab')
+  await expect(assembly).toBeFocused()
+  expect(await assembly.evaluate(el => getComputedStyle(el).boxShadow)).not.toBe('none')
+  await page.keyboard.press('Enter')
+  await expect(page).toHaveURL(/#navigation\?assemblyPage=2$/)
+  await page.getByLabel('Content width', { exact: true }).selectOption('320')
+  const long = page.getByRole('link', { name: /^Back to the originating laboratory/ })
+  expect(await long.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true)
+  await long.focus()
+  await page.keyboard.press('Tab')
+  await expect(page.getByRole('button', { name: 'Back to workflow while saving' })).toBeDisabled()
+  await expect(page.getByRole('button', { name: 'Primary example', exact: true })).toBeFocused()
+})
+
+test('shared fields align, required validation focuses and retains entries', async ({ page }) => {
+  const reference = page.getByRole('textbox', { name: 'Sample reference' })
+  const workflow = page.getByLabel('Processing workflow', { exact: false })
+  expect(await reference.evaluate(el => getComputedStyle(el).height)).toBe(await workflow.evaluate(el => getComputedStyle(el).height))
+  const boxes = await page.getByTestId('aligned-fields').locator('[data-slot="field"]').evaluateAll(fields => fields.map(field => {
+    const label = field.querySelector('label')!.getBoundingClientRect()
+    const help = field.querySelector('[data-slot="field-description"]')!.getBoundingClientRect()
+    const control = field.querySelector('input,select')!.getBoundingClientRect()
+    return { labelGap: help.top - label.bottom, controlGap: control.top - help.bottom, top: control.top }
+  }))
+  expect(boxes[0].labelGap).toBeCloseTo(boxes[1].labelGap, 0)
+  expect(boxes[0].controlGap).toBeCloseTo(boxes[1].controlGap, 0)
+  if (page.viewportSize()!.width >= 768) expect(boxes[0].top).toBeCloseTo(boxes[1].top, 0)
+  await page.getByRole('textbox', { name: 'Optional notes' }).fill('Retain these fictional notes')
+  await page.getByRole('button', { name: 'Create example', exact: true }).click()
+  await expect(reference).toBeFocused()
+  await expect(reference).toHaveAttribute('aria-invalid', 'true')
+  await expect(page.getByRole('alert').filter({ hasText: 'Enter an example sample reference.' })).toBeVisible()
+  await expect(page.getByRole('textbox', { name: 'Optional notes' })).toHaveValue('Retain these fictional notes')
+  await reference.fill('EXAMPLE-001')
+  await page.getByRole('button', { name: 'Create example', exact: true }).click()
+  await expect(page.getByRole('status')).toContainText('Fictional example saved locally')
+  const legend = page.locator('form [data-slot="required-legend"]')
+  await expect(legend).toHaveText(/Required/)
+})
+
+test('Actions has one indicator, single actions are direct and keyboard focus returns', async ({ page }) => {
+  const actions = page.getByRole('button', { name: 'Actions', exact: true })
+  await expect(actions).toHaveCount(1)
+  await expect(actions.locator('svg')).toHaveCount(1)
+  await expect(page.getByRole('button', { name: 'View example', exact: true }).locator('svg')).toHaveCount(0)
+  await actions.focus()
+  await page.keyboard.press('Enter')
+  await expect(page.getByRole('menuitem', { name: 'Edit example', exact: true })).toBeFocused()
+  await expect(page.getByRole('menuitem', { name: 'Assign example (unavailable)', exact: true })).toHaveAttribute('aria-disabled', 'true')
+  await page.keyboard.press('Escape')
+  await expect(actions).toBeFocused()
+  await page.getByRole('button', { name: 'View example', exact: true }).click()
+  await expect(page.getByRole('status')).toContainText('Example details opened')
+})
+
+test('confirmation has three regions, safe initial focus, dismissal protection and focus return', async ({ page }) => {
+  const trigger = page.getByRole('button', { name: 'Cancellation example actions', exact: true })
+  await trigger.click()
+  await expect(trigger.locator('svg')).toHaveCount(1)
+  await page.getByRole('menuitem', { name: 'Request example cancellation', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: 'Cancel fictional example?' })
+  await expect(dialog).toBeVisible()
+  await expect(dialog.locator('[data-slot="dialog-header"]')).toContainText('Cancel fictional example?')
+  await expect(dialog.locator('[data-slot="dialog-body"]')).toContainText('This demonstration affects only the fictional example.')
+  await expect(dialog.locator('[data-slot="dialog-footer"]')).toContainText('Keep example')
+  await expect(page.getByRole('button', { name: 'Keep example', exact: true })).toBeFocused()
+  const regions = await dialog.evaluate(el => [...el.children].map(child => child.getAttribute('data-slot')).filter(slot => ['dialog-header', 'dialog-body', 'dialog-footer'].includes(slot ?? '')))
+  expect(regions).toEqual(['dialog-header', 'dialog-body', 'dialog-footer'])
+  await page.mouse.click(1, 1)
+  await expect(dialog).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(dialog).not.toBeVisible()
+  await expect(trigger).toBeFocused()
+})
+
+test('tabs preserve shared sizing, keyboard selection and disabled state', async ({ page }) => {
+  const overview = page.getByRole('tab', { name: 'Overview', exact: true })
+  const samples = page.getByRole('tab', { name: 'Samples and scientific context', exact: true })
+  await expect(overview).toHaveCSS('min-height', '36px')
+  await expect(samples).toHaveCSS('padding', await overview.evaluate(el => getComputedStyle(el).padding))
+  await overview.focus()
+  await page.keyboard.press('ArrowRight')
+  await expect(samples).toHaveAttribute('aria-selected', 'true')
+  await expect(page.getByRole('tabpanel')).toContainText('Related samples appear here')
+  await expect(page.getByRole('tab', { name: 'History (unavailable)', exact: true })).toBeDisabled()
+})

@@ -1,3 +1,4 @@
+import { BackLink } from '#/components/ui/back-link'
 import { useIllustrationUploadPending } from './ProcedureIllustrations'
 import { useWorkflowDiscovery } from './configuration-discovery'
 import { procedureDetailRoute } from './procedure-navigation'
@@ -126,7 +127,7 @@ export function MasterMixProcedureEditor({ workflow: loadedWorkflow, onClose }: 
     const payload = { name: name.trim(), quantityUnit: quantityUnit.trim(), steps: (JSON.parse(serializeProtocolDefinition(value)) as ProtocolDefinition).steps }
     return workflow ? reviseMasterMixWorkflow(workflow, payload) : createMasterMixWorkflow(payload)
   }, onSuccess: async () => { guard.allowNavigation(); await client.invalidateQueries({ queryKey: masterMixWorkflowsKey }); onClose() } })
-  if (workflow && !initial) return <section role="alert" className="space-y-3"><p>This saved procedure could not be read. Its instructions have not been replaced. Return to workflows and refresh before editing.</p><Button type="button" variant="outline" onClick={onClose}>Back to workflows</Button></section>
+  if (workflow && !initial) return <section role="alert" className="space-y-3"><p>This saved procedure could not be read. Its instructions have not been replaced. Return to workflows and refresh before editing.</p><BackLink onClick={onClose}>Back to workflows</BackLink></section>
   return <section className="min-w-0 space-y-5"><header><h2 className="text-2xl font-semibold">{workflow ? `Revise ${workflow.name}` : 'New master-mix procedure'}</h2><p className="mt-2 text-sm text-muted-foreground">Write the complete procedure here. Required reagent fields and exact planned amounts define the recipe; approval reviews the whole revision.</p></header>
     <form className="space-y-5" noValidate onSubmit={form.handleSubmit(value => { if (imageUploadPending) return; setMetaError(''); if (!name.trim() || !quantityUnit.trim()) { setMetaError('Enter the master-mix name and amount unit.'); return } save.mutate(value) })}>
       <PreparationField id="mix-workflow-name" label="Master-mix name" required><Input id="mix-workflow-name" value={name} maxLength={160} onChange={e => setName(e.target.value)} /></PreparationField>

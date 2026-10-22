@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
+import { BackLink } from '#/components/ui/back-link'
 import { useEffect, useRef, useState } from 'react'
 import { listRetainedReleases } from '#/api/released-deliverables'
 import { fileManagementErrorMessage } from '#/api/file-management'
@@ -25,7 +26,7 @@ export function ReleasedDeliverablesPage({ q, page }: { q: string; page: number 
   }
   if (!permitted) return <main className="page-wrap p-6"><h1>Released packages</h1><p>A Phaeno administrator is required.</p></main>
   return <main className="page-wrap space-y-5 px-4 py-8">
-    <Link to="/file-management" className="text-primary underline">File retention policies</Link>
+    <BackLink asChild><Link to="/file-management">File retention policies</Link></BackLink>
     <h1 className="text-3xl font-semibold">Released packages</h1>
     <p className="text-muted-foreground">Review retained package records, preservation holds and reissue history.</p>
     <div className="flex flex-wrap items-end gap-2"><div className="w-full max-w-md space-y-1"><Label htmlFor="release-search">Find an organization</Label><Input id="release-search" value={search} onChange={(event) => updateSearch(event.target.value)} /></div><Button variant="outline" disabled={!search && !q && !page} onClick={() => { if (searchTimer.current) clearTimeout(searchTimer.current); setSearch(''); void navigate({ to: '/released-deliverables', search: { q: '', page: 0 }, replace: true }) }}>Clear filters</Button></div>

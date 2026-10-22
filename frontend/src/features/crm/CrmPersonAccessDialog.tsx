@@ -1,5 +1,4 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ChevronDown } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import type { CrmCompanyPerson } from '#/api/crm'
 import { apiErrorMessage, deactivateDepartmentMember, deactivateMembership, listDepartments, listOrganizationUsers, updateMembershipRole, upsertDepartmentMember } from '#/api/organization-management'
@@ -70,7 +69,7 @@ export function CrmPersonAccessDialog({ organizationId, person, onClose, returnF
         <div className="flex items-center justify-between gap-3">
           <h3 className="font-medium">Organization access</h3>
           {membership.isActive ? (
-            <ActionMenu><DropdownMenuTrigger asChild><Button id="company-member-actions" variant="outline" disabled={Boolean(confirmation)}>Actions<ChevronDown aria-hidden="true" /></Button></DropdownMenuTrigger>
+            <ActionMenu><DropdownMenuTrigger asChild><Button id="company-member-actions" variant="outline" disabled={Boolean(confirmation)}>Actions</Button></DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-max min-w-48 max-w-[calc(100vw-2rem)]">
                 <DropdownMenuItem onSelect={() => choose({ label: 'Save role', notifies: true, description: `Make ${person.displayName} ${membership.isOrganizationAdmin ? 'a member with assigned-department access' : 'an Organization administrator with access to every department'}? This applies immediately and sends an informational email.`, run: () => updateMembershipRole(membership.id, !membership.isOrganizationAdmin) }, 'company-member-actions')}>{membership.isOrganizationAdmin ? 'Make member' : 'Make Organization administrator'}</DropdownMenuItem>
                 {user?.id !== session?.user?.id ? <DropdownMenuItem variant="destructive" onSelect={() => choose({ label: 'Deactivate membership', destructive: true, notifies: true, description: `${person.displayName} will lose access to this Company and receive an informational email. A new invitation is required to restore access.`, run: () => deactivateMembership(membership.id) }, 'company-member-actions')}>Deactivate membership</DropdownMenuItem> : null}
@@ -88,7 +87,7 @@ export function CrmPersonAccessDialog({ organizationId, person, onClose, returnF
           const triggerId = `company-department-access-${department.id}`
           return <div key={department.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-3">
             <div><p className="font-medium">{department.name}</p><p className="text-sm text-muted-foreground">{active ? assignment.isDepartmentAdmin ? 'Department administrator' : 'Member' : 'No access'}</p></div>
-            <ActionMenu><DropdownMenuTrigger asChild><Button id={triggerId} size="sm" variant="outline" disabled={Boolean(confirmation)} aria-label={`Actions for ${department.name} access`}>Actions<ChevronDown aria-hidden="true" /></Button></DropdownMenuTrigger>
+            <ActionMenu><DropdownMenuTrigger asChild><Button id={triggerId} size="sm" variant="outline" disabled={Boolean(confirmation)} aria-label={`Actions for ${department.name} access`}>Actions</Button></DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-max min-w-48 max-w-[calc(100vw-2rem)]">
                 <DropdownMenuItem onSelect={() => choose({ label: active ? 'Save department role' : 'Add department access', notifies: true, description: `${active && !assignment.isDepartmentAdmin ? 'Give department-administrator access' : 'Give member access'} to ${person.displayName} in ${department.name}? This applies immediately and sends an informational email.`, run: () => upsertDepartmentMember(organizationId, department.id, membership.id, { isDepartmentAdmin: active && !assignment.isDepartmentAdmin, version: assignment?.version ?? null }) }, triggerId)}>{active ? assignment.isDepartmentAdmin ? 'Make member' : 'Make department administrator' : 'Add access'}</DropdownMenuItem>
                 {active ? <DropdownMenuItem variant="destructive" onSelect={() => choose({ label: 'Remove department access', destructive: true, notifies: true, description: `Remove ${person.displayName}'s access to ${department.name}? At least one active department must remain. This applies immediately and sends an informational email.`, run: () => deactivateDepartmentMember(organizationId, department.id, membership.id, assignment.version) }, triggerId)}>Remove access</DropdownMenuItem> : null}

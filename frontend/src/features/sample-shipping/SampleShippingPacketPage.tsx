@@ -1,8 +1,9 @@
+import { BackLink } from '#/components/ui/back-link'
 import { CustomerSourceText, useCustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { ArrowLeft, Printer } from 'lucide-react'
+import { Printer } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
 import { getSampleShippingPacket } from '#/api/sample-shipping'
@@ -332,7 +333,7 @@ function text(value: unknown) {
 }
 
 function PacketReturnLink({ shipmentId }: { shipmentId: string }) {
-  return <Link to="/sample-shipping/$shipmentId" params={{ shipmentId }} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft aria-hidden="true" className="size-4" /><CustomerText message="m_e482a83daa99" /></Link>
+  return <BackLink asChild><Link to="/sample-shipping/$shipmentId" params={{ shipmentId }}><CustomerText message="m_e482a83daa99" /></Link></BackLink>
 }
 
 function Instruction({ label, value }: { label: string; value: unknown }) {

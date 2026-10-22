@@ -1,5 +1,38 @@
 # Playwright E2E Test Plan
 
+## Component gallery browser checks — October 22, 2026
+
+`playwright.ui-gallery.config.ts` serves only the standalone gallery, with
+desktop/narrow projects in light/dark themes. `gallery.spec.ts` covers axe,
+320 px reflow, content-width containment, matched return-control style/semantics,
+one decorative arrow, keyboard focus/activation/disabled skipping, equal field
+height/gaps, retained values after required validation, single/multiple Actions,
+one menu indicator, menu focus return, three-region confirmation body and safe
+initial/return focus, backdrop protection, and keyboard tabs with shared sizing.
+Screenshots/failure traces are local/CI artifacts. No real session, API, database
+or provider is used. Component evidence does not establish all feature workflows
+or complete WCAG/screen-reader acceptance. See the
+[owning plan](UI-DESIGN-SYSTEM-GUARDRAILS-PLAN.md) for actual execution results.
+
+Execution: 24/24 cases pass in the four 1280/390 px light/dark projects, including
+the 320 px reflow assertion. Four gallery axe scans report no violations.
+Desktop-light and narrow-dark captures were visually inspected. These results
+are isolated gallery/component evidence, not authenticated whole-app acceptance.
+
+## Shared page return navigation — October 22, 2026
+
+Manual acceptance: compare CRM Company and sequencing-assembly return controls;
+inspect all inventoried workspace families and unavailable/error states for the
+shared arrow, typography, padding, hover and focus treatment. Check desktop and
+narrow light/dark layouts, long translated labels, keyboard activation, disabled
+returns, originating tabs, filters/page/hash restoration and retained dirty-form
+guards. Distinct contextual return destinations wrap in one row, separate from
+record Actions. Do not count pagination, guide previous/next cards or modal steps
+as page returns. A standalone preview of the actual shared component establishes
+control-level evidence only; it does not establish authenticated whole-page
+acceptance. No automated E2E execution was requested. See the
+[owning plan](BACK-NAVIGATION-CONSISTENCY-PLAN.md).
+
 ## HTTP replay and independent recovery follow-up — October 21, 2026
 
 Actual hosted authenticated HTTP replay of the saved terminal request passes,

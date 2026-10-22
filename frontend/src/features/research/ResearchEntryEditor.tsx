@@ -1,3 +1,4 @@
+import { BackLink } from '#/components/ui/back-link'
 import { useState, useRef } from 'react'
 import { useForm, type UseFormReturn } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -21,7 +22,7 @@ import { researchEntrySchema, type ResearchEntryValues as Values } from './resea
 export function ResearchEntryEditor({ experimentId, entryId }: { experimentId: string; entryId: string }) {
   const query = useResearchQuery<EntryDetail>(`experiments/${experimentId}/entries/${entryId}`)
   const { search } = useResearchSearch()
-  return <main className="page-wrap space-y-5 px-4 py-8"><Link to="/research/experiments/$experimentId/entries/$entryId" params={{ experimentId, entryId }} search={search} className="text-sm text-primary hover:underline">Back to entry</Link>
+  return <main className="page-wrap space-y-5 px-4 py-8"><BackLink asChild><Link to="/research/experiments/$experimentId/entries/$entryId" params={{ experimentId, entryId }} search={search}>Back to entry</Link></BackLink>
     <ResearchFeedback error={query.error} /><ResearchLoading loading={query.isLoading} />{query.isError ? <Button variant="outline" onClick={() => void query.refetch()}>Retry entry</Button> : null}
     {query.data ? <EntryForm key={`${experimentId}:${entryId}`} detail={query.data} refresh={() => query.refetch({ throwOnError: true }).then(r => r.data!)} /> : null}
   </main>

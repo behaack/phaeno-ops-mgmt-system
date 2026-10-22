@@ -1,3 +1,4 @@
+import { BackLink } from '#/components/ui/back-link'
 import { RecordPagination } from '#/components/RecordPagination'
 import { useScopedRecordPage } from '#/components/use-scoped-record-page'
 import { submissionDateLabel } from './trial-submission-dates'
@@ -57,9 +58,11 @@ export function TrialDetailPage({ trialId, fromCompanyId }: { trialId: string; f
       payload: (values, latest) => ({ scopeRevision: latest.scope!.revision, termsVersion: latest.scope!.termsVersion, ruoNoPhiConfirmed: values.confirmed === 'yes' }), content: <TrialScopeView scope={current.scope!} />, submitLabel: 'Accept Trial scope', refresh: acceptance }
   }
   return <main className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6">
-    <Link to="/order-operations/lab-services/trials" search={previous => ({ ...previous, fromCompanyId, requestId: undefined })} className="text-primary underline">Back to Trial projects</Link>
+    <div className="flex flex-wrap gap-2">
+      <BackLink asChild><Link to="/order-operations/lab-services/trials" search={previous => ({ ...previous, fromCompanyId, requestId: undefined })}>Back to Trial projects</Link></BackLink>
+      {fromCompanyId && trial.isStaff ? <BackLink asChild><Link to="/crm/companies/$companyId" params={{ companyId: fromCompanyId }}>Back to Company</Link></BackLink> : null}
+    </div>
     {queries.detail.error ? <div role="alert" className="text-sm"><p>The Trial could not be refreshed. Your current workspace is preserved.</p><Button variant="outline" onClick={() => { void queries.detail.refetch() }}>Retry Trial refresh</Button></div> : null}
-    {fromCompanyId && trial.isStaff ? <Link to="/crm/companies/$companyId" params={{ companyId: fromCompanyId }} className="ml-4 text-primary underline">Back to Company</Link> : null}
     <header className="flex flex-wrap justify-between gap-4"><div><p className="text-sm text-muted-foreground">{trial.companyName} · {trial.number}</p><h1 className="text-2xl font-semibold">{trial.scope?.name ?? (trial.isStaff ? trial.scopeDraft?.values.name : null) ?? 'Trial request'}</h1><p className="mt-1">{trialLabel(trial.status)}{trial.isOnHold ? ' · On hold' : ''} · No charge · Research use only</p></div><div className="self-start"><ActionMenu onOpenChange={opened => { menuOpen.current = opened }}><DropdownMenuTrigger asChild><Button onFocus={event => { menuTrigger.current = event.currentTarget }} variant="outline">Actions</Button></DropdownMenuTrigger><DropdownMenuContent align="end" onCloseAutoFocus={closeActionMenu}>
       {trial.isStaff && !closed ? <DropdownMenuItem asChild><Link to="/order-operations/lab-services/trials/$trialId/scope" params={{ trialId }} search={previous => ({ ...previous, fromCompanyId, requestId: undefined })}> {trial.scopeDraft ? 'Resume draft' : trial.scope ? 'Amend scope' : 'Define scope'}</Link></DropdownMenuItem> : null}
       {trial.canAccept ? <DropdownMenuItem onSelect={() => open(acceptance)}>Review and accept scope</DropdownMenuItem> : null}

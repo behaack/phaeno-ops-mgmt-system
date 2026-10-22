@@ -1,18 +1,9 @@
+import { BackLink } from '#/components/ui/back-link'
 import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
-import {
-  Archive,
-  ArrowLeft,
-  CheckCircle2,
-  Ellipsis,
-  FileCheck2,
-  FileUp,
-  LockKeyhole,
-  Save,
-  Trash2,
-} from 'lucide-react'
+import { Archive, CheckCircle2, Ellipsis, FileCheck2, FileUp, LockKeyhole, Save, Trash2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -193,7 +184,7 @@ export function SourceSampleWorkspace({ sourceSampleId }: { sourceSampleId: stri
   if (!apiEnabled) {
     return (
       <main className="page-wrap px-4 py-8">
-        <BackLink />
+        <SourceRegistryReturnLink />
         <Alert className="mt-4">
           <AlertTitle>Connected source data is unavailable in mock-session mode</AlertTitle>
           <AlertDescription>
@@ -211,7 +202,7 @@ export function SourceSampleWorkspace({ sourceSampleId }: { sourceSampleId: stri
   if (!source || sourceQuery.error) {
     return (
       <main className="page-wrap px-4 py-8">
-        <BackLink />
+        <SourceRegistryReturnLink />
         <ErrorAlert error={sourceQuery.error} fallback="The source revision could not be loaded." />
       </main>
     )
@@ -222,7 +213,7 @@ export function SourceSampleWorkspace({ sourceSampleId }: { sourceSampleId: stri
 
   return (
     <main className="page-wrap px-4 py-8">
-      <BackLink />
+      <SourceRegistryReturnLink />
       <section className="mt-5 mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-2">
@@ -482,8 +473,8 @@ function Field({ label, error, errorId, required, children }: { label: string; e
   return <label className="grid gap-1.5"><span className="text-sm font-medium">{required ? <RequiredFieldName>{label}</RequiredFieldName> : label}</span>{children}{error ? <span id={errorId} className="text-sm text-destructive" role="alert">{error}</span> : null}</label>
 }
 
-function BackLink() {
-  return <Link to="/data-provisioning" search={{ section: 'sources' }} className="inline-flex items-center gap-2 text-sm font-medium text-foreground underline underline-offset-4 hover:no-underline"><ArrowLeft aria-hidden="true" className="size-4" />Back to Source registry</Link>
+function SourceRegistryReturnLink() {
+  return <BackLink asChild><Link to="/data-provisioning" search={{ section: 'sources' }}>Back to Source registry</Link></BackLink>
 }
 
 function ErrorAlert({ error, fallback }: { error: unknown; fallback: string }) {

@@ -1,3 +1,4 @@
+import { BackLink } from '#/components/ui/back-link'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { getVendorResultsVersion, getLabOperationsError } from '#/api/lab-operations'
@@ -17,7 +18,7 @@ export function VendorResultsVersionPage({ batchId, resultVersion }: { batchId: 
   if (query.isError) return <main className="page-wrap space-y-3 py-8"><p role="alert">{getLabOperationsError(query.error, 'This results version could not be loaded.')}</p><Button variant="outline" onClick={() => void query.refetch()}>Reload version</Button></main>
   const { version, snapshot } = query.data
   return <main className="page-wrap space-y-5 py-8">
-    <Link to="/lab-operations/batches/$batchId" params={{ batchId }} className="text-sm text-primary underline">← Current batch</Link>
+    <BackLink asChild><Link to="/lab-operations/batches/$batchId" params={{ batchId }}>Back to current batch</Link></BackLink>
     <div className="space-y-2"><h1 className="break-words text-2xl font-semibold">{snapshot.batchNumber} · Results v{version.resultVersion}</h1>
       <p className="text-sm">{version.isCurrent ? 'Current saved version' : 'Earlier saved version'} · Read-only</p>
       <p className="text-sm text-muted-foreground">Recorded {date(version.recordedAtUtc)} · {version.recordedByName}</p>

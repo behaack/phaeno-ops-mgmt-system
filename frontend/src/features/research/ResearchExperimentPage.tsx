@@ -1,3 +1,4 @@
+import { BackLink } from '#/components/ui/back-link'
 import { useState } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { Button } from '#/components/ui/button'
@@ -34,7 +35,7 @@ export function ResearchExperimentPage({ experimentId }: { experimentId: string 
     } catch { await query.refetch() }
   }
   const detail = query.data
-  return <main className="page-wrap space-y-5 px-4 py-8">{search.fromProjectId ? <Link to="/research/projects/$projectId" params={{ projectId: search.fromProjectId }} search={search} className="text-sm text-primary hover:underline">Back to project experiments</Link> : <Link to="/research/experiments" search={search} className="text-sm text-primary hover:underline">Back to experiments</Link>}<ResearchFeedback error={query.error || mutation.error} /><ResearchLoading loading={query.isLoading} />{query.isError ? <Button variant="outline" onClick={() => void query.refetch()}>Retry experiment</Button> : null}
+  return <main className="page-wrap space-y-5 px-4 py-8">{search.fromProjectId ? <BackLink asChild><Link to="/research/projects/$projectId" params={{ projectId: search.fromProjectId }} search={search}>Back to project experiments</Link></BackLink> : <BackLink asChild><Link to="/research/experiments" search={search}>Back to experiments</Link></BackLink>}<ResearchFeedback error={query.error || mutation.error} /><ResearchLoading loading={query.isLoading} />{query.isError ? <Button variant="outline" onClick={() => void query.refetch()}>Retry experiment</Button> : null}
     {detail ? <><ResearchHeader title={detail.experiment.title} description={`${detail.project.name} · ${detail.experiment.status} · Experiment date: ${detail.experiment.experimentDate ?? 'not recorded'}`}>
       <ActionMenu><DropdownMenuTrigger asChild><Button id="research-experiment-actions" variant="outline" disabled={mutation.isPending}>Actions</Button></DropdownMenuTrigger><DropdownMenuContent align="end">
         {detail.experiment.status === 'Active' ? <><DropdownMenuItem onSelect={() => setDialog('edit')}>Edit experiment</DropdownMenuItem><DropdownMenuItem onSelect={() => setTransition('complete')}>Complete experiment</DropdownMenuItem></> : <DropdownMenuItem onSelect={() => setTransition('reopen')}>Reopen experiment</DropdownMenuItem>}

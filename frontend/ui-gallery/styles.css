@@ -1,0 +1,5 @@
+@import "../src/styles.css";
+
+/* The standalone Vite root must scan the real shared controls as well. */
+@source "../src/components";
+@source ".";

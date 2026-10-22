@@ -1,3 +1,4 @@
+import { BackLink } from '#/components/ui/back-link'
 import { useState, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
@@ -18,7 +19,7 @@ export function MaterialLotPage({ materialLotId }: { materialLotId: string }) {
   const query = useQuery({ queryKey: ['lab-operations'], queryFn: getLabOperationsDashboard, enabled: allowed && authProvider !== 'mock' })
   const lot = query.data?.materialLots.find(item => item.id === materialLotId)
   return <div className="space-y-5">
-    <Link to="/purchasing" search={{ section: 'materials' }} className="text-sm text-primary underline underline-offset-4">← Back to purchased materials</Link>
+    <BackLink asChild><Link to="/purchasing" search={{ section: 'materials' }}>Back to purchased materials</Link></BackLink>
     {!allowed ? <p>You do not have access to laboratory materials.</p> : authProvider === 'mock' ? <p>Use a connected Phaeno session to view material lots.</p> : <>
       {query.isError ? <Alert variant="destructive"><AlertTitle>Material lot could not be refreshed</AlertTitle><AlertDescription>{getLabOperationsError(query.error, 'Try again to load the latest lot details.')}<Button variant="outline" onClick={() => void query.refetch()}>Try again</Button></AlertDescription></Alert> : null}
       {query.isPending ? <p role="status">Loading material lot…</p> : lot ? <>

@@ -1,4 +1,5 @@
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
+import { BackLink } from '#/components/ui/back-link'
 import { useEffect, useRef, useState } from 'react'
 import { isAxiosError } from 'axios'
 import { Search } from 'lucide-react'
@@ -128,7 +129,7 @@ function DocumentationSearchResults({ audience }: { audience: DocumentationAudie
           <Button variant="outline" className="cursor-pointer" disabled={params.page * results.metadata.pageSize >= results.metadata.total} onClick={() => void navigate({ to: '/docs/search', search: { ...params, page: params.page + 1 }, resetScroll: false })}>{messages.next}</Button>
         </nav>
       </> : null}
-      <Link to="/docs" className={`${linkClass} mt-6 inline-block`}>{messages.browseAll}</Link>
+      <div className="mt-6"><BackLink asChild><Link to="/docs">{messages.browseAll}</Link></BackLink></div>
     </section>
   )
 }

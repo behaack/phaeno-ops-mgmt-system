@@ -1,5 +1,38 @@
 # Frontend Test Plan
 
+## Component gallery and source drift guard — October 22, 2026
+
+`scripts/ui-drift.test.mjs` covers aliased/localized returns, canonical component
+composition, duplicate arrows/visual overrides, contextual versus navigation
+dropdowns, manual Actions indicators, responsive/conditional tab-size overrides,
+native browser confirmations, gallery isolation, and exact/stale/expanded
+exception handling. `ui:check` scans Portal source and gallery call sites, excludes
+owned primitive implementations/generated/test code, and is included in lint.
+The only source allowances are the two existing active-tube scanner steps.
+Execution results and limits belong in the
+[owning plan](UI-DESIGN-SYSTEM-GUARDRAILS-PLAN.md).
+
+Execution: all 18 guard regressions pass; the guard passes over 739 source files
+with two exact scanner-step exceptions. Full lint and TypeScript pass. The 14
+manual Actions indicators and specimen tab-padding override found during the
+inventory were removed. The new read-only CI workflow is authored locally and
+has not run remotely.
+
+## Shared page return navigation — October 22, 2026
+
+All page-return controls use the shared `BackLink`, preserving typed Link props,
+localized labels, disabled states and guarded callback returns. Static inventory
+covers ordinary and unavailable/error paths. Verify one decorative arrow,
+matching compact typography/padding/gap, a single interactive element, wrapping
+long labels, semantic theme colors and visible keyboard focus. Verify search,
+hash, parameters and onClick handlers survive composition without introducing
+history-based navigation. Native disabled buttons and disabled router links
+must remain unavailable; form Cancel/modal steps and pagination retain their
+own patterns. Automated tests are intentionally deferred for this presentation
+refactor under the request-only policy. TypeScript, scoped lint and direct local
+component-browser evidence are recorded in the
+[owning plan](BACK-NAVIGATION-CONSISTENCY-PLAN.md).
+
 ## Internal order formatted notes — October 17, 2026
 
 Updated commercial Draft fixtures for separate private/public fields. Added

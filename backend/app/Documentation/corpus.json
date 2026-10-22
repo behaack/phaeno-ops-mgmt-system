@@ -299,7 +299,7 @@
       "title": "Getting started",
       "summary": "Find current actions, responsibility and available updates for your Department, then open Customer Jobs, samples, data and retained Trials.",
       "order": 10,
-      "reviewedAt": "2026-10-12",
+      "reviewedAt": "2026-10-22",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [
@@ -318,7 +318,7 @@
       "publicationStatus": "published",
       "id": "customer/en-US/getting-started",
       "route": "/docs/customer/getting-started",
-      "contentHash": "c3769b618045f499ed88db53ba5422ec9110a10e5394b1c3dda7302a424ea316",
+      "contentHash": "51ef64e1ec0a1dde9816d931abc9f018d2f1724089e186720ad73ac9bc5b1f57",
       "sections": [
         {
           "heading": "Getting started",
@@ -333,7 +333,7 @@
         {
           "heading": "Navigate the help center",
           "anchor": "navigate-the-help-center",
-          "text": "Open the user menu in the toolbar and choose Documentation. This entry is available on both wide and narrow screens. On smaller screens, the Documentation tab sits below the toolbar and organization details. On narrow screens, the user menu opens a full-width tray from the right. Choose Close or press Escape to dismiss it and return to its toolbar button. Your workspace links appear directly in the tray. When configuration pages are available to your role, choose Settings to expand them. The section starts collapsed each time you open the menu; use Enter or Space to toggle it, Up and Down to move among visible links, and Escape to close the user menu. Guide navigation opens beneath the toolbar from the far-left edge of the screen. Its header identifies Documentation and, on wider screens, provides the pin or unpin icon. Pointer users can preview an unpinned sidebar by approaching the left edge; keyboard and touch users open it from the tab. Choosing a guide closes an unpinned sidebar and displays the article. On narrow screens, click or tap outside the sidebar to close it; its tab and Escape also close it."
+          "text": "Page-return links use a left arrow and name the destination. Use them to return from a record to its list or originating workflow. If more than one return destination is offered, choose the one that matches your task. Open the user menu in the toolbar and choose Documentation. This entry is available on both wide and narrow screens. On smaller screens, the Documentation tab sits below the toolbar and organization details. On narrow screens, the user menu opens a full-width tray from the right. Choose Close or press Escape to dismiss it and return to its toolbar button. Your workspace links appear directly in the tray. When configuration pages are available to your role, choose Settings to expand them. The section starts collapsed each time you open the menu; use Enter or Space to toggle it, Up and Down to move among visible links, and Escape to close the user menu. Guide navigation opens beneath the toolbar from the far-left edge of the screen. Its header identifies Documentation and, on wider screens, provides the pin or unpin icon. Pointer users can preview an unpinned sidebar by approaching the left edge; keyboard and touch users open it from the tab. Choosing a guide closes an unpinned sidebar and displays the article. On narrow screens, click or tap outside the sidebar to close it; its tab and Escape also close it."
         },
         {
           "heading": "Confirm the current organization",
@@ -972,7 +972,7 @@
       "title": "Getting started",
       "summary": "Find reagent orders, Assembly requests, curated data, and retained Trials in the selected Department.",
       "order": 10,
-      "reviewedAt": "2026-10-12",
+      "reviewedAt": "2026-10-22",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [
@@ -991,7 +991,7 @@
       "publicationStatus": "published",
       "id": "partner/en-US/getting-started",
       "route": "/docs/partner/getting-started",
-      "contentHash": "8926f46c4358029f7959ef610c0b73a7936efa474473fecadfbe8e4d7de6a502",
+      "contentHash": "7049e34802dfce49636a71c048e4c3754d4f5ce5cb35f85fe549188fcb5cfdd7",
       "sections": [
         {
           "heading": "Getting started",
@@ -1006,7 +1006,7 @@
         {
           "heading": "Navigate the help center",
           "anchor": "navigate-the-help-center",
-          "text": "Open the user menu in the toolbar and choose Documentation. This entry is available on both wide and narrow screens. On smaller screens, the Documentation tab sits below the toolbar and organization details. On narrow screens, the user menu opens a full-width tray from the right. Choose Close or press Escape to dismiss it and return to its toolbar button. Your workspace links appear directly in the tray. When configuration pages are available to your role, choose Settings to expand them. The section starts collapsed each time you open the menu; use Enter or Space to toggle it, Up and Down to move among visible links, and Escape to close the user menu. Guide navigation opens beneath the toolbar from the far-left edge of the screen. Its header identifies Documentation and, on wider screens, provides the pin or unpin icon. Pointer users can preview an unpinned sidebar by approaching the left edge; keyboard and touch users open it from the tab. Choosing a guide closes an unpinned sidebar and displays the article. On narrow screens, click or tap outside the sidebar to close it; its tab and Escape also close it."
+          "text": "Page-return links use a left arrow and name the destination. Use them to return from a record to its list or originating workflow. If more than one return destination is offered, choose the one that matches your task. Open the user menu in the toolbar and choose Documentation. This entry is available on both wide and narrow screens. On smaller screens, the Documentation tab sits below the toolbar and organization details. On narrow screens, the user menu opens a full-width tray from the right. Choose Close or press Escape to dismiss it and return to its toolbar button. Your workspace links appear directly in the tray. When configuration pages are available to your role, choose Settings to expand them. The section starts collapsed each time you open the menu; use Enter or Space to toggle it, Up and Down to move among visible links, and Escape to close the user menu. Guide navigation opens beneath the toolbar from the far-left edge of the screen. Its header identifies Documentation and, on wider screens, provides the pin or unpin icon. Pointer users can preview an unpinned sidebar by approaching the left edge; keyboard and touch users open it from the tab. Choosing a guide closes an unpinned sidebar and displays the article. On narrow screens, click or tap outside the sidebar to close it; its tab and Escape also close it."
         },
         {
           "heading": "Confirm the current Partner organization",
@@ -2314,7 +2314,7 @@
       "title": "Phaeno operations guide",
       "summary": "Find each workflow, its owning workspace, reusable configuration, and the roles needed to act.",
       "order": 10,
-      "reviewedAt": "2026-10-16",
+      "reviewedAt": "2026-10-22",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [
@@ -2333,7 +2333,7 @@
       "publicationStatus": "published",
       "id": "phaeno/getting-started",
       "route": "/docs/phaeno/getting-started",
-      "contentHash": "80e7189e307770e2f1b3dcb70f9aadeb62f5aa6363dc710170aefa44d0a1aab6",
+      "contentHash": "a5213e504a102202db7017e7e95f7482a1491d3ba02976752cc048457e156e72",
       "sections": [
         {
           "heading": "Phaeno operations guide",
@@ -2343,7 +2343,7 @@
         {
           "heading": "Navigate workspaces and guides",
           "anchor": "navigate-workspaces-and-guides",
-          "text": "Open the user menu in the toolbar and choose Documentation. This entry is available on both wide and narrow screens. When your access includes User management, it appears directly beneath Documentation. Theme choices and settings keep their section dividers without Display, Administration, or Resources headings. On wide screens, choose More after the main workspace links to open Finance, Purchasing, Equipment, Data provisioning, Website operations, or Legacy integrations, in that order. On narrow screens, the user menu opens a full-width tray from the right. Choose Close or press Escape to dismiss it and return to the toolbar button. Workspace links appear directly in the tray. Choose More to reveal these destinations, or Settings to reveal your configuration pages. Both sections start collapsed, and opening one closes the other. Only destinations allowed by your Phaeno access are shown. Within the toolbar More menu, use the Up and Down arrow keys to move between links. Tab closes the menu and moves to the next toolbar control; Shift+Tab closes it and moves to the previous toolbar control. Escape closes the menu and returns focus to More. In the narrow-screen tray, use Enter or Space to expand or collapse More or Settings, then Up and Down to move among visible navigation items. Tab and Shift+Tab move among the tray controls. Escape closes the user menu and returns focus to its toolbar button. The POMS dashboard, CRM, Lab operations, Order operations, Data provisioning, Website operations, and Documentation use a shared sidebar anchored beneath the toolbar at the far-left edge of the screen. Its header identifies the current workspace and, on wider screens, provides the pin or unpin icon. The sidebar is pinned by default, leaves a centered page in place when the left margin has room, and reflows the page only to prevent overlap. Pointer users can preview an unpinned sidebar by approaching the edge; keyboard and touch users open the same non-modal rail from the tab. On narrow screens, click or tap outside the sidebar to close it. Choosing a section, toggling its tab, or pressing Escape also closes an unpinned sidebar. Documentation automatically lists only the guides for the current organization, with an icon identifying each topic. CRM, Data provisioning, Order operations, and Laboratory operations expand to show an overview and detailed workflow guides. The group containing the current guide opens automatically; use its disclosure button to expand or collapse it."
+          "text": "Page-return links use a left arrow and name the destination. Use them to return from a record to its list or originating workflow. If more than one return destination is offered, choose the one that matches your task. Open the user menu in the toolbar and choose Documentation. This entry is available on both wide and narrow screens. When your access includes User management, it appears directly beneath Documentation. Theme choices and settings keep their section dividers without Display, Administration, or Resources headings. On wide screens, choose More after the main workspace links to open Finance, Purchasing, Equipment, Data provisioning, Website operations, or Legacy integrations, in that order. On narrow screens, the user menu opens a full-width tray from the right. Choose Close or press Escape to dismiss it and return to the toolbar button. Workspace links appear directly in the tray. Choose More to reveal these destinations, or Settings to reveal your configuration pages. Both sections start collapsed, and opening one closes the other. Only destinations allowed by your Phaeno access are shown. Within the toolbar More menu, use the Up and Down arrow keys to move between links. Tab closes the menu and moves to the next toolbar control; Shift+Tab closes it and moves to the previous toolbar control. Escape closes the menu and returns focus to More. In the narrow-screen tray, use Enter or Space to expand or collapse More or Settings, then Up and Down to move among visible navigation items. Tab and Shift+Tab move among the tray controls. Escape closes the user menu and returns focus to its toolbar button. The POMS dashboard, CRM, Lab operations, Order operations, Data provisioning, Website operations, and Documentation use a shared sidebar anchored beneath the toolbar at the far-left edge of the screen. Its header identifies the current workspace and, on wider screens, provides the pin or unpin icon. The sidebar is pinned by default, leaves a centered page in place when the left margin has room, and reflows the page only to prevent overlap. Pointer users can preview an unpinned sidebar by approaching the edge; keyboard and touch users open the same non-modal rail from the tab. On narrow screens, click or tap outside the sidebar to close it. Choosing a section, toggling its tab, or pressing Escape also closes an unpinned sidebar. Documentation automatically lists only the guides for the current organization, with an icon identifying each topic. CRM, Data provisioning, Order operations, and Laboratory operations expand to show an overview and detailed workflow guides. The group containing the current guide opens automatically; use its disclosure button to expand or collapse it."
         },
         {
           "heading": "Work in the Phaeno context",
@@ -4567,7 +4567,7 @@
       "title": "Getting started",
       "summary": "Find approved Trials, authorized shipping, curated data, and access for the selected Department.",
       "order": 10,
-      "reviewedAt": "2026-10-11",
+      "reviewedAt": "2026-10-22",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [
@@ -4586,7 +4586,7 @@
       "publicationStatus": "published",
       "id": "prospect/en-US/getting-started",
       "route": "/docs/prospect/getting-started",
-      "contentHash": "1debc4715e4bf3275b998ccdf566c9197ce80028d1b63d60e6e50ef7e1cb772e",
+      "contentHash": "a5907d80003a9ee474c51f043955848f1e70ff449ab7b6405936c5ec590d34b8",
       "sections": [
         {
           "heading": "Getting started",
@@ -4601,7 +4601,7 @@
         {
           "heading": "Navigate the help center",
           "anchor": "navigate-the-help-center",
-          "text": "Open the user menu in the toolbar and choose Documentation. This entry is available on both wide and narrow screens. On smaller screens, the Documentation tab sits below the toolbar and organization details. On narrow screens, the user menu opens a full-width tray from the right. Choose Close or press Escape to dismiss it and return to its toolbar button. Your workspace links appear directly in the tray. When configuration pages are available to your role, choose Settings to expand them. The section starts collapsed each time you open the menu; use Enter or Space to toggle it, Up and Down to move among visible links, and Escape to close the user menu. Guide navigation opens beneath the toolbar from the far-left edge of the screen. Its header identifies Documentation and, on wider screens, provides the pin or unpin icon. Pointer users can preview an unpinned sidebar by approaching the left edge; keyboard and touch users open it from the tab. Choosing a guide closes an unpinned sidebar and displays the article. On narrow screens, click or tap outside the sidebar to close it; its tab and Escape also close it."
+          "text": "Page-return links use a left arrow and name the destination. Use them to return from a record to its list or originating workflow. If more than one return destination is offered, choose the one that matches your task. Open the user menu in the toolbar and choose Documentation. This entry is available on both wide and narrow screens. On smaller screens, the Documentation tab sits below the toolbar and organization details. On narrow screens, the user menu opens a full-width tray from the right. Choose Close or press Escape to dismiss it and return to its toolbar button. Your workspace links appear directly in the tray. When configuration pages are available to your role, choose Settings to expand them. The section starts collapsed each time you open the menu; use Enter or Space to toggle it, Up and Down to move among visible links, and Escape to close the user menu. Guide navigation opens beneath the toolbar from the far-left edge of the screen. Its header identifies Documentation and, on wider screens, provides the pin or unpin icon. Pointer users can preview an unpinned sidebar by approaching the left edge; keyboard and touch users open it from the tab. Choosing a guide closes an unpinned sidebar and displays the article. On narrow screens, click or tap outside the sidebar to close it; its tab and Escape also close it."
         },
         {
           "heading": "Confirm the current organization",
@@ -4863,5 +4863,5 @@
       ]
     }
   ],
-  "corpusHash": "06ed7be7d7912a2d77b695896e1ab6e14d674c7d02c6533fbe18df729e5513c7"
+  "corpusHash": "89e4a753a7d9226a3fa59d37bf082987ef2bc956014e9e05db82da24283a3a59"
 }

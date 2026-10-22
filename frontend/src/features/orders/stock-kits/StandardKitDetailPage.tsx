@@ -1,8 +1,9 @@
+import { BackLink } from '#/components/ui/back-link'
 import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 import { CustomerSourceText, useCustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useSearch } from '@tanstack/react-router'
-import { ArrowLeft } from 'lucide-react'
+
 import { useRef, useState } from 'react'
 import { getOrderErrorMessage } from '#/api/order-management'
 import { getPlatformSampleShipments } from '#/api/sample-shipping'
@@ -51,7 +52,7 @@ export function StandardKitDetailPage({ kitId }: { kitId: string }) {
   const shipments = useQuery({ queryKey: ['sample-shipping-workflow'], queryFn: getPlatformSampleShipments, enabled: enabled && action?.kind === 'legacy-dispatch' })
   async function saved() { setAction(null); await refreshStockKitSupply(client) }
   const assembly = useKitAssemblyRun(kitId, query.data, enabled, saved)
-  const back = rawSearch.returnKitRequestId ? <Link to="/lab-operations/kit-requests/$requestId" params={{ requestId: rawSearch.returnKitRequestId }} search={{ ...rawSearch, section: 'kit-requests', receiptTab: undefined, returnKitRequestId: undefined }} className="inline-flex items-center gap-1 text-sm text-primary underline underline-offset-2"><ArrowLeft className="size-4" aria-hidden="true" /><CustomerSourceText source={"Back to kit request"} /></Link> : <Link to="/lab-operations" search={search} hash="standard-kits" className="inline-flex items-center gap-1 text-sm text-primary underline underline-offset-2"><ArrowLeft className="size-4" aria-hidden="true" /><CustomerSourceText source={"Back to kit inventory"} /></Link>
+  const back = rawSearch.returnKitRequestId ? <BackLink asChild><Link to="/lab-operations/kit-requests/$requestId" params={{ requestId: rawSearch.returnKitRequestId }} search={{ ...rawSearch, section: 'kit-requests', receiptTab: undefined, returnKitRequestId: undefined }}><CustomerSourceText source={"Back to kit request"} /></Link></BackLink> : <BackLink asChild><Link to="/lab-operations" search={search} hash="standard-kits"><CustomerSourceText source={"Back to kit inventory"} /></Link></BackLink>
   if (!canManage) return <main className="page-wrap px-4 py-8"><Alert variant="destructive"><AlertTitle><CustomerSourceText source={"Standard kits unavailable"} /></AlertTitle><AlertDescription><CustomerSourceText source={"A Phaeno configuration administrator is required."} /></AlertDescription></Alert></main>
   if (!enabled) return <main className="page-wrap px-4 py-8"><p><CustomerSourceText source={"Use a connected Phaeno session to review standard kits."} /></p></main>
   if (!query.data) return <main className="page-wrap space-y-5 px-4 py-8">{back}{query.isLoading ? <p role="status"><CustomerSourceText source={"Loading standard kit…"} /></p> : <Alert variant="destructive"><AlertTitle><CustomerSourceText source={"Standard kit unavailable"} /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(query.error, 'The requested kit could not be loaded.')} />} <Button variant="outline" onClick={() => void query.refetch()}><CustomerSourceText source={"Retry"} /></Button></AlertDescription></Alert>}</main>

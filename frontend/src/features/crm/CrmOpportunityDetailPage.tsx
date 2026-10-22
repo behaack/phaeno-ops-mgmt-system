@@ -1,7 +1,8 @@
+import { BackLink } from '#/components/ui/back-link'
 import { useCrmPermissions } from './use-crm-permissions';
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { ArrowLeft, Pencil } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { useState } from "react";
 import {
   apiErrorMessage,
@@ -106,12 +107,11 @@ export function CrmOpportunityDetailPage({
       ?.stages.filter((value) => value.isActive) ?? [];
   return (
     <main className="page-wrap space-y-6 px-4 py-8">
-      <Button asChild variant="ghost" size="sm">
+      <BackLink asChild>
         <Link to="/crm/opportunities" search={previous => previous}>
-          <ArrowLeft data-icon="inline-start" />
           Back to opportunities
         </Link>
-      </Button>
+      </BackLink>
       <section className="flex flex-col gap-4 sm:flex-row sm:justify-between">
         <div>
           <div className="mb-3 flex gap-2">

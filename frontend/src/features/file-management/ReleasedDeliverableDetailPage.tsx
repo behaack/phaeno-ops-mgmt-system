@@ -1,3 +1,4 @@
+import { BackLink } from '#/components/ui/back-link'
 import { NativeSelect } from '#/components/ui/native-select'
 import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -46,7 +47,7 @@ export function ReleasedDeliverableDetailPage({ snapshotId, q, page, embedded = 
   const data = query.data
   const Container = embedded ? 'section' : 'main'
   return <Container className={embedded ? "space-y-5 border-t pt-6" : "page-wrap space-y-5 px-4 py-8"}>
-    <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">{embedded ? <span className="font-semibold">Retention and release receipt</span> : data.canManage ? <Link to="/released-deliverables" search={{ q, page }} className="text-primary underline">Released packages</Link> : <a href={data.workflowPath} className="text-primary underline">Back to workflow</a>}<Button variant="outline" onClick={() => window.print()}>Print / save PDF</Button></div>
+    <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">{embedded ? <span className="font-semibold">Retention and release receipt</span> : data.canManage ? <BackLink asChild><Link to="/released-deliverables" search={{ q, page }}>Released packages</Link></BackLink> : <BackLink asChild><a href={data.workflowPath}>Back to workflow</a></BackLink>}<Button variant="outline" onClick={() => window.print()}>Print / save PDF</Button></div>
     {!embedded && data.canManage && data.release.packageType === 'PSeqResult' ? <Button asChild variant="outline"><Link to="/lab-operations/result-packages/$packageId" params={{ packageId: data.release.packageId }}>Open result package</Link></Button> : null}
     <ReleaseReceiptView data={data} />
     {data.canManage ? <section className="space-y-4 print:hidden" aria-label="Release management">

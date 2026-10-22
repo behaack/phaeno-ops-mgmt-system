@@ -1,3 +1,4 @@
+import { BackLink } from '#/components/ui/back-link'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { NativeSelect } from '#/components/ui/native-select'
 import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
@@ -6,7 +7,7 @@ import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useSearch } from '@tanstack/react-router'
-import { ArrowLeft, ChevronDown, FilePenLine, MapPin, Plus } from 'lucide-react'
+import { FilePenLine, MapPin, Plus } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useForm, type UseFormRegisterReturn } from 'react-hook-form'
 import { z } from 'zod'
@@ -48,7 +49,7 @@ import { ShippingActivationBadge } from './ShippingActivationBadge'
 import { ContainerSizesPanel } from './ContainerSizesPanel'
 import { parseSampleTypeListSearch, type SampleTypeListSearch } from './sample-type-list-navigation'
 import { parseDestinationListSearch, type DestinationListSearch } from './destination-list-navigation'
-import { shippingSettingsBackLinkClassName, type ShippingSettingsSection } from './shipping-settings-navigation'
+import { type ShippingSettingsSection } from './shipping-settings-navigation'
 import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 import { ScientificTextField } from '#/features/lab-operations/ScientificTextField'
 import { useOrderDraftGuard } from '../use-order-draft-guard'
@@ -260,7 +261,7 @@ export function SampleShippingConfigurationPanel({ apiEnabled, section, sampleTy
       {section === 'containers' ? <ContainerSizesPanel apiEnabled={apiEnabled} configuration={configuration.data} /> : null}
 
       {section === 'destinations' && destinationId ? <>
-        <Link className={shippingSettingsBackLinkClassName} to="/sample-shipping-settings" search={{ ...destinationListSearch, shippingSection: "destinations" }}><ArrowLeft aria-hidden="true" className="size-4" /><CustomerText message="m_5e981c67ca29" /></Link>
+        <BackLink asChild><Link to="/sample-shipping-settings" search={{ ...destinationListSearch, shippingSection: "destinations" }}><CustomerText message="m_5e981c67ca29" /></Link></BackLink>
         {defaultDestination.error ? <Alert variant="destructive"><AlertTitle><CustomerText message="m_02d40c4c1d24" /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(defaultDestination.error, 'Refresh the destinations and try again.')} />}</AlertDescription></Alert> : null}
         {selectedDestination ? <DestinationDetails item={selectedDestination} revisions={destinationFamilies.get(selectedDestination.definitionKey) ?? [selectedDestination]} activeRevision={activeDestinationChoices.find(choice => choice.definitionKey === selectedDestination.definitionKey)} isDefault={selectedDestination.definitionKey === configuration.data.defaultDestinationDefinitionKey} defaultPending={defaultDestination.isPending} onSetDefault={definitionKey => defaultDestination.mutate(definitionKey)} onCreateRevision={setDestinationEditor} onStatusChange={(item, isActive) => setStatusChange({ kind: 'destination', item, isActive })} triggerRef={statusActionsRef} /> : <Alert><AlertTitle><CustomerText message="m_c424684bc5c6" /></AlertTitle><AlertDescription><CustomerText message="m_669f01082ceb" /></AlertDescription></Alert>}
       </> : null}
@@ -310,7 +311,7 @@ export function SampleShippingConfigurationPanel({ apiEnabled, section, sampleTy
       </Card> : null}
 
       {section === 'sample-types' && sampleTypeId ? <>
-        <Link className={shippingSettingsBackLinkClassName} to="/sample-shipping-settings" search={{ ...sampleTypeListSearch, shippingSection: "sample-types" }}><ArrowLeft aria-hidden="true" className="size-4" /><CustomerText message="m_b44e47c99596" /></Link>
+        <BackLink asChild><Link to="/sample-shipping-settings" search={{ ...sampleTypeListSearch, shippingSection: "sample-types" }}><CustomerText message="m_b44e47c99596" /></Link></BackLink>
         {selectedSampleType ? <SampleTypeDetails item={selectedSampleType} revisions={configuration.data.sampleTypes.filter(item => item.definitionKey === selectedSampleType.definitionKey)} onCreateRevision={setSampleTypeEditor} configuration={configuration.data} apiEnabled={apiEnabled} /> : <Alert><AlertTitle><CustomerText message="m_1bdefc797952" /></AlertTitle><AlertDescription><CustomerText message="m_5889e03f90ba" /></AlertDescription></Alert>}
       </> : null}
 
@@ -411,7 +412,7 @@ function DestinationActions({ item, revisions, activeRevision, isDefault, defaul
   const latestReleased = [...revisions].filter(value => value.lifecycle === 'Released' || value.lifecycle === 'Superseded' || value.lifecycle === 'Deactivated').sort((a, b) => b.revision - a.revision)[0]
   if (!latest && !item.isActive && latestReleased?.id !== item.id) return null
   const earlierActive = !item.isActive ? revisions.filter(value => value.id !== item.id && value.isActive && revisionHasNotEnded(value)) : []
-  return <><ActionMenu><DropdownMenuTrigger asChild><Button type="button" variant="outline" onPointerDown={event => { triggerRef.current = event.currentTarget }} onFocus={event => { triggerRef.current = event.currentTarget }}><CustomerText message="m_ff8059dc6752" /><ChevronDown aria-hidden="true" className="size-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-max max-w-[calc(100vw-2rem)]">
+  return <><ActionMenu><DropdownMenuTrigger asChild><Button type="button" variant="outline" onPointerDown={event => { triggerRef.current = event.currentTarget }} onFocus={event => { triggerRef.current = event.currentTarget }}><CustomerText message="m_ff8059dc6752" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-max max-w-[calc(100vw-2rem)]">
     {activeRevision && !isDefault ? <DropdownMenuItem disabled={defaultPending} onSelect={() => onSetDefault(item.definitionKey)}><MapPin aria-hidden="true" />{activeRevision.id === item.id ? <CustomerSourceText source={"Set as default"} /> : __customerText('m_090f1e9d7f75', { p0: String(activeRevision.revision) })}</DropdownMenuItem> : null}
     {draft ? <DropdownMenuItem onSelect={() => onCreateRevision(draft)}><FilePenLine aria-hidden="true" /><CustomerText message="m_439cdd5d5ae6" />{draft.revision}</DropdownMenuItem> : latest || latestReleased?.id === item.id ? <DropdownMenuItem onSelect={() => onCreateRevision(latestReleased ?? item)}><FilePenLine aria-hidden="true" /><CustomerText message="m_68bf5426f2b3" /></DropdownMenuItem> : null}
     {item.lifecycle === 'Draft' && revisionHasNotEnded(item) ? <DropdownMenuItem onSelect={() => onStatusChange(item, true)}><CustomerText message="m_24433c70eba5" /></DropdownMenuItem> : null}

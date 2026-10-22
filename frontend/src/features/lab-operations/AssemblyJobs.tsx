@@ -1,3 +1,4 @@
+import { BackLink } from '#/components/ui/back-link'
 import { NativeSelect } from '#/components/ui/native-select'
 import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { RecordPagination, useRecordListState } from '#/components/RecordPagination'
@@ -120,7 +121,7 @@ export function AssemblyJobPage({ jobId }: { jobId: string }) {
   ] : []
   const openAction = (action: typeof actions[number]['action']) => action === 'qc' ? void navigate({ to: '/lab-operations/assembly-jobs/$jobId/qc', params: { jobId }, search: p => ({ ...p, section: 'assembly', assemblyTab: 'jobs' }) }) : setAction(action)
   return <main className="page-wrap space-y-5 px-4 py-8">
-    <Link className={linkStyle} to="/lab-operations" search={p => ({ ...p, section: 'assembly', assemblyTab: 'jobs' })}>Back to sequencing assembly</Link>
+    <BackLink asChild><Link to="/lab-operations" search={p => ({ ...p, section: 'assembly', assemblyTab: 'jobs' })}>Back to sequencing assembly</Link></BackLink>
     {query.error ? <Alert variant="destructive"><AlertTitle>Assembly could not be refreshed</AlertTitle><AlertDescription>{getLabOperationsError(query.error, 'Refresh to recover the saved job.')}<Button variant="outline" onClick={() => void query.refetch()}>Refresh</Button></AlertDescription></Alert> : null}
     {!data ? <p role="status">{authProvider === 'mock' ? 'Use a connected Phaeno session to view this job.' : 'Loading assembly job…'}</p> : null}
     {data && job ? <>

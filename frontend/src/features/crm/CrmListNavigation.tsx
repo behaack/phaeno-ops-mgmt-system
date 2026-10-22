@@ -1,3 +1,4 @@
+import { BackLink } from '#/components/ui/back-link'
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import { useCallback, useEffect, useState, type Dispatch, type SetStateAction } from 'react'
 import { Button } from '#/components/ui/button'
@@ -65,5 +66,5 @@ export function CrmClearFilters({ ignoreStageSelection = false, label = "Clear a
 
 export function CrmProvisioningReturn() {
   const [returnTo] = useCrmState<string>('returnTo', '')
-  return returnTo === 'data-provisioning' ? <Button asChild variant="outline"><Link to="/data-provisioning" search={{ section: 'grants' }}>Return to pending data assignment</Link></Button> : null
+  return returnTo === 'data-provisioning' ? <BackLink asChild><Link to="/data-provisioning" search={{ section: 'grants' }}>Return to pending data assignment</Link></BackLink> : null
 }

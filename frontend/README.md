@@ -27,9 +27,17 @@ pnpm run test:e2e
 pnpm run build
 ```
 
-`pnpm run test:e2e` builds the app and runs Playwright against production preview so desktop, mobile, navigation, and accessibility behavior are tested against the production bundle.
+`pnpm run test:e2e` uses the deterministic mock-session development server defined
+in `playwright.config.ts`; it does not currently validate a production bundle.
+
+Launch the shared-component visual reference with `pnpm ui:gallery` and open
+`http://127.0.0.1:4318/`. It includes themes, constrained content widths and
+interactive fictional examples. See [the gallery guide](ui-gallery/README.md)
+for the focused source/browser checks and extension rules. The gallery remains
+outside the Portal route tree and production application.
 
 Run `pnpm run lint` periodically while working to catch code quality, React hooks, and JSX accessibility issues before verification.
+Lint also runs `pnpm ui:check` to prevent recognized shared-control drift.
 
 ## Development dependency caches
 
@@ -99,7 +107,8 @@ Implementation requirements:
 
 Testing requirements:
 
-- Run `pnpm run test:e2e` before considering UI changes complete.
+- Follow the repository's request-only test policy. When automated UI checks are
+  requested, run the relevant focused browser suite and record its evidence.
 - Axe checks must pass for primary pages in desktop and mobile projects.
 - Manually review keyboard navigation, focus order, screen reader semantics, contrast, and responsive behavior for new or changed components.
 

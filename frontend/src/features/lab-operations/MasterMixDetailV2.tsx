@@ -1,3 +1,4 @@
+import { BackLink } from '#/components/ui/back-link'
 import { ProcedureIllustration } from './ProcedureIllustrations'
 import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { labAmount, operationalInputProps } from './lab-presentation'
@@ -115,7 +116,7 @@ export function MasterMixPage({ mixId }: { mixId: string }) {
   const correctedIds = new Set(mix?.corrections.map(item => item.targetEntryId) ?? [])
 
   if (!enabled) return <main className="page-wrap py-8"><p role="alert">You need a connected Phaeno laboratory session to view this mix.</p></main>
-  return <main className="page-wrap space-y-5 py-8"><Link to="/lab-operations" search={{ section: 'master-mixes' }} className="text-sm text-primary hover:underline">← Master mixes</Link>
+  return <main className="page-wrap space-y-5 py-8"><BackLink asChild><Link to="/lab-operations" search={{ section: 'master-mixes' }}>Back to master mixes</Link></BackLink>
     {query.isPending ? <p role="status">Loading master mix…</p> : query.isError ? <p role="alert">{getLabOperationsError(query.error, 'The mix could not be loaded.')}</p> : mix ? <>
       <div className="flex flex-wrap items-start justify-between gap-4"><div><h1 className="text-3xl font-semibold">{mix.workflowName}</h1><p className="mt-1 break-all font-mono text-sm">{mix.barcode}</p><p className="text-sm text-muted-foreground">Approved procedure revision {mix.workflowRevision} · Preparation {mix.id}</p></div><div className="flex items-center gap-2"><Badge variant="secondary">{mix.status}</Badge>{actions.length === 1 ? <Button type="button" onClick={() => selectAction(actions[0].key)}>{actions[0].label}</Button> : actions.length > 1 ? <ActionMenu><DropdownMenuTrigger asChild><Button type="button">Actions</Button></DropdownMenuTrigger><DropdownMenuContent align="end">{actions.map(item => <DropdownMenuItem key={item.key} onSelect={() => selectAction(item.key)}>{item.label}</DropdownMenuItem>)}</DropdownMenuContent></ActionMenu> : null}</div></div>
       {expired && mix.status !== 'Discarded' ? <p role="alert" className="rounded-md border border-destructive p-3 text-sm">This mix passed the end of its local work day. POMS blocks new ingredients, completion, and tray use. Discard it and prepare a new mix.</p> : null}

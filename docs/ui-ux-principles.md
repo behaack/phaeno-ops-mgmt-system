@@ -16,6 +16,48 @@ The owner supplies the user, problem, workflow, scientific and business rules, r
 - Record significant new patterns or exceptions. An exception requires a product or domain reason, not implementation preference.
 - Detailed design authority does not expand task scope or override repository rules for plans, dependencies, authentication, migrations, deployment, or Git operations.
 
+## Shared component style guide
+
+Use this document for product-wide style and interaction decisions and the
+shared frontend components for their implementation. Reuse these components
+before choosing local sizes, colors, spacing or interaction behavior:
+
+| Pattern | Shared implementation under `frontend/src/components/` |
+| --- | --- |
+| Page return navigation | `ui/back-link.tsx` — `BackLink`; see [page return navigation](#page-return-navigation) |
+| Buttons and action emphasis | `ui/button.tsx` — `Button` and its existing variants/sizes |
+| Contextual record actions | `ui/dropdown-menu.tsx` — `ActionMenu` with one labeled trigger |
+| Form grouping and label spacing | `ui/field.tsx` — shared `Field` layout |
+| Single-line fields | `ui/input.tsx` and `ui/native-select.tsx`; shared sizing |
+| Modal layout and focus | `ui/dialog.tsx` — `Dialog`, header, meaningful body and footer |
+| Record tabs | `ui/tabs.tsx` — shared sizing and selected/focus states |
+
+Semantic theme tokens are defined in `frontend/src/styles.css`. Keep light and
+dark treatments together. Feature pages own content and arrangement; shared
+components own the recurring control's typography, padding, icons and states.
+Document a new shared pattern here rather than creating independent variants
+across features. The sections below define behavior, accessibility and permitted
+exceptions; this table does not replace those requirements.
+
+### Visual reference and automated enforcement
+
+The [local component gallery](../frontend/ui-gallery/README.md) renders the
+actual shared controls and theme tokens with fictional data. Use it to inspect
+light/dark states, constrained content, keyboard behavior, validation and modal
+regions. Run `pnpm ui:gallery` from `frontend/`. Keep examples and their focused
+browser assertions aligned when an approved shared pattern changes.
+
+`pnpm ui:check`, also included in frontend lint, checks recognizable page returns,
+back-link overrides/arrows, contextual Actions, menu indicators, tab-control
+sizing, native confirmations and gallery isolation. The independent UI quality
+workflow runs the source guard, its regression fixtures and the gallery browser
+suite. Findings include source locations and the applicable shared pattern.
+
+Prefer fixing an inconsistency to granting an exception. Existing non-page
+scanner returns have exact, reasoned allowances; stale or expanded allowances
+fail. Syntax-aware checks are deliberately bounded and complement visual and
+workflow review. They do not certify every page or replace acceptance criteria.
+
 ## Experience posture
 
 Design for trained professionals who use the product repeatedly while keeping standard workflows understandable without formal training.
@@ -104,6 +146,35 @@ Use task-oriented entry points with record-centered workspaces.
 - Selecting a major record opens a dedicated detail workspace with stable identity, status, actions, and related information.
 - Returning from a record preserves list filters, sorting, pagination, and scroll position.
 - Keep related records in the primary record's context when that supports the user's workflow.
+
+### Page return navigation
+
+Use `BackLink` from `frontend/src/components/ui/back-link.tsx` for every Portal
+page-return control, including unavailable/error states and contextual returns
+to an originating workflow. CRM Company detail is the visual reference: one
+decorative left arrow, a compact neutral label, no permanent underline or
+outlined/filled button border, consistent padding and icon gap, subtle hover
+surface, and a visible keyboard-focus ring in both themes. Long labels wrap.
+
+- Place return navigation at the start of the page content, above its heading
+  and separate from record Actions. When several return destinations apply,
+  group them in one wrapping row with an 8 px gap.
+- Name the destination, normally `Back to [destination]`; preserve existing
+  localized labels. Do not use an unlabeled arrow or browser-history guessing.
+- Compose the shared control as `<BackLink asChild><Link ...>Back to companies</Link></BackLink>`.
+  The inner typed Link owns its destination, parameters, search and hash; keep
+  filters, pagination, originating tabs and draft-navigation guards intact.
+  A real anchor is supported for existing workflow URLs. Use the native button
+  form only when returning already requires a guarded callback.
+- The shared component owns appearance and the arrow. Do not add icons,
+  feature-local style constants, button wrappers or visual class overrides.
+- Pagination, previous/next guide cards, form Cancel and steps inside a modal
+  retain their own established controls; they are different navigation roles.
+
+This document is the Portal style guide. Keep reusable visual patterns enforced
+in shared components, and record their use here before introducing alternatives.
+The [back-navigation plan](plans/BACK-NAVIGATION-CONSISTENCY-PLAN.md) records the
+October 22, 2026 application-wide conversion and verification boundaries.
 
 ## Standard record-management flow
 

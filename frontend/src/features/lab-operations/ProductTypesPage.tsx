@@ -1,3 +1,4 @@
+import { BackLink } from '#/components/ui/back-link'
 import { useId, useState } from 'react'
 import { Plus } from 'lucide-react'
 import { Link, useSearch } from '@tanstack/react-router'
@@ -33,11 +34,11 @@ export function ProductTypesPage({ productTypeId }: { productTypeId?: string }) 
   const types = query.data ?? []
   const type = types.find(t => t.id === productTypeId)
   const backSearch = { section: 'products' as const, productTab: 'product-types' as const, productTypeSearch: filters.productTypeSearch, productTypeInactive: filters.productTypeInactive }
-  if (productTypeId && !type) return <div><Link to="/purchasing" search={backSearch}>Back to product types</Link><p>Product type not found.</p></div>
+  if (productTypeId && !type) return <div><BackLink asChild><Link to="/purchasing" search={backSearch}>Back to product types</Link></BackLink><p>Product type not found.</p></div>
   const matches = types.filter(t => (showInactive || t.isActive) && `${t.name} ${t.description}`.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()))
   return <div className="space-y-5">
     {query.isError ? <p role="alert">Refresh failed. Your current edits are retained. <button className="cursor-pointer underline" onClick={() => void query.refetch()}>Retry</button></p> : null}
-    {type ? <Link className="text-sm text-primary underline" to="/purchasing" search={backSearch}>← Back to product types</Link> : null}
+    {type ? <BackLink asChild><Link to="/purchasing" search={backSearch}>Back to product types</Link></BackLink> : null}
     <Card className="gap-0 overflow-hidden py-0"><CardHeader className="border-b bg-muted/50 p-4"><CardTitle><div className="flex flex-wrap items-center gap-2"><h2>{type ? type.name : 'Product types'}</h2>{type && isBuiltInProductType(type.id) ? <Badge variant="outline">Built-in</Badge> : null}</div></CardTitle><CardDescription>{type ? type.description : 'Organize supplier products, including reagents, tubes and shipping containers.'}</CardDescription><CardAction>{type ? isBuiltInProductType(type.id) ? null : <ProductTypeActions type={type} onEdit={() => setEditing(type)} onStatus={() => setStatusTarget(type)} /> : <Button type="button" onClick={() => setEditing('new')}><Plus data-icon="inline-start" /> New product type</Button>}</CardAction>
       {!type ? <div className="col-span-full mt-3 flex min-w-0 flex-wrap items-end gap-4"><div className="min-w-0 flex-1 basis-48"><Label htmlFor="product-type-search">Search product types</Label><Input id="product-type-search" className="mt-2" value={search} onChange={e => setSearch(e.target.value)} /></div><label className="flex cursor-pointer items-center gap-2 py-2 text-sm"><input type="checkbox" checked={showInactive} onChange={e => setShowInactive(e.target.checked)} />Show inactive</label></div> : null}
     </CardHeader><CardContent className="space-y-4 p-4">

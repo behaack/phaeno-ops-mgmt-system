@@ -1,12 +1,11 @@
+import { BackLink } from '#/components/ui/back-link'
 import { useConfigurationDiscovery, type ConfigurationDiscovery } from './configuration-discovery'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { ArrowLeft } from 'lucide-react'
+
 import type { ReactNode } from 'react'
 
 import { WorkspaceSidebar } from '#/components/WorkspaceSidebar'
 import { labConfigurationTabs, type LabConfigurationTab } from './lab-configuration-tabs'
-
-export const labSettingsBackLinkClassName = 'inline-flex items-center gap-1 text-sm text-primary underline underline-offset-2'
 
 export function LabSettingsHeader() {
   return <div className="max-w-3xl">
@@ -27,9 +26,9 @@ export function LabSettingsLayout({ section, backLabel, backSearch, children }: 
     <WorkspaceSidebar workspaceLabel="Lab Settings" items={labConfigurationTabs} value={section} onValueChange={configurationTab => void navigate({ to: '/lab-configuration', search: previous => ({ ...previous, configurationTab }) })}>
       <div className="page-wrap px-4 pt-6 lg:pt-0">
         <header className="mb-6"><LabSettingsHeader /></header>
-        <Link className={labSettingsBackLinkClassName} to="/lab-configuration" search={{ ...discovery, configurationTab: section, ...backSearch }}>
-          <ArrowLeft aria-hidden="true" className="size-4" /> Back to {backLabel}
-        </Link>
+        <BackLink asChild><Link to="/lab-configuration" search={{ ...discovery, configurationTab: section, ...backSearch }}>
+           Back to {backLabel}
+        </Link></BackLink>
         <div className="mt-5">{children}</div>
       </div>
     </WorkspaceSidebar>
