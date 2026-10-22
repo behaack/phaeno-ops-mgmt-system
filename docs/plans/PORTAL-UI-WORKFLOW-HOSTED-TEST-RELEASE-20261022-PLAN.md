@@ -75,3 +75,7 @@ provider, scientific, physical, populated-S3 recovery and commercial acceptance.
 
 Authorized release preparation in progress. No migration or destructive data
 operation is required or authorized.
+
+### Required CI renderer follow-up
+
+The first release branch exposed 125/128 scattered glyph-edge differences on the two light-theme full Trial pages; all other 82 references passed. Layout and content matched. The Trial references now cover the complete page in contiguous 600 px sections with an asserted total section count. The generated inventory has 94 images. Every image retains the original 0.15 color and 80-pixel tolerances; no mask, threshold relaxation or omitted page region is used. New references require local review and exact-source CI before release.

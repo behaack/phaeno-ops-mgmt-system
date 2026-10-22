@@ -12,6 +12,20 @@ for(const example of [...coverage.features, ...coverage.states])test(`actual ${e
   if(scene==='source')await expect(page.getByLabel(/Internal label/)).toHaveValue('DEMO — source sample')
   await prepareWorkflow(page, 'prepare' in example && typeof example.prepare === 'string' ? example.prepare : undefined)
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true)
-  await expect(page).toHaveScreenshot(`feature-${scene}.png`,{fullPage:!('prepare' in example)})
+  if ('tileHeight' in example && 'tiles' in example) {
+    // Retain every pixel of a long page without accumulating platform glyph-edge
+    // differences across several viewport heights in a single comparison.
+    const height = await page.evaluate(() => document.documentElement.scrollHeight)
+    const size = info.project.name.startsWith('narrow-') ? 'narrow' : 'desktop'
+    const tileHeight = example.tileHeight as number
+    const tiles = example.tiles as { desktop: number; narrow: number }
+    expect(Math.ceil(height / tileHeight)).toBe(tiles[size])
+    const width = page.viewportSize()!.width
+    for (let index = 0; index < tiles[size]; index++) {
+      await expect(page).toHaveScreenshot(`feature-${scene}${index ? '-'+(index+1) : ''}.png`, {
+        fullPage: true, clip: { x: 0, y: index*tileHeight, width, height: Math.min(tileHeight,height-index*tileHeight) },
+      })
+    }
+  } else await expect(page).toHaveScreenshot(`feature-${scene}.png`,{fullPage:!('prepare' in example)})
   expect(errors).toEqual([])
 })

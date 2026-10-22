@@ -143,3 +143,5 @@ hashes and source dependencies. It fails for an invalid/outside annotation even
 if the help renderer could visually clamp it. CI never approves or refreshes
 references. All illustrated guides have image/alt/caption/marker browser checks in
 both themes and viewport sizes. See the [adoption plan](../../docs/plans/UI-CONSISTENCY-ADOPTION-AND-ILLUSTRATIONS-PLAN.md).
+
+Long Trial pages use contiguous 600 px sections, including the final remainder, so every page pixel remains covered without accumulating Windows glyph-edge differences across multiple viewport heights. The registry declares the section count; page-height changes require a new review. Each section retains the same 0.15 color threshold and 80-pixel limit.

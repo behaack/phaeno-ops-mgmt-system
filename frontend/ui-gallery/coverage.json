@@ -1,29 +1,169 @@
 {
   "sections": [
-    ["navigation", "Return navigation"], ["buttons", "Buttons"], ["fields", "Fields and validation"],
-    ["actions", "Record actions"], ["tabs", "Tabs"], ["feedback", "Feedback"], ["tokens", "Theme tokens"],
-    ["headers", "Page headers"], ["lists", "Lists and tables"], ["guarded-forms", "Guarded forms"],
-    ["async-feedback", "Loading and recovery"], ["controls", "More controls"], ["app-navigation", "Application navigation"],
-    ["standardization", "Data, status and form standards"], ["page-previews", "Complete page examples"],
-    ["feature-previews", "Actual feature pages"]
+    [
+      "navigation",
+      "Return navigation"
+    ],
+    [
+      "buttons",
+      "Buttons"
+    ],
+    [
+      "fields",
+      "Fields and validation"
+    ],
+    [
+      "actions",
+      "Record actions"
+    ],
+    [
+      "tabs",
+      "Tabs"
+    ],
+    [
+      "feedback",
+      "Feedback"
+    ],
+    [
+      "tokens",
+      "Theme tokens"
+    ],
+    [
+      "headers",
+      "Page headers"
+    ],
+    [
+      "lists",
+      "Lists and tables"
+    ],
+    [
+      "guarded-forms",
+      "Guarded forms"
+    ],
+    [
+      "async-feedback",
+      "Loading and recovery"
+    ],
+    [
+      "controls",
+      "More controls"
+    ],
+    [
+      "app-navigation",
+      "Application navigation"
+    ],
+    [
+      "standardization",
+      "Data, status and form standards"
+    ],
+    [
+      "page-previews",
+      "Complete page examples"
+    ],
+    [
+      "feature-previews",
+      "Actual feature pages"
+    ]
   ],
   "features": [
-    {"id":"company","label":"Company People","url":"/features.html?scene=company","title":"DEMO — Example Research"},
-    {"id":"source","label":"Source workspace","url":"/features.html?scene=source","title":"DEMO — source sample"},
-    {"id":"assembly-inputs","label":"Sequencing inputs","url":"/features.html?scene=assembly-inputs","title":"Sequencing inputs"},
-    {"id":"assembly-jobs","label":"Sequencing assembly","url":"/features.html?scene=assembly-jobs","title":"Sequencing assembly"},
-    {"id":"customer","label":"Customer Data Library","url":"/features.html?scene=customer","title":"Data Library"},
-    {"id":"research","label":"Research experiments","url":"/research.html?illustrate=true&prepared=true&path=/research/experiments","title":"Experiments"},
-    {"id":"finance","label":"Finance invoices","url":"/features.html?scene=finance","title":"Invoices and aging"},
-    {"id":"trial","label":"Prospect Trial","url":"/features.html?scene=trial","title":"DEMO — transcript evaluation"},
-    {"id":"shipping","label":"Customer sample shipping","url":"/features.html?scene=shipping","title":"Samples and shipping"},
-    {"id":"qc","label":"Assembly QC","url":"/features.html?scene=qc","title":"Assembly QC"}
+    {
+      "id": "company",
+      "label": "Company People",
+      "url": "/features.html?scene=company",
+      "title": "DEMO — Example Research"
+    },
+    {
+      "id": "source",
+      "label": "Source workspace",
+      "url": "/features.html?scene=source",
+      "title": "DEMO — source sample"
+    },
+    {
+      "id": "assembly-inputs",
+      "label": "Sequencing inputs",
+      "url": "/features.html?scene=assembly-inputs",
+      "title": "Sequencing inputs"
+    },
+    {
+      "id": "assembly-jobs",
+      "label": "Sequencing assembly",
+      "url": "/features.html?scene=assembly-jobs",
+      "title": "Sequencing assembly"
+    },
+    {
+      "id": "customer",
+      "label": "Customer Data Library",
+      "url": "/features.html?scene=customer",
+      "title": "Data Library"
+    },
+    {
+      "id": "research",
+      "label": "Research experiments",
+      "url": "/research.html?illustrate=true&prepared=true&path=/research/experiments",
+      "title": "Experiments"
+    },
+    {
+      "id": "finance",
+      "label": "Finance invoices",
+      "url": "/features.html?scene=finance",
+      "title": "Invoices and aging"
+    },
+    {
+      "id": "trial",
+      "label": "Prospect Trial",
+      "url": "/features.html?scene=trial",
+      "title": "DEMO — transcript evaluation",
+      "tileHeight": 600,
+      "tiles": {
+        "desktop": 3,
+        "narrow": 4
+      }
+    },
+    {
+      "id": "shipping",
+      "label": "Customer sample shipping",
+      "url": "/features.html?scene=shipping",
+      "title": "Samples and shipping"
+    },
+    {
+      "id": "qc",
+      "label": "Assembly QC",
+      "url": "/features.html?scene=qc",
+      "title": "Assembly QC"
+    }
   ],
   "states": [
-    {"id":"finance-error","label":"Finance read failure","url":"/features.html?scene=finance&state=error","title":"Finance information is unavailable"},
-    {"id":"trial-dialog","label":"Trial review dialog","url":"/features.html?scene=trial","title":"DEMO — transcript evaluation","prepare":"trial-review"},
-    {"id":"trial-conflict","label":"Trial conflict with retained choices","url":"/features.html?scene=trial&state=conflict","title":"DEMO — transcript evaluation","prepare":"trial-submit"},
-    {"id":"shipping-permission","label":"Shipping permission required","url":"/features.html?scene=shipping&state=permission","title":"Samples and shipping"},
-    {"id":"qc-empty","label":"QC missing setup","url":"/features.html?scene=qc&state=empty","title":"Assembly QC"}
+    {
+      "id": "finance-error",
+      "label": "Finance read failure",
+      "url": "/features.html?scene=finance&state=error",
+      "title": "Finance information is unavailable"
+    },
+    {
+      "id": "trial-dialog",
+      "label": "Trial review dialog",
+      "url": "/features.html?scene=trial",
+      "title": "DEMO — transcript evaluation",
+      "prepare": "trial-review"
+    },
+    {
+      "id": "trial-conflict",
+      "label": "Trial conflict with retained choices",
+      "url": "/features.html?scene=trial&state=conflict",
+      "title": "DEMO — transcript evaluation",
+      "prepare": "trial-submit"
+    },
+    {
+      "id": "shipping-permission",
+      "label": "Shipping permission required",
+      "url": "/features.html?scene=shipping&state=permission",
+      "title": "Samples and shipping"
+    },
+    {
+      "id": "qc-empty",
+      "label": "QC missing setup",
+      "url": "/features.html?scene=qc&state=empty",
+      "title": "Assembly QC"
+    }
   ]
 }
