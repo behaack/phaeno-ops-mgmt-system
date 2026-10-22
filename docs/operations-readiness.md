@@ -1,5 +1,24 @@
 # Operations and production-readiness boundary
 
+## Portal UI adoption and illustrated help — completed October 22, 2026
+
+API/frontend source `9d869522352dd77e4be009238259398696ff8d41` is live with
+shared shaded panel/table headers, domain status/date/feedback adoption, 16
+gallery sections, 48 reviewed image references and 32 refreshed guide images
+with 137 callouts. Exact-source CI passes both jobs, including 128 browser and
+48 image comparisons. Matching 62-guide corpus/index `9628fc1e68c1` is active;
+all live guide images and canonical/prior-pin assets match released Git/staging.
+The engineering gallery/provenance remains outside deployed Portal assets.
+
+Fresh isolated restore and independent off-server decryption verification pass.
+Final readback preserves all 250 table fingerprints, complete Website intake
+history, 29 migrations, 115 unchanged files, runtime/provider settings and OCIA
+identities. API/database/scanner healthy, zero active assemblies and bounded
+errors; signed-in sequencing headers and refreshed help/search pass. No migration
+or business write occurred. Deployment holds, orphan quarantine and hosted-test
+S3 recovery deferral remain. Exact identities and limits are in the
+[release receipt](operations/portal-ui-adoption-test-release-20261022.md).
+
 ## Portal UI pattern follow-ups — completed October 22, 2026
 
 API/frontend source `669b93365ca02db58ce8f55dcb14651059c75ee6` is live with

@@ -128,3 +128,17 @@ start illustration has no invented start/stop times. The gallery remains availab
 at `http://127.0.0.1:4318/`. All implementation, illustrations, guide generation,
 living plans and CI enforcement are ready for review. No commit, push, deployment,
 hosted index activation, provider activity or operational-data write was performed.
+
+## Authorized hosted release — completed October 22, 2026
+
+The Owner subsequently requested commit, push and deployment. Source `9d869522`
+is now active in the existing hosted-test API and Portal frontend, with matching
+62-guide corpus/index `9628fc1e68c1`. Exact-source CI passes both jobs, including
+128 browser checks and 48 strict image comparisons. Fresh recovery, all 250
+table fingerprints, 115 unchanged files, 29 migrations, every refreshed guide
+image, canonical/prior-pin assets and signed-in sequencing/help checks pass.
+No migration or business write occurred. Engineering gallery isolation, release
+holds, the orphan fence and S3 recovery deferral remain. The
+[preserving release plan](PORTAL-UI-ADOPTION-HOSTED-TEST-RELEASE-20261022-PLAN.md)
+and [release receipt](../operations/portal-ui-adoption-test-release-20261022.md)
+record exact identities and acceptance limits.

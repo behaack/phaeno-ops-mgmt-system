@@ -77,5 +77,13 @@ or complete per-workflow accessibility certification. No commercial activation.
 
 ## Status
 
-Authorized release preparation in progress. Implementation evidence is in the
-[UI adoption plan](UI-CONSISTENCY-ADOPTION-AND-ILLUSTRATIONS-PLAN.md).
+Completed. Source `9d869522352dd77e4be009238259398696ff8d41` is committed,
+pushed and active in both API and frontend. Both exact-source CI jobs, fresh
+isolated/off-server recovery, complete table/file preservation, canonical and
+prior-pin assets, all 32 guide image hashes and read-only signed-in UI/help
+checks pass. No migration or business write occurred. Holds, orphan fence,
+unrelated service identities and S3 recovery deferral remain. See the
+[release receipt](../operations/portal-ui-adoption-test-release-20261022.md)
+for exact identities, checksums, acceptance and limits, and the
+[UI adoption plan](UI-CONSISTENCY-ADOPTION-AND-ILLUSTRATIONS-PLAN.md)
+for implementation evidence.
