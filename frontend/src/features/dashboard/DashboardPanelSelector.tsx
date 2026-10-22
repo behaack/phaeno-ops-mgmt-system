@@ -1,3 +1,4 @@
+import { EmptyState } from '#/components/ui/content-state'
 import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
 import { attentionTones } from '#/features/dashboard/dashboard-status'
 import { PageTitle } from '#/components/ui/page-header'
@@ -230,7 +231,7 @@ export function DashboardPanelSelector({ webOnly = false }: { webOnly?: boolean 
 
   const visibleSections = sections.filter(item => (!webOnly || item.value === 'webOps') && (!apiEnabled || (item.value === 'orders' ? (session?.capabilities.canViewAllOperationalOrders || session?.capabilities.canViewTrialProjects) : item.value === 'lab' ? session?.capabilities.canManageLabOperations : item.value === 'accounts' ? session?.capabilities.canManageOrganizations : canViewWebOperations)))
   const activeSection = visibleSections.some(item => item.value === section) ? section : visibleSections[0]?.value
-  if (!activeSection) return <main className="page-wrap px-4 py-8">{webOnly ? <PageTitle>Web Operations</PageTitle> : <DashboardHero />}<p>No operational workspaces are assigned to your role.</p></main>
+  if (!activeSection) return <main className="page-wrap px-4 py-8">{webOnly ? <PageTitle>Web Operations</PageTitle> : <DashboardHero />}<EmptyState  kind="empty" title={<>No operational workspaces are assigned to your role.</>} /></main>
   return (
     <WorkspaceSidebar
       workspaceLabel="POMS dashboard"

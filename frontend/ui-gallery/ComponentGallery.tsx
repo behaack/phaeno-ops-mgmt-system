@@ -1,4 +1,6 @@
+import { SectionPanel } from '#/components/ui/section-panel'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
+import coverage from './coverage.json' with { type: 'json' }
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -26,14 +28,7 @@ import { FeedbackExamples } from './FeedbackExamples'
 import { ControlExamples } from './ControlExamples'
 import { StandardizationExamples } from './StandardizationExamples'
 
-const sections = [
-  ['navigation', 'Return navigation'], ['buttons', 'Buttons'], ['fields', 'Fields and validation'],
-  ['actions', 'Record actions'], ['tabs', 'Tabs'], ['feedback', 'Feedback'], ['tokens', 'Theme tokens'],
-  ['headers', 'Page headers'], ['lists', 'Lists and tables'], ['guarded-forms', 'Guarded forms'],
-  ['async-feedback', 'Loading and recovery'], ['controls', 'More controls'], ['app-navigation', 'Application navigation'],
-  ['standardization', 'Data, status and form standards'], ['page-previews', 'Complete page examples'],
-  ['feature-previews', 'Actual feature pages'],
-] as const
+const sections = coverage.sections
 
 function GallerySection({ id, title, description, children }: { id: string; title: string; description: string; children: ReactNode }) {
   return <section id={id} aria-labelledby={`${id}-title`} className="scroll-mt-6 space-y-4 border-t pt-6" data-gallery-section={id}>
@@ -67,7 +62,9 @@ export function ComponentGallery() {
       <p className="mb-6 text-sm text-muted-foreground" role="status" aria-live="polite" data-testid="gallery-notice">{message}</p>
       <div data-testid="gallery-preview" className="@container mx-auto w-full space-y-8" style={{ maxWidth: width === 'full' ? undefined : `${width}px` }}>
         <GallerySection id="feature-previews" title="Actual feature pages" description="Current feature components with isolated fictional records. Reviewed in both themes at desktop and narrow widths; these examples make no hosted changes.">
-          <div className="flex flex-wrap gap-x-6 gap-y-3">{[['company','Company People'],['source','Source workspace'],['assembly-inputs','Sequencing inputs'],['assembly-jobs','Sequencing assembly'],['customer','Customer data']].map(([scene,label])=><a key={scene} className={recordLinkClassName} href={`/features.html?scene=${scene}&theme=${theme}`}>{label}</a>)}<a className={recordLinkClassName} href={`/research.html?illustrate=true&prepared=true&path=/research/experiments&dark=${theme==='dark'}`}>Research experiments</a></div>
+          <div className="flex flex-wrap gap-x-6 gap-y-3">{coverage.features.map(example=><a key={example.id} className={recordLinkClassName} href={`${example.url}&theme=${theme}&dark=${theme==='dark'}`}>{example.label}</a>)}</div>
+          <p className="text-sm text-muted-foreground">Trial dialog examples: choose Review and accept scope. For the conflict example, confirm the scope and submit; your choice remains selected.</p><div className="flex flex-wrap gap-x-6 gap-y-3" aria-label="Workflow state examples">{coverage.states.map(example=><a key={example.id} className={recordLinkClassName} href={`${example.url}&theme=${theme}&dark=${theme==='dark'}`}>{example.label}</a>)}</div>
+          <p className="text-sm text-muted-foreground">Finance, Trial, shipping and QC also support state=loading, empty, error or permission. Trial saves support save-error, conflict and pending; all activity stays in memory.</p>
           <p className="text-sm text-muted-foreground">Panel and table headers use the same shaded band. Status adapters retain their domain meanings; completion of a process does not establish scientific approval. The illustrated guides use these components through reproducible capture scenarios.</p>
         </GallerySection>
         <GallerySection id="navigation" title="Return navigation" description="One arrow, one destination, the same typography and focus treatment. Long labels wrap.">
@@ -123,7 +120,7 @@ export function ComponentGallery() {
             <div className="rounded-lg border border-destructive bg-destructive/10 p-4 text-destructive">Destructive feedback</div>
           </div>
         </GallerySection>
-        <GallerySection id="headers" title="Page headers" description="One shared title hierarchy, wrapping status/context and trailing actions."><HeaderExamples /></GallerySection>
+        <GallerySection id="headers" title="Page headers" description="One shared title hierarchy, wrapping status/context and trailing actions."><HeaderExamples /><SectionPanel heading={<h3>Sample scope</h3>} description="A shared heading band for equivalent titled sections."><p className="text-sm">The native heading level and region identity belong to the feature; spacing and shading belong to the shared panel.</p></SectionPanel></GallerySection>
         <GallerySection id="lists" title="Lists and tables" description="Shared record links, flat rows, filters, responsive tables and real pagination."><ListExamples /></GallerySection>
         <GallerySection id="guarded-forms" title="Guarded form dialogs" description="The actual draft guard, discard confirmation, required footer and retained input after a failed save."><GuardedFormExample /></GallerySection>
         <GallerySection id="async-feedback" title="Loading, empty states and recovery" description="Initial loading, retained-data refresh, setup, permissions, errors and progress have distinct presentations."><FeedbackExamples /></GallerySection>

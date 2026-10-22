@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { formatDisplayTimestamp } from '#/lib/display-format'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
@@ -57,7 +58,7 @@ export function LabPhasesPanel({ order, internal = false, onSaved, tracking, onM
       <LabJobPhaseActions id={`phase-progress-actions-${order.id}`} actions={actions} disabled={tracking?.disabled} compact={Boolean(tracking)} />
     </CardHeader>
     <CardContent className="space-y-4" aria-busy={query.isFetching}>
-      {query.isLoading ? <p role="status">{tracking ? <CustomerSourceText source={"Loading progress…"} /> : __customerText('m_499ad32add53')}</p> : null}
+      {query.isLoading ? <LoadingState  label={<>{tracking ? <CustomerSourceText source={"Loading progress…"} /> : __customerText('m_499ad32add53')}</>} /> : null}
       {query.error ? <Alert variant="destructive"><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(query.error, tracking ? 'Progress could not be loaded.' : 'Phases could not be loaded.')} />} <Button variant="outline" onClick={() => void query.refetch()}><CustomerText message="m_942087cc2d41" /></Button></AlertDescription></Alert> : null}
       {plan && !tracking ? <p className="text-sm text-muted-foreground">{plan.sampleCount} <CustomerText message="m_860a488904af" />{plan.revision}{accepted ? __customerText('m_1bd47dff95fc', { p0: String(money(plan.acceptedSubtotal)) }) : ''}</p> : null}
       {plan && tracking ? <LabJobPhaseList order={order} plan={plan} tracking={tracking} canCancel={canCancel} onCancel={onCancel} singlePhaseActionsInHeader={Boolean(singleTrackingPhase)} /> : plan?.phases.map(phase => <article key={phase.id} className="space-y-3 rounded-md border p-4">

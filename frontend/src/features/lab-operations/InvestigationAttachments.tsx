@@ -1,3 +1,4 @@
+import { EmptyState } from '#/components/ui/content-state'
 import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
 import { downloadInvestigationAttachment, type EvidenceRow } from '#/api/lab-investigation'
@@ -11,7 +12,7 @@ export function InvestigationAttachments({ workOrderId, specimenId, rows }: { wo
     <div className="space-y-3 p-3">
       <p className="text-xs text-muted-foreground">These reports were attached to steps covering this sample. Each download checks access, scanning, file size and the recorded checksum. Saved metadata alone does not confirm file availability.</p>
       {rows.slice(page * 10, page * 10 + 10).map(row => <Attachment key={`${row.id}-${String(row.role)}`} workOrderId={workOrderId} specimenId={specimenId} row={row} />)}
-      {!rows.length ? <p className="text-sm">No supporting reports recorded.</p> : null}
+      {!rows.length ? <EmptyState  kind="empty" title={<>No supporting reports recorded.</>} /> : null}
       {rows.length > 10 ? <EvidencePages page={page} next={rows.length > (page + 1) * 10} onChange={setPage} /> : null}
     </div>
   </details>

@@ -1,4 +1,4 @@
-import { ErrorState } from '#/components/ui/content-state'
+import { ErrorState, EmptyState } from '#/components/ui/content-state'
 import { GovernanceStatusBadge as StatusBadge } from './DataStatusBadge'
 import { formatDisplayDate } from '#/lib/display-format'
 import { NativeCheckbox } from '#/components/ui/native-checkbox'
@@ -350,7 +350,7 @@ export function GovernancePanel({ apiEnabled }: { apiEnabled: boolean }) {
             <div className="rounded-lg border border-dashed p-5 text-sm text-muted-foreground">
               <AlertTriangle aria-hidden="true" className="mb-2 size-5" />
               <p className="m-0 font-medium text-foreground">No governance incidents</p>
-              <p className="m-0 mt-1">No governance incidents have been recorded.</p>
+              <EmptyState  kind="empty" title={<>No governance incidents have been recorded.</>} />
             </div>
           ) : null}
         <RecordPagination label={'Governance incident pages'} data={incidentsQueryPage.isError ? undefined : incidentsQueryPage.data} busy={incidentsQueryPage.isFetching} onPage={incidentsQuerySelection.setPage} />

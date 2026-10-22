@@ -1,3 +1,4 @@
+import { EmptyState } from '#/components/ui/content-state'
 import { RecordLink } from '#/components/ui/record-link'
 import { PageTitle } from '#/components/ui/page-header'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
@@ -164,7 +165,7 @@ export function DataLibraryPage() {
               </div>
             ))}
             {!historyQuery.isLoading && !historyQuery.isError && historyQueryPage.data?.totalCount === 0 ? (
-              <p className="m-0 rounded-lg border border-dashed p-4 text-sm text-muted-foreground"><CustomerText message="m_51bbd84c2cda" /></p>
+              <EmptyState  kind="empty" title={<><CustomerText message="m_51bbd84c2cda" /></>} />
             ) : null}
             <RecordPagination label={__customerText('download_history_pages')} data={historyQueryPage.isError ? undefined : historyQueryPage.data} busy={historyQueryPage.isFetching} onPage={historyQuerySelection.setPage} />
             {historyQuery.error ? <p className="m-0 text-sm text-destructive" role="alert"><CustomerSourceText source={getApiErrorMessage(historyQuery.error, 'Download history could not be loaded.')} /></p> : null}

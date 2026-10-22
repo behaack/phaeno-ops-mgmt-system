@@ -1,3 +1,4 @@
+import { EmptyState } from '#/components/ui/content-state'
 import { RecordTableHeader } from '#/components/ui/record-list'
 import { RequiredFieldName, RequiredLegend } from '#/components/ui/required-field'
 import { Field as PortalField } from '#/components/ui/field'
@@ -608,7 +609,7 @@ function SavedViewsCard() {
           </Badge>
         ))}
         {!query.isLoading && !(query.data?.length ?? 0) ? (
-          <p className="text-sm text-muted-foreground">No saved views yet.</p>
+          <EmptyState  kind="empty" title={<>No saved views yet.</>} />
         ) : null}
       </CardContent>
     </Card>

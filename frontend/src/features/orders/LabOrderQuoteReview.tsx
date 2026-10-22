@@ -1,3 +1,4 @@
+import { SectionPanel } from '#/components/ui/section-panel'
 import { RecordTableHeader } from '#/components/ui/record-list'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
@@ -43,8 +44,8 @@ function PhaseReview({ phase, quote }: { phase: QuoteReviewPhase; quote: Quote }
   const __customerText = useCustomerText()
 
   const breakdown = readPhaseRunBreakdown(phase)
-  return <section aria-label={`${phase.position}. ${phase.name}`} className="min-w-0 rounded-md border p-3 sm:p-4">
-    <h3 className="font-bold">{phase.position}. {phase.name}</h3>
+  return <SectionPanel aria-label={`${phase.position}. ${phase.name}`} className="min-w-0" heading={<h3 >{phase.position}. {phase.name}</h3>}>
+
     <div className="mt-3 grid min-w-0 items-start gap-4 lg:grid-cols-2 lg:gap-x-8">
       <div className="min-w-0 space-y-2"><PhaseDetails phase={phase} breakdown={breakdown} /></div>
       <div className="min-w-0">
@@ -56,7 +57,7 @@ function PhaseReview({ phase, quote }: { phase: QuoteReviewPhase; quote: Quote }
         <p className="mt-2 flex flex-wrap justify-between gap-x-3 gap-y-1 border-t pt-2 text-sm"><strong><CustomerText message="m_e3beb8a0c8bd" /></strong><span className="whitespace-nowrap font-semibold tabular-nums">{formatQuoteMoney(phase.acceptedSubtotal, quote.currency)}</span></p>
       </div>
     </div>
-  </section>
+  </SectionPanel>
 }
 
 function PhaseDetails({ phase, breakdown }: { phase: QuoteReviewPhase; breakdown: ReturnType<typeof readPhaseRunBreakdown> }) {

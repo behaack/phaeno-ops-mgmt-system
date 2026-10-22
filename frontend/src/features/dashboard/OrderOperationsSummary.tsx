@@ -1,3 +1,4 @@
+import { EmptyState } from '#/components/ui/content-state'
 import { Link } from '@tanstack/react-router'
 import type { SessionCapabilities } from '#/api/session'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
@@ -22,7 +23,7 @@ export function OrderOperationsSummary({ capabilities }: { capabilities?: Sessio
           <Link to={serviceSectionRoute(section.value)} search={serviceSectionSearch(section.value)} className="font-medium text-primary underline underline-offset-4">{section.label}</Link>
           <p className="mt-1 text-sm text-muted-foreground">{section.description}</p>
         </li>)}
-      </ul> : <p>No order workspaces are assigned to your role.</p>}
+      </ul> : <EmptyState  kind="empty" title={<>No order workspaces are assigned to your role.</>} />}
     </CardContent>
   </Card>
 }

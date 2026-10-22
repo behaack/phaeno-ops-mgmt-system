@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { RecordTableHeader } from '#/components/ui/record-list'
 import { Field as PortalField } from '#/components/ui/field'
 import { NativeCheckbox } from '#/components/ui/native-checkbox'
@@ -33,7 +34,7 @@ export function ProductTypesPage({ productTypeId }: { productTypeId?: string }) 
   const [statusTarget, setStatusTarget] = useState<ProductType | null>(null)
   if (!allowed) return <p>Product types require a Phaeno platform administrator.</p>
   if (authProvider === 'mock') return <p>Use a connected Phaeno session to manage product types.</p>
-  if (query.isPending) return <p role="status">Loading product types…</p>
+  if (query.isPending) return <LoadingState  label={<>Loading product types…</>} />
   if (query.isError && !query.data) return <div><p role="alert">{getLabOperationsError(query.error, 'Product types could not be loaded.')}</p><Button onClick={() => void query.refetch()}>Try again</Button></div>
   const types = query.data ?? []
   const type = types.find(t => t.id === productTypeId)

@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -80,7 +81,7 @@ export function SampleShipmentResetPacking({ shipment, canManage, scanActive = f
           {scanActive ? <p role="alert" className="text-destructive">{scanBlockedReason}</p> : null}
           {eligibility.data && !eligibility.data.canReset && !eligibility.isFetching ? <p role="alert" className="text-destructive">{reason ?? 'These containers can no longer be changed.'}</p> : null}
           {canReset && !matchesReview ? <div className="space-y-2"><p role="alert"><CustomerText message="m_10d97b3d2a0e" /></p><Button variant="outline" onClick={() => { if (eligibility.data) setReview(eligibility.data) }}><CustomerText message="m_12099252bb68" /></Button></div> : null}
-          {eligibility.isFetching && !reset.isPending ? <p role="status"><CustomerText message="m_9475df56a353" /></p> : null}
+          {eligibility.isFetching && !reset.isPending ? <LoadingState  label={<><CustomerText message="m_9475df56a353" /></>} /> : null}
         </div> : null}
         <DialogFooter><Button variant="outline" disabled={reset.isPending} onClick={close}><CustomerText message="m_1d1f9dbc6849" /></Button><Button disabled={reset.isPending || !canReset || !matchesReview || !review?.canReset} onClick={confirm}>{reset.isPending ? <CustomerSourceText source={"Resetting…"} /> : __customerText('m_9d96e659aa90')}</Button></DialogFooter>
       </DialogContent>

@@ -248,7 +248,7 @@
       "title": "Trial Projects",
       "summary": "Review and accept approved Trial scope, submit coded RNA, and download released results.",
       "order": 24,
-      "reviewedAt": "2026-10-03",
+      "reviewedAt": "2026-10-22",
       "navigationGroup": "trial-project",
       "contentType": "guide",
       "topicIds": [
@@ -338,7 +338,7 @@
       "title": "Prepare and ship samples",
       "summary": "Prepare containers, match tubes with their declared material amounts, print shipping inserts and record dispatch.",
       "order": 25,
-      "reviewedAt": "2026-10-03",
+      "reviewedAt": "2026-10-22",
       "navigationGroup": "trial-project",
       "contentType": "guide",
       "topicIds": [
@@ -588,7 +588,7 @@
       "title": "Prepare and ship samples",
       "summary": "Request phase kits, confirm receipt, pair samples and tubes, pack and record shipments, and follow each phase.",
       "order": 35,
-      "reviewedAt": "2026-10-11",
+      "reviewedAt": "2026-10-22",
       "navigationGroup": "laboratory-work",
       "contentType": "guide",
       "topicIds": [
@@ -621,7 +621,7 @@
       "title": "Results and billing",
       "summary": "Download scientifically released PSeq results, review retention, and find invoices independently of result access.",
       "order": 40,
-      "reviewedAt": "2026-10-11",
+      "reviewedAt": "2026-10-22",
       "navigationGroup": "laboratory-work",
       "contentType": "guide",
       "topicIds": [
@@ -797,7 +797,7 @@
       "title": "Prepare included Assembly",
       "summary": "Prepare a purchased Kit case, correct inputs and download governed outputs without another purchase.",
       "order": 40,
-      "reviewedAt": "2026-10-15",
+      "reviewedAt": "2026-10-22",
       "navigationGroup": "partner-work",
       "contentType": "guide",
       "topicIds": [

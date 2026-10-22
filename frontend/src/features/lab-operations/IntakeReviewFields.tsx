@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { FieldError } from '#/components/ui/field'
 import { Field as PortalField } from '#/components/ui/field'
 import { NativeSelect } from '#/components/ui/native-select'
@@ -37,7 +38,7 @@ export function IntakeReviewFields({ value, onChange, previousDisposition, disab
       <NativeSelect id={`${id}-reason`} className={control} required disabled={disabled} value={value.reasonCode} onChange={event => onChange({ ...value, reasonCode: event.target.value })}>
         <option value="">Choose a reason</option>{reasons.data?.map(reason => <option key={reason.code} value={reason.code}>{reason.label}</option>)}
       </NativeSelect>
-      {reasons.isPending ? <p role="status">Loading reasons…</p> : null}
+      {reasons.isPending ? <LoadingState  label={<>Loading reasons…</>} /> : null}
       {reasons.error ? <FieldError role="alert">Reasons could not be loaded. <button type="button" className="cursor-pointer underline" onClick={() => void reasons.refetch()}>Try again</button></FieldError> : null}
     </PortalField> : null}
     <div>

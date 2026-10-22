@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { formatDisplayTimestamp } from '#/lib/display-format'
 import { DisplayTimestamp } from '#/components/ui/display-value'
 import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
@@ -84,7 +85,7 @@ export function MasterMixWorkspace({ enabled, canOperate }: { enabled: boolean; 
         </form>
       </CardHeader>
       <CardContent className="space-y-4 p-4">
-        {mixes.isPending ? <p role="status">Loading master mixes…</p> : mixes.isError ? <p role="alert">{getLabOperationsError(mixes.error, 'Master mixes could not be loaded.')}</p> : mixes.data.items.length ? <>
+        {mixes.isPending ? <LoadingState  label={<>Loading master mixes…</>} /> : mixes.isError ? <p role="alert">{getLabOperationsError(mixes.error, 'Master mixes could not be loaded.')}</p> : mixes.data.items.length ? <>
           <ul className="space-y-2">{mixes.data.items.map(item => { const overdue = item.status !== 'Discarded' && new Date(item.useByUtc).getTime() <= Date.now(); return <li key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3"><div><RecordLink asChild><Link to="/lab-operations/master-mixes/$mixId" params={{ mixId: item.id }} >{item.barcode} · {item.workflowName}</Link></RecordLink><p className="text-sm text-muted-foreground">Revision {item.workflowRevision} · started {<DisplayTimestamp value={item.startedAtUtc} seconds />} · {item.status === 'Ready' ? `${labAmount(item.remainingQuantityText ?? item.remainingQuantity)} ${item.quantityUnit} remaining · use by ${labCutoff(item.useByUtc)}` : item.status}</p>{overdue ? <p className="text-sm text-destructive">Overdue — discard this mix.</p> : null}</div><DomainStatusBadge status={item.status} tones={materialTones}>{item.status}</DomainStatusBadge></li> })}</ul>
           <div className="flex flex-wrap items-center justify-between gap-3 text-sm"><p>Showing page {mixes.data.page} of {Math.max(1, Math.ceil(mixes.data.total / mixes.data.pageSize))} · {labCount(mixes.data.total, 'mix', 'mixes')}</p><div className="flex gap-2"><Button type="button" variant="outline" disabled={filters.page <= 1} onClick={() => updateFilters({ ...filters, page: filters.page - 1 })}>Previous</Button><Button type="button" variant="outline" disabled={filters.page * mixes.data.pageSize >= mixes.data.total} onClick={() => updateFilters({ ...filters, page: filters.page + 1 })}>Next</Button></div></div>
         </> : <p className="text-sm text-muted-foreground">No master mixes match these filters.</p>}

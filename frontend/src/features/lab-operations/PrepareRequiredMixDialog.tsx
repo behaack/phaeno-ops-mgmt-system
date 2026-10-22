@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { DialogDescription } from '#/components/ui/dialog'
 import { useRef } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -18,7 +19,7 @@ export function PrepareRequiredMixDialog({ requirement, onClose }: { requirement
   return <Dialog open onOpenChange={open => { if (!open && !start.isPending) onClose() }}><DialogContent><DialogHeader><DialogTitle>Prepare required master mix</DialogTitle><DialogDescription>Prepare the required mix in a new tab, then return to select it and scan its container.</DialogDescription></DialogHeader>
     <div className="space-y-3 text-sm">
       <p>Your entries stay in the waiting form. Complete the mix in a new tab, then return to select it and scan its container.</p>
-      {workflows.isPending ? <p role="status">Loading the required recipe…</p> : workflows.isError ? <p role="alert">The required recipe could not be loaded.</p> : revision ? <p><strong>{revision.name}</strong> · approved revision {revision.revision}</p> : <p role="alert">This exact recipe revision is unavailable. Ask a supervisor to review the preparation workflow.</p>}
+      {workflows.isPending ? <LoadingState  label={<>Loading the required recipe…</>} /> : workflows.isError ? <p role="alert">The required recipe could not be loaded.</p> : revision ? <p><strong>{revision.name}</strong> · approved revision {revision.revision}</p> : <p role="alert">This exact recipe revision is unavailable. Ask a supervisor to review the preparation workflow.</p>}
       {start.error ? <p role="alert" className="text-destructive">{getLabOperationsError(start.error, 'The mix could not be started. Retry uses the same request.')}</p> : null}
       {start.data ? <><p>Container: <strong className="break-all">{start.data.barcode}</strong></p><Button asChild><Link to="/lab-operations/master-mixes/$mixId" params={{ mixId: start.data.id }} target="_blank" rel="noopener noreferrer" onClick={onClose}>Continue mix preparation in a new tab</Link></Button></> : null}
     </div>

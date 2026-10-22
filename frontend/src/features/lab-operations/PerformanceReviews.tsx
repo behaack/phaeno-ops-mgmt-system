@@ -1,3 +1,4 @@
+import { LoadingState, EmptyState } from '#/components/ui/content-state'
 import { Field as PortalField } from '#/components/ui/field'
 import { NativeSelect } from '#/components/ui/native-select'
 import { confirmPortal } from '#/components/PortalConfirmation'
@@ -40,7 +41,7 @@ export function PerformanceReviews({ workOrderId, specimenId, executions, people
   return <section className="space-y-3" aria-label="Performer and time reviews">
     <div className="flex flex-wrap items-center justify-between gap-3"><h3 className="font-medium">Performer and time reviews</h3>{query.data?.canPropose && !query.isError ? <Button size="sm" variant="outline" disabled={!targets.length} onClick={() => setProposalOpen(true)}>Propose performer/time change</Button> : null}</div>
     <p className="text-xs text-muted-foreground">Original entries remain unchanged. Work recorded for another person and changes to performer/time require a reason and another supervisor’s approval before they count as verified evidence.</p>
-    {query.isError ? <><EvidenceError error={query.error} /><Button size="sm" variant="outline" onClick={() => void query.refetch()}>Reload reviews</Button></> : query.isPending ? <p role="status">Loading performance reviews…</p> : <>
+    {query.isError ? <><EvidenceError error={query.error} /><Button size="sm" variant="outline" onClick={() => void query.refetch()}>Reload reviews</Button></> : query.isPending ? <LoadingState  label={<>Loading performance reviews…</>} /> : <>
       {query.data.proposals.slice(page * 10, page * 10 + 10).map(proposal => {
         const decision = query.data.decisions.find(item => item.id === proposal.id)
         const superseded = query.data.proposals.some(item => item.basedOnProposalId === proposal.id && query.data.decisions.some(d => d.id === item.id && d.approved))
@@ -117,7 +118,7 @@ function ReviewDialog({ work, specimen, proposal, close, refresh, people }: { pe
 function Attribution({ json, people }: { json: string; people: ReadonlyMap<string, string> }) {
   try {
     const value = JSON.parse(json) as LabStepPerformance | null
-    if (!value) return <p className="text-muted-foreground">No earlier verified attribution recorded.</p>
+    if (!value) return <EmptyState  kind="empty" title={<>No earlier verified attribution recorded.</>} />
     return <div className="space-y-1 text-sm"><p>Performed by {people.get(value.performedByUserId) ?? `User ${value.performedByUserId}`}</p><p>{evidenceDate(value.performedAtUtc)} · {value.precision === 'minute' ? 'Minute precision' : 'Recorded time'}</p>{value.lateEntryReason ? <p className="whitespace-pre-wrap">Entry reason: {value.lateEntryReason}</p> : null}</div>
   } catch { return <EvidenceError error={new Error('The saved attribution could not be read. Investigate the original record.')} /> }
 }

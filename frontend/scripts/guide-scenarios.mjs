@@ -3,7 +3,7 @@ const onboarding='/docs/phaeno/screenshots/onboarding-20261015/'
 const research='/docs/phaeno/screenshots/research-20261017/'
 const experiment='/research/experiments/22222222-2222-4222-8222-222222222222'
 const entry=experiment+'/entries/33333333-3333-4333-8333-333333333333'
-const feature=(name,targets,prepare)=>({image:onboarding+name+'.jpg',url:`/features.html?scene=${name}`,targets,prepare,frame:['01-company','06-online-access-complete','09-work-needed','12-ready-to-complete','13-completed-requests'].includes(name)?'main':undefined})
+const feature=(name,targets,prepare)=>({viewportHeight:name==='11-finance-approval'?1200:undefined,image:onboarding+name+'.jpg',url:`/features.html?scene=${name}`,targets,prepare,frame:['01-company','06-online-access-complete','09-work-needed','12-ready-to-complete','13-completed-requests'].includes(name)?'main':undefined})
 const notebook=(name,path,targets,prepare,completed=false)=>({image:research+name+'.jpg',url:`/research.html?illustrate=true&prepared=true&completed=${completed}&path=${encodeURIComponent(path)}`,targets,prepare,frame:name==='04-experiment'?'main':undefined})
 const click=selector=>async page=>{await page.locator(selector).first().click()}
 export const guideScenarios=[
@@ -39,4 +39,16 @@ export const guideScenarios=[
  {image:'/docs/phaeno/screenshots/customer-order-20261015.jpg',url:'/features.html?scene=customer-order',top:0,bottom:'main [data-slot=card]',targets:['#draft-customer','#draft-department','#draft-name','#draft-service','#draft-sample-type']},
  {image:'/docs/phaeno/screenshots/sample-type-20261015.jpg',url:'/features.html?scene=sample-type',targets:['#sample-type-name','#sample-type-procedure','#sample-type-minimum-sample'],prepare:click('button:has-text("Add sample type")')},
  {image:'/docs/phaeno/screenshots/protocol-editor-20261015.jpg',url:'/features.html?scene=protocol-editor',top:0,bottom:'#step-0-instructions',targets:['button:has-text("Untitled instruction")','input[id$="-name"]','button:has-text("Configuration preview")']},
+
+ {image:'/docs/phaeno/screenshots/workflows-20261022/order-scope.jpg',viewportHeight:1400,url:'/features.html?scene=order-scope',frame:'[data-slot=card]:has(#draft-source-0-0)',targets:['#draft-source-0-0','#draft-count-0-0','#draft-runs-0'],prepare:async page=>{await page.locator('#draft-source-0-0').fill('DEMO — synthetic RNA');await page.locator('#draft-count-0-0').fill('2')}},
+ {image:'/docs/phaeno/screenshots/workflows-20261022/order-readiness.jpg',url:'/features.html?scene=order-blocked',frame:'[data-slot=card]:has(#draft-customer)',targets:['text=Before starting pricing','button:has-text("Refresh readiness")']},
+ {image:'/docs/phaeno/screenshots/workflows-20261022/order-submit.jpg',viewportHeight:2400,url:'/features.html?scene=order-submit',targets:['button:has-text("Save draft")','button:has-text("Submit for pricing")']},
+ {image:'/docs/phaeno/screenshots/workflows-20261022/kit-specification.jpg',url:'/features.html?scene=kit-specification',targets:['#container-commonName','#container-sku','#kit-sample-type','#kit-assembly-method']},
+ {image:'/docs/phaeno/screenshots/workflows-20261022/destination.jpg',viewportHeight:1600,url:'/features.html?scene=destination',targets:['#destination-name','#destination-time-zone','[role=dialog] button:has-text("Create")'],prepare:click('button:has-text("Add destination")')},
+ {image:'/docs/phaeno/screenshots/workflows-20261022/protocol-preview.jpg',url:'/features.html?scene=protocol-preview',targets:['select[id$="-presentation"]','select[id$="-paper"]','button:has-text("Actions")'],prepare:async page=>{await page.locator('select[id$="-presentation"]').selectOption('bench')}},
+ {image:'/docs/phaeno/screenshots/workflows-20261022/protocol-approval.jpg',viewportHeight:1600,url:'/features.html?scene=protocol-approval',targets:['text=Ordered protocol definition','[role=dialog] [role=checkbox]','button:has-text("Approve version 1")']},
+ {image:'/docs/customer/en-US/screenshots/workflows-20261022/results.jpg',url:'/features.html?scene=customer-results',frame:'[data-slot=card]:has-text("DEMO-transcripts.tsv")',targets:['text=DEMO-transcripts.tsv','button:has-text("Download result")','[data-slot=status-badge]:has-text("Released")']},
+ {image:'/docs/customer/en-US/screenshots/workflows-20261022/shipping.jpg',url:'/features.html?scene=shipping',frame:'[data-slot=card]:has(#shipment-search)',targets:['#shipment-search','a:has-text("DEMO-SHIP-001")','select#shipment-status']},
+ {image:'/docs/partner/en-US/screenshots/workflows-20261022/assembly-cases.jpg',url:'/features.html?scene=partner-assembly',targets:['#assembly-search','a:has-text("DEMO-ASM-001")','#assembly-status']},
+ {image:'/docs/prospect/en-US/screenshots/workflows-20261022/trial-review.jpg',url:'/features.html?scene=trial',targets:['[role=dialog] h2','[role=dialog] input[type=checkbox]','[role=dialog] button:has-text("Accept Trial scope")'],prepare:click('button:has-text("Review and accept scope")')},
 ]

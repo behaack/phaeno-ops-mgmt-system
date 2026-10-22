@@ -46,6 +46,9 @@ function ActionMenu({ keepSingleActionInMenu = false, ...props }: React.Componen
         'aria-busy': item['aria-busy'],
         onClick: event => {
           if (disabled) { event.preventDefault(); return }
+          // WebKit does not focus a button on pointer activation. Dialogs opened
+          // by a sole action still need an explicit return-focus target.
+          event.currentTarget.focus()
           if (!event.defaultPrevented) item.onSelect?.(new Event('action.select', { cancelable: true }))
         },
       })

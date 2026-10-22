@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { NativeCheckbox } from '#/components/ui/native-checkbox'
 import { useIllustrationUploadPending } from './ProcedureIllustrations'
 import { useConfigurationDiscovery } from './configuration-discovery'
@@ -195,7 +196,7 @@ export function ProtocolVersionBuilderPage({
   }
 
   if (dashboard.isLoading) {
-    return <main className="space-y-4"><p role="status">Loading protocol…</p></main>
+    return <main className="space-y-4"><LoadingState  label={<>Loading protocol…</>} /></main>
   }
 
   if (dashboard.error) {
@@ -271,7 +272,7 @@ export function ProtocolVersionBuilderPage({
   }
 
   if (!formReady) {
-    return <main className="space-y-4"><p role="status">Loading protocol definition…</p></main>
+    return <main className="space-y-4"><LoadingState  label={<>Loading protocol definition…</>} /></main>
   }
 
   const displayedVersion = draft?.protocolVersion ?? protocol.latestVersion + 1

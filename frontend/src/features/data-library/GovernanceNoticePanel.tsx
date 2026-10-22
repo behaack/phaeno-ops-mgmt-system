@@ -1,3 +1,4 @@
+import { EmptyState } from '#/components/ui/content-state'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { RecordPagination } from '#/components/RecordPagination'
 import { useScopedRecordPage } from '#/components/use-scoped-record-page'
@@ -167,8 +168,8 @@ export function GovernanceNoticePanel({
             </div>
           ))}
           {!activityQuery.isLoading && !activityQuery.isError && activityQueryPage.data?.totalCount === 0 ? (
-            <p className="m-0 rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-              <CustomerText message="m_7b52d70bb96c" /></p>
+            <EmptyState  kind="empty" title={<>
+              <CustomerText message="m_7b52d70bb96c" /></>} />
           ) : null}
           <RecordPagination label={__customerText('data_activity_pages')} data={activityQueryPage.isError ? undefined : activityQueryPage.data} busy={activityQueryPage.isFetching} onPage={activityQuerySelection.setPage} />
           {activityQuery.error ? (

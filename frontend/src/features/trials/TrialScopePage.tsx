@@ -1,3 +1,5 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
+import { ErrorState, LoadingState } from '#/components/ui/content-state'
 import { NativeCheckbox } from '#/components/ui/native-checkbox'
 import { PageTitle } from '#/components/ui/page-header'
 import { BackLink } from '#/components/ui/back-link'
@@ -64,8 +66,8 @@ function initialValues(trial: TrialDetail, configuration: TrialConfiguration): V
 export function TrialScopePage({ trialId, fromCompanyId }: { trialId: string; fromCompanyId?: string }) {
   const queries = useTrialQueries(trialId)
   if (!queries.staff) return <p className="p-6">Phaeno staff define Trial scope.</p>
-  if (queries.detail.error && !queries.detail.data || queries.config.error && !queries.config.data) return <p role="alert" className="p-6">{apiErrorMessage(queries.detail.error ?? queries.config.error)} <Button variant="outline" onClick={() => { void queries.detail.refetch(); void queries.config.refetch() }}>Retry Trial scope</Button></p>
-  if (!queries.detail.data || !queries.config.data) return <p role="status" className="p-6">Loading Trial scope…</p>
+  if (queries.detail.error && !queries.detail.data || queries.config.error && !queries.config.data) return <ErrorState title={<CustomerSourceText source="Could not load this content" />} action={<Button variant="outline" onClick={() => { void queries.detail.refetch(); void queries.config.refetch() }}>Retry Trial scope</Button>}>{apiErrorMessage(queries.detail.error ?? queries.config.error)} </ErrorState>
+  if (!queries.detail.data || !queries.config.data) return <LoadingState  label={<>Loading Trial scope…</>} />
   return <ScopeEditor fromCompanyId={fromCompanyId} key={trialId} trial={queries.detail.data} configuration={queries.config.data} onReload={async () => { const [result, configuration] = await Promise.all([queries.detail.refetch(), queries.config.refetch()]); if (result.error) throw result.error; if (configuration.error) throw configuration.error; return { trial: result.data!, configuration: configuration.data! } }} />
 }
 function ScopeEditor({ trial, configuration, onReload, fromCompanyId }: { fromCompanyId?: string; trial: TrialDetail; configuration: TrialConfiguration; onReload: () => Promise<{ trial: TrialDetail; configuration: TrialConfiguration }> }) {

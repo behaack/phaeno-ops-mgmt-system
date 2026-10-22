@@ -1,8 +1,9 @@
 import { expect, test } from '@playwright/test'
+import cases from '../documentation-cases.json' with { type: 'json' }
 
-for(const [slug,count] of [['onboard-customer',15],['record-research',14],['place-customer-order',1],['configure-samples-shipping',1],['lab-protocol',1]] as const)test(`refreshed ${slug} guide retains its illustrations and callouts`,async({page},info)=>{
-  await page.goto(`/research.html?view=howto&slug=how-to-${slug}&dark=${info.project.use.colorScheme==='dark'}`)
-  const images=page.locator('img[src^="/docs/phaeno/screenshots/"]')
+for(const {audience,slug,count} of cases)test(`refreshed ${audience}/${slug} guide retains its illustrations and callouts`,async({page},info)=>{
+  await page.goto(`/research.html?view=howto&audience=${audience}&slug=${slug}&dark=${info.project.use.colorScheme==='dark'}`)
+  const images=page.locator('img[src^="/docs/"]')
   await expect(images).toHaveCount(count)
   for(const img of await images.all()) {
     await img.scrollIntoViewIfNeeded()

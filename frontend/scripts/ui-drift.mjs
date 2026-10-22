@@ -24,7 +24,7 @@ export function inspectUiSource(source, file, messages = {}) {
     ts.forEachChild(node, collectConstants)
   }
   collectConstants(ast)
-  const opening = node => ts.isJsxElement(node) ? node.openingElement : ts.isJsxSelfClosingElement(node) ? node : null
+  const opening = node => !node ? null : ts.isJsxElement(node) ? node.openingElement : ts.isJsxSelfClosingElement(node) ? node : null
   const name = node => opening(node)?.tagName.getText(ast)
   const shared = (node, component, module) => {
     const imported = imports.get(name(node))
@@ -81,6 +81,16 @@ export function inspectUiSource(source, file, messages = {}) {
       const button = name(node) === 'button' || shared(node, 'Button', 'button')
       const inDialog = parents.some(p => shared(p, 'Dialog', 'dialog') || shared(p, 'DialogContent', 'dialog'))
       const inPrintDocument = parents.some(p => name(p) === 'article' && attr(p, 'data-print-document'))
+      const scientificInstructions = parents.some(p => name(p) === 'article' && /\bprocedure-document\b/.test(attrText(p, 'className')))
+      const contentChildren = ts.isJsxElement(node) ? node.children.filter(p => !ts.isJsxText(p) || p.text.trim()) : []
+      const firstChild = contentChildren[0]
+      const groupedHeading = firstChild && name(firstChild) === 'div' && ts.isJsxElement(firstChild) ? firstChild.children.find(p => !ts.isJsxText(p) || p.text.trim()) : undefined
+      const titledBox = ['section', 'div'].includes(name(node)) && /(?:^|\s)border(?:\s|$)/.test(attrText(node, 'className')) && /\brounded(?:-[\w]+)?\b/.test(attrText(node, 'className')) && [firstChild, groupedHeading].some(child => /^h[23]$/.test(name(child) ?? ''))
+      if (titledBox && !['alert', 'status'].includes(attrText(node, 'role')) && !attr(node, 'data-preparation-step') && !inPrintDocument && !scientificInstructions && !/^src\/features\/invitations\//.test(file)) report(node, 'shared-section-panel', 'Use SectionPanel for equivalent titled bordered sections; retain native heading levels, identity, actions and scientific/print layout.')
+      if (name(node) === 'p' && !attr(node, 'id') && /^(?:Loading|Refreshing|Checking)\b/.test(label) && attrText(node, 'role') !== 'alert') report(node, 'shared-loading-state', 'Use LoadingState for consistent initial/background feedback and accessible announcements.')
+      const panelHeading = attr(node, 'heading')?.initializer?.expression
+      const panelOverride = /(?:^|\s)(?:[\w-]+:)*(?:bg-|rounded|p[xytrblse]?-(?:\d|\[)|border(?:-|\s|$))/
+      if (shared(node, 'SectionPanel', 'section-panel') && (panelOverride.test(attrText(node, 'className')) || attr(node, 'style') || panelOverride.test(attrText(panelHeading, 'className').replace(/(?:^|\s)rounded(?:-\S+)?/g,'')) || attr(panelHeading, 'style') || pageTitleOverride.test(attrText(panelHeading, 'className')))) report(node, 'section-panel-appearance', 'SectionPanel owns its surface, border, spacing and heading band; keep call-site classes for layout.')
       if (name(node) === 'select') report(node, 'shared-native-select', 'Use NativeSelect to preserve native form behavior with shared sizing.')
       if (name(node) === 'input' && attrText(node, 'type') === 'checkbox') report(node, 'shared-native-checkbox', 'Use NativeCheckbox for registered/native events or Checkbox for controlled Radix state.')
       if ((shared(node, 'NativeSelect', 'native-select') || shared(node, 'NativeCheckbox', 'native-checkbox')) && /(?:^|\s)(?:[\w-]+:)*!?(?:h-|min-h-|max-h-|size-|p[xytrblse]?-|text-(?:xs|sm|base|lg)|rounded|border|bg-|font-|leading-)/.test(attrText(node, 'className'))) report(node, 'native-control-appearance', 'Shared native controls own height, typography and chrome; put layout on Field.')

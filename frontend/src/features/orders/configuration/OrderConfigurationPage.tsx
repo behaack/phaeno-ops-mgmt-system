@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { PageTitle } from '#/components/ui/page-header'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -122,7 +123,7 @@ export function OrderConfigurationPage({ catalogItemId, kitLotId }: { catalogIte
               </AlertDescription>
             </Alert>
           ) : null}
-          {showingOrders && configuration.isLoading ? <p role="status"><CustomerSourceText source={"Loading order configuration…"} /></p> : null}
+          {showingOrders && configuration.isLoading ? <LoadingState  label={<><CustomerSourceText source={"Loading order configuration…"} /></>} /> : null}
           {section === 'commercial' ? <div className="mb-5 space-y-3 rounded-lg border p-4"><p className="text-sm text-muted-foreground"><CustomerSourceText source={"Historical accounting mappings and connector recovery. The service catalog is maintained in Service catalog."} /></p><Button variant="outline" disabled={!apiEnabled || sync.isPending} onClick={() => sync.mutate()}><RefreshCw data-icon="inline-start" />{sync.isPending ? <CustomerSourceText source={"Queueing…"} /> : <CustomerSourceText source={"Queue QuickBooks catalog recovery"} />}</Button>{sync.error ? <p role="alert">{<CustomerSourceText source={getOrderErrorMessage(sync.error, 'Connector recovery is unavailable.')} />}</p> : null}{sync.isSuccess ? <p role="status"><CustomerSourceText source={"Catalog recovery queued."} /></p> : null}</div> : null}
           {configuration.data && section === 'catalog' ? <CatalogConfigurationPanel configuration={configuration.data} catalogItemId={catalogItemId} apiEnabled={apiEnabled} /> : null}
           {configuration.data && section === 'system' ? <SystemConfigurationPanel configuration={configuration.data} /> : null}

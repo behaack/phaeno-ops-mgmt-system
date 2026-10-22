@@ -1,3 +1,5 @@
+import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
+import { LoadingState, ErrorState, EmptyState } from '#/components/ui/content-state'
 import { formatDisplayTimestamp } from '#/lib/display-format'
 import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
 import { deliveryTones } from '#/features/dashboard/dashboard-status'
@@ -48,7 +50,7 @@ export function WebOpsDeliveryPanel() {
       <WebOpsProcessingControls attentionOnly={attentionOnly} onAttentionChange={value => { setAttentionOnly(value); setPage(1) }} />
       {success && <p role="status" className="text-sm">{success}</p>}
       {query.isError && <Alert variant="destructive"><AlertDescription className="flex flex-wrap items-center gap-2">{getWebOpsErrorMessage(query.error, 'Email delivery could not be loaded.')}<Button variant="outline" size="sm" onClick={() => void query.refetch()}>Retry email delivery</Button></AlertDescription></Alert>}
-      {query.isPending && <p role="status">Loading email delivery…</p>}
+      {query.isPending && <LoadingState  label={<>Loading email delivery…</>} />}
       {!query.isError && query.data && query.data.items.length === 0 && <p className="text-sm text-muted-foreground">{attentionOnly ? 'No email messages need attention.' : 'No email delivery records yet. Older signups appear in Mailing List; their original delivery status is unknown.'}</p>}
       {query.data && <ul className="divide-y">{query.data.items.map(item => <li key={item.id} className="space-y-2 py-4 first:pt-0">
         <div className="flex flex-wrap items-start justify-between gap-3">
@@ -91,9 +93,9 @@ function NotificationHistory({ id, label, pending, onResend }: { id: string; lab
       </DropdownMenuContent>
     </ActionMenu>
     {open && <div id={`delivery-history-${id}`} className="mt-2 space-y-2 text-xs">
-      {query.isPending && <p role="status">Loading attempts…</p>}
-      {query.isError && <p role="alert">Attempt history could not be loaded. <Button variant="outline" size="sm" onClick={() => void query.refetch()}>Retry history</Button></p>}
-      {query.data?.length === 0 && <p>No delivery attempts yet.</p>}
+      {query.isPending && <LoadingState  label={<>Loading attempts…</>} />}
+      {query.isError && <ErrorState title={<CustomerSourceText source="Could not load this content" />} action={<Button variant="outline" size="sm" onClick={() => void query.refetch()}>Retry history</Button>}>Attempt history could not be loaded. </ErrorState>}
+      {query.data?.length === 0 && <EmptyState  kind="empty" title={<>No delivery attempts yet.</>} />}
       {query.data?.map(attempt => <p key={attempt.attemptNumber}>Attempt {attempt.attemptNumber} · {formatTime(attempt.startedAtUtc)} · {attempt.outcome}{attempt.staffRequested ? ' · Requested by staff' : ''}{attempt.error ? ` · ${attempt.error}` : ''}</p>)}
       {query.data?.length === 50 && <p>Showing the 50 most recent attempts.</p>}
     </div>}

@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import { confirmPortal } from '#/components/PortalConfirmation'
@@ -27,7 +28,7 @@ export function SubmissionInstructionsPanel({ apiEnabled }: { apiEnabled: boolea
   const configuration = useQuery({ queryKey: ['order-configuration'], queryFn: getOrderConfiguration, enabled: apiEnabled })
   if (!apiEnabled) return null
   if (configuration.error) return <Alert variant="destructive"><AlertTitle><CustomerText message="m_980623077e60" /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(configuration.error, 'Try refreshing this page.')} />}</AlertDescription></Alert>
-  if (!configuration.data) return <p role="status"><CustomerText message="m_0d54723bf4bd" /></p>
+  if (!configuration.data) return <LoadingState  label={<><CustomerText message="m_0d54723bf4bd" /></>} />
   return <SubmissionInstructionsEditor configuration={configuration.data} />
 }
 

@@ -70,3 +70,21 @@ workflow steps; submitting for pricing does not complete them.
 See [Order operations](/docs/phaeno/order-operations) for phase pricing and queue
 triage, and [Customer lab authorization](/docs/phaeno/order-customer-lab-authorization)
 for readiness, quote acceptance and additional scope.
+
+## Scope, readiness and submission examples
+
+![Fictional order scope showing the biological source, sample count and sequencing runs per sample.](/docs/phaeno/screenshots/workflows-20261022/order-scope.jpg "A fictional source row illustrates the difference between samples and sequencing runs.")
+
+1. **Biological source:** describe the material represented by this row.
+2. **Samples:** enter the number of samples from that source.
+3. **Runs per sample:** record sequencing runs separately from sample quantities.
+
+![Customer order readiness showing a billing blocker and the Refresh readiness action.](/docs/phaeno/screenshots/workflows-20261022/order-readiness.jpg "This demonstration is blocked for pricing until the named billing requirement is resolved.")
+
+1. **Before starting pricing:** follow the named blocker and its owning workspace.
+2. **Refresh readiness:** recheck saved setup before reviewing submission again.
+
+![Order form footer showing separate Save draft and Submit for pricing actions.](/docs/phaeno/screenshots/workflows-20261022/order-submit.jpg "Saving retains the Draft; submitting requests pricing after validation and readiness checks.")
+
+1. **Save draft:** retain incomplete work without sending it for pricing.
+2. **Submit for pricing:** submit only after completing scope and resolving readiness issues.

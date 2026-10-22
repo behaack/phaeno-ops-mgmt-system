@@ -1,3 +1,5 @@
+import { SectionPanel } from '#/components/ui/section-panel'
+import { LoadingState } from '#/components/ui/content-state'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import { createPortal } from 'react-dom'
@@ -126,11 +128,11 @@ export function LabJobShippingWorkspace({ order, workspace, onWorkspaceChange, h
       {unknownSelection ? <Alert><AlertTitle><CustomerText message="m_3c5a7f16fcb6" /></AlertTitle><AlertDescription><CustomerText message="m_b448bd233b89" /><Button variant="outline" onClick={() => change({ shipmentId: undefined, orderKits: undefined })}><CustomerText message="m_f9eb72bacb54" /></Button></AlertDescription></Alert> : null}
       {shipments.error ? <Alert variant="destructive"><AlertTitle><CustomerText message="m_00cc48ad6ac8" /></AlertTitle><AlertDescription><CustomerText message="m_f4b041e5971e" /><Button variant="outline" onClick={() => void shipments.refetch()}><CustomerText message="m_6b505c2eafc9" /></Button></AlertDescription></Alert> : null}
       {awaitingPairedPreparation && !hasReceivedCompatibleKit ? pairState === 'loading'
-        ? <p role="status" className="text-sm text-muted-foreground"><CustomerText message="m_99b36e8f8a23" /></p>
+        ? <LoadingState  label={<><CustomerText message="m_99b36e8f8a23" /></>} />
         : pairState === 'unavailable'
           ? <Alert variant="destructive"><AlertTitle><CustomerText message="m_d73a4b782dcd" /></AlertTitle><AlertDescription><CustomerText message="m_a6ca8e78c84c" />{onPairRefresh ? <Button type="button" variant="outline" size="sm" onClick={onPairRefresh}><CustomerText message="m_942087cc2d41" /></Button> : null}</AlertDescription></Alert>
           : null : null}
-      {submissionInstructions && (!order.usesPairedPreparation || hasReceivedCompatibleKit) ? <section aria-label={__customerText('m_d64a3bc33aee')} className="rounded-md border bg-muted/30 px-4 py-3 text-sm"><h3 className="font-medium"><CustomerText message="m_d64a3bc33aee" /></h3><p className="mt-1 whitespace-pre-wrap wrap-anywhere text-muted-foreground">{submissionInstructions}</p></section> : null}
+      {submissionInstructions && (!order.usesPairedPreparation || hasReceivedCompatibleKit) ? <SectionPanel aria-label={__customerText('m_d64a3bc33aee')} className="text-sm" heading={<h3 ><CustomerText message="m_d64a3bc33aee" /></h3>}><p className="mt-1 whitespace-pre-wrap wrap-anywhere text-muted-foreground">{submissionInstructions}</p></SectionPanel> : null}
       {!selected ? renderSamples() : null}
       {selected ? <SampleShippingDetailPage key={selected.id} shipmentId={selected.id} autoOpenKitOrder={workspace.orderKits} embedded={{
         sourceId: order.id,
@@ -149,7 +151,7 @@ export function LabJobShippingWorkspace({ order, workspace, onWorkspaceChange, h
         onOpenPreparation: () => change({ shipmentId: selected.id, shippingView: 'tubes' }),
         renderActions: (actions, triggerRef, dialogOpen) => headerTarget ? createPortal(<LabJobWorkspaceActions orderActions={orderActions} shipmentActions={actions} shipmentLabel={selected.shipmentNumber} triggerRef={triggerRef} dialogOpen={dialogOpen || orderDialogOpen} />, headerTarget) : null,
         renderSendAction,
-      }} /> : !shipments.error && allowed && shipments.isLoading ? <p role="status"><CustomerText message="m_b986c820e9db" /></p>
+      }} /> : !shipments.error && allowed && shipments.isLoading ? <LoadingState  label={<><CustomerText message="m_b986c820e9db" /></>} />
           : !shipments.error && tubesView ? <p className="text-sm text-muted-foreground">{jobShipments.length > 1 ? <CustomerSourceText source={"Select the container you are preparing before scanning."} /> : __customerText('m_af351c68c209')}</p> : null}
     </CardContent>
   </Card>

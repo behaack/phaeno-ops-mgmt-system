@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { RequiredLegend } from '#/components/ui/required-field'
 import { RequiredFieldName } from '#/components/ui/required-field'
 import { ClearFiltersButton } from '#/components/ui/clear-filters-button'
@@ -42,7 +43,7 @@ export function ProductCatalogPage({ supplierId, productId }: { supplierId?: str
   const [statusTarget, setStatusTarget] = useState<ProductRow | null>(null)
   if (!allowed) return <p>Product management requires a Phaeno platform administrator.</p>
   if (authProvider === 'mock') return <p>Use a connected Phaeno session to manage products.</p>
-  if (query.isPending) return <p role="status">Loading products…</p>
+  if (query.isPending) return <LoadingState  label={<>Loading products…</>} />
   if (query.isError && !query.data) return <div><p role="alert">{getLabOperationsError(query.error, 'Products could not be loaded.')}</p><Button onClick={() => void query.refetch()}>Try again</Button></div>
   const suppliers = query.data ?? []
   const allRows = suppliers.flatMap(supplier => supplier.products.map(product => ({ supplier, product })))

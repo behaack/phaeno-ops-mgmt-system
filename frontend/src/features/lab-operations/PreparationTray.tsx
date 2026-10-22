@@ -1,3 +1,4 @@
+import { EmptyState } from '#/components/ui/content-state'
 import { confirmPortal } from '#/components/PortalConfirmation'
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { useBlocker } from '@tanstack/react-router'
@@ -148,7 +149,7 @@ export function PreparationTray({ batch, pending, onScan, onTrayScan, onConfirmT
         <div className="flex flex-wrap items-center gap-2"><Input id="saved-preparation-tray" value={batch.trayBarcode ?? ''} readOnly className="min-w-48 flex-1 bg-muted text-muted-foreground" /><span className="flex items-center gap-1 text-sm"><CheckCircle2 className="size-4" aria-hidden="true" />Saved</span>
           {!batch.members.length ? <Button type="button" size="sm" variant="outline" disabled={busy || dirty} onClick={() => { setChangingTray(true); form.resetField('batchBarcode'); setStatus(''); focus('batch') }}>Change tray</Button> : null}
         </div>
-      </div> : !batch.trayBarcode ? <p className="text-sm text-muted-foreground">No physical tray assigned.</p> : null}
+      </div> : !batch.trayBarcode ? <EmptyState  kind="empty" title={<>No physical tray assigned.</>} /> : null}
     </CardHeader>
     <CardContent id={contentId} hidden={!expanded} className="space-y-3 p-4">
       {editable ? <p ref={statusRef} tabIndex={-1} role="status" aria-live="polite" className="text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring">{dirty ? 'Save or clear the entered barcodes before confirming the tray.' : status || (trayReady ? 'Scan tubes into empty cells, then confirm the assembled tray.' : 'Scan and save the physical tray barcode above to begin loading tubes.')}</p> : null}

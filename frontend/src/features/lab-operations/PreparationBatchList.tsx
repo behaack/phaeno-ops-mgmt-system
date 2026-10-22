@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
 import { executionTones } from '#/features/lab-operations/lab-status'
 import { ClearFiltersButton } from '#/components/ui/clear-filters-button'
@@ -27,7 +28,7 @@ export function PreparationBatchList() {
     return createPreparation({ requestId: request.current.id, notes: v.notes?.trim() || undefined, trayFormatId: v.format, workflowVersionId: v.workflow })
   }, onSuccess: async batch => { await client.invalidateQueries({ queryKey: ['lab-preparation'] }); await navigate({ to: '/lab-operations/preparation/$preparationBatchId', params: { preparationBatchId: batch.id }, search: { section: 'work' } }) },
   onError: async () => { await client.invalidateQueries({ queryKey: ['lab-preparation'] }) } })
-  if (query.isPending) return <p role="status">Loading preparation batches…</p>
+  if (query.isPending) return <LoadingState  label={<>Loading preparation batches…</>} />
   if (query.isError) return <div className="space-y-3"><p role="alert">{getLabOperationsError(query.error, 'Preparation batches could not be loaded.')}</p><Button variant="outline" onClick={() => void query.refetch()}>Reload preparation batches</Button></div>
   const data = query.data
   const activeFormats = data.formats.filter(format => format.isActive)

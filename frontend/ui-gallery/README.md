@@ -15,7 +15,7 @@ Tab through controls, activate Actions, validate the example form, and open the
 fictional cancellation to inspect its header, body, footer and focus behavior.
 Examples remain in memory and reset on reload.
 
-The gallery has fifteen sections covering page headers; lists/tables and
+The gallery sections cover page headers; lists/tables and
 pagination; guarded form dialogs; loading/status/recovery; remaining controls;
 application navigation; native field validation; data formatting; explicit
 status meaning; detail summaries; and assembled list/detail/edit pages. The
@@ -49,18 +49,19 @@ Everything remains fictional and in memory, including edits and recovery.
 | `pnpm ui:check` | Syntax-aware source guard across Portal application and gallery sources |
 | `pnpm ui:test` | Guard detection/false-positive fixtures and exact exception handling |
 | `pnpm ui:test:components` | Native field events, formatting/precision, explicit domain statuses, detail semantics and retained-release paging/retry/permission contracts |
+| `pnpm ui:coverage:check` | Registry-driven coverage summary and all-audience illustrated-guide case freshness |
+| `pnpm ui:test:cross-browser` | Actual workflow feedback, retained choices, pending safety, focus return and reflow in Firefox/WebKit |
 | `pnpm ui:test:browser` | Actual gallery controls at desktop/phone widths in both themes, including 320 px reflow and axe |
-| `pnpm ui:visual:check` | Read-only validation of 24 reviewed PNGs, dimensions/hashes and pinned browser/font versions |
+| `pnpm ui:visual:check` | Read-only validation of registered reviewed PNGs, dimensions/hashes and pinned browser/font versions |
 | `pnpm ui:test:visual` | Manifest check and Windows Chromium comparisons of complete list/detail/modal pages |
 | `pnpm ui:visual:review` | Explicitly record reviewed images in the manifest; prohibited in CI |
 | `pnpm ui:gallery:build` | Standalone gallery compilation into `frontend/dist/ui-gallery` |
 | `pnpm ui:build:check` | After both builds, verify production JS/CSS/HTML excludes gallery code/styles and the gallery retains its own examples |
 
 `pnpm lint` and `pnpm lint:ci` also run the source guard. The independent
-`Portal UI quality` workflow runs the targeted checks for frontend pull requests
-and pushes to main. It does not deploy anything or use production credentials.
-GitHub branch-protection requirements are an administrator setting and are not
-changed by adding this workflow.
+`Portal UI quality` workflow runs the targeted checks for every pull request
+and pushes to main and codex branches. It does not deploy anything or use production credentials.
+Required checks are also enforced on main through repository protection. The exact-source release gate refuses a failed, skipped, missing or superseded check run; see the [owning plan](../../docs/plans/UI-WORKFLOW-COVERAGE-AND-GATES-PLAN.md).
 
 Browser verification uses loopback port **4319**, leaving the interactive gallery
 on **4318** available for review. Both servers have independent startup lifetimes;
@@ -105,10 +106,9 @@ visual review rather than pretending that one platform's pixels define every
 browser. These checks do not establish every feature page's visual consistency,
 scientific acceptance, screen-reader coverage or complete WCAG conformance.
 Those gallery captures remain review artifacts. A separate, platform-specific
-pixel suite has 48 reviewed baselines under `visual-tests/__screenshots__`:
+pixel suite derives its reviewed references from `coverage.json` under `visual-tests/__screenshots__`:
 list/detail/modal with ordinary/expanded Customer text, plus actual Company People,
-source workspace, R&D experiments, sequencing inputs, sequencing assembly and
-Customer data components, each at desktop/phone sizes in light/dark themes.
+source workspace, R&D experiments, sequencing inputs, sequencing assembly, Customer data, Finance, Trial, shipping and Assembly QC components, plus recovery/permission/dialog references, each at desktop/phone sizes in light/dark themes.
 It uses Windows Chromium, bundled Geist, en-US, UTC, reduced motion and fixed
 viewports; a dedicated Windows CI job performs these comparisons. Port **4321**
 is isolated from the interactive and ordinary gallery servers. Visual failure
@@ -128,7 +128,7 @@ When changing a shared pattern, update its gallery examples, relevant assertions
 the [UI/UX guide](../../docs/ui-ux-principles.md) and
 [owning plan](../../docs/plans/UI-PATTERN-COMPLETENESS-PLAN.md) together.
 
-The gallery now has 16 sections. **Actual feature pages** links to the production
+See the generated [coverage inventory](COVERAGE.md) for current sections, actual pages, state references, guide images and callout counts. **Actual feature pages** links to the production
 components with isolated fictional transport. The separate `features.html` and
 `research.html` entries are engineering artifacts, absent from the Portal build.
 Their checks compare header bands, wrapping, accessibility and absence of API
@@ -136,10 +136,10 @@ traffic in addition to reviewed pixels. Source guards also require shaded shared
 panel/table headings, owned status adapters and central timestamp formatting.
 
 Guide illustration maintenance uses `pnpm docs:captures:refresh` while the
-interactive gallery is running at port 4318. Inspect all 32 frames and 137 markers,
+interactive gallery is running at port 4318. Inspect every registered frame and marker,
 then run `pnpm docs:captures:review` and the read-only
 `pnpm docs:captures:check`. The capture manifest records crops, scenarios, asset
 hashes and source dependencies. It fails for an invalid/outside annotation even
 if the help renderer could visually clamp it. CI never approves or refreshes
-references. All five guides also have image/alt/caption/marker browser checks in
+references. All illustrated guides have image/alt/caption/marker browser checks in
 both themes and viewport sizes. See the [adoption plan](../../docs/plans/UI-CONSISTENCY-ADOPTION-AND-ILLUSTRATIONS-PLAN.md).

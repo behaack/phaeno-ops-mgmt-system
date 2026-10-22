@@ -1,3 +1,5 @@
+import { EmptyState } from '#/components/ui/content-state'
+import { SectionPanel } from '#/components/ui/section-panel'
 import { RequiredLegend } from '#/components/ui/required-field'
 import { Field as PortalField } from '#/components/ui/field'
 import { NativeCheckbox } from '#/components/ui/native-checkbox'
@@ -80,7 +82,7 @@ export function ScientificCaptureForm({ kind, data, source, saved, cancel }: { k
   return <form className="space-y-5" noValidate onSubmit={form.handleSubmit(submit)}>
     <p className="text-sm text-muted-foreground">Record actual completed work. Saving retains this evidence permanently; later changes create a linked record. Required evidence does not replace scientific review.</p>
     <fieldset disabled={mutation.isPending} className="space-y-5">
-      <section className="space-y-3 rounded-lg border p-4"><h2 className="font-medium">Source and run</h2>
+      <SectionPanel heading={<h2 >Source and run</h2>}>
         {kind === 'sequencing' ? <>
           <p className="text-sm text-muted-foreground">This sample has {data.sequencingRunCount ?? 1} purchased runs. Use the same purchased run number for its additional files or corrections. One prepared library can supply multiple runs.</p>
           <div className="grid gap-3 sm:grid-cols-2"><Field form={form} name="sequencingRunNumber" label="Purchased run number" required type="number" />
@@ -96,13 +98,13 @@ export function ScientificCaptureForm({ kind, data, source, saved, cancel }: { k
           const selected = inputs.find(i => i.id === output.id)
           const incompatible = Boolean(firstAttempt && firstAttempt !== output.labSpecimenAttemptId)
           return <div key={output.id} className="grid gap-2 border-b pb-3 sm:grid-cols-2"><label className="flex items-start gap-2 text-sm"><NativeCheckbox   checked={Boolean(selected)} disabled={!selected && incompatible} onChange={event => form.setValue('inputs', event.target.checked ? [...inputs, { id: output.id, role: '' }] : inputs.filter(i => i.id !== output.id), { shouldDirty: true, shouldValidate: true })} /><span>{scientificFileLabel(output.externalFileReference, uploadedFiles.data?.files)} · {output.providerRunReference}{incompatible ? ' (different tube attempt)' : ''}</span></label>{selected ? <Field form={form} name={`inputs.${inputs.findIndex(i => i.id === output.id)}.role`} label={`Input role for ${scientificFileLabel(output.externalFileReference, uploadedFiles.data?.files)}`} required /> : null}</div>
-        })}{!data.outputs.length ? <p>No sequencing outputs have been recorded for this sample.</p> : null}<FieldError>{form.formState.errors.inputs?.message}</FieldError></div>}
+        })}{!data.outputs.length ? <EmptyState  kind="empty" title={<>No sequencing outputs have been recorded for this sample.</>} /> : null}<FieldError>{form.formState.errors.inputs?.message}</FieldError></div>}
         <div className="grid gap-3 sm:grid-cols-2"><Field form={form} name="providerKey" label="Provider / producing team" required /><Field form={form} name="runReference" label="Actual run reference" required /></div>
         <p className="text-xs text-muted-foreground">Run times use {Intl.DateTimeFormat().resolvedOptions().timeZone.replaceAll('_', ' ')} and retain the selected UTC offset.</p><div className="grid gap-3 sm:grid-cols-2"><ClockField form={form} name="start" label="Run started" /><ClockField form={form} name="end" label="Run completed" /></div>
         {source ? <Field form={form} name="reason" label={kind === 'sequencing' ? 'Correction reason' : 'Reanalysis / replacement reason'} required multiline /> : null}
-      </section>
+      </SectionPanel>
       {kind === 'sequencing' ? <>
-        <section className="space-y-3 rounded-lg border p-4"><h2 className="font-medium">File and sample mapping</h2>
+        <SectionPanel heading={<h2 >File and sample mapping</h2>}>
           <Field form={form} name="mapping" label="Sample mapping / index / lane reference" required />
           <ScientificFilePicker work={data.workOrderId} specimen={data.specimenId} label="Sequencing file" reference={form.watch('fileReference')} required
             error={form.formState.errors.fileReference?.message || form.formState.errors.checksum?.message || form.formState.errors.size?.message}
@@ -111,17 +113,17 @@ export function ScientificCaptureForm({ kind, data, source, saved, cancel }: { k
               form.setValue('checksum', file.sha256, { shouldDirty: true, shouldValidate: true })
               form.setValue('size', String(file.sizeBytes), { shouldDirty: true, shouldValidate: true })
             }} />
-        </section>
-        <section className="space-y-3 rounded-lg border p-4"><h2 className="font-medium">Sequencing QC</h2><Exception form={form} name="qcNa" reason="qcReason" label="QC" />{!form.watch('qcNa') ? <><Field form={form} name="qcSummary" label="QC summary" required multiline /><p className="text-sm">Include named measurements below or a document with role “qc” in Supporting documents.</p>{metrics.fields.map((row, index) => <fieldset key={row.id} className="grid gap-3 rounded-lg border p-3 sm:grid-cols-3"><legend className="px-1 text-sm">QC metric {index + 1}</legend><Field form={form} name={`metrics.${index}.name`} label={`Metric name ${index + 1}`} required /><Field form={form} name={`metrics.${index}.value`} label={`Metric value ${index + 1}`} required type="number" /><Field form={form} name={`metrics.${index}.unit`} label={`Metric unit ${index + 1}`} required /><Button type="button" variant="outline" onClick={() => metrics.remove(index)}>Remove metric {index + 1}</Button></fieldset>)}<Button type="button" variant="outline" disabled={metrics.fields.length >= 128} onClick={() => metrics.append({ name: '', value: '', unit: '' })}>Add QC metric</Button><FieldError>{form.formState.errors.metrics?.message}</FieldError></> : <FieldError>{form.formState.errors.qcSummary?.message}</FieldError>}</section>
-      </> : <section className="space-y-4 rounded-lg border p-4"><h2 className="font-medium">Analysis software, settings and references</h2><Exception form={form} name="softwareNa" reason="softwareReason" label="Software" />{!form.watch('softwareNa') ? <Versions form={form} name="software" title="Software" /> : <FieldError>{form.formState.errors.software?.message}</FieldError>}{form.watch('parameters') && !form.watch('documents').some(d => d.role === 'parameters') ? <p className="text-sm text-muted-foreground">The previously recorded settings fingerprint is retained. Upload a settings file to store it in POMS.</p> : null}<Exception form={form} name="parametersNa" reason="parametersReason" label="Settings" />{!form.watch('parametersNa') ? <ScientificFilePicker work={data.workOrderId} specimen={data.specimenId} label="Analysis settings file" required
+        </SectionPanel>
+        <SectionPanel heading={<h2 >Sequencing QC</h2>}><Exception form={form} name="qcNa" reason="qcReason" label="QC" />{!form.watch('qcNa') ? <><Field form={form} name="qcSummary" label="QC summary" required multiline /><p className="text-sm">Include named measurements below or a document with role “qc” in Supporting documents.</p>{metrics.fields.map((row, index) => <fieldset key={row.id} className="grid gap-3 rounded-lg border p-3 sm:grid-cols-3"><legend className="px-1 text-sm">QC metric {index + 1}</legend><Field form={form} name={`metrics.${index}.name`} label={`Metric name ${index + 1}`} required /><Field form={form} name={`metrics.${index}.value`} label={`Metric value ${index + 1}`} required type="number" /><Field form={form} name={`metrics.${index}.unit`} label={`Metric unit ${index + 1}`} required /><Button type="button" variant="outline" onClick={() => metrics.remove(index)}>Remove metric {index + 1}</Button></fieldset>)}<Button type="button" variant="outline" disabled={metrics.fields.length >= 128} onClick={() => metrics.append({ name: '', value: '', unit: '' })}>Add QC metric</Button><FieldError>{form.formState.errors.metrics?.message}</FieldError></> : <FieldError>{form.formState.errors.qcSummary?.message}</FieldError>}</SectionPanel>
+      </> : <SectionPanel heading={<h2 >Analysis software, settings and references</h2>}><Exception form={form} name="softwareNa" reason="softwareReason" label="Software" />{!form.watch('softwareNa') ? <Versions form={form} name="software" title="Software" /> : <FieldError>{form.formState.errors.software?.message}</FieldError>}{form.watch('parameters') && !form.watch('documents').some(d => d.role === 'parameters') ? <p className="text-sm text-muted-foreground">The previously recorded settings fingerprint is retained. Upload a settings file to store it in POMS.</p> : null}<Exception form={form} name="parametersNa" reason="parametersReason" label="Settings" />{!form.watch('parametersNa') ? <ScientificFilePicker work={data.workOrderId} specimen={data.specimenId} label="Analysis settings file" required
         reference={form.watch('documents').find(d => d.role === 'parameters')?.externalFileReference ?? ''}
         error={form.formState.errors.parameters?.message} onBusyChange={uploadBusy} onUploaded={file => {
           form.setValue('parameters', file.sha256, { shouldDirty: true, shouldValidate: true })
           const next = form.getValues('documents').filter(d => d.role !== 'parameters')
           form.setValue('documents', [...next, { role: 'parameters', externalFileReference: file.externalFileReference, sha256: file.sha256, sizeBytes: String(file.sizeBytes) }], { shouldDirty: true, shouldValidate: true })
-        }} /> : <FieldError>{form.formState.errors.parameters?.message}</FieldError>}<Exception form={form} name="referenceNa" reason="referenceReason" label="Reference data" />{!form.watch('referenceNa') ? <Versions form={form} name="references" title="Reference" /> : <FieldError>{form.formState.errors.references?.message}</FieldError>}</section>}
+        }} /> : <FieldError>{form.formState.errors.parameters?.message}</FieldError>}<Exception form={form} name="referenceNa" reason="referenceReason" label="Reference data" />{!form.watch('referenceNa') ? <Versions form={form} name="references" title="Reference" /> : <FieldError>{form.formState.errors.references?.message}</FieldError>}</SectionPanel>}
       <details className="rounded-lg border p-4"><summary className="cursor-pointer font-medium">Additional run details</summary><div className="mt-3 grid gap-3 sm:grid-cols-2">{(['instrument', 'flowcell', 'lane', 'pool', 'indexMapping', 'workflowVersion'] as const).map((name, i) => <Field key={name} form={form} name={name} label={['Instrument', 'Flowcell', 'Lane', 'Pool', 'Index mapping', 'Workflow version'][i]} />)}</div><div className="mt-3 grid gap-3 sm:grid-cols-2"><ClockField form={form} name="submitted" label="Submitted to provider (optional)" /><ClockField form={form} name="received" label="Received from provider (optional)" /></div></details>
-      <section className="space-y-3 rounded-lg border p-4"><h2 className="font-medium">Supporting documents</h2>
+      <SectionPanel heading={<h2 >Supporting documents</h2>}>
         {documents.fields.map((row, index) => <fieldset key={row.id} className="space-y-3 rounded-lg border p-3">
           <legend className="px-1 text-sm">Document {index + 1}</legend>
           <Field form={form} name={`documents.${index}.role`} label={`Document role ${index + 1}`} required />
@@ -137,7 +139,7 @@ export function ScientificCaptureForm({ kind, data, source, saved, cancel }: { k
         </fieldset>)}
         <FieldError>{form.formState.errors.documents?.message}</FieldError>
         <Button type="button" variant="outline" disabled={documents.fields.length >= 64 || uploading > 0} onClick={() => documents.append({ role: kind === 'sequencing' ? 'qc' : 'parameters', externalFileReference: '', sha256: '', sizeBytes: '' })}>Add document</Button>
-      </section>
+      </SectionPanel>
     </fieldset>
     {form.formState.isSubmitted && Object.keys(form.formState.errors).length ? <p role="alert" className="text-sm text-destructive">Review the highlighted fields before saving.</p> : null}
     {mutation.isError ? <EvidenceError error={mutation.error} /> : null}

@@ -1,3 +1,4 @@
+import { SectionPanel } from '#/components/ui/section-panel'
 import { FieldError as PortalFieldError } from '#/components/ui/field'
 import { NativeCheckbox } from '#/components/ui/native-checkbox'
 import { ProcedureSource } from './ProcedureSource'
@@ -240,11 +241,8 @@ export function ProtocolStepEditor({
         </Field> : null}
         {['qc', 'preparation'].includes(form.watch(`steps.${index}.attachmentKind`) ?? '') ? <BooleanField id={`step-${index}-attachment-required`} label="Report required" description="Require a PDF when recording this step. Allowed skips do not require a report." control={form} name={`steps.${index}.attachmentRequired`} /> : null}
 
-        <section aria-labelledby={`step-${index}-qc-heading`} className="space-y-3 rounded-lg border p-4">
-          <div>
-            <h3 id={`step-${index}-qc-heading`} className="font-medium">Quality-control gate</h3>
-            <p className="mt-1 text-sm text-muted-foreground">A gate records a Pass, Fail, or Hold outcome before work proceeds.</p>
-          </div>
+        <SectionPanel aria-labelledby={`step-${index}-qc-heading`} heading={<h3 id={`step-${index}-qc-heading`} >Quality-control gate</h3>} description={<>A gate records a Pass, Fail, or Hold outcome before work proceeds.</>}>
+
           <BooleanField
             id={`step-${index}-qc-enabled`}
             label="Require a QC outcome"
@@ -263,7 +261,7 @@ export function ProtocolStepEditor({
             </Field>
             </>
           ) : null}
-        </section>
+        </SectionPanel>
       </CardContent>
     </Card>
   )

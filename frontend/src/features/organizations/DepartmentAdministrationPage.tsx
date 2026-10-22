@@ -1,3 +1,4 @@
+import { LoadingState, EmptyState } from '#/components/ui/content-state'
 import { Field as PortalField } from '#/components/ui/field'
 import { RecordLink } from '#/components/ui/record-link'
 import { PageTitle } from '#/components/ui/page-header'
@@ -104,13 +105,13 @@ function CustomerDeliverySettings({ organizationId, organizationAdmin, managedDe
       {department ? <CardAction><Button size="sm" disabled={locations.isLoading || Boolean(locations.error)} onClick={() => setAdding(true)}><Plus aria-hidden="true" /><CustomerText message="m_119e50923ce6" /></Button></CardAction> : null}
     </CardHeader>
     <CardContent className="space-y-4 p-4">
-      {departments.isLoading ? <p role="status" className="text-sm text-muted-foreground"><CustomerText message="m_4480f335645b" /></p> : null}
+      {departments.isLoading ? <LoadingState  label={<><CustomerText message="m_4480f335645b" /></>} /> : null}
       {departments.error ? <Alert variant="destructive"><AlertDescription><CustomerSourceText source={departmentErrorMessage(departments.error)} /></AlertDescription></Alert> : null}
-      {!departments.isLoading && !departments.error && !available.length ? <p className="text-sm text-muted-foreground"><CustomerText message="m_f2a5ef358626" /></p> : null}
+      {!departments.isLoading && !departments.error && !available.length ? <EmptyState  kind="empty" title={<><CustomerText message="m_f2a5ef358626" /></>} /> : null}
       {department ? <PortalField className="max-w-sm"><label htmlFor="delivery-settings-department" className="text-sm font-medium"><CustomerText message="m_5304ab98e581" /></label><NativeSelect id="delivery-settings-department" className="w-full" value={departmentId} onChange={event => onDepartmentChange(event.target.value)}>{available.map(value => <option key={value.id} value={value.id}>{value.name}</option>)}</NativeSelect></PortalField> : null}
-      {locations.isLoading ? <p role="status" className="text-sm text-muted-foreground"><CustomerText message="m_89353834ce2d" /></p> : null}
+      {locations.isLoading ? <LoadingState  label={<><CustomerText message="m_89353834ce2d" /></>} /> : null}
       {locations.error ? <Alert variant="destructive"><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(locations.error, 'Delivery locations could not be loaded.')} />} <Button variant="link" onClick={() => void locations.refetch()}><CustomerText message="m_942087cc2d41" /></Button></AlertDescription></Alert> : null}
-      {locations.data && !locations.data.length ? <p className="py-3 text-sm text-muted-foreground"><CustomerText message="m_094e1e57c71a" /></p> : null}
+      {locations.data && !locations.data.length ? <EmptyState  kind="empty" title={<><CustomerText message="m_094e1e57c71a" /></>} /> : null}
       {locations.data?.length ? <div className="divide-y">{locations.data.map(location => <article key={location.id} className="py-3 first:pt-0 last:pb-0">
         <div className="flex flex-wrap items-center gap-2"><RecordLink asChild><Link to="/delivery-locations/$locationId" params={{ locationId: location.id }} search={{ organizationId, departmentId, returnToSettings: true }}>{location.label}</Link></RecordLink>{location.isDefault ? <Badge variant="outline"><CustomerText message="m_21b111cbfe6e" /></Badge> : null}</div>
         <p className="mt-1 text-sm">{location.recipient}</p>

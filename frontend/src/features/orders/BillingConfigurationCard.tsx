@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { DisplayTimestamp } from '#/components/ui/display-value'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { NativeSelect } from '#/components/ui/native-select'
@@ -85,7 +86,7 @@ export function BillingConfigurationCard({ apiEnabled, customers, customersLoadi
   }
   const content = <>
     {error ? <Alert variant="destructive"><AlertTitle><CustomerSourceText source={"Billing configuration was not updated"} /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(error, 'Review the current Customer profile and try again. Your entered values are retained.')} />}</AlertDescription></Alert> : null}
-    {customersLoading ? <p role="status" className="text-sm text-muted-foreground"><CustomerSourceText source={"Loading Customer billing profiles…"} /></p> : null}
+    {customersLoading ? <LoadingState  label={<><CustomerSourceText source={"Loading Customer billing profiles…"} /></>} /> : null}
     {!initialOrganizationId ? <FinanceField id="billing-customer" label="Customer" required><NativeSelect required className={financeSelectClass} value={organizationId} disabled={busy} onChange={event => selectCustomer(event.target.value)}><option value=""><CustomerSourceText source={"Select a Customer"} /></option>{customers.map(customer => <option key={customer.organizationId} value={customer.organizationId}>{customer.organizationName}</option>)}</NativeSelect></FinanceField> : <p className="font-medium">{selected?.organizationName}</p>}
     {selected ? <><div className="flex flex-wrap items-center gap-2"><Badge variant={selected.financeApprovedAtUtc ? 'secondary' : 'outline'}>{selected.financeApprovedAtUtc ? <CustomerSourceText source={"Finance approved"} /> : <CustomerSourceText source={"Finance approval required"} />}</Badge><span className="text-xs text-muted-foreground"><CustomerSourceText source={"Configuration version"} /> {selected.configurationVersion || 'not configured'}</span></div>
       <form id={billingFormId} noValidate className="space-y-4" onSubmit={form.handleSubmit(values => save.mutate(values))}>

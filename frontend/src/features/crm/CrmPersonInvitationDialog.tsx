@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useRef } from 'react'
 import type { CrmCompanyPerson } from '#/api/crm'
@@ -38,7 +39,7 @@ export function CrmPersonInvitationDialog({ organizationId, person, action, onCl
     <DialogContent onOpenAutoFocus={event => { event.preventDefault(); cancel.current?.focus() }}
       onCloseAutoFocus={event => { if (returnFocusTo?.isConnected) { event.preventDefault(); returnFocusTo.focus() } }}>
       <DialogHeader><DialogTitle>{label}</DialogTitle><DialogDescription>{person.displayName} · {invitation?.email ?? person.email}</DialogDescription></DialogHeader>
-      {invitations.isPending || invitations.isFetching ? <p role="status">Checking current invitation…</p> : null}
+      {invitations.isPending || invitations.isFetching ? <LoadingState  label={<>Checking current invitation…</>} /> : null}
       {invitations.error || change.error ? <Alert variant="destructive"><AlertDescription>{apiErrorMessage(change.error ?? invitations.error)}</AlertDescription></Alert> : null}
       {invitations.isError ? <Button variant="outline" onClick={() => void invitations.refetch()}>Retry invitation</Button> : null}
       {invitations.isSuccess && !invitations.isFetching ? unavailable ? <p role="status">This invitation is no longer pending. Close this dialog and refresh People.</p> : <>

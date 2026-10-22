@@ -76,11 +76,10 @@ page titles, recognizable record identifiers and their visual ownership. They
 also reject raw select/checkbox controls, local control-size overrides, duplicated
 display-format implementations and inconsistent clear/required treatments.
 
-The fifteen gallery sections now include real native form validation, date/time,
+The gallery sections include real native form validation, date/time,
 byte/number/currency display, semantic statuses, counted/count-free pagination,
 detail summaries and assembled list/detail/edit pages. Dedicated Windows
-Chromium comparisons cover 24 reviewed page images: desktop/phone, both themes,
-and ordinary/expanded Customer text with long identifiers. These use bundled
+Chromium comparisons cover the registered pages and workflow states at desktop/phone sizes in both themes, including ordinary/expanded Customer text with long identifiers. See the generated [coverage inventory](../frontend/ui-gallery/COVERAGE.md). These use bundled
 fonts and fixed locale, timezone and motion settings. Normal checks never update
 images; a deliberate image review and manifest update accompany visual changes.
 This bounded page set complements interaction, geometry and axe checks; it does
@@ -585,3 +584,7 @@ User-interface work is not complete until the rendered workflow has been checked
 - For record-management work, verify the complete list-to-create, list-to-detail, list/detail-to-edit, close/focus-return, and detail-to-list-state-restoration flow, or document why a product-approved exception applies.
 - Use automated tests for stable behavior, but do not substitute unit or build success for browser verification of visual, responsive, focus, or navigation behavior.
 - Update this document when a genuinely reusable product pattern changes.
+
+### Titled sections and recoverable workflow states
+
+Use `SectionPanel` for equivalent titled bordered sections. Pass a native heading with its existing level and identity; the shared panel owns the shaded band, surface and spacing. Keep descriptions with the heading, contextual controls in `actions`, and content in the body. Scientific instruction/print layouts and active preparation execution remain explicitly scoped. Use `LoadingState`, `EmptyState` (including permission/setup/no-results) and `ErrorState` with the existing retry handler. Preserve record identity and return navigation while loading or recovering.

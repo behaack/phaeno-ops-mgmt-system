@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { NativeSelect } from '#/components/ui/native-select'
 import { useId } from 'react'
 import { useForm } from 'react-hook-form'
@@ -27,7 +28,7 @@ export function MaterialLotProductDialog({ lot, onClose }: { lot: LabMaterialLot
       <CatalogField id={`${id}-product`} label="Product name" error={form.formState.errors.productId?.message}>
         <NativeSelect id={`${id}-product`} className={prepSelectClass} disabled={save.isPending || catalog.isPending || catalog.isError} aria-invalid={Boolean(form.formState.errors.productId)} aria-describedby={form.formState.errors.productId ? `${id}-product-error` : undefined} {...form.register('productId')}><option value="">Select product…</option>{products.map(p => <option key={p.id} value={p.id}>{p.productNumber} — {p.description}</option>)}</NativeSelect>
       </CatalogField>
-      {catalog.isPending ? <p role="status">Loading products…</p> : catalog.isError ? <Button type="button" variant="outline" onClick={() => void catalog.refetch()}>Retry products</Button> : !products.length ? <p className="text-sm text-muted-foreground">No active products are available for this supplier. Add or activate the product in Suppliers &amp; products first.</p> : null}
+      {catalog.isPending ? <LoadingState  label={<>Loading products…</>} /> : catalog.isError ? <Button type="button" variant="outline" onClick={() => void catalog.refetch()}>Retry products</Button> : !products.length ? <p className="text-sm text-muted-foreground">No active products are available for this supplier. Add or activate the product in Suppliers &amp; products first.</p> : null}
     </form>
   </CatalogEditor>
 }

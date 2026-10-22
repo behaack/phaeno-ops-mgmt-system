@@ -17,7 +17,7 @@ describe('record action presentation', () => {
     expect(ref.current).toBe(button)
     fireEvent.click(button)
     expect(select).toHaveBeenCalledTimes(1)
-    ref.current?.focus(); expect(document.activeElement).toBe(button)
+    expect(document.activeElement).toBe(button)
   })
   it('retains a dropdown for multiple actions including disabled actions', () => {
     render(<Menu><DropdownMenuItem>Edit</DropdownMenuItem><DropdownMenuItem disabled>Delete</DropdownMenuItem></Menu>)

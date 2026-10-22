@@ -1,3 +1,4 @@
+import { EmptyState } from '#/components/ui/content-state'
 import { NativeCheckbox } from '#/components/ui/native-checkbox'
 import { RecordLink } from '#/components/ui/record-link'
 import { ProcedureIllustration } from './ProcedureIllustrations'
@@ -244,7 +245,7 @@ export function PreparationStepDialog({ batch, stage, step: sourceStep, action, 
           </dl>
           {failed ? <>
             <p className="text-sm">Remains in tray position {m.position}. This attempt is closed and cannot receive further step records or supply a successful library.</p>
-            <div><h5 className="text-sm font-medium">Reason and evidence</h5><p className="whitespace-pre-wrap break-words text-sm">{m.failureEvidence?.trim() || savedFailures[m.id] || 'No failure reason available.'}</p></div>
+            <div><h5 className="text-sm font-medium">Reason and evidence</h5><EmptyState  kind="empty" title={<>{m.failureEvidence?.trim() || savedFailures[m.id] || 'No failure reason available.'}</>} /></div>
             {recorded ? <div className="space-y-2 text-sm"><h5 className="font-medium">Step record</h5><dl className="space-y-2">{Object.entries(recorded.captures).map(([key, value]) => <div key={key}><dt className="text-muted-foreground">{step.captures.find(c => c.key === key)?.label ?? key}</dt><dd className="whitespace-pre-wrap break-words">{String(value)}</dd></div>)}</dl>{recorded.qcOutcome ? <p>QC outcome: {recorded.qcOutcome}</p> : null}{recorded.reason ? <p className="whitespace-pre-wrap break-words">{recorded.reason}</p> : null}</div> : null}
             {draftCaptures.length ? <div className="space-y-2 text-sm"><h5 className="font-medium">Unsaved entries — for reference only</h5><dl className="space-y-2">{draftCaptures.map(c => <div key={c.key}><dt className="text-muted-foreground">{c.label}</dt><dd className="whitespace-pre-wrap break-words">{form.getValues(`values.${m.id}_${c.key}`)}</dd></div>)}</dl></div> : null}
           </> : <>

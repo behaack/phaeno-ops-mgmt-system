@@ -1,3 +1,4 @@
+import { SectionPanel } from '#/components/ui/section-panel'
 import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
 import { orderStatusTones } from '#/features/orders/OrderStatusBadge'
 import { RecordTableHeader } from '#/components/ui/record-list'
@@ -41,8 +42,8 @@ export function ListExamples() {
     {!shown.length ? <EmptyState kind="no-results" title="No matching example samples" action={<Button variant="outline" onClick={clear}>Clear example filters</Button>}>Adjust the search or clear the active filters.</EmptyState> : null}
     <RecordPagination label="Example sample pages" data={{totalCount:filtered.length,page,pageSize:2}} busy={false} onPage={setPage} />
     <div className="grid gap-4 @min-[40rem]:grid-cols-2" data-testid="sequencing-list-comparison">
-      <section aria-label="Input list appearance" className="rounded-lg border p-4"><h3 className="font-semibold">Sequencing inputs</h3><RecordList><RecordListItem title={<RecordLink href="#lists?input=example">EXAMPLE-SAMPLE · Run 1</RecordLink>} metadata="2 input files · example run" actions={<Button>Start example assembly</Button>} /></RecordList></section>
-      <section aria-label="Assembly list appearance" className="rounded-lg border p-4"><h3 className="font-semibold">Sequencing assembly</h3><RecordList><RecordListItem title={<RecordLink href="#lists?assembly=example">EXAMPLE-SAMPLE · Run 1</RecordLink>} metadata={<><p>Requested October 22, 2026</p><p>Start and stop recorded</p></>} status={<Badge variant="outline">Simulation completed</Badge>} /></RecordList></section>
+      <SectionPanel aria-label="Input list appearance" heading={<h3 >Sequencing inputs</h3>}><RecordList><RecordListItem title={<RecordLink href="#lists?input=example">EXAMPLE-SAMPLE · Run 1</RecordLink>} metadata="2 input files · example run" actions={<Button>Start example assembly</Button>} /></RecordList></SectionPanel>
+      <SectionPanel aria-label="Assembly list appearance" heading={<h3 >Sequencing assembly</h3>}><RecordList><RecordListItem title={<RecordLink href="#lists?assembly=example">EXAMPLE-SAMPLE · Run 1</RecordLink>} metadata={<><p>Requested October 22, 2026</p><p>Start and stop recorded</p></>} status={<Badge variant="outline">Simulation completed</Badge>} /></RecordList></SectionPanel>
     </div>
   </div>
 }

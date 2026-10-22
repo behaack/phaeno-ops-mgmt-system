@@ -1,3 +1,4 @@
+import { LoadingState, EmptyState } from '#/components/ui/content-state'
 import { paymentTones } from '#/features/orders/OrderStatusBadge'
 import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
 import { RecordTableHeader } from '#/components/ui/record-list'
@@ -48,7 +49,7 @@ export function ManualJournalEntryReport({ apiEnabled }: { apiEnabled: boolean }
     <CardContent>
       {!rangeIsValid ? <Alert variant="destructive"><AlertTitle><CustomerSourceText source={"Date range is invalid"} /></AlertTitle><AlertDescription><CustomerSourceText source={"The end date must be on or after the start date."} /></AlertDescription></Alert> : null}
       {report.error || download.error ? <Alert variant="destructive" className="mb-4"><AlertTitle><CustomerSourceText source={"Journal-entry report unavailable"} /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(report.error ?? download.error, 'Review the date range and try again.')} />}</AlertDescription></Alert> : null}
-      {report.isLoading ? <p role="status"><CustomerSourceText source={"Loading journal-entry source records…"} /></p> : null}
+      {report.isLoading ? <LoadingState  label={<><CustomerSourceText source={"Loading journal-entry source records…"} /></>} /> : null}
       {report.data?.length ? <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
           <RecordTableHeader className="border-b text-muted-foreground"><tr><th className="py-3 pr-3 font-medium"><CustomerSourceText source={"Date / entry"} /></th><th className="px-3 py-3 font-medium"><CustomerSourceText source={"Organization"} /></th><th className="px-3 py-3 font-medium"><CustomerSourceText source={"Source"} /></th><th className="px-3 py-3 font-medium"><CustomerSourceText source={"Reference"} /></th><th className="px-3 py-3 text-right font-medium"><CustomerSourceText source={"Gross"} /></th><th className="py-3 pl-3 text-right font-medium"><CustomerSourceText source={"Balance"} /></th></tr></RecordTableHeader>
@@ -61,7 +62,7 @@ export function ManualJournalEntryReport({ apiEnabled }: { apiEnabled: boolean }
             <td className="py-3 pl-3 text-right"><span className="tabular-nums">{formatMoney(row.outstandingBalance, row.currency)}</span><span className="mt-1 block"><DomainStatusBadge status={row.paymentStatus} tones={paymentTones}>{row.paymentStatus === 'PaidRecorded' ? <CustomerSourceText source={"Paid recorded"} /> : <CustomerSourceText source={"Outstanding"} />}</DomainStatusBadge></span></td>
           </tr>)}</tbody>
         </table>
-      </div> : !report.isLoading && rangeIsValid && !report.error ? <p className="py-8 text-center text-sm text-muted-foreground"><CustomerSourceText source={"No journal-entry source records fall in this date range."} /></p> : null}
+      </div> : !report.isLoading && rangeIsValid && !report.error ? <EmptyState  kind="empty" title={<><CustomerSourceText source={"No journal-entry source records fall in this date range."} /></>} /> : null}
       <p className="mt-4 border-t pt-4 text-xs leading-5 text-muted-foreground">
         <CustomerSourceText source={"Finance assigns general-ledger accounts, tax treatment, and posting dates outside POMS. This report does not record payment or release files held for payment."} />
       </p>

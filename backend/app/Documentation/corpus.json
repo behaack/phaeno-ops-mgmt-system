@@ -506,7 +506,7 @@
       "title": "Results and billing",
       "summary": "Download scientifically released PSeq results, review retention, and find invoices independently of result access.",
       "order": 40,
-      "reviewedAt": "2026-10-11",
+      "reviewedAt": "2026-10-22",
       "navigationGroup": "laboratory-work",
       "contentType": "guide",
       "topicIds": [
@@ -533,7 +533,7 @@
       "publicationStatus": "published",
       "id": "customer/en-US/results-and-billing",
       "route": "/docs/customer/results-and-billing",
-      "contentHash": "1ea064f290bb0120640fb657216ebb77b80d47f7212e401a3115db19f27aff79",
+      "contentHash": "568b62e76f397f852e01b2bd47092ad60f9de1a77dfa35e5e12aca8fba6fa6f4",
       "sections": [
         {
           "heading": "Results and billing",
@@ -569,6 +569,11 @@
           "heading": "Keep a release receipt",
           "anchor": "keep-a-release-receipt",
           "text": "Open View retained package receipt beside a release's retention schedule, then choose Print / save PDF. The receipt retains the complete file manifest, byte sizes, checksums, original deadlines, recorded completion and deletion facts, and any reissue links. It contains metadata, not copies of the scientific files. Times include your display time zone and their UTC value. For newly captured Lab releases, the receipt also retains the sample identifier, recorded supplier tube barcodes, and Phaeno accession as they stood at release. Historical releases may show that lineage was not recorded. Organization admins can also review the organization's downloader history; other members see the release facts available within their Department. A quarantined package cannot be downloaded. A preservation hold protects retained files without extending their download window. Contact Phaeno about either state. After deletion, an authorized reissue requires a newly prepared and approved package; the original receipt and dates remain unchanged."
+        },
+        {
+          "heading": "Find released result files",
+          "anchor": "find-released-result-files",
+          "text": "Fictional Job Files and results panel showing a released package, result filename and Download result action. Result filename: check that the file belongs to the intended result package. Download result: use the offered action while the file remains available to your organization. Released status: review the package's recorded release and any displayed retention or availability explanation."
         }
       ]
     },
@@ -579,7 +584,7 @@
       "title": "Prepare and ship samples",
       "summary": "Request phase kits, confirm receipt, pair samples and tubes, pack and record shipments, and follow each phase.",
       "order": 35,
-      "reviewedAt": "2026-10-11",
+      "reviewedAt": "2026-10-22",
       "navigationGroup": "laboratory-work",
       "contentType": "guide",
       "topicIds": [
@@ -605,7 +610,7 @@
       "publicationStatus": "published",
       "id": "customer/en-US/sample-shipping",
       "route": "/docs/customer/sample-shipping",
-      "contentHash": "aa8a8b02a4c5038f4d48998a15bc2c2c86aba8ff7961179fbfa6e993c6413f08",
+      "contentHash": "120a153db12c702cc31e63a71863393280d1e3d90276eed2fd1f95963257110d",
       "sections": [
         {
           "heading": "Prepare and ship samples",
@@ -651,6 +656,11 @@
           "heading": "Record dispatch and follow receipt",
           "anchor": "record-dispatch-and-follow-receipt",
           "text": "After handing each package to the carrier, use Record shipment for its carrier, tracking number and shipment time. Repeat for each physical shipment. If you close the form after entering details, confirm whether to discard them; the form stays open while a save is in progress. Progress shows recorded dispatches, tracking and actual receipt; Shipping remains active for containers still being prepared. All required active shipments must have recorded dispatch before the customer shipping steps are complete. For multi-phase Jobs, the next phase then opens at Request transportation kits, which you can request when ready without waiting for results. Expand the sent phase for its receipt, laboratory progress and available result counts. Files and results retains released downloads independently of the current shipping phase. A later clarification or replacement request can still require your attention. For each finalized sample, use the Matched and Receipt counts in Samples. Saved matches cover that sample's active shipments, while receipt is the actual recorded tube count. Checking… or Not available must not be read as zero. Per-container and Job-wide totals remain explicitly scoped in the scan and receipt details. A sample split across containers remains partly received until all its expected tubes have been recorded; receiving the first package does not mark the entire sample received. Use Samples to return to the grouped Job overview or Shipping container to choose another container without leaving the Job. Existing standalone shipment bookmarks remain available, and Trial shipping keeps its existing entry point. If a tube cannot be matched confidently, a printed barcode cannot be read, or there is no compatible container, contact Phaeno with the Job and shipment references instead of guessing. After a shipment is sent, open its reference in Progress (expand its phase first for a multi-phase Job) to view instructions or use Reprint shipping insert when permitted. Reprinting uses the current revision without recording another shipment or receipt. Shipping inserts, printable kit labels and retained packet copies show QR codes with readable identifiers. Phaeno-printed laboratory tube labels use DataMatrix and readable identifiers. Saved scan results show the identifier as text. Use a 2D scanner that supports both QR and DataMatrix where both workflows are performed. Existing manufacturer labels and older printed barcodes remain valid; do not relabel a tube or change its saved identity merely to match a display. A scan still requires the correct workflow and does not by itself confirm receipt or accession. With one container, the tube count is assigned automatically up to its capacity and shown in a read-only text box. Any remaining tubes stay unallocated. With multiple containers, edit the tube counts to split the allocation. Returning to one container restores its automatic allocation. Samples are ordered by ID alphabetically and digit by digit, rather than by numeric value. In the Job, biological-source groups stay together. Tube matching follows that sample order, with each sample’s tubes in tube-number order. Saving a match advances to the next unmatched tube. Sample rows show matching progress as 1 of 1 tube matched or 2 of 2 tubes matched. This includes the tube total, so the row does not repeat a separate quantity while matching status is shown. Long sample IDs wrap; they are not shortened or changed."
+        },
+        {
+          "heading": "Find the authorized shipment",
+          "anchor": "find-the-authorized-shipment",
+          "text": "Fictional Samples and shipping list showing shipment search, an authorized shipment identifier and status filtering. Search: find the shipment or its Job reference within your current organization and Department. Shipment identifier: open the record to review its packet and tube crosswalk. Shipment status: narrow the list without changing any shipment's saved state."
         }
       ]
     },
@@ -899,7 +909,7 @@
       "title": "Prepare included Assembly",
       "summary": "Prepare a purchased Kit case, correct inputs and download governed outputs without another purchase.",
       "order": 40,
-      "reviewedAt": "2026-10-15",
+      "reviewedAt": "2026-10-22",
       "navigationGroup": "partner-work",
       "contentType": "guide",
       "topicIds": [
@@ -921,7 +931,7 @@
       "publicationStatus": "published",
       "id": "partner/en-US/data-assembly",
       "route": "/docs/partner/data-assembly",
-      "contentHash": "493060d34833e79fe48b4d784c7826a27e859eca270ae0f7f961ca2f174c34a3",
+      "contentHash": "cac4a772dfd45a7ab565e5e2ddcbe0d17b4611637855946e5b03f29a081ca4db",
       "sections": [
         {
           "heading": "Included assembly inputs and outputs",
@@ -962,6 +972,11 @@
           "heading": "Reuse your kit lot submission",
           "anchor": "reuse-your-kit-lot-submission",
           "text": "You can submit your lot earlier from the PSeq Kit order, before preparing or sequencing libraries and without assembly files. Open the included case's Actions → Submit kit lot. This saves and checks the lot independently and leaves the assembly entitlement available for later. The assembly preparation page reuses that saved lot. If you have not entered it yet, choose Submit kit lot in the Kit lot section. Add the actual kit-use date through Update kit lot submission before submitting the assembly inputs. Expiration is assessed against the date the kit was used; a kit used before expiry is not marked as expired merely because the data is submitted later. The assembly entitlement deadline remains separate. Review the current recall, expired-at-use, or unknown-expiration warnings. The server checks the lot again at submission and before processing starts. If lot information changes, refresh and review the updated warnings before trying again. Uploaded files and drafts remain available. Phaeno sees the warnings during intake; warning visibility does not replace scientific review. Each submitted input receipt includes its frozen kit lot assessment and use date. Later recall decisions do not rewrite earlier input receipts. The lot and use-date evidence cannot be changed after submission unless Phaeno requests corrected inputs. To submit a saved draft from its detail page, choose Actions → Submit for intake. This checks the displayed lot information again. If the lot has changed, review the refreshed warning before retrying; the saved draft and files remain available."
+        },
+        {
+          "heading": "Find an assembly case",
+          "anchor": "find-an-assembly-case",
+          "text": "Fictional Partner Assembly cases list showing search, a case identifier and the status filter. Search assembly requests: locate the intended case in your current scope. Case identifier: open its saved details before reviewing inputs or results. Status filter: find cases by their recorded workflow state."
         }
       ]
     },
@@ -2421,7 +2436,7 @@
       "publicationStatus": "published",
       "id": "phaeno/how-to-configure-samples-shipping",
       "route": "/docs/phaeno/how-to-configure-samples-shipping",
-      "contentHash": "1e48a37ad07c5321880891c14f0e0a6fb59596c5e469f8cc2dd34ef842e2b787",
+      "contentHash": "9747bd8682706b0a7e28ff4366efdc98a83a9a520a730554a77cafca26bc2759",
       "sections": [
         {
           "heading": "How to configure samples and shipping",
@@ -2457,6 +2472,11 @@
           "heading": "Check readiness for a new order",
           "anchor": "check-readiness-for-a-new-order",
           "text": "Confirm an effective Active Sample type, an Active revision of its selected Shipping procedure, a usable compatible kit design and an available Default destination. Open the Sample type and kit records to resolve Needs attention messages. Activation can recheck dependencies and reject stale or incomplete work. Use Create revision for released-content changes. Continue editing the one open Draft, or discard it with its history retained; do not create several pending successors. Existing Jobs, packets, physical kits and shipment records retain their exact recorded revisions. Ordinary deactivation prevents new selection; an already placed Job needs a separate shipping safety hold to stop further packets. See Configuration and file retention for the detailed validation and revision rules, and Sample receipt and accession for receiving work."
+        },
+        {
+          "heading": "Kit and destination examples",
+          "anchor": "kit-and-destination-examples",
+          "text": "Empty kit specification editor showing the name, stable SKU, Sample type and assembly workflow choices. Kit specification name: choose a recognizable name for staff. Kit SKU: identify the complete specification; the SKU stays fixed across revisions. Sample type: link the material and handling requirements for this revision. Assembly workflow: select the reusable instructions required for physical assembly. New receiving-destination form showing its name, time zone and Create Draft action. Destination name: identify the receiving location unambiguously. Time zone: use the receiving location's time zone when defining its availability. Create Draft: save the configuration, then complete activation and the separate Default selection."
         }
       ]
     },
@@ -2494,7 +2514,7 @@
       "publicationStatus": "published",
       "id": "phaeno/how-to-lab-protocol",
       "route": "/docs/phaeno/how-to-lab-protocol",
-      "contentHash": "5789a93cc955672b7e118831a14d3891a80a307b498126426dabcda4aac56bdd",
+      "contentHash": "554f1ece470d6e9bccbeffff7c437413fc613cf71af353eec790646694ca8d85",
       "sections": [
         {
           "heading": "How to create and approve a lab protocol",
@@ -2520,6 +2540,11 @@
           "heading": "4. Approve the complete revision",
           "anchor": "4-approve-the-complete-revision",
           "text": "From the protocol's Actions, choose Review and approve. Review the complete revision, including copied content, illustrations and required capture fields. Independent approval is required. When permitted, a platform administrator may use the explicit administrator-override action and record the reason; ordinary authors cannot bypass independent review. After approval, confirm the Approved revision and approval evidence. Library workflows select exact approved protocol revisions. Existing workflows and performed work keep their pins when a later revision is approved. To prevent future use, use the controlled retirement flow and review its dependency impact. See Service workflows, protocol control, and execution for copying, illustration limits, execution and retirement rules, and Laboratory operations for the surrounding workflow."
+        },
+        {
+          "heading": "Presentation and approval examples",
+          "anchor": "presentation-and-approval-examples",
+          "text": "Draft protocol bench presentation showing the Presentation and Paper size selectors and Actions menu. Presentation: switch between Process overview and Bench instructions. Paper size: choose Letter or A4 before printing. Actions: use the offered presentation actions after reviewing the content. Protocol approval dialog showing the ordered definition, review attestation and exact-version approval action. Ordered protocol definition: review the complete instructions and recording requirements. Review attestation: confirm the review only when it has actually been completed. Approve version: approval applies to this exact version and retains its author and approver evidence."
         }
       ]
     },
@@ -2682,7 +2707,7 @@
       "publicationStatus": "published",
       "id": "phaeno/how-to-place-customer-order",
       "route": "/docs/phaeno/how-to-place-customer-order",
-      "contentHash": "018f431726add8cbdbc42358838b7f5f56bfd14f908b5fe8d44713fc1d90436e",
+      "contentHash": "c5fffffe2703e5173808ce0946afeeedf9da9329cfed7a76450d0c86cc9dc34b",
       "sections": [
         {
           "heading": "How to place a Customer order",
@@ -2713,6 +2738,11 @@
           "heading": "What happens next",
           "anchor": "what-happens-next",
           "text": "The order enters pricing review. Follow its Next step for Phaeno to prepare and issue the quote. The authorized Customer administrator accepts separately. Acceptance, kit requests, sample entry and laboratory authorization are later workflow steps; submitting for pricing does not complete them. See Order operations for phase pricing and queue triage, and Customer lab authorization for readiness, quote acceptance and additional scope."
+        },
+        {
+          "heading": "Scope, readiness and submission examples",
+          "anchor": "scope-readiness-and-submission-examples",
+          "text": "Fictional order scope showing the biological source, sample count and sequencing runs per sample. Biological source: describe the material represented by this row. Samples: enter the number of samples from that source. Runs per sample: record sequencing runs separately from sample quantities. Customer order readiness showing a billing blocker and the Refresh readiness action. Before starting pricing: follow the named blocker and its owning workspace. Refresh readiness: recheck saved setup before reviewing submission again. Order form footer showing separate Save draft and Submit for pricing actions. Save draft: retain incomplete work without sending it for pricing. Submit for pricing: submit only after completing scope and resolving readiness issues."
         }
       ]
     },
@@ -4703,7 +4733,7 @@
       "title": "Prepare and ship samples",
       "summary": "Prepare containers, match tubes with their declared material amounts, print shipping inserts and record dispatch.",
       "order": 25,
-      "reviewedAt": "2026-10-03",
+      "reviewedAt": "2026-10-22",
       "navigationGroup": "trial-project",
       "contentType": "guide",
       "topicIds": [
@@ -4813,7 +4843,7 @@
       "title": "Trial Projects",
       "summary": "Review and accept approved Trial scope, submit coded RNA, and download released results.",
       "order": 24,
-      "reviewedAt": "2026-10-03",
+      "reviewedAt": "2026-10-22",
       "navigationGroup": "trial-project",
       "contentType": "guide",
       "topicIds": [
@@ -4838,7 +4868,7 @@
       "publicationStatus": "published",
       "id": "prospect/en-US/trial-projects",
       "route": "/docs/prospect/trial-projects",
-      "contentHash": "85995e1852a184aff767da40fe6ff783922b18667ede8dc1d6e4cc4d2a792d65",
+      "contentHash": "37e8ce7a4a71573d5f5516f613b00d52ac2ba80b82198b203ee4032c9c66198c",
       "sections": [
         {
           "heading": "Your Trial Project",
@@ -4869,9 +4899,14 @@
           "heading": "Multiple tubes in a Trial submission",
           "anchor": "multiple-tubes-in-a-trial-submission",
           "text": "When submitting the sample roster, review and confirm Run one tube per specimen; use a reserve only after the current attempt fails. Extra tubes remain reserves and do not increase the approved analysis allowance. Phaeno selects a suitable source after receipt and review; no reserve starts automatically. This instruction is retained with the laboratory authorization for that submission."
+        },
+        {
+          "heading": "Review the approved Trial scope",
+          "anchor": "review-the-approved-trial-scope",
+          "text": "Fictional Trial scope acceptance dialog showing its review title, required acceptance checkbox and Accept Trial scope action. Scope review: read the current approved revision, quantities, submission window and terms. Acceptance checkbox: confirm only after reviewing the scope and required research-use conditions. Accept Trial scope: an authorized administrator performs this separate action before permitted sample submission."
         }
       ]
     }
   ],
-  "corpusHash": "9628fc1e68c15d0b4950a62a702d976fc36a27445c90a5cbfe2e38953b9d7439"
+  "corpusHash": "538ebc79bacda685310e80918e20097e6454e50543800c1f22236abd2c8be940"
 }

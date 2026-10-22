@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { useId, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getProcedureLibrary, type ProcedureLibraryItem } from '#/api/lab-procedures'
@@ -23,7 +24,7 @@ export function ProcedureLibraryPicker({ context, onInsert, remaining = 100 }: {
     <summary className="cursor-pointer text-sm font-medium">Insert from an approved procedure (optional)</summary>
     <div className="mt-3 space-y-3"><p className="text-xs text-muted-foreground">A copy belongs to this draft and is reviewed with the complete procedure. Source updates never change it automatically.</p>
       <PreparationField label="Procedure or instruction" id={id}><NativeSelect id={id} value={selection} onChange={e => setSelection(e.target.value)}><option value="">Choose approved content…</option>{choices.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</NativeSelect></PreparationField>
-      {query.isPending ? <p role="status">Loading approved procedures…</p> : query.error ? <p role="alert" className="text-sm text-destructive">Approved procedures could not be loaded.</p> : !choices.length ? <p className="text-sm text-muted-foreground">No approved procedures are available in this context. You can write instructions directly below.</p> : null}
+      {query.isPending ? <LoadingState  label={<>Loading approved procedures…</>} /> : query.error ? <p role="alert" className="text-sm text-destructive">Approved procedures could not be loaded.</p> : !choices.length ? <p className="text-sm text-muted-foreground">No approved procedures are available in this context. You can write instructions directly below.</p> : null}
       {exceedsLimit ? <p role="alert" className="text-sm text-destructive">This copy exceeds the 100-instruction limit. Choose fewer instructions or remove an existing instruction.</p> : null}
       <Button type="button" variant="outline" disabled={!selected || exceedsLimit || uploading} onClick={() => { if (selected && !exceedsLimit && !uploading) { onInsert(selected.source, selected.index); setSelection('') } }}>Insert copy</Button>
     </div>

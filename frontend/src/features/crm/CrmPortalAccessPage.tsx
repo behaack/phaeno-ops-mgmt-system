@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { Field as PortalField } from '#/components/ui/field'
 import { PageTitle } from '#/components/ui/page-header'
 import { CrmProvisioningReturn } from "./CrmListNavigation";
@@ -193,9 +194,9 @@ export function CrmPortalAccessPage() {
         </CardHeader>
         <CardContent className="p-4">
           {displayedQuery.isLoading ? (
-            <p role="status" className="text-sm text-muted-foreground">
+            <LoadingState  label={<>
               Loading Company requests…
-            </p>
+            </>} />
           ) : reviewQueue.length ? (
             <div className="space-y-3">
               {reviewQueue.map((request) => (

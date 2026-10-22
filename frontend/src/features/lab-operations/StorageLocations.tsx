@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { Field as PortalField } from '#/components/ui/field'
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -50,7 +51,7 @@ export function StorageLocations({ enabled, canCreate, canEdit }: { enabled: boo
   })
 
   if (!enabled) return null
-  if (query.isPending) return <p role="status">Loading storage locations…</p>
+  if (query.isPending) return <LoadingState  label={<>Loading storage locations…</>} />
   if (query.isError) return <div className="space-y-3"><p role="alert">{getLabOperationsError(query.error, 'Storage locations could not be loaded.')}</p><Button type="button" variant="outline" onClick={() => void query.refetch()}>Reload storage locations</Button></div>
 
   const locations = query.data.filter(location => location.name.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()))

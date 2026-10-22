@@ -1,3 +1,4 @@
+import { LoadingState, EmptyState } from '#/components/ui/content-state'
 import { formatDisplayTimestamp } from '#/lib/display-format'
 import { Field as PortalField } from '#/components/ui/field'
 import { PageTitle } from '#/components/ui/page-header'
@@ -40,9 +41,9 @@ export function ResultReleasePanel({ apiEnabled }: { apiEnabled: boolean }) {
     <PortalField className="max-w-sm pt-2"><Label htmlFor="result-package-state"><CustomerSourceText source={"Package state"} /></Label><NativeSelect id="result-package-state" className="w-full" value={state} onChange={(event) => void navigate({ to: '/lab-operations/result-release', search: { resultState: event.target.value, listPage: 1 }, replace: true })}>{states.map((value) => <option key={value} value={value}>{humanizeStatus(value)}</option>)}</NativeSelect></PortalField>
   </CardHeader><CardContent>
     {query.error ? <Alert variant="destructive"><AlertTitle><CustomerSourceText source={"Result packages could not be loaded"} /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(query.error, 'Refresh the queue.')} />}</AlertDescription></Alert> : null}
-    {query.isLoading ? <p role="status"><CustomerSourceText source={"Loading result packages…"} /></p> : null}
+    {query.isLoading ? <LoadingState  label={<><CustomerSourceText source={"Loading result packages…"} /></>} /> : null}
     <div className="divide-y">{query.data?.map((item) => <article key={item.id} className="flex flex-wrap items-center justify-between gap-3 py-4"><div><RecordLink asChild><Link to="/lab-operations/result-packages/$packageId" params={{ packageId: item.id }} search={{ resultState: state, listPage: list.page }} >{packageTitle(item)}</Link></RecordLink><p className="mt-1 text-sm text-muted-foreground">{item.context?.organizationName ?? 'Customer'} · {item.context?.customerReference ?? 'Job reference unavailable'}</p><p className="mt-1 text-xs text-muted-foreground">{item.artifacts.length} <CustomerSourceText source={"files ·"} /> {item.context?.scientificReviewer ? `Reviewed by ${item.context.scientificReviewer}` : <CustomerSourceText source={"Scientific approval pending"} />}</p></div><OrderStatusBadge status={item.state} /></article>)}</div>
-    {!query.isLoading && !query.error && !query.data?.length ? <p className="py-8 text-center text-sm text-muted-foreground"><CustomerSourceText source={"No result packages in this state."} /></p> : null}
+    {!query.isLoading && !query.error && !query.data?.length ? <EmptyState  kind="empty" title={<><CustomerSourceText source={"No result packages in this state."} /></>} /> : null}
     <RecordPagination data={pageQuery.data} busy={pageQuery.isFetching} onPage={page => list.change({ listPage: page })} />
   </CardContent></Card>
 }

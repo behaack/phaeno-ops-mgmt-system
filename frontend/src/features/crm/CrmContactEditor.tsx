@@ -1,3 +1,4 @@
+import { SectionPanel } from '#/components/ui/section-panel'
 import { RequiredLegend } from '#/components/ui/required-field'
 import { NativeCheckbox } from '#/components/ui/native-checkbox'
 import { NativeSelect } from '#/components/ui/native-select'
@@ -106,10 +107,8 @@ function ContactEditor({ contact, pending, error, onOpenChange, onSubmit }: Prop
           </div>
           {field('ownerUserId', 'Owner', <CrmOwnerSelect id="contact-ownerUserId" currentOwnerId={reviewed?.ownerUserId} currentOwnerName={reviewed?.ownerName}
             defaultLabel={reviewed ? 'Keep current owner' : 'Assign to me'} />)}
-          <section className="grid gap-3 rounded-md border p-3" aria-labelledby="contact-outreach-title">
-            <div><h3 id="contact-outreach-title" className="text-sm font-semibold">Sales and marketing outreach</h3>
-              <p className="mt-1 text-sm">Current status: {outreachLabel(reviewed)}</p>
-              <p id="contact-outreach-boundary" className="mt-2 text-xs text-muted-foreground">{outreachBoundary}</p></div>
+          <SectionPanel aria-labelledby="contact-outreach-title" bodyClassName="grid gap-3" heading={<h3 id="contact-outreach-title" >Sales and marketing outreach</h3>} description={<>Current status: {outreachLabel(reviewed)}</>} actions={<><p id="contact-outreach-boundary" className="mt-2 text-xs text-muted-foreground">{outreachBoundary}</p></>}>
+
             {reviewed?.communicationPreference === 'Permitted' && !reviewed.outreachPermissionSource
               ? <p className="text-xs text-muted-foreground">Legacy “Permitted” is retained, but permission evidence needs review before outreach is allowed.</p> : null}
             {reviewed?.lawfulContactBasis ? <p className="text-xs text-muted-foreground">Legacy contact basis (retained): {reviewed.lawfulContactBasis}</p> : null}
@@ -130,7 +129,7 @@ function ContactEditor({ contact, pending, error, onOpenChange, onSubmit }: Prop
               {field('explanation', 'Decision explanation and scope *', <Textarea {...attributes('explanation', true)} {...form.register('explanation')} rows={3} maxLength={1000} />,
                 'Describe the evidence and exactly which outreach it covers. Do not include sensitive personal or scientific information.')}
             </div> : null}
-          </section>
+          </SectionPanel>
           {field('tags', 'Tags', <Input {...attributes('tags')} {...form.register('tags')} placeholder="Comma-separated" />)}
         </fieldset>
         <DialogFooter>

@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { useId, useState, type RefObject } from 'react'
 import { useInfiniteQuery, useMutation } from '@tanstack/react-query'
 import type { S3ScientificObject, S3ScientificPage } from '#/api/lab-s3-scientific'
@@ -40,7 +41,7 @@ export function S3ScientificFileDialog({ open, onOpenChange, queryKey, load, sel
           <p className="mt-2 break-all font-mono text-xs">{query.data.pages[0].sourceLocation}</p>
           <p className="mt-1 text-xs text-muted-foreground">Share this folder with the authorized producer before their first upload. Folder knowledge does not grant S3 access.</p>
         </details> : null}
-        {query.isPending ? <p role="status">Loading S3 files…</p> : null}
+        {query.isPending ? <LoadingState  label={<>Loading S3 files…</>} /> : null}
         {query.isError ? <div role="alert"><p>{getLabOperationsError(query.error, 'S3 files could not be loaded.')}</p>
           <Button type="button" variant="outline" onClick={() => void query.refetch()}>Reload S3 files</Button></div> : null}
         {query.data?.pages[0]?.available === false ? <p>S3 access is not configured in this environment. Contact Operations.</p> : null}

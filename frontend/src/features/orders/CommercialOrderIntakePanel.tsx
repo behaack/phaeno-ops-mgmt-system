@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
 import { handoffTones } from '#/features/crm/crm-status'
 import { ClearFiltersButton } from '#/components/ui/clear-filters-button'
@@ -142,7 +143,7 @@ export function CommercialOrderIntakePanel({
               <AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(handoffs.error ?? orders.error, 'Refresh the intake queue and try again.')} />}</AlertDescription>
             </Alert>
           ) : null}
-          {handoffs.isLoading || orders.isLoading ? <p role="status"><CustomerSourceText source={"Loading commercial intake…"} /></p> : null}
+          {handoffs.isLoading || orders.isLoading ? <LoadingState  label={<><CustomerSourceText source={"Loading commercial intake…"} /></>} /> : null}
           <div className="divide-y">
             {queueItems.map((item) => item.kind === 'order' ? (
               <CommercialOrderRow

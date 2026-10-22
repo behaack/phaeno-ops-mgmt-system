@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { DialogDescription } from '#/components/ui/dialog'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -34,7 +35,7 @@ function SavedKitAssemblyDialog({ kit: initialKit, printOnOpen, onClose, onSaved
     if (refreshed.data) await onSaved(refreshed.data)
   })
   if (!assembly.run) return <Dialog open onOpenChange={open => { if (!open) onClose() }}><DialogContent><DialogHeader><DialogTitle><CustomerSourceText source={"Assemble transportation kit"} /></DialogTitle><DialogDescription>Load the current kit and assembly record before recording packed contents.</DialogDescription></DialogHeader>
-    {query.error || assembly.query.error ? <Alert variant="destructive"><AlertTitle><CustomerSourceText source={"Assembly unavailable"} /></AlertTitle><AlertDescription><CustomerSourceText source={"Refresh the kit and its assembly record before continuing."} /></AlertDescription></Alert> : <p role="status"><CustomerSourceText source={"Loading assembly…"} /></p>}
+    {query.error || assembly.query.error ? <Alert variant="destructive"><AlertTitle><CustomerSourceText source={"Assembly unavailable"} /></AlertTitle><AlertDescription><CustomerSourceText source={"Refresh the kit and its assembly record before continuing."} /></AlertDescription></Alert> : <LoadingState  label={<><CustomerSourceText source={"Loading assembly…"} /></>} />}
     <DialogFooter><Button variant="ghost" onClick={onClose}><CustomerSourceText source={"Close"} /></Button><Button variant="outline" onClick={() => { void query.refetch(); void assembly.query.refetch() }}><CustomerSourceText source={"Retry"} /></Button></DialogFooter>
   </DialogContent></Dialog>
   return <RecordKitPackedContentsDialog kit={kit} assembly={{ ...assembly, setComponentsOpen: open => { if (!open) onClose() } }} writesBlocked={Boolean(query.error) || query.isFetching} printOnOpen={printOnOpen} refreshError={Boolean(query.error) || Boolean(assembly.query.error)} onRetryRefresh={() => { void query.refetch(); void assembly.query.refetch() }} />

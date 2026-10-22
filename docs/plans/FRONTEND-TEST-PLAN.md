@@ -1,5 +1,11 @@
 # Frontend Test Plan
 
+## UI workflow coverage and quality gates — October 22, 2026
+
+Local implementation of the six follow-up priorities is recorded in [the owning plan](UI-WORKFLOW-COVERAGE-AND-GATES-PLAN.md). Source guard regressions cover titled panels, shared loading, heading ownership and scientific/print exclusions. Shared tests retain native headings/regions/refs/actions, loading announcements, permission guidance, retry handlers and pointer focus on a sole action. The full frontend suite passes 1,578 cases, with three pre-existing skips. Final focused verification covers the later spacing and shared-control refinements.
+
+The coverage inventory generates gallery/reference counts and all-audience documentation cases from registered scenarios. JPEG geometry must match annotation metadata; cropped targets inside scroll containers are rejected. Changed sources/assets require deliberate capture review. The Python release-gate tests reject wrong sources/workflows, failed or superseded attempts and skipped/missing required jobs. Lint, types, corpus generation, independent builds and production/gallery isolation are required. See [verification evidence](../operations/ui-workflow-coverage-20261022.md) for final browser/image counts and boundaries.
+
 ## UI patterns release verification — October 22, 2026
 
 Exact deployed source `669b9336` passes [CI run 39844011970](https://github.com/behaack/phaeno-ops-mgmt-system/actions/runs/39844011970):

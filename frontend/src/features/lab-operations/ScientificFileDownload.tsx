@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { downloadScientificFile, getScientificFiles, scientificFilesKey } from '#/api/lab-scientific-evidence'
@@ -23,7 +24,7 @@ export function ScientificFileDownload({ work, specimen, reference }: { work: st
     } catch (failure) { setError(failure) } finally { setPending(false) }
   }
   return <div className="space-y-1">
-    {query.isPending ? <p role="status">Loading file…</p> : file ? <Button type="button" size="sm" variant="outline" className="h-auto max-w-full whitespace-normal break-all text-left" disabled={pending} onClick={() => void download()}>{pending ? 'Verifying and downloading…' : `Download ${file.fileName}`}</Button> : query.isError ? <><EvidenceError error={query.error} /><Button type="button" variant="outline" onClick={() => void query.refetch()}>Reload file</Button></> : <p role="alert">The recorded managed file is unavailable. Contact an administrator.</p>}
+    {query.isPending ? <LoadingState  label={<>Loading file…</>} /> : file ? <Button type="button" size="sm" variant="outline" className="h-auto max-w-full whitespace-normal break-all text-left" disabled={pending} onClick={() => void download()}>{pending ? 'Verifying and downloading…' : `Download ${file.fileName}`}</Button> : query.isError ? <><EvidenceError error={query.error} /><Button type="button" variant="outline" onClick={() => void query.refetch()}>Reload file</Button></> : <p role="alert">The recorded managed file is unavailable. Contact an administrator.</p>}
     {error ? <EvidenceError error={error} /> : null}
   </div>
 }

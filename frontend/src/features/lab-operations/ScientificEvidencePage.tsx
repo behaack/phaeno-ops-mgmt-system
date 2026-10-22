@@ -1,3 +1,4 @@
+import { LoadingState, EmptyState } from '#/components/ui/content-state'
 import { PageTitle } from '#/components/ui/page-header'
 import { BackLink } from '#/components/ui/back-link'
 import { parseLabSection } from './lab-sections'
@@ -24,7 +25,7 @@ function readableMetadata(value: unknown, data: ScientificWorkspace): unknown {
 }
 export function ScientificEvidenceList({ workOrderId, specimenId }: { workOrderId: string; specimenId: string }) {
   const query = useQuery({ queryKey: scientificKey(workOrderId, specimenId), queryFn: () => getScientificWorkspace(workOrderId, specimenId) })
-  if (query.isPending) return <p role="status">Loading scientific records…</p>
+  if (query.isPending) return <LoadingState  label={<>Loading scientific records…</>} />
   if (query.isError) return <div className="space-y-2"><EvidenceError error={query.error} /><Button variant="outline" onClick={() => void query.refetch()}>Reload scientific records</Button></div>
   return <>{(['sequencing', 'analysis'] as const).map(kind => <ScientificRecordList key={kind} kind={kind} data={query.data} />)}</>
 }
@@ -35,7 +36,7 @@ function ScientificRecordList({ kind, data }: { kind: 'sequencing' | 'analysis';
   const params = { workOrderId: data.workOrderId, specimenId: data.specimenId, kind }
   return <section className="overflow-hidden rounded-lg border" aria-label={kind === 'sequencing' ? 'Sequencing records' : 'Analysis records'}>
     <header className="flex flex-wrap items-center justify-between gap-3 border-b bg-muted/50 p-3"><h3 className="text-sm font-medium">{kind === 'sequencing' ? 'Sequencing outputs' : 'Analysis runs'} ({rows.length})</h3>{data.canRecord ? <Button size="sm" variant="outline" asChild><Link to={recordRoute} params={{ ...params, recordId: 'new' }} search={previous => ({ ...previous, section: parseLabSection(previous.section) })}>Record {kind === 'sequencing' ? 'sequencing output' : 'analysis run'}</Link></Button> : null}</header>
-    <div className="space-y-3 p-3 text-sm">{rows.slice(page * 10, page * 10 + 10).map(row => <div key={row.id} className="min-w-0 border-b pb-2"><Link className="break-all text-primary underline" to={recordRoute} params={{ ...params, recordId: row.id }} search={previous => ({ ...previous, section: parseLabSection(previous.section) })}>{'externalFileReference' in row ? `${scientificFileLabel(row.externalFileReference, files.data?.files)} · ${row.providerRunReference}` : row.runReference}</Link><p className="text-xs text-muted-foreground">{row.providerKey} · Recorded {evidenceDate(row.recordedAtUtc)}</p></div>)}{!rows.length ? <p>No records yet.</p> : null}{rows.length > 10 ? <EvidencePages page={page} next={rows.length > (page + 1) * 10} onChange={setPage} /> : null}</div>
+    <div className="space-y-3 p-3 text-sm">{rows.slice(page * 10, page * 10 + 10).map(row => <div key={row.id} className="min-w-0 border-b pb-2"><Link className="break-all text-primary underline" to={recordRoute} params={{ ...params, recordId: row.id }} search={previous => ({ ...previous, section: parseLabSection(previous.section) })}>{'externalFileReference' in row ? `${scientificFileLabel(row.externalFileReference, files.data?.files)} · ${row.providerRunReference}` : row.runReference}</Link><p className="text-xs text-muted-foreground">{row.providerKey} · Recorded {evidenceDate(row.recordedAtUtc)}</p></div>)}{!rows.length ? <EmptyState  kind="empty" title={<>No records yet.</>} /> : null}{rows.length > 10 ? <EvidencePages page={page} next={rows.length > (page + 1) * 10} onChange={setPage} /> : null}</div>
   </section>
 }
 export function ScientificEvidencePage({ workOrderId, specimenId, kind, recordId, from }: { workOrderId: string; specimenId: string; kind: string; recordId: string; from?: string }) {
@@ -44,7 +45,7 @@ export function ScientificEvidencePage({ workOrderId, specimenId, kind, recordId
   const navigate = useNavigate()
   const [upload, setUpload] = useState(false)
   const back = () => void navigate({ to: '/lab-operations/$workOrderId/specimens/$specimenId', params: { workOrderId, specimenId }, search: previous => ({ ...previous, section: parseLabSection(previous.section), specimenTab: 'sequencing' }) })
-  if (query.isPending) return <p role="status">Loading scientific evidence…</p>
+  if (query.isPending) return <LoadingState  label={<>Loading scientific evidence…</>} />
   if (query.isError) return <div className="space-y-3 p-6"><EvidenceError error={query.error} /><Button variant="outline" onClick={() => void query.refetch()}>Reload scientific records</Button></div>
   if (kind !== 'sequencing' && kind !== 'analysis') return <EvidenceError error={new Error('This scientific record type is not supported.')} />
   const data = query.data

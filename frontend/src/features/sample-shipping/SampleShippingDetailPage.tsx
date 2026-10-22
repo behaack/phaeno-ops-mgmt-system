@@ -1,3 +1,5 @@
+import { SectionPanel } from '#/components/ui/section-panel'
+import { LoadingState } from '#/components/ui/content-state'
 import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
 import { shippingTones } from '#/features/sample-shipping/shipping-status'
 import { FieldError } from '#/components/ui/field'
@@ -179,7 +181,7 @@ export function SampleShippingDetailPage({ shipmentId, autoOpenKitOrder = false,
   const dialogOpen = Boolean(packetAction) || shipmentOpen || instructionsOpen || Boolean(printedConfirmation) || printing
   const unavailableActions = () => <>{embedded?.renderActions([], headerActionRef, dialogOpen)}{embedded?.renderSendAction?.(null, sendActionRef)}</>
   if (!canView) return <Workspace className={workspaceClassName}>{unavailableActions()}{embedded?.renderSamples?.()}<Alert variant="destructive"><AlertTitle><CustomerText message="m_e2c9a6f62628" /></AlertTitle><AlertDescription><CustomerText message="m_852245df9ee8" /></AlertDescription></Alert></Workspace>
-  if (query.isLoading) return <Workspace className={workspaceClassName}>{unavailableActions()}{embedded?.renderSamples?.()}<p role="status" className="text-sm text-muted-foreground"><CustomerText message="m_bac36166203b" /></p></Workspace>
+  if (query.isLoading) return <Workspace className={workspaceClassName}>{unavailableActions()}{embedded?.renderSamples?.()}<LoadingState  label={<><CustomerText message="m_bac36166203b" /></>} /></Workspace>
   if (!query.data || !sourceMatches) return <Workspace className={workspaceClassName}>{unavailableActions()}{embedded?.renderSamples?.()}<Alert variant="destructive"><AlertTitle><CustomerText message="m_ed9d858ef049" /></AlertTitle><AlertDescription>{query.data && !sourceMatches ? <CustomerSourceText source={"This shipment does not belong to this Lab Job. Select one of this Job’s containers to continue."} /> : query.error ? apiErrorMessage(query.error) : __customerText('m_4405ffc9c508')}</AlertDescription></Alert></Workspace>
   const shipment = query.data
   const matchedCount = shipment.crosswalk.filter((item) => item.supplierTubeBarcode).length
@@ -265,10 +267,10 @@ export function SampleShippingDetailPage({ shipmentId, autoOpenKitOrder = false,
         <ShipmentHeaderActions actions={headerActions} triggerRef={headerActionRef} dialogOpen={dialogOpen} />
       </section>}
       {embedded?.renderSendAction?.(sendAction, sendActionRef)}
-      {embedded && sentInsert ? <section aria-label={__customerText('m_388945d1466a')} className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border p-4">
-        <div><h3 className="text-sm font-medium"><CustomerText message="m_592c7d476214" />{shipment.shipmentNumber}</h3><p className="text-sm text-muted-foreground"><CustomerText message="m_97b110160547" /></p></div>
+      {embedded && sentInsert ? <SectionPanel aria-label={__customerText('m_388945d1466a')} className="mb-5" heading={<h3 ><CustomerText message="m_592c7d476214" />{shipment.shipmentNumber}</h3>} description={<><CustomerText message="m_97b110160547" /></>}>
+
         <Button ref={reprintActionRef} type="button" variant="outline" size="sm" disabled={!currentShipmentVerified || navigationLocked || scanActive} aria-busy={printing || undefined} onClick={() => startPrint('reprint')}><Printer aria-hidden="true" /><CustomerText message="m_7498c830a306" /></Button>
-      </section> : null}
+      </SectionPanel> : null}
       <p role="status" className="sr-only">{printing ? <CustomerSourceText source={"Preparing shipping insert for printing…"} /> : ''}</p>
       {printFailure?.shipmentId === shipmentId ? <Alert variant="destructive" className="mb-5"><AlertTitle><CustomerText message="m_631b4c378dfd" /></AlertTitle><AlertDescription>{<CustomerSourceText source={printFailure.message} />}<Button variant="outline" onClick={() => startPrint()}><CustomerText message="m_d8b8392e2c54" /></Button></AlertDescription></Alert> : null}
       {printing ? <ShippingInsertPrintFrame key={shipmentId} shipmentId={shipmentId} onFinished={finishPrint} onFailure={failPrint} /> : null}

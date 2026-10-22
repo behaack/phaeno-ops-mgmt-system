@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { RecordLink } from '#/components/ui/record-link'
 import { RecordPagination, useRecordListState } from '#/components/RecordPagination'
 import { useQuery } from '@tanstack/react-query'
@@ -18,7 +19,7 @@ export function ResultsWorkQueue({ enabled }: { enabled: boolean }) {
       <CardDescription>Completed assembly outputs with verified files and passing QC, awaiting scientific review. Open a Job to review its pending packages.</CardDescription>
     </CardHeader>
     <CardContent className="space-y-3 p-4">
-      {enabled && query.isPending ? <p role="status">Loading results awaiting scientific review…</p> : null}
+      {enabled && query.isPending ? <LoadingState  label={<>Loading results awaiting scientific review…</>} /> : null}
       {query.error ? <Alert variant="destructive"><AlertTitle>Scientific review queue could not be loaded</AlertTitle><AlertDescription>{getLabOperationsError(query.error, 'Refresh to recover the current review queue.')}<Button variant="outline" onClick={() => void query.refetch()}>Refresh queue</Button></AlertDescription></Alert> : null}
       {query.data?.map(({ workOrder: item, pendingPackageCount }) => <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/30 p-4 shadow-xs">
         <div><RecordLink asChild><Link to="/lab-operations/$workOrderId" params={{ workOrderId: item.id }} search={previous => ({ ...previous, section: 'results', tab: 'review' })} >{labWorkOrderLabel(item)}</Link></RecordLink>

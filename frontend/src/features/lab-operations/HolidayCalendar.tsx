@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { Field as PortalField } from '#/components/ui/field'
 import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { useState } from 'react'
@@ -23,7 +24,7 @@ export function HolidayCalendar() {
   const query = useQuery({ queryKey: ['lab-forecast-configuration'], queryFn: getForecastConfiguration })
   const [editing, setEditing] = useState(false)
   const [year, setYear] = useState(String(new Date().getFullYear()))
-  if (query.isPending) return <p role="status">Loading holiday calendar…</p>
+  if (query.isPending) return <LoadingState  label={<>Loading holiday calendar…</>} />
   if (query.isError) return <><Failure error={query.error} /><Button variant="outline" onClick={() => void query.refetch()}>Reload</Button></>
   const { calendars, canConfigure } = query.data
   const calendar = calendars[0]

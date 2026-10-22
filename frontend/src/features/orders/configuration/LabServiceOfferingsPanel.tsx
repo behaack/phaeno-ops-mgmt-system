@@ -1,3 +1,4 @@
+import { LoadingState, ErrorState } from '#/components/ui/content-state'
 import { Field as PortalField } from '#/components/ui/field'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { NativeSelect } from '#/components/ui/native-select'
@@ -298,9 +299,9 @@ export function LabServiceOfferingsPanel({
         {!offerings.isLoading && !offerings.error && versions.length === 0 ? <Button disabled={!apiEnabled} onClick={event => { actionRef.current = event.currentTarget; open(null) }}><CustomerSourceText source={"Add definition"} /></Button> : null}
       </div>
       {offerings.isLoading ? (
-        <p role="status" className="mt-4">
+        <LoadingState  label={<>
           <CustomerSourceText source={"Loading offerings…"} />
-        </p>
+        </>} />
       ) : null}
       {offerings.error ? (
         <Alert variant="destructive" className="mt-4">
@@ -485,8 +486,8 @@ export function LabServiceOfferingsPanel({
                     {error('analysisIds')}
                   </fieldset>
                   <fieldset><legend className="text-sm font-medium"><RequiredFieldName><CustomerSourceText source={"Supported sample types"} /></RequiredFieldName></legend><p className="mt-1 text-sm text-muted-foreground"><CustomerSourceText source={"Select the exact approved revisions. PSeq ordering currently requires one extracted-RNA tube type; other materials do not enable new intake workflows."} /></p>
-                    {samples.isLoading ? <p role="status"><CustomerSourceText source={"Loading sample types…"} /></p> : null}
-                    {samples.error ? <p role="alert"><CustomerSourceText source={"Sample types could not be loaded."} /> <Button variant="outline" onClick={() => void samples.refetch()} type="button"><CustomerSourceText source={"Retry"} /></Button></p> : null}
+                    {samples.isLoading ? <LoadingState  label={<><CustomerSourceText source={"Loading sample types…"} /></>} /> : null}
+                    {samples.error ? <ErrorState title={<CustomerSourceText source="Could not load this content" />} action={<Button variant="outline" onClick={() => void samples.refetch()} type="button"><CustomerSourceText source={"Retry"} /></Button>}><CustomerSourceText source={"Sample types could not be loaded."} /> </ErrorState> : null}
                     <div className="mt-2 space-y-2">{(samples.data?.sampleTypes ?? []).filter(type => type.isActive || selectedSampleTypes.includes(type.id)).map(type => <label key={type.id} className="flex cursor-pointer items-start gap-2 text-sm"><Checkbox checked={selectedSampleTypes.includes(type.id)} onCheckedChange={checked => form.setValue('supportedSampleTypeIds', checked ? [...selectedSampleTypes, type.id] : selectedSampleTypes.filter(id => id !== type.id), { shouldDirty: true, shouldValidate: true })} />{type.name} <CustomerSourceText source={"· revision"} /> {type.revision} · {type.materialClass}{type.isActive ? '' : <CustomerSourceText source={" (inactive)"} />}</label>)}</div>
                     {samples.data && samples.data.sampleTypes.length === 0 ? <p className="mt-2 text-sm"><CustomerSourceText source={"Create a shared sample-type definition in Order settings → Sample types first."} /></p> : null}
                     {error('supportedSampleTypeIds')}

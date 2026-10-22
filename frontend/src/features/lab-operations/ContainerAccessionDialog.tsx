@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { getLabWorkOrder, type LabWorkOrderDetail } from '#/api/lab-operations'
 import { scanSampleShippingPacket, type SampleShippingPacketScan } from '#/api/sample-shipping'
@@ -26,7 +27,7 @@ export function ContainerAccessionDialog({ initialPacket, canAccession, onClose 
 
   return <Dialog open onOpenChange={open => { if (!open) onClose() }}><DialogContent className="sm:max-w-4xl">
     <DialogHeader><DialogTitle>Accession tubes in {packet.shipmentNumber}</DialogTitle><DialogDescription>Loading the expected tubes and their recorded intake decisions.</DialogDescription></DialogHeader>
-    <div>{refreshFailed ? <Alert variant="destructive"><AlertTitle>Could not refresh shipment details</AlertTitle><AlertDescription><Button variant="outline" onClick={refresh}>Try again</Button></AlertDescription></Alert> : <p role="status">Loading shipment details…</p>}</div>
+    <div>{refreshFailed ? <Alert variant="destructive"><AlertTitle>Could not refresh shipment details</AlertTitle><AlertDescription><Button variant="outline" onClick={refresh}>Try again</Button></AlertDescription></Alert> : <LoadingState  label={<>Loading shipment details…</>} />}</div>
     <DialogFooter><Button variant="outline" onClick={onClose}>Close</Button></DialogFooter>
   </DialogContent></Dialog>
 }

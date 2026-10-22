@@ -1,3 +1,4 @@
+import { LoadingState, EmptyState } from '#/components/ui/content-state'
 import { BackLink } from '#/components/ui/back-link'
 import { CustomerSourceText, useCustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
@@ -63,7 +64,7 @@ export function SampleShippingPacketPage({ shipmentId, autoPrint = false, onAuto
   }, [autoPrint, currentPacket, onAutoPrint, printable])
 
   if (query.isLoading || query.isFetching) {
-    return <Page className="page-wrap space-y-5 px-4 py-8">{!packingOnly ? <PacketReturnLink shipmentId={shipmentId} /> : null}<p role="status"><CustomerText message="m_762477bd629b" /></p></Page>
+    return <Page className="page-wrap space-y-5 px-4 py-8">{!packingOnly ? <PacketReturnLink shipmentId={shipmentId} /> : null}<LoadingState  label={<><CustomerText message="m_762477bd629b" /></>} /></Page>
   }
 
   if (query.fetchStatus === 'paused') {
@@ -168,7 +169,7 @@ export function SampleShippingPacketPage({ shipmentId, autoPrint = false, onAuto
           <div className="packet-samples mt-4 space-y-5">{visibleSamples.map(item => <article key={item.id} className="packet-sample rounded-md border p-4">
             <header className="break-inside-avoid space-y-2"><h3 className="wrap-anywhere font-semibold">{item.customerSampleId}</h3><p className="text-sm">{item.sampleName}{item.sampleTypeName ? ` · ${item.sampleTypeName}` : ''}</p><p className="text-sm font-medium">{item.tubes.length} of {item.totalTubeCount} <CustomerText message="m_6f8b3af8dca6" /></p>{item.sampleBarcode ? <div className="max-w-2xl"><ShippingBarcode value={item.sampleBarcode} label={__customerText('m_6500d1c034ff')} /></div> : null}</header>
             <h4 className="mt-4 text-sm font-semibold"><CustomerText message="m_a9eba104ca62" /></h4>
-            <ul className="mt-2 divide-y">{item.tubes.map((tube, index) => <li key={`${tube.barcode}-${index}`} className="packet-tube break-inside-avoid space-y-2 py-3"><p className="text-sm"><span className="hidden wrap-anywhere font-medium print:block">{item.customerSampleId}</span><CustomerText message="m_a04259785d8e" />{tube.ordinal || index + 1}{tube.quantity ? __customerText('m_e4c039943946', { p0: String(tube.quantity), p1: String(tube.quantityUnit) }) : __customerText('m_d03caacd8c85')}</p>{tube.barcode ? <div className="max-w-2xl"><ShippingBarcode value={tube.barcode} label={__customerText('m_c8cc24fb143d')} /></div> : <p className="text-sm"><CustomerText message="m_6d0540a7fb0e" /></p>}</li>)}</ul>
+            <ul className="mt-2 divide-y">{item.tubes.map((tube, index) => <li key={`${tube.barcode}-${index}`} className="packet-tube break-inside-avoid space-y-2 py-3"><p className="text-sm"><span className="hidden wrap-anywhere font-medium print:block">{item.customerSampleId}</span><CustomerText message="m_a04259785d8e" />{tube.ordinal || index + 1}{tube.quantity ? __customerText('m_e4c039943946', { p0: String(tube.quantity), p1: String(tube.quantityUnit) }) : __customerText('m_d03caacd8c85')}</p>{tube.barcode ? <div className="max-w-2xl"><ShippingBarcode value={tube.barcode} label={__customerText('m_c8cc24fb143d')} /></div> : <EmptyState  kind="empty" title={<><CustomerText message="m_6d0540a7fb0e" /></>} />}</li>)}</ul>
             {item.otherShipments.length || item.unallocatedTubeCount > 0 ? <aside className="mt-3 break-inside-avoid border-t pt-3 text-sm"><h4 className="font-semibold"><CustomerText message="m_83c72c329c0d" /></h4><ul className="mt-2 space-y-1">{item.otherShipments.map(other => <li key={other.shipmentNumber}>{other.tubeCount} {other.tubeCount === 1 ? <CustomerSourceText source={"tube"} /> : __customerText('m_cc169e248ff2')} <CustomerText message="m_fe0a0957f844" />{other.shipmentNumber}</li>)}{item.unallocatedTubeCount > 0 ? <li>{item.unallocatedTubeCount} {item.unallocatedTubeCount === 1 ? <CustomerSourceText source={"tube is"} /> : __customerText('m_fb12a3d0225a')} <CustomerText message="m_5432b5fa4b8f" /></li> : null}</ul><p className="mt-2 text-xs"><CustomerText message="m_5804504237d1" /></p></aside> : null}
           </article>)}</div>
         </section>

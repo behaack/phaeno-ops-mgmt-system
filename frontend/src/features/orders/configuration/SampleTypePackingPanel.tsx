@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { RecordLink } from '#/components/ui/record-link'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
@@ -41,7 +42,7 @@ export function SampleTypePackingPanel({ sampleType, configuration }: { sampleTy
         {procedure ? <Link className={recordLinkClassName} to="/sample-shipping-settings" search={{ shippingSection: "procedures", procedureId: procedure.id }}>{procedure.name}</Link>
           : <p role="alert" className="text-warning"><CustomerText message="m_5bdbc7cec305" /></p>}
       </div>
-      {containers.isLoading ? <p role="status"><CustomerText message="m_64d3514b35c8" /></p> : null}
+      {containers.isLoading ? <LoadingState  label={<><CustomerText message="m_64d3514b35c8" /></>} /> : null}
       {containers.error ? <Alert variant="destructive"><AlertTitle><CustomerText message="m_9594df9465cc" /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(containers.error, 'Refresh the transportation kits and try again.')} />} <Button variant="outline" onClick={() => void containers.refetch()}><CustomerText message="m_942087cc2d41" /></Button></AlertDescription></Alert> : null}
       <div className="space-y-3">
         <h3 className="font-medium"><CustomerText message="m_459a1311b7e2" /></h3>

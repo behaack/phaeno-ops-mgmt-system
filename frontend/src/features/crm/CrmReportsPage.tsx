@@ -1,3 +1,4 @@
+import { EmptyState } from '#/components/ui/content-state'
 import { RecordTableHeader } from '#/components/ui/record-list'
 import { PageTitle } from '#/components/ui/page-header'
 import { useQuery } from "@tanstack/react-query";
@@ -180,9 +181,9 @@ function Table({
         </tbody>
       </table>
       {rows.length === 0 ? (
-        <p className="p-8 text-center text-sm text-muted-foreground">
+        <EmptyState  kind="empty" title={<>
           No report data is available yet.
-        </p>
+        </>} />
       ) : null}
     </div>
   );

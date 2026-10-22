@@ -1,3 +1,4 @@
+import { LoadingState, EmptyState } from '#/components/ui/content-state'
 import { formatDisplayTimestamp } from '#/lib/display-format'
 import { RecordTableHeader } from '#/components/ui/record-list'
 import { RecordLink } from '#/components/ui/record-link'
@@ -25,7 +26,7 @@ export function JobSequencingPanel({ workOrderId, libraries, specimens, specimen
   return <div className="space-y-4">
     <Card className="gap-0 py-0"><CardHeader ><CardTitle>Sequencing</CardTitle><CardDescription>{specimenId ? 'This specimen’s' : 'This Job’s'} libraries and vendor batch progress. Recorded vendor outcomes remain separate from scientific approval and result release.</CardDescription><CardAction><Button asChild variant="outline" size="sm"><Link to="/lab-operations" search={previous => ({ ...previous, section: 'batches' })}>Open sequencing batches</Link></Button></CardAction></CardHeader>
       <CardContent className="p-4">
-        {query.isPending ? <p role="status">Loading {specimenId ? 'this specimen’s' : 'this Job’s'} sequencing…</p> : query.isError ? <Alert variant="destructive"><AlertDescription>{getLabOperationsError(query.error, 'Sequencing could not be loaded.')} <Button variant="outline" onClick={() => void query.refetch()}>Retry sequencing</Button></AlertDescription></Alert> : !libraries.length ? <p>No libraries have been recorded for {specimenId ? 'this specimen' : 'this Job'}.</p> : <p>{labCount(query.data.length, 'linked batch', 'linked batches')} · {labCount(assignedIds.size, 'assigned library', 'assigned libraries')} · {labCount(unassigned.length, 'unassigned library', 'unassigned libraries')}</p>}
+        {query.isPending ? <LoadingState  label={<>Loading {specimenId ? 'this specimen’s' : 'this Job’s'} sequencing…</>} /> : query.isError ? <Alert variant="destructive"><AlertDescription>{getLabOperationsError(query.error, 'Sequencing could not be loaded.')} <Button variant="outline" onClick={() => void query.refetch()}>Retry sequencing</Button></AlertDescription></Alert> : !libraries.length ? <EmptyState  kind="empty" title={<>No libraries have been recorded for {specimenId ? 'this specimen' : 'this Job'}.</>} /> : <p>{labCount(query.data.length, 'linked batch', 'linked batches')} · {labCount(assignedIds.size, 'assigned library', 'assigned libraries')} · {labCount(unassigned.length, 'unassigned library', 'unassigned libraries')}</p>}
       </CardContent>
     </Card>
     {query.isSuccess ? query.data.map(({ batch, sequencingStartedAtUtc, sequencingCompletedAtUtc, libraries: members }) => <Card key={batch.id} className="gap-0 overflow-hidden py-0">

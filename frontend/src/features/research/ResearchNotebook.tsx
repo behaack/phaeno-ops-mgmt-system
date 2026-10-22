@@ -1,3 +1,4 @@
+import { EmptyState, LoadingState } from '#/components/ui/content-state'
 import { RecordTableHeader } from '#/components/ui/record-list'
 import { useEffect, useState } from 'react'
 import { Button } from '#/components/ui/button'
@@ -10,9 +11,9 @@ export function ResearchNotebook({ blocks, experimentId, entryId }: { blocks: Re
   const files = useResearchQuery<Attachment[]>(`experiments/${experimentId}/entries/${entryId}/attachments`, undefined, Boolean(experimentId && entryId))
   return <div className="space-y-5"><ResearchFeedback error={files.error} />{blocks.length ? blocks.map(block => <section key={block.id} className="min-w-0 space-y-2"><h3 className="break-words font-semibold">{block.label}</h3>
     {block.kind === 'text' ? <p className="whitespace-pre-wrap break-words text-sm leading-6">{block.text || <span className="text-muted-foreground">No notes recorded.</span>}</p>
-      : block.kind === 'table' ? <div className="overflow-x-auto rounded-md border"><table className="w-full text-left text-sm"><caption className="sr-only">{block.label}</caption><RecordTableHeader><tr>{block.columns?.map((column, i) => <th className="border-b bg-muted px-3 py-2" key={i} scope="col">{column || `Column ${i + 1}`}</th>)}</tr></RecordTableHeader><tbody>{block.rows?.map((row, i) => <tr key={i}>{row.map((cell, j) => <td key={j} className="whitespace-pre-wrap border-b px-3 py-2">{cell}</td>)}</tr>)}</tbody></table>{!block.rows?.length ? <p className="p-3 text-sm text-muted-foreground">No values recorded.</p> : null}</div>
+      : block.kind === 'table' ? <div className="overflow-x-auto rounded-md border"><table className="w-full text-left text-sm"><caption className="sr-only">{block.label}</caption><RecordTableHeader><tr>{block.columns?.map((column, i) => <th className="border-b bg-muted px-3 py-2" key={i} scope="col">{column || `Column ${i + 1}`}</th>)}</tr></RecordTableHeader><tbody>{block.rows?.map((row, i) => <tr key={i}>{row.map((cell, j) => <td key={j} className="whitespace-pre-wrap border-b px-3 py-2">{cell}</td>)}</tr>)}</tbody></table>{!block.rows?.length ? <EmptyState  kind="empty" title={<>No values recorded.</>} /> : null}</div>
       : files.data?.find(f => f.id === block.attachmentId) ? <ResearchAttachmentView file={files.data.find(f => f.id === block.attachmentId)!} />
-        : <p className="text-sm text-muted-foreground">{files.isLoading ? 'Loading attachment…' : 'Attachment metadata unavailable.'}</p>}
+        : <LoadingState  label={<>{files.isLoading ? 'Loading attachment…' : 'Attachment metadata unavailable.'}</>} />}
   </section>) : <p className="text-sm text-muted-foreground">This entry has no sections yet.</p>}</div>
 }
 export function ResearchAttachmentView({ file }: { file: Attachment }) {
@@ -33,6 +34,6 @@ export function ResearchAttachmentView({ file }: { file: Attachment }) {
   }
   return <div className="space-y-3 rounded-lg border p-3"><div className="flex flex-wrap items-center justify-between gap-3"><p className="break-all text-sm">{file.fileName} <span className="text-muted-foreground">({formatByteSize(file.sizeBytes)})</span></p>
     <ActionMenu><DropdownMenuTrigger asChild><Button type="button" variant="outline" disabled={busy}>Actions</Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onSelect={() => void download()}>{busy ? 'Downloading…' : 'Download file'}</DropdownMenuItem>{file.contentType.startsWith('image/') ? <DropdownMenuItem onSelect={() => { setError(null); setPreview(!preview) }}>{preview ? 'Close image preview' : 'Preview image'}</DropdownMenuItem> : null}</DropdownMenuContent></ActionMenu></div>
-    <ResearchFeedback error={error} />{preview && !imageUrl && !error ? <p role="status">Loading image…</p> : null}{imageUrl ? <img src={imageUrl} alt={file.fileName} className="max-h-96 max-w-full rounded-md object-contain" /> : null}
+    <ResearchFeedback error={error} />{preview && !imageUrl && !error ? <LoadingState  label={<>Loading image…</>} /> : null}{imageUrl ? <img src={imageUrl} alt={file.fileName} className="max-h-96 max-w-full rounded-md object-contain" /> : null}
   </div>
 }

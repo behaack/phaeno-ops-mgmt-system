@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import type { CrmCompanyPerson } from '#/api/crm'
@@ -60,7 +61,7 @@ export function CrmPersonAccessDialog({ organizationId, person, onClose, returnF
       </DialogHeader>
       {error ? <Alert variant="destructive"><AlertDescription>{apiErrorMessage(error)}</AlertDescription></Alert> : null}
       {feedback ? <p role="status" className="text-sm">{feedback}</p> : null}
-      {loading ? <p role="status">Loading current access…</p> : null}
+      {loading ? <LoadingState  label={<>Loading current access…</>} /> : null}
       {unavailable ? <Button variant="outline" onClick={() => void refresh()}>Retry current access</Button> : null}
       {confirmation ? <section className="space-y-3 rounded-lg border p-4" aria-label="Confirm access change">
         <p>{confirmation.description}</p><div className="flex flex-wrap gap-2"><Button ref={confirmationCancel} variant="outline" disabled={change.isPending} onClick={() => setConfirmation(null)}>Keep unchanged</Button><Button variant={confirmation.destructive ? 'destructive' : 'default'} disabled={busy} onClick={() => change.mutate(confirmation)}>{change.isPending ? 'Saving…' : confirmation.label}</Button></div>

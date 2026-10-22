@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { type CustomerLabDashboardView } from '#/api/order-management'
 import { Button } from '#/components/ui/button'
 import { cn } from '#/lib/utils'
@@ -29,7 +30,7 @@ export function CustomerDashboardMetrics({ view, onSelect, query, enabled }: {
           <span className="mt-1 block text-xs text-muted-foreground">{metric.description}</span></span>
       </button>)}
     </div>
-    {enabled && query.isPending ? <p role="status" className="text-xs text-muted-foreground">Loading dashboard totals…</p> : null}
+    {enabled && query.isPending ? <LoadingState  label={<>Loading dashboard totals…</>} /> : null}
     {enabled && query.isError ? <div role="status" className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
       Dashboard totals are temporarily unavailable.
       <Button type="button" size="sm" variant="ghost" disabled={query.isFetching} onClick={() => { void query.refetch() }}>Refresh totals</Button>

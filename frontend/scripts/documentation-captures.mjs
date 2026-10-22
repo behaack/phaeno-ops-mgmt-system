@@ -1,3 +1,4 @@
+import { guideScenarios } from './guide-scenarios.mjs'
 import fs from 'node:fs'
 import path from 'node:path'
 import { createHash } from 'node:crypto'
@@ -7,6 +8,35 @@ export const root=fileURLToPath(new URL('../',import.meta.url))
 export const manifestPath=path.join(root,'ui-gallery/documentation-captures.json')
 export const hash=value=>createHash('sha256').update(value).digest('hex')
 export const sourceFingerprint=source=>hash(source.replaceAll('\r\n','\n'))
+export function validateCaptureDimensions(bytes, metadata, url) {
+  if(bytes.readUInt16BE(0)!==0xffd8)throw new Error(`Invalid JPEG: ${url}`)
+  for(let offset=2;offset+8<bytes.length;) {
+    if(bytes[offset++]!==0xff)break
+    const marker=bytes[offset++],length=bytes.readUInt16BE(offset)
+    if([0xc0,0xc1,0xc2].includes(marker)) {
+      if(bytes.readUInt16BE(offset+3)!==metadata.height||bytes.readUInt16BE(offset+5)!==metadata.width)throw new Error(`Capture dimensions differ from the actual image: ${url}`)
+      return
+    }
+    if(length<2)break
+    offset+=length
+  }
+  throw new Error(`JPEG dimensions are unavailable: ${url}`)
+}
+export function guideScreenshots() {
+  const directory=path.join(root,'src/content/docs')
+  return fs.readdirSync(directory,{recursive:true}).filter(file=>file.endsWith('.mdx')).flatMap(file=>{
+    const parts=file.replaceAll('\\','/').split('/'),audience=parts.length===2?'phaeno':parts[1]
+    const source=fs.readFileSync(path.join(directory,file),'utf8')
+    const matches=[...source.matchAll(/!\[([^\]]+)\]\((\/docs\/[^\s)]+)(?:\s+"([^"]+)")?\)/g)]
+    const images=matches.map((match,index)=>{
+      const explanation=source.slice(match.index+match[0].length,matches[index+1]?.index).split(/\n## /)[0]
+      const prefix=audience==='phaeno'?'/docs/phaeno/screenshots/':`/docs/${audience}/${parts[0]}/screenshots/`
+      if(!match[2].startsWith(prefix))throw new Error(`Guide screenshot has the wrong audience/locale: ${file}`)
+      return {alt:match[1],url:match[2],caption:match[3],numbers:[...explanation.matchAll(/^(\d+)\. \*\*/gm)].map(n=>Number(n[1]))}
+    })
+    return images.length?[{audience,locale:audience==='phaeno'?null:parts[0],slug:path.basename(file,'.mdx'),images}]:[]
+  })
+}
 export function validateAnnotation(image, url) {
   if(!image.scenario||!Number.isInteger(image.width)||image.width<=0||!Number.isInteger(image.height)||image.height<=0||!image.targets.length||image.points.length!==image.targets.length||image.points.some((p,i)=>p.number!==i+1||!Number.isFinite(p.x)||!Number.isFinite(p.y)||p.x<0||p.x>100||p.y<0||p.y>100))throw new Error(`Invalid annotation/provenance: ${url}`)
 }
@@ -34,7 +64,7 @@ export function dependencies() {
 }
 export function checkCaptures({ allowUnreviewed = false } = {}) {
   const manifest=JSON.parse(fs.readFileSync(manifestPath,'utf8'))
-  if(manifest.schemaVersion!==1||Object.keys(manifest.images).length!==32||!allowUnreviewed&&!manifest.reviewedAt)throw new Error('Expected 32 reviewed guide captures.')
+  if(manifest.schemaVersion!==1||Object.keys(manifest.images).sort().join('|')!==guideScenarios.map(s=>s.image).sort().join('|')||!allowUnreviewed&&!manifest.reviewedAt)throw new Error('Expected one deliberately reviewed capture for every registered guide scenario.')
   const sources=dependencies()
   const metadata=JSON.parse(fs.readFileSync(path.join(root,'src/features/documentation/documentation-capture-metadata.json'),'utf8'))
   const expected=Object.fromEntries(Object.entries(manifest.images).map(([url,{width,height,points}])=>[url,{width,height,points}]))
@@ -43,18 +73,10 @@ export function checkCaptures({ allowUnreviewed = false } = {}) {
   for(const [url,image] of Object.entries(manifest.images)) {
     const file=path.join(root,'public',url)
     if(!fs.existsSync(file)||hash(fs.readFileSync(file))!==image.sha256)throw new Error(`Missing or unreviewed guide image: ${url}`)
+    validateCaptureDimensions(fs.readFileSync(file),image,url)
     validateAnnotation(image,url)
   }
-  const guideDir=path.join(root,'src/content/docs/phaeno')
-  const references=fs.readdirSync(guideDir).filter(f=>f.endsWith('.mdx')).flatMap(file=>{
-    const source=fs.readFileSync(path.join(guideDir,file),'utf8')
-    const matches=[...source.matchAll(/!\[([^\]]+)\]\((\/docs\/phaeno\/screenshots\/[^\s)]+)\s+"([^"]+)"\)/g)]
-    return matches.map((m,i)=>{
-      const explanation=source.slice(m.index+m[0].length,matches[i+1]?.index).split(/\n## /)[0]
-      const numbers=[...explanation.matchAll(/^(\d+)\. \*\*/gm)].map(n=>Number(n[1]))
-      return {alt:m[1],url:m[2],caption:m[3],numbers}
-    })
-  })
-  if(new Set(references.map(r=>r.url)).size!==32||references.some(r=>!manifest.images[r.url]||r.alt.length<20||!r.caption||r.numbers.length!==manifest.images[r.url].points.length||r.numbers.some((number,i)=>number!==i+1)))throw new Error('Every guide screenshot needs a reviewed capture, meaningful alt/caption and matching numbered explanations.')
+  const references=guideScreenshots().flatMap(guide=>guide.images)
+  if(new Set(references.map(r=>r.url)).size!==guideScenarios.length||references.some(r=>!manifest.images[r.url]||r.alt.length<20||!r.caption||r.numbers.length!==manifest.images[r.url].points.length||r.numbers.some((number,i)=>number!==i+1)))throw new Error('Every guide screenshot needs a reviewed capture, meaningful alt/caption and matching numbered explanations.')
   return manifest
 }

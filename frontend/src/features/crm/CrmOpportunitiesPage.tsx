@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { RecordTableHeader } from '#/components/ui/record-list'
 import { Field as PortalField } from '#/components/ui/field'
 import { NativeSelect } from '#/components/ui/native-select'
@@ -206,10 +207,10 @@ export function CrmOpportunitiesPage() {
             : opportunities.data ? <dl className="rounded-lg border bg-card p-3">
               <dt className="text-sm font-medium">All opportunities</dt>
               <dd className="mt-1 text-lg font-semibold tabular-nums">{opportunities.data.totalCount.toLocaleString()}</dd>
-            </dl> : <p role="status">Loading opportunity total…</p>
+            </dl> : <LoadingState  label={<>Loading opportunity total…</>} />
         ) : summary.isError ? <Alert variant="destructive"><AlertDescription>Could not load pipeline totals. <Button variant="outline" size="sm" onClick={() => void summary.refetch()}>Retry pipeline totals</Button></AlertDescription></Alert>
           : summary.data ? <CrmOpportunityStageSummary stages={summary.data} configuredStages={pipelines.data?.flatMap(pipeline => pipeline.stages)} selectedStageId={selectedStageId} showPipeline={false} onSelect={setStageId} />
-          : summary.isLoading || pipelines.isLoading ? <p role="status">Loading pipeline totals…</p>
+          : summary.isLoading || pipelines.isLoading ? <LoadingState  label={<>Loading pipeline totals…</>} />
           : <p className="text-sm text-muted-foreground">Select an active pipeline to view its opportunities.</p>}
       </section>
         <Card>
@@ -220,7 +221,7 @@ export function CrmOpportunitiesPage() {
             </CardDescription>
           </CardHeader>
           <CardContent aria-busy={opportunities.isFetching}>
-            {opportunities.isLoading ? <p role="status">Loading opportunities…</p>
+            {opportunities.isLoading ? <LoadingState  label={<>Loading opportunities…</>} />
               : opportunities.isError ? <Alert variant="destructive"><AlertDescription>Could not load opportunities. <Button variant="outline" size="sm" onClick={() => void opportunities.refetch()}>Retry opportunities</Button></AlertDescription></Alert>
               : records.length === 0 ? <p className="py-6 text-center text-sm text-muted-foreground">No opportunities match these filters.</p>
               : <>

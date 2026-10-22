@@ -1,3 +1,5 @@
+import { SectionPanel } from '#/components/ui/section-panel'
+import { LoadingState } from '#/components/ui/content-state'
 import { scanTones } from '#/features/data-provisioning/DataStatusBadge'
 import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
 import { ProvisioningStatusBadge } from './DataStatusBadge'
@@ -202,7 +204,7 @@ export function SourceSampleWorkspace({ sourceSampleId }: { sourceSampleId: stri
   }
 
   if (sourceQuery.isLoading) {
-    return <main className="page-wrap px-4 py-8"><p>Loading source revision…</p></main>
+    return <main className="page-wrap px-4 py-8"><SourceRegistryReturnLink /><PageTitle>Source revision</PageTitle><LoadingState label="Loading source revision…" /></main>
   }
 
   if (!source || sourceQuery.error) {
@@ -294,8 +296,8 @@ export function SourceSampleWorkspace({ sourceSampleId }: { sourceSampleId: stri
                   <Input disabled={!isDraft} {...form.register('provenance')} />
                 </Field>
               </div>
-              <div className="rounded-lg border p-4">
-                <h2 className="m-0 text-sm font-semibold">Phaeno ownership evidence</h2>
+              <SectionPanel as="div" heading={<h2 >Phaeno ownership evidence</h2>}>
+
                 <div className="mt-3 grid gap-4">
                   <Field label="Ownership basis" error={form.formState.errors.ownershipBasis?.message} required>
                     <textarea className={textareaClass} rows={3} disabled={!isDraft} {...form.register('ownershipBasis')} />
@@ -304,9 +306,9 @@ export function SourceSampleWorkspace({ sourceSampleId }: { sourceSampleId: stri
                     <Input disabled={!isDraft} {...form.register('ownershipEvidenceReference')} />
                   </Field>
                 </div>
-              </div>
-              <div className="rounded-lg border p-4">
-                <h2 className="m-0 text-sm font-semibold">De-identification evidence</h2>
+              </SectionPanel>
+              <SectionPanel as="div" heading={<h2 >De-identification evidence</h2>}>
+
                 <div className="mt-3 grid gap-4">
                   <Field label="Method or policy" error={form.formState.errors.deidentificationMethod?.message} required>
                     <Input disabled={!isDraft} {...form.register('deidentificationMethod')} />
@@ -315,7 +317,7 @@ export function SourceSampleWorkspace({ sourceSampleId }: { sourceSampleId: stri
                     <textarea className={textareaClass} rows={3} disabled={!isDraft} {...form.register('deidentificationNotes')} />
                   </Field>
                 </div>
-              </div>
+              </SectionPanel>
               <ErrorAlert error={saveMutation.error} fallback="The source metadata could not be saved." />
               {isDraft ? (
                 <div className="flex justify-end">

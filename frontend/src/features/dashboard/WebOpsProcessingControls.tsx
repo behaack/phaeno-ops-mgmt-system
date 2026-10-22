@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { formatDisplayTimestamp } from '#/lib/display-format'
 import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -24,7 +25,7 @@ export function WebOpsProcessingControls({ attentionOnly, onAttentionChange }: {
   const summary = query.data
   function close() { setReviewed(null); requestAnimationFrame(() => button.current?.focus()) }
   return <section className="space-y-3 border-b pb-4" aria-label="Email processing and queue status">
-    {query.isPending && <p role="status">Loading email processing status…</p>}
+    {query.isPending && <LoadingState  label={<>Loading email processing status…</>} />}
     {query.isError && <Alert variant="destructive"><AlertTitle>Email processing status is unavailable</AlertTitle><AlertDescription>
       {summary ? 'Previously loaded counts may be out of date. ' : ''}{getWebOpsErrorMessage(query.error, 'Try loading the current status again.')}
       <Button type="button" variant="outline" className="text-foreground" disabled={query.isFetching} onClick={() => void query.refetch()}>Retry processing status</Button>

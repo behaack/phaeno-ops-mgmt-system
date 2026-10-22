@@ -1,5 +1,9 @@
 # Backend Test Plan
 
+## Generated help and release-check gate — October 22, 2026
+
+The UI workflow consistency phase changes generated help content but no domain model, API, authentication or migration. The complete solution builds successfully with zero warnings/errors using isolated task output. The backend test suite was not rerun for this UI/generated-content change. Three focused Python release-gate tests cover exact workflow/source identity, newer failed/pending attempts superseding an older success, and required completed successful jobs (missing/skipped/cancelled fail closed). This is release validation, not production deployment or laboratory evidence. See [the owning plan](UI-WORKFLOW-COVERAGE-AND-GATES-PLAN.md).
+
 ## Actual HTTP replay follow-up — October 21, 2026
 
 The public authenticated hosted endpoint passes two identical replays of saved

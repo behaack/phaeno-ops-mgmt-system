@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { RecordLink } from '#/components/ui/record-link'
 import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -35,7 +36,7 @@ export function ProtocolRetirementDialog({ protocol, pending, error, onClose, on
           <DialogTitle>Retire protocol?</DialogTitle>
           <DialogDescription>Retire {protocol.name}. It will no longer be available for new use. Its versions, approvals and execution history remain available. Discard any open protocol draft first. Retirement cannot be undone here.</DialogDescription>
         </DialogHeader>
-        {impact.isFetching ? <p role="status">Checking workflows and samples in process…</p> : null}
+        {impact.isFetching ? <LoadingState  label={<>Checking workflows and samples in process…</>} /> : null}
         {impact.error ? <Alert variant="destructive"><AlertTitle>Retirement impact could not be checked</AlertTitle><AlertDescription>{getLabOperationsError(impact.error, 'Try again.')}</AlertDescription></Alert> : null}
         {impact.data?.activeWork.length ? <Alert variant="destructive"><AlertTitle>Samples are in process</AlertTitle><AlertDescription>Retirement is blocked until processing is finished on these jobs:<ul>{impact.data.activeWork.map((job) => <li key={job.id}><RecordLink asChild><Link to="/lab-operations/$workOrderId" params={{ workOrderId: job.id }} search={{ section: undefined }} >{job.reference}</Link></RecordLink></li>)}</ul></AlertDescription></Alert> : null}
         {impact.data?.workflows.length ? <Alert><AlertTitle>Affected workflows will become invalid</AlertTitle><AlertDescription>The protocol will be removed from new workflow revisions. Review and approve those revisions before putting them back into production.<ul>{impact.data.workflows.map((name) => <li key={name}>{name}</li>)}</ul></AlertDescription></Alert> : null}

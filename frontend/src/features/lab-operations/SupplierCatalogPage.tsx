@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { Field as PortalField } from '#/components/ui/field'
 import { NativeCheckbox } from '#/components/ui/native-checkbox'
 import { RecordLink } from '#/components/ui/record-link'
@@ -35,7 +36,7 @@ export function SupplierCatalogPage({ supplierId, tab, onTabChange }: { supplier
   const selectedTab = tab ?? localTab
   if (!allowed) return <p>Supplier and product management requires a Phaeno platform administrator.</p>
   if (authProvider === 'mock') return <p>Use a connected Phaeno session to manage suppliers and products.</p>
-  if (query.isPending) return <p role="status">Loading suppliers and products…</p>
+  if (query.isPending) return <LoadingState  label={<>Loading suppliers and products…</>} />
   if (query.isError && !query.data) return <div className="space-y-3"><p role="alert">{getLabOperationsError(query.error, 'The catalog could not be loaded.')}</p><Button onClick={() => void query.refetch()}>Try again</Button></div>
   const data = query.data ?? []
   const supplier = supplierId ? data.find(item => item.id === supplierId) : undefined

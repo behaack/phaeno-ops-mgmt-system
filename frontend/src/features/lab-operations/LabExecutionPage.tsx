@@ -1,3 +1,4 @@
+import { LoadingState, EmptyState } from '#/components/ui/content-state'
 import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
 import { executionTones } from '#/features/lab-operations/lab-status'
 import { formatDisplayTimestamp } from '#/lib/display-format'
@@ -63,7 +64,7 @@ export function LabExecutionPage({ executionId, returnSection, returnShipmentId,
     onError: recover,
   })
   if (!canView || authProvider === 'mock') return <main className="page-wrap p-6"><Alert><AlertTitle>Connected laboratory session required</AlertTitle><AlertDescription>Open this execution with an authorized Phaeno laboratory account.</AlertDescription></Alert></main>
-  if (execution.isLoading) return <main className="page-wrap p-6"><p role="status">Loading protocol execution…</p></main>
+  if (execution.isLoading) return <main className="page-wrap p-6"><LoadingState  label={<>Loading protocol execution…</>} /></main>
   if (!execution.data) return <main className="page-wrap p-6"><Alert variant="destructive"><AlertTitle>Execution could not be loaded</AlertTitle><AlertDescription>{getLabOperationsError(execution.error, 'Reload the execution and try again.')}</AlertDescription></Alert><Button className="mt-4" onClick={() => void execution.refetch()}>Reload execution</Button></main>
   const returnToSpecimen = Boolean(returnSpecimenId && returnSpecimenId === execution.data.execution.labSpecimenId)
   const error = record.error ?? transition.error
@@ -141,7 +142,7 @@ export function LabExecutionWorkspace({ data, returnLink, reviewTubesLink, speci
         })}
       </ol>
     </section>
-    <section className="space-y-3" aria-labelledby="execution-resources"><h2 id="execution-resources" className="text-lg font-semibold">Recorded material and equipment use</h2><p className="text-sm text-muted-foreground">{data.preparationBatchId ? 'Material and equipment use is recorded in the preparation batch and retained here for review.' : 'Use Material and Equipment on the laboratory job to record lot quantities, output containers, and equipment use before confirming resources.'}</p>{[...data.materialUse, ...data.equipmentUse].map(resource => <p key={resource.id} className="text-sm"><strong>{resource.name}</strong> · {resource.details} · {formatTime(resource.recordedAtUtc)}</p>)}{data.materialUse.length + data.equipmentUse.length === 0 ? <p className="text-sm text-muted-foreground">No material or equipment use has been recorded.</p> : null}</section>
+    <section className="space-y-3" aria-labelledby="execution-resources"><h2 id="execution-resources" className="text-lg font-semibold">Recorded material and equipment use</h2><p className="text-sm text-muted-foreground">{data.preparationBatchId ? 'Material and equipment use is recorded in the preparation batch and retained here for review.' : 'Use Material and Equipment on the laboratory job to record lot quantities, output containers, and equipment use before confirming resources.'}</p>{[...data.materialUse, ...data.equipmentUse].map(resource => <p key={resource.id} className="text-sm"><strong>{resource.name}</strong> · {resource.details} · {formatTime(resource.recordedAtUtc)}</p>)}{data.materialUse.length + data.equipmentUse.length === 0 ? <EmptyState  kind="empty" title={<>No material or equipment use has been recorded.</>} /> : null}</section>
     {data.recoveryMessage ? <details><summary className="cursor-pointer text-sm font-medium">Preserved historical results</summary><pre className="mt-2 max-h-80 overflow-auto whitespace-pre-wrap break-all rounded-lg bg-muted p-3 text-xs">{data.execution.capturedResultsJson}</pre></details> : null}
     {target && selected ? <ExecutionStepDialog key={`${target.key}-${target.action}`} step={selected} action={target.action} version={data.execution.version} pending={pending} error={error} onClose={() => setTarget(null)} onSave={onRecord} onReturnFocus={returnFocus} /> : null}
     {confirmStart ? <ExecutionStartDialog barcode={data.sourceBarcode!} pending={pending} error={error} onClose={() => setConfirmStart(false)} onReturnFocus={returnFocus} onSave={async barcode => { await onTransition('start', undefined, barcode); setConfirmStart(false) }} /> : null}

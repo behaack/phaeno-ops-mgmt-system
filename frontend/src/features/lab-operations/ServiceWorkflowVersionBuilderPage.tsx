@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { ProcedurePresentation } from './ProcedurePresentation'
 import { deserializeProtocolDefinition, serializeProtocolDefinition, type ProtocolDefinition } from './protocol-definition'
 import { Field as FieldContainer } from '#/components/ui/field'
@@ -122,7 +123,7 @@ export function ServiceWorkflowVersionBuilderPage({ workflowId, draftVersionId }
   const leave = () => navigate({ to: '/lab-configuration', search: { ...discovery, configurationTab: 'workflows' } })
   if (!canManage) return <PageAlert title="Workflow authoring unavailable" message="An active Protocol Administrator role is required." destructive />
   if (authProvider === 'mock') return <PageAlert title="Workflow authoring is paused" message="Connect a real Phaeno session to create a controlled workflow version." />
-  if (dashboard.isLoading) return <main className="space-y-4"><p role="status">Loading service workflow…</p></main>
+  if (dashboard.isLoading) return <main className="space-y-4"><LoadingState  label={<>Loading service workflow…</>} /></main>
   if (dashboard.error || !workflow) return <PageAlert title="Service workflow could not be loaded" message={getLabOperationsError(dashboard.error, 'Return to Workflows and try again.')} destructive />
   if (draftVersionId && (!draft || !['Draft', 'Invalid'].includes(draft.status))) return <PageAlert title="This workflow version cannot be edited" message="Only the current Draft version can be changed." destructive />
   if (!draftVersionId && openCandidate) return <PageAlert title="A workflow candidate is already open" message="Continue, promote, withdraw, or discard the existing candidate first." destructive />

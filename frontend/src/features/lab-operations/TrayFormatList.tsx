@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { useState } from 'react'
 import { Plus } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
@@ -12,7 +13,7 @@ export function TrayFormatList() {
   const query = useQuery({ queryKey: ['lab-preparation'], queryFn: () => getPreparationIndex() })
   const [dialog, setDialog] = useState<'create' | TrayFormat | null>(null)
 
-  if (query.isPending) return <p role="status">Loading library tray formats…</p>
+  if (query.isPending) return <LoadingState  label={<>Loading library tray formats…</>} />
   if (query.isError) return <div className="space-y-3"><p role="alert">{getLabOperationsError(query.error, 'Library tray formats could not be loaded.')}</p><Button variant="outline" onClick={() => void query.refetch()}>Reload library tray formats</Button></div>
 
   const { formats, canConfigure } = query.data

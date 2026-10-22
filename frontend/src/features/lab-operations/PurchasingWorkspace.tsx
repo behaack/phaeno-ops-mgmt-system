@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { PageTitle } from '#/components/ui/page-header'
 import { useState, type ReactNode } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -55,7 +56,7 @@ function PurchasedMaterialsSection() {
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['lab-operations'] })
   return <>
     {authProvider === 'mock' ? <p>Use a connected Phaeno session to manage material lots.</p> : query.isError ? <Alert variant="destructive"><AlertTitle>Purchased materials could not be loaded</AlertTitle><AlertDescription>{getLabOperationsError(query.error, 'Refresh the page and try again.')}</AlertDescription></Alert> : null}
-    {enabled && query.isPending ? <p role="status">Loading material lots…</p> : query.data ? <>
+    {enabled && query.isPending ? <LoadingState  label={<>Loading material lots…</>} /> : query.data ? <>
       <div className="flex justify-end"><Button type="button" variant="outline" disabled={query.isFetching} onClick={() => void refresh()}><RefreshCw data-icon="inline-start" /> Refresh</Button></div>
       <MaterialList items={query.data.materialLots} canManage={Boolean(session?.capabilities.canOperateLabWork)} canApprove={Boolean(session?.capabilities.canSuperviseLabWork)} onCreate={() => setCreating(true)} refresh={refresh} />
       <MaterialLotCreateDialog open={creating} definitions={query.data.materialDefinitions} suppliers={query.data.suppliers} storageLocations={query.data.storageLocations} materialLots={query.data.materialLots} onOpenChange={setCreating} onSaved={async () => { setCreating(false); await refresh() }} />

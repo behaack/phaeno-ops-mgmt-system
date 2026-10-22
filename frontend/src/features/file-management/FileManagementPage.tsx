@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { FieldError } from '#/components/ui/field'
 import { formatDisplayTimestamp } from '#/lib/display-format'
 import { Field as PortalField } from '#/components/ui/field'
@@ -145,7 +146,7 @@ export function FileRetentionPanel() {
           <AlertDescription>Existing released packages keep their previously snapshotted deadlines.</AlertDescription>
         </Alert>
       ) : null}
-      {query.isLoading ? <p role="status">Loading file-management configuration…</p> : null}
+      {query.isLoading ? <LoadingState  label={<>Loading file-management configuration…</>} /> : null}
 
       {configuration ? (
         <>

@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { ProcedureIllustration } from '#/features/lab-operations/ProcedureIllustrations'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -166,7 +167,7 @@ export function RecordKitPackedContentsDialog({ kit, assembly, writesBlocked, pr
         return quantity > 0 ? [{ supplierProductId: component.supplierProductId, quantity, sourceMaterialLotId: value.sourceMaterialLotId || null }] : []
       }) }, { onSettled: () => { submitting.current = false; intent.current = 'save' } })
     }, () => { intent.current = 'save' })}>
-      {inventory.isFetching || assembly.query.isFetching ? <p role="status" className="text-sm"><CustomerSourceText source={"Checking current quantities and component inventory…"} /></p> : null}
+      {inventory.isFetching || assembly.query.isFetching ? <LoadingState  label={<><CustomerSourceText source={"Checking current quantities and component inventory…"} /></>} /> : null}
       {assembly.run!.steps.map((step, instructionIndex) => <section key={step.stepKey} aria-labelledby={`kit-packing-instructions-${instructionIndex}`} className="space-y-2 border-b pb-4">
         <h3 id={`kit-packing-instructions-${instructionIndex}`} className="text-sm font-medium"><CustomerSourceText source={"Assembly instructions"} /></h3>
         <p className="text-sm font-medium wrap-anywhere">{instructionIndex + 1}. {step.name}</p>

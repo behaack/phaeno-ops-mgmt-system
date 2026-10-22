@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
 import { workflowTones } from '#/features/lab-operations/lab-status'
 import { RequiredLegend } from '#/components/ui/required-field'
@@ -61,7 +62,7 @@ export function KitAssemblyWorkflowSettings({ canManage, actorId, isPlatformAdmi
     && (!needle || workflow.name.toLocaleLowerCase().includes(needle)))
   return <>
     <Card className="gap-0 py-0"><CardHeader ><CardTitle>Transportation kit workflows</CardTitle><CardDescription>Reusable assembly procedures approved as a whole. Each Kit specification selects its method and defines its own required contents.</CardDescription>{canManage ? <CardAction><Button type="button" disabled={query.isPending || query.isError} onClick={() => setEditor('new')}><Plus data-icon="inline-start" /> New workflow</Button></CardAction> : null}<div className="col-span-full"><WorkflowListFilters id="kit-workflow" search={search} onSearchChange={setSearch} showInactive={showInactive} onShowInactiveChange={setShowInactive} /></div></CardHeader><CardContent className="space-y-3 p-4">
-      {query.isPending ? <p role="status">Loading kit workflows…</p> : null}
+      {query.isPending ? <LoadingState  label={<>Loading kit workflows…</>} /> : null}
       {query.error ? <Alert variant="destructive"><AlertTitle>Kit workflows unavailable</AlertTitle><AlertDescription>{getLabOperationsError(query.error, 'Refresh and try again.')} <Button variant="outline" onClick={() => void query.refetch()}>Retry</Button></AlertDescription></Alert> : null}
       {visibleWorkflows.length ? <ul className="divide-y" aria-label="Transportation kit workflows">
         {visibleWorkflows.map(workflow => {

@@ -51,9 +51,13 @@ fi
 [[ "${RELEASE_DIR}" == "${DEPLOY_ROOT}/releases/"* ]] \
     || fail "The release must be under ${DEPLOY_ROOT}/releases."
 
-for command in curl docker flock grep openssl realpath seq sha256sum shred stat; do
+for command in curl docker flock grep openssl python3 realpath seq sha256sum shred stat; do
     require_command "${command}"
 done
+
+# Refuse activation before any runtime mutation unless the exact source passed
+# all required UI checks. This also covers the bounded direct-host release path.
+python3 "${SCRIPT_DIR}/verify-ui-quality.py" "${SOURCE_REVISION}"
 
 for path in "${COMPOSE_FILE}" "${COMPOSE_ENV}" "${DATABASE_ENV}" "${PORTAL_ENV}"; do
     [[ -f "${path}" ]] || fail "Required deployment file '${path}' is missing."

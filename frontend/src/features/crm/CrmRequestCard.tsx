@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
 import { relationshipTones } from '#/features/crm/crm-status'
 import { RecordLink } from '#/components/ui/record-link'
@@ -106,7 +107,7 @@ export function CrmRequestCard({ request, isPending, onAction, onRecover }: {
         {work.isError ? <div role="alert" className="space-y-2 text-sm">
           <p>Could not verify current progress. Completion is unavailable until the latest requirements can be checked.</p>
           <Button variant="outline" size="sm" onClick={() => { void work.refetch() }}>Retry progress</Button>
-        </div> : work.isPending ? <p role="status" className="text-sm text-muted-foreground">Checking saved progress…</p> : (
+        </div> : work.isPending ? <LoadingState  label={<>Checking saved progress…</>} /> : (
           <ol className="space-y-3">
             {work.steps.map(step => {
               const Icon = step.status === 'done' ? Check : step.status === 'waiting' ? Clock : step.status === 'review' ? ClipboardList : Circle

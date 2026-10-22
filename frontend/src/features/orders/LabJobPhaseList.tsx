@@ -1,3 +1,4 @@
+import { EmptyState } from '#/components/ui/content-state'
 import { formatDisplayTimestamp } from '#/lib/display-format'
 import { RecordLink } from '#/components/ui/record-link'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
@@ -111,5 +112,5 @@ function PhaseShipments({ shipments, ready, single = false }: { shipments: Sampl
     <div className="flex flex-wrap justify-between gap-2"><span className="wrap-anywhere"><RecordLink asChild><Link to="/sample-shipping/$shipmentId" params={{ shipmentId: shipment.id }} >{shipment.shipmentNumber}</Link></RecordLink></span><span>{humanizeStatus(shipment.status)}</span></div>
     <p className="text-muted-foreground wrap-anywhere">{shipment.carrier || 'Carrier not recorded'}{shipment.trackingNumber ? __customerText('m_a202b2edcefc', { p0: String(shipment.trackingNumber) }) : ''} · {shipment.destinationName}</p>
     <p className="text-muted-foreground">{shipment.shippedAt ? __customerText('m_75c2977ea865', { p0: String(formatDisplayTimestamp(shipment.shippedAt, { seconds: true })) }) : __customerText('m_43f09128ac06')}{shipment.receivedTubeCount !== undefined && shipment.expectedTubeCount !== undefined ? __customerText('m_0b2ff1cd5bc8', { p0: String(shipment.receivedTubeCount), p1: String(shipment.expectedTubeCount) }) : ''}</p>
-  </li>)}</ul> : <p className="mt-1 text-sm text-muted-foreground">{single ? <CustomerSourceText source={"No sample shipments recorded yet."} /> : __customerText('m_805798fb03e6')}</p>}</div>
+  </li>)}</ul> : <EmptyState  kind="empty" title={<>{single ? <CustomerSourceText source={"No sample shipments recorded yet."} /> : __customerText('m_805798fb03e6')}</>} />}</div>
 }

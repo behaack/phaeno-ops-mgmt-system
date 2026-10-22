@@ -1,3 +1,4 @@
+import { SectionPanel } from '#/components/ui/section-panel'
 import { DisplayTimestamp } from '#/components/ui/display-value'
 import { RecordLink } from '#/components/ui/record-link'
 import { labAmount } from './lab-presentation'
@@ -8,8 +9,8 @@ import { Button } from '#/components/ui/button'
 
 export function SequencingTubePairs({ members, canPrint, onPrint }: { members: SequencingTubeMember[]; canPrint: boolean; onPrint: (container: LabContainer) => void }) {
   if (!members.length) return null
-  return <section className="overflow-hidden rounded-md border" aria-label="Library and sequencing tube pairs">
-    <h3 className="bg-muted/50 px-4 py-3 font-semibold">Tube pairs</h3>
+  return <SectionPanel aria-label="Library and sequencing tube pairs" className="overflow-hidden" heading={<h3 >Tube pairs</h3>}>
+
     <ol className="divide-y border-t">{members.map(item => <li key={item.id} className="space-y-2 px-4 py-3 text-sm">
       <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0">
         <p className="break-all font-medium"><RecordLink asChild><Link to="/lab-operations/$workOrderId/containers/$containerId" params={{ workOrderId: item.labWorkOrderId, containerId: item.source.id }} search={{ section: 'work' }}>{item.source.barcode}</Link></RecordLink>{' → '}{item.sequencingTube ? <RecordLink asChild><Link to="/lab-operations/$workOrderId/containers/$containerId" params={{ workOrderId: item.labWorkOrderId, containerId: item.sequencingTube.id }} search={{ section: 'work' }}>{item.sequencingTube.barcode}</Link></RecordLink> : <span className="font-normal text-muted-foreground">Sequencing tube pending</span>}</p>
@@ -22,5 +23,5 @@ export function SequencingTubePairs({ members, canPrint, onPrint }: { members: S
         <div className="sm:col-span-3"><dt className="text-xs text-muted-foreground">Performed / recorded</dt><dd>{<DisplayTimestamp value={item.transfer.performedAtUtc} seconds />} / {<DisplayTimestamp value={item.transfer.recordedAtUtc} seconds />}</dd></div>
       </dl> : null}
     </li>)}</ol>
-  </section>
+  </SectionPanel>
 }

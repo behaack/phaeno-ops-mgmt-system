@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { DisplayDate } from '#/components/ui/display-value'
 import { FieldError } from '#/components/ui/field'
 import { Field as PortalField } from '#/components/ui/field'
@@ -133,7 +134,7 @@ export function ServiceRequestEntitlementsDialog({ request, mode, error, isPendi
           if (departments.error) void departments.refetch()
         }}>Retry loading</Button> : null}
       </AlertDescription></Alert> : null}
-      {busy && organizationId && !entitlements.error && !departments.error ? <p role="status" className="text-sm text-muted-foreground">Loading current service permissions and Departments…</p> : null}
+      {busy && organizationId && !entitlements.error && !departments.error ? <LoadingState  label={<>Loading current service permissions and Departments…</>} /> : null}
       {!busy ? <form id="service-request-entitlements" className="space-y-5" noValidate onSubmit={form.handleSubmit(values => {
         onSubmit({
           approvalNote: values.approvalNote,
