@@ -9,6 +9,19 @@ out. The source/actor matrix below remains the representative operational
 acceptance contract; deployment does not close that complete acceptance matrix.
 Owning review: [System gap closure](SYSTEM-GAP-CLOSURE-PLAN.md), GAP-06.
 
+## October 22 notification badge alignment
+
+Owner-authorized presentation refinement: attach the badge to the bell's
+upper-right corner rather than the outer button edge. `WorkBellButton` is a
+pure presentation component shared by the live work bell and isolated gallery.
+At the standard 20 px icon/44 px button size, the numeric badge moves 4 px left
+and down and remains inside the click target. One/two-digit, `99+`, zero and
+unavailable examples retain the full localized accessible count, live summary,
+dialog activation and focus return. Counts, permissions and work-feed behavior
+are unchanged. This visual adjustment requires no new help instructions.
+Focused browser verification and results are recorded in the
+[UI pattern plan](UI-PATTERN-COMPLETENESS-PLAN.md).
+
 ## October 12 final review repair scope
 
 Authorized under REVIEW-01/02/03/09 in the

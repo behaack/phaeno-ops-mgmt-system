@@ -1,3 +1,6 @@
+import { formatDisplayTimestamp } from '#/lib/display-format'
+import { Field as PortalField } from '#/components/ui/field'
+import { PageTitle } from '#/components/ui/page-header'
 import { confirmPortal } from '#/components/PortalConfirmation'
 import { Link } from '@tanstack/react-router'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -108,7 +111,7 @@ export function FileRetentionPanel() {
     <section aria-label="File retention" className="space-y-6">
       <section className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-3xl font-semibold">File retention policies</h1>
+          <PageTitle>File retention policies</PageTitle>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
             Control the retention schedule applied to future released result and output packages.
           </p>
@@ -251,9 +254,7 @@ function NumberField({ form, label, name }: {
 }) {
   const error = form.formState.errors[name]
   const id = `global-policy-${name}`
-  return <div><Label htmlFor={id}><RequiredFieldName>{label}</RequiredFieldName></Label><Input id={id} type="number" min={1} step={1} className="mt-2" required aria-invalid={Boolean(error)} aria-describedby={error ? `${id}-error` : undefined} {...form.register(name, { valueAsNumber: true })} />{error ? <p id={`${id}-error`} role="alert" className="mt-1 text-sm text-destructive">{error.message}</p> : null}</div>
+  return <PortalField><Label htmlFor={id}><RequiredFieldName>{label}</RequiredFieldName></Label><Input id={id} type="number" min={1} step={1}  required aria-invalid={Boolean(error)} aria-describedby={error ? `${id}-error` : undefined} {...form.register(name, { valueAsNumber: true })} />{error ? <p id={`${id}-error`} role="alert" className="mt-1 text-sm text-destructive">{error.message}</p> : null}</PortalField>
 }
 
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
-}
+function formatDateTime(value: string) { return formatDisplayTimestamp(value) }

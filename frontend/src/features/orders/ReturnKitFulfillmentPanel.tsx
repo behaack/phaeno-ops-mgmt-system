@@ -1,3 +1,4 @@
+import { RecordLink } from '#/components/ui/record-link'
 import { CustomerSourceText, useCustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { Link, useNavigate, useSearch } from '@tanstack/react-router'
@@ -76,7 +77,7 @@ export function ReturnKitFulfillmentPanel({ apiEnabled, shipmentId, showEmpty = 
         <table className="w-full min-w-[660px] text-left text-sm">
           <thead className="border-b bg-muted text-foreground"><tr><th className="px-2 py-3 font-medium"><CustomerSourceText source={"Shipment"} /></th><th className="px-2 py-3 font-medium"><CustomerSourceText source={"Organization"} /></th><th className="px-2 py-3 font-medium"><CustomerSourceText source={"Kit"} /></th><th className="px-2 py-3 font-medium"><CustomerSourceText source={"Registered tubes"} /></th><th className="px-2 py-3 font-medium"><CustomerSourceText source={"Fulfillment date"} /></th><th className="px-2 py-3 font-medium"><span className="sr-only"><CustomerSourceText source={"Actions"} /></span></th></tr></thead>
           <tbody>{shipments.map(shipment => <tr key={shipment.id} className="border-b bg-muted/20 last:border-0">
-            <td className="px-2 py-3"><Link to="/lab-operations/$workOrderId" params={{ workOrderId: shipment.labWorkOrderId }} search={{ ...currentSearch, section: 'kit-requests', receiptTab: undefined, kitQueue: 'sent' }} className="font-medium text-primary underline">{shipment.shipmentNumber}</Link><p className="mt-1 text-xs text-muted-foreground">{shipment.authorizationReference}</p></td>
+            <td className="px-2 py-3"><RecordLink asChild><Link to="/lab-operations/$workOrderId" params={{ workOrderId: shipment.labWorkOrderId }} search={{ ...currentSearch, section: 'kit-requests', receiptTab: undefined, kitQueue: 'sent' }} >{shipment.shipmentNumber}</Link></RecordLink><p className="mt-1 text-xs text-muted-foreground">{shipment.authorizationReference}</p></td>
             <td className="px-2 py-3">{shipment.organizationName}</td>
             <td className="px-2 py-3"><span className="font-mono">{shipment.returnKit!.kitNumber}</span><p className="mt-1"><Badge variant="outline">{humanize(shipment.returnKit!.status)}</Badge></p></td>
             <td className="px-2 py-3">{shipment.returnKit!.tubes.length + ' of ' + shipment.returnKit!.requiredTubeCount}</td>

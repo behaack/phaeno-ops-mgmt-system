@@ -1,3 +1,4 @@
+import { Field as PortalField } from '#/components/ui/field'
 import { NativeSelect } from '#/components/ui/native-select'
 import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
@@ -456,7 +457,7 @@ function MembershipRoleDialog({
           className="grid gap-4"
           onSubmit={form.handleSubmit(onSubmit)}
         >
-          <div className="grid gap-1.5">
+          <PortalField >
             <Label htmlFor="organization-user-name"><CustomerText message="m_dcd1d5223f73" /></Label>
             <Input
               id="organization-user-name"
@@ -467,29 +468,29 @@ function MembershipRoleDialog({
               }
               disabled
             />
-          </div>
-          <div className="grid gap-1.5">
+          </PortalField>
+          <PortalField >
             <Label htmlFor="organization-user-email"><CustomerText message="m_969ccbd3cf63" /></Label>
             <Input
               id="organization-user-email"
               value={target?.user.email ?? ''}
               disabled
             />
-          </div>
-          <div className="grid gap-1.5">
+          </PortalField>
+          <PortalField >
             <Label htmlFor="organization-user-role">
               <RequiredFieldName><CustomerText message="m_14736a2eb9f4" /></RequiredFieldName>
             </Label>
             <NativeSelect
               id="organization-user-role"
-              className="cursor-pointer rounded-lg border border-input bg-background px-3 text-sm"
+
               {...form.register('role')}
             >
               <option value="Member"><CustomerText message="m_7c968fb71f50" /></option>
               <option value="Administrator">
                 <CustomerText message="m_211d58cbb46a" /></option>
             </NativeSelect>
-          </div>
+          </PortalField>
         </form>
         <RequiredDialogFooter>
           <Button

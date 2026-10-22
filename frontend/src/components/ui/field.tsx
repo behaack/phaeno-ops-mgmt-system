@@ -23,15 +23,16 @@ function FieldDescription({
 function FieldError({
   children,
   className,
+  reserveSpace = false,
   ...props
-}: React.ComponentProps<'p'>) {
+}: React.ComponentProps<'p'> & { reserveSpace?: boolean }) {
   const translate = useCustomerSourceText()
-  if (!children) return null
+  if (!children) return reserveSpace ? <span aria-hidden="true" data-slot="field-error" className="mt-1 block min-h-4" /> : null
 
   return (
     <p
       data-slot="field-error"
-      className={cn('mt-1 text-xs text-destructive', className)}
+      className={cn('mt-1 text-xs text-destructive', reserveSpace && 'min-h-4', className)}
       role="alert"
       {...props}
     >

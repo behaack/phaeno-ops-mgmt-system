@@ -369,9 +369,9 @@
       "locale": "en-US",
       "slug": "data-library",
       "title": "Use the Data Library",
-      "summary": "Review explicitly granted package versions and verify file or archive downloads.",
+      "summary": "Review explicitly granted package versions and verify file or archive downloads. Includes binary file-size units.",
       "order": 30,
-      "reviewedAt": "2026-10-11",
+      "reviewedAt": "2026-10-22",
       "navigationGroup": "data-access",
       "contentType": "guide",
       "topicIds": [
@@ -653,9 +653,9 @@
       "locale": "en-US",
       "slug": "data-and-organization",
       "title": "Data Library and organization access",
-      "summary": "Distinguish Job results from curated data, manage organization access, and track transportation kits at delivery locations.",
+      "summary": "Distinguish Job results from curated data, manage organization access, and track transportation kits at delivery locations. Includes binary file-size units.",
       "order": 50,
-      "reviewedAt": "2026-10-11",
+      "reviewedAt": "2026-10-22",
       "navigationGroup": "data-and-access",
       "contentType": "guide",
       "topicIds": [
@@ -824,9 +824,9 @@
       "locale": "en-US",
       "slug": "data-and-organization",
       "title": "Data Library, billing, and organization access",
-      "summary": "Use curated data, understand commercial records, and manage Partner membership.",
+      "summary": "Use curated data, understand commercial records, and manage Partner membership. Includes binary file-size units.",
       "order": 50,
-      "reviewedAt": "2026-10-11",
+      "reviewedAt": "2026-10-22",
       "navigationGroup": "data-and-access",
       "contentType": "guide",
       "topicIds": [
@@ -1188,7 +1188,7 @@
       "title": "Data provisioning",
       "summary": "Manage Phaeno-owned sources, immutable packages, exact-version grants, and governance events.",
       "order": 30,
-      "reviewedAt": "2026-10-11",
+      "reviewedAt": "2026-10-22",
       "navigationGroup": "data-provisioning",
       "contentType": "overview",
       "topicIds": [
@@ -1362,7 +1362,7 @@
       "title": "Order operations",
       "summary": "Use grouped Lab services and Partner services sections in Order Ops, with Dashboard attention, Finance and laboratory release in their owning workspaces.",
       "order": 40,
-      "reviewedAt": "2026-10-17",
+      "reviewedAt": "2026-10-22",
       "navigationGroup": "order-operations",
       "contentType": "overview",
       "topicIds": [
@@ -1585,7 +1585,7 @@
       "title": "Laboratory operations",
       "summary": "Find laboratory work, receive purchased kits and stock, assemble Phaeno kits and reagents, record scientific evidence, and trace result delivery.",
       "order": 50,
-      "reviewedAt": "2026-10-11",
+      "reviewedAt": "2026-10-22",
       "navigationGroup": "laboratory-operations",
       "contentType": "overview",
       "topicIds": [
@@ -1616,7 +1616,7 @@
       "title": "Sample receipt and accession",
       "summary": "Fulfill kits, receive shipments, accession tubes into freezer boxes, and find recorded samples by identity, location, intake status or sample use.",
       "order": 51,
-      "reviewedAt": "2026-10-10",
+      "reviewedAt": "2026-10-22",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1661,7 +1661,7 @@
       "title": "Service workflows, protocol control, and execution",
       "summary": "Author, review and present complete laboratory procedures; control exact revisions and record scientific execution.",
       "order": 54,
-      "reviewedAt": "2026-10-15",
+      "reviewedAt": "2026-10-22",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1696,7 +1696,7 @@
       "title": "Materials and equipment",
       "summary": "Receive purchased lots, configure Phaeno reagent products and manufacture their lots, qualify stock, and track consumption and storage.",
       "order": 55,
-      "reviewedAt": "2026-10-11",
+      "reviewedAt": "2026-10-22",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -2083,7 +2083,7 @@
       "summary": "Create shared research projects and experiments, capture flexible notes, tables and files, review history, and repeat an experiment setup.",
       "navigationGroup": "research",
       "order": 59,
-      "reviewedAt": "2026-10-17",
+      "reviewedAt": "2026-10-22",
       "contentType": "guide",
       "topicIds": [
         "research"

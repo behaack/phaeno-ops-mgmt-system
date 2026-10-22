@@ -1,3 +1,4 @@
+import { RecordLink } from '#/components/ui/record-link'
 import { Link } from '@tanstack/react-router'
 import { Check, ChevronDown, Circle, Clock, ClipboardList } from 'lucide-react'
 import type { RelationshipRequest } from '#/api/organization-management'
@@ -39,11 +40,11 @@ export function CrmRequestCard({ request, isPending, onAction, onRecover }: {
         <div className="min-w-0 space-y-1">
           <div className="flex flex-wrap items-center gap-2">
             {request.companyId ? (
-              <Link to="/crm/companies/$companyId" params={{ companyId: request.companyId }}
+              <span className="break-words"><RecordLink asChild><Link to="/crm/companies/$companyId" params={{ companyId: request.companyId }}
                 search={previous => ({ ...previous, section: 'requests' })}
-                className="cursor-pointer break-words font-medium underline-offset-4 hover:underline focus-visible:rounded-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none">
+                >
                 {request.candidateOrganizationName}
-              </Link>
+              </Link></RecordLink></span>
             ) : <span className="break-words font-medium">{request.candidateOrganizationName}</span>}
             <Badge variant="outline" className="h-auto min-h-5 max-w-full break-all whitespace-normal">{request.requestNumber}</Badge>
             <Badge variant={approved ? 'secondary' : 'outline'}>{request.status === 'PendingReview' ? 'Pending review' : request.status === 'Applied' ? 'Completed' : waitingForAcceptance ? 'Waiting for acceptance' : request.status}</Badge>
@@ -125,12 +126,12 @@ export function CrmRequestCard({ request, isPending, onAction, onRecover }: {
                       {step.instructions?.length ? <ol className="list-decimal space-y-1 pl-5">
                         {step.instructions.map(instruction => <li key={instruction}>{instruction}</li>)}
                       </ol> : null}
-                      {step.catalogItem ? <Link to="/order-configuration/catalog/$catalogItemId"
+                      {step.catalogItem ? <span className="inline-block"><RecordLink asChild><Link to="/order-configuration/catalog/$catalogItemId"
                         params={{ catalogItemId: step.catalogItem.id }} search={{ configurationSection: 'catalog' }}
                         target="_blank" rel="noopener noreferrer"
-                        className="inline-block cursor-pointer rounded-sm text-primary underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                        >
                         Review {step.catalogItem.name} (opens in a new tab)
-                      </Link> : null}
+                      </Link></RecordLink></span> : null}
                     </div>
                   </details>
                 </div>

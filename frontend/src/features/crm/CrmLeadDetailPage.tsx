@@ -1,3 +1,7 @@
+import { RequiredLegend } from '#/components/ui/required-field'
+import { RequiredFieldName } from '#/components/ui/required-field'
+import { Field as PortalField } from '#/components/ui/field'
+import { PageTitle } from '#/components/ui/page-header'
 import { BackLink } from '#/components/ui/back-link'
 import { NativeSelect } from '#/components/ui/native-select'
 import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
@@ -131,7 +135,7 @@ export function CrmLeadDetailPage({ leadId }: { leadId: string }) {
             <Badge variant="secondary">{lead.kind} lead</Badge>
             <Badge variant="outline">{lead.status}</Badge>
           </div>
-          <h1 className="text-3xl font-semibold">{lead.displayName}</h1>
+          <PageTitle>{lead.displayName}</PageTitle>
           <p className="mt-2 text-sm text-muted-foreground">
             {lead.companyName ?? "No company recorded"} · owned by{" "}
             {lead.ownerName}
@@ -220,8 +224,7 @@ export function CrmLeadDetailPage({ leadId }: { leadId: string }) {
             {lead.convertedCompanyId ? (
               <div className="flex flex-wrap gap-2">
                 <Button asChild size="sm" variant="outline">
-                  <Link
-                    to="/crm/companies/$companyId"
+                  <Link to="/crm/companies/$companyId"
                     params={{ companyId: lead.convertedCompanyId }}
                   >
                     Open Company
@@ -229,8 +232,7 @@ export function CrmLeadDetailPage({ leadId }: { leadId: string }) {
                 </Button>
                 {lead.convertedOpportunityId ? (
                   <Button asChild size="sm" variant="outline">
-                    <Link
-                      to="/crm/opportunities/$opportunityId"
+                    <Link to="/crm/opportunities/$opportunityId"
                       params={{ opportunityId: lead.convertedOpportunityId }}
                     >
                       Open Opportunity
@@ -317,14 +319,12 @@ function DecisionDialog({
               <AlertDescription>{apiErrorMessage(error)}</AlertDescription>
             </Alert>
           ) : null}
-          <div className="grid gap-1.5">
-            <Label htmlFor="lead-decision">Explanation *</Label>
+          <PortalField >
+            <Label htmlFor="lead-decision"><RequiredFieldName>Explanation</RequiredFieldName></Label>
             <Textarea id="lead-decision" name="explanation" required rows={5} />
-          </div>
+          </PortalField>
           <DialogFooter>
-            <span className="mr-auto text-xs text-muted-foreground">
-              * Required
-            </span>
+            <RequiredLegend className="mr-auto" />
             <Button
               type="button"
               variant="outline"
@@ -432,7 +432,7 @@ function ConfirmConvert({
             </Alert>
           ) : null}
           <div className="grid gap-4">
-            <div className="grid gap-1.5">
+            <PortalField >
               <Label htmlFor="lead-company">Company</Label>
               <NativeSelect
                 id="lead-company"
@@ -441,7 +441,7 @@ function ConfirmConvert({
                 aria-describedby={
                   createCompany && !needsCompanyName ? "lead-company-description" : undefined
                 }
-                className="rounded-md border bg-background px-3 text-sm"
+
               >
                 <option value="">No company</option>
                 <option value="create">Create company</option>
@@ -459,10 +459,10 @@ function ConfirmConvert({
                   Company name: {lead.companyName}
                 </p>
               ) : null}
-            </div>
+            </PortalField>
             {needsCompanyName ? (
-              <div className="grid gap-1.5">
-                <Label htmlFor="lead-company-name">Company name *</Label>
+              <PortalField >
+                <Label htmlFor="lead-company-name"><RequiredFieldName>Company name</RequiredFieldName></Label>
                 <Input
                   id="lead-company-name"
                   required
@@ -472,7 +472,7 @@ function ConfirmConvert({
                   aria-describedby={form.formState.errors.companyName ? "lead-company-name-error" : undefined}
                 />
                 <FieldError id="lead-company-name-error">{form.formState.errors.companyName?.message}</FieldError>
-              </div>
+              </PortalField>
             ) : null}
             <CheckRow
               id="lead-create-contact"
@@ -488,10 +488,8 @@ function ConfirmConvert({
             />
             {createOpportunity ? (
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="grid gap-1.5">
-                  <Label htmlFor="lead-opportunity-name">
-                    Opportunity name *
-                  </Label>
+                <PortalField >
+                  <Label htmlFor="lead-opportunity-name"><RequiredFieldName>Opportunity name</RequiredFieldName></Label>
                   <Input
                     id="lead-opportunity-name"
                     required
@@ -500,13 +498,13 @@ function ConfirmConvert({
                     aria-describedby={form.formState.errors.opportunityName ? "lead-opportunity-name-error" : undefined}
                   />
                   <FieldError id="lead-opportunity-name-error">{form.formState.errors.opportunityName?.message}</FieldError>
-                </div>
-                <div className="grid gap-1.5">
+                </PortalField>
+                <PortalField >
                   <Label htmlFor="lead-pipeline">Pipeline</Label>
                   <NativeSelect
                     id="lead-pipeline"
                     {...form.register("pipelineId")}
-                    className="rounded-md border bg-background px-3 text-sm"
+
                   >
                     <option value="">Default pipeline</option>
                     {pipelines.map((pipeline) => (
@@ -515,7 +513,7 @@ function ConfirmConvert({
                       </option>
                     ))}
                   </NativeSelect>
-                </div>
+                </PortalField>
               </div>
             ) : null}
             {createOpportunity && !companyAvailable ? (
@@ -534,9 +532,7 @@ function ConfirmConvert({
             ) : null}
           </div>
           <DialogFooter>
-            <span className="mr-auto text-xs text-muted-foreground">
-              * Required
-            </span>
+            <RequiredLegend className="mr-auto" />
             <Button
               type="button"
               variant="outline"

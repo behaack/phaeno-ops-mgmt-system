@@ -63,6 +63,7 @@ test('rejects inline tab typography and native browser confirmations', () => {
 test('keeps the gallery out of production imports and routes', () => {
   assert.equal(inspect(`import { ComponentGallery } from '../../ui-gallery/ComponentGallery'`)[0].rule, 'gallery-isolation')
   assert.equal(inspect(`<a href="/ui-gallery/">Gallery</a>`)[0].rule, 'gallery-isolation')
+  assert.equal(inspect(`<a href="/navigation-preview">Navigation example</a>`)[0].rule,'gallery-isolation')
 })
 test('parses generic TypeScript helpers without treating them as JSX', () => {
   const source = `const identity = <T>(value: T) => value; window.confirm('Discard?')`
@@ -81,4 +82,57 @@ test('baseline rejects missing explanations and duplicates', () => {
   assert.ok(compareUiBaseline([d], [{ ...d, count: 1 }]).some(f => f.startsWith('Invalid')))
   const allowance = { ...d, count: 1, reason: 'Reviewed' }
   assert.ok(compareUiBaseline([d], [allowance, allowance]).some(f => f.startsWith('Invalid')))
+})
+
+test('requires shared page headings but leaves article headings and auth presentation scoped', () => {
+  assert.equal(inspect('<h1 id="sample" tabIndex={-1}>Samples</h1>')[0].rule,'shared-page-title')
+  assert.deepEqual(inspectUiSource('<h1>Guide article</h1>','ui-gallery/example.tsx'),[])
+  assert.deepEqual(inspectUiSource('<h1>Sign in</h1>','src/features/auth/example.tsx'),[])
+  assert.deepEqual(inspect('<article data-print-document><h1>Printed packet</h1></article>'),[])
+})
+
+test('shared heading permits layout/identifier fonts and rejects visual overrides', () => {
+  const imports=`import { PageTitle as Title } from '#/components/ui/page-header';`
+  assert.deepEqual(inspect(`${imports}<Title id="sample" className="mt-2 font-mono">Sample</Title>`),[])
+  assert.equal(inspect(`${imports}<Title className="sm:text-3xl">Sample</Title>`)[0].rule,'page-title-appearance')
+  assert.equal(inspect(`${imports}<Title style={{fontSize:12}}>Sample</Title>`)[0].rule,'page-title-appearance')
+})
+
+test('detects aliased record-title links without matching ordinary navigation or actions', () => {
+  assert.equal(inspect(`${router}<RouteLink to="/samples/$sampleId">{sample.name}</RouteLink>`)[0].rule,'shared-record-link')
+  assert.deepEqual(inspect(`${router}<RouteLink to="/samples">Samples</RouteLink>`),[])
+  assert.deepEqual(inspect(`${router}import { Button } from '#/components/ui/button';<Button asChild><RouteLink to="/samples/$sampleId">{sample.name}</RouteLink></Button>`),[])
+})
+
+test('record link preserves composition and rejects class/style drift including aliases', () => {
+  const imports=`${router}import { RecordLink as Identifier } from '#/components/ui/record-link';`
+  assert.deepEqual(inspect(`${imports}<Identifier asChild><RouteLink to="/samples/$sampleId" search={previous=>previous}>{sample.name}</RouteLink></Identifier>`),[])
+  assert.equal(inspect(`${imports}<Identifier className="underline">Sample</Identifier>`)[0].rule,'record-link-appearance')
+  assert.equal(inspect(`${imports}<Identifier asChild><RouteLink to="/samples/$sampleId" style={{color:'red'}}>{sample.name}</RouteLink></Identifier>`)[0].rule,'record-link-appearance')
+})
+
+test('recognizes record-route helper aliases and route-owned page headings',()=>{
+  const helper=`${router} import { commercialRecordRoute as target } from '#/features/orders/order-navigation';`
+  assert.equal(inspect(`${helper}<RouteLink to={target(workflow)}>{item.number}</RouteLink>`)[0].rule,'shared-record-link')
+  assert.equal(inspectUiSource('<h1>People</h1>','src/routes/people.tsx')[0].rule,'shared-page-title')
+})
+
+test('native form controls use shared presentation without changing native events',()=>{
+  assert.equal(inspect('<select name="role" defaultValue="Member"><option>Member</option></select>')[0].rule,'shared-native-select')
+  assert.equal(inspect('<input type="checkbox" {...register("confirmed")} />')[0].rule,'shared-native-checkbox')
+  assert.deepEqual(inspect(`import { NativeCheckbox as Check } from '#/components/ui/native-checkbox';<Check checked={value} onChange={e=>change(e.target.checked)} />`),[])
+  assert.equal(inspect(`import { NativeSelect as Select } from '#/components/ui/native-select';<Select className="md:h-9" />`)[0].rule,'native-control-appearance')
+  assert.equal(inspect(`import { NativeSelect } from '#/components/ui/native-select';const control='h-9 px-3';<NativeSelect className={control} />`)[0].rule,'native-control-appearance')
+  assert.equal(inspect(`import { Input } from '#/components/ui/input';<Input className="h-9" />`)[0].rule,'single-line-control-size')
+  assert.deepEqual(inspect(`import { Input } from '#/components/ui/input';<Input controlSize="touch" />`),[])
+})
+test('required markers and filter reset controls retain the shared treatment',()=>{
+  assert.equal(inspect('<Label>Name *</Label>')[0].rule,'shared-required-marker')
+  assert.equal(inspect('<Button onClick={clear}>Clear filters</Button>')[0].rule,'shared-clear-filters')
+  assert.deepEqual(inspect(`import { ClearFiltersButton } from '#/components/ui/clear-filters-button';<ClearFiltersButton disabled={!active} onClick={clear} />`),[])
+})
+test('display helpers and complete-page gallery routes cannot drift into local formatting or production',()=>{
+  assert.equal(inspect('function formatBytes(n) { return `${n/1024} KB` }')[0].rule,'shared-display-format')
+  assert.deepEqual(inspect('function formatDate(value) { return formatDisplayDate(value) }'),[])
+  assert.equal(inspectUiSource('const route="/workspace-preview"','src/routes/example.tsx')[0].rule,'gallery-isolation')
 })

@@ -1,3 +1,6 @@
+import { Field as PortalField } from '#/components/ui/field'
+import { PageTitle } from '#/components/ui/page-header'
+import { RecordLink } from '#/components/ui/record-link'
 import { BackLink } from '#/components/ui/back-link'
 import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
@@ -227,7 +230,7 @@ export function SampleShippingDetailPage({ shipmentId, autoOpenKitOrder = false,
   }
   if (canManage && readyToConfirm && !embedded?.renderSendAction) headerActions.push({ kind: 'command', label: __customerText('m_d27336b8485a'), disabled: sendActionBlocked, onSelect: () => openConfirmation('header') })
   if (canManage && shipment.status === 'ReadyToShip' && !embedded?.renderSendAction) headerActions.push({ kind: 'command', label: __customerText('m_747cea6b1a86'), disabled: sendActionBlocked || !preparationAllowed || !amountsComplete, onSelect: () => openRecordShipment('header') })
-  const containerLocationControl = customerKitSupply && shipment.isPackingPool && !retired ? <div className="max-w-xl space-y-1.5">{containerLocations.length === 1 && departureLocationId === containerLocations[0].id ? <div><p className="text-sm font-medium"><CustomerText message="m_77ca3a76a5c1" /></p><p className="text-sm">{containerLocations[0].label}</p></div> : <><Label htmlFor="container-location"><CustomerText message="m_77ca3a76a5c1" /></Label><NativeSelect id="container-location" className="w-full cursor-pointer rounded-md border bg-background px-3 text-sm" value={departureLocationId ?? ''} disabled={packingOpen || scanActive} onChange={event => setLocationSelection({ shipmentId, locationId: event.target.value })}><option value=""><CustomerText message="m_54c60544411a" /></option>{containerLocations.map(location => <option key={location.id} value={location.id}>{location.label}</option>)}</NativeSelect></>}{containerLocations.length > 1 ? <p className="text-xs text-muted-foreground"><CustomerText message="m_2a572525a27e" /></p> : null}{departureLocationId ? <Link to="/delivery-locations/$locationId" params={{ locationId: departureLocationId }} search={{ organizationId: shipment.organizationId, departmentId: selectedDepartmentId ?? '', shipmentId, returnOrderId: embedded?.sourceId }} className="text-sm text-primary underline"><CustomerText message="m_68aa84b034d1" /></Link> : null}</div> : null
+  const containerLocationControl = customerKitSupply && shipment.isPackingPool && !retired ? <div className="max-w-xl space-y-1.5">{containerLocations.length === 1 && departureLocationId === containerLocations[0].id ? <div><p className="text-sm font-medium"><CustomerText message="m_77ca3a76a5c1" /></p><p className="text-sm">{containerLocations[0].label}</p></div> : <><Label htmlFor="container-location"><CustomerText message="m_77ca3a76a5c1" /></Label><NativeSelect id="container-location" className="w-full" value={departureLocationId ?? ''} disabled={packingOpen || scanActive} onChange={event => setLocationSelection({ shipmentId, locationId: event.target.value })}><option value=""><CustomerText message="m_54c60544411a" /></option>{containerLocations.map(location => <option key={location.id} value={location.id}>{location.label}</option>)}</NativeSelect></>}{containerLocations.length > 1 ? <p className="text-xs text-muted-foreground"><CustomerText message="m_2a572525a27e" /></p> : null}{departureLocationId ? <RecordLink asChild><Link to="/delivery-locations/$locationId" params={{ locationId: departureLocationId }} search={{ organizationId: shipment.organizationId, departmentId: selectedDepartmentId ?? '', shipmentId, returnOrderId: embedded?.sourceId }} ><CustomerText message="m_68aa84b034d1" /></Link></RecordLink> : null}</div> : null
   const preparation = shipment.isPackingPool ? <SampleShipmentPackingPanel shipment={shipment} canManage={canManage && !retired} locationInventory={customerKitSupply} locationControl={containerLocationControl} hasLocationChoice={containerLocations.length > 1} deliveryLocationId={departureLocationId} sampleTypeName={kitSupply.data?.sampleTypeName ?? undefined} writesBlocked={Boolean(inventoryBlocked || query.error || customerKitSupply && !departureLocationId)} onOpenChange={setPackingOpen} onSelectShipment={embedded?.onSelectShipment} /> : <SampleTubeScanner key={shipment.id} renderSamples={embedded?.renderSamples} scanActionsTarget={embedded?.scanActionsTarget} scanning={!embedded?.renderSamples || embedded.showPreparation} onStartScanning={embedded?.onOpenPreparation} onStopScanning={embedded?.onClosePreparation} shipment={shipment} canManage={canManage && !retired} requiresAssignedContainer={customerKitSupply} writesBlocked={!preparationAllowed} specimenSources={embedded?.specimenSources} sampleOrder={embedded?.sampleOrder} jobTubeProgress={embedded?.jobTubeProgress} onScanActivityChange={setScanActive} onPendingChange={setScanPending} onCorrect={item => { assignment.reset(); setAssignmentItem(item) }} onAssign={async (item, barcode, amount, unit) => {
     if (!preparationAllowed) throw new Error('Current container information must be verified before saving. Your scan is retained.')
     const saved = await assignSampleTube(shipment.id, item.shipmentItemId, { supplierBarcode: barcode, customerDeclaredQuantity: amount, customerDeclaredQuantityUnit: unit, reason: null, version: item.version, tubeSlotId: item.tubeSlotId ?? null })
@@ -241,8 +244,7 @@ export function SampleShippingDetailPage({ shipmentId, autoOpenKitOrder = false,
       {embedded ? embedded.renderActions(headerActions, headerActionRef, dialogOpen) : <section className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
           {returnList ? <BackLink asChild><Link to="/sample-shipping" search={returnList}><CustomerText message="shipment_return_list" /></Link></BackLink> : shipment.authorizationSource === 'CustomerPromotionalOrder' || shipment.authorizationSource === 'CustomerLabServiceOrder' ? (
-            <BackLink asChild><Link
-              to="/lab-services/$orderId"
+            <BackLink asChild><Link to="/lab-services/$orderId"
               params={{ orderId: shipment.authorizationSourceId }}
             >
               <CustomerText message="m_5125f85c806e" />{shipment.authorizationReference}
@@ -253,7 +255,7 @@ export function SampleShippingDetailPage({ shipmentId, autoOpenKitOrder = false,
             </Link></BackLink>
           )}
           <div className="mt-3 flex flex-wrap items-center gap-3">
-            <h1 className="wrap-anywhere text-3xl font-semibold">{shipment.shipmentNumber}</h1>
+            <PageTitle className="wrap-anywhere">{shipment.shipmentNumber}</PageTitle>
             <Badge variant="outline">{humanize(shipment.status)}</Badge>
           </div>
           <p className="mt-2 text-sm text-muted-foreground">{shipment.authorizationReference} · {shipment.destinationName}</p>
@@ -372,18 +374,18 @@ function TubeAssignmentDialog({ item, replacesPacket, isPending, error, onOpenCh
       </DialogHeader>
       {error ? <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert> : null}
       <form id="tube-assignment" className="grid gap-4" noValidate onSubmit={submit}>
-        <div className="grid gap-1.5">
+        <PortalField >
           <Label htmlFor="supplier-barcode"><RequiredFieldName><CustomerText message="m_b7eabda0dead" /></RequiredFieldName></Label>
           <Input id="supplier-barcode" autoComplete="off" className="font-mono uppercase" disabled={isPending} aria-invalid={Boolean(form.formState.errors.supplierBarcode)} {...form.register('supplierBarcode')} />
           {form.formState.errors.supplierBarcode ? <p role="alert" className="text-sm text-destructive">{<CustomerSourceText source={form.formState.errors.supplierBarcode.message} />}</p> : null}
-        </div>
+        </PortalField>
         <TubeMaterialAmountFields idPrefix="assignment" quantityField={form.register('customerDeclaredQuantity')} unitField={form.register('customerDeclaredQuantityUnit')} quantityError={form.formState.errors.customerDeclaredQuantity?.message} unitError={form.formState.errors.customerDeclaredQuantityUnit?.message} disabled={isPending} />
-        {item?.supplierTubeBarcode ? <div className="grid gap-1.5">
+        {item?.supplierTubeBarcode ? <PortalField >
           <Label htmlFor="assignment-reason">{reasonRequired ? <RequiredFieldName><CustomerText message="m_f96404674470" /></RequiredFieldName> : __customerText('m_2e2badabaaac')}</Label>
           <p className="text-xs text-muted-foreground"><CustomerText message="m_d156a6b2b8a8" /></p>
           <Input id="assignment-reason" disabled={isPending} aria-invalid={Boolean(form.formState.errors.reason)} {...form.register('reason')} />
           {form.formState.errors.reason ? <p role="alert" className="text-sm text-destructive">{<CustomerSourceText source={form.formState.errors.reason.message} />}</p> : null}
-        </div> : null}
+        </PortalField> : null}
       </form>
       <RequiredDialogFooter>
         <Button type="button" variant="outline" disabled={isPending} onClick={() => close(false)}><CustomerText message="m_19766ed6ccb2" /></Button>

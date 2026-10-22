@@ -209,7 +209,7 @@ describe("Commercial order intake CRM handoffs", () => {
     expect(navigation.search({ ...router.search, financeCustomer: "customer-2" })).toEqual({
       intakeView: "all", intakeSearch: "new query", intakePage: 1, financeCustomer: "customer-2",
     });
-    fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
+    fireEvent.click(screen.getByRole("button", { name: "Clear all" }));
     navigation = router.navigate.mock.calls.at(-1)?.[0];
     expect(navigation.search(router.search)).toEqual({ intakeView: "active", intakeSearch: "", intakePage: 1 });
   });

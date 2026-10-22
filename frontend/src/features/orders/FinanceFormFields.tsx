@@ -5,7 +5,7 @@ import { FieldError } from '#/components/ui/field'
 import { Label } from '#/components/ui/label'
 import { RequiredFieldName } from '#/components/ui/required-field'
 
-export const financeSelectClass = 'w-full cursor-pointer'
+export const financeSelectClass = "w-full"
 export const financeTextareaClass = 'min-h-28 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none'
 
 export function FinanceField({ id, label, required, error, children }: { id: string; label: string; required?: boolean; error?: string; children: ReactNode }) {

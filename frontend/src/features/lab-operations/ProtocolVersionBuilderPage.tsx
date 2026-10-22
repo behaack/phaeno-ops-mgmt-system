@@ -1,3 +1,4 @@
+import { NativeCheckbox } from '#/components/ui/native-checkbox'
 import { useIllustrationUploadPending } from './ProcedureIllustrations'
 import { useConfigurationDiscovery } from './configuration-discovery'
 import { confirmPortal } from '#/components/PortalConfirmation'
@@ -326,7 +327,7 @@ export function ProtocolVersionBuilderPage({
       >
         <div className="flex items-center justify-between gap-3"><RequiredLegend /><Button type="button" variant="outline" onClick={() => showPreview()}>Configuration preview</Button></div>
         <label className="flex cursor-pointer items-start gap-2 text-sm leading-snug">
-          <input type="checkbox" className="mt-0.5 size-4 shrink-0" disabled={watchedValues.steps.some(s => s.labStepVersionId)} {...form.register('preparationBatchEnabled')} />
+          <NativeCheckbox  className="shrink-0" disabled={watchedValues.steps.some(s => s.labStepVersionId)} {...form.register('preparationBatchEnabled')} />
           <span>Use this version for preparation batches. Specify whether each field and QC outcome applies to the batch or individual samples.</span>
         </label>
 

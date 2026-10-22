@@ -1,3 +1,4 @@
+import { Field as PortalField } from '#/components/ui/field'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { NativeSelect } from '#/components/ui/native-select'
 import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
@@ -139,7 +140,7 @@ export function RequestActionDialog({
           })}
         >
           {action === 'apply' && !request.organizationId ? (
-            <div className="mb-3 grid gap-1.5">
+            <PortalField className="mb-3">
               <Label htmlFor="request-action-organization">
                 <RequiredFieldName><CustomerSourceText source={"Completed organization"} /></RequiredFieldName>
               </Label>
@@ -163,7 +164,7 @@ export function RequestActionDialog({
                   {<CustomerSourceText source={form.formState.errors.organizationId.message} />}
                 </p>
               ) : null}
-            </div>
+            </PortalField>
           ) : null}
           <Label htmlFor="request-action-explanation">
             {optionalApprovalNote ? <CustomerSourceText source={"Approval note (optional)"} /> : action === 'apply'

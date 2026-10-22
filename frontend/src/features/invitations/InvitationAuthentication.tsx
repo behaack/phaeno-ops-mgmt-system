@@ -222,7 +222,7 @@ export function InvitationAuthentication({ invitation, token, registrationTicket
           <Input key={step} id="invitation-auth-value" {...form.register('value')} type={isPassword && !showPassword ? 'password' : 'text'}
             inputMode={isPassword || step === 'backup' ? 'text' : 'numeric'}
             autoComplete={isPassword ? (step === 'password' ? 'current-password' : 'new-password') : 'one-time-code'}
-            required disabled={pending} aria-invalid={Boolean(form.formState.errors.value)} aria-describedby={form.formState.errors.value ? 'invitation-auth-error' : undefined} className="min-h-11" />
+            required disabled={pending} aria-invalid={Boolean(form.formState.errors.value)} aria-describedby={form.formState.errors.value ? 'invitation-auth-error' : undefined} controlSize="touch" />
           {form.formState.errors.value ? <p id="invitation-auth-error" className="text-sm text-destructive">{form.formState.errors.value.message}</p> : null}
         </div>
         <RequiredLegend />

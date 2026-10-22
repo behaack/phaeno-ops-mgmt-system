@@ -1,3 +1,6 @@
+import { formatByteSize } from '#/lib/display-format'
+import { Field as PortalField } from '#/components/ui/field'
+import { PageTitle } from '#/components/ui/page-header'
 import { BackLink } from '#/components/ui/back-link'
 import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -217,7 +220,7 @@ export function SourceSampleWorkspace({ sourceSampleId }: { sourceSampleId: stri
       <section className="mt-5 mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="m-0 text-3xl font-semibold leading-tight">{source.label}</h1>
+            <PageTitle className="m-0">{source.label}</PageTitle>
             <Badge variant={isDraft ? 'outline' : 'secondary'}>{source.status}</Badge>
             {source.isSynthetic ? <Badge variant="outline">Synthetic fixture</Badge> : null}
           </div>
@@ -356,12 +359,12 @@ export function SourceSampleWorkspace({ sourceSampleId }: { sourceSampleId: stri
                   }}
                 >
                   <RequiredLegend />
-                  <div className="grid gap-1.5 text-sm font-medium">
+                  <PortalField className="text-sm font-medium">
                     <label htmlFor="approved-source-file">
                       <RequiredFieldName>Approved source file</RequiredFieldName>
                     </label>
                     <Input id="approved-source-file" type="file" accept=".txt,.csv,.json" required onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)} />
-                  </div>
+                  </PortalField>
                   <Button type="submit" variant="outline" className="w-full" disabled={!selectedFile || uploadMutation.isPending}>
                     <FileUp data-icon="inline-start" />
                     {uploadMutation.isPending ? 'Uploading and scanning' : 'Upload managed file'}
@@ -495,11 +498,7 @@ function requiredText(label: string, maximumLength: number) {
   return z.string().trim().min(1, `${label} is required.`).max(maximumLength)
 }
 
-function formatBytes(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-}
+function formatBytes(bytes: number) { return formatByteSize(bytes) }
 
 const emptyMetadata: MetadataValues = { label: '', description: '', biologicalContext: '', assayContext: '', analysisSummary: '', qcStatus: '', provenance: '', ownershipBasis: '', ownershipEvidenceReference: '', deidentificationMethod: '', deidentificationNotes: '' }
 const textareaClass = 'min-h-20 w-full resize-y rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-60'

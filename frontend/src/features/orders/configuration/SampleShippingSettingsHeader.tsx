@@ -1,3 +1,4 @@
+import { PageTitle } from '#/components/ui/page-header'
 import { CustomerText } from '#/features/customer-i18n/customer-text'
 import { Link } from '@tanstack/react-router'
 
@@ -5,7 +6,7 @@ export function SampleShippingSettingsHeader() {
 
 
   return <header className="mb-6">
-    <h1 className="text-3xl font-semibold"><CustomerText message="m_47bf3dab14cb" /></h1>
+    <PageTitle><CustomerText message="m_47bf3dab14cb" /></PageTitle>
     <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground"><CustomerText message="m_4fa90c9e4a78" /></p>
     <details className="mt-3 max-w-3xl rounded-lg border p-3 text-sm"><summary className="cursor-pointer font-medium"><CustomerText message="m_a007f401a741" /></summary><ol className="mt-3 list-decimal space-y-2 pl-5">
       <li><Link className="underline" to="/sample-shipping-settings" search={{ shippingSection: "sample-types" }}><CustomerText message="m_bd4e8f4f92d0" /></Link><CustomerText message="m_93dc94a296eb" /></li>

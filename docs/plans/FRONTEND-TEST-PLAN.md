@@ -1,5 +1,67 @@
 # Frontend Test Plan
 
+## Six-area UI standardization — October 22, 2026
+
+The [owning UI plan](UI-PATTERN-COMPLETENESS-PLAN.md#six-area-implementation---october-22-2026)
+records the completed control, formatting, status, list/feedback, detail and
+page-image work. `ui:test:components` covers fifteen cases for native registered
+select/checkbox events, calendar-day/timezone/second precision, binary units,
+small decimals, zero/missing/currency, localized false, explicit status maps,
+definition-list semantics, counted recovery and count-free paging. Actual
+retained-release tests preserve URL page/offset contracts, retry and admin gating.
+Commercial status coverage reads the current backend enums; relevant backend
+paths trigger the UI workflow. No dependencies or model/API contracts changed.
+
+The full frontend suite passes **257 files / 1,572 tests**, with three existing
+skips. Subsequent final menu/focus/retry/byte changes pass **27 targeted tests**:
+the fifteen above, seven shared-dialog tests and five R&D editor tests. Updated
+existing assertions follow shared required legends, reset labels, canonical
+BackLink composition, link disabled semantics and asynchronous menu readiness.
+
+Source regression coverage grows to **26 cases** for raw controls, module class
+constants, sizing/chrome, duplicated formatting, required/clear treatment and
+gallery isolation. The unchanged two scanner-step exceptions remain exact.
+UI principles, AGENTS and gallery instructions describe the owned patterns.
+Fourteen audience-specific guides/registry metadata are updated and generated
+help checks pass: **62 guides, `33311a4e2057`**. Customer references validate
+**5,788 English messages**, including the shared negative boolean label.
+
+Browser, reviewed image and final build/isolation evidence is recorded in the
+[E2E plan](E2E-TEST-PLAN.md#six-area-ui-standardization--october-22-2026).
+The expanded phase remains local; configured GitHub jobs have not run remotely.
+
+## Notification badge alignment — October 22, 2026
+
+`WorkBellButton` supplies the live bell and fictional gallery with the same
+icon-anchored badge. Targeted ESLint, TypeScript and the source guard pass (746
+files, two unchanged scanner exceptions). The standalone gallery build passes.
+No new dependency, API, permission or count behavior is introduced. See the
+[pattern plan](UI-PATTERN-COMPLETENESS-PLAN.md#notification-badge-follow-up--october-22-2026)
+for browser evidence and local verification limits.
+
+## UI pattern completeness — October 22, 2026
+
+Shared page titles/headers, record links, flat rows, toolbars/table containment
+and content states implement the five-area follow-up. App adoption standardizes
+89 screen-heading declarations and 155 record-link call sites. Source comparison
+preserves all 337 router-Link prop sets and four heading identity/focus targets
+in 132 touched source files. Authentication/article/print hierarchies, navigation
+cards and contextual hold/exception links retain their distinct roles.
+
+The AST suite passes 23 cases, including page-title sizing, recognizable record
+identifiers/helper aliases, composition and gallery-route isolation. Full lint
+and TypeScript pass; the guard scans 745 source files with the same two exact
+scanner-step exceptions. The focused AssemblyJobs, UserMenu and WorkspaceSidebar
+suite passes 18 cases. Added input/job row checks verify shared presentation and
+unchanged unavailable-processing/active-job Start guards.
+
+App and standalone gallery builds pass. `ui:build:check` verifies gallery JS and
+CSS are absent from all 837 production artifacts while its own three text
+artifacts retain the examples. UI quality CI now runs this build/isolation gate;
+the expanded local changes have not been pushed or run remotely. The unchanged
+62-guide corpus passes at `89e4a753a7d9`. See the
+[owning plan](UI-PATTERN-COMPLETENESS-PLAN.md).
+
 ## Component gallery and source drift guard — October 22, 2026
 
 `scripts/ui-drift.test.mjs` covers aliased/localized returns, canonical component

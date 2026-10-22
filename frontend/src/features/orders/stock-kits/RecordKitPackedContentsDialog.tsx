@@ -205,7 +205,7 @@ export function RecordKitPackedContentsDialog({ kit, assembly, writesBlocked, pr
             <p className="wrap-anywhere">{component.supplierName}</p>
             <p className="shrink-0 tabular-nums">{assembly.used(component.supplierProductId)} of {component.quantity} <CustomerSourceText source={"recorded"} /></p>
           </div>
-          {component.kind === 'Tube' && (Boolean(barcodes.trim()) || (kit.tubes.length < kit.container.capacity)) ? <div className="space-y-1">
+          {component.kind === 'Tube' && (Boolean(barcodes.trim()) || (kit.tubes.length < kit.container.capacity)) ? <Field >
             <Label htmlFor="kit-packing-barcodes"><CustomerSourceText source={"Permanent tube barcodes"} /></Label>
             <FieldDescription id="kit-packing-barcodes-help"><CustomerSourceText source={"Scan each new tube as it goes into this container, one per line."} /> {kit.tubes.length} of {kit.container.capacity} <CustomerSourceText source={"already registered."} /></FieldDescription>
             <Textarea id="kit-packing-barcodes" rows={4} className="font-mono" autoComplete="off" spellCheck={false} disabled={assembly.pending}
@@ -213,7 +213,7 @@ export function RecordKitPackedContentsDialog({ kit, assembly, writesBlocked, pr
               {...form.register('barcodes', { onChange: () => { if (form.formState.isSubmitted) void form.trigger() } })} />
             <FieldError id="kit-packing-barcodes-error">{errors.barcodes?.message}</FieldError>
             <p role="status" className="text-xs text-muted-foreground tabular-nums">{acceptedBarcodes.length} <CustomerSourceText source={"unique valid new scans ·"} /> {kit.tubes.length + acceptedBarcodes.length} of {kit.container.capacity} <CustomerSourceText source={"tubes"} /></p>
-          </div> : null}
+          </Field> : null}
           <div className="grid items-start gap-3 sm:grid-cols-[10rem_minmax(0,1fr)]">
             <Field className="min-w-0">
               <Label htmlFor={id + '-quantity'}><RequiredFieldName><CustomerSourceText source={"Quantity"} /></RequiredFieldName></Label>

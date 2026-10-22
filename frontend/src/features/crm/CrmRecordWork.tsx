@@ -1,3 +1,6 @@
+import { RequiredLegend } from '#/components/ui/required-field'
+import { formatDisplayTimestamp } from '#/lib/display-format'
+import { NativeSelect } from '#/components/ui/native-select'
 import { useCrmPermissions } from './use-crm-permissions';
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarPlus, MessageSquarePlus } from "lucide-react";
@@ -238,13 +241,13 @@ function ActivityDialog({
           ) : null}
           <div className="grid gap-4">
             <Field label="Activity type" htmlFor="activity-type">
-              <select
+              <NativeSelect
                 id="activity-type"
                 value={type}
                 onChange={(event) =>
                   setType(event.target.value as CrmActivityType)
                 }
-                className="h-9 rounded-md border bg-background px-3 text-sm"
+
               >
                 {(
                   [
@@ -259,7 +262,7 @@ function ActivityDialog({
                     {label(value)}
                   </option>
                 ))}
-              </select>
+              </NativeSelect>
             </Field>
             <Field label="Subject *" htmlFor="activity-subject">
               <Input
@@ -278,20 +281,18 @@ function ActivityDialog({
               />
             </Field>
             <Field label="Visibility" htmlFor="activity-visibility">
-              <select
+              <NativeSelect
                 id="activity-visibility"
                 name="visibility"
-                className="h-9 rounded-md border bg-background px-3 text-sm"
+
               >
                 <option value="Internal">Internal</option>
                 {canAdminister ? <option value="Restricted">Restricted</option> : null}
-              </select>
+              </NativeSelect>
             </Field>
           </div>
           <DialogFooter>
-            <span className="mr-auto text-xs text-muted-foreground">
-              * Required
-            </span>
+            <RequiredLegend className="mr-auto" />
             <Button
               type="button"
               variant="outline"
@@ -372,17 +373,17 @@ function TaskDialog({
             </Field>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Priority" htmlFor="task-priority">
-                <select
+                <NativeSelect
                   id="task-priority"
                   name="priority"
                   defaultValue="Normal"
-                  className="h-9 rounded-md border bg-background px-3 text-sm"
+
                 >
                   <option>Low</option>
                   <option>Normal</option>
                   <option>High</option>
                   <option>Urgent</option>
-                </select>
+                </NativeSelect>
               </Field>
               <Field label="Due" htmlFor="task-due">
                 <Input id="task-due" name="dueAt" type="datetime-local" />
@@ -397,23 +398,21 @@ function TaskDialog({
                 />
               </Field>
               <Field label="Recurrence" htmlFor="task-recurrence">
-                <select
+                <NativeSelect
                   id="task-recurrence"
                   name="recurrenceRule"
-                  className="h-9 rounded-md border bg-background px-3 text-sm"
+
                 >
                   <option value="">Does not repeat</option>
                   <option value="DAILY">Daily</option>
                   <option value="WEEKLY">Weekly</option>
                   <option value="MONTHLY">Monthly</option>
-                </select>
+                </NativeSelect>
               </Field>
             </div>
           </div>
           <DialogFooter>
-            <span className="mr-auto text-xs text-muted-foreground">
-              * Required
-            </span>
+            <RequiredLegend className="mr-auto" />
             <Button
               type="button"
               variant="outline"
@@ -458,9 +457,4 @@ function dateTime(value: FormDataEntryValue | null) {
 function label(value: string) {
   return value.replace(/([a-z])([A-Z])/g, "$1 $2");
 }
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
-}
+function formatDate(value: string) { return formatDisplayTimestamp(value) }

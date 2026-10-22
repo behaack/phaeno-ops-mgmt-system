@@ -1,3 +1,4 @@
+import { formatDisplayDate } from '#/lib/display-format'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import { TriangleAlert } from 'lucide-react'
@@ -47,7 +48,7 @@ export function QuoteTotals({ quote }: { quote: Quote }) {
 }
 
 export function formatQuoteMoney(value: number, currency: string) { return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(value) }
-function formatDate(value: string) { return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' }).format(new Date(value)) }
+function formatDate(value: string) { return formatDisplayDate(value) }
 function pricingDecisionLabel(decision: NonNullable<Quote['pricingDecision']>) {
   if (decision === 'ApprovedAsProposed') return 'Phaeno approved the proposed unit price.'
   if (decision === 'AmendedProposal') return 'Phaeno amended the proposed unit price when issuing this quote.'

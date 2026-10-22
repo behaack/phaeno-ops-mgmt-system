@@ -1,3 +1,5 @@
+import { formatDisplayDate, formatDisplayCurrency } from '#/lib/display-format'
+import { Field as PortalField } from '#/components/ui/field'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { Download } from 'lucide-react'
@@ -37,8 +39,8 @@ export function ManualJournalEntryReport({ apiEnabled }: { apiEnabled: boolean }
         </Button>
       </div>
       <div className="mt-3 grid max-w-xl gap-3 sm:grid-cols-2">
-        <div><Label htmlFor="journal-from"><CustomerSourceText source={"Accounting date from"} /></Label><Input id="journal-from" type="date" className="mt-2" value={from} onChange={(event) => setFrom(event.target.value)} /></div>
-        <div><Label htmlFor="journal-to"><CustomerSourceText source={"Accounting date through"} /></Label><Input id="journal-to" type="date" className="mt-2" value={to} onChange={(event) => setTo(event.target.value)} /></div>
+        <PortalField><Label htmlFor="journal-from"><CustomerSourceText source={"Accounting date from"} /></Label><Input id="journal-from" type="date"  value={from} onChange={(event) => setFrom(event.target.value)} /></PortalField>
+        <PortalField><Label htmlFor="journal-to"><CustomerSourceText source={"Accounting date through"} /></Label><Input id="journal-to" type="date"  value={to} onChange={(event) => setTo(event.target.value)} /></PortalField>
       </div>
     </CardHeader>
     <CardContent>
@@ -67,6 +69,6 @@ export function ManualJournalEntryReport({ apiEnabled }: { apiEnabled: boolean }
 
 function currentUtcDate() { return new Date().toISOString().slice(0, 10) }
 function currentMonthStart() { const today = currentUtcDate(); return `${today.slice(0, 8)}01` }
-function formatDate(value: string) { return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeZone: 'UTC' }).format(new Date(value)) }
-function formatMoney(value: number, currency: string) { return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(value) }
+function formatDate(value: string) { return formatDisplayDate(value, { timeZone: 'UTC' }) }
+function formatMoney(value: number, currency: string) { return formatDisplayCurrency(value, currency) }
 function workflowLabel(value: string) { return value === 'LabService' ? 'Lab' : value === 'Reagent' ? 'PSeq kit' : value === 'DataAssembly' ? 'Assembly' : value }

@@ -1,3 +1,7 @@
+import { formatDisplayDate } from '#/lib/display-format'
+import { Field as PortalField } from '#/components/ui/field'
+import { RecordLink } from '#/components/ui/record-link'
+import { PageHeader } from '#/components/ui/page-header'
 import { CrmProvisioningReturn } from "./CrmListNavigation";
 import { CrmClearFilters, useCrmState, useCrmSearch } from "./CrmListNavigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -69,18 +73,8 @@ export function CrmCompaniesPage() {
   return (
     <main className="page-wrap space-y-6 px-4 py-8">
       <CrmProvisioningReturn />
-      <section className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="max-w-3xl">
-          <Badge variant="secondary" className="mb-3">
-            Phaeno CRM
-          </Badge>
-          <h1 className="text-3xl font-semibold leading-tight">Companies</h1>
-          <p className="mt-3 text-sm leading-6 text-muted-foreground sm:text-base">
-            Maintain the complete customer relationship, including optional
-            Portal access, services, and operational readiness.
-          </p>
-        </div>
-      </section>
+      <PageHeader title="Companies" eyebrow={<Badge variant="secondary">Phaeno CRM</Badge>}
+        description="Maintain the complete customer relationship, including optional Portal access, services, and operational readiness." />
 
       {companiesQuery.error ? (
         <Alert variant="destructive">
@@ -116,7 +110,7 @@ export function CrmCompaniesPage() {
               setSearch(draftSearch.trim());
             }}
           >
-            <div className="grid min-w-0 flex-1 gap-1.5">
+            <PortalField className="min-w-0 flex-1">
               <Label htmlFor="crm-company-search">Search companies</Label>
               <Input
                 id="crm-company-search"
@@ -124,7 +118,7 @@ export function CrmCompaniesPage() {
                 placeholder="Company, domain, or industry"
                 onChange={(event) => setDraftSearch(event.target.value)}
               />
-            </div>
+            </PortalField>
             <Button type="submit" variant="outline" className="cursor-pointer">
               <Search data-icon="inline-start" />
               Search
@@ -187,13 +181,12 @@ export function CrmCompaniesPage() {
                 {(result?.items ?? []).map((company) => (
                   <tr key={company.id}>
                     <td className="px-4 py-3 font-medium">
-                      <Link
-                        to="/crm/companies/$companyId" search={previous => previous}
+                      <RecordLink asChild><Link to="/crm/companies/$companyId" search={previous => previous}
                         params={{ companyId: company.id }}
-                        className="cursor-pointer underline-offset-4 hover:underline focus-visible:rounded-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+
                       >
                         {company.name}
-                      </Link>
+                      </Link></RecordLink>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {company.domainName ?? "—"}
@@ -346,8 +339,4 @@ function valueOrNull(value: string) {
   return normalized || null;
 }
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(
-    new Date(value),
-  );
-}
+function formatDate(value: string) { return formatDisplayDate(value) }

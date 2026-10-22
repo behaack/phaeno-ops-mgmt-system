@@ -3,12 +3,14 @@ import ts from 'typescript'
 
 const returnLabel = /^(?:←\s*|back\b|return to\b)/i
 const tabOverride = /(?:^|\s)(?:[\w-]+:)*!?(?:h-|min-h-|max-h-|p[xytrblse]?-|text-(?:xs|sm|base|lg|xl|\d|\[)|leading-|font-)/
+const pageTitleOverride = /(?:^|\s)(?:[\w-]+:)*!?(?:text-(?:xs|sm|base|lg|xl|\d|\[|primary|destructive|muted|foreground)|leading-|font-(?!mono\b))/
 
 /** Deliberately bounded source rules; rendering/permissions still need browser review. */
 export function inspectUiSource(source, file, messages = {}) {
   const kind = /\.[jt]sx$/.test(file) ? ts.ScriptKind.TSX : ts.ScriptKind.TS
   const ast = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true, kind)
   const imports = new Map()
+  const classConstants = new Map()
   const diagnostics = []
   for (const statement of ast.statements) {
     if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier)) continue
@@ -17,6 +19,11 @@ export function inspectUiSource(source, file, messages = {}) {
       imports.set(item.name.text, { name: item.propertyName?.text ?? item.name.text, from: statement.moduleSpecifier.text })
     }
   }
+  function collectConstants(node) {
+    if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name) && node.initializer && (ts.isStringLiteral(node.initializer) || ts.isNoSubstitutionTemplateLiteral(node.initializer))) classConstants.set(node.name.text, node.initializer)
+    ts.forEachChild(node, collectConstants)
+  }
+  collectConstants(ast)
   const opening = node => ts.isJsxElement(node) ? node.openingElement : ts.isJsxSelfClosingElement(node) ? node : null
   const name = node => opening(node)?.tagName.getText(ast)
   const shared = (node, component, module) => {
@@ -26,6 +33,7 @@ export function inspectUiSource(source, file, messages = {}) {
   const attr = (node, key) => opening(node)?.attributes.properties.find(p => ts.isJsxAttribute(p) && p.name.getText(ast) === key)
   const strings = node => {
     if (!node) return []
+    if (ts.isIdentifier(node) && classConstants.has(node.text)) return strings(classConstants.get(node.text))
     if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node) || ts.isTemplateHead(node) || ts.isTemplateMiddle(node) || ts.isTemplateTail(node)) return [node.text]
     return node.getChildren(ast).flatMap(strings)
   }
@@ -52,16 +60,36 @@ export function inspectUiSource(source, file, messages = {}) {
     diagnostics.push({ file, rule, fingerprint, line: position.line + 1, column: position.character + 1, message })
   }
   function walk(node) {
-    if (file.startsWith('src/') && (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) && /(?:^|\/)ui-gallery(?:\/|$)/.test(node.text)) report(node, 'gallery-isolation', 'Keep the engineering gallery outside production Portal imports, routes and asset links.')
+    if (file.startsWith('src/') && (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) && /(?:^|\/)(?:ui-gallery|navigation-preview|workspace-preview)(?:\/|$)/.test(node.text)) report(node, 'gallery-isolation', 'Keep the engineering gallery outside production Portal imports, routes and asset links.')
+    if (ts.isFunctionDeclaration(node) && /^(?:formatDate|formatDateTime|formatTime|formatBytes|formatMoney)$/.test(node.name?.text ?? '') && /new Intl\.|toLocale(?:Date|Time)?String|\/\s*(?:1024|1_000)/.test(node.body?.getText(ast) ?? '')) report(node, 'shared-display-format', 'Use shared display-format helpers; retain calendar-day, timezone, precision and domain missing-value meaning.')
     const element = opening(node)
     if (element) {
       const parents = ancestors(node)
       const inBackLink = parents.some(p => shared(p, 'BackLink', 'back-link'))
+      const inRecordLink = parents.some(p => shared(p, 'RecordLink', 'record-link'))
       const label = text(node).replace(/\s+/g, ' ').trim()
       const imported = imports.get(name(node))
       const navigation = name(node) === 'a' || imported?.name === 'Link' && imported.from === '@tanstack/react-router'
       const button = name(node) === 'button' || shared(node, 'Button', 'button')
       const inDialog = parents.some(p => shared(p, 'Dialog', 'dialog') || shared(p, 'DialogContent', 'dialog'))
+      const inPrintDocument = parents.some(p => name(p) === 'article' && attr(p, 'data-print-document'))
+      if (name(node) === 'select') report(node, 'shared-native-select', 'Use NativeSelect to preserve native form behavior with shared sizing.')
+      if (name(node) === 'input' && attrText(node, 'type') === 'checkbox') report(node, 'shared-native-checkbox', 'Use NativeCheckbox for registered/native events or Checkbox for controlled Radix state.')
+      if ((shared(node, 'NativeSelect', 'native-select') || shared(node, 'NativeCheckbox', 'native-checkbox')) && /(?:^|\s)(?:[\w-]+:)*!?(?:h-|min-h-|max-h-|size-|p[xytrblse]?-|text-(?:xs|sm|base|lg)|rounded|border|bg-|font-|leading-)/.test(attrText(node, 'className'))) report(node, 'native-control-appearance', 'Shared native controls own height, typography and chrome; put layout on Field.')
+      if (shared(node, 'Input', 'input') && /(?:^|\s)(?:[\w-]+:)*!?(?:h-|min-h-|max-h-|size-)/.test(attrText(node, 'className'))) report(node, 'single-line-control-size', 'Input owns its height; align text and select controls with Field instead of local sizes.')
+      if ((name(node) === 'Label' || name(node) === 'label') && /\S\s+\*$/.test(label)) report(node, 'shared-required-marker', 'Use RequiredFieldName so the required marker stays attached and consistent.')
+      if ((name(node) === 'Button' || name(node) === 'button') && /^(?:Clear all|Clear filters|Reset filters)$/.test(label)) report(node, 'shared-clear-filters', 'Use ClearFiltersButton; retain existing filter/reset callbacks and guards.')
+      if (name(node) === 'h1' && /^src\/(?:features|routes)\//.test(file) && !/^src\/features\/(?:auth|invitations)\//.test(file) && !inPrintDocument) report(node, 'shared-page-title', 'Use PageTitle or PageHeader for Portal page headings; retain identifiers and focus targets.')
+      if (shared(node, 'PageTitle', 'page-header') && (pageTitleOverride.test(attrText(node, 'className')) || /\b(?:fontSize|fontWeight|lineHeight|color)\b/.test(attr(node, 'style')?.getText(ast) ?? ''))) report(node, 'page-title-appearance', 'PageTitle owns heading typography and color; keep only layout classes or an identifier font.')
+      if (shared(node, 'RecordLink', 'record-link') && (attr(node, 'className') || attr(node, 'style') || descendants(node).some(p => (name(p) === 'a' || imports.get(name(p))?.name === 'Link') && (attr(p, 'className') || attr(p, 'style'))))) report(node, 'record-link-appearance', 'RecordLink owns title-link typography, color, underline and focus; move layout to a non-interactive wrapper.')
+      const toExpression = attr(node, 'to')?.initializer
+      const destination = toExpression && ts.isJsxExpression(toExpression) ? toExpression.expression : undefined
+      const destinationIdentifier = destination && ts.isCallExpression(destination) ? destination.expression : destination
+      const routeHelper = destinationIdentifier && ts.isIdentifier(destinationIdentifier) ? imports.get(destinationIdentifier.text)?.name ?? destinationIdentifier.text : ''
+      const knownRecordHelper = ['commercialRecordRoute', 'workDestination', 'procedureDetailRoute'].includes(routeHelper)
+      const recordDestination = navigation && (/\$/.test(attrText(node, 'to')) || knownRecordHelper) && !attrText(node, 'to').startsWith('/docs/')
+      const hasRecordIdentity = ts.isJsxElement(node) && node.children.some(child => ts.isJsxExpression(child) && /(?:\.\s*(?:name|title|label|reference|\w*Number|barcode)|\b(?:recordTitle|labWorkOrderLabel|kitRequestReference)\b)/i.test(child.expression?.getText(ast) ?? ''))
+      if (recordDestination && (hasRecordIdentity || knownRecordHelper) && !inBackLink && !inRecordLink && !parents.some(p => shared(p, 'Button', 'button') || shared(p, 'DropdownMenuItem', 'dropdown-menu'))) report(node, 'shared-record-link', 'Use RecordLink for a primary record identifier while preserving its router props and handlers.')
       if ((navigation || button && !inDialog) && returnLabel.test(label) && !inBackLink) {
         // A Button composing a Link is diagnosed at the Link, once.
         if (!button || !descendants(node).some(p => name(p) === 'a' || imports.get(name(p))?.name === 'Link')) report(node, 'shared-back-link', 'Use the shared BackLink for page returns; document an exact exception for non-page workflow steps.')

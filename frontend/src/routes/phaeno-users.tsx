@@ -1,3 +1,4 @@
+import { PageTitle } from '#/components/ui/page-header'
 import { createFileRoute } from '@tanstack/react-router'
 
 import { OrganizationUserManagementPanel } from '#/features/admin/OrganizationUserManagementPanel'
@@ -71,9 +72,9 @@ function UsersPage() {
           <Badge variant="secondary" className="mb-3">
             User management
           </Badge>
-          <h1 className="text-3xl font-semibold leading-tight">
+          <PageTitle>
             Manage users for {selectedExternalMembership.organizationName}
-          </h1>
+          </PageTitle>
         </section>
 
         <OrganizationUserManagementPanel
@@ -92,9 +93,9 @@ function UsersPage() {
           <Badge variant="secondary" className="mb-3">
             Internal Phaeno administration
           </Badge>
-          <h1 className="text-3xl font-semibold leading-tight">
+          <PageTitle>
             User management
-          </h1>
+          </PageTitle>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
             Manage Phaeno employee accounts, platform access, and laboratory
             roles.

@@ -17,7 +17,7 @@ describe("CRM lead dialog", () => {
     );
 
     expect(screen.getByText(/before creating durable Company/)).toBeTruthy();
-    expect(screen.getByText("* Required")).toBeTruthy();
+    expect(screen.getByText("Required")).toBeTruthy();
     fireEvent.change(screen.getByLabelText(/Display name/), {
       target: { value: " Ada Lovelace " },
     });

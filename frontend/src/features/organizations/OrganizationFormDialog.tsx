@@ -134,5 +134,5 @@ export function readinessLabel(value: PortalReadinessStatus) {
   return value === 'NotReviewed' ? 'Not reviewed' : value
 }
 
-export const selectClass = 'h-9 w-full cursor-pointer rounded-lg border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50'
+export const selectClass = "w-full"
 export const textareaClass = 'w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50'

@@ -1,3 +1,4 @@
+import { RecordLink } from '#/components/ui/record-link'
 import { Link } from '@tanstack/react-router'
 import type { LabAttemptSpecimen, LabLibrary, LabWorkOrderDetail } from '#/api/lab-operations'
 import { Badge } from '#/components/ui/badge'
@@ -12,7 +13,7 @@ export function SpecimenLibraries({ workOrderId, specimen, work }: { workOrderId
   const preparation = (library: LabLibrary) => {
     const attempts = specimen.attempts.filter(attempt => attempt.executionIds.includes(library.preparationExecutionId) && attempt.sourceContainerId === library.sourceContainerId)
     const execution = work.executions.find(item => item.id === library.preparationExecutionId)
-    return <div className="space-y-1"><p>{attempts.length === 1 ? `Attempt ${attempts[0].sequence} · ${evidenceLabel(attempts[0].state)}` : 'Preparation attempt not established'}</p><Link to="/lab-operations/executions/$executionId" params={{ executionId: library.preparationExecutionId }} search={previous => ({ ...previous, returnSpecimenId: specimen.id, returnSpecimenTab: 'libraries', section: parseLabSection(previous.section) ?? 'jobs' })} className="text-primary underline underline-offset-4">Open preparation execution</Link><p className="text-xs text-muted-foreground">{execution ? evidenceLabel(execution.status) : 'Execution status unavailable'}</p></div>
+    return <div className="space-y-1"><p>{attempts.length === 1 ? `Attempt ${attempts[0].sequence} · ${evidenceLabel(attempts[0].state)}` : 'Preparation attempt not established'}</p><RecordLink asChild><Link to="/lab-operations/executions/$executionId" params={{ executionId: library.preparationExecutionId }} search={previous => ({ ...previous, returnSpecimenId: specimen.id, returnSpecimenTab: 'libraries', section: parseLabSection(previous.section) ?? 'jobs' })} >Open preparation execution</Link></RecordLink><p className="text-xs text-muted-foreground">{execution ? evidenceLabel(execution.status) : 'Execution status unavailable'}</p></div>
   }
   const identity = (library: LabLibrary) => <div className="space-y-1"><p className="wrap-anywhere font-medium">{library.libraryKey}</p><p className="wrap-anywhere text-xs text-muted-foreground">Library tube: {barcode(library.libraryContainerId)}</p></div>
   const source = (library: LabLibrary) => <div className="space-y-1"><p className="wrap-anywhere">{barcode(library.sourceContainerId)}</p><p className="wrap-anywhere text-xs text-muted-foreground">{library.sourceContainerId}</p></div>

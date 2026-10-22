@@ -1,3 +1,4 @@
+import { PageTitle } from '#/components/ui/page-header'
 import { useNavigate, useRouterState } from '@tanstack/react-router'
 import {
   Building2,
@@ -104,10 +105,10 @@ export function CrmShell({ children }: { children: ReactNode }) {
   const activeSection = getActiveSection(pathname)
   const sections = crmSections.filter(section => canAdminister || section.value !== 'portalAccess')
 
-  if (!canAccess) return <main className="page-wrap px-4 py-8"><h1 className="text-2xl font-semibold">CRM access required</h1><p className="mt-3 text-muted-foreground">Select your Phaeno organization. Commercial or administrator access is required to use CRM.</p></main>
+  if (!canAccess) return <main className="page-wrap px-4 py-8"><PageTitle>CRM access required</PageTitle><p className="mt-3 text-muted-foreground">Select your Phaeno organization. Commercial or administrator access is required to use CRM.</p></main>
 
   if (pathname === '/crm/administration' || pathname.startsWith('/crm/administration/')) {
-    return canAdminister ? children : <main className="page-wrap px-4 py-8"><h1 className="text-2xl font-semibold">CRM Settings</h1><p className="mt-3 text-muted-foreground">A Phaeno administrator manages pipelines, imports, exports, and sensitive configuration. Use CRM to continue your commercial work.</p></main>
+    return canAdminister ? children : <main className="page-wrap px-4 py-8"><PageTitle>CRM Settings</PageTitle><p className="mt-3 text-muted-foreground">A Phaeno administrator manages pipelines, imports, exports, and sensitive configuration. Use CRM to continue your commercial work.</p></main>
   }
 
   return (

@@ -1,3 +1,4 @@
+import { RecordLink } from '#/components/ui/record-link'
 import { useState } from 'react'
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
@@ -29,7 +30,7 @@ export function LabStepList() {
     <PreparationField label="Find historical Lab steps" id="find-lab-steps"><Input id="find-lab-steps" value={search.labStepSearch ?? ''} onChange={e => update({ labStepSearch: e.target.value, labStepPage: 1 })} /></PreparationField>
     <div className="flex items-center gap-2"><Checkbox id="show-retired-lab-steps" checked={Boolean(search.labStepRetired)} onCheckedChange={checked => update({ labStepRetired: checked === true, labStepPage: 1 })} /><Label htmlFor="show-retired-lab-steps">Show retired</Label></div>
   </CardHeader><CardContent className="space-y-3">
-    {query.isPending ? <p role="status">Loading historical definitions…</p> : query.error ? <p role="alert">Historical definitions could not be loaded.</p> : !items.length ? <p>No historical definitions match.</p> : items.slice((page - 1) * 10, page * 10).map(step => <div key={step.id} className="border-b py-3"><Link className="font-medium text-primary hover:underline" to="/lab-operations/steps/$stepId" params={{ stepId: step.id }} search={search}>{step.name}</Link><p className="mt-1 text-sm text-muted-foreground">{step.description} · {step.versions.length} versions · {step.usedBy.length} retained protocol occurrences</p></div>)}
+    {query.isPending ? <p role="status">Loading historical definitions…</p> : query.error ? <p role="alert">Historical definitions could not be loaded.</p> : !items.length ? <p>No historical definitions match.</p> : items.slice((page - 1) * 10, page * 10).map(step => <div key={step.id} className="border-b py-3"><RecordLink asChild><Link to="/lab-operations/steps/$stepId" params={{ stepId: step.id }} search={search}>{step.name}</Link></RecordLink><p className="mt-1 text-sm text-muted-foreground">{step.description} · {step.versions.length} versions · {step.usedBy.length} retained protocol occurrences</p></div>)}
     {items.length > 10 ? <div className="flex items-center justify-between gap-2"><span className="text-sm">Page {page} of {Math.ceil(items.length / 10)}</span><Button variant="outline" disabled={page <= 1} onClick={() => update({ labStepPage: page - 1 })}>Previous</Button><Button variant="outline" disabled={page * 10 >= items.length} onClick={() => update({ labStepPage: page + 1 })}>Next</Button></div> : null}
   </CardContent></Card>
 }

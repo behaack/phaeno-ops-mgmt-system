@@ -1,3 +1,4 @@
+import { Field as PortalField } from '#/components/ui/field'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import { confirmPortal } from '#/components/PortalConfirmation'
@@ -144,13 +145,13 @@ export function RequestCustomWorkButton({
                 )}
               >
                 <fieldset disabled={mutation.isPending} className="space-y-4">
-                  <div>
+                  <PortalField>
                     <Label htmlFor="custom-work-subject">
                       <RequiredFieldName><CustomerText message="m_68971283841a" /></RequiredFieldName>
                     </Label>
                     <Input
                       id="custom-work-subject"
-                      className="mt-2"
+
                       {...form.register('subject')}
                     />
                     {form.formState.errors.subject ? (
@@ -158,8 +159,8 @@ export function RequestCustomWorkButton({
                         {<CustomerSourceText source={form.formState.errors.subject.message} />}
                       </p>
                     ) : null}
-                  </div>
-                  <div>
+                  </PortalField>
+                  <PortalField>
                     <Label htmlFor="custom-work-description">
                       <RequiredFieldName><CustomerText message="m_a53a0c0ce5ac" /></RequiredFieldName>
                     </Label>
@@ -167,7 +168,7 @@ export function RequestCustomWorkButton({
                       <CustomerText message="m_373390d9352c" /></p>
                     <Textarea
                       id="custom-work-description"
-                      className="mt-2"
+
                       rows={6}
                       maxLength={1500}
                       {...form.register('description')}
@@ -177,7 +178,7 @@ export function RequestCustomWorkButton({
                         {<CustomerSourceText source={form.formState.errors.description.message} />}
                       </p>
                     ) : null}
-                  </div>
+                  </PortalField>
                 </fieldset>
               </form>
               <RequiredDialogFooter>

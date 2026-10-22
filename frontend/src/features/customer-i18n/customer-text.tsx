@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useMemo } from 'react'
 import { customerEnglishMessages } from './customer-messages.generated'
+import { formatByteSize, formatDisplayCurrency, formatDisplayDate, formatDisplayNumber, formatDisplayTimestamp } from '#/lib/display-format'
 
 export const CustomerLocaleContext = createContext({ customer: false, pseudo: false, locale: 'en-US' })
 export type CustomerMessageId = keyof typeof customerEnglishMessages
@@ -58,4 +59,15 @@ export function useCustomerDateFormatter(includeTime = false) {
   const { customer, locale } = useContext(CustomerLocaleContext)
   return useMemo(() => new Intl.DateTimeFormat(customer ? locale : undefined,
     { dateStyle: 'medium', ...(includeTime ? { timeStyle: 'short' as const } : {}) }), [customer, locale, includeTime])
+}
+
+export function useDisplayFormatters() {
+  const { locale } = useContext(CustomerLocaleContext)
+  return useMemo(()=>({
+    date: (value: Parameters<typeof formatDisplayDate>[0])=>formatDisplayDate(value,{locale}),
+    dateTime: (value: Parameters<typeof formatDisplayTimestamp>[0])=>formatDisplayTimestamp(value,{locale}),
+    bytes: (value: number | null | undefined)=>formatByteSize(value,{locale}),
+    number: (value: number | null | undefined)=>formatDisplayNumber(value,{locale}),
+    currency: (value: number | null | undefined,currency: string)=>formatDisplayCurrency(value,currency,{locale}),
+  }),[locale])
 }

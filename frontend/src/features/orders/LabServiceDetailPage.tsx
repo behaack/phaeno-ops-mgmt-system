@@ -1,3 +1,6 @@
+import { formatDisplayCurrency, formatDisplayDate, formatDisplayTimestamp } from '#/lib/display-format'
+import { NativeCheckbox } from '#/components/ui/native-checkbox'
+import { PageTitle } from '#/components/ui/page-header'
 import { BackLink } from '#/components/ui/back-link'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
@@ -229,7 +232,7 @@ export function LabServiceDetailPage({ orderId, workspace: controlledWorkspace, 
   return (
     <main className="page-wrap px-4 py-8">
       <section className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div><BackLink asChild><Link to="/lab-services" search={previous => previous}><CustomerText message="m_c0362ead7153" /></Link></BackLink><div className="mt-2 flex flex-wrap items-center gap-3"><h1 className="text-3xl font-semibold">{order.orderNumber}</h1><OrderStatusBadge status={order.status === 'QuoteIssued' && quoteStatus === 'Expired' ? "QuoteExpired" : customerLabStatus(order.status, order.laboratoryProgress)} /></div><p className="mt-2 text-sm text-muted-foreground">{order.customerReference || 'No Customer reference'} <CustomerText message="m_95ea2e3ec57e" />{formatDate(order.updatedAt)}</p>{visibility.confirmed && phasePlan.data ? <p className="mt-1 text-xs text-muted-foreground">{labSampleCount(phasePlan.data.sampleCount)}{hasMultipleLabPhases(order, phasePlan.data) ? __customerText('m_2e6e00653c15', { p0: String(phasePlan.data.phases.length) }) : ''} · {phasePlan.data.phases.reduce((total, phase) => total + phase.deliveredSamples, 0)} <CustomerText message="m_bc44dba57530" /></p> : null}</div>
+        <div><BackLink asChild><Link to="/lab-services" search={previous => previous}><CustomerText message="m_c0362ead7153" /></Link></BackLink><div className="mt-2 flex flex-wrap items-center gap-3"><PageTitle>{order.orderNumber}</PageTitle><OrderStatusBadge status={order.status === 'QuoteIssued' && quoteStatus === 'Expired' ? "QuoteExpired" : customerLabStatus(order.status, order.laboratoryProgress)} /></div><p className="mt-2 text-sm text-muted-foreground">{order.customerReference || 'No Customer reference'} <CustomerText message="m_95ea2e3ec57e" />{formatDate(order.updatedAt)}</p>{visibility.confirmed && phasePlan.data ? <p className="mt-1 text-xs text-muted-foreground">{labSampleCount(phasePlan.data.sampleCount)}{hasMultipleLabPhases(order, phasePlan.data) ? __customerText('m_2e6e00653c15', { p0: String(phasePlan.data.phases.length) }) : ''} · {phasePlan.data.phases.reduce((total, phase) => total + phase.deliveredSamples, 0)} <CustomerText message="m_bc44dba57530" /></p> : null}</div>
         <div ref={setHeaderTarget} className="shrink-0">{!showShippingWorkspace ? <LabJobWorkspaceActions orderActions={orderActions} triggerRef={orderActionRef} dialogOpen={Boolean(dialog) || Boolean(extensionQuote) || kitOrderOpen || phaseDialogOpen} /> : null}</div>
       </section>
       {order.tenantSafeReason && (order.status === 'ChangesRequested' || order.tenantSafeReason !== proposal?.reason) ? <Alert className="mb-5"><AlertTitle><CustomerText message="m_f6b44079c1c8" /></AlertTitle><AlertDescription>{order.tenantSafeReason}</AlertDescription></Alert> : null}
@@ -309,7 +312,7 @@ export function LabServiceDetailPage({ orderId, workspace: controlledWorkspace, 
               <div className="space-y-2">
                 <Label htmlFor="confirmed-lab-sample-type"><RequiredFieldName><CustomerText message="m_1e3f2e3f87c9" /></RequiredFieldName></Label>
                 <p className="text-sm">{order.sampleTypeName ?? 'No Sample type was quoted'}</p>
-                <label className="flex items-start gap-2 text-sm"><input id="confirmed-lab-sample-type" type="checkbox" className="mt-1" checked={sampleTypeConfirmed} disabled={action.isPending || !order.sampleTypeDefinitionId} onChange={event => setSampleTypeConfirmed(event.target.checked)} /><span><CustomerText message="m_1e94608f465d" /></span></label>
+                <label className="flex items-start gap-2 text-sm"><NativeCheckbox id="confirmed-lab-sample-type"   checked={sampleTypeConfirmed} disabled={action.isPending || !order.sampleTypeDefinitionId} onChange={event => setSampleTypeConfirmed(event.target.checked)} /><span><CustomerText message="m_1e94608f465d" /></span></label>
               </div>
 
             </div>
@@ -339,6 +342,6 @@ export function LabServiceDetailPage({ orderId, workspace: controlledWorkspace, 
   )
 }
 
-function formatMoney(value: number, currency: string) { return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(value) }
-function formatDate(value: string) { return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' }).format(new Date(value)) }
-function formatDateTime(value: string) { return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) }
+function formatMoney(value: number, currency: string) { return formatDisplayCurrency(value, currency) }
+function formatDate(value: string) { return formatDisplayDate(value) }
+function formatDateTime(value: string) { return formatDisplayTimestamp(value) }

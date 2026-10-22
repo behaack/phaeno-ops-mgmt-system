@@ -1,3 +1,4 @@
+import { Field as PortalField } from '#/components/ui/field'
 import { NativeSelect } from '#/components/ui/native-select'
 import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -188,7 +189,7 @@ export function EquipmentCreateDialog({
               >
                 <NativeSelect
                   id="equipment-type"
-                  className="w-full rounded-lg border bg-background px-3 text-sm"
+                  className="w-full"
                   value={equipmentType}
                   required
                   aria-invalid={Boolean(form.formState.errors.equipmentType)}
@@ -217,7 +218,7 @@ export function EquipmentCreateDialog({
               >
                 <NativeSelect
                   id="equipment-location"
-                  className="w-full rounded-lg border bg-background px-3 text-sm"
+                  className="w-full"
                   value={location}
                   required
                   aria-invalid={Boolean(form.formState.errors.location)}
@@ -355,20 +356,20 @@ function ReferenceCreateDialog({
               Enter the name to use for this equipment and future equipment records.
             </DialogDescription>
           </DialogHeader>
-          <div className="my-5">
+          <PortalField className="my-5">
             <Label htmlFor="new-equipment-reference">
               <RequiredFieldName>{label}</RequiredFieldName>
             </Label>
             <Input
               id="new-equipment-reference"
-              className="mt-2"
+
               required
               value={state.value}
               aria-invalid={Boolean(error)}
               onChange={(event) => onValueChange(event.target.value)}
             />
             {error ? <p className="mt-1 text-sm text-destructive" role="alert">{error}</p> : null}
-          </div>
+          </PortalField>
           <RequiredDialogFooter>
             <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
             <Button type="submit">Use {equipmentType ? 'equipment type' : 'location'}</Button>

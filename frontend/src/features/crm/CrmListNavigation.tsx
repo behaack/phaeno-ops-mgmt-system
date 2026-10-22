@@ -1,7 +1,8 @@
+import { ClearFiltersButton } from '#/components/ui/clear-filters-button'
+import { RecordPagination } from '#/components/RecordPagination'
 import { BackLink } from '#/components/ui/back-link'
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import { useCallback, useEffect, useState, type Dispatch, type SetStateAction } from 'react'
-import { Button } from '#/components/ui/button'
 
 export type CrmNavigationSearch = { search?: string; requestId?: string; taskId?: string; page?: number; includeInactive?: boolean; status?: string; pipelineId?: string; stageId?: string; board?: boolean; overdue?: boolean; dueSoon?: boolean; needsNextAction?: boolean; stale?: boolean; section?: string; returnTo?: 'data-provisioning' }
 export function validateCrmNavigationSearch(input: Record<string, unknown>): CrmNavigationSearch {
@@ -51,17 +52,14 @@ export function useCrmSearch(): [string, (value: string) => void, string, (value
   return [draft, setDraft, search, setSearch]
 }
 
-export function CrmListPagination({ result, page, onPageChange, busy }: { result?: { totalCount: number; pageSize: number }; page: number; onPageChange: (page: number) => void; busy?: boolean }) {
-  const pages = Math.max(1, Math.ceil((result?.totalCount ?? 0) / (result?.pageSize ?? 25)))
-  return <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm"><p>{result?.totalCount ?? 0} records · Page {page} of {pages}</p><div className="flex gap-2"><Button size="sm" variant="outline" disabled={busy || page <= 1} onClick={() => onPageChange(page - 1)}>Previous</Button><Button size="sm" variant="outline" disabled={busy || page >= pages} onClick={() => onPageChange(page + 1)}>Next</Button></div></div>
-}
+export function CrmListPagination({ result, page, onPageChange, busy }: { result?: { totalCount: number; pageSize: number }; page: number; onPageChange: (page: number) => void; busy?: boolean }) { return <RecordPagination data={{totalCount:result?.totalCount ?? 0,page,pageSize:result?.pageSize ?? 25}} busy={Boolean(busy)} onPage={onPageChange} label="CRM record pages" /> }
 
 export function CrmClearFilters({ ignoreStageSelection = false, label = "Clear all", keepVisible = false }: { ignoreStageSelection?: boolean; label?: string; keepVisible?: boolean }) {
   const search = useRouterState({ select: state => state.location.search }) as CrmNavigationSearch
   const navigate = useNavigate()
   const hasFilters = Boolean(search.search || search.requestId || search.taskId || search.status || search.includeInactive || (!ignoreStageSelection && search.stageId) || search.overdue || search.dueSoon || search.needsNextAction || search.stale || (search.page && search.page > 1))
   if (!hasFilters && !keepVisible) return null
-  return <Button type="button" size="sm" variant="ghost" disabled={!hasFilters} onClick={() => void navigate({ to: '.', search: { pipelineId: search.pipelineId, board: search.board, section: search.section, returnTo: search.returnTo }, replace: true, resetScroll: false })}>{label}</Button>
+  return <ClearFiltersButton label={label === "Clear all" ? undefined : label} disabled={!hasFilters} onClick={() => void navigate({ to: '.', search: { pipelineId: search.pipelineId, board: search.board, section: search.section, returnTo: search.returnTo }, replace: true, resetScroll: false })} />
 }
 
 export function CrmProvisioningReturn() {

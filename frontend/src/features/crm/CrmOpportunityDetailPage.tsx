@@ -1,3 +1,8 @@
+import { formatDisplayTimestamp } from '#/lib/display-format'
+import { Field as PortalField } from '#/components/ui/field'
+import { NativeSelect } from '#/components/ui/native-select'
+import { RecordLink } from '#/components/ui/record-link'
+import { PageTitle } from '#/components/ui/page-header'
 import { BackLink } from '#/components/ui/back-link'
 import { useCrmPermissions } from './use-crm-permissions';
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -118,18 +123,17 @@ export function CrmOpportunityDetailPage({
             <Badge variant="secondary">Opportunity</Badge>
             <Badge variant="outline">{opportunity.stageName}</Badge>
           </div>
-          <h1 className="text-3xl font-semibold">{opportunity.name}</h1>
+          <PageTitle>{opportunity.name}</PageTitle>
           <p className="mt-1 font-mono text-sm text-muted-foreground">
             {opportunity.opportunityNumber}
           </p>
           <p className="mt-2 text-sm text-muted-foreground">
-            <Link
-              to="/crm/companies/$companyId"
+            <RecordLink asChild><Link to="/crm/companies/$companyId"
               params={{ companyId: opportunity.companyId }}
-              className="hover:underline"
+
             >
               {opportunity.companyName}
-            </Link>{" "}
+            </Link></RecordLink>{" "}
             · {money(opportunity.amount, opportunity.currency)} ·{" "}
             {opportunity.probability}% probability
           </p>
@@ -188,13 +192,13 @@ export function CrmOpportunityDetailPage({
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid gap-1.5">
+            <PortalField >
               <Label htmlFor="opportunity-stage">Stage</Label>
-              <select
+              <NativeSelect
                 id="opportunity-stage"
                 value={stageId}
                 onChange={(event) => setStageId(event.target.value)}
-                className="h-9 rounded-md border bg-background px-3 text-sm"
+
               >
                 <option value="">Select stage</option>
                 {stages
@@ -204,9 +208,9 @@ export function CrmOpportunityDetailPage({
                       {value.name}
                     </option>
                   ))}
-              </select>
-            </div>
-            <div className="grid gap-1.5">
+              </NativeSelect>
+            </PortalField>
+            <PortalField >
               <Label htmlFor="stage-reason">Reason or context</Label>
               <Textarea
                 id="stage-reason"
@@ -214,7 +218,7 @@ export function CrmOpportunityDetailPage({
                 onChange={(event) => setReason(event.target.value)}
                 rows={3}
               />
-            </div>
+            </PortalField>
             <Button
               disabled={!stageId || move.isPending}
               onClick={() => move.mutate()}
@@ -288,9 +292,4 @@ function productInterestLabel(value: string | null) {
   if (value === "PSeqKit") return "PSeq Kit";
   return value ?? "Not recorded";
 }
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
-}
+function formatDate(value: string) { return formatDisplayTimestamp(value) }

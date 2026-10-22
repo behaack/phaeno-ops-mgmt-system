@@ -1,3 +1,4 @@
+import { Field as PortalField } from '#/components/ui/field'
 import { useEffect, useId, useRef, useState } from 'react'
 import { useIsMutating, useMutation, useQuery } from '@tanstack/react-query'
 import { readProcedureIllustration, uploadProcedureIllustration } from '#/api/lab-procedures'
@@ -44,7 +45,7 @@ export function ProcedureIllustrationsEditor({ images, onChange, disabled = fals
       <PreparationField label="Caption" id={`image-caption-${image.assetId}`}><Input id={`image-caption-${image.assetId}`} value={image.caption ?? ''} maxLength={1000} onChange={e => onChange(images.map((v, i) => i === index ? { ...v, caption: e.target.value } : v))} /></PreparationField>
       <Button type="button" variant="outline" onClick={() => onChange(images.filter((_, i) => i !== index))}>Remove illustration {index + 1}</Button>
     </div>)}
-    {images.length < 12 ? <div><Label className="sr-only" htmlFor={inputId}>Add illustration</Label><Input ref={fileRef} id={inputId} type="file" accept="image/png,image/jpeg,image/webp" onChange={e => { const file = e.target.files?.[0]; if (file) upload.mutate(file) }} /></div> : null}
+    {images.length < 12 ? <PortalField><Label className="sr-only" htmlFor={inputId}>Add illustration</Label><Input ref={fileRef} id={inputId} type="file" accept="image/png,image/jpeg,image/webp" onChange={e => { const file = e.target.files?.[0]; if (file) upload.mutate(file) }} /></PortalField> : null}
     {upload.isPending ? <p role="status">Uploading and scanning illustration…</p> : null}
     {upload.error ? <p role="alert" className="text-sm text-destructive">{getLabOperationsError(upload.error, upload.error instanceof Error ? upload.error.message : 'The illustration could not be uploaded.')}</p> : null}
   </fieldset>

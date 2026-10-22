@@ -1,3 +1,5 @@
+import { Field as PortalField } from '#/components/ui/field'
+import { NativeCheckbox } from '#/components/ui/native-checkbox'
 import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRef, useState } from 'react'
@@ -41,8 +43,8 @@ export function CrmOpportunityContactDialog({ association, excludedIds, pending,
     <form id="opportunity-contact-form" noValidate onSubmit={form.handleSubmit(values => { if (!pending && !confirmRemoval) onSubmit({ ...values, role: values.role || null }) }, errors => { if (errors.contactId) document.getElementById('opportunity-contact')?.focus() })}>
       <fieldset disabled={pending || confirmRemoval} className="space-y-4">
         {!association ? <div className="space-y-1.5"><Label htmlFor="opportunity-contact"><RequiredFieldName>Contact</RequiredFieldName></Label><CrmAssociationRecordCombobox id="opportunity-contact" name="contactId" kind="contact" required excludedIds={excludedIds} invalid={Boolean(contactError)} describedBy={contactError ? 'opportunity-contact-error' : undefined} onValueChange={id => form.setValue('contactId', id, { shouldDirty: true, shouldValidate: Boolean(contactError) })} /><FieldError id="opportunity-contact-error">{contactError}</FieldError></div> : null}
-        <div className="space-y-1.5"><Label htmlFor="opportunity-contact-role">Role (optional)</Label><Input id="opportunity-contact-role" maxLength={150} aria-invalid={Boolean(form.formState.errors.role)} aria-describedby={form.formState.errors.role ? 'opportunity-contact-role-error' : undefined} {...form.register('role')} placeholder="Decision maker, scientific lead, procurement…" /><FieldError id="opportunity-contact-role-error">{form.formState.errors.role?.message}</FieldError></div>
-        <label className="flex cursor-pointer items-center gap-2 text-sm"><input type="checkbox" {...form.register('isPrimary')} />Primary contact for this Opportunity</label>
+        <PortalField ><Label htmlFor="opportunity-contact-role">Role (optional)</Label><Input id="opportunity-contact-role" maxLength={150} aria-invalid={Boolean(form.formState.errors.role)} aria-describedby={form.formState.errors.role ? 'opportunity-contact-role-error' : undefined} {...form.register('role')} placeholder="Decision maker, scientific lead, procurement…" /><FieldError id="opportunity-contact-role-error">{form.formState.errors.role?.message}</FieldError></PortalField>
+        <label className="flex cursor-pointer items-center gap-2 text-sm"><NativeCheckbox  {...form.register('isPrimary')} />Primary contact for this Opportunity</label>
       </fieldset>
     </form>
     {confirmRemoval ? <Alert><AlertDescription>Remove {association?.contactName} from this Opportunity? The saved association will remain in history. Unsaved role changes will be discarded.</AlertDescription></Alert> : null}

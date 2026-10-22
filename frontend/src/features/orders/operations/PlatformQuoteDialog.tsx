@@ -1,3 +1,5 @@
+import { formatDisplayCurrency } from '#/lib/display-format'
+import { Field as PortalField } from '#/components/ui/field'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { NativeSelect } from '#/components/ui/native-select'
 import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
@@ -366,25 +368,25 @@ export function PlatformQuoteDialog({
           ) : null}
           <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
             <div>
-              <Label htmlFor="quotePurpose"><CustomerSourceText source={"Purpose *"} /></Label>
-              {sourceQuote ? <><Input id="quotePurpose" className="mt-2 h-9 bg-muted/30" readOnly value={sourceQuote.purpose === "Change" ? "Scope change" : "Initial"} /><input type="hidden" {...form.register("purpose")} /></> : <NativeSelect
+              <Label htmlFor="quotePurpose"><RequiredFieldName><CustomerSourceText source={"Purpose"} /></RequiredFieldName></Label>
+              {sourceQuote ? <><Input id="quotePurpose" className="bg-muted/30" readOnly value={sourceQuote.purpose === "Change" ? "Scope change" : "Initial"} /><input type="hidden" {...form.register("purpose")} /></> : <NativeSelect
                 id="quotePurpose"
                 {...form.register("purpose")}
-                className="mt-2 w-full rounded-lg border border-input bg-background px-3 text-sm"
+                className="w-full"
               >
                 <option value="Initial"><CustomerSourceText source={"Initial"} /></option>
                 {workflow !== 'lab' ? <option value="Change"><CustomerSourceText source={"Scope change"} /></option> : null}
               </NativeSelect>}
             </div>
-            <div>
-              <Label htmlFor="quoteCurrency"><CustomerSourceText source={"Currency *"} /></Label>
+            <PortalField>
+              <Label htmlFor="quoteCurrency"><RequiredFieldName><CustomerSourceText source={"Currency"} /></RequiredFieldName></Label>
               <Input
                 id="quoteCurrency"
                 maxLength={3}
-                className="mt-2 h-9 uppercase"
+                className="uppercase"
                 {...form.register("currency")}
               />
-            </div>
+            </PortalField>
             {workflow === "lab" ? (
               <div>
                 <p
@@ -409,25 +411,25 @@ export function PlatformQuoteDialog({
                 </p>
               </div>
             ) : (
-              <div>
+              <PortalField>
                 <Label htmlFor="quoteTax"><CustomerSourceText source={"Tax"} /></Label>
                 <Input
                   id="quoteTax"
                   type="number"
                   min="0"
                   step="0.01"
-                  className="mt-2"
+
                   {...form.register("tax")}
                 />
-              </div>
+              </PortalField>
             )}
-            <div>
+            <PortalField>
               <Label htmlFor="quoteExpiresAt">{sourceQuote ? <RequiredFieldName><CustomerSourceText source={"Expiration date"} /></RequiredFieldName> : <CustomerSourceText source={"Expiration override"} />}</Label>
               <Input
                 id="quoteExpiresAt"
                 type="date"
                 min={nextUtcDate()}
-                className="mt-2 h-9"
+
                 aria-invalid={Boolean(form.formState.errors.expiresAt)}
                 aria-describedby={`quote-expiration-help${form.formState.errors.expiresAt ? " quote-expiration-error" : ""}`}
                 {...form.register("expiresAt")}
@@ -436,14 +438,14 @@ export function PlatformQuoteDialog({
                 {sourceQuote ? <CustomerSourceText source={"Required for the new revision. The original expiration is preserved."} /> : <CustomerSourceText source={"Leave blank to use the configured default validity."} />}
               </p>
               <FieldError id="quote-expiration-error">{form.formState.errors.expiresAt?.message}</FieldError>
-            </div>
+            </PortalField>
           </div>
-          {workflow === "lab" && form.watch("purpose") === "Initial" ? <div className="space-y-1">
+          {workflow === "lab" && form.watch("purpose") === "Initial" ? <PortalField >
             <Label htmlFor="quote-delivery-target"><RequiredFieldName><CustomerSourceText source={"Delivery target (business days)"} /></RequiredFieldName></Label>
             <Input id="quote-delivery-target" type="number" min={1} max={365} step={1} className="max-w-40" {...form.register("deliveryTargetBusinessDays", { valueAsNumber: true })} aria-invalid={Boolean(form.formState.errors.deliveryTargetBusinessDays)} />
             <p className="text-xs text-muted-foreground"><CustomerSourceText source={"Starts when Phaeno physically receives every required tube for all samples. Monday–Friday, excluding Phaeno holidays."} /></p>
             <FieldError>{form.formState.errors.deliveryTargetBusinessDays?.message}</FieldError>
-          </div> : null}
+          </PortalField> : null}
           <fieldset>
             <legend className="text-sm font-medium">
               <RequiredFieldName><CustomerSourceText source={"Itemized quote"} /></RequiredFieldName>
@@ -476,7 +478,7 @@ export function PlatformQuoteDialog({
                     key={field.id}
                     className="grid min-w-0 gap-3 rounded-lg border p-4 md:grid-cols-[minmax(12rem,0.85fr)_minmax(14rem,1.35fr)_5rem_6rem_2rem] lg:rounded-none lg:border-0 lg:p-0 lg:py-1"
                   >
-                    <div className="min-w-0 md:col-start-1 md:row-start-1">
+                    <PortalField className="min-w-0 md:col-start-1 md:row-start-1">
                       <Label
                         htmlFor={`quoteItem-${index}`}
                         className="lg:sr-only"
@@ -496,7 +498,7 @@ export function PlatformQuoteDialog({
                             ? `quoteItem-${index}-description`
                             : undefined
                         }
-                        className="mt-2 w-full rounded-lg border border-input bg-background px-3 text-sm lg:mt-0"
+                        className="w-full"
                       >
                         <option value=""><CustomerSourceText source={"Select item"} /></option>
                         {selectedItem && !selectedItem.isActive ? <option value={selectedItem.id} disabled>{selectedItem.name} <CustomerSourceText source={"· Inactive"} /></option> : null}
@@ -519,7 +521,7 @@ export function PlatformQuoteDialog({
                             </option>
                           ))}
                       </NativeSelect>
-                    </div>
+                    </PortalField>
                     {selectedItem ? (
                       <p
                         id={`quoteItem-${index}-description`}
@@ -530,7 +532,7 @@ export function PlatformQuoteDialog({
                           : <CustomerSourceText source={"Priced per unit · set the quantity for this quote"} />}
                       </p>
                     ) : null}
-                    <div className="min-w-0 md:col-start-2 md:row-start-1">
+                    <PortalField className="min-w-0 md:col-start-2 md:row-start-1">
                       <Label
                         htmlFor={`quoteDescription-${index}`}
                         className="lg:sr-only"
@@ -539,11 +541,11 @@ export function PlatformQuoteDialog({
                       </Label>
                       <Input
                         id={`quoteDescription-${index}`}
-                        className="mt-2 lg:mt-0"
+                        className="lg:mt-0"
                         {...form.register(`lines.${index}.description`)}
                       />
-                    </div>
-                    <div className="min-w-0 md:col-start-3 md:row-start-1">
+                    </PortalField>
+                    <PortalField className="min-w-0 md:col-start-3 md:row-start-1">
                       <Label
                         htmlFor={`quoteQuantity-${index}`}
                         className="lg:sr-only"
@@ -556,11 +558,11 @@ export function PlatformQuoteDialog({
                         step="any"
                         readOnly={isLockedRequiredLabLine}
                         aria-readonly={isLockedRequiredLabLine}
-                        className="mt-2 read-only:bg-muted/30 read-only:text-muted-foreground lg:mt-0"
+                        className="read-only:bg-muted/30 read-only:text-muted-foreground lg:mt-0"
                         {...form.register(`lines.${index}.quantity`)}
                       />
-                    </div>
-                    <div className="min-w-0 md:col-start-4 md:row-start-1">
+                    </PortalField>
+                    <PortalField className="min-w-0 md:col-start-4 md:row-start-1">
                       <Label
                         htmlFor={`quotePrice-${index}`}
                         className="lg:sr-only"
@@ -572,10 +574,10 @@ export function PlatformQuoteDialog({
                         type="number"
                         min="0"
                         step="0.01"
-                        className="mt-2 lg:mt-0"
+                        className="lg:mt-0"
                         {...form.register(`lines.${index}.unitPrice`)}
                       />
-                    </div>
+                    </PortalField>
                     <Button
                       type="button"
                       variant="ghost"
@@ -632,7 +634,7 @@ export function PlatformQuoteDialog({
             </div>
           </fieldset>
           {workflow === "lab" && amendsProposedPrice ? (
-            <div>
+            <PortalField>
               <Label htmlFor="pricingDecisionReason">
                 <RequiredFieldName><CustomerSourceText source={"Amendment reason"} /></RequiredFieldName>
               </Label>
@@ -641,7 +643,7 @@ export function PlatformQuoteDialog({
               </FieldDescription>
               <Textarea
                 id="pricingDecisionReason"
-                className="mt-2 min-h-20"
+                className="min-h-20"
                 aria-invalid={Boolean(form.formState.errors.pricingDecisionReason)}
                 aria-describedby={`pricingDecisionReason-help${form.formState.errors.pricingDecisionReason ? " pricingDecisionReason-error" : ""}`}
                 {...form.register("pricingDecisionReason")}
@@ -649,7 +651,7 @@ export function PlatformQuoteDialog({
               <FieldError id="pricingDecisionReason-error">
                 {form.formState.errors.pricingDecisionReason?.message}
               </FieldError>
-            </div>
+            </PortalField>
           ) : null}
           </fieldset>
           {form.formState.errors.root?.message ? (
@@ -765,9 +767,7 @@ function roundMoney(value: number) {
   return Math.round((value + Number.EPSILON) * 100) / 100;
 }
 
-function formatMoney(value: number, currency: string) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(value);
-}
+function formatMoney(value: number, currency: string) { return formatDisplayCurrency(value, currency) }
 
 function formatSignedMoney(value: number, currency: string) {
   const amount = formatMoney(Math.abs(value), currency);

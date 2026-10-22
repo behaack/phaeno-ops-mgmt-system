@@ -1,3 +1,4 @@
+import { PageTitle } from '#/components/ui/page-header'
 import { useCustomerText } from '#/features/customer-i18n/customer-text'
 import { useNavigate, useRouterState } from '@tanstack/react-router'
 import { parseWorkSearch, type WorkSearch } from './work-search'
@@ -35,7 +36,7 @@ export function WorkDashboard({ full = false }: { full?: boolean }) {
   const retry = () => { void Promise.all([summary.refetch({ cancelRefetch: false }), query.refetch({ cancelRefetch: false })]) }
   const chooseKind = (next: WorkKind) => { setKind(next) }
   return <main className="page-wrap space-y-5 px-4 py-8">
-    <header><h1 className="text-3xl font-semibold">{messages.text('title')}</h1><p className="mt-2 text-sm text-muted-foreground">{messages.text('description')}</p></header>
+    <header><PageTitle>{messages.text('title')}</PageTitle><p className="mt-2 text-sm text-muted-foreground">{messages.text('description')}</p></header>
     <section aria-label={messages.text('title')} className="grid gap-3 sm:grid-cols-3">{(['action', 'waiting', 'update'] as const).map((value, index) => <Button key={value} variant={kind === value ? "default" : "outline"} className="h-auto justify-start gap-3 whitespace-normal px-4 py-4 text-left" aria-pressed={kind === value} onClick={() => chooseKind(value)}>
       <span className="text-2xl tabular-nums">{summary.data && !summary.isError ? [summary.data.actionCount, summary.data.waitingCount, summary.data.updateCount][index] : '—'}</span>{messages.text(value === 'action' ? 'actions' : value === 'waiting' ? 'waiting' : 'updates')}
     </Button>)}</section>

@@ -1,3 +1,5 @@
+import { Field as PortalField } from '#/components/ui/field'
+import { NativeSelect } from '#/components/ui/native-select'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
 import { Send } from 'lucide-react'
@@ -14,7 +16,8 @@ import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
-import { RequiredLegend } from '#/components/ui/required-field'
+import { RequiredFieldName, RequiredLegend } from '#/components/ui/required-field'
+import { FieldError } from '#/components/ui/field'
 
 const roles = ['Member', 'Organization Admin'] as const
 
@@ -56,8 +59,8 @@ export function InviteUserForm({ organizationId }: { organizationId: string }) {
     <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
       <RequiredLegend />
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="grid gap-2">
-          <Label htmlFor="first-name">First name *</Label>
+        <PortalField >
+          <Label htmlFor="first-name"><RequiredFieldName>First name</RequiredFieldName></Label>
           <Input
             id="first-name"
             autoComplete="given-name"
@@ -69,17 +72,17 @@ export function InviteUserForm({ organizationId }: { organizationId: string }) {
             {...register('firstName')}
           />
           {errors.firstName ? (
-            <p
+            <FieldError
               id="first-name-error"
-              className="text-sm text-destructive"
-              role="alert"
+
+
             >
               {errors.firstName.message}
-            </p>
+            </FieldError>
           ) : null}
-        </div>
-        <div className="grid gap-2">
-          <Label htmlFor="last-name">Last name *</Label>
+        </PortalField>
+        <PortalField >
+          <Label htmlFor="last-name"><RequiredFieldName>Last name</RequiredFieldName></Label>
           <Input
             id="last-name"
             autoComplete="family-name"
@@ -89,19 +92,19 @@ export function InviteUserForm({ organizationId }: { organizationId: string }) {
             {...register('lastName')}
           />
           {errors.lastName ? (
-            <p
+            <FieldError
               id="last-name-error"
-              className="text-sm text-destructive"
-              role="alert"
+
+
             >
               {errors.lastName.message}
-            </p>
+            </FieldError>
           ) : null}
-        </div>
+        </PortalField>
       </div>
 
-      <div className="grid gap-2">
-        <Label htmlFor="email">Email address *</Label>
+      <PortalField >
+        <Label htmlFor="email"><RequiredFieldName>Email address</RequiredFieldName></Label>
         <Input
           id="email"
           autoComplete="email"
@@ -112,17 +115,17 @@ export function InviteUserForm({ organizationId }: { organizationId: string }) {
           {...register('email')}
         />
         {errors.email ? (
-          <p id="email-error" className="text-sm text-destructive" role="alert">
+          <FieldError id="email-error"  >
             {errors.email.message}
-          </p>
+          </FieldError>
         ) : null}
-      </div>
+      </PortalField>
 
-      <div className="grid gap-2">
-        <Label htmlFor="role">Access role *</Label>
-        <select
+      <PortalField >
+        <Label htmlFor="role"><RequiredFieldName>Access role</RequiredFieldName></Label>
+        <NativeSelect
           id="role"
-          className="h-8 rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+
           required
           aria-describedby={errors.role ? 'role-error' : undefined}
           aria-invalid={errors.role ? 'true' : 'false'}
@@ -133,13 +136,13 @@ export function InviteUserForm({ organizationId }: { organizationId: string }) {
               {role}
             </option>
           ))}
-        </select>
+        </NativeSelect>
         {errors.role ? (
-          <p id="role-error" className="text-sm text-destructive" role="alert">
+          <FieldError id="role-error"  >
             {errors.role.message}
-          </p>
+          </FieldError>
         ) : null}
-      </div>
+      </PortalField>
 
       <Button type="submit" disabled={isBusy} className="w-full">
         <Send data-icon="inline-start" />

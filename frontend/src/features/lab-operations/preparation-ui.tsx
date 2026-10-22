@@ -1,3 +1,4 @@
+import { NativeCheckbox } from '#/components/ui/native-checkbox'
 import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Controller, useForm } from 'react-hook-form'
@@ -14,7 +15,7 @@ import { operationalInputProps } from './lab-presentation'
 import { RequiredFieldName, RequiredDialogFooter } from '#/components/ui/required-field'
 import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 
-export const prepSelectClass = 'h-9 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring'
+export const prepSelectClass = "w-full"
 export const prepRowClass = 'rounded-lg border bg-muted/30 p-4 shadow-xs'
 export function PreparationPanel({ title, description, actions, headerContent, children }: { title: string; description?: string; actions?: ReactNode; headerContent?: ReactNode; children: ReactNode }) {
   return <Card className="gap-0 overflow-hidden py-0"><CardHeader className="border-b bg-muted/50 p-4"><CardTitle>{title}</CardTitle>{description ? <CardDescription>{description}</CardDescription> : null}{actions ? <CardAction>{actions}</CardAction> : null}{headerContent ? <div className="col-span-full space-y-2">{headerContent}</div> : null}</CardHeader><CardContent className="space-y-3 p-4">{children}</CardContent></Card>
@@ -46,9 +47,9 @@ export function PreparationFormDialog({ title, description, fields, onClose, onS
     <div className="space-y-4">{children}{error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
       {fields.map(field => field.type === 'checkbox' ? <div key={field.key} className="space-y-1.5">
         <label htmlFor={`prep-${field.key}`} className="flex cursor-pointer items-start gap-2 text-sm leading-snug">
-          <Controller name={field.key} control={form.control} render={({ field: control }) => <input id={`prep-${field.key}`} type="checkbox" name={control.name} ref={control.ref} checked={control.value === 'yes'} onChange={event => control.onChange(event.target.checked ? 'yes' : '')} onBlur={control.onBlur} disabled={pending}
+          <Controller name={field.key} control={form.control} render={({ field: control }) => <NativeCheckbox id={`prep-${field.key}`}  name={control.name} ref={control.ref} checked={control.value === 'yes'} onChange={event => control.onChange(event.target.checked ? 'yes' : '')} onBlur={control.onBlur} disabled={pending}
             aria-required={field.required || undefined} aria-invalid={Boolean(form.formState.errors[field.key])} aria-describedby={form.formState.errors[field.key] ? `prep-${field.key}-error` : undefined}
-            className="mt-0.5 size-4 shrink-0 cursor-pointer accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" />} />
+            className="shrink-0 accent-primary" />} />
           {field.required ? <RequiredFieldName>{field.label}</RequiredFieldName> : <span>{field.label}</span>}
         </label>
         {form.formState.errors[field.key] ? <p id={`prep-${field.key}-error`} role="alert" className="text-sm text-destructive">{form.formState.errors[field.key]?.message}</p> : null}

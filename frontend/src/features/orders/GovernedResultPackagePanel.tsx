@@ -1,3 +1,4 @@
+import { formatByteSize } from '#/lib/display-format'
 import { CustomerText } from '#/features/customer-i18n/customer-text'
 import { Download } from 'lucide-react'
 
@@ -37,7 +38,4 @@ export function GovernedResultPackagePanel({ resultPackage, sampleName, isDownlo
   </section>
 }
 
-function formatBytes(value: number) {
-  return new Intl.NumberFormat('en-US', { style: 'unit', unit: value >= 1_000_000 ? 'megabyte' : 'kilobyte', maximumFractionDigits: 1 })
-    .format(value >= 1_000_000 ? value / 1_000_000 : value / 1_000)
-}
+function formatBytes(value: number) { return formatByteSize(value) }

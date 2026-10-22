@@ -19,10 +19,19 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '#/components/ui/tabs'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { recordLinkClassName } from '#/components/ui/record-link'
+import { HeaderExamples } from './HeaderExamples'
+import { ListExamples } from './ListExamples'
+import { GuardedFormExample } from './GuardedFormExample'
+import { FeedbackExamples } from './FeedbackExamples'
+import { ControlExamples } from './ControlExamples'
+import { StandardizationExamples } from './StandardizationExamples'
 
 const sections = [
   ['navigation', 'Return navigation'], ['buttons', 'Buttons'], ['fields', 'Fields and validation'],
   ['actions', 'Record actions'], ['tabs', 'Tabs'], ['feedback', 'Feedback'], ['tokens', 'Theme tokens'],
+  ['headers', 'Page headers'], ['lists', 'Lists and tables'], ['guarded-forms', 'Guarded forms'],
+  ['async-feedback', 'Loading and recovery'], ['controls', 'More controls'], ['app-navigation', 'Application navigation'],
+  ['standardization', 'Data, status and form standards'], ['page-previews', 'Complete page examples'],
 ] as const
 
 function GallerySection({ id, title, description, children }: { id: string; title: string; description: string; children: ReactNode }) {
@@ -41,7 +50,7 @@ export function ComponentGallery() {
     document.documentElement.style.colorScheme = theme
   }, [theme])
 
-  return <div className="min-h-screen bg-background text-foreground">
+  return <div className="min-h-screen bg-background text-foreground [--gallery-reference:1]">
     <a href="#gallery-content" className="sr-only focus:not-sr-only focus:block focus:p-4">Skip to component examples</a>
     <header className="border-b bg-card">
       <div className="mx-auto flex max-w-6xl flex-wrap items-end justify-between gap-5 p-4 sm:p-6">
@@ -54,7 +63,7 @@ export function ComponentGallery() {
     </header>
     <main id="gallery-content" tabIndex={-1} className="mx-auto max-w-6xl p-4 sm:p-6">
       <nav aria-label="Gallery sections" className="mb-6 flex flex-wrap gap-x-5 gap-y-3">{sections.map(([id, title]) => <a key={id} href={`#${id}`} className={recordLinkClassName}>{title}</a>)}</nav>
-      <p className="mb-6 text-sm text-muted-foreground" role="status" aria-live="polite">{message}</p>
+      <p className="mb-6 text-sm text-muted-foreground" role="status" aria-live="polite" data-testid="gallery-notice">{message}</p>
       <div data-testid="gallery-preview" className="@container mx-auto w-full space-y-8" style={{ maxWidth: width === 'full' ? undefined : `${width}px` }}>
         <GallerySection id="navigation" title="Return navigation" description="One arrow, one destination, the same typography and focus treatment. Long labels wrap.">
           <div className="grid gap-4 @min-[40rem]:grid-cols-2">
@@ -103,8 +112,20 @@ export function ComponentGallery() {
             <div className="rounded-lg border bg-card p-4 text-card-foreground">Card / card foreground</div>
             <div className="rounded-lg bg-primary p-4 text-primary-foreground">Primary / primary foreground</div>
             <div className="rounded-lg bg-muted p-4 text-muted-foreground">Muted / muted foreground</div>
+            <div className="rounded-lg bg-secondary p-4 text-secondary-foreground">Secondary / secondary foreground</div>
+            <div className="rounded-lg bg-accent p-4 text-accent-foreground">Accent / accent foreground</div>
+            <div className="rounded-lg border bg-popover p-4 text-popover-foreground">Popover / popover foreground</div>
+            <div className="rounded-lg border border-destructive bg-destructive/10 p-4 text-destructive">Destructive feedback</div>
           </div>
         </GallerySection>
+        <GallerySection id="headers" title="Page headers" description="One shared title hierarchy, wrapping status/context and trailing actions."><HeaderExamples /></GallerySection>
+        <GallerySection id="lists" title="Lists and tables" description="Shared record links, flat rows, filters, responsive tables and real pagination."><ListExamples /></GallerySection>
+        <GallerySection id="guarded-forms" title="Guarded form dialogs" description="The actual draft guard, discard confirmation, required footer and retained input after a failed save."><GuardedFormExample /></GallerySection>
+        <GallerySection id="async-feedback" title="Loading, empty states and recovery" description="Initial loading, retained-data refresh, setup, permissions, errors and progress have distinct presentations."><FeedbackExamples /></GallerySection>
+        <GallerySection id="controls" title="Additional shared controls" description="Control sizes, icon names, checkbox wrapping, selection, dates, view toggles and disabled states."><ControlExamples /></GallerySection>
+        <GallerySection id="app-navigation" title="Application navigation" description="Inspect the actual main navigation, mobile user tray and responsive workspace sidebar in an isolated full-page example."><a href="/navigation-preview" className={recordLinkClassName}>Open application navigation example</a></GallerySection>
+        <GallerySection id="standardization" title="Data, status and form standards" description="Registered native controls, explicit status semantics, truthful units, calendar days, timestamps, missing values and both pagination contracts."><StandardizationExamples /></GallerySection>
+        <GallerySection id="page-previews" title="Complete page examples" description="Assembled list, detail and guarded-modal patterns with fictional data, long identifiers and expanded Customer text."><div className="flex flex-wrap gap-4">{['list','detail','modal'].map(view=><a key={view} href={`/workspace-preview?view=${view}`} className={recordLinkClassName}>Open {view} page example</a>)}<a href="/workspace-preview?view=detail&pseudo=true" className={recordLinkClassName}>Open expanded Customer example</a></div></GallerySection>
       </div>
     </main>
     <footer className="mx-auto max-w-6xl p-4 text-sm text-muted-foreground sm:p-6">Local engineering reference · fictional examples · no API connection</footer>

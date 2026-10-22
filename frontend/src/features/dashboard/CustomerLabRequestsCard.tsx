@@ -1,3 +1,4 @@
+import { RecordLink } from '#/components/ui/record-link'
 import { Link } from '@tanstack/react-router'
 import { type CustomerLabDashboardView, type OrderListItem } from '#/api/order-management'
 import type { SessionCapabilities } from '#/api/session'
@@ -45,7 +46,7 @@ export function CustomerLabRequestsCard({ view, page, onPageChange, query }: {
                   return <li key={order.id} className="flex flex-wrap items-start justify-between gap-3 py-4 first:pt-0 last:pb-0">
                     <div className="min-w-0 flex-1 basis-64 space-y-2">
                       <div className="flex flex-wrap items-center gap-2">
-                        <Link to="/lab-services/$orderId" params={{ orderId: order.id }} className="cursor-pointer rounded-sm font-bold wrap-anywhere text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{name}</Link>
+                        <span className="wrap-anywhere"><RecordLink asChild><Link to="/lab-services/$orderId" params={{ orderId: order.id }} >{name}</Link></RecordLink></span>
                         <OrderStatusBadge status={order.status} />
                       </div>
                       <p className="text-xs text-muted-foreground">Order reference: {order.number}</p>

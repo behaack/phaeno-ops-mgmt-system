@@ -1,3 +1,4 @@
+import { PageTitle } from '#/components/ui/page-header'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { Link } from '@tanstack/react-router'
 import type { LabServiceOrder } from '#/api/order-management'
@@ -12,7 +13,7 @@ export function CommercialDraftDetails({ order, canEdit }: { order: LabServiceOr
   const totals = draftTotals(draft)
   return <main className="page-wrap space-y-5 px-4 py-8">
     <header className="flex flex-wrap items-start justify-between gap-4">
-      <div><Link to="/order-operations/lab-services" search={previous => ({ ...previous })} className="text-sm text-primary hover:underline"><CustomerSourceText source={"Order intake"} /></Link><div className="mt-2 flex flex-wrap items-center gap-3"><h1 className="text-3xl font-semibold">{draft.jobName}</h1><OrderStatusBadge status="DraftRequest" /></div><p className="mt-2 text-sm text-muted-foreground"><CustomerSourceText source={"Order"} /> {order.orderNumber} <CustomerSourceText source={"· Saved Draft · Version"} /> {order.version}</p></div>
+      <div><Link to="/order-operations/lab-services" search={previous => ({ ...previous })} className="text-sm text-primary hover:underline"><CustomerSourceText source={"Order intake"} /></Link><div className="mt-2 flex flex-wrap items-center gap-3"><PageTitle>{draft.jobName}</PageTitle><OrderStatusBadge status="DraftRequest" /></div><p className="mt-2 text-sm text-muted-foreground"><CustomerSourceText source={"Order"} /> {order.orderNumber} <CustomerSourceText source={"· Saved Draft · Version"} /> {order.version}</p></div>
       {canEdit ? <Button asChild variant="outline"><Link to="/order-operations/lab-services/drafts/$orderId/edit" params={{ orderId: order.id }}><CustomerSourceText source={"Edit draft"} /></Link></Button> : null}
     </header>
     <p className="text-sm text-muted-foreground"><CustomerSourceText source={"This Draft has not been submitted for pricing. Complete the order details, then submit it from Edit draft."} /></p>

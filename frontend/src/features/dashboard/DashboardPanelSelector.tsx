@@ -1,3 +1,4 @@
+import { PageTitle } from '#/components/ui/page-header'
 import { Link, useNavigate, useSearch } from '@tanstack/react-router'
 import {
   useMutation,
@@ -227,7 +228,7 @@ export function DashboardPanelSelector({ webOnly = false }: { webOnly?: boolean 
 
   const visibleSections = sections.filter(item => (!webOnly || item.value === 'webOps') && (!apiEnabled || (item.value === 'orders' ? (session?.capabilities.canViewAllOperationalOrders || session?.capabilities.canViewTrialProjects) : item.value === 'lab' ? session?.capabilities.canManageLabOperations : item.value === 'accounts' ? session?.capabilities.canManageOrganizations : canViewWebOperations)))
   const activeSection = visibleSections.some(item => item.value === section) ? section : visibleSections[0]?.value
-  if (!activeSection) return <main className="page-wrap px-4 py-8">{webOnly ? <h1 className="text-3xl font-semibold">Web Operations</h1> : <DashboardHero />}<p>No operational workspaces are assigned to your role.</p></main>
+  if (!activeSection) return <main className="page-wrap px-4 py-8">{webOnly ? <PageTitle>Web Operations</PageTitle> : <DashboardHero />}<p>No operational workspaces are assigned to your role.</p></main>
   return (
     <WorkspaceSidebar
       workspaceLabel="POMS dashboard"
@@ -237,7 +238,7 @@ export function DashboardPanelSelector({ webOnly = false }: { webOnly?: boolean 
     >
       <main className="page-wrap px-4 py-8">
         <div className="soft-enter">
-          {webOnly ? <h1 className="text-3xl font-semibold">Web Operations</h1> : <DashboardHero />}
+          {webOnly ? <PageTitle>Web Operations</PageTitle> : <DashboardHero />}
           {!webOnly ? <NeedsAttentionSummary capabilities={session?.capabilities} enabled={apiEnabled} /> : null}
         </div>
         <div className="soft-enter soft-enter-delay-1">

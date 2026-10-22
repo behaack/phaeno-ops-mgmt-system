@@ -1,3 +1,4 @@
+import { Field as PortalField } from '#/components/ui/field'
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Plus } from 'lucide-react'
@@ -56,7 +57,7 @@ export function StorageLocations({ enabled, canCreate, canEdit }: { enabled: boo
   return <>
     <PreparationPanel title="Storage locations" description="Maintain the named locations used for material lots. Inactive locations stay in history and cannot be selected for new lots."
       actions={canCreate ? <Button type="button" id="new-storage-location" onClick={() => setEditor('create')}><Plus data-icon="inline-start" /> New storage location</Button> : undefined}
-      headerContent={<div className="max-w-sm space-y-1.5"><Label htmlFor="storage-location-search">Search locations</Label><Input id="storage-location-search" type="search" value={search} onChange={event => setSearch(event.target.value)} /></div>}>
+      headerContent={<PortalField className="max-w-sm"><Label htmlFor="storage-location-search">Search locations</Label><Input id="storage-location-search" type="search" value={search} onChange={event => setSearch(event.target.value)} /></PortalField>}>
       {locations.length ? <ul aria-label="Storage locations" className="space-y-3">{locations.map(location => <li key={location.id} className={`${prepRowClass} flex flex-wrap items-center justify-between gap-3`}>
         <div className="min-w-0 flex-1 basis-48 break-words"><p className="font-medium">{location.name}</p><p className="mt-1 text-sm text-muted-foreground">{location.materialLotCount} material {location.materialLotCount === 1 ? 'lot' : 'lots'}</p></div>
         <div className="flex items-center gap-2"><Badge variant="secondary">{location.isActive ? 'Active' : 'Inactive'}</Badge>

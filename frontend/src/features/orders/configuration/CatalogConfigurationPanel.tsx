@@ -1,3 +1,6 @@
+import { ClearFiltersButton } from '#/components/ui/clear-filters-button'
+import { formatDisplayCurrency } from '#/lib/display-format'
+import { RecordLink } from '#/components/ui/record-link'
 import { BackLink } from '#/components/ui/back-link'
 import { CustomerSourceText, useCustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -259,7 +262,7 @@ export function CatalogConfigurationPanel({
                 <Checkbox id="catalog-show-inactive" checked={Boolean(listSearch.catalogShowInactive)} onCheckedChange={checked => void navigate({ to: '/order-configuration', search: previous => ({ ...previous, configurationSection: 'catalog', catalogShowInactive: checked === true || undefined }), replace: true, resetScroll: false })} />
                 <Label htmlFor="catalog-show-inactive" className="cursor-pointer"><CustomerSourceText source={"Show inactive"} /></Label>
               </div>
-              {hasFilters ? <Button type="button" variant="ghost" size="sm" onClick={() => { setSearchInput({ saved: catalogSearch, text: '' }); void navigate({ to: '/order-configuration', search: previous => ({ ...previous, configurationSection: 'catalog', catalogSearch: undefined, catalogShowInactive: undefined }), replace: true, resetScroll: false }); }}><CustomerSourceText source={"Clear all"} /></Button> : null}
+              {hasFilters ? <ClearFiltersButton type="button"   onClick={() => { setSearchInput({ saved: catalogSearch, text: '' }); void navigate({ to: '/order-configuration', search: previous => ({ ...previous, configurationSection: 'catalog', catalogSearch: undefined, catalogShowInactive: undefined }), replace: true, resetScroll: false }); }}></ClearFiltersButton> : null}
             </div>
           </div>
         </CardHeader>
@@ -283,14 +286,13 @@ export function CatalogConfigurationPanel({
                   {visibleItems.map((item) => (
                     <tr key={item.id} className="border-b last:border-0">
                       <td className="py-3 pr-3">
-                        <Link
-                          to="/order-configuration/catalog/$catalogItemId"
+                        <RecordLink asChild><Link to="/order-configuration/catalog/$catalogItemId"
                           params={{ catalogItemId: item.id }}
                           search={{ ...listSearch, configurationSection: 'catalog' }}
-                          className="cursor-pointer text-left font-medium text-primary hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+
                         >
                           {item.name}
-                        </Link>
+                        </Link></RecordLink>
                       </td>
                       <td className="px-3 py-3">{salesUnitLabel(item.salesUnit)}</td>
                       <td className="px-3 py-3 text-right">
@@ -358,13 +360,13 @@ export function CatalogConfigurationPanel({
                 <option value="other"><CustomerSourceText source={"Other"} /></option>
               </NativeSelect>
             </Field>
-            <div className="space-y-2">
+            <SharedField >
               <Label htmlFor="catalog-status"><RequiredFieldName><CustomerSourceText source={"Status"} /></RequiredFieldName></Label>
               <NativeSelect id="catalog-status" value={form.watch('isActive') ? 'active' : 'inactive'} aria-describedby="catalog-status-help" onChange={event => form.setValue('isActive', event.target.value === 'active', { shouldDirty: true })}>
                 <option value="active"><CustomerSourceText source={"Active"} /></option><option value="inactive"><CustomerSourceText source={"Inactive"} /></option>
               </NativeSelect>
               <p id="catalog-status-help" className="text-xs text-muted-foreground"><CustomerSourceText source={"Active makes this item available for new pricing. Inactive keeps it out of new pricing; saved orders retain their details."} /></p>
-            </div>
+            </SharedField>
             <Field
               id="catalog-name"
               label="Name"
@@ -494,8 +496,4 @@ function Field({
   );
 }
 
-function formatMoney(value: number, currency: string) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(
-    value,
-  );
-}
+function formatMoney(value: number, currency: string) { return formatDisplayCurrency(value, currency) }

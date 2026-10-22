@@ -1,3 +1,5 @@
+import { RequiredLegend } from '#/components/ui/required-field'
+import { NativeCheckbox } from '#/components/ui/native-checkbox'
 import { NativeSelect } from '#/components/ui/native-select'
 import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -72,7 +74,7 @@ function ContactEditor({ contact, pending, error, onOpenChange, onSubmit }: Prop
   </div>;
   const attributes = (name: keyof Values, described = false) => ({ id: `contact-${name}`, 'aria-invalid': Boolean(errors[name]),
     'aria-describedby': [described ? `contact-${name}-help` : '', errors[name] ? `contact-${name}-error` : ''].filter(Boolean).join(' ') || undefined });
-  const selectClass = 'h-9 w-full min-w-0 rounded-md border bg-background px-3 text-sm';
+  const selectClass = "w-full min-w-0";
   return <Dialog open onOpenChange={close}>
     <DialogContent className="max-w-2xl" showCloseButton={!pending}>
       <form noValidate onSubmit={form.handleSubmit(values => onSubmit({
@@ -113,8 +115,8 @@ function ContactEditor({ contact, pending, error, onOpenChange, onSubmit }: Prop
             {reviewed?.lawfulContactBasis ? <p className="text-xs text-muted-foreground">Legacy contact basis (retained): {reviewed.lawfulContactBasis}</p> : null}
             {reviewed?.outreachStatus === 'Allowed' && email.trim().toLowerCase() !== reviewed.email?.toLowerCase()
               ? <p role="status" className="text-sm">Changing this email resets outreach to Not established unless you record a new decision for the new address.</p> : null}
-            <label className="flex cursor-pointer items-center gap-2 text-sm"><input type="checkbox" {...form.register('recordDecision')}
-              aria-describedby="contact-outreach-boundary" className="size-4" />Record or update outreach decision</label>
+            <label className="flex cursor-pointer items-center gap-2 text-sm"><NativeCheckbox  {...form.register('recordDecision')}
+              aria-describedby="contact-outreach-boundary"  />Record or update outreach decision</label>
             {recordDecision ? <div className="grid gap-4">
               {field('preference', 'Outreach status *', <NativeSelect {...attributes('preference')} {...form.register('preference')} className={selectClass}>
                 <option value="Unknown">Not established</option><option value="Permitted">Allowed</option><option value="Suppressed">Suppressed</option></NativeSelect>)}
@@ -132,7 +134,7 @@ function ContactEditor({ contact, pending, error, onOpenChange, onSubmit }: Prop
           {field('tags', 'Tags', <Input {...attributes('tags')} {...form.register('tags')} placeholder="Comma-separated" />)}
         </fieldset>
         <DialogFooter>
-          <span className="mr-auto text-xs text-muted-foreground">* Required</span>
+          <RequiredLegend className="mr-auto" />
           <Button type="button" variant="outline" disabled={pending} onClick={() => close(false)}>Cancel</Button>
           <Button type="submit" disabled={pending || (Boolean(reviewed) && !isDirty)}>{pending ? 'Saving…' : reviewed ? 'Save changes' : 'Create contact'}</Button>
         </DialogFooter>

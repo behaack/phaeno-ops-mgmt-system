@@ -1,3 +1,4 @@
+import { NativeCheckbox } from '#/components/ui/native-checkbox'
 import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery } from '@tanstack/react-query'
@@ -103,11 +104,11 @@ export function InvitationAccessDialog({ invitation, onClose, onSaved, returnFoc
             {active.map(department => {
               const intent = selected.find(value => value.departmentId === department.id)
               return <div key={department.id} className="space-y-2">
-                <label className="flex cursor-pointer items-center gap-2 text-sm"><input type="checkbox" checked={Boolean(intent)} onChange={event => {
+                <label className="flex cursor-pointer items-center gap-2 text-sm"><NativeCheckbox  checked={Boolean(intent)} onChange={event => {
                   const available = selected.filter(value => active.some(entry => entry.id === value.departmentId))
                   form.setValue('departments', event.target.checked ? [...available, { departmentId: department.id, isDepartmentAdmin: false }] : available.filter(value => value.departmentId !== department.id), { shouldDirty: true })
                 }} />{department.name}</label>
-                {intent ? <label className="flex cursor-pointer items-center gap-2 pl-5 text-sm"><input type="checkbox" checked={intent.isDepartmentAdmin} onChange={event => form.setValue('departments', selected.map(value => value.departmentId === department.id ? { ...value, isDepartmentAdmin: event.target.checked } : value), { shouldDirty: true })} />Department administrator for {department.name}</label> : null}
+                {intent ? <label className="flex cursor-pointer items-center gap-2 pl-5 text-sm"><NativeCheckbox  checked={intent.isDepartmentAdmin} onChange={event => form.setValue('departments', selected.map(value => value.departmentId === department.id ? { ...value, isDepartmentAdmin: event.target.checked } : value), { shouldDirty: true })} />Department administrator for {department.name}</label> : null}
               </div>
             })}
           </fieldset> : null}

@@ -1,3 +1,5 @@
+import { RequiredLegend } from '#/components/ui/required-field'
+import { NativeSelect } from '#/components/ui/native-select'
 import { useEffect, useState } from "react";
 import type { CrmLead, CrmLeadInput, CrmLeadKind } from "#/api/crm";
 import { Alert, AlertDescription } from "#/components/ui/alert";
@@ -70,15 +72,15 @@ export function CrmLeadDialog({
           ) : null}
           <div className="grid gap-4">
             <Field label="Lead type" id="lead-kind">
-              <select
+              <NativeSelect
                 id="lead-kind"
                 value={kind}
                 onChange={(event) => setKind(event.target.value as CrmLeadKind)}
-                className="h-9 rounded-md border bg-background px-3 text-sm"
+
               >
                 <option value="Individual">Individual</option>
                 <option value="Company">Company</option>
-              </select>
+              </NativeSelect>
             </Field>
             <Field label="Display name *" id="lead-name">
               <Input
@@ -165,9 +167,7 @@ export function CrmLeadDialog({
             </Field>
           </div>
           <DialogFooter>
-            <span className="mr-auto text-xs text-muted-foreground">
-              * Required
-            </span>
+            <RequiredLegend className="mr-auto" />
             <Button
               type="button"
               variant="outline"

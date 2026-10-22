@@ -1,3 +1,4 @@
+import { Field as PortalField } from '#/components/ui/field'
 import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
@@ -52,11 +53,11 @@ export function CrmMergeDialog({ recordLabel, source, pending, error, onClose, o
             <p id="merge-target-help" className="text-xs text-muted-foreground">Search the active {recordLabel} directory and select the record that should remain authoritative.</p>
             <FieldError id="merge-target-error">{targetError}</FieldError>
           </div>
-          <div className="space-y-1.5">
+          <PortalField >
             <Label htmlFor="merge-reason"><RequiredFieldName>Merge reason</RequiredFieldName></Label>
             <Textarea id="merge-reason" required maxLength={1000} rows={4} aria-invalid={Boolean(form.formState.errors.reason)} aria-describedby={form.formState.errors.reason ? 'merge-reason-error' : undefined} {...form.register('reason')} />
             <FieldError id="merge-reason-error">{form.formState.errors.reason?.message}</FieldError>
-          </div>
+          </PortalField>
         </fieldset>
       </form>
       <RequiredDialogFooter>

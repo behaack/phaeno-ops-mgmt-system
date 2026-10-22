@@ -1,3 +1,4 @@
+import { PageTitle } from '#/components/ui/page-header'
 import { BackLink } from '#/components/ui/back-link'
 import { parseLabSection } from './lab-sections'
 import { useQuery } from '@tanstack/react-query'
@@ -57,7 +58,7 @@ export function ScientificEvidencePage({ workOrderId, specimenId, kind, recordId
   const replace = () => void navigate({ to: recordRoute, params: { ...params, recordId: 'new' }, search: { from: row!.id } })
   return <main className="mx-auto w-full max-w-5xl space-y-5 p-4 sm:p-6">
     <BackLink asChild><Link to="/lab-operations/$workOrderId/specimens/$specimenId" params={{ workOrderId, specimenId }} search={previous => ({ ...previous, section: parseLabSection(previous.section), specimenTab: 'sequencing' })}>Back to sample {data.accessionNumber ?? ''}</Link></BackLink>
-    <h1 className="text-2xl font-semibold">{recordId === 'new' ? from ? kind === 'sequencing' ? 'Record sequencing correction' : 'Record reanalysis' : `Record ${title.toLowerCase()}` : title}</h1>
+    <PageTitle>{recordId === 'new' ? from ? kind === 'sequencing' ? 'Record sequencing correction' : 'Record reanalysis' : `Record ${title.toLowerCase()}` : title}</PageTitle>
     {recordId === 'new' ? data.canRecord ? <ScientificCaptureForm key={`${kind}-${from ?? 'new'}`} kind={kind} data={data} source={row} cancel={back} saved={id => void navigate({ to: recordRoute, params: { ...params, recordId: id }, search: {} })} /> : <p>Scientific capture is unavailable for your role or the current job state.</p> : row ? <>
       <Card className="gap-0 overflow-hidden py-0"><CardHeader className="flex flex-wrap items-start justify-between gap-3 border-b bg-muted/50 p-4"><div className="min-w-0"><CardTitle className="break-all">{'providerRunReference' in row ? row.providerRunReference : row.runReference}</CardTitle><p className="mt-1 text-sm">{row.providerKey} · Recorded {evidenceDate(row.recordedAtUtc)}</p></div>{data.canRecord && kind === 'analysis' && data.canManualUpload ? <ActionMenu><DropdownMenuTrigger asChild><Button variant="outline">Actions</Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onSelect={replace}>Record reanalysis</DropdownMenuItem><DropdownMenuItem onSelect={() => setUpload(true)}>Upload result</DropdownMenuItem></DropdownMenuContent></ActionMenu> : data.canRecord ? <Button variant="outline" onClick={replace}>{kind === 'sequencing' ? 'Record correction' : 'Record reanalysis'}</Button> : kind === 'analysis' && data.canManualUpload ? <Button variant="outline" onClick={() => setUpload(true)}>Upload result</Button> : null}</CardHeader>
         <CardContent className="space-y-4 p-4 text-sm"><p>Recorded evidence remains unchanged. A correction or reanalysis creates a new linked record.</p>

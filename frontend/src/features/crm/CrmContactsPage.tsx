@@ -1,3 +1,6 @@
+import { Field as PortalField } from '#/components/ui/field'
+import { RecordLink } from '#/components/ui/record-link'
+import { PageTitle } from '#/components/ui/page-header'
 import { CrmClearFilters, useCrmState, useCrmSearch, CrmListPagination } from "./CrmListNavigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -57,7 +60,7 @@ export function CrmContactsPage() {
           <Badge variant="secondary" className="mb-3">
             Relationships
           </Badge>
-          <h1 className="text-3xl font-semibold">Contacts</h1>
+          <PageTitle>Contacts</PageTitle>
           <p className="mt-3 text-sm text-muted-foreground">
             People can be connected to one or more Companies without duplicating
             their identity.
@@ -91,14 +94,14 @@ export function CrmContactsPage() {
               setSearch(draft.trim());
             }}
           >
-            <div className="grid min-w-0 flex-1 gap-1.5">
+            <PortalField className="min-w-0 flex-1">
               <Label htmlFor="contact-search">Search contacts</Label>
               <Input
                 id="contact-search"
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
               />
-            </div>
+            </PortalField>
             <Button className="mt-auto" type="submit" variant="outline">
               <Search data-icon="inline-start" />
               Search
@@ -144,13 +147,12 @@ export function CrmContactsPage() {
                 {(query.data?.items ?? []).map((contact) => (
                   <tr key={contact.id}>
                     <td className="px-4 py-3 font-medium">
-                      <Link
-                        to="/crm/contacts/$contactId" search={previous => previous}
+                      <RecordLink asChild><Link to="/crm/contacts/$contactId" search={previous => previous}
                         params={{ contactId: contact.id }}
-                        className="hover:underline"
+
                       >
                         {contact.displayName}
-                      </Link>
+                      </Link></RecordLink>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {contact.email ?? "—"}

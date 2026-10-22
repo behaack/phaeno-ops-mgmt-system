@@ -1,3 +1,4 @@
+import { Field as PortalField } from '#/components/ui/field'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { NativeSelect } from '#/components/ui/native-select'
 import { confirmPortal } from '#/components/PortalConfirmation'
@@ -416,7 +417,7 @@ export function LabServiceOfferingsPanel({
                 <>
                   <p className="text-sm font-medium">{parentItem.name}</p>
                   {field('description', 'Description', undefined, true)}
-                  <div>
+                  <PortalField>
                     <Label htmlFor="offering-catalog">
                       <RequiredFieldName>
                         <CustomerSourceText source={"Service catalog item"} />
@@ -428,7 +429,7 @@ export function LabServiceOfferingsPanel({
                     <NativeSelect
                       id="offering-catalog"
                       disabled
-                      className="mt-2 w-full rounded-md border border-input bg-background px-3 text-sm"
+                      className="w-full"
                       {...form.register('catalogItemId')}
                     >
                       {configuration.catalogItems
@@ -449,7 +450,7 @@ export function LabServiceOfferingsPanel({
                         {selectedCatalog.basePrice} <CustomerSourceText source={"per specimen."} />
                       </p>
                     ) : null}
-                  </div>
+                  </PortalField>
                   <fieldset>
                     <legend className="text-sm font-medium">
                       <RequiredFieldName><CustomerSourceText source={"Included analyses"} /></RequiredFieldName>
@@ -528,30 +529,30 @@ export function LabServiceOfferingsPanel({
                 </>
               ) : null}
               <div className="grid gap-4 sm:grid-cols-2">
-                <div>
+                <PortalField>
                   <Label htmlFor="offering-start">
                     <RequiredFieldName><CustomerSourceText source={"Effective from"} /></RequiredFieldName>
                   </Label>
                   <Input
                     id="offering-start"
                     type="date"
-                    className="mt-2"
+
                     {...form.register('effectiveFrom')}
                   />
                   {error('effectiveFrom')}
-                </div>
-                <div>
+                </PortalField>
+                <PortalField>
                   <Label htmlFor="offering-end">
                     <CustomerSourceText source={"Effective through (optional)"} />
                   </Label>
                   <Input
                     id="offering-end"
                     type="date"
-                    className="mt-2"
+
                     {...form.register('effectiveTo')}
                   />
                   {error('effectiveTo')}
-                </div>
+                </PortalField>
               </div>
               <label
                 htmlFor="offering-active"

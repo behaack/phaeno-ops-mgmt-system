@@ -1,3 +1,4 @@
+import { Field as PortalField } from '#/components/ui/field'
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
@@ -125,14 +126,14 @@ function CreateOpportunityHandoffDialog({ open, pending, error, onOpenChange, on
           </DialogHeader>
           {error ? <div className="px-5"><Alert variant="destructive"><AlertDescription>{apiErrorMessage(error)}</AlertDescription></Alert></div> : null}
           <div className="space-y-4 px-5 py-4">
-            <div className="grid gap-1.5">
+            <PortalField >
               <Label htmlFor="opportunity-handoff-summary"><RequiredFieldName>Commercial summary</RequiredFieldName></Label>
               <Textarea id="opportunity-handoff-summary" name="summary" required rows={4} />
-            </div>
-            <div className="grid gap-1.5">
+            </PortalField>
+            <PortalField >
               <Label htmlFor="opportunity-handoff-notes">Internal notes</Label>
               <Textarea id="opportunity-handoff-notes" name="notes" rows={3} />
-            </div>
+            </PortalField>
           </div>
           <RequiredDialogFooter className="border-t bg-muted/40 px-5 py-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>

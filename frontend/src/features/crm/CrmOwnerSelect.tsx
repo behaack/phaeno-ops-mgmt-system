@@ -1,3 +1,4 @@
+import { NativeSelect } from '#/components/ui/native-select'
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
@@ -28,12 +29,12 @@ export function CrmOwnerSelect({
     currentOwnerId && !activeUsers.some((user) => user.id === currentOwnerId),
   );
   return (
-    <select
+    <NativeSelect
       id={id}
       name="ownerUserId"
       value={value}
       onChange={(event) => setValue(event.target.value)}
-      className="h-9 w-full min-w-0 max-w-full rounded-md border bg-background px-3 text-sm"
+      className="w-full min-w-0 max-w-full"
     >
       <option value="">{defaultLabel}</option>
       {currentIsMissing ? (
@@ -46,6 +47,6 @@ export function CrmOwnerSelect({
           {`${user.firstName} ${user.lastName}`.trim()} · {user.email}
         </option>
       ))}
-    </select>
+    </NativeSelect>
   );
 }

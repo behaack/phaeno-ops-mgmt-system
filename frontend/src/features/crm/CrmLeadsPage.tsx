@@ -1,3 +1,8 @@
+import { Field as PortalField } from '#/components/ui/field'
+import { NativeSelect } from '#/components/ui/native-select'
+import { NativeCheckbox } from '#/components/ui/native-checkbox'
+import { RecordLink } from '#/components/ui/record-link'
+import { PageTitle } from '#/components/ui/page-header'
 import { CrmClearFilters, useCrmSearch, useCrmState, CrmListPagination } from "./CrmListNavigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -52,7 +57,7 @@ export function CrmLeadsPage() {
           <Badge variant="secondary" className="mb-3">
             Qualification
           </Badge>
-          <h1 className="text-3xl font-semibold">Leads</h1>
+          <PageTitle>Leads</PageTitle>
           <p className="mt-3 text-sm text-muted-foreground">
             Triage commercial signals, record qualification reasoning, and
             convert only when durable records are warranted.
@@ -78,19 +83,19 @@ export function CrmLeadsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_20rem]">
-            <div className="grid min-w-0 content-start gap-1.5">
+            <PortalField className="min-w-0 content-start">
               <Label htmlFor="crm-list-search">Search</Label>
-              <Input id="crm-list-search" className="h-9" value={draftSearch} onChange={event => setDraftSearch(event.target.value)} />
-            </div>
-            <div className="grid w-full max-w-xs gap-1.5">
+              <Input id="crm-list-search"  value={draftSearch} onChange={event => setDraftSearch(event.target.value)} />
+            </PortalField>
+            <PortalField className="w-full max-w-xs">
               <Label htmlFor="lead-status">Status</Label>
-              <select
+              <NativeSelect
                 id="lead-status"
                 value={status}
                 onChange={(event) =>
                   setStatus(event.target.value as CrmLeadStatus | "")
                 }
-                className="h-9 rounded-md border bg-background px-3 text-sm"
+
               >
                 <option value="">All statuses</option>
                 {["New", "Working", "Qualified", "Disqualified", "Converted"].map(
@@ -98,11 +103,11 @@ export function CrmLeadsPage() {
                     <option key={value}>{value}</option>
                   ),
                 )}
-              </select>
-            </div>
+              </NativeSelect>
+            </PortalField>
           </div>
           <CrmClearFilters />
-          <label className="flex cursor-pointer items-center gap-2 text-sm"><input type="checkbox" checked={needsNextAction} onChange={event => setNeedsNextAction(event.target.checked)} />Needs next action</label>
+          <label className="flex cursor-pointer items-center gap-2 text-sm"><NativeCheckbox  checked={needsNextAction} onChange={event => setNeedsNextAction(event.target.checked)} />Needs next action</label>
           <CrmSavedViewBar
             recordType="Lead"
             currentFilter={{ status, search, needsNextAction }}
@@ -124,13 +129,12 @@ export function CrmLeadsPage() {
                 {(query.data?.items ?? []).map((lead) => (
                   <tr key={lead.id}>
                     <td className="px-4 py-3 font-medium">
-                      <Link
-                        to="/crm/leads/$leadId" search={previous => previous}
+                      <RecordLink asChild><Link to="/crm/leads/$leadId" search={previous => previous}
                         params={{ leadId: lead.id }}
-                        className="hover:underline"
+
                       >
                         {lead.displayName}
-                      </Link>
+                      </Link></RecordLink>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {lead.companyName ?? "—"}

@@ -34,7 +34,7 @@ describe('product catalog filters', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: 'Show inactive' }))
     expect(screen.getByRole('link', { name: 'T-RETIRED' })).toBeTruthy()
     expect(screen.queryByRole('link', { name: 'T-001' })).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Clear all' }))
     expect(mocks.navigate).toHaveBeenCalledWith(expect.objectContaining({ to: '/purchasing', replace: true }))
     expect(screen.getByRole('combobox', { name: 'Product type' })).toHaveProperty('value', '')
     expect(screen.getByRole('textbox', { name: 'Search products' })).toHaveProperty('value', '')
@@ -58,7 +58,7 @@ describe('product catalog filters', () => {
   it('returns to the products list with its saved filters', () => {
     mocks.search = { productSearch: 'Sterile', productTypeFilter: productTypesFixture[0].id, productInactive: true }
     mount(supplierCatalogFixture[0].id, supplierCatalogFixture[0].products[0].id)
-    const href = screen.getByRole('link', { name: '← Back to products' }).getAttribute('href')!
+    const href = screen.getByRole('link', { name: 'Back to products' }).getAttribute('href')!
     const search = new URL(href, 'https://portal.test').searchParams
     expect(search.get('productTypeFilter')).toBe(productTypesFixture[0].id)
     expect(search.get('productSearch')).toBe('Sterile')

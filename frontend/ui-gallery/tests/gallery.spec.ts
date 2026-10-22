@@ -12,7 +12,8 @@ test('theme, reflow and accessible gallery remain consistent at narrow widths', 
   for (const width of ['full', '320']) {
     await page.getByLabel('Content width', { exact: true }).selectOption(width)
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
-    expect(await page.getByTestId('gallery-preview').evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true)
+    const overflow = await page.getByTestId('gallery-preview').evaluate(el => ({fits:el.scrollWidth<=el.clientWidth,items:[...el.querySelectorAll('*')].filter(child=>child.getBoundingClientRect().right>el.getBoundingClientRect().right+1).slice(0,6).map(child=>({tag:child.tagName,cls:child.className,text:child.textContent?.slice(0,70)}))}))
+    expect(overflow.fits,JSON.stringify(overflow.items)).toBe(true)
   }
   await page.getByLabel('Content width', { exact: true }).selectOption('full')
   const accessibility = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()
@@ -23,8 +24,8 @@ test('theme, reflow and accessible gallery remain consistent at narrow widths', 
 })
 
 test('return controls keep semantics, style, focus, wrapping and destination', async ({ page }) => {
-  const company = page.getByRole('link', { name: 'Back to companies', exact: true })
-  const assembly = page.getByRole('link', { name: 'Back to sequencing assembly', exact: true })
+  const company = page.locator('#navigation').getByRole('link', { name: 'Back to companies', exact: true })
+  const assembly = page.locator('#navigation').getByRole('link', { name: 'Back to sequencing assembly', exact: true })
   for (const link of [company, assembly]) {
     await expect(link.locator('svg[aria-hidden="true"]')).toHaveCount(1)
     await expect(link.locator('a, button')).toHaveCount(0)
@@ -71,8 +72,8 @@ test('shared fields align, required validation focuses and retains entries', asy
   await expect(page.getByRole('textbox', { name: 'Optional notes' })).toHaveValue('Retain these fictional notes')
   await reference.fill('EXAMPLE-001')
   await page.getByRole('button', { name: 'Create example', exact: true }).click()
-  await expect(page.getByRole('status')).toContainText('Fictional example saved locally')
-  const legend = page.locator('form [data-slot="required-legend"]')
+  await expect(page.getByTestId('gallery-notice')).toContainText('Fictional example saved locally')
+  const legend = page.locator('#fields form [data-slot="required-legend"]')
   await expect(legend).toHaveText(/Required/)
 })
 
@@ -88,7 +89,7 @@ test('Actions has one indicator, single actions are direct and keyboard focus re
   await page.keyboard.press('Escape')
   await expect(actions).toBeFocused()
   await page.getByRole('button', { name: 'View example', exact: true }).click()
-  await expect(page.getByRole('status')).toContainText('Example details opened')
+  await expect(page.getByTestId('gallery-notice')).toContainText('Example details opened')
 })
 
 test('confirmation has three regions, safe initial focus, dismissal protection and focus return', async ({ page }) => {

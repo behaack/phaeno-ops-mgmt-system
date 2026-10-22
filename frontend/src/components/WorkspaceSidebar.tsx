@@ -169,6 +169,7 @@ export function ResponsiveSidebar({
     <div className={cn(
       'relative min-w-0 transition-[padding] duration-200 motion-reduce:transition-none',
       showPinnedSidebar && 'workspace-sidebar-pinned',
+      !showPinnedSidebar && 'workspace-sidebar-unpinned',
     )}>
       {!showPinnedSidebar ? (
         <>

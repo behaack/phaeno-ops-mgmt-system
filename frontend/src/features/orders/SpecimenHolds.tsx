@@ -1,3 +1,4 @@
+import { NativeCheckbox } from '#/components/ui/native-checkbox'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import { useEffect, useId, useRef, useState } from 'react'
@@ -80,7 +81,7 @@ export function SpecimenHolds({ orderId, workOrderId, sampleIds, embedded = fals
     <Dialog open={decision !== null} onOpenChange={open => { if (!open) close() }}><DialogContent showCloseButton={!mutation.isPending} onOpenAutoFocus={event => { event.preventDefault(); cancelRef.current?.focus() }} onCloseAutoFocus={event => { event.preventDefault(); if (opener.current?.isConnected) opener.current.focus(); else document.getElementById('job-phase-progress')?.focus() }}><form onSubmit={form.handleSubmit(values => mutation.mutate(values))}><DialogHeader><DialogTitle>{decision?.label}</DialogTitle></DialogHeader>
       <div><DialogDescription>{decision?.specimen.name}<CustomerText message="m_6597af94a2ef" /></DialogDescription></div>
       <div className="my-4 space-y-3"><Label htmlFor={id}><RequiredFieldName>{staff ? <CustomerSourceText source={"Reason shared with the customer"} /> : __customerText('m_f81ab834de5f')}</RequiredFieldName></Label><textarea id={id} disabled={mutation.isPending} maxLength={2000} aria-invalid={Boolean(form.formState.errors.reason)} className="min-h-24 w-full rounded-md border bg-background p-2" {...form.register('reason')} />{form.formState.errors.reason ? <p role="alert">{<CustomerSourceText source={form.formState.errors.reason.message} />}</p> : null}
-      {staff ? <label className="flex items-start gap-2"><input type="checkbox" disabled={mutation.isPending} {...form.register('confirmed')} /><span><CustomerText message="m_5aac35273c70" /></span></label> : null}{form.formState.errors.confirmed ? <p role="alert">{<CustomerSourceText source={form.formState.errors.confirmed.message} />}</p> : null}
+      {staff ? <label className="flex items-start gap-2"><NativeCheckbox  disabled={mutation.isPending} {...form.register('confirmed')} /><span><CustomerText message="m_5aac35273c70" /></span></label> : null}{form.formState.errors.confirmed ? <p role="alert">{<CustomerSourceText source={form.formState.errors.confirmed.message} />}</p> : null}
       {mutation.isError ? <EvidenceError error={mutation.error} /> : null}</div>
       <RequiredDialogFooter><Button ref={cancelRef} type="button" variant="outline" disabled={mutation.isPending} onClick={close}><CustomerText message="m_19766ed6ccb2" /></Button><Button type="submit" disabled={mutation.isPending}>{mutation.isPending ? <CustomerSourceText source={"Saving…"} /> : decision?.label}</Button></RequiredDialogFooter>
     </form></DialogContent></Dialog>

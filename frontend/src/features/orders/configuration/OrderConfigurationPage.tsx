@@ -1,3 +1,4 @@
+import { PageTitle } from '#/components/ui/page-header'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -98,7 +99,7 @@ export function OrderConfigurationPage({ catalogItemId, kitLotId }: { catalogIte
         <div className="page-wrap px-4 pt-6 lg:pt-0">
           <section className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h1 className="text-3xl font-semibold"><CustomerSourceText source={"Order Settings"} /></h1>
+              <PageTitle><CustomerSourceText source={"Order Settings"} /></PageTitle>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
                 <CustomerSourceText source={"Maintain quote validity, order workflows, scientific service definitions,\r\n                Partner-negotiated reagent prices, assembly profiles, Trial configuration, and legacy\r\n                accounting links. Customer billing and tax approval live in Finance."} />
               </p>

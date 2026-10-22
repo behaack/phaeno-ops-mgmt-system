@@ -1,3 +1,6 @@
+import { Field as PortalField } from '#/components/ui/field'
+import { NativeSelect } from '#/components/ui/native-select'
+import { RecordLink } from '#/components/ui/record-link'
 import { useMutation } from '@tanstack/react-query'
 import axios from 'axios'
 import { Link } from '@tanstack/react-router'
@@ -46,14 +49,14 @@ export function LabBarcodeLookup() {
       <div>
         <form className="flex flex-wrap items-end gap-3" onSubmit={submit}>
           <RequiredLegend className="basis-full" />
-          <div className="min-w-64 flex-1">
+          <PortalField className="min-w-64 flex-1">
             <Label htmlFor="lab-container-scan">
               <RequiredFieldName>Container barcode</RequiredFieldName>
             </Label>
             <Input
               autoCapitalize="characters"
               autoComplete="off"
-              className="mt-2 font-mono"
+              className="font-mono"
               id="lab-container-scan"
               onChange={(event) => setBarcode(event.target.value)}
               ref={input}
@@ -61,7 +64,7 @@ export function LabBarcodeLookup() {
               spellCheck={false}
               value={barcode}
             />
-          </div>
+          </PortalField>
           <Button disabled={!barcode.trim() || scan.isPending} type="submit">
             <ScanBarcode data-icon="inline-start" /> Scan
           </Button>
@@ -80,14 +83,12 @@ export function LabBarcodeLookup() {
             <div className="mt-4 rounded-lg border bg-muted/30 p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <Link
-                    className="font-medium text-primary hover:underline"
-                    params={{ workOrderId: result.labWorkOrderId }}
+                  <RecordLink asChild><Link params={{ workOrderId: result.labWorkOrderId }}
                     search={previous => ({ ...previous, section: 'jobs' })}
                     to="/lab-operations/$workOrderId"
                   >
                     {result.commercialOrderNumber ?? result.labWorkOrderId}
-                  </Link>
+                  </Link></RecordLink>
                   <p className="mt-1 font-mono text-sm">{result.container.barcode}</p>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {result.container.kind} · {result.accessionNumber ?? 'No accession'} · {result.container.location}
@@ -157,12 +158,12 @@ export function LabBatchBarcodeScanner({
       <div>
         <form className="grid gap-3 sm:grid-cols-[minmax(12rem,1fr)_minmax(14rem,2fr)_auto]" onSubmit={submit}>
           <RequiredLegend className="sm:col-span-3" />
-          <div>
+          <PortalField>
             <Label htmlFor="lab-batch-scan-target">
               <RequiredFieldName>Draft batch</RequiredFieldName>
             </Label>
-            <select
-              className="mt-2 h-9 w-full rounded-lg border bg-background px-3 text-sm"
+            <NativeSelect
+              className="w-full"
               id="lab-batch-scan-target"
               onChange={(event) => setBatchId(event.target.value)}
               required
@@ -170,16 +171,16 @@ export function LabBatchBarcodeScanner({
             >
               <option value="">Select…</option>
               {drafts.map((item) => <option key={item.id} value={item.id}>{item.name === item.batchNumber ? item.batchNumber : `${item.name} · ${item.batchNumber}`}</option>)}
-            </select>
-          </div>
-          <div>
+            </NativeSelect>
+          </PortalField>
+          <PortalField>
             <Label htmlFor="lab-batch-container-scan">
               <RequiredFieldName>Library barcode</RequiredFieldName>
             </Label>
             <Input
               autoCapitalize="characters"
               autoComplete="off"
-              className="mt-2 font-mono"
+              className="font-mono"
               id="lab-batch-container-scan"
               onChange={(event) => setBarcode(event.target.value)}
               ref={input}
@@ -187,8 +188,8 @@ export function LabBatchBarcodeScanner({
               spellCheck={false}
               value={barcode}
             />
-          </div>
-          {suppliers.length > 0 ? <div className="sm:col-span-2"><Label htmlFor="lab-batch-manufacturer">Manufacturer (when printed values are shared)</Label><select id="lab-batch-manufacturer" className="mt-2 h-9 w-full cursor-pointer rounded-lg border bg-background px-3 text-sm" value={manufacturerSupplierId} onChange={event => setManufacturerSupplierId(event.target.value)}><option value="">Identify from barcode alone</option>{suppliers.map(supplier => <option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}</select></div> : null}
+          </PortalField>
+          {suppliers.length > 0 ? <PortalField className="sm:col-span-2"><Label htmlFor="lab-batch-manufacturer">Manufacturer (when printed values are shared)</Label><NativeSelect id="lab-batch-manufacturer" className="w-full" value={manufacturerSupplierId} onChange={event => setManufacturerSupplierId(event.target.value)}><option value="">Identify from barcode alone</option>{suppliers.map(supplier => <option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}</NativeSelect></PortalField> : null}
           <Button
             className="self-end"
             disabled={!batchId || !barcode.trim() || add.isPending}

@@ -1,3 +1,4 @@
+import { Field as PortalField } from '#/components/ui/field'
 import { NativeSelect } from '#/components/ui/native-select'
 import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -154,7 +155,7 @@ export function ServiceRequestEntitlementsDialog({ request, mode, error, isPendi
           const name = grant.service === 'PSeqLabService' ? 'PSeq Lab Service' : 'PSeq Kit (includes data assembly)'
           return <fieldset key={grant.service} className="space-y-3 rounded-lg border p-4">
             <legend className="px-1 font-medium">{name}</legend>
-            <div className="grid gap-1.5">
+            <PortalField >
               <Label htmlFor={`service-department-${index}`}><RequiredFieldName>Applies to</RequiredFieldName></Label>
               <NativeSelect id={`service-department-${index}`} className={selectClass} value={grant.departmentId}
                 onChange={event => {
@@ -166,8 +167,8 @@ export function ServiceRequestEntitlementsDialog({ request, mode, error, isPendi
                 <option value="">All departments (Company default)</option>
                 {(departments.data ?? []).filter(department => department.isActive).map(department => <option key={department.id} value={department.id}>{department.name}</option>)}
               </NativeSelect>
-            </div>
-            {candidates.length ? <div className="grid gap-1.5">
+            </PortalField>
+            {candidates.length ? <PortalField >
               <Label htmlFor={`service-existing-${index}`}>Existing permission</Label>
               <NativeSelect id={`service-existing-${index}`} className={selectClass} value={grant.existingEntitlementId}
                 onChange={event => chooseExisting(index, event.target.value)}>
@@ -177,27 +178,27 @@ export function ServiceRequestEntitlementsDialog({ request, mode, error, isPendi
                 </option>)}
               </NativeSelect>
               <p className="text-xs text-muted-foreground">Update an existing overlapping permission to avoid a duplicate. Its current dates and status are loaded for review.</p>
-            </div> : null}
+            </PortalField> : null}
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="grid gap-1.5">
+              <PortalField >
                 <Label htmlFor={`service-start-${index}`}><RequiredFieldName>Effective from</RequiredFieldName></Label>
                 <Input id={`service-start-${index}`} type="datetime-local" aria-invalid={Boolean(form.formState.errors.grants?.[index]?.effectiveFrom)} {...form.register(`grants.${index}.effectiveFrom`)} />
                 {form.formState.errors.grants?.[index]?.effectiveFrom ? <p role="alert" className="text-sm text-destructive">{form.formState.errors.grants[index]?.effectiveFrom?.message}</p> : null}
-              </div>
-              <div className="grid gap-1.5">
+              </PortalField>
+              <PortalField >
                 <Label htmlFor={`service-end-${index}`}>Effective to (optional)</Label>
                 <Input id={`service-end-${index}`} type="datetime-local" aria-invalid={Boolean(form.formState.errors.grants?.[index]?.effectiveTo)} {...form.register(`grants.${index}.effectiveTo`)} />
                 {form.formState.errors.grants?.[index]?.effectiveTo ? <p role="alert" className="text-sm text-destructive">{form.formState.errors.grants[index]?.effectiveTo?.message}</p> : null}
-              </div>
+              </PortalField>
             </div>
-            <div className="grid gap-1.5">
+            <PortalField >
               <Label htmlFor={`service-status-${index}`}><RequiredFieldName>Service configuration</RequiredFieldName></Label>
               <NativeSelect id={`service-status-${index}`} className={selectClass} {...form.register(`grants.${index}.configurationStatus`)}>
                 <option value="Pending">Pending setup</option>
                 <option value="Ready">Ready to use</option>
                 <option value="Blocked">Blocked</option>
               </NativeSelect>
-            </div>
+            </PortalField>
           </fieldset>
         })}
         {mode === 'approve' ? <div className="grid gap-1.5">

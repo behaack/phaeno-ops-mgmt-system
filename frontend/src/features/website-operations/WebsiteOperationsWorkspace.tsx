@@ -1,3 +1,4 @@
+import { PageTitle } from '#/components/ui/page-header'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useSearch } from '@tanstack/react-router'
 import { Mail, Send, MailCheck } from 'lucide-react'
@@ -19,7 +20,7 @@ export function WebsiteOperationsWorkspace() {
   if (isLoading) return <main className="page-wrap px-4 py-8"><p role="status">Loading Website operations…</p></main>
   if (session?.state !== 'ready' || !session.isPlatformAdmin || membership?.organizationKind !== 'Phaeno') {
     return <main className="page-wrap space-y-3 px-4 py-8">
-      <h1 className="text-3xl font-semibold">Website operations</h1>
+      <PageTitle>Website operations</PageTitle>
       <p>Website operations requires a Phaeno platform administrator in the Phaeno organization.</p>
     </main>
   }
@@ -67,7 +68,7 @@ function WebsiteOperationsQueues() {
     onValueChange={next => void navigate({ to: '/website-operations', search: { ...search, section: next, requestId: undefined, deliveryId: undefined }, resetScroll: false })}>
     <main className="page-wrap space-y-5 px-4 py-8">
       <header>
-        <h1 className="text-3xl font-semibold">Website operations</h1>
+        <PageTitle>Website operations</PageTitle>
         <p className="mt-2 text-sm text-muted-foreground">Review public Website intake and email delivery. Select a queue in the sidebar.</p>
       </header>
       {search.requestId && section === 'demo-requests' ? <Button asChild variant="outline">

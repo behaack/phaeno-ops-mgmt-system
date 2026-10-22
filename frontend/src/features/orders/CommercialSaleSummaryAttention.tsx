@@ -1,3 +1,4 @@
+import { RecordLink } from '#/components/ui/record-link'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { commercialRecordRoute } from '#/features/orders/service-workspaces'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -23,7 +24,7 @@ export function CommercialSaleSummaryAttention({ enabled }: { enabled: boolean }
     <CardContent className="space-y-4">
       {query.isPending ? <p role="status"><CustomerSourceText source={"Loading sale summaries…"} /></p> : query.isError ? <Alert variant="destructive"><AlertTitle><CustomerSourceText source={"Sale summaries unavailable"} /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(query.error, "The sale summaries could not be loaded.")} />} <Button variant="outline" disabled={query.isFetching} onClick={() => { void query.refetch() }}><CustomerSourceText source={"Try again"} /></Button></AlertDescription></Alert> : <>
         {!query.data?.items.length ? <p><CustomerSourceText source={"No sale summaries need attention."} /></p> : <ul className="divide-y">{query.data.items.map(summary => <li key={summary.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
-          <Link to={commercialRecordRoute(summary.workflowType === 'LabService' ? 'lab' : 'reagent')} params={{ orderId: summary.orderId }} className="min-w-0 break-words font-medium underline underline-offset-4">{summary.productSummary}</Link><Button variant="outline" disabled={retry.isPending} onClick={() => retry.mutate(summary)} aria-label={`Retry CRM summary for ${summary.productSummary}`}><CustomerSourceText source={"Retry publication"} /></Button>
+          <span className="min-w-0 break-words"><RecordLink asChild><Link to={commercialRecordRoute(summary.workflowType === 'LabService' ? 'lab' : 'reagent')} params={{ orderId: summary.orderId }} >{summary.productSummary}</Link></RecordLink></span><Button variant="outline" disabled={retry.isPending} onClick={() => retry.mutate(summary)} aria-label={`Retry CRM summary for ${summary.productSummary}`}><CustomerSourceText source={"Retry publication"} /></Button>
         </li>)}</ul>}
         {query.data && (page > 1 || query.data.totalCount > 10) ? <div className="flex flex-wrap items-center gap-3"><Button variant="outline" disabled={page === 1 || query.isFetching} onClick={() => setPage(value => value - 1)}><CustomerSourceText source={"Previous"} /></Button><span><CustomerSourceText source={"Page"} /> {page}</span><Button variant="outline" disabled={page * 10 >= query.data.totalCount || query.isFetching} onClick={() => setPage(value => value + 1)}><CustomerSourceText source={"Next"} /></Button></div> : null}
       </>}

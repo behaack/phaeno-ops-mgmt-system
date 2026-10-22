@@ -1,3 +1,9 @@
+import { LoadingState, ErrorState, EmptyState } from '#/components/ui/content-state'
+import { formatDisplayTimestamp } from '#/lib/display-format'
+import { Field as PortalField } from '#/components/ui/field'
+import { NativeSelect } from '#/components/ui/native-select'
+import { PageTitle } from '#/components/ui/page-header'
+import { RecordLink } from '#/components/ui/record-link'
 import { BackLink } from '#/components/ui/back-link'
 import { commercialRecordRoute } from '#/features/orders/service-workspaces'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -45,32 +51,30 @@ export function LabManufacturingQueue({ workflow, apiEnabled }: { workflow: Manu
             : 'Validate accepted input, run the assembly workflow, review quality, and release outputs.'}
         </CardDescription>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <div><Label htmlFor={`${workflow}-manufacturing-search`}>Search</Label><Input id={`${workflow}-manufacturing-search`} className="mt-2" value={search} onChange={(event) => setSearch(event.target.value)} /></div>
-          <div><Label htmlFor={`${workflow}-manufacturing-status`}>Status</Label><select id={`${workflow}-manufacturing-status`} className="mt-2 h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" value={status} onChange={(event) => setStatus(event.target.value)}><option value="">All statuses</option>{manufacturingStatuses[workflow].map((item) => <option key={item} value={item}>{humanizeStatus(item)}</option>)}</select></div>
+          <PortalField><Label htmlFor={`${workflow}-manufacturing-search`}>Search</Label><Input id={`${workflow}-manufacturing-search`}  value={search} onChange={(event) => setSearch(event.target.value)} /></PortalField>
+          <PortalField><Label htmlFor={`${workflow}-manufacturing-status`}>Status</Label><NativeSelect id={`${workflow}-manufacturing-status`} className="w-full" value={status} onChange={(event) => setStatus(event.target.value)}><option value="">All statuses</option>{manufacturingStatuses[workflow].map((item) => <option key={item} value={item}>{humanizeStatus(item)}</option>)}</NativeSelect></PortalField>
         </div>
       </CardHeader>
       <CardContent>
-        {query.error ? <Alert variant="destructive"><AlertTitle>Manufacturing queue could not be loaded</AlertTitle><AlertDescription>{getLabOperationsError(query.error, 'Refresh the queue and try again.')}</AlertDescription></Alert> : null}
-        {query.isLoading ? <p role="status">Loading manufacturing queue…</p> : null}
+        {query.error ? <ErrorState title="Manufacturing queue could not be loaded" onRetry={()=>void query.refetch()} busy={query.isFetching}>{getLabOperationsError(query.error, 'Refresh the queue and try again.')}</ErrorState> : null}
+        {query.isLoading ? <LoadingState label="Loading manufacturing queue…" /> : null}
         <div className="divide-y">
           {query.data?.items.map((item) => (
             <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 py-4">
               <div>
-                <Link
-                  to={isKit ? '/lab-operations/pseq-kit-orders/$orderId' : '/lab-operations/data-assembly/$orderId'}
+                <RecordLink asChild><Link to={isKit ? '/lab-operations/pseq-kit-orders/$orderId' : '/lab-operations/data-assembly/$orderId'}
                   params={{ orderId: item.id }}
                   search={{ section: undefined }}
-                  className="font-medium text-primary hover:underline"
                 >
                   {item.number}
-                </Link>
+                </Link></RecordLink>
                 <p className="mt-1 text-xs text-muted-foreground">{item.reference ?? 'No reference'} · updated {formatDateTime(item.updatedAt)}</p>
               </div>
               <OrderStatusBadge status={item.status} />
             </div>
           ))}
         </div>
-        {!query.isLoading && !query.data?.items.length ? <p className="py-8 text-center text-sm text-muted-foreground">No records in this manufacturing queue.</p> : null}
+        {!query.isLoading && !query.isError && !query.data?.items.length ? <EmptyState kind={search||status?'no-results':'empty'} title={search||status?'No matching records in this manufacturing queue.':'No records in this manufacturing queue.'} /> : null}
       </CardContent>
     </Card>
   )
@@ -120,7 +124,7 @@ export function LabManufacturingOrderPage({ workflow, orderId }: { workflow: Man
       <section className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-sm text-muted-foreground">{workflow === 'reagent' ? <BackLink asChild><Link to="/lab-operations" search={{ section: 'kits' }}>Lab operations</Link></BackLink> : <BackLink asChild><Link to="/order-operations/partner-services" search={previous => ({ ...previous, section: 'assembly' })}>Partner services</Link></BackLink>} / {workflow === 'reagent' ? 'PSeq kit fulfillment' : 'Data assembly'} / <span className="font-mono">{number}</span></p>
-          <div className="mt-2 flex flex-wrap items-center gap-3"><h1 className="text-3xl font-semibold">{number}</h1><OrderStatusBadge status={item.status} /></div>
+          <div className="mt-2 flex flex-wrap items-center gap-3"><PageTitle>{number}</PageTitle><OrderStatusBadge status={item.status} /></div>
           <p className="mt-2 text-sm text-muted-foreground">Manufacturing record for organization {item.organizationId}</p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -167,4 +171,4 @@ const manufacturingStatuses: Record<ManufacturingWorkflow, string[]> = {
   assembly: ['Submitted', 'IntakeValidation', 'ChangesRequested', 'QuoteInPreparation', 'QuoteIssued', 'PlacedQueued', 'Processing', 'OutputReview', 'OutputAvailable', 'OnHold', 'Completed', 'Cancelled', 'Rejected'],
 }
 
-function formatDateTime(value: string) { return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) }
+function formatDateTime(value: string) { return formatDisplayTimestamp(value) }

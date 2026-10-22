@@ -1,3 +1,6 @@
+import { Field as PortalField } from '#/components/ui/field'
+import { PageTitle } from '#/components/ui/page-header'
+import { RecordLink } from '#/components/ui/record-link'
 import { BackLink } from '#/components/ui/back-link'
 import { CustomerSourceText, useCustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { RecordPagination, useRecordListState } from '#/components/RecordPagination'
@@ -77,7 +80,7 @@ export function FinanceOperationsPanel({ apiEnabled, canBill, canManageCash, can
   const visibleReceipts = receipts.data?.filter(item => !customerId || item.organizationId === customerId) ?? []
   const visibleCustomers = customers.data?.filter(item => matchesCustomer(item.organizationId)) ?? []
   const customerFilter = <div className="mt-3 flex flex-wrap items-end gap-3">
-    <div className="min-w-0 flex-1 basis-60"><Label htmlFor="finance-customer-search"><CustomerSourceText source={"Search customers"} /></Label><Input id="finance-customer-search" className="mt-2" value={customerSearch} placeholder={__customerSource("Customer name")} onChange={event => { const value = event.currentTarget.value; void navigate({ to: '/finance', replace: true, search: previous => ({ ...previous, financeCustomer: undefined, financeSearch: value || undefined, listPage: 1 }) }) }} /></div>
+    <PortalField className="min-w-0 flex-1 basis-60"><Label htmlFor="finance-customer-search"><CustomerSourceText source={"Search customers"} /></Label><Input id="finance-customer-search"  value={customerSearch} placeholder={__customerSource("Customer name")} onChange={event => { const value = event.currentTarget.value; void navigate({ to: '/finance', replace: true, search: previous => ({ ...previous, financeCustomer: undefined, financeSearch: value || undefined, listPage: 1 }) }) }} /></PortalField>
     <Button variant="outline" onClick={() => { void navigate({ to: '/finance', search: previous => ({ ...previous, financeCustomer: undefined, financeSearch: undefined, listPage: 1 }) }) }}><CustomerSourceText source={"Clear filter"} /></Button>
   </div>
   const currentQuery = record ? record.kind === 'invoice' ? invoices : record.kind === 'receipt' ? receipts : record.kind === 'customer' ? customers : batches : section === 'invoices' ? invoices : section === 'receipts' ? receipts : section === 'reconciliation' ? batches : customers
@@ -85,7 +88,7 @@ export function FinanceOperationsPanel({ apiEnabled, canBill, canManageCash, can
   const error = currentQuery.error
   const actionError = exportReport.error ?? downloadEvidence.error ?? changeBatch.error
   const title = invoice?.invoiceNumber ?? payment?.receiptNumber ?? customer?.organizationName ?? batch?.batchNumber
-  const recordLink = (kind: FinanceRecord['kind'], id: string, label: string) => <Link className="font-medium text-primary hover:underline" to="/finance/$kind/$recordId" params={{ kind, recordId: id }} search={previous => ({ ...previous, financeSection: section, financeCustomer: customerId || undefined })}>{label}</Link>
+  const recordLink = (kind: FinanceRecord['kind'], id: string, label: string) => <RecordLink asChild><Link to="/finance/$kind/$recordId" params={{ kind, recordId: id }} search={previous => ({ ...previous, financeSection: section, financeCustomer: customerId || undefined })}>{label}</Link></RecordLink>
   if (!recordAllowed) return <div className="space-y-4"><BackLink asChild><Link to="/finance" search={previous => ({ ...previous,  })}><CustomerSourceText source={"Back to Finance"} /></Link></BackLink><p><CustomerSourceText source={"This record is unavailable in your current Finance view."} /></p></div>
   return <div className="space-y-5">
     {record ? <BackLink asChild><Link to="/finance" search={previous => previous}><CustomerSourceText source={"Back to Finance"} /></Link></BackLink> : null}
@@ -137,7 +140,7 @@ export function FinanceRecordPage({ record }: { record: FinanceRecord }) {
   const canManageCash = Boolean(session?.capabilities.canManagePSeqCash)
   const canReconcile = Boolean(session?.capabilities.canReconcilePSeqCash)
   const recordSection = record.kind === 'invoice' ? 'invoices' : record.kind === 'receipt' ? 'receipts' : record.kind === 'customer' ? 'customers' : 'reconciliation'
-  return <main className="py-8"><FinanceSidebar recordSection={recordSection}><div className="page-wrap px-4"><h1 tabIndex={-1} className="mb-5 text-3xl font-semibold"><CustomerSourceText source={"Finance"} /></h1><FinanceOperationsPanel apiEnabled={authProvider !== 'mock' && (canBill || canManageCash || canReconcile)} canBill={canBill} canManageCash={canManageCash} canReconcile={canReconcile} canViewCommercialOrder={Boolean(session?.capabilities.canManageOrderConfiguration)} record={record} /></div></FinanceSidebar></main>
+  return <main className="py-8"><FinanceSidebar recordSection={recordSection}><div className="page-wrap px-4"><PageTitle tabIndex={-1} className="mb-5"><CustomerSourceText source={"Finance"} /></PageTitle><FinanceOperationsPanel apiEnabled={authProvider !== 'mock' && (canBill || canManageCash || canReconcile)} canBill={canBill} canManageCash={canManageCash} canReconcile={canReconcile} canViewCommercialOrder={Boolean(session?.capabilities.canManageOrderConfiguration)} record={record} /></div></FinanceSidebar></main>
 }
 function Summary({ entries }: { entries: Array<[string, string]> }) { return <dl className="grid gap-4 sm:grid-cols-3">{entries.map(([label, value]) => <div key={label}><dt className="text-xs text-muted-foreground">{label}</dt><dd className="mt-1 break-words font-medium">{value}</dd></div>)}</dl> }
 function Row({ title, detail, status }: { title: ReactNode; detail: string; status: string }) { return <div className="flex flex-wrap items-center justify-between gap-3 py-4"><div>{title}<p className="mt-1 text-sm text-muted-foreground">{detail}</p></div><Badge variant="outline">{status}</Badge></div> }

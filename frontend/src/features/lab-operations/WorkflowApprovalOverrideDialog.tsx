@@ -1,3 +1,4 @@
+import { NativeCheckbox } from '#/components/ui/native-checkbox'
 import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useBlocker } from '@tanstack/react-router'
@@ -28,7 +29,7 @@ export function WorkflowApprovalOverrideDialog({ workflow, version, pending, err
       <Label htmlFor="workflow-override-reason"><RequiredFieldName>Override reason</RequiredFieldName></Label>
       <textarea id="workflow-override-reason" className="min-h-24 w-full rounded-md border bg-background p-3 text-sm" maxLength={2000} disabled={pending} aria-invalid={Boolean(form.formState.errors.reason)} aria-describedby={form.formState.errors.reason ? 'workflow-override-error' : undefined} {...form.register('reason')} />
       {form.formState.errors.reason ? <p id="workflow-override-error" role="alert" className="text-sm text-destructive">{form.formState.errors.reason.message}</p> : null}
-      <Label className="flex cursor-pointer items-start gap-2 leading-5"><input type="checkbox" className="mt-1 cursor-pointer" disabled={pending} {...form.register('confirmed')} /><RequiredFieldName>I reviewed these exact stages and accept responsibility for bypassing independent review.</RequiredFieldName></Label>
+      <Label className="flex cursor-pointer items-start gap-2 leading-5"><NativeCheckbox   disabled={pending} {...form.register('confirmed')} /><RequiredFieldName>I reviewed these exact stages and accept responsibility for bypassing independent review.</RequiredFieldName></Label>
       {form.formState.errors.confirmed ? <p role="alert" className="text-sm text-destructive">{form.formState.errors.confirmed.message}</p> : null}
     </form>
     {error ? <Alert variant="destructive"><AlertTitle>Workflow was not approved</AlertTitle><AlertDescription>{error}</AlertDescription></Alert> : null}

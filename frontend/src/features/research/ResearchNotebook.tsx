@@ -3,6 +3,7 @@ import { Button } from '#/components/ui/button'
 import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 import { downloadResearchAttachment, useResearchQuery, type Attachment, type ResearchBlock } from './research-api'
 import { ResearchFeedback } from './ResearchCommon'
+import { formatByteSize } from '#/lib/display-format'
 
 export function ResearchNotebook({ blocks, experimentId, entryId }: { blocks: ResearchBlock[]; experimentId?: string; entryId?: string }) {
   const files = useResearchQuery<Attachment[]>(`experiments/${experimentId}/entries/${entryId}/attachments`, undefined, Boolean(experimentId && entryId))
@@ -29,7 +30,7 @@ export function ResearchAttachmentView({ file }: { file: Attachment }) {
     try { const blob = await downloadResearchAttachment(file); const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = file.fileName; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000) }
     catch (error) { setError(error) } finally { setBusy(false) }
   }
-  return <div className="space-y-3 rounded-lg border p-3"><div className="flex flex-wrap items-center justify-between gap-3"><p className="break-all text-sm">{file.fileName} <span className="text-muted-foreground">({(file.sizeBytes / 1024).toLocaleString('en-US', { maximumFractionDigits: 1 })} KiB)</span></p>
+  return <div className="space-y-3 rounded-lg border p-3"><div className="flex flex-wrap items-center justify-between gap-3"><p className="break-all text-sm">{file.fileName} <span className="text-muted-foreground">({formatByteSize(file.sizeBytes)})</span></p>
     <ActionMenu><DropdownMenuTrigger asChild><Button type="button" variant="outline" disabled={busy}>Actions</Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onSelect={() => void download()}>{busy ? 'Downloading…' : 'Download file'}</DropdownMenuItem>{file.contentType.startsWith('image/') ? <DropdownMenuItem onSelect={() => { setError(null); setPreview(!preview) }}>{preview ? 'Close image preview' : 'Preview image'}</DropdownMenuItem> : null}</DropdownMenuContent></ActionMenu></div>
     <ResearchFeedback error={error} />{preview && !imageUrl && !error ? <p role="status">Loading image…</p> : null}{imageUrl ? <img src={imageUrl} alt={file.fileName} className="max-h-96 max-w-full rounded-md object-contain" /> : null}
   </div>

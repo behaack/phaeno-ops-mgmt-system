@@ -1,3 +1,4 @@
+import { Field as PortalField } from '#/components/ui/field'
 import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -31,7 +32,7 @@ export function HolidayCalendar() {
     <PreparationPanel title="Holiday calendar" description="Business days are Monday–Friday, excluding these observed holidays and closure dates. Calendar-day stages count every day. Laboratory timezone: America/Los Angeles." actions={canConfigure ? <Button onClick={() => setEditing(true)}>{calendar ? 'Edit calendar' : <><Plus data-icon="inline-start" /> New calendar</>}</Button> : undefined} headerContent={calendar ? <>
       <p className="text-sm">Revision {calendar.revision} · Confirmed coverage: {formatCalendarDate(calendar.coverageFrom)} through {formatCalendarDate(calendar.coverageTo)}</p>
       {calendar.coverageTo < new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10) ? <p role="status" className="text-sm text-destructive">Calendar coverage is expiring or has expired. Extend it and apply the updated timing policy to affected jobs.</p> : null}
-      <div className="space-y-1"><Label htmlFor="holiday-year">Year</Label><Input id="holiday-year" type="number" min="1900" max="9998" value={year} onChange={e => setYear(e.target.value)} /></div>
+      <PortalField ><Label htmlFor="holiday-year">Year</Label><Input id="holiday-year" type="number" min="1900" max="9998" value={year} onChange={e => setYear(e.target.value)} /></PortalField>
     </> : undefined}>
       {calendar ? <>
         <ul className="space-y-2">{holidays.map(h => <li key={h.date} className={`${prepRowClass} flex flex-wrap justify-between gap-3`}><span>{h.name}</span><span className="whitespace-nowrap">{formatCalendarDate(h.date)}</span></li>)}</ul>

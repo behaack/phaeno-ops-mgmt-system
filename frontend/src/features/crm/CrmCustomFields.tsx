@@ -1,3 +1,6 @@
+import { RequiredFieldName } from '#/components/ui/required-field'
+import { RequiredLegend } from '#/components/ui/required-field'
+import { NativeSelect } from '#/components/ui/native-select'
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   apiErrorMessage,
@@ -131,39 +134,39 @@ function CustomField({
       }}
     >
       <div className="mb-2 flex items-center gap-2">
-        <Label htmlFor={id}>
+        <Label htmlFor={id}><RequiredFieldName>
           {definition.name}
-          {definition.isRequired ? " *" : ""}
-        </Label>
+          {definition.isRequired ? "" : ""}
+        </RequiredFieldName></Label>
         {definition.sensitivity === "Restricted" ? (
           <Badge variant="outline">Restricted</Badge>
         ) : null}
       </div>
       {definition.dataType === "Boolean" ? (
-        <select
+        <NativeSelect
           id={id}
           name="value"
           required={definition.isRequired}
           defaultValue={initial == null ? "" : String(initial)}
-          className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+          className="w-full"
         >
           <option value="">Not set</option>
           <option value="false">No</option>
           <option value="true">Yes</option>
-        </select>
+        </NativeSelect>
       ) : definition.dataType === "Option" ? (
-        <select
+        <NativeSelect
           id={id}
           name="value"
           required={definition.isRequired}
           defaultValue={String(initial ?? "")}
-          className="h-9 w-full rounded-md border bg-background px-3 text-sm"
+          className="w-full"
         >
           <option value="">Select</option>
           {options(definition.optionsJson).map((option) => (
             <option key={option}>{option}</option>
           ))}
-        </select>
+        </NativeSelect>
       ) : (
         <Input
           id={id}
@@ -190,7 +193,7 @@ function CustomField({
         Save
       </Button>
       {definition.isRequired ? (
-        <p className="mt-2 text-xs text-muted-foreground">* Required</p>
+        <RequiredLegend className="mt-2" />
       ) : null}
     </form>
   );

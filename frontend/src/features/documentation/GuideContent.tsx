@@ -1,3 +1,4 @@
+import { PageTitle } from '#/components/ui/page-header'
 import { Component, Suspense, type ReactNode } from 'react'
 import { Button } from '#/components/ui/button'
 import { Alert, AlertDescription } from '#/components/ui/alert'
@@ -11,7 +12,7 @@ class GuideLoadBoundary extends Component<{ children: ReactNode; fallback: React
 
 export function GuideContent({ children, identity, title }: { children: ReactNode; identity: string; title: string }) {
   const text = useCustomerText()
-  const heading = <h1 className="text-3xl font-semibold">{title}</h1>
+  const heading = <PageTitle>{title}</PageTitle>
   return <GuideLoadBoundary key={identity} fallback={<div className="space-y-4">{heading}<Alert variant="destructive"><AlertDescription>
     <p>{text('guide_unavailable')}</p><Button variant="outline" onClick={() => window.location.reload()}>{text('guide_reload')}</Button>
   </AlertDescription></Alert></div>}><Suspense fallback={<div className="space-y-4">{heading}<p role="status">{text('guide_loading')}</p></div>}>{children}</Suspense></GuideLoadBoundary>

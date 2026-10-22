@@ -1,3 +1,4 @@
+import { RecordLink } from '#/components/ui/record-link'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 
@@ -36,11 +37,10 @@ export function CrmCompanySales({ companyId, company }: { companyId: string; com
       <CardContent className="space-y-2 p-4">
         <CrmCollectionFeedback name="opportunities" query={opportunities} />
         {(opportunities.data?.items ?? []).map((opportunity) => (
-          <Link
-            key={opportunity.id}
+          <span className="flex items-center justify-between gap-3 border p-3"><RecordLink asChild><Link key={opportunity.id}
             to="/crm/opportunities/$opportunityId"
             params={{ opportunityId: opportunity.id }}
-            className="flex items-center justify-between gap-3 rounded-lg border p-3 hover:bg-muted/50"
+
           >
             <span className="min-w-0">
               <span className="block truncate font-medium">{opportunity.name}</span>
@@ -49,7 +49,7 @@ export function CrmCompanySales({ companyId, company }: { companyId: string; com
               </span>
             </span>
             <Badge variant="outline">{opportunity.stageName}</Badge>
-          </Link>
+          </Link></RecordLink></span>
         ))}
         {opportunities.isSuccess && opportunities.data.items.length === 0 ? (
           <p className="text-sm text-muted-foreground">No opportunities recorded.</p>

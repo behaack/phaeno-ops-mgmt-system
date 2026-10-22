@@ -1,10 +1,17 @@
+import { ClearFiltersButton } from '#/components/ui/clear-filters-button'
+import { Field as PortalField } from '#/components/ui/field'
+import { RecordLink } from '#/components/ui/record-link'
+import { PageTitle } from '#/components/ui/page-header'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { BackLink } from '#/components/ui/back-link'
 import { useEffect, useRef, useState } from 'react'
 import { listRetainedReleases } from '#/api/released-deliverables'
 import { fileManagementErrorMessage } from '#/api/file-management'
-import { Button } from '#/components/ui/button'
+import { CountFreePagination } from '#/components/ui/pagination-footer'
+import { LoadingState, EmptyState, ErrorState } from '#/components/ui/content-state'
+import { ListToolbar, RecordTable } from '#/components/ui/record-list'
+import { formatDisplayDate } from '#/lib/display-format'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { usePhaenoSession } from '#/features/auth/session-context'
@@ -24,15 +31,15 @@ export function ReleasedDeliverablesPage({ q, page }: { q: string; page: number 
     if (searchTimer.current) clearTimeout(searchTimer.current)
     searchTimer.current = setTimeout(() => { void navigate({ to: '/released-deliverables', search: { q: value, page: 0 }, replace: true }) }, 300)
   }
-  if (!permitted) return <main className="page-wrap p-6"><h1>Released packages</h1><p>A Phaeno administrator is required.</p></main>
+  if (!permitted) return <main className="page-wrap p-6"><PageTitle>Released packages</PageTitle><EmptyState kind="permission" title="A Phaeno administrator is required." /></main>
   return <main className="page-wrap space-y-5 px-4 py-8">
     <BackLink asChild><Link to="/file-management">File retention policies</Link></BackLink>
-    <h1 className="text-3xl font-semibold">Released packages</h1>
+    <PageTitle>Released packages</PageTitle>
     <p className="text-muted-foreground">Review retained package records, preservation holds and reissue history.</p>
-    <div className="flex flex-wrap items-end gap-2"><div className="w-full max-w-md space-y-1"><Label htmlFor="release-search">Find an organization</Label><Input id="release-search" value={search} onChange={(event) => updateSearch(event.target.value)} /></div><Button variant="outline" disabled={!search && !q && !page} onClick={() => { if (searchTimer.current) clearTimeout(searchTimer.current); setSearch(''); void navigate({ to: '/released-deliverables', search: { q: '', page: 0 }, replace: true }) }}>Clear filters</Button></div>
-    {authProvider === 'mock' ? <p>Use a connected Phaeno session to review retained packages.</p> : query.isPending ? <p role="status">Loading releases…</p> : query.error ? <div role="alert" className="space-y-2"><p>{fileManagementErrorMessage(query.error, 'Could not load releases.')}</p><Button variant="outline" disabled={query.isFetching} onClick={() => void query.refetch()}>Retry</Button></div> : !query.data?.length ? <p>{page ? 'No releases on this page. Use Previous to return to earlier results.' : q ? 'No matching releases. Clear filters to see all released packages.' : 'No retained releases yet.'}</p> : <>
-      <div className="overflow-x-auto"><table className="w-full text-left text-sm"><caption className="sr-only">Released packages</caption><thead><tr className="border-b"><th className="p-3">Package</th><th className="p-3">Organization</th><th className="p-3">Released</th><th className="p-3">State</th></tr></thead><tbody>{query.data.map((release) => <tr key={release.id} className="border-b"><td className="p-3"><Link to="/released-deliverables/$snapshotId" params={{ snapshotId: release.id }} search={{ q, page }} className="font-medium text-primary underline">{release.workflowNumber ?? release.packageType}{release.sampleName ? ` · ${release.sampleName}` : ''} · {new Date(release.releasedAtUtc).toLocaleDateString()}</Link></td><td className="p-3">{release.organizationName}</td><td className="p-3">{new Date(release.releasedAtUtc).toLocaleDateString()}</td><td className="p-3">{release.byteDeletedAtUtc ? 'Files deleted' : release.isQuarantined ? 'Quarantined' : release.downloadAccessClosedAtUtc ? 'Downloads closed' : 'Retained'}</td></tr>)}</tbody></table></div>
+    <ListToolbar><PortalField className="w-full max-w-md"><Label htmlFor="release-search">Find an organization</Label><Input id="release-search" value={search} onChange={(event) => updateSearch(event.target.value)} /></PortalField><ClearFiltersButton disabled={!search && !q && !page} onClick={() => { if (searchTimer.current) clearTimeout(searchTimer.current); setSearch(''); void navigate({ to: '/released-deliverables', search: { q: '', page: 0 }, replace: true }) }} /></ListToolbar>
+    {authProvider === 'mock' ? <EmptyState kind="setup" title="Use a connected Phaeno session to review retained packages." /> : query.isPending ? <LoadingState label="Loading releases…" /> : query.error ? <ErrorState title="Released packages could not be loaded" onRetry={()=>void query.refetch()} busy={query.isFetching} retryLabel="Retry">{fileManagementErrorMessage(query.error, 'Could not load releases.')}</ErrorState> : !query.data?.length ? <EmptyState kind={q ? 'no-results' : 'empty'} title={page ? 'No releases on this page. Use Previous to return to earlier results.' : q ? 'No matching releases. Clear all filters to see all released packages.' : 'No retained releases yet.'} /> : <>
+      <RecordTable label="Released packages"><table className="w-full text-left text-sm"><caption className="sr-only">Released packages</caption><thead><tr className="border-b"><th className="p-3">Package</th><th className="p-3">Organization</th><th className="p-3">Released</th><th className="p-3">State</th></tr></thead><tbody>{query.data.map((release) => <tr key={release.id} className="border-b"><td className="p-3"><RecordLink asChild><Link to="/released-deliverables/$snapshotId" params={{ snapshotId: release.id }} search={{ q, page }} >{release.workflowNumber ?? release.packageType}{release.sampleName ? ` · ${release.sampleName}` : ''} · {formatDisplayDate(release.releasedAtUtc)}</Link></RecordLink></td><td className="p-3">{release.organizationName}</td><td className="p-3">{formatDisplayDate(release.releasedAtUtc)}</td><td className="p-3">{release.byteDeletedAtUtc ? 'Files deleted' : release.isQuarantined ? 'Quarantined' : release.downloadAccessClosedAtUtc ? 'Downloads closed' : 'Retained'}</td></tr>)}</tbody></table></RecordTable>
     </>}
-    <div className="flex items-center gap-3"><Button variant="outline" disabled={!page} onClick={() => void navigate({ to: '/released-deliverables', search: { q, page: page - 1 } })}>Previous</Button><span>Page {page + 1}</span><Button variant="outline" disabled={query.data?.length !== 50} onClick={() => void navigate({ to: '/released-deliverables', search: { q, page: page + 1 } })}>Next</Button></div>
+    <CountFreePagination label="Released package pages" page={page+1} busy={query.isFetching} hasNext={query.data?.length===50} onPage={next=>void navigate({to:'/released-deliverables',search:{q,page:next-1}})} />
   </main>
 }

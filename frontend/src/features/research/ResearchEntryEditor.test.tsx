@@ -27,7 +27,8 @@ function mountEditor() {
 }
 async function keepEdits() {
   const review = screen.getByRole('heading', { name: 'Review the latest saved notebook' }).closest('section')!
-  fireEvent.keyDown(within(review).getByRole('button', { name: 'Actions' }), { key: 'Enter' })
+  const actions = await within(review).findByRole('button', { name: 'Actions' }); await waitFor(()=>expect((actions as HTMLButtonElement).disabled).toBe(false))
+  fireEvent.keyDown(actions, { key: 'Enter' })
   fireEvent.click(await screen.findByRole('menuitem', { name: 'I reviewed the latest entry; keep my edits' }))
 }
 async function dirtyAndSave() {

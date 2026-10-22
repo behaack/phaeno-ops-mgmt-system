@@ -25,10 +25,16 @@ before choosing local sizes, colors, spacing or interaction behavior:
 | Pattern | Shared implementation under `frontend/src/components/` |
 | --- | --- |
 | Page return navigation | `ui/back-link.tsx` — `BackLink`; see [page return navigation](#page-return-navigation) |
+| Page identity and header | `ui/page-header.tsx` — `PageTitle` and `PageHeader` |
+| Primary record identifiers | `ui/record-link.tsx` — `RecordLink` composed with the existing typed link |
+| Lists, filters and tables | `ui/record-list.tsx` — `RecordList`, `RecordListItem`, `ListToolbar`, `RecordTable`; `RecordPagination.tsx`, `ui/pagination-footer.tsx`, `ui/clear-filters-button.tsx` |
+| Loading, unavailable data and recovery | `ui/content-state.tsx` — `LoadingState`, `EmptyState`, `ErrorState` |
 | Buttons and action emphasis | `ui/button.tsx` — `Button` and its existing variants/sizes |
 | Contextual record actions | `ui/dropdown-menu.tsx` — `ActionMenu` with one labeled trigger |
-| Form grouping and label spacing | `ui/field.tsx` — shared `Field` layout |
-| Single-line fields | `ui/input.tsx` and `ui/native-select.tsx`; shared sizing |
+| Form grouping, validation and required fields | `ui/field.tsx` — `Field`, `FieldError`, required-name/legend/footer patterns |
+| Single-line fields and native checkboxes | `ui/input.tsx`, `ui/native-select.tsx`, `ui/native-checkbox.tsx`; shared sizing and focus |
+| Status meaning and appearance | `ui/status-badge.tsx` — `StatusBadge` with explicit feature-owned tone maps |
+| Read-only values and section titles | `ui/detail-summary.tsx` — `DetailSummary`, `DetailField`, `DetailHeading` |
 | Modal layout and focus | `ui/dialog.tsx` — `Dialog`, header, meaningful body and footer |
 | Record tabs | `ui/tabs.tsx` — shared sizing and selected/focus states |
 
@@ -57,6 +63,55 @@ Prefer fixing an inconsistency to granting an exception. Existing non-page
 scanner returns have exact, reasoned allowances; stale or expanded allowances
 fail. Syntax-aware checks are deliberately bounded and complement visual and
 workflow review. They do not certify every page or replace acceptance criteria.
+
+The gallery also demonstrates page headers, matched record rows/table links,
+real pagination/filtering, the actual guarded form/Portal discard dialog, save
+failure/conflict states, upload/workflow progress and remaining selection/button
+controls. Its isolated navigation page uses the actual desktop menu, narrow user
+tray and workspace sidebar with fictional props. No authenticated session or API
+is connected. The [pattern-completeness plan](plans/UI-PATTERN-COMPLETENESS-PLAN.md)
+records adoption and verification. Source guards additionally enforce shared
+page titles, recognizable record identifiers and their visual ownership. They
+also reject raw select/checkbox controls, local control-size overrides, duplicated
+display-format implementations and inconsistent clear/required treatments.
+
+The fifteen gallery sections now include real native form validation, date/time,
+byte/number/currency display, semantic statuses, counted/count-free pagination,
+detail summaries and assembled list/detail/edit pages. Dedicated Windows
+Chromium comparisons cover 24 reviewed page images: desktop/phone, both themes,
+and ordinary/expanded Customer text with long identifiers. These use bundled
+fonts and fixed locale, timezone and motion settings. Normal checks never update
+images; a deliberate image review and manifest update accompany visual changes.
+This bounded page set complements interaction, geometry and axe checks; it does
+not certify all application journeys or every assistive technology.
+
+Use `frontend/src/lib/display-format.ts` for presentation of dates, timestamps,
+numbers, currencies and bytes. Calendar-only values retain the recorded day;
+timestamps show timezone context. Customer-facing formatting uses the Customer
+locale through `useDisplayFormatters`. Binary file sizes use B/KiB/MiB/GiB,
+not decimal unit names for powers of 1024. Preserve scientific precision, exact
+byte evidence, zero and false. Missing data has an explicit label rather than
+being converted to zero. These helpers format values without changing storage.
+
+Status tones are neutral, info, pending, success, warning and error. Feature
+maps choose the tone for each domain status; never infer it from fragments of
+the label. Cancellation and failure remain distinct. Unknown statuses remain
+neutral. A status badge never changes the workflow or release qualification.
+
+Counted and count-free feeds share footer geometry while preserving their own
+query contracts. Do not invent totals. Use `ClearFiltersButton` with the common
+`Clear all` label unless a documented scope needs a more specific label. Retain
+the existing reset scope, URL state and feature-specific retry callback.
+
+Use `DetailSummary`/`DetailField` for recurring label/value presentation and
+`DetailHeading` for section hierarchy. Allow plain or boxed summaries as the
+information hierarchy requires. Long identifiers wrap, missing values remain
+explicit, and meaningful zero/false values remain visible.
+The bell examples use `features/work-attention/WorkBellButton.tsx` and include
+zero, one-digit, two-digit, capped `99+` and unavailable
+counts. Anchor the badge to the bell icon's upper-right corner; keep it inside
+the 44 px button with a small inset. Count growth must not move the bell or its
+click target. The full count stays in the localized accessible button name.
 
 ## Experience posture
 
@@ -140,6 +195,11 @@ Use task-oriented entry points with record-centered workspaces.
   readiness, service entitlement, or executable work.
 - Multi-section workspaces use one shared sidebar anchored to the far-left viewport edge beneath the primary toolbar. On wide screens it may remain pinned; when unpinned, a fine pointer may preview the same rail from the viewport edge. The persistent edge tab provides keyboard, click, and touch access. On narrow or coarse-pointer layouts, the rail stays open until the user selects a section, toggles the tab, or presses Escape. On narrow screens, clicking or tapping outside the sidebar also closes it and allows the clicked page control to work normally.
 - The unpinned rail is non-modal: it does not add a backdrop, trap focus, blur the page, or move content. A pinned rail preserves the normal centered page position when it fits in the available left margin and reflows the page only when the rail would otherwise overlap it. Apply the same clearance to the shared footer so its copyright and help link remain visible.
+- Where the normal page margin cannot clear the closed sidebar tab, reserve a
+  stable 36 px screen gutter for the unpinned rail. The return link and other
+  controls must remain visible and clickable. Opening/closing the rail keeps
+  the same content position; sufficiently wide screens keep normal centering,
+  and printed document layout does not inherit this screen clearance.
 - Remember the sidebar pin preference as a low-risk presentation setting, and show pin controls only on wide layouts. Keep section selection, keyboard focus, Escape behavior, and accessible names intact across pinned and unpinned states, and do not render duplicate navigation for one viewport.
 - **R&D** is a first-class Phaeno workspace beside Lab ops, with **Projects** and **Experiments** sidebar items. Its standalone notebooks are shared by authorized researchers; entry editing uses a dedicated page for flexible sections, tables, uploads and resumability. The owning [R&D plan](plans/RD-NOTEBOOK-PLAN.md) records the scope and acceptance.
 - Searchable lists provide access to core records.
@@ -197,7 +257,22 @@ For records with numbered content revisions, follow the application-wide [revisi
 Use tables by default for structured scientific and business records that users compare across common attributes.
 
 - Make the primary identifier a clear link to the detail workspace; avoid ambiguous whole-row clicking.
-- Style primary record links consistently across Portal lists and summaries: medium-weight primary-color text, an underline on hover or keyboard focus, and a visible focus outline. Use the shared record-link style rather than a permanent underline on one list and hover-only underline on another.
+- Style primary record links consistently across Portal lists and summaries:
+  14 px medium-weight primary-color text, no resting underline, an underline on
+  hover or keyboard focus, and a visible focus outline. Compose `RecordLink
+  asChild` with the typed router Link, preserving all route/event props. The
+  component owns appearance; put layout classes on a non-interactive wrapper.
+  `recordLinkClassName` remains the shared treatment for ordinary browse links.
+- Use `RecordList` and `RecordListItem` for flat record rows: the same 16 px
+  vertical spacing, wrapping title/metadata and separate trailing status/action
+  region. Use dividers between rows. Inputs and assembly attempts retain their
+  distinct context and actions while sharing their title and row presentation.
+  A row is not an ambiguous whole-row click target; its identifier is the link.
+- Use `ListToolbar` for shared field/action alignment and `RecordTable` for
+  table containment and header/cell spacing. Preserve captions, column headers,
+  feature-specific filters and URL state. On narrow screens, use record rows
+  when they convey the same information; allow local table scrolling when the
+  scientific comparison needs it. `RecordPagination` owns the common paginator.
 - Put search, filters, sorting, and the primary create action in a predictable toolbar.
 - Place secondary row actions in a consistent overflow menu.
 - Keep active filters visible and provide a clear `Clear all` action.
@@ -212,6 +287,13 @@ Use tables by default for structured scientific and business records that users 
 Use one coherent, view-first workspace for a major record.
 
 - A compact header shows identity, status, essential context, and actions.
+- Use `PageHeader` to compose these regions. `PageTitle` owns the 24 px,
+  semibold, tight-line-height page heading and long-identifier wrapping; retain
+  existing heading IDs, refs and focus targets. Existing feature-specific
+  arrangements may compose `PageTitle` without changing their workflow. A
+  barcode identifier may retain a monospace font. Authentication panels,
+  documentation article headings and printable documents have their own
+  semantic hierarchy. Page header controls wrap without overlapping the title.
 - When a record or version has multiple action options, group them in one `Actions` dropdown. Keep page-level creation and form Save/Cancel controls separate.
 - Present high-value summary information first.
 - Group related information by meaningful user tasks rather than database structure.
@@ -257,6 +339,9 @@ Prioritize clarity and error prevention over maximum visual compactness.
 - Use two columns only for short, naturally paired fields such as start/end dates.
 - Place persistent labels above controls; placeholders never replace labels.
 - Keep single-line text, search and select controls the same height within a form. Use shared `Field` spacing and `NativeSelect`/`Input` sizing rather than per-screen height and margin overrides. Adjacent fields must align at their control edges with the same label-to-control gap.
+- Standard single-line controls are 32 px. Use the owned `Input controlSize="touch"`
+  variant for an intentional 44 px touch control; do not recreate it with local
+  height classes. `NativeCheckbox` retains native input events and registration.
 - Group fields by the user's mental model and workflow, not the data model.
 - Use concise helper text only when it prevents a likely mistake.
 - Place helper text immediately below its field label and before the control.
@@ -264,6 +349,10 @@ Prioritize clarity and error prevention over maximum visual compactness.
   size as helper text, and retain the destructive color and alert semantics.
   Use the shared field-description, field-error, and control primitives so this
   structure and spacing do not drift between forms.
+- Use `FieldError reserveSpace` where blur validation could move a pending Save
+  or other action. Reserve a compact error line without announcing an empty
+  error. Long-form summaries appear on submission, while individual field
+  validation remains progressive.
 - Mark genuinely required controls with actual required validation and the
   established ruby-red `*`. Keep the marker visually adjacent to its label,
   without the standard label-to-control gap. Required markers flow inline with the label and stay attached to its final word when it wraps; do not place the marker in a separate flex column. Long checkbox labels use readable line spacing and keep the checkbox aligned with the first line. Every form with required controls
@@ -288,6 +377,12 @@ Use explicit saving for scientific and business records. Limit autosave to low-r
 - Prevent duplicate submissions and show a clear saving state in the initiating action.
 - A form becomes pristine again when the user restores every value to its original state.
 - Preserve entered values when validation or saving fails.
+- Use the existing `GuardedFormDialog` for bounded forms needing shared dirty/
+  pending dismissal protection. It works with `PortalConfirmation`; the owning
+  form still owns validation, version review and successful-save/reset behavior.
+  Use `RequiredDialogFooter` for the required legend before Cancel/Save controls.
+  The gallery's failed-save/conflict outcomes are local demonstrations of these
+  states, not an alternative server-concurrency implementation.
 
 Validation is progressive:
 
@@ -315,6 +410,12 @@ Each page, modal, or workflow has one visually dominant primary action.
 - Group multiple record or version actions in an `Actions` dropdown, including status transitions. When exactly one action is shown, surface it as a directly labeled button; do not hide it in an Actions dropdown. Preserve its disabled state when prerequisites are unmet. Keep menus wide enough for clear labels and aligned to the trailing edge of the record or version row.
 - Owner-approved exception: Customer/Partner Lab Job and phase cancellation requests remain inside a neutral **Actions** dropdown even when cancellation is the only available action. Cancellation is an exceptional task and must not dominate the ordinary Job/phase workflow. Use a red destructive menu item and destructive confirmation action; keep the Actions trigger neutral. Use the shared `ActionMenu` with `keepSingleActionInMenu` for this documented exception. Other sole actions remain directly labeled buttons.
 - Every labeled Actions dropdown shows one trailing down-chevron. The shared `ActionMenu` owns this cue so screens do not have to supply it. A direct action has no dropdown chevron. Keep the icon decorative so it does not change the button's accessible name.
+- Menus dismiss immediately when an item is chosen or the menu closes, so a
+  closing layer cannot block a quickly reopened menu. A menu's queued focus
+  restoration must not steal focus from the dialog or menu opened by its action.
+  Confirmation dialogs restore focus to the surviving invoking control; use
+  `DialogReturnFocus` when a selected menu item will disappear. Preserve focus
+  in a newly opened overlay during a conditional dialog handoff.
 - Hide actions the user is never authorized to perform.
 - Disable a temporarily unavailable action only when knowing it exists is useful, and explain the blocking condition.
 - Use destructive styling only for the action that causes harm, not for Cancel or ordinary navigation.
@@ -351,6 +452,15 @@ Toasts are a secondary signal, never the sole location of an actionable error.
 - Consolidate repeated events and limit stacking.
 - Background completion or failure toasts link to durable job or activity details.
 - Announce toast and status content accessibly without unexpectedly moving keyboard focus.
+
+Use `LoadingState` for initial skeleton/status or a compact refresh indicator;
+refreshing must not replace trustworthy loaded content with a blank state. Use
+`EmptyState` with a truthful empty/no-results/setup/permission explanation and
+next step. Show these states only when their condition is established, never as
+a substitute for a failed read. `ErrorState` supplies a durable contextual alert
+with a named retry action. Domain statuses, actual measured progress and
+scientific completion remain owned by their workflows; reuse `FileUploadProgress`
+and `WorkflowProgress` without equating transfer completion with scientific success.
 
 ## Accessibility compliance
 

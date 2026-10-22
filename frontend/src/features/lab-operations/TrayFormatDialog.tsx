@@ -1,3 +1,4 @@
+import { NativeCheckbox } from '#/components/ui/native-checkbox'
 import { NativeSelect } from '#/components/ui/native-select'
 import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -33,7 +34,7 @@ export function TrayFormatDialog({ format, onClose }: { format?: TrayFormat; onC
       <PreparationField label="Columns" id="tray-columns" required error={form.formState.errors.columns?.message}><Input id="tray-columns" type="number" {...form.register('columns', { valueAsNumber: true })} /></PreparationField>
       <PreparationField label="Position labels" id="tray-labels" required><NativeSelect id="tray-labels" className={prepSelectClass} {...form.register('labels')}><option value="grid">Rows and columns (A1, A2…)</option><option value="numeric">Numbers (1, 2…)</option></NativeSelect></PreparationField>
       <PreparationField label="Unavailable positions (optional)" id="tray-unavailable"><Input id="tray-unavailable" placeholder="A1, D6" {...form.register('unavailable')} /></PreparationField>
-      <label className="flex cursor-pointer items-center gap-2 text-sm"><input type="checkbox" {...form.register('isActive')} />Available for new batches</label>
+      <label className="flex cursor-pointer items-center gap-2 text-sm"><NativeCheckbox  {...form.register('isActive')} />Available for new batches</label>
       <div aria-label="Library tray layout preview" className="overflow-x-auto"><div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${layout.columns}, minmax(2.5rem, 1fr))` }}>{trayPositions(layout).map(p => <span key={p} className={`rounded border p-1 text-center text-xs ${layout.unavailable.includes(p) ? 'bg-muted line-through' : 'bg-background'}`}>{p}</span>)}</div></div>
     </div><RequiredDialogFooter><Button type="button" variant="outline" disabled={save.isPending} onClick={() => { void __modalGuard.close(() => (onClose)()) }}>Cancel</Button><Button disabled={save.isPending}>Save format</Button></RequiredDialogFooter>
   </form></DialogContent></Dialog>

@@ -1,3 +1,4 @@
+import { RecordLink } from '#/components/ui/record-link'
 import { RecordPagination, useRecordListState } from '#/components/RecordPagination'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
@@ -20,7 +21,7 @@ export function ResultsWorkQueue({ enabled }: { enabled: boolean }) {
       {enabled && query.isPending ? <p role="status">Loading results awaiting scientific review…</p> : null}
       {query.error ? <Alert variant="destructive"><AlertTitle>Scientific review queue could not be loaded</AlertTitle><AlertDescription>{getLabOperationsError(query.error, 'Refresh to recover the current review queue.')}<Button variant="outline" onClick={() => void query.refetch()}>Refresh queue</Button></AlertDescription></Alert> : null}
       {query.data?.map(({ workOrder: item, pendingPackageCount }) => <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/30 p-4 shadow-xs">
-        <div><Link to="/lab-operations/$workOrderId" params={{ workOrderId: item.id }} search={previous => ({ ...previous, section: 'results', tab: 'review' })} className="font-medium text-primary hover:underline">{labWorkOrderLabel(item)}</Link>
+        <div><RecordLink asChild><Link to="/lab-operations/$workOrderId" params={{ workOrderId: item.id }} search={previous => ({ ...previous, section: 'results', tab: 'review' })} >{labWorkOrderLabel(item)}</Link></RecordLink>
           <p className="mt-1 text-xs text-muted-foreground">{pendingPackageCount} {pendingPackageCount === 1 ? 'package' : 'packages'} awaiting review · {item.specimenCount} {item.specimenCount === 1 ? 'specimen' : 'specimens'} · {item.openExceptionCount} open {item.openExceptionCount === 1 ? 'exception' : 'exceptions'}</p>
         </div><Badge variant="outline">Awaiting scientific review</Badge>
       </div>)}

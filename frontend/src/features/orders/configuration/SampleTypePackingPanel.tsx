@@ -1,3 +1,4 @@
+import { RecordLink } from '#/components/ui/record-link'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import { useQuery } from '@tanstack/react-query'
@@ -47,7 +48,7 @@ export function SampleTypePackingPanel({ sampleType, configuration }: { sampleTy
         {!linked.length && containers.data ? <p role="alert" className="text-sm text-warning"><CustomerText message="m_ad5246311e24" /></p> : null}
         {linked.length > 0 && current.length === 0 ? <p role="alert" className="text-sm text-warning"><CustomerText message="m_af476bb08848" /></p> : null}
         {linked.map(container => <article key={container.id} className="rounded-lg border p-4 text-sm">
-          <Link className={recordLinkClassName} to="/sample-shipping-settings/kit-specifications/$containerId" params={{ containerId: container.id }} search={{}}>{container.commonName}</Link>
+          <RecordLink asChild><Link to="/sample-shipping-settings/kit-specifications/$containerId" params={{ containerId: container.id }} search={{}}>{container.commonName}</Link></RecordLink>
           <p className="mt-1 text-xs text-muted-foreground"><CustomerText message="m_e330d85ff901" />{container.revision} <CustomerText message="m_db0b5773c2f5" />{container.tubeCapacity} <CustomerText message="m_2fb19d7bbf61" />{current.some(item => item.definitionKey === container.definitionKey) ? <CustomerSourceText source={"Active revision available"} /> : __customerText('m_4bfc8b9205c0')}</p>
           {container.temperatureControlInstructions ? <p className="mt-2 whitespace-pre-wrap"><strong><CustomerText message="m_bd31a088db20" /></strong> {container.temperatureControlInstructions}</p> : null}
           {container.dryIceQuantity != null ? <p className="mt-2"><strong><CustomerText message="m_8efa701191e4" /></strong> {container.dryIceQuantity} {container.dryIceUnit}</p> : null}

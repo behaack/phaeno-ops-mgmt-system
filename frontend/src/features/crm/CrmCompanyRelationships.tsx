@@ -1,3 +1,7 @@
+import { RequiredLegend } from '#/components/ui/required-field'
+import { formatDisplayDate } from '#/lib/display-format'
+import { NativeSelect } from '#/components/ui/native-select'
+import { RecordLink } from '#/components/ui/record-link'
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, Pencil, Plus } from "lucide-react";
@@ -154,17 +158,16 @@ export function CrmCompanyRelationships({
                     key={contact.id}
                     className="flex items-center justify-between gap-3 rounded-lg border p-3"
                   >
-                    <Link
-                      to="/crm/contacts/$contactId"
+                    <span className="min-w-0"><RecordLink asChild><Link to="/crm/contacts/$contactId"
                       params={{ contactId: contact.contactId }}
-                      className="min-w-0 hover:underline"
+
                     >
                       <span className="block font-medium">{contact.contactName}</span>
                       <span className="block text-xs text-muted-foreground">
                         {contact.jobTitle ?? "Job title not recorded"} ·{" "}
                         {contact.relationshipRole ?? "Role not recorded"}
                       </span>
-                    </Link>
+                    </Link></RecordLink></span>
                     <div className="flex shrink-0 items-center gap-2">
                       {contact.isPrimaryCompany ? <Badge>Primary</Badge> : null}
                       {!contact.isActive ? <Badge variant="outline">Ended</Badge> : null}
@@ -194,15 +197,14 @@ export function CrmCompanyRelationships({
               <CardContent className="space-y-2">
                 <CollectionFeedback name="opportunities" query={opportunities} />
                 {(opportunities.data?.items ?? []).map((value) => (
-                  <Link
-                    key={value.id}
+                  <span className="flex justify-between border p-3"><RecordLink asChild><Link key={value.id}
                     to="/crm/opportunities/$opportunityId"
                     params={{ opportunityId: value.id }}
-                    className="flex justify-between rounded-lg border p-3 hover:bg-muted/50"
+
                   >
                     <span className="font-medium">{value.name}</span>
                     <Badge variant="outline">{value.stageName}</Badge>
-                  </Link>
+                  </Link></RecordLink></span>
                 ))}
                 {opportunities.isSuccess && opportunities.data.items.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
@@ -425,9 +427,7 @@ function AssociateDialog({
             </div>
           </div>
           <DialogFooter>
-            <span className="mr-auto text-xs text-muted-foreground">
-              * Required
-            </span>
+            <RequiredLegend className="mr-auto" />
             <Button
               type="button"
               variant="outline"
@@ -632,7 +632,7 @@ export function HandoffDialog({
                 label="What does this Company need? *"
                 id="handoff-category"
               >
-                <select
+                <NativeSelect
                   id="handoff-category"
                   required
                   value={config.category}
@@ -644,50 +644,50 @@ export function HandoffDialog({
                       changeRequestType(nextCategory.requestTypes[0]);
                     }
                   }}
-                  className="h-9 rounded-md border bg-background px-3 text-sm"
+
                 >
                   {companyRequestCategories.filter(value => value.value !== "Relationship" || currentRelationship === "Prospect").map((value) => (
                     <option key={value.value} value={value.value}>
                       {value.label}
                     </option>
                   ))}
-                </select>
+                </NativeSelect>
               </Field>
               {category.requestTypes.length > 1 ? (
                 <Field label="Request type *" id="handoff-type">
-                  <select
+                  <NativeSelect
                     id="handoff-type"
                     required
                     value={type}
                     onChange={(event) =>
                       changeRequestType(event.target.value as CrmHandoffType)
                     }
-                    className="h-9 rounded-md border bg-background px-3 text-sm"
+
                   >
                     {category.requestTypes.map((value) => (
                       <option key={value} value={value}>
                         {companyRequestTypeConfig[value].label}
                       </option>
                     ))}
-                  </select>
+                  </NativeSelect>
                 </Field>
               ) : null}
             </div>
             {type === 'RelationshipChange' ? <p className="text-sm">Current relationship: {currentRelationship}. Approval records the decision; applying the approved request converts the relationship.</p> : null}
             {config.showRelationship ? (
               <Field label="Requested relationship *" id="handoff-kind">
-                <select
+                <NativeSelect
                   id="handoff-kind"
                   name="kind"
                   required
                   defaultValue={type === 'RelationshipChange' ? 'Customer' : currentRelationship ?? 'Customer'}
                   disabled={Boolean(currentRelationship && type !== 'RelationshipChange')}
-                  className="h-9 rounded-md border bg-background px-3 text-sm"
+
                 >
                   {type !== 'RelationshipChange' ? <option>Prospect</option> : null}
                   <option>Customer</option>
                   <option>Partner</option>
-                </select>
+                </NativeSelect>
               </Field>
             ) : null}
             {config.showOpportunity ? (
@@ -696,11 +696,11 @@ export function HandoffDialog({
                 id="handoff-opportunity"
                 description="Link the request when it arose from a specific commercial pursuit. Customer order handoffs still begin from the Opportunity workspace."
               >
-                <select
+                <NativeSelect
                   id="handoff-opportunity"
                   name="opportunityId"
                   disabled={opportunitiesUnavailable}
-                  className="h-9 rounded-md border bg-background px-3 text-sm"
+
                 >
                   <option value="">{opportunitiesUnavailable ? "Load opportunities to continue" : "No specific opportunity"}</option>
                   {opportunities.map((value) => (
@@ -708,7 +708,7 @@ export function HandoffDialog({
                       {value.name}
                     </option>
                   ))}
-                </select>
+                </NativeSelect>
               </Field>
             ) : null}
             {config.showServices ? (
@@ -736,9 +736,7 @@ export function HandoffDialog({
             </Field>
           </div>
           <DialogFooter>
-            <span className="mr-auto text-xs text-muted-foreground">
-              * Required
-            </span>
+            <RequiredLegend className="mr-auto" />
             <Button
               type="button"
               variant="outline"
@@ -787,8 +785,4 @@ function spaced(value: string) {
 function requestTypeLabel(value: CrmHandoffType) {
   return companyRequestTypeConfig[value].label;
 }
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(
-    new Date(value),
-  );
-}
+function formatDate(value: string) { return formatDisplayDate(value) }

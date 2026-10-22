@@ -1,3 +1,4 @@
+import { PageTitle } from '#/components/ui/page-header'
 import { createFileRoute } from '@tanstack/react-router'
 
 import {
@@ -19,7 +20,7 @@ function About() {
   return (
     <main className="page-wrap px-4 py-8">
       <section className="mb-6 max-w-3xl">
-        <h1 className="text-3xl font-semibold leading-tight">Project setup</h1>
+        <PageTitle>Project setup</PageTitle>
         <p className="mt-3 text-sm leading-6 text-muted-foreground sm:text-base">
           This frontend is a TanStack Start app prepared for the {branding.name}
           {' '}security model and UI conventions.

@@ -1,3 +1,7 @@
+import { RequiredLegend } from '#/components/ui/required-field'
+import { RequiredFieldName } from '#/components/ui/required-field'
+import { Field as PortalField } from '#/components/ui/field'
+import { NativeSelect } from '#/components/ui/native-select'
 import { useCrmPermissions } from './use-crm-permissions';
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BookmarkPlus } from "lucide-react";
@@ -76,9 +80,9 @@ export function CrmSavedViewBar({
   return (
     <>
       <div className="flex flex-wrap items-end gap-2 rounded-lg border bg-muted/20 p-3">
-        <div className="grid min-w-52 gap-1.5">
+        <PortalField className="min-w-52">
           <Label htmlFor={`${recordType}-saved-view`}>Saved view</Label>
-          <select
+          <NativeSelect
             id={`${recordType}-saved-view`}
             value={selection}
             onChange={(event) => {
@@ -95,7 +99,7 @@ export function CrmSavedViewBar({
                 setApplyError("This saved view is no longer valid.");
               }
             }}
-            className="h-9 rounded-md border bg-background px-3 text-sm"
+
           >
             <option value="">Current filters</option>
             {(views.data ?? []).map((view) => (
@@ -104,8 +108,8 @@ export function CrmSavedViewBar({
                 {view.isShared ? " · Shared" : ""}
               </option>
             ))}
-          </select>
-        </div>
+          </NativeSelect>
+        </PortalField>
         <Button type="button" variant="outline" onClick={() => setOpen(true)}>
           <BookmarkPlus data-icon="inline-start" />
           Save current view
@@ -154,15 +158,15 @@ export function CrmSavedViewBar({
               </Alert>
             ) : null}
             <div className="grid gap-4">
-              <div className="grid gap-1.5">
-                <Label htmlFor={`${recordType}-view-name`}>View name *</Label>
+              <PortalField >
+                <Label htmlFor={`${recordType}-view-name`}><RequiredFieldName>View name</RequiredFieldName></Label>
                 <Input
                   id={`${recordType}-view-name`}
                   name="name"
                   required
                   maxLength={150}
                 />
-              </div>
+              </PortalField>
               {canAdminister ? <div className="flex items-center gap-2">
                 <Checkbox
                   id={`${recordType}-view-shared`}
@@ -178,9 +182,7 @@ export function CrmSavedViewBar({
               </div> : null}
             </div>
             <DialogFooter>
-              <span className="mr-auto text-xs text-muted-foreground">
-                * Required
-              </span>
+              <RequiredLegend className="mr-auto" />
               <Button
                 type="button"
                 variant="outline"

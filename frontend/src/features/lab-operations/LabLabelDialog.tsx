@@ -1,3 +1,4 @@
+import { formatDisplayTimestamp } from '#/lib/display-format'
 import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -324,12 +325,7 @@ export function LabLabelDialog({
   )
 }
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat('en-US', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(new Date(value))
-}
+function formatDate(value: string) { return formatDisplayTimestamp(value) }
 
 function normalizeScan(value: string) {
   return value.trim().toUpperCase().replace(/^\*(.*)\*$/, '$1')

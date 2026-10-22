@@ -1,3 +1,4 @@
+import { Field as PortalField } from '#/components/ui/field'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -117,22 +118,22 @@ export function SampleIdentificationRows({ order, source, expectedCount, savedCo
       const id = `${prefix}-${index}`
       return <div key={index} className="grid grid-cols-[2rem_minmax(0,1fr)] sm:grid-cols-[2rem_minmax(0,1fr)_5rem_6rem] items-start gap-3 border-b pb-3 last:border-0">
         <span className="pt-7 text-sm text-muted-foreground" aria-label={__customerText('m_bfa208f40cee', { p0: String(savedCount + index + 1) })}>{savedCount + index + 1}</span>
-        <div className="space-y-1"><Label htmlFor={`${id}-sample`}><RequiredFieldName><CustomerText message="m_1860caa4e4b3" /></RequiredFieldName></Label>
+        <PortalField ><Label htmlFor={`${id}-sample`}><RequiredFieldName><CustomerText message="m_1860caa4e4b3" /></RequiredFieldName></Label>
           <Input id={`${id}-sample`} aria-label={__customerText('m_4c2ba4cbae1f', { p0: String(savedCount + index + 1), p1: String(source) })} maxLength={255} defaultValue="" aria-required="true"
             disabled={disabled || save.isPending} aria-invalid={Boolean(idError)} aria-describedby={idError ? `${id}-error` : undefined}
             {...form.register(`rows.${index}.customerSampleId`)} />
-          {idError ? <p id={`${id}-error`} className="text-xs text-destructive">{idError}</p> : null}</div>
-        <div className="space-y-1"><Label htmlFor={`${id}-tubes`}><RequiredFieldName><CustomerText message="m_9896e020cb56" /></RequiredFieldName></Label>
+          {idError ? <p id={`${id}-error`} className="text-xs text-destructive">{idError}</p> : null}</PortalField>
+        <PortalField ><Label htmlFor={`${id}-tubes`}><RequiredFieldName><CustomerText message="m_9896e020cb56" /></RequiredFieldName></Label>
           <Input id={`${id}-tubes`} aria-label={__customerText('m_c7fa813872d1', { p0: String(savedCount + index + 1), p1: String(source) })} type="number" min={1} step={1} defaultValue="1" aria-required="true"
             disabled={disabled || save.isPending} aria-invalid={Boolean(tubeError)} aria-describedby={tubeError ? `${id}-tube-error` : undefined}
             {...form.register(`rows.${index}.tubeCount`)} />
-          {tubeError ? <p id={`${id}-tube-error`} className="text-xs text-destructive">{tubeError}</p> : null}</div>
+          {tubeError ? <p id={`${id}-tube-error`} className="text-xs text-destructive">{tubeError}</p> : null}</PortalField>
         {oneRunPerSample ? <div className="space-y-1"><Label htmlFor={`${id}-runs`}><CustomerText message="m_848f54e89660" /></Label>
           <output id={`${id}-runs`} aria-label={__customerText('m_59baa6992064', { p0: String(savedCount + index + 1), p1: String(source) })} className="block py-2 text-sm">1</output>
-        </div> : <div className="space-y-1"><Label htmlFor={`${id}-runs`}><RequiredFieldName><CustomerText message="m_848f54e89660" /></RequiredFieldName></Label>
+        </div> : <PortalField ><Label htmlFor={`${id}-runs`}><RequiredFieldName><CustomerText message="m_848f54e89660" /></RequiredFieldName></Label>
           <Input id={`${id}-runs`} aria-label={__customerText('m_59baa6992064', { p0: String(savedCount + index + 1), p1: String(source) })} type="number" min={1} max={10000} step={1} defaultValue="1" aria-required="true"
             disabled={disabled || save.isPending} aria-invalid={Boolean(runError)} aria-describedby={runError ? `${id}-run-error` : undefined} {...form.register(`rows.${index}.sequencingRunCount`)} />
-          {runError ? <p id={`${id}-run-error`} className="text-xs text-destructive">{runError}</p> : null}</div>}
+          {runError ? <p id={`${id}-run-error`} className="text-xs text-destructive">{runError}</p> : null}</PortalField>}
       </div>
     })}
     {entered > capacity ? <p role="alert" className="text-sm text-destructive"><CustomerText message="m_62bde862e229" />{capacity} <CustomerText message="m_823465a77ee4" /></p> : null}

@@ -1,0 +1,134 @@
+{
+  "schemaVersion": 1,
+  "reviewedAt": "2026-10-22T19:13:42.426Z",
+  "platform": "win32",
+  "browser": "chromium",
+  "locale": "en-US",
+  "timezone": "UTC",
+  "versions": {
+    "playwright": "1.59.1",
+    "font": "5.2.8"
+  },
+  "images": {
+    "desktop-dark/detail-expanded.png": {
+      "sha256": "efa79edc06414df2f9fb4e41d9b61b06dbd12dc7da336cd828530c39a808e487",
+      "width": 1280,
+      "height": 900
+    },
+    "desktop-dark/detail.png": {
+      "sha256": "e5bfb2ca6fed2f5975721fc2804e98f5794d63929d32cf86eb146ba0c3a0365d",
+      "width": 1280,
+      "height": 900
+    },
+    "desktop-dark/list-expanded.png": {
+      "sha256": "b91aa6ec9e133d7ec0199a707e1fd6de59799ee09e8e95a83f7931c297f518e0",
+      "width": 1280,
+      "height": 900
+    },
+    "desktop-dark/list.png": {
+      "sha256": "ca915b32dc2d2c8ceab713f666c296059ce0402dfbe1e86673b0343209980584",
+      "width": 1280,
+      "height": 900
+    },
+    "desktop-dark/modal-expanded.png": {
+      "sha256": "4de74b901b4a7cbf05ca8f0cb212ae8ddff519ab7e46ec4a3edd8b908af499eb",
+      "width": 1280,
+      "height": 900
+    },
+    "desktop-dark/modal.png": {
+      "sha256": "a650e60076e7651b7beec3d0e16f224752ef97a40bb96b524a0d6ddb6bbf1907",
+      "width": 1280,
+      "height": 900
+    },
+    "desktop-light/detail-expanded.png": {
+      "sha256": "bf0f40c5ace1ab8ba84dfe5e3ae53437c7319a8bf99d47b2051b0d25aefd25fc",
+      "width": 1280,
+      "height": 900
+    },
+    "desktop-light/detail.png": {
+      "sha256": "3489131f124a7a8e232c211d6d208d9f529032bb5d5119cb68341cecbb332cbf",
+      "width": 1280,
+      "height": 900
+    },
+    "desktop-light/list-expanded.png": {
+      "sha256": "8a040a805a597a7642ce1a0faae230a39c1eae9cd12279ee14d79783beb71ee0",
+      "width": 1280,
+      "height": 900
+    },
+    "desktop-light/list.png": {
+      "sha256": "a424d093b9d0180eec88eb2282ffea8431a57d23e8d55b77f8b5355106167ba8",
+      "width": 1280,
+      "height": 900
+    },
+    "desktop-light/modal-expanded.png": {
+      "sha256": "6e38bad84bb27e76e5cb5b972d2df4d71ceed0a3bb9cc2efa783178459644e9c",
+      "width": 1280,
+      "height": 900
+    },
+    "desktop-light/modal.png": {
+      "sha256": "0df5bd94e1813904e552e7c75ffe96597bf041d295083f060bd7eb8a8bf5e8d5",
+      "width": 1280,
+      "height": 900
+    },
+    "narrow-dark/detail-expanded.png": {
+      "sha256": "16eb09f655af1d18f268b9b18a60e0208a18e07eb4a9da57b171cb3c04f142bd",
+      "width": 390,
+      "height": 949
+    },
+    "narrow-dark/detail.png": {
+      "sha256": "7ba614eca6aea99946cbb79485c48e09ed42408fc45889053eb0c872b153d93f",
+      "width": 390,
+      "height": 844
+    },
+    "narrow-dark/list-expanded.png": {
+      "sha256": "8630d662ae2d7f5b93f6c8c58780b678cd49547089775a609b5b59122cd9db0a",
+      "width": 390,
+      "height": 844
+    },
+    "narrow-dark/list.png": {
+      "sha256": "02d1f20f9ba1b825e7c1bb8541c88dec968736e4fb490f39358f025410f7a1af",
+      "width": 390,
+      "height": 844
+    },
+    "narrow-dark/modal-expanded.png": {
+      "sha256": "0538af76d8848f5c00513fe03f2d08c82ec25eca07064df65a2ad69da0b90a6b",
+      "width": 390,
+      "height": 844
+    },
+    "narrow-dark/modal.png": {
+      "sha256": "8d939a6d8699f26b89d1b485ec47040c05966bcf76a9dab081c7b0733ac3d34a",
+      "width": 390,
+      "height": 844
+    },
+    "narrow-light/detail-expanded.png": {
+      "sha256": "16947227b5c62531212ab120562b171ab8349c560d7c68c20a7bdc000a482edf",
+      "width": 390,
+      "height": 949
+    },
+    "narrow-light/detail.png": {
+      "sha256": "ad7ed6c35aeffe1adf5f8319dfe6b90dcbeebfec94fc21082cb1465dbb918485",
+      "width": 390,
+      "height": 844
+    },
+    "narrow-light/list-expanded.png": {
+      "sha256": "5aa06410de958ec7150b043aed00c309b63211c240f5945e9fb66dc3a0c5f439",
+      "width": 390,
+      "height": 844
+    },
+    "narrow-light/list.png": {
+      "sha256": "0e47d45623c818fca4d2bdbb457390f37759c4870f18c0e80eb43cde09ddafc1",
+      "width": 390,
+      "height": 844
+    },
+    "narrow-light/modal-expanded.png": {
+      "sha256": "f5b5f9439047d989278ccf724033e32c2dae08e459a65994d343f7f8e0554dfc",
+      "width": 390,
+      "height": 844
+    },
+    "narrow-light/modal.png": {
+      "sha256": "13701d4f9098a0578a09e233d4a9b0c7c6817336c1dbeb659b0bcc0ffd7fdb3f",
+      "width": 390,
+      "height": 844
+    }
+  }
+}

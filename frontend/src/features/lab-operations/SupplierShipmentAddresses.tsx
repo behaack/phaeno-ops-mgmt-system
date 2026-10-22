@@ -1,3 +1,4 @@
+import { NativeCheckbox } from '#/components/ui/native-checkbox'
 import { useId, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -44,7 +45,7 @@ export function SupplierShipmentAddresses({ supplier }: { supplier: CatalogSuppl
     <Card className="gap-0 overflow-hidden py-0"><CardHeader className="border-b bg-muted/50 p-4">
       <CardTitle>Shipment addresses</CardTitle><CardDescription>Name each vendor destination, such as a receiving laboratory. Prepared shipments retain a copy of the selected address.</CardDescription>
       <CardAction><Button id={`supplier-address-new-${supplier.id}`} disabled={!supplier.isActive} onClick={() => setEditor('new')}><Plus data-icon="inline-start" />New address</Button></CardAction>
-      <label className="col-span-full mt-3 flex cursor-pointer items-center gap-2 text-sm"><input id={`supplier-address-inactive-${supplier.id}`} type="checkbox" checked={showInactive} onChange={event => setShowInactive(event.target.checked)} />Show inactive addresses</label>
+      <label className="col-span-full mt-3 flex cursor-pointer items-center gap-2 text-sm"><NativeCheckbox id={`supplier-address-inactive-${supplier.id}`}  checked={showInactive} onChange={event => setShowInactive(event.target.checked)} />Show inactive addresses</label>
     </CardHeader><CardContent className="p-4">
       {addresses.length ? <ul className="divide-y" aria-label="Shipment addresses">{addresses.map(address => <li key={address.id} className="flex flex-wrap items-start justify-between gap-3 py-4">
         <div className="min-w-0 flex-1 basis-48"><p className="font-medium break-words">{address.label}</p><p className="mt-1 whitespace-pre-line break-words text-sm">{address.destination}</p><Badge className="mt-2" variant="secondary">{address.isActive ? 'Active' : 'Inactive'}</Badge></div>

@@ -1,7 +1,12 @@
+import { ClearFiltersButton } from '#/components/ui/clear-filters-button'
+import { formatDisplayTimestamp, formatDisplayCurrency } from '#/lib/display-format'
+import { Field as PortalField } from '#/components/ui/field'
+import { NativeSelect } from '#/components/ui/native-select'
 import { CustomerSourceText, useCustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { commercialRecordRoute } from '#/features/orders/service-workspaces'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate, useSearch } from '@tanstack/react-router'
+import { RecordLink } from '#/components/ui/record-link'
 import { Plus } from 'lucide-react'
 import { useMemo } from 'react'
 
@@ -101,17 +106,17 @@ export function CommercialOrderIntakePanel({
             <CustomerSourceText source={"Create Customer orders and manage pricing, quotes, extensions and holds. Use All orders and history for accepted, completed and cancelled records. Laboratory execution continues in Lab operations."} />
           </CardDescription>
           <div className="mt-3 flex flex-wrap items-end gap-3">
-            <div><Label htmlFor="intake-view"><CustomerSourceText source={"View"} /></Label><select id="intake-view" className="mt-2 block h-9 cursor-pointer rounded-lg border bg-background px-3 text-sm" value={view} onChange={event => setFilters({ intakeView: event.target.value as 'active' | 'holds' | 'all' })}><option value="active"><CustomerSourceText source={"Active intake"} /></option><option value="holds"><CustomerSourceText source={"On hold"} /></option><option value="all"><CustomerSourceText source={"All orders and history"} /></option></select></div>
-            <div className="min-w-60 flex-1">
+            <PortalField><Label htmlFor="intake-view"><CustomerSourceText source={"View"} /></Label><NativeSelect id="intake-view" className="block" value={view} onChange={event => setFilters({ intakeView: event.target.value as 'active' | 'holds' | 'all' })}><option value="active"><CustomerSourceText source={"Active intake"} /></option><option value="holds"><CustomerSourceText source={"On hold"} /></option><option value="all"><CustomerSourceText source={"All orders and history"} /></option></NativeSelect></PortalField>
+            <PortalField className="min-w-60 flex-1">
             <Label htmlFor="commercial-intake-search"><CustomerSourceText source={"Search intake"} /></Label>
             <Input
               id="commercial-intake-search"
-              className="mt-2"
+
               value={search}
               onChange={(event) => setFilters({ intakeSearch: event.target.value })}
               placeholder={__customerSource("Order, Job, Company, or request number")}
             />
-            </div><Button variant="outline" onClick={() => setFilters({ intakeView: 'active', intakeSearch: '', intakePage: 1 })}><CustomerSourceText source={"Clear filters"} /></Button>
+            </PortalField><ClearFiltersButton  onClick={() => setFilters({ intakeView: 'active', intakeSearch: '', intakePage: 1 })}></ClearFiltersButton>
           </div>
         </CardHeader>
         <CardContent className="p-4">
@@ -184,14 +189,12 @@ function CommercialOrderRow({
     <div className="flex flex-wrap items-center justify-between gap-3 py-4">
       <div className="min-w-0 flex-1 basis-64">
         <div className="flex flex-wrap items-center gap-2">
-          <Link
-            to={commercialRecordRoute(workflow)}
+          <RecordLink asChild><Link to={commercialRecordRoute(workflow)}
             params={{ orderId: order.id }}
             search={previous => previous}
-            className="font-bold text-primary hover:underline"
           >
             {order.reference || order.number}
-          </Link>
+          </Link></RecordLink>
           <Badge variant="outline">{orderTypeLabel(order.orderType)}</Badge>
           {order.hasPendingQuoteExtension ? <Badge variant="secondary"><CustomerSourceText source={"Extension requested"} /></Badge> : null}
         </div>
@@ -283,13 +286,9 @@ function orderTypeLabel(orderType: CommercialOrderListItem['orderType']) {
   return 'PSeq Lab Service'
 }
 
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
-}
+function formatDateTime(value: string) { return formatDisplayTimestamp(value) }
 
-function formatMoney(value: number, currency: string) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(value)
-}
+function formatMoney(value: number, currency: string) { return formatDisplayCurrency(value, currency) }
 
 function formatHandoffStatus(value: string) {
   if (value === 'PendingReview') return 'Pending review'

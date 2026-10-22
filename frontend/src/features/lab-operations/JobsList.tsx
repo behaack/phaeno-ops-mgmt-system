@@ -1,3 +1,7 @@
+import { ClearFiltersButton } from '#/components/ui/clear-filters-button'
+import { Field as PortalField } from '#/components/ui/field'
+import { NativeSelect } from '#/components/ui/native-select'
+import { RecordLink } from '#/components/ui/record-link'
 import { ForecastSummary } from './CompletionForecast'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
@@ -25,7 +29,7 @@ function JobDateFilter({ id, label, value, min, max, invalidRange, onCommit }: {
   invalidRange: boolean; onCommit: (value: string | undefined) => void
 }) {
   const [incomplete, setIncomplete] = useState(false)
-  return <div className="space-y-1">
+  return <PortalField >
     <Label htmlFor={id}>{label}</Label>
     <Input id={id} type="date" defaultValue={value ?? ''} min={min} max={max}
       aria-invalid={incomplete || invalidRange}
@@ -43,7 +47,7 @@ function JobDateFilter({ id, label, value, min, max, invalidRange, onCommit }: {
       }}
       onKeyDown={event => { if (event.key === 'Enter') event.currentTarget.blur() }} />
     {incomplete ? <p id={`${id}-error`} role="alert" className="text-sm text-destructive">Enter a complete date with a four-digit year.</p> : null}
-  </div>
+  </PortalField>
 }
 
 export function JobsList({ enabled }: { enabled: boolean }) {
@@ -88,18 +92,18 @@ export function JobsList({ enabled }: { enabled: boolean }) {
               {invalidRange ? <span className="text-destructive">— Check date range</span> : null}
             </button>
           </Collapsible.Trigger>
-          <Button variant="outline" onClick={() => { setDateReset(value => value + 1); change(clearJobFilters(view)) }}>Clear filters</Button>
+          <ClearFiltersButton  onClick={() => { setDateReset(value => value + 1); change(clearJobFilters(view)) }}></ClearFiltersButton>
         </div>
         <p className="mt-1 break-words text-sm text-muted-foreground group-data-[state=open]/filters:hidden">{jobFilterSummary(filters)}</p>
         <Collapsible.Content>
           <div className={`mt-3 grid items-start gap-3 sm:grid-cols-2 ${closed ? '' : 'lg:grid-cols-3'}`}>
-            <div className="space-y-1"><Label htmlFor="job-search">Job or organization</Label><Input id="job-search" type="search" value={searchValue} maxLength={255} onChange={e => change(closed ? { jobClosedSearch: e.target.value || undefined } : { jobSearch: e.target.value || undefined })} placeholder="Job or organization" /></div>
-            {closed ? <div className="space-y-1"><Label htmlFor="job-outcome">Outcome</Label><select id="job-outcome" className="h-9 w-full rounded-md border bg-transparent px-3 text-sm" value={filters.jobOutcome ?? ''} onChange={e => change({ jobOutcome: e.target.value as JobListSearch['jobOutcome'] || undefined })}><option value="">All outcomes</option><option value="Delivered">Delivered</option><option value="Cancelled">Cancelled</option></select></div> : null}
+            <PortalField ><Label htmlFor="job-search">Job or organization</Label><Input id="job-search" type="search" value={searchValue} maxLength={255} onChange={e => change(closed ? { jobClosedSearch: e.target.value || undefined } : { jobSearch: e.target.value || undefined })} placeholder="Job or organization" /></PortalField>
+            {closed ? <PortalField ><Label htmlFor="job-outcome">Outcome</Label><NativeSelect id="job-outcome" className="w-full" value={filters.jobOutcome ?? ''} onChange={e => change({ jobOutcome: e.target.value as JobListSearch['jobOutcome'] || undefined })}><option value="">All outcomes</option><option value="Delivered">Delivered</option><option value="Cancelled">Cancelled</option></NativeSelect></PortalField> : null}
             {!closed ? <>
-              <div className="space-y-1"><Label htmlFor="job-status-filter">Job status</Label><select id="job-status-filter" className="h-9 w-full rounded-md border bg-transparent px-3 text-sm" value={filters.jobStatus ?? ''} onChange={e => change({ jobStatus: e.target.value as JobListSearch['jobStatus'] || undefined })}><option value="">All job statuses</option>{Object.entries(jobStatusLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></div>
-              <div className="flex flex-col"><Label className="mb-1" htmlFor="job-deadline-filter">Deadline status</Label><select id="job-deadline-filter" className="h-9 w-full rounded-md border bg-transparent px-3 text-sm" value={filters.jobDeadline ?? ''} onChange={e => change({ jobDeadline: e.target.value as JobListSearch['jobDeadline'] || undefined })}><option value="">All deadlines</option>{Object.entries(activeDeadlineLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select>
+              <PortalField ><Label htmlFor="job-status-filter">Job status</Label><NativeSelect id="job-status-filter" className="w-full" value={filters.jobStatus ?? ''} onChange={e => change({ jobStatus: e.target.value as JobListSearch['jobStatus'] || undefined })}><option value="">All job statuses</option>{Object.entries(jobStatusLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</NativeSelect></PortalField>
+              <PortalField className="flex flex-col"><Label className="mb-1" htmlFor="job-deadline-filter">Deadline status</Label><NativeSelect id="job-deadline-filter" className="w-full" value={filters.jobDeadline ?? ''} onChange={e => change({ jobDeadline: e.target.value as JobListSearch['jobDeadline'] || undefined })}><option value="">All deadlines</option>{Object.entries(activeDeadlineLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</NativeSelect>
                 {!closed && data ? <div className="mt-[3px] flex flex-wrap gap-x-4 gap-y-1 pl-[10px] text-xs" aria-label="Job deadline counts"><button type="button" className="cursor-pointer rounded-sm text-primary underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => change({ jobDeadline: undefined })}>All</button>{(Object.keys(activeDeadlineLabels) as Array<keyof typeof activeDeadlineLabels>).map(status => <button key={status} type="button" className="cursor-pointer rounded-sm text-primary underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => change({ jobDeadline: status })}>{deadlineLabels[status]}: {data.counts[status] ?? 0}</button>)}</div> : null}
-              </div>
+              </PortalField>
             </> : null}
           </div>
           <div className="mt-3 grid items-end gap-3 sm:grid-cols-2">
@@ -125,7 +129,7 @@ export function JobsList({ enabled }: { enabled: boolean }) {
           return `${count} ${label.charAt(0).toLowerCase()}${label.slice(1)}`
         }).join(' · ')
         return <article key={phaseId ?? job.id} className="space-y-3 rounded-lg border bg-muted/30 p-4">
-        <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><Link className="font-medium text-primary underline-offset-4 hover:underline" to="/lab-operations/$workOrderId" params={{ workOrderId: job.id }} search={previous => ({ ...previous, section: 'jobs', tab: 'overview' })}>{job.name}{phaseName ? ` · ${phaseName}` : ''}</Link><p className="mt-1 text-sm text-muted-foreground wrap-anywhere">{job.organizationName}{job.customerReference ? ` · ${job.customerReference}` : ''}</p></div>{!closed && deadlineLabels[deadlineStatus] !== statusLabel ? <DeadlineBadge status={deadlineStatus} /> : null}</div>
+        <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><RecordLink asChild><Link to="/lab-operations/$workOrderId" params={{ workOrderId: job.id }} search={previous => ({ ...previous, section: 'jobs', tab: 'overview' })}>{job.name}{phaseName ? ` · ${phaseName}` : ''}</Link></RecordLink><p className="mt-1 text-sm text-muted-foreground wrap-anywhere">{job.organizationName}{job.customerReference ? ` · ${job.customerReference}` : ''}</p></div>{!closed && deadlineLabels[deadlineStatus] !== statusLabel ? <DeadlineBadge status={deadlineStatus} /> : null}</div>
         <dl className="grid gap-3 text-sm sm:grid-cols-2">
           <div><dt className="font-semibold">Current status</dt><dd className="mt-1">{statusLabel}</dd></div>
           <div className="min-w-0"><dt className="font-semibold">Recorded freezer {job.freezerBoxBarcodes.length === 1 ? 'box' : 'boxes'}</dt><dd className="mt-1 wrap-anywhere">{job.freezerBoxBarcodes.length ? job.freezerBoxBarcodes.join(', ') : 'Not recorded'}</dd></div>

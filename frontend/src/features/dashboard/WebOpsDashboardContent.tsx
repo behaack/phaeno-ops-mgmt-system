@@ -1,3 +1,4 @@
+import { formatDisplayTimestamp } from '#/lib/display-format'
 import {
   CheckCircle2,
   ChevronLeft,
@@ -660,9 +661,4 @@ function PanelPagination({
   )
 }
 
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat('en-US', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(new Date(value))
-}
+function formatDateTime(value: string) { return formatDisplayTimestamp(value) }

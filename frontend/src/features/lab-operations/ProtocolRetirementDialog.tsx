@@ -1,3 +1,4 @@
+import { RecordLink } from '#/components/ui/record-link'
 import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQuery } from '@tanstack/react-query'
@@ -36,7 +37,7 @@ export function ProtocolRetirementDialog({ protocol, pending, error, onClose, on
         </DialogHeader>
         {impact.isFetching ? <p role="status">Checking workflows and samples in process…</p> : null}
         {impact.error ? <Alert variant="destructive"><AlertTitle>Retirement impact could not be checked</AlertTitle><AlertDescription>{getLabOperationsError(impact.error, 'Try again.')}</AlertDescription></Alert> : null}
-        {impact.data?.activeWork.length ? <Alert variant="destructive"><AlertTitle>Samples are in process</AlertTitle><AlertDescription>Retirement is blocked until processing is finished on these jobs:<ul>{impact.data.activeWork.map((job) => <li key={job.id}><Link to="/lab-operations/$workOrderId" params={{ workOrderId: job.id }} search={{ section: undefined }} className="underline">{job.reference}</Link></li>)}</ul></AlertDescription></Alert> : null}
+        {impact.data?.activeWork.length ? <Alert variant="destructive"><AlertTitle>Samples are in process</AlertTitle><AlertDescription>Retirement is blocked until processing is finished on these jobs:<ul>{impact.data.activeWork.map((job) => <li key={job.id}><RecordLink asChild><Link to="/lab-operations/$workOrderId" params={{ workOrderId: job.id }} search={{ section: undefined }} >{job.reference}</Link></RecordLink></li>)}</ul></AlertDescription></Alert> : null}
         {impact.data?.workflows.length ? <Alert><AlertTitle>Affected workflows will become invalid</AlertTitle><AlertDescription>The protocol will be removed from new workflow revisions. Review and approve those revisions before putting them back into production.<ul>{impact.data.workflows.map((name) => <li key={name}>{name}</li>)}</ul></AlertDescription></Alert> : null}
         {impact.data?.queuedWork.length ? <Alert><AlertTitle>Assigned work may be stranded</AlertTitle><AlertDescription>These jobs have not started. Their original workflow assignments will remain, and they will be blocked from starting. Proceed anyway?<ul>{impact.data.queuedWork.map((job) => <li key={job.id}>{job.reference}</li>)}</ul></AlertDescription></Alert> : null}
         {error || impact.error ? <Button type="button" variant="outline" disabled={pending || impact.isFetching} onClick={() => void impact.refetch()}>Refresh impact</Button> : null}

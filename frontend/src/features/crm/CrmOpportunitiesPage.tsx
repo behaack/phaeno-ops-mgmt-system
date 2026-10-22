@@ -1,3 +1,8 @@
+import { Field as PortalField } from '#/components/ui/field'
+import { NativeSelect } from '#/components/ui/native-select'
+import { NativeCheckbox } from '#/components/ui/native-checkbox'
+import { RecordLink } from '#/components/ui/record-link'
+import { PageTitle } from '#/components/ui/page-header'
 import { CrmClearFilters, useCrmState, useCrmSearch, CrmListPagination } from "./CrmListNavigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -99,7 +104,7 @@ export function CrmOpportunitiesPage() {
           <Badge variant="secondary" className="mb-3">
             Sales pipeline
           </Badge>
-          <h1 className="text-3xl font-semibold">Opportunities</h1>
+          <PageTitle>Opportunities</PageTitle>
           <p className="mt-3 text-sm text-muted-foreground">
             Forecast value and make every stage transition durable and
             reviewable.
@@ -140,7 +145,7 @@ export function CrmOpportunitiesPage() {
               setSearch(draftSearch.trim());
             }}
           >
-            <div className={showPipelineFilter ? "col-span-2 grid min-w-0 gap-1.5 sm:col-span-1" : "grid min-w-0 gap-1.5"}>
+            <PortalField className={showPipelineFilter ? "col-span-2 grid min-w-0 gap-1.5 sm:col-span-1" : "grid min-w-0 gap-1.5"}>
               <Label htmlFor="opportunity-search">Search opportunities</Label>
               <Input
                 id="opportunity-search"
@@ -149,17 +154,17 @@ export function CrmOpportunitiesPage() {
                 onChange={(event) => setDraftSearch(event.target.value)}
                 placeholder="Opportunity number, name, Company, or product"
               />
-            </div>
-            {showPipelineFilter ? <div className="grid gap-1.5">
+            </PortalField>
+            {showPipelineFilter ? <PortalField >
               <Label htmlFor="opportunity-pipeline-filter">Pipeline</Label>
-              <select
+              <NativeSelect
                 id="opportunity-pipeline-filter"
                 value={allPipelines ? "all" : selectedPipelineId}
                 onChange={(event) => {
                   const nextPipelineId = event.target.value;
                   void navigate({ to: ".", search: previous => ({ ...previous, pipelineId: nextPipelineId, stageId: "", page: 1 }), replace: true, resetScroll: false });
                 }}
-                className="h-9 rounded-md border bg-background px-3 text-sm"
+
               >
                 <option value="all">All pipelines</option>
                 {activePipelines.map((pipeline) => (
@@ -167,11 +172,11 @@ export function CrmOpportunitiesPage() {
                       {pipeline.name}
                     </option>
                   ))}
-              </select>
-            </div> : null}
+              </NativeSelect>
+            </PortalField> : null}
             <CrmClearFilters ignoreStageSelection keepVisible label="Clear filter" />
           </form>
-          <label className="flex cursor-pointer items-center gap-2 text-sm"><input type="checkbox" checked={stale} onChange={event => setStale(event.target.checked)} />Open opportunities unchanged for 30 days</label>
+          <label className="flex cursor-pointer items-center gap-2 text-sm"><NativeCheckbox  checked={stale} onChange={event => setStale(event.target.checked)} />Open opportunities unchanged for 30 days</label>
           <CrmSavedViewBar
             recordType="Opportunity"
             currentFilter={{ search, pipelineId: selectedPipelineId, stageId: selectedStageId, stale }}
@@ -235,13 +240,12 @@ export function CrmOpportunitiesPage() {
                   {records.map((value) => (
                     <tr key={value.id}>
                       <td className="p-3 font-medium">
-                        <Link
-                          to="/crm/opportunities/$opportunityId" search={previous => previous}
+                        <RecordLink asChild><Link to="/crm/opportunities/$opportunityId" search={previous => previous}
                           params={{ opportunityId: value.id }}
-                          className="hover:underline"
+
                         >
                           {value.name}
-                        </Link>
+                        </Link></RecordLink>
                         <p className="mt-1 font-mono text-xs font-normal text-muted-foreground">
                           {value.opportunityNumber}
                         </p>
@@ -259,7 +263,7 @@ export function CrmOpportunitiesPage() {
             </div>
             <ul className="divide-y md:hidden">
               {records.map(value => <li key={value.id} className="space-y-2 py-4">
-                <Link to="/crm/opportunities/$opportunityId" search={previous => previous} params={{ opportunityId: value.id }} className="font-medium hover:underline">{value.name}</Link>
+                <RecordLink asChild><Link to="/crm/opportunities/$opportunityId" search={previous => previous} params={{ opportunityId: value.id }} >{value.name}</Link></RecordLink>
                 <p className="font-mono text-xs text-muted-foreground">{value.opportunityNumber}</p>
                 <p className="text-sm">{value.companyName}</p>
                 <Badge variant="outline">{value.stageName}</Badge>

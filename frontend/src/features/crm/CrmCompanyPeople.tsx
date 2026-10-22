@@ -1,3 +1,5 @@
+import { Field as PortalField } from '#/components/ui/field'
+import { RecordLink } from '#/components/ui/record-link'
 import { useCrmPermissions } from './use-crm-permissions';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
@@ -180,7 +182,7 @@ export function CrmCompanyPeople({
           {canAdminister ? <CrmCollectionFeedback name="people" query={people} /> : null}
           <CrmCollectionFeedback name="contacts" query={contacts} />
           {canAdminister && accessOrganizationId ? <CrmCollectionFeedback name="departments" query={departments} /> : null}
-          {!canAdminister ? (contacts.data ?? []).map(contact => <div key={contact.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3"><div><Link to="/crm/contacts/$contactId" params={{ contactId: contact.contactId }} className="font-medium underline underline-offset-4">{contact.contactName}</Link><p className="text-sm text-muted-foreground">{[contact.jobTitle, contact.relationshipRole, contact.isPrimaryCompany ? 'Primary Company' : null, contact.isActive ? null : 'Ended relationship'].filter(Boolean).join(' · ') || 'Company contact'}</p></div><Button size="sm" variant="outline" onClick={() => { editRelationship.reset(); setRelationshipTarget(contact) }}>Manage relationship</Button></div>) : null}
+          {!canAdminister ? (contacts.data ?? []).map(contact => <div key={contact.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3"><div><RecordLink asChild><Link to="/crm/contacts/$contactId" params={{ contactId: contact.contactId }} >{contact.contactName}</Link></RecordLink><p className="text-sm text-muted-foreground">{[contact.jobTitle, contact.relationshipRole, contact.isPrimaryCompany ? 'Primary Company' : null, contact.isActive ? null : 'Ended relationship'].filter(Boolean).join(' · ') || 'Company contact'}</p></div><Button size="sm" variant="outline" onClick={() => { editRelationship.reset(); setRelationshipTarget(contact) }}>Manage relationship</Button></div>) : null}
           {(canAdminister ? people.data ?? [] : []).map((person) => (
             <PersonRow
               key={`${person.recordKind}-${person.contactAssociationId ?? person.contactId ?? person.portalUserId ?? person.invitationId}`}
@@ -271,13 +273,12 @@ function PersonRow({
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             {person.contactId ? (
-              <Link
-                to="/crm/contacts/$contactId"
+              <RecordLink asChild><Link to="/crm/contacts/$contactId"
                 params={{ contactId: person.contactId }}
-                className="font-medium hover:underline"
+
               >
                 {person.displayName}
-              </Link>
+              </Link></RecordLink>
             ) : (
               <span className="font-medium">{person.displayName}</span>
             )}
@@ -358,10 +359,10 @@ function IdentityReviewDialog({
           </DialogHeader>
           <p className="text-sm">{action?.person.displayName} · {action?.person.email}</p>
           {error ? <Alert variant="destructive"><AlertDescription>{apiErrorMessage(error)}</AlertDescription></Alert> : null}
-          <div className="grid gap-1.5">
+          <PortalField >
             <Label htmlFor="identity-review-reason"><RequiredFieldName>Reason</RequiredFieldName></Label>
             <Textarea id="identity-review-reason" name="reason" maxLength={500} required />
-          </div>
+          </PortalField>
           <RequiredDialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
             <Button type="submit" disabled={pending}>{linking ? 'Link identity' : 'Unlink identity'}</Button>

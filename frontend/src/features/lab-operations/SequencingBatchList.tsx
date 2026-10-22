@@ -1,3 +1,4 @@
+import { RecordLink } from '#/components/ui/record-link'
 import { useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import { ChevronRight, Plus } from 'lucide-react'
@@ -62,7 +63,7 @@ export function SequencingBatchList({ items, suppliers, canManage, onCreate, ref
                   return (
                     <div key={item.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-1 rounded-lg border bg-muted/30 p-4 shadow-xs sm:grid-cols-[minmax(0,1fr)_auto_auto]">
                       <div className="min-w-0 break-words">
-                        <Link to="/lab-operations/batches/$batchId" params={{ batchId: item.id }} className="font-medium text-primary underline underline-offset-4">{item.batchNumber}</Link>
+                        <RecordLink asChild><Link to="/lab-operations/batches/$batchId" params={{ batchId: item.id }} >{item.batchNumber}</Link></RecordLink>
                         {item.resultsVersion ? <span className="ml-2 text-xs text-muted-foreground">Results v{item.resultsVersion}</span> : null}
                       </div>
                       <div className="col-span-2 min-w-0 break-words sm:col-span-1 sm:col-start-1 sm:row-start-2">

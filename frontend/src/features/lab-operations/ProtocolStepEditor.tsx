@@ -1,3 +1,4 @@
+import { NativeCheckbox } from '#/components/ui/native-checkbox'
 import { ProcedureSource } from './ProcedureSource'
 import { Field as FieldContainer } from '#/components/ui/field'
 import { ProcedureSequence } from './ProcedureSequence'
@@ -181,7 +182,7 @@ export function ProtocolStepEditor({
                     </NativeSelect>
                   </Field>
                 </div>
-                {captureType === 'barcode' ? <label className="flex cursor-pointer items-center gap-2 text-sm"><input type="checkbox" {...form.register(`steps.${index}.captures.${captureIndex}.sourceTube`)} />Must match the selected source tube</label> : null}
+                {captureType === 'barcode' ? <label className="flex cursor-pointer items-center gap-2 text-sm"><NativeCheckbox  {...form.register(`steps.${index}.captures.${captureIndex}.sourceTube`)} />Must match the selected source tube</label> : null}
                 {masterMix ? <p className="text-sm text-muted-foreground">Recorded for this master-mix preparation.</p> : form.watch('preparationBatchEnabled') ? <Field label="Recorded for" id={`scope-${index}-${captureIndex}`} required error={captureErrors?.scope?.message}>
                   <NativeSelect id={`scope-${index}-${captureIndex}`} {...form.register(`steps.${index}.captures.${captureIndex}.scope`, { onChange: event => {
                     if (materialField && event.target.value === 'shared') form.setValue(`steps.${index}.captures.${captureIndex}.quantityBasis`, 'perSample', { shouldDirty: true })
@@ -190,7 +191,7 @@ export function ProtocolStepEditor({
                     {!['barcode', 'output', 'biologicalMaterial'].includes(captureType) ? <><option value="batch">Batch only — same entry for all samples</option>{captureType !== 'equipment' ? <option value="shared">Same entry with sample exceptions</option> : null}</> : null}
                   </NativeSelect>
                 </Field> : null}
-                {captureType === 'material' && masterMix ? <p className="text-sm text-muted-foreground">Actual reagent lot number and amount are required during preparation.</p> : captureType === 'material' && !form.watch(`steps.${index}.captures.${captureIndex}.material.masterMixWorkflowId`) ? <label className="flex cursor-pointer items-center gap-2 text-sm"><input type="checkbox" {...form.register(`steps.${index}.captures.${captureIndex}.includeTracking`)} />Include lot number</label> : null}
+                {captureType === 'material' && masterMix ? <p className="text-sm text-muted-foreground">Actual reagent lot number and amount are required during preparation.</p> : captureType === 'material' && !form.watch(`steps.${index}.captures.${captureIndex}.material.masterMixWorkflowId`) ? <label className="flex cursor-pointer items-center gap-2 text-sm"><NativeCheckbox  {...form.register(`steps.${index}.captures.${captureIndex}.includeTracking`)} />Include lot number</label> : null}
                 {captureType === 'equipment' ? <p className="text-sm text-muted-foreground">Select the equipment used from eligible registered equipment when recording this step.</p> : null}
                 {materialField && !masterMix && ['batch', 'shared'].includes(form.watch(`steps.${index}.captures.${captureIndex}.scope`) ?? '') ? <Field label="Quantity recorded" id={`basis-${index}-${captureIndex}`}><NativeSelect id={`basis-${index}-${captureIndex}`} {...form.register(`steps.${index}.captures.${captureIndex}.quantityBasis`)}><option value="perSample">Amount per sample</option>{form.watch(`steps.${index}.captures.${captureIndex}.scope`) !== 'shared' ? <option value="total">Total amount for the batch</option> : null}</NativeSelect></Field> : null}
                 {materialField ? <Field label="Quantity unit" id={`step-${index}-capture-${captureIndex}-unit`} required error={captureErrors?.unit?.message}>

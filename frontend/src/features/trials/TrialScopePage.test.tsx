@@ -133,7 +133,7 @@ describe('Trial scope reload', () => {
     expect(screen.getByLabelText('Trial name', { exact: false }).matches(':disabled')).toBe(true); expect(screen.getByLabelText('Reason for this scope revision', { exact: false }).matches(':disabled')).toBe(true)
     expect(screen.getByRole('button', { name: 'Submit scope for approval' }).matches(':disabled')).toBe(true)
     expect(screen.getByRole('button', { name: 'Reloading…' }).matches(':disabled')).toBe(true)
-    expect(screen.getByText('Back to TR-RESEARCH-01').getAttribute('aria-disabled')).toBe('true'); expect(screen.getByText('Cancel').getAttribute('aria-disabled')).toBe('true')
+    expect(screen.getByText('Back to TR-RESEARCH-01').closest('a')?.getAttribute('aria-disabled')).toBe('true'); expect(screen.getByText('Cancel').getAttribute('aria-disabled')).toBe('true')
     expect(await mocks.blocker.mock.lastCall![0].shouldBlockFn()).toBe(true); expect(mocks.blocker.mock.lastCall![0].enableBeforeUnload()).toBe(true)
     expect(confirm).not.toHaveBeenCalled()
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Reloading…' })) })

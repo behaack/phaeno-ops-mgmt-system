@@ -1,3 +1,4 @@
+import { PageTitle } from '#/components/ui/page-header'
 import { CheckCircle2, KeyRound } from 'lucide-react'
 
 import { useApplicationBranding } from '#/components/application-branding'
@@ -32,9 +33,9 @@ export function DashboardHero() {
         <Badge variant="secondary" className="mb-3">
           {eyebrow}
         </Badge>
-        <h1 className="text-3xl font-semibold leading-tight sm:text-4xl">
+        <PageTitle>
           {dashboardTitle}
-        </h1>
+        </PageTitle>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
           {dashboardDescription(
             organizationKind,

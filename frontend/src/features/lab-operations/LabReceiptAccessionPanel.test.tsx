@@ -79,7 +79,7 @@ describe('LabReceiptAccessionPanel navigation', () => {
     fireEvent.change(screen.getByLabelText('Search accessioned samples'), { target: { value: 'missing' } })
     expect(await screen.findByText('No samples match your filters.')).toBeTruthy()
     expect(route.search).toMatchObject({ accessionStatus: 'OnHold', accessionUse: 'Used', accessionPage: 1, kitSearch: 'preserved' })
-    fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Clear all' }))
     await waitFor(() => expect(api.samples).toHaveBeenCalledWith('', 1, undefined, undefined))
     expect(route.search.kitSearch).toBe('preserved')
     expect(api.accession).not.toHaveBeenCalled()

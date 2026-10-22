@@ -1,8 +1,4 @@
-const calendarDateFormatter = new Intl.DateTimeFormat('en-US', {
-  month: 'short', day: '2-digit', year: 'numeric', timeZone: 'UTC',
-})
+import { formatDisplayDate } from '#/lib/display-format'
 
-// Calendar dates have no timezone; preserve the recorded day for every viewer.
-export function formatCalendarDate(value: string) {
-  return calendarDateFormatter.format(new Date(`${value}T00:00:00Z`))
-}
+// Preserve a recorded calendar day independently of the viewer's timezone.
+export function formatCalendarDate(value: string) { return formatDisplayDate(value) }

@@ -1,3 +1,7 @@
+import { ErrorState } from '#/components/ui/content-state'
+import { GovernanceStatusBadge as StatusBadge } from './DataStatusBadge'
+import { formatDisplayDate } from '#/lib/display-format'
+import { NativeCheckbox } from '#/components/ui/native-checkbox'
 import { GuardedFormDialog, ConfirmationFormContent } from '#/components/GuardedFormDialog'
 import { NativeSelect } from '#/components/ui/native-select'
 import { RecordPagination } from '#/components/RecordPagination'
@@ -26,7 +30,6 @@ import {
   type GovernanceAffectedOrganization,
   type GovernanceIncident,
 } from '#/api/data-provisioning'
-import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import { ActionMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '#/components/ui/dropdown-menu'
@@ -265,7 +268,7 @@ export function GovernancePanel({ apiEnabled }: { apiEnabled: boolean }) {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <QueryError error={incidentsQuery.error} fallback="Governance incidents could not be loaded." />
+          <QueryError error={incidentsQuery.error} fallback="Governance incidents could not be loaded." onRetry={()=>void incidentsQuery.refetch()} busy={incidentsQuery.isFetching} />
           {(incidentsQuery.data ?? []).map((incident) => (
             <article key={incident.id} className="rounded-lg border bg-background p-4">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
@@ -387,7 +390,7 @@ function QuarantineDialog({ open, onOpenChange, form, sources, mutation }: { ope
 
 function ResolutionDialog({ action, onOpenChange, form, mutation }: { action: ResolutionAction | null; onOpenChange: (open: boolean) => void; form: ReturnType<typeof useForm<ResolutionValues>>; mutation: ReturnType<typeof useMutation<GovernanceIncident, Error, { action: ResolutionAction; values: ResolutionValues }>> }) {
   const isClear = action?.kind === 'clear'
-  return <GuardedFormDialog dirty={form.formState.isDirty} pending={mutation.isPending} returnFocusId={`governance-${action?.incident.id}-actions`} open={Boolean(action)} onOpenChange={onOpenChange}><ConfirmationFormContent><DialogHeader><DialogTitle>{isClear ? 'Clear quarantine and restore active grants?' : 'Confirm content is unsafe and withdraw it?'}</DialogTitle><DialogDescription>{isClear ? 'Access resumes only for grants that remain active. Eligibility stays off until Phaeno deliberately approves it again.' : 'The affected versions remain preserved as evidence but can never be accessed through tenant grants. Every affected organization must attest to remediation.'}</DialogDescription></DialogHeader>{action ? <form className="space-y-4" onSubmit={form.handleSubmit((values) => mutation.mutateAsync({ action, values }))}><p className="text-sm">{action.incident.sourceSampleLabel}: {isClear ? "Still-active grants resume only after unchanged content is confirmed safe. Revoked grants remain unavailable." : "All affected versions remain evidence and become unavailable to tenants. Every affected organization must attest to remediation."}</p><FormField label="Documented investigation outcome" error={form.formState.errors.resolution?.message} required><textarea className={textareaClass} rows={5} {...form.register('resolution')} /></FormField>{isClear ? <label className="flex items-start gap-2 rounded-lg border p-3 text-sm"><input type="checkbox" className="mt-0.5 size-4" {...form.register('immutableContentConfirmedUnchanged')} /><span><span className="font-medium">I confirmed the immutable curated content and checksums are unchanged.</span><span className="mt-1 block text-muted-foreground">This scientific-integrity confirmation is required before suspended grants resume.</span></span></label> : null}<MutationError error={mutation.error} fallback="The incident could not be resolved." /><RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" variant={isClear ? 'default' : 'destructive'} disabled={mutation.isPending || (isClear && !form.watch('immutableContentConfirmedUnchanged'))}>{mutation.isPending ? 'Saving' : isClear ? 'Clear quarantine' : 'Withdraw content'}</Button></RequiredDialogFooter></form> : null}</ConfirmationFormContent></GuardedFormDialog>
+  return <GuardedFormDialog dirty={form.formState.isDirty} pending={mutation.isPending} returnFocusId={`governance-${action?.incident.id}-actions`} open={Boolean(action)} onOpenChange={onOpenChange}><ConfirmationFormContent><DialogHeader><DialogTitle>{isClear ? 'Clear quarantine and restore active grants?' : 'Confirm content is unsafe and withdraw it?'}</DialogTitle><DialogDescription>{isClear ? 'Access resumes only for grants that remain active. Eligibility stays off until Phaeno deliberately approves it again.' : 'The affected versions remain preserved as evidence but can never be accessed through tenant grants. Every affected organization must attest to remediation.'}</DialogDescription></DialogHeader>{action ? <form className="space-y-4" onSubmit={form.handleSubmit((values) => mutation.mutateAsync({ action, values }))}><p className="text-sm">{action.incident.sourceSampleLabel}: {isClear ? "Still-active grants resume only after unchanged content is confirmed safe. Revoked grants remain unavailable." : "All affected versions remain evidence and become unavailable to tenants. Every affected organization must attest to remediation."}</p><FormField label="Documented investigation outcome" error={form.formState.errors.resolution?.message} required><textarea className={textareaClass} rows={5} {...form.register('resolution')} /></FormField>{isClear ? <label className="flex items-start gap-2 rounded-lg border p-3 text-sm"><NativeCheckbox   {...form.register('immutableContentConfirmedUnchanged')} /><span><span className="font-medium">I confirmed the immutable curated content and checksums are unchanged.</span><span className="mt-1 block text-muted-foreground">This scientific-integrity confirmation is required before suspended grants resume.</span></span></label> : null}<MutationError error={mutation.error} fallback="The incident could not be resolved." /><RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" variant={isClear ? 'default' : 'destructive'} disabled={mutation.isPending || (isClear && !form.watch('immutableContentConfirmedUnchanged'))}>{mutation.isPending ? 'Saving' : isClear ? 'Clear quarantine' : 'Withdraw content'}</Button></RequiredDialogFooter></form> : null}</ConfirmationFormContent></GuardedFormDialog>
 }
 
 function NotesDialog({ title, description, open, onOpenChange, form, pending, error, onSubmit, returnFocusId }: { title: string; description: string; open: boolean; onOpenChange: (open: boolean) => void; form: ReturnType<typeof useForm<NotesValues>>; pending: boolean; error: unknown; onSubmit: (values: NotesValues) => Promise<unknown> | undefined; returnFocusId?: string }) {
@@ -410,20 +413,12 @@ function FormField({ label, error, required, children }: { label: string; error?
   return <Field><Label htmlFor={id}>{required ? <RequiredFieldName>{label}</RequiredFieldName> : label}</Label>{control}<FieldError>{error}</FieldError></Field>
 }
 
-function StatusBadge({ status }: { status: string }) {
-  return <Badge variant={status === 'Open' ? 'destructive' : status === 'Cleared' ? 'secondary' : 'outline'}>{status}</Badge>
-}
 
-function QueryError({ error, fallback }: { error: unknown; fallback: string }) {
-  return error ? <Alert variant="destructive" role="alert"><AlertTitle>Unable to load data</AlertTitle><AlertDescription>{getApiErrorMessage(error, fallback)}</AlertDescription></Alert> : null
-}
 
-function MutationError({ error, fallback }: { error: unknown; fallback: string }) {
-  return error ? <Alert variant="destructive" role="alert"><AlertTitle>Action failed</AlertTitle><AlertDescription>{getApiErrorMessage(error, fallback)}</AlertDescription></Alert> : null
-}
+function QueryError({ error, fallback, onRetry, busy }: { error: unknown; fallback: string; onRetry?:()=>void; busy?:boolean }) { return error ? <ErrorState title="Unable to load data" onRetry={onRetry} busy={busy}>{getApiErrorMessage(error, fallback)}</ErrorState> : null }
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(value))
-}
+function MutationError({ error, fallback }: { error: unknown; fallback: string }) { return error ? <ErrorState title="Action failed">{getApiErrorMessage(error, fallback)}</ErrorState> : null }
+
+function formatDate(value: string) { return formatDisplayDate(value) }
 
 const textareaClass = 'min-h-20 w-full resize-y rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50'

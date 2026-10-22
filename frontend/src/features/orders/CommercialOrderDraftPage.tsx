@@ -1,3 +1,4 @@
+import { PageTitle } from '#/components/ui/page-header'
 import { BackLink } from '#/components/ui/back-link'
 import { CustomerSourceText, useCustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -132,7 +133,7 @@ function DraftEditor({ order, initialOrganizationId, sourceRequestId }: { order?
   }
   const busy = mutation.isPending
   return <main className="page-wrap px-4 py-8">
-    <header className="mb-6"><BackLink asChild><Link to="/order-operations/lab-services" search={previous => ({ ...previous })}><CustomerSourceText source={"Order intake"} /></Link></BackLink><h1 className="mt-2 text-3xl font-semibold">{savedOrder ? `Edit Draft · ${savedOrder.orderNumber}` : <CustomerSourceText source={"New Customer order"} />}</h1><p className="mt-2 text-sm text-muted-foreground"><CustomerSourceText source={"Record the Customer’s scope and optional proposed prices. Save a Draft, then submit the completed order for pricing."} /></p></header>
+    <header className="mb-6"><BackLink asChild><Link to="/order-operations/lab-services" search={previous => ({ ...previous })}><CustomerSourceText source={"Order intake"} /></Link></BackLink><PageTitle className="mt-2">{savedOrder ? `Edit Draft · ${savedOrder.orderNumber}` : <CustomerSourceText source={"New Customer order"} />}</PageTitle><p className="mt-2 text-sm text-muted-foreground"><CustomerSourceText source={"Record the Customer’s scope and optional proposed prices. Save a Draft, then submit the completed order for pricing."} /></p></header>
     {ownerError || mutation.error || submissionError || issueSummary.length ? <Alert variant="destructive" className="mb-5" role="alert"><AlertTitle>{submissionError ? <CustomerSourceText source={"Draft saved; pricing submission needs attention"} /> : <CustomerSourceText source={"Review the order entries"} />}</AlertTitle><AlertDescription>{ownerError || getOrderErrorMessage(submissionError ?? mutation.error, '')}{issueSummary.length ? <ul className="list-disc space-y-1 pl-5">{issueSummary.map((issue, index) => <li key={`${issue.path}-${index}`}><button type="button" className="cursor-pointer text-left underline" onClick={() => form.setFocus(issue.path as FieldPath<CommercialDraftForm>)}>{<CustomerSourceText source={issue.message} />}</button></li>)}</ul> : null}<p><CustomerSourceText source={"Your entries are retained. If another user changed the Draft, reopen its saved details before reconciling your changes."} /></p></AlertDescription></Alert> : null}
     <form noValidate onSubmit={event => { event.preventDefault(); void save(false) }} className="space-y-5">
       <fieldset disabled={busy} className="space-y-5">
@@ -175,10 +176,10 @@ function DraftEditor({ order, initialOrganizationId, sourceRequestId }: { order?
             <div className="flex flex-wrap items-start gap-x-6 gap-y-3">
               <label htmlFor="draft-use-phases" className="flex min-h-8 cursor-pointer items-center gap-2"><Checkbox id="draft-use-phases" checked={values.usesPhases} onCheckedChange={value => togglePhases(value === true)} /><span><CustomerSourceText source={"Use phases"} /></span></label>
               {values.usesPhases ? <Field className="min-w-0">
-                <div className="flex min-h-8 items-center gap-2">
+                <Field className="flex min-h-8">
                   <Label htmlFor="draft-phase-count" className="shrink-0"><CustomerSourceText source={"Phase count"} /></Label>
                   <Input id="draft-phase-count" className="w-24 shrink-0" type="number" min={2} max={100} value={phaseCountInput ?? phases.fields.length} onChange={event => setPhaseCountInput(event.target.value)} onBlur={event => resizePhases(Number(event.target.value))} aria-invalid={Boolean(phaseCountError)} aria-describedby="draft-phase-count-error" />
-                </div>
+                </Field>
                 <FieldError id="draft-phase-count-error">{phaseCountError}</FieldError>
               </Field> : null}
             </div>

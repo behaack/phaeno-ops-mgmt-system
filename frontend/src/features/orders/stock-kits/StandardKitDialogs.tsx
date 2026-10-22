@@ -27,7 +27,7 @@ import { containerEffectiveState, localContainerDateTime } from '../configuratio
 import { ShippingKitContents } from '../configuration/ShippingKitContents'
 import { getKitAssemblyWorkflows, kitAssemblyWorkflowsKey } from '#/api/lab-kit-assembly'
 
-const selectClass = 'h-9 w-full cursor-pointer rounded-md border border-input bg-background px-3 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none'
+const selectClass = "w-full"
 const prepareSchema = z.object({ containerDefinitionId: z.string().uuid('Choose an active kit specification.'), tubeSupplierId: z.string().uuid('Choose a tube supplier.'), tubeSupplierProductId: z.string().uuid('Choose a tube product.'), tubeLotNumber: z.string().trim().max(100), shipperSupplierId: z.string().uuid('Choose a shipping container supplier.'), shipperSupplierProductId: z.string().uuid('Choose a shipping container product.'), productExpirations: z.record(z.string(), z.string()) })
 type PrepareValues = z.infer<typeof prepareSchema>
 type EditorProps = { onClose: () => void; onSaved: (kit: ShippingStockKit) => void | Promise<void> }

@@ -1,3 +1,5 @@
+import { Field as PortalField } from '#/components/ui/field'
+import { NativeCheckbox } from '#/components/ui/native-checkbox'
 import { ProcedureIllustration } from './ProcedureIllustrations'
 import { NativeSelect } from '#/components/ui/native-select'
 import { confirmPortal } from '#/components/PortalConfirmation'
@@ -18,7 +20,7 @@ import { Textarea } from '#/components/ui/textarea'
 import { hasResourceRequirements, stepFormDefaults, stepFormSchema, stepInput, type ExecutionStepFormValues } from './protocol-execution'
 import { StepTimingFields } from './StepTimingFields'
 
-const selectClass = 'h-9 w-full cursor-pointer rounded-lg border border-input bg-background px-3 text-sm focus-visible:outline-2 focus-visible:outline-ring'
+const selectClass = "w-full"
 
 export function ExecutionStepDialog({ step, action, version, error, pending, onClose, onSave, onReturnFocus }: {
   step: LabExecutionStep
@@ -69,7 +71,7 @@ export function ExecutionStepDialog({ step, action, version, error, pending, onC
         })}>
           <p className="whitespace-pre-wrap text-sm leading-6">{definition.instructions}</p>{(definition.illustrations ?? []).map(image => <ProcedureIllustration key={image.assetId} image={image} />)}
           {definition.condition ? <p className="rounded-lg bg-muted p-3 text-sm"><strong>Condition:</strong> {definition.condition}</p> : null}
-          {canSkip ? <div className="space-y-1.5"><Label htmlFor="step-outcome"><RequiredFieldName>Step decision</RequiredFieldName></Label><NativeSelect id="step-outcome" className={selectClass} {...form.register('outcome')}><option value="recorded">Record performed step</option><option value="skipped">Skip with reason</option></NativeSelect></div> : null}
+          {canSkip ? <PortalField ><Label htmlFor="step-outcome"><RequiredFieldName>Step decision</RequiredFieldName></Label><NativeSelect id="step-outcome" className={selectClass} {...form.register('outcome')}><option value="recorded">Record performed step</option><option value="skipped">Skip with reason</option></NativeSelect></PortalField> : null}
           {!skipped ? <>
             {action === 'correct' ? <p className="text-sm text-muted-foreground">This correction preserves the earlier performer and performed time, including any unknowns. It does not record new work.</p> : <Controller name="timing" control={form.control} render={({ field }) => <StepTimingFields value={field.value} onChange={field.onChange} onBlur={field.onBlur} inputRef={field.ref} errors={errors.timing} />} />}
             {definition.captures.map(capture => {
@@ -88,16 +90,16 @@ export function ExecutionStepDialog({ step, action, version, error, pending, onC
               {definition.inputMaterials.length > 0 ? <p className="text-sm"><strong>Inputs:</strong> {definition.inputMaterials.join(', ')}</p> : null}
               {definition.preparedOutputs.length > 0 ? <p className="text-sm"><strong>Outputs:</strong> {definition.preparedOutputs.join(', ')}</p> : null}
               {definition.equipmentTypes.length > 0 ? <p className="text-sm"><strong>Equipment:</strong> {definition.equipmentTypes.join(', ')}</p> : null}
-              <Label className="items-start" htmlFor="step-resources"><input className="mt-1 size-4 shrink-0 cursor-pointer accent-primary" type="checkbox" id="step-resources" aria-invalid={Boolean(errors.resourcesConfirmed)} aria-describedby="step-resources-error" {...form.register('resourcesConfirmed')} /><RequiredFieldName>I checked these resources and recorded the applicable lot, container, and equipment traceability on the job.</RequiredFieldName></Label>
+              <Label className="items-start" htmlFor="step-resources"><NativeCheckbox className="shrink-0 accent-primary"  id="step-resources" aria-invalid={Boolean(errors.resourcesConfirmed)} aria-describedby="step-resources-error" {...form.register('resourcesConfirmed')} /><RequiredFieldName>I checked these resources and recorded the applicable lot, container, and equipment traceability on the job.</RequiredFieldName></Label>
               <FieldError id="step-resources-error">{errors.resourcesConfirmed?.message}</FieldError>
             </fieldset> : null}
             {definition.qcGate ? <fieldset className="rounded-lg border p-3"><legend className="px-1 text-sm font-medium">QC gate</legend><div className="space-y-3"><p className="text-sm whitespace-pre-wrap">{definition.qcGate.criteria}</p>
-              <div className="space-y-1.5"><Label htmlFor="step-qc"><RequiredFieldName>QC outcome</RequiredFieldName></Label><NativeSelect id="step-qc" className={selectClass} aria-invalid={Boolean(errors.qcOutcome)} aria-describedby="step-qc-error" {...form.register('qcOutcome')}><option value="">Choose an outcome</option><option value="pass">Pass</option><option value="fail">Fail</option><option value="hold">Hold</option></NativeSelect>
-              <FieldError id="step-qc-error">{errors.qcOutcome?.message}</FieldError><p className="text-xs text-muted-foreground">Fail or Hold is saved as evidence and blocks later steps and completion.</p></div></div>
+              <PortalField ><Label htmlFor="step-qc"><RequiredFieldName>QC outcome</RequiredFieldName></Label><NativeSelect id="step-qc" className={selectClass} aria-invalid={Boolean(errors.qcOutcome)} aria-describedby="step-qc-error" {...form.register('qcOutcome')}><option value="">Choose an outcome</option><option value="pass">Pass</option><option value="fail">Fail</option><option value="hold">Hold</option></NativeSelect>
+              <FieldError id="step-qc-error">{errors.qcOutcome?.message}</FieldError><p className="text-xs text-muted-foreground">Fail or Hold is saved as evidence and blocks later steps and completion.</p></PortalField></div>
             </fieldset> : null}
-            {action !== 'correct' || definition.operatorConfirmation ? <div><Label className="items-start gap-2 leading-snug" htmlFor="step-confirmation"><input type="checkbox" id="step-confirmation" className="mt-0.5 size-4 shrink-0 cursor-pointer accent-primary" aria-required aria-invalid={Boolean(errors.operatorConfirmed)} aria-describedby="step-confirmation-error" {...form.register('operatorConfirmed')} /><RequiredFieldName>{action === 'correct' ? 'I reviewed this correction against the pinned instructions.' : form.watch('timing.otherPerformer') ? 'I confirm this entry identifies the actual performer and time.' : definition.operatorConfirmation ? 'I performed this step according to the pinned instructions.' : 'I performed this step at the time selected above.'}</RequiredFieldName></Label><FieldError id="step-confirmation-error">{errors.operatorConfirmed?.message}</FieldError></div> : null}
+            {action !== 'correct' || definition.operatorConfirmation ? <div><Label className="items-start gap-2 leading-snug" htmlFor="step-confirmation"><NativeCheckbox  id="step-confirmation" className="shrink-0 accent-primary" aria-required aria-invalid={Boolean(errors.operatorConfirmed)} aria-describedby="step-confirmation-error" {...form.register('operatorConfirmed')} /><RequiredFieldName>{action === 'correct' ? 'I reviewed this correction against the pinned instructions.' : form.watch('timing.otherPerformer') ? 'I confirm this entry identifies the actual performer and time.' : definition.operatorConfirmation ? 'I performed this step according to the pinned instructions.' : 'I performed this step at the time selected above.'}</RequiredFieldName></Label><FieldError id="step-confirmation-error">{errors.operatorConfirmed?.message}</FieldError></div> : null}
           </> : null}
-          <div className="space-y-1.5"><Label htmlFor="step-reason">{reasonRequired ? <RequiredFieldName>Reason or condition assessment</RequiredFieldName> : 'Note (optional)'}</Label><Textarea id="step-reason" rows={3} maxLength={4000} aria-invalid={Boolean(errors.reason)} aria-describedby="step-reason-error" {...form.register('reason')} /><FieldError id="step-reason-error">{errors.reason?.message}</FieldError></div>
+          <PortalField ><Label htmlFor="step-reason">{reasonRequired ? <RequiredFieldName>Reason or condition assessment</RequiredFieldName> : 'Note (optional)'}</Label><Textarea id="step-reason" rows={3} maxLength={4000} aria-invalid={Boolean(errors.reason)} aria-describedby="step-reason-error" {...form.register('reason')} /><FieldError id="step-reason-error">{errors.reason?.message}</FieldError></PortalField>
         </form>
         <RequiredDialogFooter><Button type="button" variant="outline" onClick={close} disabled={pending}>Cancel</Button><Button type="submit" form="record-protocol-step" disabled={pending || !allowed}>{pending ? 'Saving…' : 'Save step record'}</Button></RequiredDialogFooter>
       </DialogContent>

@@ -5786,5 +5786,6 @@ export const customerEnglishMessages = {
   "m_cae28771c0b2": "BAM alignments",
   "m_061ed69d15bd": "Find current actions, responsibility and available updates for your Department, then open Customer Jobs, samples, data and retained Trials.",
   "m_2c1f9ea2a110": "This page has no work items. Choose an earlier page.",
-  "m_10aa7ae1a549": "Work counts are unavailable. Refresh the counts before relying on totals."
+  "m_10aa7ae1a549": "Work counts are unavailable. Refresh the counts before relying on totals.",
+  "shared_boolean_no": "No"
 } as const

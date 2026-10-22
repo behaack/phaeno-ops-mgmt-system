@@ -1,3 +1,4 @@
+import { Field as PortalField } from '#/components/ui/field'
 import { SignOutButton, useUser } from '@clerk/react'
 import { isAxiosError } from 'axios'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -183,11 +184,11 @@ function InvitationReview({ invitation, completeAfterSignIn, pending, onAccept, 
   return <form className="grid gap-4" onSubmit={form.handleSubmit(onAccept)}>
     <div><h2 className="text-lg font-semibold">Ready to join</h2><p className="mt-2 leading-6 text-muted-foreground">You’re signed in with your invited email. Accept to join {invitation.organizationName} with the access selected by your administrator.</p></div>
     {missingName ? <div className="grid gap-3 sm:grid-cols-2">
-      {(['firstName', 'lastName'] as const).map((field) => <div key={field} className="grid gap-2">
+      {(['firstName', 'lastName'] as const).map((field) => <PortalField key={field} >
         <Label htmlFor={field}><RequiredFieldName>{field === 'firstName' ? 'First name' : 'Last name'}</RequiredFieldName></Label>
         <Input id={field} {...form.register(field)} autoComplete={field === 'firstName' ? 'given-name' : 'family-name'} required aria-invalid={Boolean(form.formState.errors[field])} aria-describedby={form.formState.errors[field] ? `${field}-error` : undefined} />
         {form.formState.errors[field] ? <p id={`${field}-error`} className="text-sm text-destructive">{form.formState.errors[field]?.message}</p> : null}
-      </div>)}
+      </PortalField>)}
     </div> : null}
     {missingName ? <RequiredLegend /> : null}
     <div className="flex flex-wrap gap-3">

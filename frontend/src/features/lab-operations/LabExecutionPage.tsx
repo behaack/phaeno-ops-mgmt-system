@@ -1,3 +1,6 @@
+import { formatDisplayTimestamp } from '#/lib/display-format'
+import { PageTitle } from '#/components/ui/page-header'
+import { RecordLink } from '#/components/ui/record-link'
 import { BackLink } from '#/components/ui/back-link'
 import { ProcedureIllustration } from './ProcedureIllustrations'
 import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
@@ -91,10 +94,10 @@ export function LabExecutionWorkspace({ data, returnLink, reviewTubesLink, speci
   const openFinish = (action: 'complete' | 'abandon') => { trigger.current = actionTrigger.current; setFinish(action) }
 
   return <main className="page-wrap space-y-6 px-4 py-8">
-    {data.preparationBatchId ? <div className="rounded-lg border bg-muted/30 p-4 text-sm">Shared preparation evidence is recorded from its tray. <Link className="underline" to="/lab-operations/preparation/$preparationBatchId" params={{ preparationBatchId: data.preparationBatchId }} search={{ section: 'work' }}>Open preparation batch</Link></div> : null}
+    {data.preparationBatchId ? <div className="rounded-lg border bg-muted/30 p-4 text-sm">Shared preparation evidence is recorded from its tray. <RecordLink asChild><Link to="/lab-operations/preparation/$preparationBatchId" params={{ preparationBatchId: data.preparationBatchId }} search={{ section: 'work' }}>Open preparation batch</Link></RecordLink></div> : null}
     {returnLink}
     <header className="flex flex-wrap items-start justify-between gap-4">
-      <div className="min-w-0"><h1 ref={heading} tabIndex={-1} className="text-2xl font-semibold break-words">{data.protocolName}</h1><p className="mt-2 text-sm text-muted-foreground">Protocol version {data.protocolVersion}{data.accessionNumber ? ` · Specimen ${data.accessionNumber}` : ' · Job-level execution'}</p><Badge variant="outline" className="mt-2">{data.execution.status === 'InProgress' ? 'In progress' : data.execution.status}</Badge></div>
+      <div className="min-w-0"><PageTitle ref={heading} tabIndex={-1} className="break-words">{data.protocolName}</PageTitle><p className="mt-2 text-sm text-muted-foreground">Protocol version {data.protocolVersion}{data.accessionNumber ? ` · Specimen ${data.accessionNumber}` : ' · Job-level execution'}</p><Badge variant="outline" className="mt-2">{data.execution.status === 'InProgress' ? 'In progress' : data.execution.status}</Badge></div>
       {data.canAbandon || data.canOperate && (active || data.execution.status === 'Planned') ? <ActionMenu><DropdownMenuTrigger asChild><Button ref={actionTrigger} variant="outline" disabled={pending}>Actions </Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-max min-w-40">
         {data.canOperate && data.execution.status === 'Planned' ? <DropdownMenuItem disabled={pending || data.tubeAcceptanceRequired || data.sourceSelectionRequired} onSelect={() => { if (data.attemptId) { trigger.current = actionTrigger.current; setConfirmStart(true) } else void onTransition('start').catch(() => {}) }}>Start execution</DropdownMenuItem> : null}
         {data.canOperate && active ? <DropdownMenuItem disabled={pending || data.completionBlockers.length > 0} onSelect={() => openFinish('complete')}>Complete execution</DropdownMenuItem> : null}
@@ -159,7 +162,7 @@ function ExecutionFinishDialog({ action, name, pending, error, onClose, onSave, 
   return <Dialog open onOpenChange={open => { if (!open) close() }}><DialogContent onCloseAutoFocus={event => { event.preventDefault(); onReturnFocus() }}><DialogHeader><DialogTitle>{abandon ? 'Abandon' : 'Complete'} {name}?</DialogTitle><DialogDescription>{abandon ? 'This stops the execution and retains every recorded step. Record a reason; further work requires a new execution.' : 'The server will check the saved step evidence and QC. Completion locks the execution and preserves its history.'}</DialogDescription></DialogHeader>{error ? <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert> : null}<form id="finish-execution" noValidate onSubmit={form.handleSubmit(async values => { try { await onSave(values.note) } catch { /* Keep entered values and show API feedback. */ } })}><Label htmlFor="finish-note">{abandon ? <RequiredFieldName>Reason</RequiredFieldName> : 'Deviation note (optional)'}</Label><Textarea className="mt-1.5" id="finish-note" rows={4} maxLength={4000} aria-invalid={Boolean(form.formState.errors.note)} {...form.register('note')} /><FieldError>{form.formState.errors.note?.message}</FieldError></form><RequiredDialogFooter showLegend={abandon}><Button variant="outline" onClick={close} disabled={pending}>Cancel</Button><Button type="submit" form="finish-execution" variant={abandon ? 'destructive' : 'default'} disabled={pending}>{pending ? 'Saving…' : abandon ? 'Abandon execution' : 'Confirm completion'}</Button></RequiredDialogFooter></DialogContent></Dialog>
 }
 
-function formatTime(value: string | null) { return value ? new Date(value).toLocaleString() : '—' }
+function formatTime(value: string | null) { return value ? formatDisplayTimestamp(value, { seconds: true }) : 'Not recorded' }
 
 function ExecutionStartDialog({ barcode, pending, error, onClose, onSave, onReturnFocus }: { barcode: string; pending: boolean; error?: string; onClose: () => void; onSave: (barcode: string) => Promise<void>; onReturnFocus: () => void }) {
   const form = useForm<{ barcode: string }>({ resolver: zodResolver(z.object({ barcode: z.string().trim().refine(value => value === barcode, 'Scan the selected source tube.') })), defaultValues: { barcode: '' }, mode: 'onBlur' })

@@ -1,3 +1,4 @@
+import { NativeSelect } from '#/components/ui/native-select'
 import { useState } from 'react'
 import type { PreparationDetail, PreparationStage } from '#/api/lab-preparation'
 import type { MasterMix } from '#/api/lab-master-mix'
@@ -40,8 +41,8 @@ export function ConfigurationPreview({ definition, name, initialIndex = 0, onClo
   const batch = createPreviewBatch(stage)
   const changeStep = (next: number) => { setIndex(next); setAction('record'); setValid(false) }
   const controls = <div className="space-y-3 pt-3">
-    <PreparationField id="preview-step" label="Step"><select id="preview-step" className={prepSelectClass} value={index} onChange={e => changeStep(Number(e.target.value))}>{definition.steps.map((s, i) => <option key={s.key} value={i}>{i + 1}. {s.name || 'Unnamed step'}</option>)}</select></PreparationField>
-    <PreparationField id="preview-state" label="Presentation"><select id="preview-state" className={prepSelectClass} value={action} onChange={e => { setAction(e.target.value as typeof action); setValid(false) }}><option value="record">Performed{!step.required ? ' / skipped' : ''}</option>{step.repeatable ? <option value="repeat">Repeat</option> : null}<option value="correct">Correction</option></select></PreparationField>
+    <PreparationField id="preview-step" label="Step"><NativeSelect id="preview-step" className={prepSelectClass} value={index} onChange={e => changeStep(Number(e.target.value))}>{definition.steps.map((s, i) => <option key={s.key} value={i}>{i + 1}. {s.name || 'Unnamed step'}</option>)}</NativeSelect></PreparationField>
+    <PreparationField id="preview-state" label="Presentation"><NativeSelect id="preview-state" className={prepSelectClass} value={action} onChange={e => { setAction(e.target.value as typeof action); setValid(false) }}><option value="record">Performed{!step.required ? ' / skipped' : ''}</option>{step.repeatable ? <option value="repeat">Repeat</option> : null}<option value="correct">Correction</option></NativeSelect></PreparationField>
     <div className="flex flex-wrap gap-2"><Button type="button" variant="outline" disabled={index === 0} onClick={() => changeStep(index - 1)}>Previous step</Button><Button type="button" variant="outline" disabled={index === definition.steps.length - 1} onClick={() => changeStep(index + 1)}>Next step</Button><Button type="button" variant="outline" onClick={() => { setReset(n => n + 1); setValid(false) }}>Reset example values</Button></div>
     <p className="text-xs text-muted-foreground">Changing steps or presentation resets example values. Close and reopen after editing to preview the updated configuration.</p>
     {valid ? <p role="status" className="text-sm">Example entry is valid. Nothing was saved.</p> : null}

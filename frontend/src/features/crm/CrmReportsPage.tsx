@@ -1,3 +1,4 @@
+import { PageTitle } from '#/components/ui/page-header'
 import { useQuery } from "@tanstack/react-query";
 import { apiErrorMessage, getCrmReports } from "#/api/crm";
 import { Alert, AlertDescription } from "#/components/ui/alert";
@@ -19,7 +20,7 @@ export function CrmReportsPage() {
         <Badge variant="secondary" className="mb-3">
           Commercial intelligence
         </Badge>
-        <h1 className="text-3xl font-semibold">Reports</h1>
+        <PageTitle>Reports</PageTitle>
         <p className="mt-3 text-sm text-muted-foreground">
           A transparent operational view of pipeline, forecast, source quality,
           workload, and recent activity.

@@ -1,5 +1,83 @@
 # Playwright E2E Test Plan
 
+## Six-area UI standardization — October 22, 2026
+
+Final normal-configuration gallery run: **84/84** across desktop/phone and
+light/dark. New coverage includes actual native form registration/validation,
+retained draft values, aligned controls and touch sizing; truthful bytes/time/
+missing/zero/false detail values; explicit statuses; counted/count-free paging;
+conditional confirmation focus; and assembled list/detail/edit interactions.
+Existing 320 px reflow, keyboard, navigation, Actions and axe checks remain.
+The fifteen gallery sections use fictional in-memory data without API/session.
+
+The separate `playwright.ui-visual.config.ts` runs on Windows Chromium with
+bundled Geist, en-US, UTC, reduced motion and fixed 1280×900 / 390×844 viewports.
+All **24 manually reviewed comparisons pass with snapshot updates disabled**:
+list/detail/modal × normal/expanded Customer text and long identifier × both
+themes/widths. A read-only manifest gate verifies 24 hashes/dimensions and pinned
+Playwright/font versions. Only explicit reviewed-image acceptance records a new
+manifest; CI cannot accept it. The dedicated Windows job compares page pixels;
+the independent ordinary gallery job retains cross-platform assertions.
+
+Actual feature fixture checks pass **22/22** across desktop/phone for CRM
+recovery, provisioning and R&D validation/drafts/permission context/confirmation
+focus. R&D fixture HTML is explicitly intercepted, so these checks now exercise
+the intended UI rather than the application catch-all. Its narrow section table
+is contained; blur errors do not displace a pending Save click. Shared dialog
+handoffs preserve the new overlay's focus; immediate menu dismissal avoids stale
+layers on rapid reopening. Cancel → Actions → complete passed three consecutive
+runs on both desktop and phone before the final full selected-fixture pass.
+
+Production and standalone gallery builds pass; isolation checks inspect **843
+production text artifacts and three gallery artifacts** for gallery code/styles.
+The interactive gallery remains on 4318; tests use 4319 (gallery), 4321 (images)
+and an isolated 4320 app fixture server. Build/browser artifacts are cleaned
+after retaining evidence; reviewed baseline PNGs remain source artifacts.
+
+These are local representative checks, not every signed-in business journey,
+full screen-reader/WCAG certification or scientific/provider qualification. The
+configured CI phase has not been pushed/run remotely; no deployment occurred.
+See the [owning plan](UI-PATTERN-COMPLETENESS-PLAN.md).
+
+## Notification badge alignment — October 22, 2026
+
+Twelve focused gallery cases pass across desktop/phone light/dark: one/two-digit,
+`99+`, zero and unavailable presentation; upper-right overlap and 44 px target;
+keyboard activation; header dialog/focus; gallery axe and 320 px reflow. After
+adding the example dialog description, all four navigation cases pass again,
+including four open-notification-dialog axe scans. The actual `WorkBell` fixture
+suite passes all ten desktop/mobile cases for counts, scope, localization,
+dialog focus and unavailable/recovery behavior. This follow-up did not rerun
+the entire expanded gallery or every authenticated application journey.
+
+The gallery server now starts Vite directly, matching the main E2E launcher,
+after a nested local package-runner startup timeout. The final focused run uses
+the normal checked-in gallery configuration and the already installed browser
+via an explicit local `PLAYWRIGHT_BROWSERS_PATH`; CI installation is unchanged.
+Screenshots were visually reviewed. See the
+[pattern plan](UI-PATTERN-COMPLETENESS-PLAN.md#notification-badge-follow-up--october-22-2026).
+
+## UI pattern completeness browser coverage — October 22, 2026
+
+The gallery suite passes 60 cases in desktop/phone light/dark projects, including
+320 px containment. Added coverage checks common header geometry, matched
+sequencing-row link styles and exact destinations, filter/sort/clear/pagination,
+real guarded-form validation/discard/focus, failed-save retention and pending
+protection, explicit conflict review, multi-select/clearable selection/pill-toggle
+keyboard behavior, measured versus unmeasured progress, and actual desktop More,
+mobile tray and workspace-sidebar interactions. Four gallery axe scans and the
+two open mobile-tray scans report no violations. The expanded pattern cases
+also assert no API traffic or browser page errors.
+
+Screenshots cover headers, sequencing rows, guarded/failed/conflicted forms and
+navigation. They are review artifacts with geometry/interaction assertions,
+not cross-platform pixel baselines. Gallery/fixture evidence does not establish
+every authenticated feature, concurrency/provider workflow, scientific result,
+screen-reader behavior or complete WCAG conformance. Actual feature component
+regressions and source-preservation evidence are in the
+[owning plan](UI-PATTERN-COMPLETENESS-PLAN.md). No hosted business write or new
+deployment is part of this follow-up.
+
 ## Component gallery browser checks — October 22, 2026
 
 `playwright.ui-gallery.config.ts` serves only the standalone gallery, with

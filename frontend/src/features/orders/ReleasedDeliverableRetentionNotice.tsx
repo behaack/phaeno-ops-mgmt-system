@@ -1,3 +1,4 @@
+import { RecordLink } from '#/components/ui/record-link'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import { Link } from '@tanstack/react-router'
@@ -40,7 +41,7 @@ export function ReleasedDeliverableRetentionNotice({
               <CustomerText message="m_01adf60de3ab" /></p>
           </div>
 
-          {retention.snapshotId ? <Link to="/released-deliverables/$snapshotId" params={{ snapshotId: retention.snapshotId }} search={{ q: '', page: 0 }} className="text-sm text-primary underline print:hidden"><CustomerText message="m_1e75f4e233be" /></Link> : null}
+          {retention.snapshotId ? <span className="print:hidden"><RecordLink asChild><Link to="/released-deliverables/$snapshotId" params={{ snapshotId: retention.snapshotId }} search={{ q: '', page: 0 }} ><CustomerText message="m_1e75f4e233be" /></Link></RecordLink></span> : null}
 
           {downloadSummary ? (
             <p aria-live="polite" className="text-sm font-medium text-foreground">

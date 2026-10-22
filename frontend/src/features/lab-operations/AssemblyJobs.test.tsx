@@ -1,18 +1,33 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, expect, it, vi } from 'vitest'
 import { cleanup } from '@testing-library/react'
 import type { AssemblyJob } from '#/api/lab-assembly'
-import { AssemblyJobPage, AssemblyJobProgress, AssemblyJobsList } from './AssemblyJobs'
+import { AssemblyJobPage, AssemblyJobProgress, AssemblyJobsList, DataAssemblyWorkspace } from './AssemblyJobs'
 
-const mockApi = vi.hoisted(() => ({ list: vi.fn(), allowed: false }))
-vi.mock('#/features/auth/session-context', () => ({ usePhaenoSession: () => ({ authProvider: 'mock', session: { capabilities: { canManageLabOperations: mockApi.allowed } }, selectedOrganizationId: null }) }))
-vi.mock('#/api/lab-assembly', async original => ({ ...await original<object>(), getAssemblyJobs: mockApi.list, getAssemblyJobsPage: mockApi.list }))
-vi.mock('@tanstack/react-router', () => ({ useBlocker: () => ({status: 'idle', reset: vi.fn(), proceed: vi.fn()}), Link: ({ children }: { children: ReactNode }) => <a href="#job">{children}</a>, useNavigate: () => vi.fn(), useSearch: () => ({}), useRouterState: ({ select }: { select: (state: { location: { search: object } }) => unknown }) => select({ location: { search: {} } }) }))
+const mockApi = vi.hoisted(() => ({ list: vi.fn(), inputs: vi.fn(), allowed: false }))
+vi.mock('#/features/auth/session-context', () => ({ usePhaenoSession: () => ({ authProvider: 'mock', session: { capabilities: { canManageLabOperations: mockApi.allowed, canOperateLabWork: mockApi.allowed } }, selectedOrganizationId: null }) }))
+vi.mock('#/api/lab-assembly', async original => ({ ...await original<object>(), getAssemblyJobs: mockApi.list, getAssemblyJobsPage: mockApi.list, getAssemblyInputs: mockApi.inputs }))
+vi.mock('@tanstack/react-router', () => ({ useBlocker: () => ({status: 'idle', reset: vi.fn(), proceed: vi.fn()}), Link: ({ children, className, ...props }: { children: ReactNode; className?: string; 'data-slot'?: string }) => <a href="#job" className={className} data-slot={props['data-slot']}>{children}</a>, useNavigate: () => vi.fn(), useSearch: () => ({}), useRouterState: ({ select }: { select: (state: { location: { search: object } }) => unknown }) => select({ location: { search: {} } }) }))
 afterEach(() => { cleanup(); mockApi.allowed = false })
 const job = { id: 'test-job', sampleName: 'Sample A', sequencingRunNumber: 2, state: 'Running', isTerminal: false,
   cancellationRequested: false, progress: { percentage: 42, receivedAtUtc: new Date().toISOString(), sequence: 1 } } as AssemblyJob
+
+it.each([{available:false,active:false},{available:true,active:true}])('aligns actual input/job rows and retains the Start guard %j',async({available,active})=>{
+  mockApi.allowed=true
+  mockApi.inputs.mockResolvedValue([{labWorkOrderId:'work',labSpecimenId:'sample',labSpecimenAttemptId:'attempt',sequencingRunNumber:2,sampleName:'Sample A',providerRunReference:'Run reference'}])
+  mockApi.list.mockResolvedValue({jobs:[{...job,labSpecimenId:active?'sample':'other'}],canOperate:true,availability:{available,message:'Processing unavailable.',recipes:[]}})
+  const client=new QueryClient({defaultOptions:{queries:{retry:false}}})
+  render(<QueryClientProvider client={client}><DataAssemblyWorkspace apiEnabled /><AssemblyJobsList enabled /></QueryClientProvider>)
+  await waitFor(()=>expect(screen.getAllByRole('link',{name:'Sample A · Run 2'})).toHaveLength(2))
+  const links=screen.getAllByRole('link',{name:'Sample A · Run 2'})
+  expect(links[0].className).toBe(links[1].className)
+  expect(links.every(link=>link.closest('[data-slot="record-list-item"]'))).toBe(true)
+  expect(screen.getByRole('button',{name:'Start assembly'}).hasAttribute('disabled')).toBe(true)
+  expect(screen.getAllByText(available?'An assembly is already active for this specimen and run.':'Processing unavailable.',{exact:true}).length).toBeGreaterThan(0)
+  client.clear()
+})
 
 it('displays live progress and replaces it with the final disposition', () => {
   const view = render(<AssemblyJobProgress job={job} />)

@@ -1,3 +1,8 @@
+import { RequiredLegend } from '#/components/ui/required-field'
+import { RequiredFieldName } from '#/components/ui/required-field'
+import { Field as PortalField } from '#/components/ui/field'
+import { RecordLink } from '#/components/ui/record-link'
+import { PageTitle } from '#/components/ui/page-header'
 import { BackLink } from '#/components/ui/back-link'
 import { confirmPortal } from '#/components/PortalConfirmation'
 import { useCrmPermissions } from './use-crm-permissions';
@@ -189,7 +194,7 @@ export function CrmContactDetailPage({ contactId }: { contactId: string }) {
               {contact.isActive ? "Active" : "Inactive"}
             </Badge>
           </div>
-          <h1 className="text-3xl font-semibold">{contact.displayName}</h1>
+          <PageTitle>{contact.displayName}</PageTitle>
           <p className="mt-2 text-sm text-muted-foreground">
             {primaryPosition(contact)} · owned by {contact.ownerName}
           </p>
@@ -281,17 +286,16 @@ export function CrmContactDetailPage({ contactId }: { contactId: string }) {
                 key={company.id}
                 className="flex items-center justify-between gap-3 rounded-lg border p-3"
               >
-                <Link
-                  to="/crm/companies/$companyId"
+                <span className="min-w-0"><RecordLink asChild><Link to="/crm/companies/$companyId"
                   params={{ companyId: company.companyId }}
-                  className="min-w-0 hover:underline"
+
                 >
                   <span className="block font-medium">{company.companyName}</span>
                   <span className="block text-xs text-muted-foreground">
                     {company.jobTitle ?? "Job title not recorded"} ·{" "}
                     {company.relationshipRole ?? "Role not recorded"}
                   </span>
-                </Link>
+                </Link></RecordLink></span>
                 <div className="flex shrink-0 items-center gap-2">
                   {company.isPrimaryCompany ? <Badge>Primary</Badge> : null}
                   {!company.isActive ? (
@@ -429,9 +433,7 @@ function ContactCompanyAssociationDialog({
           ) : null}
           <fieldset disabled={pending} className="grid gap-4">
             <div className="grid gap-1.5">
-              <Label htmlFor="contact-company-association-company">
-                Company *
-              </Label>
+              <Label htmlFor="contact-company-association-company"><RequiredFieldName>Company</RequiredFieldName></Label>
               <CrmAssociationRecordCombobox
                 id="contact-company-association-company"
                 name="companyId"
@@ -441,7 +443,7 @@ function ContactCompanyAssociationDialog({
                 onValueChange={() => setDirty(true)}
               />
             </div>
-            <div className="grid gap-1.5">
+            <PortalField >
               <Label htmlFor="contact-company-association-title">
                 Job title
               </Label>
@@ -450,17 +452,15 @@ function ContactCompanyAssociationDialog({
                 name="jobTitle"
                 maxLength={150}
               />
-            </div>
+            </PortalField>
             <div className="grid gap-1.5">
               <Label htmlFor="contact-company-association-role">
                 Relationship role
               </Label>
               <CrmRelationshipRoleSelect id="contact-company-association-role" />
             </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="contact-company-association-date">
-                Effective from *
-              </Label>
+            <PortalField >
+              <Label htmlFor="contact-company-association-date"><RequiredFieldName>Effective from</RequiredFieldName></Label>
               <Input
                 id="contact-company-association-date"
                 name="effectiveFrom"
@@ -468,7 +468,7 @@ function ContactCompanyAssociationDialog({
                 required
                 defaultValue={new Date().toISOString().slice(0, 10)}
               />
-            </div>
+            </PortalField>
             <div className="flex items-center gap-2">
               <Checkbox
                 id="contact-company-association-primary"
@@ -484,9 +484,7 @@ function ContactCompanyAssociationDialog({
             </div>
           </fieldset>
           <DialogFooter>
-            <span className="mr-auto text-xs text-muted-foreground">
-              * Required
-            </span>
+            <RequiredLegend className="mr-auto" />
             <Button
               type="button"
               variant="outline"

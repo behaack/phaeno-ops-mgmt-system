@@ -1,3 +1,5 @@
+import { Field as PortalField } from '#/components/ui/field'
+import { NativeSelect } from '#/components/ui/native-select'
 import { Send, UserPlus } from 'lucide-react'
 
 import { mockInvites } from './dashboard-data'
@@ -27,27 +29,27 @@ export function InvitePanel() {
       </CardHeader>
       <CardContent className="space-y-5">
         <div className="grid gap-3">
-          <div className="grid gap-2">
+          <PortalField >
             <Label htmlFor="mock-email">Email address</Label>
             <Input
               id="mock-email"
               readOnly
               value="new.admin@northline.example"
             />
-          </div>
-          <div className="grid gap-2">
+          </PortalField>
+          <PortalField >
             <Label htmlFor="mock-role">Access role</Label>
-            <select
+            <NativeSelect
               id="mock-role"
-              className="h-8 rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+
               value="Organization Admin"
               aria-label="Mock access role"
               onChange={() => undefined}
             >
               <option>Organization Admin</option>
               <option>Member</option>
-            </select>
-          </div>
+            </NativeSelect>
+          </PortalField>
           <Button type="button" variant="secondary" className="w-full">
             <Send data-icon="inline-start" />
             Preview invite

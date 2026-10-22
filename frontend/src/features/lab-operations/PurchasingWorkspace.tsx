@@ -1,3 +1,4 @@
+import { PageTitle } from '#/components/ui/page-header'
 import { useState, type ReactNode } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Building2, FlaskConical, Package, RefreshCw } from 'lucide-react'
@@ -33,7 +34,7 @@ export function PurchasingWorkspace({ section, onSectionChange, children, produc
     <WorkspaceSidebar workspaceLabel="Purchasing" items={purchasingSections} value={section} onValueChange={onSectionChange}>
       <div className="page-wrap space-y-5 px-4 pt-6 lg:pt-0">
         <header className="max-w-3xl">
-          <h1 className="text-3xl font-semibold">Purchasing</h1>
+          <PageTitle>Purchasing</PageTitle>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">Manage suppliers, catalog products, and material lots used in laboratory work and transportation kits.</p>
         </header>
         {children ?? (section === 'materials'

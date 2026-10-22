@@ -113,7 +113,7 @@ export function SampleShippingPacketPage({ shipmentId, autoPrint = false, onAuto
           <CustomerText message="m_84eeca69e626" /></Button>
       </div> : null}
 
-      <article data-packet-id={packet.id} data-packet-revision={packet.revision} className="shipping-packet mx-auto max-w-4xl space-y-8 bg-background pb-16 text-foreground print:max-w-none print:bg-white print:text-black">
+      <article data-print-document data-packet-id={packet.id} data-packet-revision={packet.revision} className="shipping-packet mx-auto max-w-4xl space-y-8 bg-background pb-16 text-foreground print:max-w-none print:bg-white print:text-black">
         <header className="packet-header break-inside-avoid border-b pb-5">
           <div className="flex items-center justify-between gap-4"><img src="/phaeno124x40.webp" alt={__customerSource("Phaeno")} width={124} height={40} /><p className="text-sm font-medium uppercase tracking-wide"><CustomerText message="m_388945d1466a" /></p></div>
           <h1 className="mt-2 text-3xl font-semibold">{packet?.packetNumber}</h1>

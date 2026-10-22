@@ -1,11 +1,14 @@
 import { expect, test } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
+import { readFile } from 'node:fs/promises'
 import type { Entry, Experiment, Project } from '../src/features/research/research-api'
 
-test.use({ timezoneId: 'America/Los_Angeles' })
+test.use({ timezoneId: 'America/Los_Angeles', screenshot: 'only-on-failure' })
 const experimentId = '22222222-2222-2222-2222-222222222222'
 const entryId = '33333333-3333-4333-8333-333333333333'
 async function fixture(page: import('@playwright/test').Page, conflict: false | 'active' | 'complete' = false) {
+  const html=await readFile(new URL('./fixtures/research.html',import.meta.url),'utf8')
+  await page.route('**/e2e/fixtures/research.html*',route=>route.fulfill({contentType:'text/html',body:html}))
   const project: Project = { id: '11111111-1111-4111-8111-111111111111', name: 'Method development', description: '', updatedAt: '2026-10-16T12:00:00Z', version: 1 }
   const experiment: Experiment = { id: experimentId, researchProjectId: project.id, title: 'Extraction pilot', status: 'Active', experimentDate: '2026-10-16', lastActivityAtUtc: '2026-10-16T12:00:00Z', version: 1 }
   const entries: Entry[] = [{ id: entryId, researchExperimentId: experimentId, title: 'Pilot notebook', entryDate: '2026-10-16', version: 1, createdAt: '2026-10-16T12:00:00Z', updatedAt: '2026-10-16T12:00:00Z', createdByUserId: 'fixture-author', updatedByUserId: 'fixture-author', blocks: [
@@ -91,8 +94,9 @@ test('completion confirmation has body, Cancel focus and focus return; completed
   const dialog = page.getByRole('dialog', { name: 'Complete experiment?' })
   await expect(dialog.locator('[data-slot="dialog-body"]')).toContainText('read-only until reopened')
   await expect(dialog.getByRole('button', { name: 'Cancel', exact: true })).toBeFocused()
-  await page.keyboard.press('Escape'); await expect(page.locator('#research-experiment-actions')).toBeFocused()
-  await page.locator('#research-experiment-actions').click(); await page.getByRole('menuitem', { name: 'Complete experiment', exact: true }).click()
+  await page.keyboard.press('Escape'); await expect(dialog).not.toBeVisible(); await expect(page.locator('#research-experiment-actions')).toBeFocused()
+  await page.locator('#research-experiment-actions').click()
+  await page.getByRole('menuitem', { name: 'Complete experiment', exact: true }).click()
   await page.getByRole('button', { name: 'Complete experiment', exact: true }).click()
   await expect(page.getByText('Reopen the experiment to add or edit entries.')).toBeVisible()
   await page.getByRole('link', { name: 'Pilot notebook' }).click()
@@ -152,6 +156,7 @@ test('experiment pages fetch summaries and load one entry only after opening it'
 })
 
 test('R&D hides notebooks from unauthorized or external organization contexts', async ({ page }) => {
+  await fixture(page)
   for (const query of ['denied=true', 'external=true']) {
     await page.goto(`/e2e/fixtures/research.html?${query}`)
     await expect(page.getByText('Select Phaeno with an assigned Researcher role or platform administrator access.')).toBeVisible()

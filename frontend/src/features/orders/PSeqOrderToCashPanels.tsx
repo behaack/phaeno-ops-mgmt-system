@@ -1,3 +1,4 @@
+import { Field as PortalField } from '#/components/ui/field'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { NativeSelect } from '#/components/ui/native-select'
 import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
@@ -87,9 +88,9 @@ export function OperationalAttentionPanel({
         <CardDescription>
           <CustomerSourceText source={"Failures and blockers stay visible until an operator owns and resolves them."} />
         </CardDescription>
-        <div className="max-w-sm pt-2">
+        <PortalField className="max-w-sm pt-2">
           <Label htmlFor="attention-category"><CustomerSourceText source={"Queue"} /></Label>
-          <NativeSelect id="attention-category" className="mt-2 w-full cursor-pointer rounded-lg border border-input bg-background px-3 text-sm" value={category} onChange={(event) => setCategory(event.target.value)}>
+          <NativeSelect id="attention-category" className="w-full" value={category} onChange={(event) => setCategory(event.target.value)}>
             <option value=""><CustomerSourceText source={"All attention"} /></option>
             <option value="InvitationFailure"><CustomerSourceText source={"Invitation failures"} /></option>
             <option value="ReadinessBlocker"><CustomerSourceText source={"Readiness blockers"} /></option>
@@ -101,7 +102,7 @@ export function OperationalAttentionPanel({
             <option value="ReconciliationDifference"><CustomerSourceText source={"Reconciliation differences"} /></option>
             <option value="RetentionNoticeFailure"><CustomerSourceText source={"Retention notices"} /></option>
           </NativeSelect>
-        </div>
+        </PortalField>
       </CardHeader>
       <CardContent>
         {error ? <Alert variant="destructive"><AlertTitle><CustomerSourceText source={"Attention queue could not be updated"} /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(error, 'Refresh and try again.')} />}</AlertDescription></Alert> : null}

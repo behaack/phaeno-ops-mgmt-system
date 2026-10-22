@@ -51,3 +51,10 @@ Choose **Copy setup** to start a new Active experiment. The copy retains section
 Projects supports name and description search. Experiments supports title, saved notebook text and table-content search, with project and status filters. Results are paged, with complete matching counts. Each experiment lists 25 entry summaries per page. Open an entry's title to read its notebook, files and history. Returning to the experiment retains the entry page. Search does not inspect attachment contents. Returning from an experiment preserves your list filters and page.
 
 R&D is currently standalone. It does not record operational sample or reagent consumption, run Lab protocols, or automatically connect notebook content to Lab records. Saved notebooks and attachments have no permanent-delete action or automatic expiry.
+
+## Read sizes and recorded times
+
+File summaries use KiB, MiB, GiB and larger binary units, each 1,024 times the
+previous unit. Recorded timestamps identify their display timezone. A recorded
+calendar date stays on its original day; it is not converted into a timestamp.
+Zero is a recorded value; **Not recorded** means no value was supplied.

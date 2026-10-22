@@ -1,3 +1,7 @@
+import { formatDisplayDate, formatDisplayCurrency } from '#/lib/display-format'
+import { Field as PortalField } from '#/components/ui/field'
+import { RecordLink } from '#/components/ui/record-link'
+import { PageTitle } from '#/components/ui/page-header'
 import { useCrmPermissions } from './use-crm-permissions';
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
@@ -60,7 +64,7 @@ export function CrmHomePage() {
         <Badge variant="secondary" className="mb-3">
           Phaeno CRM
         </Badge>
-        <h1 className="text-3xl font-semibold">Commercial workspace</h1>
+        <PageTitle>Commercial workspace</PageTitle>
         <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground sm:text-base">
           Work leads, relationships, opportunities, and follow-up from one
           first-party system. Portal access and operational work remain
@@ -93,7 +97,7 @@ export function CrmHomePage() {
               setSearch(draftSearch.trim());
             }}
           >
-            <div className="grid min-w-0 flex-1 gap-1.5">
+            <PortalField className="min-w-0 flex-1">
               <Label htmlFor="crm-global-search">Search CRM</Label>
               <Input
                 id="crm-global-search"
@@ -101,7 +105,7 @@ export function CrmHomePage() {
                 onChange={(event) => setDraftSearch(event.target.value)}
                 placeholder="Name, number, email, company, opportunity, or task"
               />
-            </div>
+            </PortalField>
             <Button type="submit" variant="outline" className="mt-auto">
               <Search data-icon="inline-start" />
               Search
@@ -238,14 +242,9 @@ export function CrmHomePage() {
           <CardContent className="space-y-3">
             {(dashboard.data?.recentlyChangedOpportunities ?? []).map(
               (opportunity) => (
-                <Link
-                  key={opportunity.id}
-                  to="/crm/opportunities/$opportunityId"
-                  params={{ opportunityId: opportunity.id }}
-                  className="block cursor-pointer rounded-lg border p-3 hover:bg-muted/50 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-                >
+                <div key={opportunity.id} className="rounded-lg border p-3">
                   <div className="flex justify-between gap-3">
-                    <span className="font-medium">{opportunity.name}</span>
+                    <span className="font-medium"><RecordLink asChild><Link to="/crm/opportunities/$opportunityId" params={{ opportunityId: opportunity.id }}>{opportunity.name}</Link></RecordLink></span>
                     <Badge variant="outline">{opportunity.stageName}</Badge>
                   </div>
                   <p className="mt-1 text-xs text-muted-foreground">
@@ -253,7 +252,7 @@ export function CrmHomePage() {
                     · {opportunity.companyName} ·{" "}
                     {formatMoney(opportunity.amount, opportunity.currency)}
                   </p>
-                </Link>
+                </div>
               ),
             )}
             <Button asChild variant="ghost" size="sm">
@@ -285,8 +284,7 @@ function Metric({ label, description, value, to, search }: {
     return <div className="rounded-lg border bg-card p-4 text-muted-foreground">{content}</div>;
   }
   return (
-    <Link
-      to={to}
+    <Link to={to}
       search={search ?? {}}
       className="cursor-pointer rounded-lg border border-primary/40 bg-primary/5 p-4 hover:bg-primary/10 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
     >
@@ -328,8 +326,7 @@ function SearchResult({
             ? { opportunityId: result.id }
             : {};
   return (
-    <Link
-      to={route}
+    <Link to={route}
       params={params}
       className="flex cursor-pointer items-center justify-between gap-3 rounded-lg border p-3 hover:bg-muted/50"
     >
@@ -344,17 +341,5 @@ function SearchResult({
   );
 }
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(
-    new Date(value),
-  );
-}
-function formatMoney(value: number | null, currency: string) {
-  return value == null
-    ? "Amount not recorded"
-    : new Intl.NumberFormat(undefined, {
-        style: "currency",
-        currency,
-        maximumFractionDigits: 0,
-      }).format(value);
-}
+function formatDate(value: string) { return formatDisplayDate(value) }
+function formatMoney(value: number | null, currency: string) { return formatDisplayCurrency(value, currency, { maximumFractionDigits: 0, empty: 'Amount not recorded' }) }

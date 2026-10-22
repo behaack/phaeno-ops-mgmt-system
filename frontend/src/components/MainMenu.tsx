@@ -17,24 +17,9 @@ import {
 } from '#/components/ui/dropdown-menu'
 
 export function MainMenu() {
-  const __customerText = useCustomerText()
-
   const { signedIn, session, selectedOrganizationId } = usePhaenoSession()
   const pathname = useRouterState({ select: state => state.location.pathname })
   const { customers } = useMockAdminData()
-  const [moreOpen, setMoreOpen] = useState(false)
-  const moreTriggerRef = useRef<HTMLButtonElement>(null)
-  const moreCloseFocusRef = useRef<HTMLElement | null>(null)
-
-  useEffect(() => {
-    const viewport = window.matchMedia('(min-width: 1024px)')
-    const closeOnNarrowLayout = (event: MediaQueryListEvent) => {
-      if (!event.matches) setMoreOpen(false)
-    }
-    viewport.addEventListener('change', closeOnNarrowLayout)
-    return () => viewport.removeEventListener('change', closeOnNarrowLayout)
-  }, [])
-
   if (!signedIn) {
     return null
   }
@@ -48,13 +33,35 @@ export function MainMenu() {
   const navigationContext = { selectedOrganizationKind, selectedMembership }
   const visibleMenuItems = getVisibleMainMenuItems(session, navigationContext, 'workspace')
   const moreMenuItems = getVisibleMainMenuItems(session, navigationContext, 'more')
+  return <MainNavigation visibleMenuItems={visibleMenuItems} moreMenuItems={moreMenuItems} pathname={pathname} />
+}
+
+/** Shared presentation; permissions and membership selection stay in MainMenu. */
+export function MainNavigation({ visibleMenuItems, moreMenuItems, pathname }: {
+  visibleMenuItems: ReturnType<typeof getVisibleMainMenuItems>
+  moreMenuItems: ReturnType<typeof getVisibleMainMenuItems>
+  pathname: string
+}) {
+  const __customerText = useCustomerText()
+  const [moreOpen, setMoreOpen] = useState(false)
+  const moreTriggerRef = useRef<HTMLButtonElement>(null)
+  const moreCloseFocusRef = useRef<HTMLElement | null>(null)
+
+  useEffect(() => {
+    const viewport = window.matchMedia('(min-width: 1024px)')
+    const closeOnNarrowLayout = (event: MediaQueryListEvent) => {
+      if (!event.matches) setMoreOpen(false)
+    }
+    viewport.addEventListener('change', closeOnNarrowLayout)
+    return () => viewport.removeEventListener('change', closeOnNarrowLayout)
+  }, [])
+
   const isMoreActive = moreMenuItems.some(item => isMainMenuRouteActive(pathname, item.to, item.exact))
 
   return (
     <div className="hidden items-center gap-2 text-sm font-medium lg:ml-auto lg:flex">
       {visibleMenuItems.map((item) => (
-        <Link
-          key={item.to}
+        <Link key={item.to}
           to={item.to}
           className={`nav-link whitespace-nowrap${isMainMenuRouteActive(pathname, item.to, item.exact) ? ' is-active' : ''}`}
           aria-current={isMainMenuRouteActive(pathname, item.to, item.exact) ? "page" : undefined}

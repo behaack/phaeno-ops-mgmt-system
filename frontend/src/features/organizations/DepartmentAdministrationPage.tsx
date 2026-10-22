@@ -1,3 +1,6 @@
+import { Field as PortalField } from '#/components/ui/field'
+import { RecordLink } from '#/components/ui/record-link'
+import { PageTitle } from '#/components/ui/page-header'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { useCustomerMessages } from '#/features/customer-i18n/use-customer-messages'
 import { NativeSelect } from '#/components/ui/native-select'
@@ -44,7 +47,7 @@ export function DepartmentAdministrationPage() {
   }
   return <main className="page-wrap space-y-6 px-4 py-8">
     <section>
-      <h1 className="text-3xl font-semibold">{customerSettings ? <CustomerSourceText source={"Customer settings"} /> : allowed && membership ? m.pageTitle(membership.organizationName) : m.unavailable}</h1>
+      <PageTitle>{customerSettings ? <CustomerSourceText source={"Customer settings"} /> : allowed && membership ? m.pageTitle(membership.organizationName) : m.unavailable}</PageTitle>
       {customerSettings ? <p className="mt-1 text-sm text-muted-foreground">{membership.organizationName}</p> : null}
       {!allowed ? <p className="mt-3 text-sm text-muted-foreground">{m.unavailableDescription}</p> : null}
     </section>
@@ -104,12 +107,12 @@ function CustomerDeliverySettings({ organizationId, organizationAdmin, managedDe
       {departments.isLoading ? <p role="status" className="text-sm text-muted-foreground"><CustomerText message="m_4480f335645b" /></p> : null}
       {departments.error ? <Alert variant="destructive"><AlertDescription><CustomerSourceText source={departmentErrorMessage(departments.error)} /></AlertDescription></Alert> : null}
       {!departments.isLoading && !departments.error && !available.length ? <p className="text-sm text-muted-foreground"><CustomerText message="m_f2a5ef358626" /></p> : null}
-      {department ? <div className="max-w-sm space-y-2"><label htmlFor="delivery-settings-department" className="text-sm font-medium"><CustomerText message="m_5304ab98e581" /></label><NativeSelect id="delivery-settings-department" className="w-full cursor-pointer rounded-md border bg-background px-3 text-sm" value={departmentId} onChange={event => onDepartmentChange(event.target.value)}>{available.map(value => <option key={value.id} value={value.id}>{value.name}</option>)}</NativeSelect></div> : null}
+      {department ? <PortalField className="max-w-sm"><label htmlFor="delivery-settings-department" className="text-sm font-medium"><CustomerText message="m_5304ab98e581" /></label><NativeSelect id="delivery-settings-department" className="w-full" value={departmentId} onChange={event => onDepartmentChange(event.target.value)}>{available.map(value => <option key={value.id} value={value.id}>{value.name}</option>)}</NativeSelect></PortalField> : null}
       {locations.isLoading ? <p role="status" className="text-sm text-muted-foreground"><CustomerText message="m_89353834ce2d" /></p> : null}
       {locations.error ? <Alert variant="destructive"><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(locations.error, 'Delivery locations could not be loaded.')} />} <Button variant="link" onClick={() => void locations.refetch()}><CustomerText message="m_942087cc2d41" /></Button></AlertDescription></Alert> : null}
       {locations.data && !locations.data.length ? <p className="py-3 text-sm text-muted-foreground"><CustomerText message="m_094e1e57c71a" /></p> : null}
       {locations.data?.length ? <div className="divide-y">{locations.data.map(location => <article key={location.id} className="py-3 first:pt-0 last:pb-0">
-        <div className="flex flex-wrap items-center gap-2"><Link className="font-medium text-primary hover:underline focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-ring" to="/delivery-locations/$locationId" params={{ locationId: location.id }} search={{ organizationId, departmentId, returnToSettings: true }}>{location.label}</Link>{location.isDefault ? <Badge variant="outline"><CustomerText message="m_21b111cbfe6e" /></Badge> : null}</div>
+        <div className="flex flex-wrap items-center gap-2"><RecordLink asChild><Link to="/delivery-locations/$locationId" params={{ locationId: location.id }} search={{ organizationId, departmentId, returnToSettings: true }}>{location.label}</Link></RecordLink>{location.isDefault ? <Badge variant="outline"><CustomerText message="m_21b111cbfe6e" /></Badge> : null}</div>
         <p className="mt-1 text-sm">{location.recipient}</p>
         <p className="mt-1 text-sm text-muted-foreground">{location.line1}{location.line2 ? `, ${location.line2}` : ''} · {location.city}, {location.region} {location.postalCode}</p>
       </article>)}</div> : null}

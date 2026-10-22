@@ -1,3 +1,4 @@
+import { NativeCheckbox } from '#/components/ui/native-checkbox'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -263,7 +264,7 @@ export function LabJobSamplesPanel({ order, embedded = false, page, onPageChange
               </section>
             })}</div>
             <p className="text-sm"><CustomerText message="m_c60d449cb1d2" /></p>
-            <label className="flex items-start gap-2 text-sm"><input type="checkbox" checked={confirmedVersion === order.version} disabled={change.isPending} onChange={event => setConfirmedVersion(event.target.checked ? order.version : null)} className="mt-1" /><RequiredFieldName><CustomerText message="m_8acb921b1dbe" /></RequiredFieldName></label>
+            <label className="flex items-start gap-2 text-sm"><NativeCheckbox  checked={confirmedVersion === order.version} disabled={change.isPending} onChange={event => setConfirmedVersion(event.target.checked ? order.version : null)}  /><RequiredFieldName><CustomerText message="m_8acb921b1dbe" /></RequiredFieldName></label>
           </div>}
         <RequiredDialogFooter><Button variant="outline" disabled={change.isPending || upload.isPending} onClick={() => setConfirm(null)}><CustomerText message="m_19766ed6ccb2" /></Button><Button disabled={change.isPending || upload.isPending || (confirm === 'import' ? order.samples.length > 0 || !preview || preview.version !== order.version || preview.value.errors.length > 0 || !preview.value.validRowCount : confirmedVersion !== order.version || !order.canFinalizeSamples || !exactComposition)} onClick={() => change.mutate({ kind: confirm === 'import' ? 'import' : 'finalize' })}>{change.isPending ? <CustomerSourceText source={"Saving…"} /> : confirm === 'import' ? "Replace draft sample list" : __customerText('m_d884a62190dd')}</Button></RequiredDialogFooter>
       </DialogContent></Dialog>

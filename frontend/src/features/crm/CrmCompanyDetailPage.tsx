@@ -1,3 +1,8 @@
+import { RequiredLegend } from '#/components/ui/required-field'
+import { RequiredFieldName } from '#/components/ui/required-field'
+import { DetailField, DetailSummary, DetailHeading } from '#/components/ui/detail-summary'
+import { formatDisplayTimestamp } from '#/lib/display-format'
+import { PageHeader } from '#/components/ui/page-header'
 import { BackLink } from '#/components/ui/back-link'
 import { useCrmPermissions } from './use-crm-permissions';
 import { CrmProvisioningReturn } from "./CrmListNavigation";
@@ -184,7 +189,7 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
       <main className="page-wrap px-4 py-8">
         <Card className="max-w-2xl">
           <CardHeader>
-            <CardTitle>CRM company not found</CardTitle>
+            <CardTitle><DetailHeading>CRM company not found</DetailHeading></CardTitle>
             <CardDescription>
               The selected company could not be loaded.
             </CardDescription>
@@ -217,9 +222,7 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
         </BackLink>
       </div>
 
-      <section className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <div className="mb-3 flex flex-wrap gap-2">
+      <PageHeader title={company.name} description={<>Customer and commercial relationship owned by {company.ownerName}.</>} eyebrow={<div className="flex flex-wrap gap-2">
             <Badge variant="secondary">Company</Badge>
             <Badge variant={company.isActive ? "outline" : "destructive"}>
               {company.isActive ? "Active" : "Inactive"}
@@ -231,15 +234,7 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
                   ? "Portal access suspended"
                   : "Portal access not enabled"}
             </Badge>
-          </div>
-          <h1 className="break-words text-3xl font-semibold leading-tight">
-            {company.name}
-          </h1>
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground sm:text-base">
-            Customer and commercial relationship owned by {company.ownerName}.
-          </p>
-        </div>
-        <ActionMenu>
+          </div>} actions={<ActionMenu>
           <DropdownMenuTrigger asChild>
             <Button ref={actionsTrigger} variant="outline" className="shrink-0 self-start" aria-label={`Actions for ${company.name}`}>
               Actions
@@ -269,8 +264,7 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
               </DropdownMenuItem>
             </> : null}
           </DropdownMenuContent>
-        </ActionMenu>
-      </section>
+        </ActionMenu>} />
 
       <Tabs
         value={activeSection}
@@ -328,14 +322,14 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
           <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]">
             <Card>
               <CardHeader>
-                <CardTitle>Company profile</CardTitle>
+                <CardTitle><DetailHeading>Company profile</DetailHeading></CardTitle>
                 <CardDescription>
                   Core information used to recognize and manage this commercial
                   relationship.
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <dl className="grid gap-4 sm:grid-cols-2">
+                <DetailSummary>
                   <Info label="Domain" value={company.domainName ?? "Not recorded"} />
                   <Info label="Industry" value={company.industry ?? "Not recorded"} />
                   <Info label="Phone" value={company.phone ?? "Not recorded"} />
@@ -376,13 +370,13 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
                     label="Tags"
                     value={company.tags.length ? company.tags.join(", ") : "None"}
                   />
-                </dl>
+                </DetailSummary>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle>Record details</CardTitle>
+                <CardTitle><DetailHeading>Record details</DetailHeading></CardTitle>
               </CardHeader>
               <CardContent>
                 <dl className="space-y-4">
@@ -428,7 +422,7 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
           ) : (
             <Card>
               <CardHeader>
-                <CardTitle>Services</CardTitle>
+                <CardTitle><DetailHeading>Services</DetailHeading></CardTitle>
                 <CardDescription>
                   Online access has not been approved for this Company.
                 </CardDescription>
@@ -535,7 +529,7 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
               </Alert>
             ) : null}
             <div className="grid gap-1.5">
-              <Label htmlFor="company-owner">Owner *</Label>
+              <Label htmlFor="company-owner"><RequiredFieldName>Owner</RequiredFieldName></Label>
               <CrmOwnerSelect
                 id="company-owner"
                 enabled={ownerOpen}
@@ -545,9 +539,7 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
               />
             </div>
             <DialogFooter>
-              <span className="mr-auto text-xs text-muted-foreground">
-                * Required
-              </span>
+              <RequiredLegend className="mr-auto" />
               <Button
                 type="button"
                 variant="outline"
@@ -578,30 +570,11 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
   );
 }
 
-function Info({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-lg border p-4">
-      <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
-      <dd className="mt-1 break-words text-sm font-medium">{value}</dd>
-    </div>
-  );
-}
+function Info({ label, value }: { label: string; value: string }) { return <DetailField label={label} value={value} boxed /> }
 
-function Meta({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
-      <dd className="mt-1 text-sm">{value}</dd>
-    </div>
-  );
-}
+function Meta({ label, value }: { label: string; value: string }) { return <DetailField label={label} value={value} /> }
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
-}
+function formatDate(value: string) { return formatDisplayTimestamp(value) }
 
 function spaced(value: string) {
   return value.replace(/([a-z])([A-Z])/g, "$1 $2");

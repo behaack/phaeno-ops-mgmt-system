@@ -1,3 +1,4 @@
+import { Field as PortalField } from '#/components/ui/field'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { useCustomerMessages } from '#/features/customer-i18n/use-customer-messages'
 import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
@@ -78,7 +79,7 @@ export function DepartmentMembersDialog({ organizationId, department, onOpenChan
         </div>
       </section> : null}
       <form id="department-member-lookup" noValidate className="space-y-3" onSubmit={form.handleSubmit((values) => { setChangeTarget(null); lookup.mutate(values) })}>
-        <div className="grid gap-1.5">
+        <PortalField >
           <Label htmlFor="department-member-email"><RequiredFieldName>{m.lookupLabel}</RequiredFieldName></Label>
           <p id="department-member-email-description" className="text-xs text-muted-foreground">{m.lookupDescription}</p>
           <Input id="department-member-email" type="email" maxLength={255} required disabled={!canChange || Boolean(changeTarget)}
@@ -86,7 +87,7 @@ export function DepartmentMembersDialog({ organizationId, department, onOpenChan
             aria-describedby={`department-member-email-description${form.formState.errors.email ? ' department-member-email-error' : ''}`}
             {...form.register('email', { onChange: () => lookup.reset() })} />
           {form.formState.errors.email ? <p id="department-member-email-error" role="alert" className="text-xs text-destructive">{<CustomerSourceText source={form.formState.errors.email.message} />}</p> : null}
-        </div>
+        </PortalField>
         <Button type="submit" variant="outline" disabled={!canChange || Boolean(changeTarget)}>{lookup.isPending ? m.lookingUp : m.lookup}</Button>
       </form>
       {lookup.isSuccess && !lookup.data.length ? <p role="status" className="text-sm text-muted-foreground">{m.noCandidate}</p> : null}

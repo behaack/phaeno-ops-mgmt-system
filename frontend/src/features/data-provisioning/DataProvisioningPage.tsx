@@ -1,3 +1,9 @@
+import { EmptyState as SharedEmptyState, ErrorState, LoadingState } from '#/components/ui/content-state'
+import { ProvisioningStatusBadge as StatusBadge } from './DataStatusBadge'
+import { formatDisplayTimestamp } from '#/lib/display-format'
+import { NativeCheckbox } from '#/components/ui/native-checkbox'
+import { RecordLink } from '#/components/ui/record-link'
+import { PageTitle } from '#/components/ui/page-header'
 import { RecordPagination } from '#/components/RecordPagination'
 import { GuardedFormDialog, ConfirmationFormContent } from '#/components/GuardedFormDialog'
 import { Field, FieldError } from '#/components/ui/field'
@@ -157,7 +163,7 @@ export function DataProvisioningPage({ section, onSectionChange }: { section: Da
             <Badge variant="secondary" className="mb-3">
               Phaeno-only configuration
             </Badge>
-            <h1 id="data-provisioning-heading" tabIndex={-1} className="text-3xl font-semibold leading-tight">Data provisioning</h1>
+            <PageTitle id="data-provisioning-heading" tabIndex={-1} >Data provisioning</PageTitle>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
               Register Phaeno-owned source samples, publish immutable curated versions,
               and grant one exact version to an organization.
@@ -227,19 +233,14 @@ function SourceRegistryPanel({ apiEnabled }: { apiEnabled: boolean }) {
           </div>
         </CardHeader>
         <CardContent>
-          <QueryError error={sourceQuery.error} fallback="Source samples could not be loaded." />
+          <QueryError error={sourceQuery.error} fallback="Source samples could not be loaded." onRetry={()=>void sourceQuery.refetch()} busy={sourceQuery.isFetching} />
+          {sourceQuery.isLoading ? <LoadingState label="Loading source samples…" /> : null}
           <div className="grid gap-3 md:grid-cols-2">
             {(sourceQuery.data ?? []).map((source) => (
-              <Link
-                key={source.id}
-                to="/data-provisioning/sources/$sourceSampleId"
-                params={{ sourceSampleId: source.id }}
-                search={{ section: 'sources' }}
-                className="rounded-lg border bg-background p-4 text-inherit no-underline transition-colors hover:bg-muted/50 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-              >
+              <div key={source.id} className="rounded-lg border bg-background p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="m-0 truncate font-medium">{source.label}</p>
+                    <p className="m-0 truncate font-medium"><RecordLink asChild><Link to="/data-provisioning/sources/$sourceSampleId" params={{ sourceSampleId: source.id }} search={{ section: 'sources' }}>{source.label}</Link></RecordLink></p>
                     <p className="m-0 mt-1 text-xs text-muted-foreground">
                       Revision {source.revision} · {source.files.length} file
                       {source.files.length === 1 ? '' : 's'}
@@ -250,11 +251,11 @@ function SourceRegistryPanel({ apiEnabled }: { apiEnabled: boolean }) {
                 {source.isSynthetic ? (
                   <Badge variant="outline" className="mt-3">Synthetic fixture</Badge>
                 ) : null}
-              </Link>
+              </div>
             ))}
           </div>
           <EmptyState
-            show={!sourceQuery.isLoading && (sourceQuery.data?.length ?? 0) === 0}
+            show={!sourceQuery.isError && !sourceQuery.isLoading && (sourceQuery.data?.length ?? 0) === 0}
             icon={FileStack}
             title="No source samples registered"
             description={
@@ -284,7 +285,7 @@ function SourceRegistryPanel({ apiEnabled }: { apiEnabled: boolean }) {
               <Input {...form.register('label')} />
             </FormField>
             <label className="flex items-start gap-2 rounded-lg border p-3 text-sm">
-              <input type="checkbox" className="mt-0.5 size-4" {...form.register('isSynthetic')} />
+              <NativeCheckbox   {...form.register('isSynthetic')} />
               <span>
                 <span className="block font-medium">Synthetic development fixture</span>
                 <span className="block text-muted-foreground">
@@ -437,7 +438,8 @@ function CuratedCatalogPanel({ apiEnabled }: { apiEnabled: boolean }) {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <QueryError error={datasetsQuery.error} fallback="Curated datasets could not be loaded." />
+          <QueryError error={datasetsQuery.error} fallback="Curated datasets could not be loaded." onRetry={()=>void datasetsQuery.refetch()} busy={datasetsQuery.isFetching} />
+          {datasetsQuery.isLoading ? <LoadingState label="Loading curated datasets…" /> : null}
           {(datasetsQuery.data ?? []).map((dataset) => (
             <div key={dataset.id} className="rounded-lg border bg-background p-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -522,7 +524,7 @@ function CuratedCatalogPanel({ apiEnabled }: { apiEnabled: boolean }) {
           ))}
           <MutationError error={eligibilityMutation.error} fallback="Catalog eligibility could not be changed." />
           <MutationError error={reactivateMutation.error} fallback="The dataset could not be reactivated." />
-          <EmptyState show={!datasetsQuery.isLoading && (datasetsQuery.data?.length ?? 0) === 0} icon={Database} title="No curated datasets" description={apiEnabled ? 'Create a dataset, then snapshot a ready source revision.' : 'Connect a real Phaeno session to load the catalog.'} />
+          <EmptyState show={!datasetsQuery.isError && !datasetsQuery.isLoading && (datasetsQuery.data?.length ?? 0) === 0} icon={Database} title="No curated datasets" description={apiEnabled ? 'Create a dataset, then snapshot a ready source revision.' : 'Connect a real Phaeno session to load the catalog.'} />
         </CardContent>
       </Card>
 
@@ -668,7 +670,7 @@ function OrganizationGrantsPanel({ apiEnabled }: { apiEnabled: boolean }) {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid max-w-md gap-1.5">
+          <Field className="max-w-md">
             <Label htmlFor="grant-organization-filter">Organization</Label>
             <NativeSelect id="grant-organization-filter" className={selectClass} value={selectedOrganizationId} onChange={(event) => setSelectedOrganizationId(event.target.value)} disabled={!apiEnabled}>
               <option value="">Select an organization</option>
@@ -676,8 +678,8 @@ function OrganizationGrantsPanel({ apiEnabled }: { apiEnabled: boolean }) {
                 <option key={organization.id} value={organization.id}>{organization.name} ({organization.kind})</option>
               ))}
             </NativeSelect>
-          </div>
-          <QueryError error={organizationsQuery.error ?? grantsQuery.error ?? runsQuery.error ?? activityQuery.error} fallback="Organization provisioning data could not be loaded." />
+          </Field>
+          <QueryError error={organizationsQuery.error ?? grantsQuery.error ?? runsQuery.error ?? activityQuery.error} fallback="Organization provisioning data could not be loaded." onRetry={()=>{void Promise.allSettled([organizationsQuery.refetch(),...(selectedOrganizationId?[grantsQuery.refetch(),runsQuery.refetch(),activityQuery.refetch()]:[])])}} busy={organizationsQuery.isFetching||grantsQuery.isFetching||runsQuery.isFetching||activityQuery.isFetching} />
           {(grantsQuery.data ?? []).map((grant) => (
             <div key={grant.id} className="flex flex-col gap-3 rounded-lg border bg-background p-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -699,7 +701,7 @@ function OrganizationGrantsPanel({ apiEnabled }: { apiEnabled: boolean }) {
               ) : null}
             </div>
           ))}
-          <EmptyState show={Boolean(selectedOrganizationId) && !grantsQuery.isLoading && (grantsQuery.data?.length ?? 0) === 0} icon={ShieldCheck} title="No sample data assigned yet" description="This organization has no explicit curated-data grants." />
+          <EmptyState show={Boolean(selectedOrganizationId) && !grantsQuery.isError && !grantsQuery.isLoading && (grantsQuery.data?.length ?? 0) === 0} icon={ShieldCheck} title="No sample data assigned yet" description="This organization has no explicit curated-data grants." />
           {!selectedOrganizationId ? (
             <EmptyState show icon={UserRoundCheck} title="Select an organization" description="Review its current and historical grants without exposing another tenant's data." />
           ) : null}
@@ -839,7 +841,7 @@ function EligibilityRemovalDialog({ dataset, onOpenChange, form, mutation }: { d
     onOpenChange(next)
   }
   const revoke = form.watch('revokeAllActiveGrants')
-  return <GuardedFormDialog fallbackFocusId="data-provisioning-heading" returnFocusId={dataset ? `version-actions-${dataset.eligibleVersionId}` : undefined} open={Boolean(dataset)} dirty={form.formState.isDirty} pending={mutation.isPending} onOpenChange={changeOpen}><ConfirmationFormContent showCloseButton={!mutation.isPending}><DialogHeader><DialogTitle>Remove this version from the eligible catalog?</DialogTitle></DialogHeader><div><DialogDescription>By default this affects future assignments only and preserves every existing organization grant. Bulk revocation is a separate, explicit destructive option.</DialogDescription></div>{dataset ? <form id={formId} className="space-y-4" noValidate onSubmit={form.handleSubmit((values) => mutation.isPending ? undefined : mutation.mutate({ dataset, values }))}><fieldset disabled={mutation.isPending} className="space-y-4"><label className="flex items-start gap-2 rounded-lg border p-3 text-sm"><input type="checkbox" className="mt-0.5 size-4" {...form.register('revokeAllActiveGrants')} /><span><span className="font-medium">Also revoke every active organization grant for this dataset.</span><span className="mt-1 block text-muted-foreground">Access ends immediately. Previously downloaded copies cannot be recalled.</span></span></label>{revoke ? <FormField label="Bulk revocation reason" error={form.formState.errors.reason?.message} required><textarea className={textareaClass} rows={4} {...form.register('reason')} /></FormField> : null}</fieldset></form> : null}<DialogFeedback><MutationError error={mutation.error} fallback="Eligibility could not be removed." /></DialogFeedback><RequiredDialogFooter showLegend={revoke}><DialogClose asChild><Button type="button" variant="outline" disabled={mutation.isPending}>Cancel</Button></DialogClose><Button type="submit" form={formId} variant={revoke ? 'destructive' : 'default'} disabled={mutation.isPending}>{mutation.isPending ? 'Saving' : revoke ? 'Remove and revoke all' : 'Remove eligibility only'}</Button></RequiredDialogFooter></ConfirmationFormContent></GuardedFormDialog>
+  return <GuardedFormDialog fallbackFocusId="data-provisioning-heading" returnFocusId={dataset ? `version-actions-${dataset.eligibleVersionId}` : undefined} open={Boolean(dataset)} dirty={form.formState.isDirty} pending={mutation.isPending} onOpenChange={changeOpen}><ConfirmationFormContent showCloseButton={!mutation.isPending}><DialogHeader><DialogTitle>Remove this version from the eligible catalog?</DialogTitle></DialogHeader><div><DialogDescription>By default this affects future assignments only and preserves every existing organization grant. Bulk revocation is a separate, explicit destructive option.</DialogDescription></div>{dataset ? <form id={formId} className="space-y-4" noValidate onSubmit={form.handleSubmit((values) => mutation.isPending ? undefined : mutation.mutate({ dataset, values }))}><fieldset disabled={mutation.isPending} className="space-y-4"><label className="flex items-start gap-2 rounded-lg border p-3 text-sm"><NativeCheckbox   {...form.register('revokeAllActiveGrants')} /><span><span className="font-medium">Also revoke every active organization grant for this dataset.</span><span className="mt-1 block text-muted-foreground">Access ends immediately. Previously downloaded copies cannot be recalled.</span></span></label>{revoke ? <FormField label="Bulk revocation reason" error={form.formState.errors.reason?.message} required><textarea className={textareaClass} rows={4} {...form.register('reason')} /></FormField> : null}</fieldset></form> : null}<DialogFeedback><MutationError error={mutation.error} fallback="Eligibility could not be removed." /></DialogFeedback><RequiredDialogFooter showLegend={revoke}><DialogClose asChild><Button type="button" variant="outline" disabled={mutation.isPending}>Cancel</Button></DialogClose><Button type="submit" form={formId} variant={revoke ? 'destructive' : 'default'} disabled={mutation.isPending}>{mutation.isPending ? 'Saving' : revoke ? 'Remove and revoke all' : 'Remove eligibility only'}</Button></RequiredDialogFooter></ConfirmationFormContent></GuardedFormDialog>
 }
 
 function VersionCreateDialog({ dataset, onOpenChange, form, readySources, mutation }: { dataset: CuratedDataset | null; onOpenChange: (open: boolean) => void; form: ReturnType<typeof useForm<VersionValues>>; readySources: Awaited<ReturnType<typeof listSourceSamples>>; mutation: ReturnType<typeof useMutation<unknown, Error, { dataset: CuratedDataset; values: VersionValues }>> }) {
@@ -895,30 +897,19 @@ function FormField({ label, error, required, children }: { label: string; error?
   </Field>
 }
 
-function StatusBadge({ status }: { status: string }) {
-  return <Badge variant={status === 'Active' || status === 'Ready' || status === 'Published' ? 'secondary' : 'outline'}>{status}</Badge>
-}
 
-function EmptyState({ show, icon: Icon, title, description }: { show: boolean; icon: typeof Archive; title: string; description: string }) {
-  if (!show) return null
-  return <div className="mt-3 flex flex-col items-start gap-2 rounded-lg border border-dashed p-5 text-sm text-muted-foreground"><Icon aria-hidden="true" className="size-5" /><div><p className="m-0 font-medium text-foreground">{title}</p><p className="m-0 mt-1">{description}</p></div></div>
-}
 
-function QueryError({ error, fallback }: { error: unknown; fallback: string }) {
-  return error ? <Alert variant="destructive" className="mb-3" role="alert"><AlertTitle>Unable to load data</AlertTitle><AlertDescription>{getApiErrorMessage(error, fallback)}</AlertDescription></Alert> : null
-}
+function EmptyState({ show, title, description }: { show: boolean; icon: typeof Archive; title: string; description: string }) { return show ? <SharedEmptyState title={title}>{description}</SharedEmptyState> : null }
 
-function MutationError({ error, fallback }: { error: unknown; fallback: string }) {
-  return error ? <Alert variant="destructive" role="alert"><AlertTitle>Action failed</AlertTitle><AlertDescription>{getApiErrorMessage(error, fallback)}</AlertDescription></Alert> : null
-}
+function QueryError({ error, fallback, onRetry, busy }: { error: unknown; fallback: string; onRetry?:()=>void; busy?:boolean }) { return error ? <ErrorState title="Unable to load data" onRetry={onRetry} busy={busy}>{getApiErrorMessage(error, fallback)}</ErrorState> : null }
+
+function MutationError({ error, fallback }: { error: unknown; fallback: string }) { return error ? <ErrorState title="Action failed">{getApiErrorMessage(error, fallback)}</ErrorState> : null }
 
 function UnavailableState() {
   return <main className="page-wrap px-4 py-8"><Card className="max-w-2xl"><CardHeader><CardTitle>Data provisioning unavailable</CardTitle><CardDescription>This Phaeno-only workspace requires dataset-configuration permission.</CardDescription></CardHeader></Card></main>
 }
 
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
-}
+function formatDateTime(value: string) { return formatDisplayTimestamp(value) }
 
 const selectClass = 'w-full'
 const textareaClass = 'min-h-20 w-full resize-y rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50'

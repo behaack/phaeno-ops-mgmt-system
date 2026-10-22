@@ -198,7 +198,7 @@ export function LabSampleDialog({
                   <NativeSelect
                     id={`${formId}-source`}
                     disabled={mutation.isPending}
-                    className="w-full cursor-pointer rounded-md border border-input bg-transparent px-3 py-1 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+                    className="w-full"
                     aria-invalid={Boolean(form.formState.errors.biologicalSource)}
                     aria-describedby={fieldDescriptionIds(
                       `${formId}-source`,

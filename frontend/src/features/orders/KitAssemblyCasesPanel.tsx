@@ -365,7 +365,7 @@ export function KitAssemblyCasesPanel({
                     {field('trackingNumber', 'Tracking number')}
                   </>
                 ) : null}
-                <div>
+                <Field>
                   <Label htmlFor="kit-case-reason">
                     <RequiredFieldName><CustomerSourceText source={"Reason"} /></RequiredFieldName>
                   </Label>
@@ -374,7 +374,7 @@ export function KitAssemblyCasesPanel({
                   </p>
                   <Textarea
                     id="kit-case-reason"
-                    className="mt-2"
+
                     {...form.register('reason')}
                   />
                   {form.formState.errors.reason ? (
@@ -382,7 +382,7 @@ export function KitAssemblyCasesPanel({
                       {<CustomerSourceText source={form.formState.errors.reason.message} />}
                     </p>
                   ) : null}
-                </div>
+                </Field>
               </fieldset>
             </form>
             <RequiredDialogFooter>

@@ -1,3 +1,4 @@
+import { PageTitle } from '#/components/ui/page-header'
 import { BackLink } from '#/components/ui/back-link'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
@@ -19,7 +20,7 @@ export function VendorResultsVersionPage({ batchId, resultVersion }: { batchId: 
   const { version, snapshot } = query.data
   return <main className="page-wrap space-y-5 py-8">
     <BackLink asChild><Link to="/lab-operations/batches/$batchId" params={{ batchId }}>Back to current batch</Link></BackLink>
-    <div className="space-y-2"><h1 className="break-words text-2xl font-semibold">{snapshot.batchNumber} · Results v{version.resultVersion}</h1>
+    <div className="space-y-2"><PageTitle className="break-words">{snapshot.batchNumber} · Results v{version.resultVersion}</PageTitle>
       <p className="text-sm">{version.isCurrent ? 'Current saved version' : 'Earlier saved version'} · Read-only</p>
       <p className="text-sm text-muted-foreground">Recorded {date(version.recordedAtUtc)} · {version.recordedByName}</p>
     </div>

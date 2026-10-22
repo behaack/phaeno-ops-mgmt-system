@@ -1,3 +1,4 @@
+import { NativeCheckbox } from '#/components/ui/native-checkbox'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import { confirmPortal } from '#/components/PortalConfirmation'
@@ -56,7 +57,7 @@ export function DeliveryLocationEditor({ scope, source, initialDefault = false, 
       <div className="grid gap-4 sm:grid-cols-2">{input('city', 'City')}{input('region', 'State, province, or region')}{input('postalCode', 'Postal code')}{input('countryCode', 'Country code')}</div>
       {input('phone', 'Delivery phone', false)}
       <LocationField id="delivery-deliveryInstructions" label={__customerText('m_2821a6a29f57')} error={errors.deliveryInstructions?.message}><Textarea id="delivery-deliveryInstructions" rows={3} disabled={mutation.isPending} aria-invalid={Boolean(errors.deliveryInstructions)} aria-describedby={errors.deliveryInstructions ? "delivery-deliveryInstructions-error" : undefined} {...form.register('deliveryInstructions')} /></LocationField>
-      <label className="flex cursor-pointer items-start gap-2 rounded-md border p-3 text-sm"><input type="checkbox" className="mt-0.5 accent-primary" disabled={mutation.isPending} {...form.register('isDefault')} /><span><span className="font-medium"><CustomerText message="m_e336d2cb937b" /></span><span className="mt-1 block text-muted-foreground"><CustomerText message="m_d60358a1cb67" /></span></span></label>
+      <label className="flex cursor-pointer items-start gap-2 rounded-md border p-3 text-sm"><NativeCheckbox  className="accent-primary" disabled={mutation.isPending} {...form.register('isDefault')} /><span><span className="font-medium"><CustomerText message="m_e336d2cb937b" /></span><span className="mt-1 block text-muted-foreground"><CustomerText message="m_d60358a1cb67" /></span></span></label>
     </form>
     <RequiredDialogFooter><Button variant="outline" disabled={mutation.isPending} onClick={close}><CustomerText message="m_19766ed6ccb2" /></Button><Button type="submit" form="delivery-location-form" disabled={mutation.isPending}>{mutation.isPending ? <CustomerSourceText source={"Saving…"} /> : source ? "Save changes" : __customerText('m_119e50923ce6')}</Button></RequiredDialogFooter>
   </DialogContent></Dialog>

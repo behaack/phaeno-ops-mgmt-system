@@ -1,3 +1,4 @@
+import { Field as PortalField } from '#/components/ui/field'
 import { NativeSelect } from '#/components/ui/native-select'
 import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -73,8 +74,8 @@ function TaskStatusDialog({ task, onClose, onRestoreFocus }: { task: CrmTask; on
     {mutation.error ? <Alert variant="destructive"><AlertDescription>{apiErrorMessage(mutation.error)} If the task changed, close this dialog and reopen it to review its current status.</AlertDescription></Alert> : null}
     <form id="crm-task-status" noValidate onSubmit={form.handleSubmit(values => { if (!mutation.isPending) mutation.mutate(values) })}>
       <fieldset disabled={mutation.isPending} className="space-y-4">
-        <div className="grid gap-1.5"><Label htmlFor="task-next-status">New status</Label><NativeSelect id="task-next-status" className="cursor-pointer rounded-md border bg-background px-3 text-sm" {...form.register('status')}><option value="Open">Open</option><option value="InProgress">In progress</option><option value="Blocked">Blocked</option><option value="Completed">Completed</option><option value="Cancelled">Cancelled</option></NativeSelect></div>
-        <div className="grid gap-1.5"><Label htmlFor="task-status-reason">{next === 'Blocked' ? <RequiredFieldName>Reason</RequiredFieldName> : 'Reason'}</Label><Textarea id="task-status-reason" required={next === 'Blocked'} maxLength={1000} aria-invalid={Boolean(form.formState.errors.reason)} aria-describedby={form.formState.errors.reason ? 'task-status-reason-error' : undefined} {...form.register('reason')} /><FieldError id="task-status-reason-error">{form.formState.errors.reason?.message}</FieldError></div>
+        <PortalField ><Label htmlFor="task-next-status">New status</Label><NativeSelect id="task-next-status"  {...form.register('status')}><option value="Open">Open</option><option value="InProgress">In progress</option><option value="Blocked">Blocked</option><option value="Completed">Completed</option><option value="Cancelled">Cancelled</option></NativeSelect></PortalField>
+        <PortalField ><Label htmlFor="task-status-reason">{next === 'Blocked' ? <RequiredFieldName>Reason</RequiredFieldName> : 'Reason'}</Label><Textarea id="task-status-reason" required={next === 'Blocked'} maxLength={1000} aria-invalid={Boolean(form.formState.errors.reason)} aria-describedby={form.formState.errors.reason ? 'task-status-reason-error' : undefined} {...form.register('reason')} /><FieldError id="task-status-reason-error">{form.formState.errors.reason?.message}</FieldError></PortalField>
       </fieldset>
     </form>
     <RequiredDialogFooter showLegend={next === 'Blocked'}><Button type="button" variant="outline" disabled={mutation.isPending} onClick={close}>Cancel</Button><Button type="submit" form="crm-task-status" disabled={mutation.isPending || !__formDraftDirty}>{mutation.isPending ? 'Saving…' : 'Save status'}</Button></RequiredDialogFooter>

@@ -1,3 +1,8 @@
+import { RequiredFieldName, RequiredLegend } from '#/components/ui/required-field'
+import { Field as PortalField } from '#/components/ui/field'
+import { NativeSelect } from '#/components/ui/native-select'
+import { RecordLink } from '#/components/ui/record-link'
+import { PageTitle } from '#/components/ui/page-header'
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Download, Plus, Upload } from "lucide-react";
@@ -225,7 +230,7 @@ export function CrmAdministrationPage() {
         <Badge variant="secondary" className="mb-3">
           Configuration & data quality
         </Badge>
-        <h1 className="text-3xl font-semibold">CRM Settings</h1>
+        <PageTitle>CRM Settings</PageTitle>
         <p className="mt-3 text-sm text-muted-foreground">
           Configure first-party pipelines and fields, review possible
           duplicates, and use previewed, auditable data movement.
@@ -778,17 +783,17 @@ function StageDialog({
                 />
               </Field>
               <Field label="Category" id="stage-category">
-                <select
+                <NativeSelect
                   id="stage-category"
                   name="category"
                   defaultValue={value?.category ?? "Open"}
-                  className="h-9 rounded-md border bg-background px-3 text-sm"
+
                 >
                   <option>Open</option>
                   <option>Won</option>
                   <option>Lost</option>
                   <option>Abandoned</option>
-                </select>
+                </NativeSelect>
               </Field>
               <Field label="Probability" id="stage-probability">
                 <Input
@@ -895,44 +900,44 @@ function FieldDialog({
             </Field>
             <div className="grid grid-cols-3 gap-3">
               <Field label="Record" id="field-record">
-                <select
+                <NativeSelect
                   id="field-record"
                   name="recordType"
                   defaultValue={value?.recordType ?? "Company"}
                   disabled={Boolean(value)}
-                  className="h-9 rounded-md border bg-background px-3 text-sm"
+
                 >
                   {["Company", "Contact", "Lead", "Opportunity", "Task"].map(
                     (value) => (
                       <option key={value}>{value}</option>
                     ),
                   )}
-                </select>
+                </NativeSelect>
               </Field>
               <Field label="Data type" id="field-type">
-                <select
+                <NativeSelect
                   id="field-type"
                   name="dataType"
                   defaultValue={value?.dataType ?? "Text"}
-                  className="h-9 rounded-md border bg-background px-3 text-sm"
+
                 >
                   {["Text", "Number", "Date", "Boolean", "Option"].map(
                     (value) => (
                       <option key={value}>{value}</option>
                     ),
                   )}
-                </select>
+                </NativeSelect>
               </Field>
               <Field label="Sensitivity" id="field-sensitivity">
-                <select
+                <NativeSelect
                   id="field-sensitivity"
                   name="sensitivity"
                   defaultValue={value?.sensitivity ?? "Internal"}
-                  className="h-9 rounded-md border bg-background px-3 text-sm"
+
                 >
                   <option>Internal</option>
                   <option>Restricted</option>
-                </select>
+                </NativeSelect>
               </Field>
             </div>
             <Field label="Option choices JSON" id="field-options">
@@ -1015,17 +1020,17 @@ function ImportDialog({
         ) : null}
         <Fields>
           <Field label="Record type" id="import-type">
-            <select
+            <NativeSelect
               id="import-type"
               value={type}
               onChange={(event) => setType(event.target.value as CrmRecordType)}
-              className="h-9 rounded-md border bg-background px-3 text-sm"
+
             >
               <option>Company</option>
               <option>Contact</option>
               <option>Lead</option>
               <option>Opportunity</option>
-            </select>
+            </NativeSelect>
           </Field>
           <Field label="CSV file" id="import-file">
             <Input
@@ -1112,23 +1117,21 @@ function DuplicateRecordLink({
 }) {
   if (recordType === "Company")
     return (
-      <Link
-        to="/crm/companies/$companyId"
+      <RecordLink asChild><Link to="/crm/companies/$companyId"
         params={{ companyId: id }}
-        className="text-primary hover:underline"
+
       >
         {name}
-      </Link>
+      </Link></RecordLink>
     );
   if (recordType === "Contact")
     return (
-      <Link
-        to="/crm/contacts/$contactId"
+      <RecordLink asChild><Link to="/crm/contacts/$contactId"
         params={{ contactId: id }}
-        className="text-primary hover:underline"
+
       >
         {name}
-      </Link>
+      </Link></RecordLink>
     );
   return <span>{name}</span>;
 }
@@ -1143,14 +1146,7 @@ function Field({
   label: string;
   id: string;
   children: React.ReactNode;
-}) {
-  return (
-    <div className="grid gap-1.5">
-      <Label htmlFor={id}>{label}</Label>
-      {children}
-    </div>
-  );
-}
+}) { return <PortalField><Label htmlFor={id}>{label.endsWith("") ? <RequiredFieldName>{label.slice(0,-2)}</RequiredFieldName> : label}</Label>{children}</PortalField> }
 function Footer({
   pending,
   onCancel,
@@ -1162,7 +1158,7 @@ function Footer({
 }) {
   return (
     <DialogFooter>
-      <span className="mr-auto text-xs text-muted-foreground">* Required</span>
+      <RequiredLegend className="mr-auto" />
       <Button type="button" variant="outline" onClick={onCancel}>
         Cancel
       </Button>

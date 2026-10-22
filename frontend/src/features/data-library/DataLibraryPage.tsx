@@ -1,3 +1,5 @@
+import { RecordLink } from '#/components/ui/record-link'
+import { PageTitle } from '#/components/ui/page-header'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { RecordPagination } from '#/components/RecordPagination'
 import { useScopedRecordPage } from '#/components/use-scoped-record-page'
@@ -71,7 +73,7 @@ export function DataLibraryPage() {
     <main className="page-wrap px-4 py-8">
       <section className="mb-6 max-w-3xl">
         <Badge variant="secondary" className="mb-3"><CustomerText message="m_a929de0aff97" /></Badge>
-        <h1 className="text-3xl font-semibold leading-tight"><CustomerText message="m_c7f86b3ebb58" /></h1>
+        <PageTitle><CustomerText message="m_c7f86b3ebb58" /></PageTitle>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
           <CustomerText message="m_85a310c82afc" /></p>
       </section>
@@ -99,13 +101,8 @@ export function DataLibraryPage() {
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {(datasetsQuery.data ?? []).map((dataset) => (
-          <Link
-            key={dataset.datasetId}
-            to="/data-library/$datasetId"
-            params={{ datasetId: dataset.datasetId }}
-            className="text-inherit no-underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-          >
-            <Card className="h-full transition-colors hover:bg-muted/30">
+          <div key={dataset.datasetId} className="min-w-0">
+            <Card className="h-full">
               <CardHeader>
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
@@ -113,7 +110,7 @@ export function DataLibraryPage() {
                   </div>
                   <Badge variant="outline"><CustomerText message="m_92b2c95e99f0" />{dataset.versionNumber}</Badge>
                 </div>
-                <CardTitle className="mt-2">{dataset.name}</CardTitle>
+                <CardTitle className="mt-2"><RecordLink asChild><Link to="/data-library/$datasetId" params={{ datasetId: dataset.datasetId }}>{dataset.name}</Link></RecordLink></CardTitle>
                 <CardDescription>{dataset.sampleLabel}</CardDescription>
               </CardHeader>
               <CardContent>
@@ -124,7 +121,7 @@ export function DataLibraryPage() {
                 </div>
               </CardContent>
             </Card>
-          </Link>
+          </div>
         ))}
       </section>
 

@@ -1,3 +1,4 @@
+import { NativeCheckbox } from '#/components/ui/native-checkbox'
 import { NativeSelect } from '#/components/ui/native-select'
 import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { useLotProducts } from '#/api/lab-materials'
@@ -459,7 +460,7 @@ export function MaterialLotCreateDialog({
                       <Button type="button" size="icon" variant="ghost" className="self-end" aria-label={`Remove component ${index + 1}`} onClick={() => components.remove(index)}>
                         <Trash2 aria-hidden="true" />
                       </Button>
-                      <div className="space-y-1 sm:col-span-4"><label className="flex cursor-pointer items-start gap-2 text-sm"><input type="checkbox" className="mt-0.5 size-4 shrink-0 cursor-pointer" aria-describedby={`component-${component.id}-exhausted-help`} {...form.register(`components.${index}.materialExhausted`)} />Material exhausted (optional override)</label><p id={`component-${component.id}-exhausted-help`} className="text-xs text-muted-foreground">Confirm no usable component material remains. Its actual quantity used is retained, with a separate adjustment for any remaining balance.</p></div>
+                      <div className="space-y-1 sm:col-span-4"><label className="flex cursor-pointer items-start gap-2 text-sm"><NativeCheckbox  className="shrink-0" aria-describedby={`component-${component.id}-exhausted-help`} {...form.register(`components.${index}.materialExhausted`)} />Material exhausted (optional override)</label><p id={`component-${component.id}-exhausted-help`} className="text-xs text-muted-foreground">Confirm no usable component material remains. Its actual quantity used is retained, with a separate adjustment for any remaining balance.</p></div>
                     </div>
                   ))}
                   <FieldError message={form.formState.errors.components?.root?.message ?? form.formState.errors.components?.message} />
@@ -617,4 +618,4 @@ function today() {
   return local.toISOString().slice(0, 10)
 }
 
-const selectClass = 'h-9 w-full cursor-pointer rounded-lg border border-input bg-background px-3 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none'
+const selectClass = "w-full"

@@ -85,11 +85,25 @@ Keep the owner focused on scientific meaning, sequencing and laboratory workflow
   existing tokens and patterns under `website/src/styles/`. Portal
   record-management conventions do not automatically apply to marketing pages.
 - Use pointer cursors for mouse-clickable actions and accessible labels for icon-only controls.
+- Use shared `PageHeader`/`PageTitle` for Portal page identity and `RecordLink asChild` for primary record identifiers. Preserve route/search/hash, handlers, heading IDs/refs and focus targets. Shared components own typography, color, underline and focus; do not add feature-local visual overrides. Authentication, article and print hierarchies remain distinct.
+- Use shared `RecordList`/`RecordListItem`, `ListToolbar`, `RecordTable`, pagination and content-state patterns for new or touched list/feedback UI. Show truthful loading, no-results, setup, permission and error states, preserving trustworthy loaded data, scientific status meanings and existing Actions rules. Keep actual guarded forms, missing controls and navigation examples represented in the gallery.
 - Use the shared `BackLink` from `frontend/src/components/ui/back-link.tsx` for every Portal page-return control. Compose typed router links with `asChild`; the component owns the left arrow, typography, spacing, hover and focus styles. Place returns above the page heading, preserve destination/search/hash and draft guards, and do not add feature-local back-link styles or icons. See the page-return pattern in `docs/ui-ux-principles.md`.
 - Use `frontend/ui-gallery/` as the visual reference for shared controls. Keep examples, focused browser assertions and the UI guide aligned when shared patterns change. `pnpm ui:check` is part of frontend lint; fix findings rather than expanding its exact exception baseline without a documented workflow reason. The gallery is a local engineering tool and must remain outside production Portal routes and user navigation.
 - Use the shared `ActionMenu` from `frontend/src/components/ui/dropdown-menu.tsx` for contextual Actions menus, with `DropdownMenuTrigger asChild` wrapping a labeled `Button`. It supplies the dropdown chevron for multiple actions and renders one action directly without a chevron. Do not hand-author the chevron in new Actions triggers or bypass `ActionMenu` with a plain dropdown. Verify one visible indicator, accessible name, keyboard opening and focus return on touched menus.
 - Owner-approved exception: Customer/Partner Lab Job and phase cancellation requests stay inside a neutral **Actions** dropdown even when they are the sole action. Use `ActionMenu keepSingleActionInMenu`, a red destructive cancellation item, and a destructive confirmation action. Keep other sole actions directly visible; see `docs/ui-ux-principles.md`.
 - Use shared `Field` spacing and `NativeSelect` sizing for new or touched single-line form fields. `Input`, `SearchableSelect` and `NativeSelect` use the same control styles. Do not mix local height overrides or per-control label margins within a form row; verify aligned control edges and label gaps with both text inputs and selects.
+- Use `NativeCheckbox` for native checkbox fields and preserve native events,
+  refs and form registration. Standard single-line controls are 32 px; intentional
+  44 px inputs use `controlSize="touch"`. Reserve a validation line with
+  `FieldError reserveSpace` where blur errors could move a pending action.
+- Use `lib/display-format.ts` for date/time, number, currency and byte display;
+  preserve calendar-only days, scientific precision, Customer locale, zero and
+  missing values. Use explicit feature maps with `StatusBadge`, shared
+  `PaginationFooter`/`CountFreePagination`, `ClearFiltersButton`, and
+  `DetailSummary`/`DetailField`/`DetailHeading` for recurring presentation.
+- Update the standalone gallery, source guards and applicable behavior/visual
+  checks when shared patterns change. Reviewed Windows Chromium page baselines
+  are deliberate artifacts; normal checks and CI must never accept new images.
 - Use the shared Portal `Dialog` for in-page confirmations instead of `window.confirm`. Name the affected scope and consequence, initially focus the cancel action, and restore focus to the invoking control or a surviving adjacent control. Browser-required unload prompts remain browser-managed.
 - Every confirmation dialog must have three visible regions: a header with the title, a body explaining the affected scope and consequences, and an action footer. Do not put all explanatory content in `DialogHeader` and leave the body absent. The shared `DialogContent` moves direct `DialogDescription` children into the header; wrap a body description in a body container. Inspect the rendered dialog to verify that a meaningful `[data-slot="dialog-body"]` sits between the header and footer.
 - Keep required-field presentation consistent: label, tightly spaced required

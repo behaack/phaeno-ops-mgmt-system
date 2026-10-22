@@ -1,3 +1,4 @@
+import { Field as PortalField } from '#/components/ui/field'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { useCustomerMessages } from '#/features/customer-i18n/use-customer-messages'
 import { NativeSelect } from '#/components/ui/native-select'
@@ -100,10 +101,10 @@ function OrganizationDefaultsDialog({ target, pending, error, onClose, onSubmit 
         {error ? <Alert variant="destructive"><AlertDescription><CustomerSourceText source={departmentErrorMessage(error)} /></AlertDescription></Alert> : null}
         {discard ? <section role="alert" className="space-y-3"><p>{m.discardDefaults}</p><div className="flex flex-wrap gap-2"><Button type="button" variant="outline" onClick={() => setDiscard(false)}>{m.keepEditing}</Button><Button type="button" variant="destructive" onClick={() => { void __modalGuard.close(() => (onClose)()) }}>{m.discard}</Button></div></section> : null}
         <fieldset disabled={pending} className="grid gap-4">
-          <div className="grid gap-1.5"><Label htmlFor="defaults-po">{m.purchaseOrderRule}</Label>
-            <NativeSelect id="defaults-po" className="cursor-pointer rounded-lg border border-input bg-background px-3 text-sm" {...form.register('purchaseOrderRequired')}>
+          <PortalField ><Label htmlFor="defaults-po">{m.purchaseOrderRule}</Label>
+            <NativeSelect id="defaults-po"  {...form.register('purchaseOrderRequired')}>
               <option value="inherit">{m.systemPoDefault}</option><option value="required">{m.required}</option><option value="optional">{m.optional}</option>
-            </NativeSelect></div>
+            </NativeSelect></PortalField>
           {textFields.map((field) => {
             const fieldError = form.formState.errors[field]?.message
             const props = { id: `defaults-${field}`, maxLength: field.endsWith('Email') ? 255 : 2000, 'aria-invalid': Boolean(fieldError), 'aria-describedby': fieldError ? `defaults-${field}-error` : undefined, ...form.register(field) }

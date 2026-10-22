@@ -1,3 +1,5 @@
+import { Field as PortalField } from '#/components/ui/field'
+import { PageTitle } from '#/components/ui/page-header'
 import { CrmProvisioningReturn } from "./CrmListNavigation";
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CrmRequestCard, type CrmRequestAction } from './CrmRequestCard'
@@ -158,9 +160,9 @@ export function CrmPortalAccessPage() {
         <Badge variant="secondary" className="mb-3">
           Phaeno CRM
         </Badge>
-        <h1 className="text-3xl font-semibold leading-tight">
+        <PageTitle>
           Company request review
-        </h1>
+        </PageTitle>
         <p className="mt-3 text-sm leading-6 text-muted-foreground sm:text-base">
           Review online access, product and service, relationship, and work
           requests for CRM Companies. Approval never creates a separate
@@ -185,7 +187,7 @@ export function CrmPortalAccessPage() {
             context.
           </CardDescription>
           {view === 'history' ? <div className="mt-3 flex flex-wrap items-end gap-3">
-            <div className="min-w-0 flex-1 basis-60"><Label htmlFor="request-history-search">Search completed requests</Label><Input id="request-history-search" className="mt-2" value={draftSearch} onChange={event => setDraftSearch(event.target.value)} disabled={Boolean(requestId)} placeholder="Company, request number, or request details" /></div>
+            <PortalField className="min-w-0 flex-1 basis-60"><Label htmlFor="request-history-search">Search completed requests</Label><Input id="request-history-search"  value={draftSearch} onChange={event => setDraftSearch(event.target.value)} disabled={Boolean(requestId)} placeholder="Company, request number, or request details" /></PortalField>
             <CrmClearFilters label="Clear filter" keepVisible />
           </div> : <CrmClearFilters />}
         </CardHeader>

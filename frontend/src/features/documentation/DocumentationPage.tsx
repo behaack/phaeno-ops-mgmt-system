@@ -1,3 +1,4 @@
+import { PageTitle } from '#/components/ui/page-header'
 import { BackLink } from '#/components/ui/back-link'
 import { Link, useRouterState } from '@tanstack/react-router'
 import {
@@ -155,9 +156,9 @@ function DocumentationIndex({ audience }: { audience: DocumentationAudience }) {
             <Badge variant="secondary" className="mb-3">
               {messages.helpCenter}
             </Badge>
-            <h1 className="text-3xl font-semibold leading-tight">
+            <PageTitle>
               {messages.documentationHeading(audienceDetails.label)}
-            </h1>
+            </PageTitle>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
               {audienceDetails.description}
             </p>
@@ -218,8 +219,7 @@ function DocumentationArticle({
   return (
     <div>
           <div className="mb-6">
-            <BackLink asChild><Link
-              to="/docs"
+            <BackLink asChild><Link to="/docs"
             >
               {messages.documentation}
             </Link></BackLink>
@@ -401,8 +401,7 @@ function DocumentationGuideLink({
     : getGuideIcon(entry.slug)
 
   return (
-    <Link
-      to="/docs/$audience/$slug"
+    <Link to="/docs/$audience/$slug"
       params={{ audience, slug: entry.slug }}
       aria-current={entry.slug === activeSlug ? 'page' : undefined}
       onClick={onNavigate}
@@ -431,8 +430,7 @@ function GuideSequenceLink({
   direction: 'previous' | 'next'
 }) {
   return (
-    <Link
-      to="/docs/$audience/$slug"
+    <Link to="/docs/$audience/$slug"
       params={{ audience, slug }}
       className={`rounded-lg border p-3 text-sm no-underline hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none ${
         direction === 'next' ? 'text-right' : ''
@@ -463,11 +461,11 @@ function DocumentationUnavailable({ missingGuide = false }: { missingGuide?: boo
     <main className="page-wrap px-4 py-8">
       <Alert className="max-w-2xl">
         <BookOpenText aria-hidden="true" />
-        <h1 className="font-medium">
+        <PageTitle>
           {missingGuide
             ? messages.guideNotFound
             : messages.documentationUnavailable}
-        </h1>
+        </PageTitle>
         <AlertDescription>
           {missingGuide
             ? messages.missingGuideDescription

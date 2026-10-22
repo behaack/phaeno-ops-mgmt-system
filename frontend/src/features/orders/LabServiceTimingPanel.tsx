@@ -1,3 +1,4 @@
+import { Field as PortalField } from '#/components/ui/field'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { NativeSelect } from '#/components/ui/native-select'
 import { confirmPortal } from '#/components/PortalConfirmation'
@@ -272,14 +273,14 @@ export function LabServiceTimingPanel({
               onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
             >
               <fieldset disabled={mutation.isPending} className="space-y-4">
-                <div>
+                <PortalField>
                   <Label htmlFor="lab-expected">
                     <RequiredFieldName><CustomerSourceText source={"Expected completion"} /></RequiredFieldName>
                   </Label>
                   <Input
                     id="lab-expected"
                     type="datetime-local"
-                    className="mt-2"
+
                     {...form.register('expectedCompletion')}
                   />
                   {form.formState.errors.expectedCompletion ? (
@@ -287,8 +288,8 @@ export function LabServiceTimingPanel({
                       {<CustomerSourceText source={form.formState.errors.expectedCompletion.message} />}
                     </p>
                   ) : null}
-                </div>
-                <div>
+                </PortalField>
+                <PortalField>
                   <Label htmlFor="lab-timing-reason">
                     <RequiredFieldName>
                       <CustomerSourceText source={"Reason shown to the organization"} />
@@ -296,15 +297,15 @@ export function LabServiceTimingPanel({
                   </Label>
                   <NativeSelect
                     id="lab-timing-reason"
-                    className="mt-2 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    className="w-full"
                     {...form.register('reason')}
                   >
                     {reasons.map((reason) => (
                       <option key={reason}>{reason}</option>
                     ))}
                   </NativeSelect>
-                </div>
-                <div>
+                </PortalField>
+                <PortalField>
                   <Label htmlFor="lab-safe-note">
                     {form.watch('reason') === 'Other operational delay' ? (
                       <RequiredFieldName>
@@ -319,7 +320,7 @@ export function LabServiceTimingPanel({
                   </p>
                   <Textarea
                     id="lab-safe-note"
-                    className="mt-2"
+
                     {...form.register('customerSafeNote')}
                   />
                   {form.formState.errors.customerSafeNote ? (
@@ -327,17 +328,17 @@ export function LabServiceTimingPanel({
                       {<CustomerSourceText source={form.formState.errors.customerSafeNote.message} />}
                     </p>
                   ) : null}
-                </div>
-                <div>
+                </PortalField>
+                <PortalField>
                   <Label htmlFor="lab-internal-note">
                     <CustomerSourceText source={"Internal note (optional)"} />
                   </Label>
                   <Textarea
                     id="lab-internal-note"
-                    className="mt-2"
+
                     {...form.register('internalNote')}
                   />
-                </div>
+                </PortalField>
               </fieldset>
             </form>
             <RequiredDialogFooter>

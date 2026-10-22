@@ -1,3 +1,9 @@
+import { formatDisplayTimestamp } from '#/lib/display-format'
+import { Field as PortalField } from '#/components/ui/field'
+import { NativeSelect } from '#/components/ui/native-select'
+import { NativeCheckbox } from '#/components/ui/native-checkbox'
+import { RecordLink } from '#/components/ui/record-link'
+import { PageTitle } from '#/components/ui/page-header'
 import { CrmTaskActions, useCrmTaskDialogs } from "./CrmTaskActions";
 import { CrmClearFilters, useCrmSearch, useCrmState, CrmListPagination } from "./CrmListNavigation";
 import { useQuery } from "@tanstack/react-query";
@@ -48,7 +54,7 @@ export function CrmTasksPage() {
         <Badge variant="secondary" className="mb-3">
           Follow-up
         </Badge>
-        <h1 className="text-3xl font-semibold">Tasks</h1>
+        <PageTitle>Tasks</PageTitle>
         <p className="mt-3 text-sm text-muted-foreground">
           Manage due dates, reminders, ownership, blocking reasons, and
           completion across every CRM record.
@@ -75,19 +81,19 @@ export function CrmTasksPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap items-end gap-4">
-            <div className="grid w-full min-w-0 gap-1.5 md:w-auto md:flex-1">
+            <PortalField className="w-full min-w-0 md:w-auto md:flex-1">
               <Label htmlFor="crm-list-search">Search</Label>
-              <Input id="crm-list-search" className="h-9" value={draftSearch} onChange={event => setDraftSearch(event.target.value)} />
-            </div>
-            <div className="grid gap-1.5">
+              <Input id="crm-list-search"  value={draftSearch} onChange={event => setDraftSearch(event.target.value)} />
+            </PortalField>
+            <PortalField >
               <Label htmlFor="task-status-filter">Status</Label>
-              <select
+              <NativeSelect
                 id="task-status-filter"
                 value={status}
                 onChange={(event) =>
                   setStatus(event.target.value as CrmTaskStatus | "")
                 }
-                className="h-9 rounded-md border bg-background px-3 text-sm"
+
               >
                 <option value="">All statuses</option>
                 {[
@@ -101,17 +107,17 @@ export function CrmTasksPage() {
                     {spaced(value)}
                   </option>
                 ))}
-              </select>
-            </div>
+              </NativeSelect>
+            </PortalField>
             <label className="flex h-9 cursor-pointer items-center gap-2 rounded-md border px-3 text-sm">
-              <input
-                type="checkbox"
+              <NativeCheckbox
+
                 checked={overdue}
                 onChange={(event) => setOverdue(event.target.checked)}
               />
               Overdue only
             </label>
-            <label className="flex h-9 cursor-pointer items-center gap-2 rounded-md border px-3 text-sm"><input type="checkbox" checked={dueSoon} onChange={event => setDueSoon(event.target.checked)} />Due in 7 days</label>
+            <label className="flex h-9 cursor-pointer items-center gap-2 rounded-md border px-3 text-sm"><NativeCheckbox  checked={dueSoon} onChange={event => setDueSoon(event.target.checked)} />Due in 7 days</label>
           </div>
           <CrmClearFilters />
           <CrmSavedViewBar
@@ -191,43 +197,39 @@ export function CrmTasksPage() {
 function recordLink(task: CrmTask) {
   if (task.opportunityId)
     return (
-      <Link
-        to="/crm/opportunities/$opportunityId" search={previous => previous}
+      <RecordLink asChild><Link to="/crm/opportunities/$opportunityId" search={previous => previous}
         params={{ opportunityId: task.opportunityId }}
-        className="hover:underline"
+
       >
         {task.opportunityName}
-      </Link>
+      </Link></RecordLink>
     );
   if (task.leadId)
     return (
-      <Link
-        to="/crm/leads/$leadId" search={previous => previous}
+      <RecordLink asChild><Link to="/crm/leads/$leadId" search={previous => previous}
         params={{ leadId: task.leadId }}
-        className="hover:underline"
+
       >
         {task.leadName}
-      </Link>
+      </Link></RecordLink>
     );
   if (task.contactId)
     return (
-      <Link
-        to="/crm/contacts/$contactId" search={previous => previous}
+      <RecordLink asChild><Link to="/crm/contacts/$contactId" search={previous => previous}
         params={{ contactId: task.contactId }}
-        className="hover:underline"
+
       >
         {task.contactName}
-      </Link>
+      </Link></RecordLink>
     );
   if (task.companyId)
     return (
-      <Link
-        to="/crm/companies/$companyId" search={previous => previous}
+      <RecordLink asChild><Link to="/crm/companies/$companyId" search={previous => previous}
         params={{ companyId: task.companyId }}
-        className="hover:underline"
+
       >
         {task.companyName}
-      </Link>
+      </Link></RecordLink>
     );
   return "—";
 }
@@ -239,12 +241,7 @@ function isOverdue(task: CrmTask) {
     task.status !== "Cancelled",
   );
 }
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
-}
+function formatDate(value: string) { return formatDisplayTimestamp(value) }
 function spaced(value: string) {
   return value.replace(/([a-z])([A-Z])/g, "$1 $2");
 }

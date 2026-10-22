@@ -1,3 +1,5 @@
+import { NativeCheckbox } from '#/components/ui/native-checkbox'
+import { RecordLink } from '#/components/ui/record-link'
 import { ProcedureIllustration } from './ProcedureIllustrations'
 import { NativeSelect } from '#/components/ui/native-select'
 import { operationalInputProps } from './lab-presentation'
@@ -227,7 +229,7 @@ export function PreparationStepDialog({ batch, stage, step: sourceStep, action, 
         {action === 'correct' && resources.length ? <p className="text-sm text-muted-foreground">Resource use is retained. This correction does not consume stock again or replace an output.</p> : null}
         </div> : null}
       </> : null}
-        {!skipped && hasExceptions ? <div className="space-y-1"><label className="flex cursor-pointer items-center gap-2 text-sm"><input type="checkbox" className="size-4" aria-describedby="sample-exception-help" checked={recordException} onChange={e => toggleExceptions(e.target.checked)} />Record exception</label><p id="sample-exception-help" className="text-xs text-muted-foreground">Turning this off clears sample overrides.</p></div> : null}
+        {!skipped && hasExceptions ? <div className="space-y-1"><label className="flex cursor-pointer items-center gap-2 text-sm"><NativeCheckbox   aria-describedby="sample-exception-help" checked={recordException} onChange={e => toggleExceptions(e.target.checked)} />Record exception</label><p id="sample-exception-help" className="text-xs text-muted-foreground">Turning this off clears sample overrides.</p></div> : null}
         {visibleMembers.length ? <h3 className="font-medium">Sample entries and exceptions</h3> : null}
         {visibleMembers.map(m => {
           const failed = isFailed(m.id)
@@ -238,7 +240,7 @@ export function PreparationStepDialog({ batch, stage, step: sourceStep, action, 
           <dl className="grid gap-3 rounded-md border bg-background p-3 sm:grid-cols-2">
             <div className="min-w-0"><dt className="text-xs text-muted-foreground">Customer sample ID</dt><dd className="wrap-anywhere">{m.customerSampleId === undefined ? 'Not available' : m.customerSampleId?.trim() || 'Not recorded'}</dd></div>
             <div className="min-w-0"><dt className="text-xs text-muted-foreground">Specimen type</dt><dd className="wrap-anywhere">{m.biologicalSource?.trim() || 'Not recorded'}</dd></div>
-            <div className="min-w-0 sm:col-span-2"><dt className="text-xs text-muted-foreground">Accession reference</dt><dd>{preview ? <span>{m.specimenName}</span> : <Link className="wrap-anywhere underline" to="/lab-operations/$workOrderId/specimens/$specimenId" params={{ workOrderId: m.workOrderId, specimenId: m.specimenId }} search={{ section: 'work' }} target="_blank" rel="noopener noreferrer" aria-label={`Open specimen ${m.specimenName} in a new tab`}>{m.specimenName}</Link>}</dd></div>
+            <div className="min-w-0 sm:col-span-2"><dt className="text-xs text-muted-foreground">Accession reference</dt><dd>{preview ? <span>{m.specimenName}</span> : <span className="wrap-anywhere"><RecordLink asChild><Link to="/lab-operations/$workOrderId/specimens/$specimenId" params={{ workOrderId: m.workOrderId, specimenId: m.specimenId }} search={{ section: 'work' }} target="_blank" rel="noopener noreferrer" aria-label={`Open specimen ${m.specimenName} in a new tab`}>{m.specimenName}</Link></RecordLink></span>}</dd></div>
           </dl>
           {failed ? <>
             <p className="text-sm">Remains in tray position {m.position}. This attempt is closed and cannot receive further step records or supply a successful library.</p>
@@ -253,7 +255,7 @@ export function PreparationStepDialog({ batch, stage, step: sourceStep, action, 
         })}
       {!skipped ? <>
 
-        {step.inputMaterials.length + step.equipmentTypes.length + step.preparedOutputs.length ? <label className="flex cursor-pointer items-start gap-2 text-sm leading-snug"><input type="checkbox" aria-required aria-invalid={Boolean(form.formState.errors.resources)} className="mt-0.5 size-4 shrink-0" {...form.register('resources')} /><RequiredFieldName>I confirmed the listed inputs, outputs and equipment and recorded their traceability.</RequiredFieldName></label> : null}
+        {step.inputMaterials.length + step.equipmentTypes.length + step.preparedOutputs.length ? <label className="flex cursor-pointer items-start gap-2 text-sm leading-snug"><NativeCheckbox  aria-required aria-invalid={Boolean(form.formState.errors.resources)} className="shrink-0" {...form.register('resources')} /><RequiredFieldName>I confirmed the listed inputs, outputs and equipment and recorded their traceability.</RequiredFieldName></label> : null}
       </> : null}
       {!rationaleSuppliesCondition || skipped ? <PreparationField label="Reason or condition assessment" id="prep-step-reason" required={skipped || action !== 'record' || Boolean(step.condition)} error={form.formState.errors.values?.reason?.message}><textarea id="prep-step-reason" className={`${prepSelectClass} min-h-20 py-2`} {...form.register('values.reason')} /></PreparationField> : null}
         {!skipped && allowsReport ? <div className={`${prepRowClass} space-y-2`} >
@@ -263,7 +265,7 @@ export function PreparationStepDialog({ batch, stage, step: sourceStep, action, 
           <p id="prep-qc-report-help" className="text-xs leading-relaxed text-muted-foreground">Attach a PDF up to 10 MB for the included tubes. {preview ? 'The selection stays local and is discarded when preview closes.' : 'It uploads when you save the step record.'} {reportRequired ? 'A report is required for a performed step.' : 'You can continue without a report.'}</p>
           {qcReport ? <div className="flex flex-wrap items-center gap-2"><p className="min-w-0 break-all text-sm">Selected: {qcReport.name}</p><Button type="button" variant="outline" size="sm" disabled={pending} onClick={() => { setQcReport(undefined); if (reportInput.current) reportInput.current.value = ''; form.clearErrors('values.qc_report') }}>Remove report</Button></div> : null}
         </div> : null}
-        {!skipped && (action !== 'correct' || step.operatorConfirmation) ? <label className="flex cursor-pointer items-start gap-2 text-sm leading-snug"><input type="checkbox" aria-required aria-invalid={Boolean(form.formState.errors.operator)} className="mt-0.5 size-4 shrink-0" {...form.register('operator')} /><RequiredFieldName>{action === 'correct' ? 'I reviewed this correction against its pinned instructions.' : form.watch('timing.otherPerformer') ? 'I confirm this entry identifies the actual performer and time.' : step.operatorConfirmation ? 'I performed this step according to its pinned instructions.' : 'I performed this step at the time selected above.'}</RequiredFieldName></label> : null}
+        {!skipped && (action !== 'correct' || step.operatorConfirmation) ? <label className="flex cursor-pointer items-start gap-2 text-sm leading-snug"><NativeCheckbox  aria-required aria-invalid={Boolean(form.formState.errors.operator)} className="shrink-0" {...form.register('operator')} /><RequiredFieldName>{action === 'correct' ? 'I reviewed this correction against its pinned instructions.' : form.watch('timing.otherPerformer') ? 'I confirm this entry identifies the actual performer and time.' : step.operatorConfirmation ? 'I performed this step according to its pinned instructions.' : 'I performed this step at the time selected above.'}</RequiredFieldName></label> : null}
       {(['operator', 'resources'] as const).map(key => form.formState.errors[key] ? <p key={key} role="alert" className="text-sm text-destructive">{form.formState.errors[key]?.message}</p> : null)}
     </div><RequiredDialogFooter><Button type="button" variant="outline" disabled={pending} onClick={onClose}>{preview ? 'Return to configuration' : 'Cancel'}</Button><Button type="submit" disabled={pending || !applicable.length || resources.length > 0 && !preview && (!batch.inlineResourceFields || resources.some(f => f.type === 'material') && !batch.configuredMaterials)}>{pending ? 'Saving…' : preview ? 'Validate entry' : 'Save step record'}</Button></RequiredDialogFooter>
   </form>}</DialogContent></Dialog>

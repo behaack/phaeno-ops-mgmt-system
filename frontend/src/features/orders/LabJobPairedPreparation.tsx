@@ -1,3 +1,4 @@
+import { NativeCheckbox } from '#/components/ui/native-checkbox'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -159,8 +160,8 @@ export function LabJobPairedPreparation({ order, phaseId }: { order: LabServiceO
         <div><DialogDescription><CustomerText message="m_5205dcb2574e" />{multiplePhases ? <CustomerSourceText source={"this phase’s"} /> : __customerText('m_4d040d3f6466')} <CustomerText message="m_9304f8914dac" />{multiplePhases ? <CustomerSourceText source={"its"} /> : __customerText('m_b9776d7ddf45')} <CustomerText message="m_499b5db08ce1" />{multiplePhases ? <CustomerSourceText source={" Other phases can be prepared later."} /> : ''}</DialogDescription></div>
         <p className="text-sm">{labSampleCount(activePairs.length)}{allocatesAdditionalRuns ? __customerText('m_a4453aefe2b8', { p0: String(allocatedRuns) }) : ''} · {physicalKitCount} <CustomerText message="m_7fd3f68c29e7" />{physicalKitCount === 1 ? '' : 's'}</p>
         <label htmlFor="pair-finalization-policy" className="flex items-start gap-2 text-sm">
-          <input id="pair-finalization-policy" type="checkbox" className="mt-1" checked={policyConfirmed} onChange={event => setPolicyConfirmed(event.target.checked)} disabled={finalize.isPending} />
-          <span><CustomerText message="m_8e17ef38c89a" /><span aria-hidden="true" className="text-destructive">*</span></span>
+          <NativeCheckbox id="pair-finalization-policy"   checked={policyConfirmed} onChange={event => setPolicyConfirmed(event.target.checked)} disabled={finalize.isPending} />
+          <RequiredFieldName><CustomerText message="m_8e17ef38c89a" /></RequiredFieldName>
         </label>
         {finalize.error ? <Alert variant="destructive"><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(finalize.error, 'Review the saved pairs and try again.')} />}</AlertDescription></Alert> : null}
         <RequiredDialogFooter>

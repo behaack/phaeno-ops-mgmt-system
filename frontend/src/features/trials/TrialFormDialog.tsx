@@ -1,3 +1,4 @@
+import { NativeCheckbox } from '#/components/ui/native-checkbox'
 import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useBlocker } from '@tanstack/react-router'
@@ -84,7 +85,7 @@ export function TrialFormDialog({ title, description, fields, children, onClose,
             {field.help ? <p id={`trial-${field.name}-help`} className="text-xs text-muted-foreground">{field.help}</p> : null}
             {field.type === 'textarea' ? <Textarea id={`trial-${field.name}`} rows={3} required={field.required} {...inputProps(field.name)} aria-invalid={Boolean(fieldError)} aria-describedby={describedBy} />
               : field.type === 'select' ? <Controller name={field.name} control={form.control} render={({ field: control }) => <SearchableSelect portal id={`trial-${field.name}`} value={control.value ?? ''} onValueChange={value => updateChoice(field.name, value)} inputRef={control.ref} aria-invalid={Boolean(fieldError)} resultsLabel={`${field.label} choices`} selectionMessage="Select an option from the results." noMatchMessage="No matching choices." narrowMessage={count => `Keep typing to narrow ${count} choices.`} options={field.options ?? []} placeholder="Search and select…" emptyMessage="No matching choices." required={field.required} aria-describedby={describedBy} />} />
-                : field.type === 'checkbox' ? <Controller name={field.name} control={form.control} render={({ field: control }) => <input id={`trial-${field.name}`} type="checkbox" required={field.required} ref={control.ref} checked={control.value === 'yes'} onChange={event => updateChoice(field.name, event.target.checked ? 'yes' : '')} onBlur={control.onBlur} aria-invalid={Boolean(fieldError)} aria-describedby={describedBy} className="block size-5 cursor-pointer accent-primary" />} />
+                : field.type === 'checkbox' ? <Controller name={field.name} control={form.control} render={({ field: control }) => <NativeCheckbox id={`trial-${field.name}`}  required={field.required} ref={control.ref} checked={control.value === 'yes'} onChange={event => updateChoice(field.name, event.target.checked ? 'yes' : '')} onBlur={control.onBlur} aria-invalid={Boolean(fieldError)} aria-describedby={describedBy} className="block accent-primary" />} />
                   : <Input id={`trial-${field.name}`} required={field.required} type={field.type ?? 'text'} min={field.min} max={field.max} step={field.type === 'number' ? 'any' : undefined} {...inputProps(field.name)} aria-invalid={Boolean(fieldError)} aria-describedby={describedBy} />}
             <FieldError id={`trial-${field.name}-error`}>{fieldError?.message}</FieldError>
           </div>})}

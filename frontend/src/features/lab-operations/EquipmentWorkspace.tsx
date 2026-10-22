@@ -1,3 +1,4 @@
+import { PageTitle } from '#/components/ui/page-header'
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { RefreshCw } from 'lucide-react'
@@ -21,7 +22,7 @@ export function EquipmentWorkspace() {
   return <main className="page-wrap space-y-5 px-4 py-8">
     <header className="flex flex-wrap items-start justify-between gap-4">
       <div className="max-w-3xl">
-        <h1 className="text-3xl font-semibold">Equipment</h1>
+        <PageTitle>Equipment</PageTitle>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">Manage laboratory assets, availability, and calibration records.</p>
       </div>
       <Button type="button" variant="outline" disabled={!enabled || query.isFetching} onClick={() => void refresh()}><RefreshCw data-icon="inline-start" /> Refresh</Button>

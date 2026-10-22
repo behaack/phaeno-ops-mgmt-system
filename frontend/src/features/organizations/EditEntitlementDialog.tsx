@@ -1,3 +1,4 @@
+import { Field as PortalField } from '#/components/ui/field'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { NativeSelect } from '#/components/ui/native-select'
 import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
@@ -97,7 +98,7 @@ export function EditEntitlementDialog({
           noValidate
           onSubmit={form.handleSubmit(onSubmit)}
         >
-          <div className="grid gap-1.5">
+          <PortalField >
             <Label htmlFor="edit-entitlement-service"><CustomerSourceText source={"Service"} /></Label>
             <Input
               id="edit-entitlement-service"
@@ -105,8 +106,8 @@ export function EditEntitlementDialog({
               disabled
               readOnly
             />
-          </div>
-          <div className="grid gap-1.5">
+          </PortalField>
+          <PortalField >
             <Label htmlFor="edit-entitlement-from">
               <RequiredFieldName><CustomerSourceText source={"Effective from"} /></RequiredFieldName>
             </Label>
@@ -115,16 +116,16 @@ export function EditEntitlementDialog({
               type="datetime-local"
               {...form.register('effectiveFrom')}
             />
-          </div>
-          <div className="grid gap-1.5">
+          </PortalField>
+          <PortalField >
             <Label htmlFor="edit-entitlement-to"><CustomerSourceText source={"Effective to"} /></Label>
             <Input
               id="edit-entitlement-to"
               type="datetime-local"
               {...form.register('effectiveTo')}
             />
-          </div>
-          <div className="grid gap-1.5">
+          </PortalField>
+          <PortalField >
             <Label htmlFor="edit-entitlement-status">
               <RequiredFieldName><CustomerSourceText source={"Service configuration"} /></RequiredFieldName>
             </Label>
@@ -137,8 +138,8 @@ export function EditEntitlementDialog({
               <option value="Ready"><CustomerSourceText source={"Ready"} /></option>
               <option value="Blocked"><CustomerSourceText source={"Blocked"} /></option>
             </NativeSelect>
-          </div>
-          <div className="grid gap-1.5">
+          </PortalField>
+          <PortalField >
             <Label htmlFor="edit-entitlement-source">
               <CustomerSourceText source={"Approved source request"} />
             </Label>
@@ -157,7 +158,7 @@ export function EditEntitlementDialog({
             <p className="text-xs text-muted-foreground">
               <CustomerSourceText source={"Only approved or applied requests for this service are available."} />
             </p>
-          </div>
+          </PortalField>
           <div className="grid gap-1.5">
             <Label htmlFor="edit-entitlement-notes"><CustomerSourceText source={"Internal notes"} /></Label>
             <textarea

@@ -1,3 +1,4 @@
+import { RecordLink } from '#/components/ui/record-link'
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Pencil, Plus } from "lucide-react";
@@ -105,16 +106,15 @@ export function CrmOpportunityContacts({
               key={association.id}
               className="flex items-center justify-between gap-3 rounded-lg border p-3"
             >
-              <Link
-                to="/crm/contacts/$contactId"
+              <span className="min-w-0"><RecordLink asChild><Link to="/crm/contacts/$contactId"
                 params={{ contactId: association.contactId }}
-                className="min-w-0 hover:underline"
+
               >
                 <span className="font-medium">{association.contactName}</span>
                 <span className="ml-2 text-xs text-muted-foreground">
                   {association.role ?? "Role not recorded"}
                 </span>
-              </Link>
+              </Link></RecordLink></span>
               <div className="flex shrink-0 items-center gap-2">
                 {association.isPrimary ? <Badge>Primary</Badge> : null}
                 {!association.isActive ? (

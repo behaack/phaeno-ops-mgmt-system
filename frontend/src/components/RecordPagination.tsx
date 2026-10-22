@@ -1,6 +1,6 @@
-import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
+import { useCustomerText } from '#/features/customer-i18n/customer-text'
 import { useNavigate, useRouterState } from '@tanstack/react-router'
-import { Button } from './ui/button'
+import { PaginationFooter } from './ui/pagination-footer'
 
 export type RecordListSearch = { listPage?: number; listSearch?: string; listStatus?: string }
 export function parseRecordListSearch(search: Record<string, unknown>): RecordListSearch {
@@ -23,11 +23,8 @@ export function RecordPagination({ data, busy, onPage, label }: { data?: { total
 
   if (!data) return null
   const pages = Math.max(1, Math.ceil(data.totalCount / data.pageSize))
-  return <nav aria-label={label ?? __customerText('m_7ba552e96e1d')} className="flex flex-wrap items-center justify-between gap-3 py-3">
-    <p className="text-sm text-muted-foreground">{__customerText(data.totalCount === 1 ? 'pagination_one' : 'pagination_many', { p0: data.totalCount, p1: data.page, p2: pages })}</p>
-    <div className="flex gap-2">{data.page > pages ? <Button variant="outline" disabled={busy} onClick={() => onPage(1)}><CustomerText message="m_0bdbb750609c" /></Button> : null}
-      <Button variant="outline" disabled={busy || data.page <= 1} onClick={() => onPage(data.page - 1)}><CustomerText message="m_a57b08a480b8" /></Button>
-      <Button variant="outline" disabled={busy || data.page >= pages} onClick={() => onPage(data.page + 1)}><CustomerText message="m_1ff57a29d7c9" /></Button>
-    </div>
-  </nav>
+  return <PaginationFooter label={label ?? __customerText('m_7ba552e96e1d')}
+    summary={__customerText(data.totalCount === 1 ? 'pagination_one' : 'pagination_many', { p0: data.totalCount, p1: data.page, p2: pages })}
+    busy={busy} hasPrevious={data.page > 1} hasNext={data.page < pages}
+    onFirst={data.page > pages ? ()=>onPage(1) : undefined} onPrevious={()=>onPage(data.page-1)} onNext={()=>onPage(data.page+1)} />
 }

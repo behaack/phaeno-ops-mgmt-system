@@ -1,3 +1,4 @@
+import { RequiredLegend } from '#/components/ui/required-field'
 import { useState } from "react";
 
 import { apiErrorMessage, type CrmCompanyContact } from "#/api/crm";
@@ -116,9 +117,7 @@ export function CrmCompanyContactEditDialog({
             </div>
           </div>
           <DialogFooter>
-            <span className="mr-auto text-xs text-muted-foreground">
-              * Required
-            </span>
+            <RequiredLegend className="mr-auto" />
             <Button
               type="button"
               variant="outline"

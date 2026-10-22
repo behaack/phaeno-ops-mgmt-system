@@ -1,3 +1,4 @@
+import { NativeSelect } from '#/components/ui/native-select'
 import { useState } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 import type { LabStep } from '#/api/lab-steps'
@@ -20,7 +21,7 @@ export function LabStepPicker({ catalog, onAdd }: { catalog: LabStep[]; onAdd: (
     const savedName = deserializeProtocolDefinition(v.definitionJson)?.steps[0]?.name
     return { id: v.id, label: `${s.name} · v${v.stepVersion}${savedName && savedName !== s.name ? ` (saved as ${savedName})` : ''}` }
   }))
-  return <div className="flex flex-wrap items-end gap-2 rounded-lg border p-3"><div className="min-w-48 flex-1"><PreparationField label="Approved Lab step version" id="catalog-step"><select id="catalog-step" className={prepSelectClass} value={id} onChange={e => setId(e.target.value)}><option value="">Choose an exact version…</option>{choices.map(v => <option key={v.id} value={v.id}>{v.label}</option>)}</select></PreparationField></div><Button type="button" variant="outline" disabled={!id} onClick={() => { onAdd(resolveCatalogStep(catalog, id)); setId('') }}>Add Lab step</Button>{!choices.length ? <p className="w-full text-sm text-muted-foreground">Approve a Lab step version in Lab configuration before selecting it here.</p> : null}</div>
+  return <div className="flex flex-wrap items-end gap-2 rounded-lg border p-3"><div className="min-w-48 flex-1"><PreparationField label="Approved Lab step version" id="catalog-step"><NativeSelect id="catalog-step" className={prepSelectClass} value={id} onChange={e => setId(e.target.value)}><option value="">Choose an exact version…</option>{choices.map(v => <option key={v.id} value={v.id}>{v.label}</option>)}</NativeSelect></PreparationField></div><Button type="button" variant="outline" disabled={!id} onClick={() => { onAdd(resolveCatalogStep(catalog, id)); setId('') }}>Add Lab step</Button>{!choices.length ? <p className="w-full text-sm text-muted-foreground">Approve a Lab step version in Lab configuration before selecting it here.</p> : null}</div>
 }
 
 export function PinnedLabStep({ form, index, catalog, total, onReplace, onMove, onDuplicate, onRemove, onPreview }: {
@@ -37,7 +38,7 @@ export function PinnedLabStep({ form, index, catalog, total, onReplace, onMove, 
     { label: 'Move up', disabled: index === 0, onClick: () => onMove(index - 1) }, { label: 'Move down', disabled: index === total - 1, onClick: () => onMove(index + 1) },
     { label: 'Duplicate occurrence', onClick: onDuplicate }, { label: 'Remove occurrence', disabled: total === 1, onClick: onRemove },
   ]} /></CardAction></CardHeader><CardContent className="space-y-3"><p className="whitespace-pre-wrap text-sm">{current.instructions}</p>
-    <PreparationField label="Requirement in this protocol" id={`pinned-${index}-requirement`} required><select id={`pinned-${index}-requirement`} className={prepSelectClass} {...form.register(`steps.${index}.requirement`)}><option value="required">Required</option><option value="optional">Optional</option><option value="conditional">Conditional</option></select></PreparationField>
+    <PreparationField label="Requirement in this protocol" id={`pinned-${index}-requirement`} required><NativeSelect id={`pinned-${index}-requirement`} className={prepSelectClass} {...form.register(`steps.${index}.requirement`)}><option value="required">Required</option><option value="optional">Optional</option><option value="conditional">Conditional</option></NativeSelect></PreparationField>
     {current.requirement === 'conditional' ? <PreparationField label="When this step applies" id={`pinned-${index}-condition`} required error={form.formState.errors.steps?.[index]?.condition?.message}><Input id={`pinned-${index}-condition`} {...form.register(`steps.${index}.condition`)} /></PreparationField> : null}
     <p className="text-xs text-muted-foreground">Occurrence: {current.key}. Earlier steps remain ordered prerequisites.</p>
   </CardContent></Card>

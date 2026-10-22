@@ -1,3 +1,4 @@
+import { RecordLink } from '#/components/ui/record-link'
 import { BackLink } from '#/components/ui/back-link'
 import { useState, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
@@ -54,7 +55,7 @@ export function MaterialLotPage({ materialLotId }: { materialLotId: string }) {
         </PreparationPanel>
         {lot.kind === 'PreparedReagent' || lot.components.length > 0 ? <PreparationPanel title="Source component lots" description="The source lots and quantities recorded when this reagent was prepared.">
           {lot.components.length ? <ul className="divide-y">{lot.components.map(component => <li key={component.id} className="flex flex-wrap items-start justify-between gap-3 py-3">
-            <div className="min-w-0"><Link to="/purchasing/materials/$materialLotId" params={{ materialLotId: component.componentMaterialLotId }} className="font-medium text-primary underline underline-offset-4 wrap-anywhere">{component.materialName} · {component.lotNumber}</Link><p className="mt-1 text-sm text-muted-foreground">{component.materialKey}</p></div>
+            <div className="min-w-0"><span className="wrap-anywhere"><RecordLink asChild><Link to="/purchasing/materials/$materialLotId" params={{ materialLotId: component.componentMaterialLotId }} >{component.materialName} · {component.lotNumber}</Link></RecordLink></span><p className="mt-1 text-sm text-muted-foreground">{component.materialKey}</p></div>
             <p className="text-sm">{component.quantity} {component.quantityUnit}</p>
           </li>)}</ul> : <p className="text-sm text-muted-foreground">No source component lots were recorded.</p>}
         </PreparationPanel> : null}

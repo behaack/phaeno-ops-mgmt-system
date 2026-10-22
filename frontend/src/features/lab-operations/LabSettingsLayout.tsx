@@ -1,3 +1,4 @@
+import { PageTitle } from '#/components/ui/page-header'
 import { BackLink } from '#/components/ui/back-link'
 import { useConfigurationDiscovery, type ConfigurationDiscovery } from './configuration-discovery'
 import { Link, useNavigate } from '@tanstack/react-router'
@@ -9,7 +10,7 @@ import { labConfigurationTabs, type LabConfigurationTab } from './lab-configurat
 
 export function LabSettingsHeader() {
   return <div className="max-w-3xl">
-    <h1 className="text-3xl font-semibold">Lab Settings</h1>
+    <PageTitle>Lab Settings</PageTitle>
     <p className="mt-2 text-sm leading-6 text-muted-foreground">Maintain complete protocols and workflows, duration estimates, holidays, tray formats, and storage locations.</p>
   </div>
 }

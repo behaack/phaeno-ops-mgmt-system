@@ -1,9 +1,12 @@
+import { Field as PortalField } from '#/components/ui/field'
+import { NativeSelect } from '#/components/ui/native-select'
 import { useWorkflowDiscovery } from './configuration-discovery'
 import { procedureDetailRoute } from './procedure-navigation'
 import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 import { WorkflowApprovalOverrideDialog } from './WorkflowApprovalOverrideDialog'
 import { useMutation } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
+import { RecordLink } from '#/components/ui/record-link'
 import { Plus, ShieldCheck } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 
@@ -124,7 +127,7 @@ export function ServiceWorkflowList({
               return (
                 <li key={workflow.id} className="py-4">
                   <div className="flex items-start justify-between gap-3">
-                    <h3 className="min-w-0 wrap-anywhere font-medium"><Link className="text-primary hover:underline" to={procedureDetailRoute} params={{ kind: 'library', recordId: workflow.id }} search={discovery}>{workflow.name}</Link></h3>
+                    <h3 className="min-w-0 wrap-anywhere font-medium"><RecordLink asChild><Link to={procedureDetailRoute} params={{ kind: 'library', recordId: workflow.id }} search={discovery}>{workflow.name}</Link></RecordLink></h3>
                     {canManage && !openCandidate ? (
                       <Button asChild size="sm" variant="outline" className="shrink-0">
                         <Link to="/lab-operations/workflows/$workflowId/versions/new" params={{ workflowId: workflow.id }} search={{ ...discovery, section: undefined }}>
@@ -281,9 +284,9 @@ function CreateServiceWorkflowDialog({
             <DialogDescription>Create the single controlled workflow identity for a marketed laboratory service. Add its ordered protocol stages next.</DialogDescription>
           </DialogHeader>
           <div className="my-5 grid gap-4">
-            <div>
+            <PortalField>
               <Label htmlFor="workflow-service"><RequiredFieldName>Marketed service</RequiredFieldName></Label>
-              <select id="workflow-service" className="mt-2 h-9 w-full rounded-lg border bg-background px-3 text-sm" value={serviceKey} required onChange={(event) => {
+              <NativeSelect id="workflow-service" className="w-full" value={serviceKey} required onChange={(event) => {
                 const next = event.target.value
                 setServiceKey(next)
                 const service = marketedServices.find((item) => item.serviceKey === next)
@@ -291,13 +294,13 @@ function CreateServiceWorkflowDialog({
               }}>
                 <option value="">Select…</option>
                 {marketedServices.map((service) => <option key={service.serviceKey} value={service.serviceKey}>{service.name}</option>)}
-              </select>
+              </NativeSelect>
               {marketedServices.length === 0 ? <p className="mt-2 text-sm text-muted-foreground">Every active marketed lab service already has a workflow.</p> : null}
-            </div>
-            <div>
+            </PortalField>
+            <PortalField>
               <Label htmlFor="workflow-name"><RequiredFieldName>Workflow name</RequiredFieldName></Label>
-              <Input id="workflow-name" className="mt-2" value={name} required onChange={(event) => setName(event.target.value)} />
-            </div>
+              <Input id="workflow-name"  value={name} required onChange={(event) => setName(event.target.value)} />
+            </PortalField>
             <div>
               <Label htmlFor="workflow-description">Description</Label>
               <textarea id="workflow-description" className="mt-2 min-h-24 w-full rounded-lg border bg-background px-3 py-2 text-sm" value={description} onChange={(event) => setDescription(event.target.value)} />

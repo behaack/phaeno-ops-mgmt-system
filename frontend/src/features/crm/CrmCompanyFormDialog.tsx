@@ -164,7 +164,7 @@ function CompanyForm({
             <Field id={`${formId}-lifecycle`} label="Relationship stage">
               <NativeSelect
                 id={`${formId}-lifecycle`}
-                className="rounded-md border bg-background px-3 text-sm"
+
                 {...form.register("lifecycleState")}
               >
                 <option value="Target">Target</option>

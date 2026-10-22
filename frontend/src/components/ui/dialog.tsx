@@ -73,6 +73,7 @@ function DialogContent({
 
   const arrangedChildren = arrangeDialogChildren(children)
   const openerRef = React.useRef<HTMLElement | null>(null)
+  const ownContentRef = React.useRef<Element | null>(null)
   const returnFocus = React.useContext(DialogReturnFocusContext)
 
   return (
@@ -113,6 +114,7 @@ function DialogContent({
           }
         }}
         onOpenAutoFocus={(event) => {
+          ownContentRef.current = event.target instanceof Element ? event.target : null
           const active = document.activeElement
           openerRef.current = active instanceof HTMLElement && active !== document.body ? active : null
           onOpenAutoFocus?.(event)
@@ -122,20 +124,24 @@ function DialogContent({
           // its active focus instead of returning to the old trigger and closing
           // the newly opened menu/dialog through an outside-focus event.
           const active = document.activeElement
-          if (active instanceof Element && active.closest('[data-state="open"][data-slot="dialog-content"], [data-state="open"][data-slot="dropdown-menu-content"]')) {
+          const activeOverlay = active instanceof Element ? active.closest('[data-state="open"][data-slot="dialog-content"], [data-state="open"][data-slot="dropdown-menu-content"]') : null
+          const openingMenu = [...document.querySelectorAll('[data-slot="dropdown-menu-trigger"][aria-expanded="true"]')].some(trigger=>!ownContentRef.current?.contains(trigger))
+          if (openingMenu || activeOverlay && activeOverlay !== ownContentRef.current) {
             event.preventDefault()
             return
           }
           onCloseAutoFocus?.(event)
-          if (!event.defaultPrevented && openerRef.current?.isConnected) {
+          if (!event.defaultPrevented && returnFocus) {
+            // A loading dialog may hand off to a form; retain the new dialog's focus.
+            if ([...document.querySelectorAll('[data-slot="dialog-content"][data-state="open"]')].some(dialog=>dialog !== ownContentRef.current)) { event.preventDefault(); return }
+            // An explicitly named surviving trigger wins over a menu item that is
+            // still connected only for its exit animation.
+            const candidates=[returnFocus.target,returnFocus.fallbackId?document.getElementById(returnFocus.fallbackId):null,openerRef.current]
+            const target=candidates.find(node=>node?.isConnected&&!node.closest('[data-state="closed"][data-slot="dropdown-menu-content"], [data-state="closed"][data-slot="dialog-content"]'))
+            if(target){event.preventDefault();target.focus()}
+          } else if (!event.defaultPrevented && openerRef.current?.isConnected) {
             event.preventDefault()
             openerRef.current.focus()
-          } else if (!event.defaultPrevented && returnFocus) {
-            event.preventDefault()
-            // A loading dialog may hand off to a form; retain the new dialog's focus.
-            if (document.querySelector('[data-slot="dialog-content"][data-state="open"]')) return
-            const target = returnFocus.target?.isConnected ? returnFocus.target : returnFocus.fallbackId ? document.getElementById(returnFocus.fallbackId) : null
-            target?.focus()
           }
         }}
         onEscapeKeyDown={(event) => {

@@ -47,6 +47,7 @@ export default tseslint.config(
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
       'jsx-a11y/anchor-is-valid': 'off',
+      'jsx-a11y/label-has-associated-control': ['error', { controlComponents: ['NativeCheckbox', 'NativeSelect'], depth: 3 }],
     },
   },
   {

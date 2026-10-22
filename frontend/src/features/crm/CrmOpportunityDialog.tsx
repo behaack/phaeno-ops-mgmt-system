@@ -1,3 +1,4 @@
+import { RequiredLegend } from '#/components/ui/required-field'
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { listCrmOpportunityDepartments } from "#/api/crm";
@@ -259,9 +260,7 @@ export function CrmOpportunityDialog({
             </Field>
           </div>
           <DialogFooter>
-            <span className="mr-auto text-xs text-muted-foreground">
-              * Required
-            </span>
+            <RequiredLegend className="mr-auto" />
             <Button
               type="button"
               variant="outline"

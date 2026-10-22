@@ -194,7 +194,7 @@ describe('preparation access feedback', () => {
     await screen.findByText('Tube on page 2')
     fireEvent.change(screen.getByLabelText('Search by tube barcode or job'), { target: { value: 'JOB-2' } })
     await waitFor(() => expect(state.tubes).toHaveBeenLastCalledWith('saved-preparation', 'JOB-2', 'BOX-2', 1))
-    fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Clear all' }))
     await screen.findByText('Tube on page 1')
     expect(screen.getByLabelText('Freezer box barcode')).toHaveProperty('value', '')
     expect(screen.getByLabelText('Search by tube barcode or job')).toHaveProperty('value', '')

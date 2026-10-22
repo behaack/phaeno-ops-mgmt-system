@@ -1,3 +1,4 @@
+import { formatDisplayDate } from '#/lib/display-format'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { useState, type ReactNode } from 'react'
@@ -418,11 +419,7 @@ function datasetSummary(
   return `Latest assignment: ${latest.name}, version ${latest.versionNumber}.`
 }
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' }).format(
-    new Date(value),
-  )
-}
+function formatDate(value: string) { return formatDisplayDate(value) }
 
 function humanize(value: string) {
   return value.replace(/([a-z])([A-Z])/g, '$1 $2')

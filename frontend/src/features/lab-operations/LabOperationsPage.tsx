@@ -1,3 +1,6 @@
+import { formatDisplayTimestamp } from '#/lib/display-format'
+import { RecordLink } from '#/components/ui/record-link'
+import { PageTitle } from '#/components/ui/page-header'
 import { useConfigurationDiscovery, useWorkflowDiscovery } from './configuration-discovery'
 import { procedureDetailRoute } from './procedure-navigation'
 import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
@@ -113,7 +116,7 @@ export function LabOperationsPage({ section, shipmentId, receiptTab, onReceiptTa
         <div className={configuring ? "page-wrap px-4 pt-6 lg:pt-0" : "page-wrap px-4"}>
           <section className="mb-6 flex flex-wrap items-start justify-between gap-4">
             {configuring ? <LabSettingsHeader /> : <div className="max-w-3xl">
-              <h1 className="text-3xl font-semibold">Lab operations</h1>
+              <PageTitle>Lab operations</PageTitle>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
                 Internal kit fulfillment, receipt and accession, protocol execution, data assembly,
                 cross-order batching, exceptions, and release readiness.
@@ -313,7 +316,7 @@ export function ProtocolList({ protocols, canManage, canOverride = false, actorI
                 <section key={protocol.id} className="rounded-lg border bg-background p-4 shadow-xs">
                   <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
                     <div className="min-w-0 wrap-anywhere">
-                      <h3 className="font-medium"><Link className="text-primary hover:underline" to={procedureDetailRoute} params={{ kind: 'protocol', recordId: protocol.id }} search={{ ...discovery, revision: displayedVersion?.protocolVersion }}>{protocol.name}</Link></h3>
+                      <h3 className="font-medium"><RecordLink asChild><Link to={procedureDetailRoute} params={{ kind: 'protocol', recordId: protocol.id }} search={{ ...discovery, revision: displayedVersion?.protocolVersion }}>{protocol.name}</Link></RecordLink></h3>
                       {protocol.description ? (
                         <p className="mt-1 text-sm text-muted-foreground">{protocol.description}</p>
                       ) : null}
@@ -321,7 +324,7 @@ export function ProtocolList({ protocols, canManage, canOverride = false, actorI
                         <Status value={displayedVersion
                             ? `${protocol.retiredAtUtc ? 'Retired' : protocolVersionStatusLabel(displayedVersion.status)} v${displayedVersion.protocolVersion}`
                             : protocol.retiredAtUtc ? 'Retired' : 'Setup incomplete'} />
-                        {draft && approvedVersion ? <Link className="text-sm text-primary underline" to={procedureDetailRoute} params={{ kind: 'protocol', recordId: protocol.id }} search={{ ...discovery, revision: draft.protocolVersion }}>Pending Draft v{draft.protocolVersion}</Link> : null}
+                        {draft && approvedVersion ? <RecordLink asChild><Link to={procedureDetailRoute} params={{ kind: 'protocol', recordId: protocol.id }} search={{ ...discovery, revision: draft.protocolVersion }}>Pending Draft v{draft.protocolVersion}</Link></RecordLink> : null}
                       </div>
                       {!hasDefinition ? (
                         <p className="mt-2 text-xs text-muted-foreground">
@@ -340,8 +343,7 @@ export function ProtocolList({ protocols, canManage, canOverride = false, actorI
                           <DropdownMenuLabel>Protocol actions</DropdownMenuLabel>
                           {draft ? (
                             <DropdownMenuItem asChild>
-                              <Link
-                                to="/lab-operations/protocols/$protocolId/versions/$versionId/edit"
+                              <Link to="/lab-operations/protocols/$protocolId/versions/$versionId/edit"
                                 params={{ protocolId: protocol.id, versionId: draft.id }} search={{ ...discovery, section: undefined }}
                               >
                                 <Pencil /> Edit protocol
@@ -349,8 +351,7 @@ export function ProtocolList({ protocols, canManage, canOverride = false, actorI
                             </DropdownMenuItem>
                           ) : (
                             <DropdownMenuItem asChild>
-                              <Link
-                                to="/lab-operations/protocols/$protocolId/versions/new"
+                              <Link to="/lab-operations/protocols/$protocolId/versions/new"
                                 params={{ protocolId: protocol.id }} search={{ ...discovery, section: undefined }}
                               >
                                 <Plus /> {hasDefinition ? 'Create new version' : 'Edit protocol'}
@@ -420,7 +421,7 @@ export function ProtocolList({ protocols, canManage, canOverride = false, actorI
                         {earlierVersions.map((version) => (
                           <li key={version.id} className="space-y-2 py-3">
                             <div className="flex flex-wrap items-center gap-2">
-                              <Link className="font-medium text-primary hover:underline" to={procedureDetailRoute} params={{ kind: 'protocol', recordId: protocol.id }} search={{ ...discovery, revision: version.protocolVersion }}>Revision {version.protocolVersion}</Link>
+                              <RecordLink asChild><Link to={procedureDetailRoute} params={{ kind: 'protocol', recordId: protocol.id }} search={{ ...discovery, revision: version.protocolVersion }}>Revision {version.protocolVersion}</Link></RecordLink>
                               <Status value={protocolVersionStatusLabel(version.status)} />
                             </div>
                             {version.approvalOverrideReason ? <p className="wrap-anywhere"><strong>Administrator override</strong> · {version.approvalOverrideReason}</p> : null}
@@ -643,7 +644,7 @@ export function MaterialList({ items, canManage, canApprove, onCreate, refresh }
                 className="flex items-start justify-between gap-3 rounded-lg border bg-background p-4 shadow-xs focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
               >
                 <div className="min-w-0 flex-1">
-                  <Link className="font-medium text-primary underline underline-offset-4 wrap-anywhere" to="/purchasing/materials/$materialLotId" params={{ materialLotId: item.id }}>{item.name} · {item.lotNumber}</Link>
+                  <span className="wrap-anywhere"><RecordLink asChild><Link to="/purchasing/materials/$materialLotId" params={{ materialLotId: item.id }}>{item.name} · {item.lotNumber}</Link></RecordLink></span>
                   <p className="wrap-anywhere text-xs text-muted-foreground">
                     {item.quantityHoldReason ? 'Quantity reconciliation required · ' : ''}{item.materialKey} · {item.availableQuantity} {item.quantityUnit} · {item.storageLocation}
                     {item.supplier ? ` · ${item.supplier}` : ''}
@@ -699,7 +700,7 @@ export function MaterialList({ items, canManage, canApprove, onCreate, refresh }
             </DialogHeader>
 
             <div className="my-5 grid gap-4">
-              <div className="grid gap-1.5">
+              <FormField >
                 <Label htmlFor="material-qc-date">
                   <RequiredFieldName>QC date</RequiredFieldName>
                 </Label>
@@ -714,7 +715,7 @@ export function MaterialList({ items, canManage, canApprove, onCreate, refresh }
                 {qcAttempted && !qcPerformedOn ? (
                   <p className="text-sm text-destructive" role="alert">Enter the QC date.</p>
                 ) : null}
-              </div>
+              </FormField>
 
               <fieldset className="grid gap-3" aria-invalid={qcAttempted && !qcOutcome}>
                 <legend className="mb-1 text-sm font-medium">
@@ -901,7 +902,7 @@ function CreateRecordDialog({ kind, onClose, onSaved }: { kind: SimpleCreateKind
   </form></DialogContent></Dialog>
 }
 
-function Field({ label, value = '', onChange, required, type = 'text' }: { label: string; value?: string; onChange: React.ChangeEventHandler<HTMLInputElement>; required?: boolean; type?: string }) { const id = `lab-${label.toLowerCase().replaceAll(' ', '-')}`; return <div><Label htmlFor={id}>{required ? <RequiredFieldName>{label}</RequiredFieldName> : label}</Label><Input id={id} className="mt-2" type={type} value={value ?? ''} onChange={onChange} required={required} /></div> }
+function Field({ label, value = '', onChange, required, type = 'text' }: { label: string; value?: string; onChange: React.ChangeEventHandler<HTMLInputElement>; required?: boolean; type?: string }) { const id = `lab-${label.toLowerCase().replaceAll(' ', '-')}`; return <FormField><Label htmlFor={id}>{required ? <RequiredFieldName>{label}</RequiredFieldName> : label}</Label><Input id={id}  type={type} value={value ?? ''} onChange={onChange} required={required} /></FormField> }
 function TextField({ label, value = '', onChange }: { label: string; value?: string; onChange: React.ChangeEventHandler<HTMLTextAreaElement> }) { const id = `lab-${label.toLowerCase().replaceAll(' ', '-')}`; return <div className="sm:col-span-2"><Label htmlFor={id}>{label}</Label><textarea id={id} className="mt-2 min-h-20 w-full rounded-lg border bg-background px-3 py-2 text-sm" value={value ?? ''} onChange={onChange} /></div> }
 function Status({ value, prefix }: { value: string; prefix?: string }) { return <span className="rounded-full border bg-muted px-2.5 py-1 text-xs font-medium">{prefix ? `${prefix}: ` : ''}{humanize(value)}</span> }
 function protocolVersionStatusLabel(status: string) { if (status === 'Approved' || status === 'Active') return 'Approved'; if (status === 'Retired') return 'Superseded'; return status }
@@ -909,7 +910,7 @@ function Empty({ children }: { children: React.ReactNode }) { return <p classNam
 function AccessDenied() { return <main className="page-wrap px-4 py-8"><Alert variant="destructive"><AlertTitle>Lab operations unavailable</AlertTitle><AlertDescription>An assigned Phaeno laboratory role is required.</AlertDescription></Alert></main> }
 function humanize(value: string) { return value.replace(/([a-z])([A-Z])/g, '$1 $2').replaceAll('_', ' ').replace(/^./, (character) => character.toUpperCase()) }
 function createActionLabel(kind: Exclude<CreateKind, null>) { return `Create ${humanize(kind).toLowerCase()}` }
-function formatDate(value: string) { return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) }
+function formatDate(value: string) { return formatDisplayTimestamp(value) }
 function formatDateOnly(value: string) { return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeZone: 'UTC' }).format(new Date(`${value}T00:00:00Z`)) }
 function todayDateOnly() {
   const now = new Date()

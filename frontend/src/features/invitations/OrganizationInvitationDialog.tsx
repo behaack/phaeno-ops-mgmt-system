@@ -1,3 +1,5 @@
+import { Field as PortalField } from '#/components/ui/field'
+import { NativeCheckbox } from '#/components/ui/native-checkbox'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { useCustomerMessages } from '#/features/customer-i18n/use-customer-messages'
 import { useQuery } from '@tanstack/react-query'
@@ -124,14 +126,14 @@ function InvitationForm({ departments, pending, onDirty, onSubmit, contact, orga
           ? <p key={field} role="alert" className="text-xs text-destructive">{form.formState.errors[field]?.message}</p> : null)}
       </section> : <>
       {organizationName ? <p className="text-sm">{m.invitationOrganization}: <span className="font-medium">{organizationName}</span></p> : null}
-      {(['firstName', 'lastName', 'email'] as const).map((field) => <div key={field} className="grid gap-1.5">
+      {(['firstName', 'lastName', 'email'] as const).map((field) => <PortalField key={field} >
         <Label htmlFor={`organization-invite-${field}`}><RequiredFieldName>{m[field]}</RequiredFieldName></Label>
         <Input id={`organization-invite-${field}`} required readOnly={Boolean(contact)} type={field === 'email' ? 'email' : 'text'} maxLength={field === 'email' ? 255 : 100}
           autoComplete={field === 'firstName' ? 'given-name' : field === 'lastName' ? 'family-name' : 'email'}
           aria-invalid={Boolean(form.formState.errors[field])} aria-describedby={form.formState.errors[field] ? `organization-invite-${field}-error` : undefined}
           {...form.register(field)} />
         {form.formState.errors[field] ? <p id={`organization-invite-${field}-error`} role="alert" className="text-xs text-destructive">{form.formState.errors[field]?.message}</p> : null}
-      </div>)}
+      </PortalField>)}
       </>}
       <section aria-labelledby="invitation-access-heading" className="grid gap-3">
         <h3 id="invitation-access-heading" className="text-sm font-semibold">{m.invitationAccess}</h3>
@@ -153,13 +155,13 @@ function InvitationForm({ departments, pending, onDirty, onSubmit, contact, orga
             const intent = selected.find((value) => value.departmentId === department.id)
             return <div key={department.id} className="space-y-2">
               <label className="flex cursor-pointer items-center gap-2 text-sm">
-                <input type="checkbox" checked={Boolean(intent)} onChange={(event) => {
+                <NativeCheckbox  checked={Boolean(intent)} onChange={(event) => {
                   const availableSelected = selected.filter((value) => activeDepartments.some((entry) => entry.id === value.departmentId))
                   form.setValue('departments', event.target.checked ? [...availableSelected, { departmentId: department.id, isDepartmentAdmin: false }] : availableSelected.filter((value) => value.departmentId !== department.id), { shouldDirty: true, shouldValidate: Boolean(departmentError) })
                 }} />{department.isDefault ? m.defaultDepartment(department.name) : department.name}
               </label>
               {intent ? <label className="flex cursor-pointer items-center gap-2 pl-5 text-sm">
-                <input type="checkbox" checked={intent.isDepartmentAdmin} onChange={(event) => form.setValue('departments', selected.map((value) => value.departmentId === department.id ? { ...value, isDepartmentAdmin: event.target.checked } : value), { shouldDirty: true })} />{m.departmentAdminFor(department.name)}
+                <NativeCheckbox  checked={intent.isDepartmentAdmin} onChange={(event) => form.setValue('departments', selected.map((value) => value.departmentId === department.id ? { ...value, isDepartmentAdmin: event.target.checked } : value), { shouldDirty: true })} />{m.departmentAdminFor(department.name)}
               </label> : null}
             </div>
           })}

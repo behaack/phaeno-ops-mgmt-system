@@ -1,3 +1,4 @@
+import { Field as PortalField } from '#/components/ui/field'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { useCustomerMessages } from '#/features/customer-i18n/use-customer-messages'
 import { NativeSelect } from '#/components/ui/native-select'
@@ -94,13 +95,13 @@ export function DepartmentSettingsDialog({ target, pending, error, onClose, onSu
                 {fieldError ? <p id={`department-${name}-error`} role="alert" className="text-xs text-destructive">{fieldError}</p> : null}
               </div>
             })}
-            <div className="grid gap-1.5">
+            <PortalField >
               <Label htmlFor="department-po">{m.purchaseOrderRule}</Label>
-              <NativeSelect id="department-po" className="w-full cursor-pointer rounded-lg border border-input bg-background px-3 text-sm" {...form.register('purchaseOrderRequired')}>
+              <NativeSelect id="department-po" className="w-full" {...form.register('purchaseOrderRequired')}>
                 <option value="inherit">{m.inheritPo}</option>
                 <option value="required">{m.required}</option><option value="optional">{m.optional}</option>
               </NativeSelect>
-            </div>
+            </PortalField>
           </fieldset>
           <RequiredDialogFooter>
             <Button type="button" variant="outline" disabled={pending} onClick={close}>{m.cancel}</Button>

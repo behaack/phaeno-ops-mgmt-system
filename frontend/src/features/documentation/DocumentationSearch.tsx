@@ -1,3 +1,8 @@
+import { ClearFiltersButton } from '#/components/ui/clear-filters-button'
+import { Field as PortalField } from '#/components/ui/field'
+import { NativeSelect } from '#/components/ui/native-select'
+import { RecordLink } from '#/components/ui/record-link'
+import { PageTitle } from '#/components/ui/page-header'
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import { BackLink } from '#/components/ui/back-link'
 import { useEffect, useRef, useState } from 'react'
@@ -14,7 +19,7 @@ import { useDocumentationMessages } from './documentation-localization'
 import { documentationSearchParams, useDocumentationSearch, type DocumentationSearchParams } from './documentation-search'
 
 const linkClass = 'cursor-pointer rounded-sm text-primary underline underline-offset-4 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50'
-const selectClass = 'h-10 w-full cursor-pointer rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50'
+const selectClass = "w-full"
 
 function useSearchLocation() {
   return useRouterState({ select: state => ({ pathname: state.location.pathname, params: documentationSearchParams(state.location.search) }) })
@@ -60,23 +65,23 @@ export function DocumentationSearchBar({ audience }: { audience: DocumentationAu
             ['topic', messages.topic, 'topics', [...new Set(entries.flatMap(entry => entry.topicIds))]],
             ['workflow', messages.workflow, 'workflows', [...new Set(entries.flatMap(entry => entry.workflowIds))]],
             ['contentType', messages.contentType, 'contentTypes', [...new Set(entries.map(entry => entry.contentType))]],
-          ] as const).map(([field, label, taxonomy, ids]) => <div key={field}>
+          ] as const).map(([field, label, taxonomy, ids]) => <PortalField key={field}>
             <Label htmlFor={`documentation-${field}`} className="mb-2 block">{label}</Label>
-            <select id={`documentation-${field}`} className={selectClass} value={params[field] ?? ''} onChange={event => go({ [field]: event.target.value || undefined, page: 1 })}>
+            <NativeSelect id={`documentation-${field}`} className={selectClass} value={params[field] ?? ''} onChange={event => go({ [field]: event.target.value || undefined, page: 1 })}>
               <option value="">{messages.all}</option>
               {[...ids].sort().map(id => {
                 const count = facets?.[taxonomy].find(facet => facet.id === id)?.count ?? 0
                 return <option key={id} value={id}>{documentationCatalog.taxonomy[taxonomy][id]['en-US']}{facets ? ` (${count})` : ''}</option>
               })}
-            </select>
-          </div>)}
+            </NativeSelect>
+          </PortalField>)}
         </div> : null}
         {activeFilters ? <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
           {[['topic', 'topics'], ['workflow', 'workflows'], ['contentType', 'contentTypes']].map(([field, group]) => {
             const value = params[field as keyof DocumentationSearchParams]
             return typeof value === 'string' && value ? <span key={field} className="rounded bg-muted px-2 py-1">{documentationCatalog.taxonomy[group as 'topics'][value]?.['en-US'] ?? messages.unknownFilter}</span> : null
           })}
-          <Button type="button" variant="ghost" className="cursor-pointer" onClick={() => go({ topic: undefined, workflow: undefined, contentType: undefined, page: 1 })}>{messages.clearFilters}</Button>
+          <ClearFiltersButton onClick={() => go({ topic: undefined, workflow: undefined, contentType: undefined, page: 1 })} />
         </div> : null}
       </form>
     </section>
@@ -105,7 +110,7 @@ function DocumentationSearchResults({ audience }: { audience: DocumentationAudie
   const searchStarted = params.q.trim().length >= 2 || (!params.q.trim().length && Boolean(params.topic || params.workflow || params.contentType))
   return (
     <section aria-labelledby="documentation-results-title" className="max-w-4xl">
-      <h1 id="documentation-results-title" className="text-2xl font-semibold">{messages.results}</h1>
+      <PageTitle id="documentation-results-title" >{messages.results}</PageTitle>
       <p role="status" aria-live="polite" className="my-4 text-sm text-muted-foreground">
         {query.isFetching ? messages.loading : results ? messages.count(results.metadata.total) : !searchStarted ? messages.initial : ''}
       </p>
@@ -118,7 +123,7 @@ function DocumentationSearchResults({ audience }: { audience: DocumentationAudie
         <ul className="m-0 divide-y p-0">
           {results.items.map(item => <li key={item.id} className="list-none py-5">
             <div className="mb-1 text-xs text-muted-foreground">{item.contentType} · {item.topics.join(', ')}</div>
-            <h2 className="text-lg font-medium"><Link className={linkClass} to="/docs/$audience/$slug" params={{ audience, slug: item.slug }} hash={item.anchor}>{item.title}</Link></h2>
+            <h2 className="text-lg font-medium"><RecordLink asChild><Link to="/docs/$audience/$slug" params={{ audience, slug: item.slug }} hash={item.anchor}>{item.title}</Link></RecordLink></h2>
             {item.heading && item.heading !== item.title ? <p className="mt-1 text-sm font-medium">{item.heading}</p> : null}
             <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.excerpt.map((part, i) => part.match ? <mark key={i} className="rounded bg-primary/15 text-foreground">{part.text}</mark> : <span key={i}>{part.text}</span>)}</p>
           </li>)}
@@ -155,7 +160,7 @@ export function DocumentationRelatedGuides({ entry }: { entry: DocumentationEntr
       {entry.workflowIds.map(id => <Link className={linkClass} key={id} to="/docs/search" search={{ q: '', workflow: id, page: 1 }}>{documentationCatalog.taxonomy.workflows[id]['en-US']}</Link>)}
     </div>
     {related.length ? <><h2 className="text-lg font-semibold">{messages.related}</h2><ul className="mt-3 space-y-2">
-      {related.map(guide => <li key={guide.slug}><Link className={linkClass} to="/docs/$audience/$slug" params={{ audience: guide.audience, slug: guide.slug }}>{guide.title}</Link></li>)}
+      {related.map(guide => <li key={guide.slug}><RecordLink asChild><Link to="/docs/$audience/$slug" params={{ audience: guide.audience, slug: guide.slug }}>{guide.title}</Link></RecordLink></li>)}
     </ul></> : null}
   </section>
 }

@@ -1,3 +1,6 @@
+import { useDisplayFormatters } from '#/features/customer-i18n/customer-text'
+import { DetailField, DetailSummary, DetailHeading } from '#/components/ui/detail-summary'
+import { PageTitle } from '#/components/ui/page-header'
 import { BackLink } from '#/components/ui/back-link'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
@@ -25,6 +28,7 @@ import {
 import { usePhaenoSession } from '#/features/auth/session-context'
 
 export function DatasetDetailPage({ datasetId }: { datasetId: string }) {
+  const {dateTime: formatDate, bytes: formatBytes}=useDisplayFormatters()
   const __customerText = useCustomerText()
 
   const { authProvider, session, selectedOrganizationId } = usePhaenoSession()
@@ -60,7 +64,7 @@ export function DatasetDetailPage({ datasetId }: { datasetId: string }) {
       <section className="mt-5 mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="m-0 text-3xl font-semibold leading-tight">{dataset.name}</h1>
+            <PageTitle className="m-0">{dataset.name}</PageTitle>
             <Badge variant="secondary"><CustomerText message="m_92b2c95e99f0" />{dataset.versionNumber}</Badge>
           </div>
           <p className="mt-2 text-sm text-muted-foreground">{dataset.sampleLabel}</p>
@@ -76,18 +80,18 @@ export function DatasetDetailPage({ datasetId }: { datasetId: string }) {
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_24rem]">
         <div className="space-y-5">
           <Card>
-            <CardHeader><CardTitle><CustomerText message="m_101bcb9a7cce" /></CardTitle><CardDescription>{dataset.description}</CardDescription></CardHeader>
-            <CardContent className="grid gap-4 sm:grid-cols-2">
-              <Definition label={__customerText('m_2982b337e1bf')} value={dataset.biologicalContext} />
-              <Definition label={__customerText('m_66db048fcc09')} value={dataset.assayContext} />
-              <Definition label={__customerText('m_b50c60980685')} value={dataset.analysisSummary} />
-              <Definition label={__customerText('m_7b919a414770')} value={dataset.qcStatus} />
-              <Definition label={__customerText('m_1c4b8ff60530')} value={dataset.provenance} />
-              <Definition label={__customerText('m_2ef42ec21d93')} value={formatDate(dataset.publishedAt)} />
-            </CardContent>
+            <CardHeader><CardTitle><DetailHeading><CustomerText message="m_101bcb9a7cce" /></DetailHeading></CardTitle><CardDescription>{dataset.description}</CardDescription></CardHeader>
+            <CardContent><DetailSummary>
+              <DetailField label={__customerText('m_2982b337e1bf')} value={dataset.biologicalContext} />
+              <DetailField label={__customerText('m_66db048fcc09')} value={dataset.assayContext} />
+              <DetailField label={__customerText('m_b50c60980685')} value={dataset.analysisSummary} />
+              <DetailField label={__customerText('m_7b919a414770')} value={dataset.qcStatus} />
+              <DetailField label={__customerText('m_1c4b8ff60530')} value={dataset.provenance} />
+              <DetailField label={__customerText('m_2ef42ec21d93')} value={formatDate(dataset.publishedAt)} />
+            </DetailSummary></CardContent>
           </Card>
           <Card>
-            <CardHeader><CardTitle><CustomerText message="m_477d209bc944" /></CardTitle><CardDescription><CustomerText message="m_a8517817a46e" /></CardDescription></CardHeader>
+            <CardHeader><CardTitle><DetailHeading><CustomerText message="m_477d209bc944" /></DetailHeading></CardTitle><CardDescription><CustomerText message="m_a8517817a46e" /></CardDescription></CardHeader>
             <CardContent className="space-y-3">
               {dataset.files.map((file) => (
                 <div key={file.id} className="flex flex-col gap-3 rounded-lg border bg-background p-4 sm:flex-row sm:items-start sm:justify-between">
@@ -106,7 +110,7 @@ export function DatasetDetailPage({ datasetId }: { datasetId: string }) {
         <Card className="h-fit">
           <CardHeader>
             <div className="mb-2 flex size-9 items-center justify-center rounded-lg bg-muted text-muted-foreground"><LockKeyhole aria-hidden="true" className="size-4" /></div>
-            <CardTitle><CustomerText message="m_fb95f92963b2" /></CardTitle>
+            <CardTitle><DetailHeading><CustomerText message="m_fb95f92963b2" /></DetailHeading></CardTitle>
             <CardDescription><CustomerText message="m_c95b8d1370d2" /></CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
@@ -119,20 +123,8 @@ export function DatasetDetailPage({ datasetId }: { datasetId: string }) {
   )
 }
 
-function Definition({ label, value }: { label: string; value: string }) {
-  return <div><p className="m-0 text-xs font-semibold tracking-wide text-muted-foreground uppercase">{label}</p><p className="m-0 mt-1 text-sm leading-6">{value}</p></div>
-}
+
 
 function LibraryReturnLink() {
   return <BackLink asChild><Link to="/data-library"><CustomerText message="m_844de73c889e" /></Link></BackLink>
-}
-
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
-}
-
-function formatBytes(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }

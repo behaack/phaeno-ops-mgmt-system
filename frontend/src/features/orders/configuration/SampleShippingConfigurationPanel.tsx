@@ -1,3 +1,4 @@
+import { formatDisplayTimestamp } from '#/lib/display-format'
 import { BackLink } from '#/components/ui/back-link'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { NativeSelect } from '#/components/ui/native-select'
@@ -641,7 +642,7 @@ function SampleTypeDialog({ item, configuration, onClose, onSaved }: { item: Sam
           <Field label={__customerText('m_dcd1d5223f73')} id="sample-type-name" required error={form.formState.errors.name?.message} full><Input id="sample-type-name" {...form.register('name')} /></Field>
           <Field label={__customerText('m_526e0087cc3f')} id="sample-type-description" error={form.formState.errors.description?.message} full><TextArea id="sample-type-description" rows={3} registration={form.register('description')} /></Field>
           <Field label={__customerText('m_8ca6e896cf9a')} id="sample-type-procedure" required error={form.formState.errors.shippingProcedureId?.message} full>
-            <NativeSelect id="sample-type-procedure" className="w-full cursor-pointer rounded-lg border border-input bg-background px-3 text-sm" aria-invalid={Boolean(form.formState.errors.shippingProcedureId)} {...form.register('shippingProcedureId')}>
+            <NativeSelect id="sample-type-procedure" className="w-full" aria-invalid={Boolean(form.formState.errors.shippingProcedureId)} {...form.register('shippingProcedureId')}>
               <option value=""><CustomerText message="m_328d2f8591fd" /></option>
               {latestRevisions((configuration.procedures ?? []).filter(procedure => procedure.isActive)).map(procedure => <option key={procedure.id} value={procedure.id}>{procedure.name}</option>)}
               {item?.shippingProcedureId && !(configuration.procedures ?? []).some(procedure => procedure.id === item.shippingProcedureId && procedure.isActive) ? <option value={item.shippingProcedureId}><CustomerText message="m_d94ddb75c484" /></option> : null}
@@ -649,7 +650,7 @@ function SampleTypeDialog({ item, configuration, onClose, onSaved }: { item: Sam
             <p className="mt-1 text-xs text-muted-foreground"><CustomerText message="m_b885add5406e" /></p>
           </Field>
           <Field label={__customerText('m_19006d3b69de')} id="sample-type-material" required error={form.formState.errors.materialClass?.message} full>
-            <NativeSelect id="sample-type-material" className="w-full cursor-pointer rounded-lg border border-input bg-background px-3 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none" aria-invalid={Boolean(form.formState.errors.materialClass)} {...form.register('materialClass')}>
+            <NativeSelect id="sample-type-material" className="w-full" aria-invalid={Boolean(form.formState.errors.materialClass)} {...form.register('materialClass')}>
               <option value="" disabled><CustomerText message="m_41b0a955e1f7" /></option>
               <option value="extracted_rna"><CustomerText message="m_98b86c73d915" /></option>
               <option value="enriched_rna"><CustomerText message="m_491af00c30d0" /></option>
@@ -688,7 +689,7 @@ function SampleTypeDialog({ item, configuration, onClose, onSaved }: { item: Sam
             <div className="rounded-t-lg border-b bg-muted/50 px-3 py-1.5"><h3 className="text-sm font-medium"><CustomerText message="m_26f60e3f3fdd" /></h3></div>
             <CardContent className="grid gap-3 p-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
               <Field label={__customerText('m_87adef34993e')} id="sample-type-minimum-sample" error={form.formState.errors.minimumSampleAmount?.message}><Input id="sample-type-minimum-sample" type="number" min="0" step="any" aria-invalid={Boolean(form.formState.errors.minimumSampleAmount)} {...form.register('minimumSampleAmount')} /></Field>
-              <Field label={__customerText('m_4e545960f1bf')} id="sample-type-sample-unit" error={form.formState.errors.sampleAmountUnit?.message}><NativeSelect id="sample-type-sample-unit" className="w-full cursor-pointer rounded-lg border border-input bg-background px-3 text-sm" aria-invalid={Boolean(form.formState.errors.sampleAmountUnit)} {...form.register('sampleAmountUnit')}><option value=""><CustomerText message="m_9cde46ed21c4" /></option><option value="µL">µL</option><option value="mL">mL</option></NativeSelect></Field>
+              <Field label={__customerText('m_4e545960f1bf')} id="sample-type-sample-unit" error={form.formState.errors.sampleAmountUnit?.message}><NativeSelect id="sample-type-sample-unit" className="w-full" aria-invalid={Boolean(form.formState.errors.sampleAmountUnit)} {...form.register('sampleAmountUnit')}><option value=""><CustomerText message="m_9cde46ed21c4" /></option><option value="µL">µL</option><option value="mL">mL</option></NativeSelect></Field>
               <p className="text-xs text-muted-foreground sm:col-span-2"><CustomerText message="m_f3f0ea9a9e37" /></p>
             </CardContent>
           </Card>
@@ -816,7 +817,7 @@ function quantityRange(item: SampleTypeDefinition) {
 
 function optionalNumber(value: string) { return value === '' ? null : Number(value) }
 function optionalNumberText(value: number | null) { return value == null ? '' : String(value) }
-function formatDateTime(value: string) { return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) }
+function formatDateTime(value: string) { return formatDisplayTimestamp(value) }
 function toLocalDateTime(value: Date) {
   const offset = value.getTimezoneOffset() * 60_000
   return new Date(value.getTime() - offset).toISOString().slice(0, 16)
