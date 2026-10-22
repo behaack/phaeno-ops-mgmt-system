@@ -98,3 +98,15 @@ the 80-pixel budget, reviewed PNGs and no-update gate. No baseline images are
 regenerated. Verify a deliberate one-pixel layout shift still fails, rerun local
 and exact-source remote comparisons, and release the corrective commit only
 after both CI jobs pass. The first staged candidate remains unpromoted.
+
+## Completion
+
+Source `669b93365ca02db58ce8f55dcb14651059c75ee6` is committed/pushed and live
+in both API and frontend. Exact-source CI passes both jobs, including all 24
+unchanged image baselines. Recovery, preservation, staged/canonical assets,
+read-only signed-in smoke and matching help corpus/index pass. No migration,
+business write, Website deployment or unrelated service restart occurred. Holds,
+orphan fence and hosted-test S3 deferral remain. See the
+[release receipt](../operations/portal-ui-patterns-test-release-20261022.md) for
+identities, hashes, the initial renderer correction, evidence and limits. The
+documentation-only completion commit is not another deployed application version.

@@ -1,5 +1,20 @@
 # Playwright E2E Test Plan
 
+## UI patterns hosted-test acceptance — October 22, 2026
+
+Deployed source `669b9336` passes exact-source CI with **84 gallery and 24 image
+cases**. Eight initial light-theme image differences were glyph-edge smoothing;
+the reviewed images stay unchanged, color threshold 0.15 is stricter than the
+framework default, and the 80-pixel budget still rejects a deliberate 1 px shift.
+Actual signed-in Edge verifies matching input/assembly title styles, 44 px bell/
+20 px icon/inset badge, 32 px filters, timezone-labelled timestamps, shared Company
+detail hierarchy, one return arrow/Actions indicator, keyboard opening/Escape
+focus return and updated help search/content. Browser warning/error scan is empty.
+Original input URL/state is restored; no business action or save ran. Complete
+table/file preservation, exact staged/canonical asset identity and healthy API/
+database/scanner pass. See the [release receipt](../operations/portal-ui-patterns-test-release-20261022.md)
+for the exact source, CI correction, recovery and representative-acceptance limits.
+
 ## Six-area UI standardization — October 22, 2026
 
 Final normal-configuration gallery run: **84/84** across desktop/phone and

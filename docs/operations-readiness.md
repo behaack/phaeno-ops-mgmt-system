@@ -1,5 +1,24 @@
 # Operations and production-readiness boundary
 
+## Portal UI pattern follow-ups — completed October 22, 2026
+
+API/frontend source `669b93365ca02db58ce8f55dcb14651059c75ee6` is live with
+the shared page/list/record patterns, closer notification badge and six-area
+control/data/status/pagination/detail standardization. The isolated gallery has
+fifteen sections and 24 reviewed page images; exact-source CI passes both jobs,
+including 84 gallery and 24 visual checks. Signed-in Company, sequencing, bell,
+native filters, Actions focus and help checks pass. Matched 62-guide corpus/index
+`33311a4e2057` is active; the gallery remains outside production Portal assets.
+
+Fresh isolated restore and off-server decryption verification pass. Final
+readback preserves all 250 table fingerprints, complete Website intake history,
+29 migrations, 115 unrelated files, runtime settings, DPS TLS 18883/Simulated
+mode and OCIA identities. No migration or business write occurred. API/database/
+scanner healthy, zero active assemblies, no bounded API/browser errors. Automatic
+deployment holds, orphan quarantine and S3 recovery deferral remain. Exact source,
+initial CI renderer correction, rollback identities and acceptance limits are in
+the [receipt](operations/portal-ui-patterns-test-release-20261022.md).
+
 ## Portal UI consistency hosted-test release — completed October 22, 2026
 
 API/frontend source `0baf3adf57ae07b67d6f1497a01523774f98f7f9` is active,

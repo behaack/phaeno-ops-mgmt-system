@@ -298,3 +298,14 @@ triggers; this expanded phase has not been pushed or run remotely. These are
 representative visual/fixture checks, not every authenticated page, a full
 assistive-technology audit, scientific/provider acceptance or commercial sign-off.
 No Git publication, deployment, migration, hosted write or Website change occurred.
+
+### Subsequent authorized release
+
+The Owner subsequently requested commit/push/deployment of these changes. Source
+`669b9336` is now live in both Portal API and frontend, with exact-source CI
+passing both jobs, 84 gallery cases and 24 reviewed image comparisons. The initial
+Windows CI run exposed small light-theme glyph-edge color differences; threshold
+0.15 retains the 80-pixel budget and reviewed images, passes CI, and still rejects
+a deliberate 1 px layout shift. Signed-in bell/filter/list/detail/Actions/help
+smoke and full data/file preservation pass. The gallery remains engineering-only.
+See the [preserving release receipt](../operations/portal-ui-patterns-test-release-20261022.md).

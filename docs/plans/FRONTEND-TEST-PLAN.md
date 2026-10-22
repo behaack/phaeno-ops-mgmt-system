@@ -1,5 +1,16 @@
 # Frontend Test Plan
 
+## UI patterns release verification — October 22, 2026
+
+Exact deployed source `669b9336` passes [CI run 39844011970](https://github.com/behaack/phaeno-ops-mgmt-system/actions/runs/39844011970):
+26 source regressions, fifteen focused component cases, full lint/type/help,
+production/gallery builds, build isolation, 84 gallery cases and 24 Windows image
+comparisons. Backend Release compilation has zero warnings/errors; no backend
+suite rerun was needed for UI/generated help. Prior full/frontend and final
+focused evidence below remains distinct from exact-source CI. The Windows color
+threshold correction changes no reviewed PNG or production UI; see the
+[receipt](../operations/portal-ui-patterns-test-release-20261022.md).
+
 ## Six-area UI standardization — October 22, 2026
 
 The [owning UI plan](UI-PATTERN-COMPLETENESS-PLAN.md#six-area-implementation---october-22-2026)
