@@ -1,0 +1,402 @@
+{
+  "started_at_utc": "2026-10-21T23:48:08.916080+00:00",
+  "provider_baseline": {
+    "at_utc": "2026-10-21T23:48:08.660488+00:00",
+    "boot_id": "7cbf4515-b865-42cd-89c6-8f640079db9c",
+    "processes": [
+      {
+        "pid": 24335,
+        "comm": "dps",
+        "start_ticks": "8259682",
+        "executable": "/home/ubuntu/development/pipeline/apps/MQTT_Test/dps/bin/Debug/net9.0/dps",
+        "executable_sha256": "95fabb9c500a7eb3290236fccfc390739c844893631ef3a49a12d93d6e95b3d4",
+        "cwd": "/home/ubuntu/development/pipeline/apps/MQTT_Test/dps"
+      }
+    ]
+  },
+  "provider_samples": [
+    {
+      "stage": "before owned tunnel interruption",
+      "at_utc": "2026-10-21T23:48:11.897912+00:00",
+      "boot_id": "7cbf4515-b865-42cd-89c6-8f640079db9c",
+      "processes": [
+        {
+          "pid": 24335,
+          "comm": "dps",
+          "start_ticks": "8259682",
+          "executable": "/home/ubuntu/development/pipeline/apps/MQTT_Test/dps/bin/Debug/net9.0/dps",
+          "executable_sha256": "95fabb9c500a7eb3290236fccfc390739c844893631ef3a49a12d93d6e95b3d4",
+          "cwd": "/home/ubuntu/development/pipeline/apps/MQTT_Test/dps"
+        }
+      ],
+      "same_process": true
+    },
+    {
+      "stage": "during tunnel interruption",
+      "at_utc": "2026-10-21T23:48:18.250827+00:00",
+      "boot_id": "7cbf4515-b865-42cd-89c6-8f640079db9c",
+      "processes": [
+        {
+          "pid": 24335,
+          "comm": "dps",
+          "start_ticks": "8259682",
+          "executable": "/home/ubuntu/development/pipeline/apps/MQTT_Test/dps/bin/Debug/net9.0/dps",
+          "executable_sha256": "95fabb9c500a7eb3290236fccfc390739c844893631ef3a49a12d93d6e95b3d4",
+          "cwd": "/home/ubuntu/development/pipeline/apps/MQTT_Test/dps"
+        }
+      ],
+      "same_process": true
+    },
+    {
+      "stage": "after tunnel restoration",
+      "at_utc": "2026-10-21T23:48:24.636044+00:00",
+      "boot_id": "7cbf4515-b865-42cd-89c6-8f640079db9c",
+      "processes": [
+        {
+          "pid": 24335,
+          "comm": "dps",
+          "start_ticks": "8259682",
+          "executable": "/home/ubuntu/development/pipeline/apps/MQTT_Test/dps/bin/Debug/net9.0/dps",
+          "executable_sha256": "95fabb9c500a7eb3290236fccfc390739c844893631ef3a49a12d93d6e95b3d4",
+          "cwd": "/home/ubuntu/development/pipeline/apps/MQTT_Test/dps"
+        }
+      ],
+      "same_process": true
+    },
+    {
+      "stage": "after same-image API restart",
+      "at_utc": "2026-10-21T23:48:31.671784+00:00",
+      "boot_id": "7cbf4515-b865-42cd-89c6-8f640079db9c",
+      "processes": [
+        {
+          "pid": 24335,
+          "comm": "dps",
+          "start_ticks": "8259682",
+          "executable": "/home/ubuntu/development/pipeline/apps/MQTT_Test/dps/bin/Debug/net9.0/dps",
+          "executable_sha256": "95fabb9c500a7eb3290236fccfc390739c844893631ef3a49a12d93d6e95b3d4",
+          "cwd": "/home/ubuntu/development/pipeline/apps/MQTT_Test/dps"
+        }
+      ],
+      "same_process": true
+    },
+    {
+      "stage": "await terminal Running",
+      "at_utc": "2026-10-21T23:48:32.238086+00:00",
+      "boot_id": "7cbf4515-b865-42cd-89c6-8f640079db9c",
+      "processes": [
+        {
+          "pid": 24335,
+          "comm": "dps",
+          "start_ticks": "8259682",
+          "executable": "/home/ubuntu/development/pipeline/apps/MQTT_Test/dps/bin/Debug/net9.0/dps",
+          "executable_sha256": "95fabb9c500a7eb3290236fccfc390739c844893631ef3a49a12d93d6e95b3d4",
+          "cwd": "/home/ubuntu/development/pipeline/apps/MQTT_Test/dps"
+        }
+      ],
+      "same_process": true
+    },
+    {
+      "stage": "await terminal Running",
+      "at_utc": "2026-10-21T23:48:44.679762+00:00",
+      "boot_id": "7cbf4515-b865-42cd-89c6-8f640079db9c",
+      "processes": [
+        {
+          "pid": 24335,
+          "comm": "dps",
+          "start_ticks": "8259682",
+          "executable": "/home/ubuntu/development/pipeline/apps/MQTT_Test/dps/bin/Debug/net9.0/dps",
+          "executable_sha256": "95fabb9c500a7eb3290236fccfc390739c844893631ef3a49a12d93d6e95b3d4",
+          "cwd": "/home/ubuntu/development/pipeline/apps/MQTT_Test/dps"
+        }
+      ],
+      "same_process": true
+    },
+    {
+      "stage": "await terminal Running",
+      "at_utc": "2026-10-21T23:48:57.328979+00:00",
+      "boot_id": "7cbf4515-b865-42cd-89c6-8f640079db9c",
+      "processes": [
+        {
+          "pid": 24335,
+          "comm": "dps",
+          "start_ticks": "8259682",
+          "executable": "/home/ubuntu/development/pipeline/apps/MQTT_Test/dps/bin/Debug/net9.0/dps",
+          "executable_sha256": "95fabb9c500a7eb3290236fccfc390739c844893631ef3a49a12d93d6e95b3d4",
+          "cwd": "/home/ubuntu/development/pipeline/apps/MQTT_Test/dps"
+        }
+      ],
+      "same_process": true
+    },
+    {
+      "stage": "await terminal Running",
+      "at_utc": "2026-10-21T23:49:09.759151+00:00",
+      "boot_id": "7cbf4515-b865-42cd-89c6-8f640079db9c",
+      "processes": [
+        {
+          "pid": 24335,
+          "comm": "dps",
+          "start_ticks": "8259682",
+          "executable": "/home/ubuntu/development/pipeline/apps/MQTT_Test/dps/bin/Debug/net9.0/dps",
+          "executable_sha256": "95fabb9c500a7eb3290236fccfc390739c844893631ef3a49a12d93d6e95b3d4",
+          "cwd": "/home/ubuntu/development/pipeline/apps/MQTT_Test/dps"
+        }
+      ],
+      "same_process": true
+    },
+    {
+      "stage": "await terminal Running",
+      "at_utc": "2026-10-21T23:49:22.211561+00:00",
+      "boot_id": "7cbf4515-b865-42cd-89c6-8f640079db9c",
+      "processes": [
+        {
+          "pid": 24335,
+          "comm": "dps",
+          "start_ticks": "8259682",
+          "executable": "/home/ubuntu/development/pipeline/apps/MQTT_Test/dps/bin/Debug/net9.0/dps",
+          "executable_sha256": "95fabb9c500a7eb3290236fccfc390739c844893631ef3a49a12d93d6e95b3d4",
+          "cwd": "/home/ubuntu/development/pipeline/apps/MQTT_Test/dps"
+        }
+      ],
+      "same_process": true
+    },
+    {
+      "stage": "await terminal Running",
+      "at_utc": "2026-10-21T23:49:34.656987+00:00",
+      "boot_id": "7cbf4515-b865-42cd-89c6-8f640079db9c",
+      "processes": [
+        {
+          "pid": 24335,
+          "comm": "dps",
+          "start_ticks": "8259682",
+          "executable": "/home/ubuntu/development/pipeline/apps/MQTT_Test/dps/bin/Debug/net9.0/dps",
+          "executable_sha256": "95fabb9c500a7eb3290236fccfc390739c844893631ef3a49a12d93d6e95b3d4",
+          "cwd": "/home/ubuntu/development/pipeline/apps/MQTT_Test/dps"
+        }
+      ],
+      "same_process": true
+    },
+    {
+      "stage": "await terminal Running",
+      "at_utc": "2026-10-21T23:49:47.089591+00:00",
+      "boot_id": "7cbf4515-b865-42cd-89c6-8f640079db9c",
+      "processes": [
+        {
+          "pid": 24335,
+          "comm": "dps",
+          "start_ticks": "8259682",
+          "executable": "/home/ubuntu/development/pipeline/apps/MQTT_Test/dps/bin/Debug/net9.0/dps",
+          "executable_sha256": "95fabb9c500a7eb3290236fccfc390739c844893631ef3a49a12d93d6e95b3d4",
+          "cwd": "/home/ubuntu/development/pipeline/apps/MQTT_Test/dps"
+        }
+      ],
+      "same_process": true
+    },
+    {
+      "stage": "await terminal Running",
+      "at_utc": "2026-10-21T23:49:59.748152+00:00",
+      "boot_id": "7cbf4515-b865-42cd-89c6-8f640079db9c",
+      "processes": [
+        {
+          "pid": 24335,
+          "comm": "dps",
+          "start_ticks": "8259682",
+          "executable": "/home/ubuntu/development/pipeline/apps/MQTT_Test/dps/bin/Debug/net9.0/dps",
+          "executable_sha256": "95fabb9c500a7eb3290236fccfc390739c844893631ef3a49a12d93d6e95b3d4",
+          "cwd": "/home/ubuntu/development/pipeline/apps/MQTT_Test/dps"
+        }
+      ],
+      "same_process": true
+    },
+    {
+      "stage": "await terminal Running",
+      "at_utc": "2026-10-21T23:50:12.205570+00:00",
+      "boot_id": "7cbf4515-b865-42cd-89c6-8f640079db9c",
+      "processes": [
+        {
+          "pid": 24335,
+          "comm": "dps",
+          "start_ticks": "8259682",
+          "executable": "/home/ubuntu/development/pipeline/apps/MQTT_Test/dps/bin/Debug/net9.0/dps",
+          "executable_sha256": "95fabb9c500a7eb3290236fccfc390739c844893631ef3a49a12d93d6e95b3d4",
+          "cwd": "/home/ubuntu/development/pipeline/apps/MQTT_Test/dps"
+        }
+      ],
+      "same_process": true
+    },
+    {
+      "stage": "await terminal Running",
+      "at_utc": "2026-10-21T23:50:24.659742+00:00",
+      "boot_id": "7cbf4515-b865-42cd-89c6-8f640079db9c",
+      "processes": [
+        {
+          "pid": 24335,
+          "comm": "dps",
+          "start_ticks": "8259682",
+          "executable": "/home/ubuntu/development/pipeline/apps/MQTT_Test/dps/bin/Debug/net9.0/dps",
+          "executable_sha256": "95fabb9c500a7eb3290236fccfc390739c844893631ef3a49a12d93d6e95b3d4",
+          "cwd": "/home/ubuntu/development/pipeline/apps/MQTT_Test/dps"
+        }
+      ],
+      "same_process": true
+    },
+    {
+      "stage": "await terminal Running",
+      "at_utc": "2026-10-21T23:50:37.104679+00:00",
+      "boot_id": "7cbf4515-b865-42cd-89c6-8f640079db9c",
+      "processes": [
+        {
+          "pid": 24335,
+          "comm": "dps",
+          "start_ticks": "8259682",
+          "executable": "/home/ubuntu/development/pipeline/apps/MQTT_Test/dps/bin/Debug/net9.0/dps",
+          "executable_sha256": "95fabb9c500a7eb3290236fccfc390739c844893631ef3a49a12d93d6e95b3d4",
+          "cwd": "/home/ubuntu/development/pipeline/apps/MQTT_Test/dps"
+        }
+      ],
+      "same_process": true
+    },
+    {
+      "stage": "await terminal Succeeded",
+      "at_utc": "2026-10-21T23:50:49.534182+00:00",
+      "boot_id": "7cbf4515-b865-42cd-89c6-8f640079db9c",
+      "processes": [
+        {
+          "pid": 24335,
+          "comm": "dps",
+          "start_ticks": "8259682",
+          "executable": "/home/ubuntu/development/pipeline/apps/MQTT_Test/dps/bin/Debug/net9.0/dps",
+          "executable_sha256": "95fabb9c500a7eb3290236fccfc390739c844893631ef3a49a12d93d6e95b3d4",
+          "cwd": "/home/ubuntu/development/pipeline/apps/MQTT_Test/dps"
+        }
+      ],
+      "same_process": true
+    },
+    {
+      "stage": "after terminal HTTP read",
+      "at_utc": "2026-10-21T23:50:50.694558+00:00",
+      "boot_id": "7cbf4515-b865-42cd-89c6-8f640079db9c",
+      "processes": [
+        {
+          "pid": 24335,
+          "comm": "dps",
+          "start_ticks": "8259682",
+          "executable": "/home/ubuntu/development/pipeline/apps/MQTT_Test/dps/bin/Debug/net9.0/dps",
+          "executable_sha256": "95fabb9c500a7eb3290236fccfc390739c844893631ef3a49a12d93d6e95b3d4",
+          "cwd": "/home/ubuntu/development/pipeline/apps/MQTT_Test/dps"
+        }
+      ],
+      "same_process": true
+    }
+  ],
+  "image": "sha256:3ced49a630f3596d79c1ddc31810dbca966bc617159a97c205b33b96cb101127",
+  "source": "79b0338f5f96b3a5fcbea24b86db89906e922f84",
+  "tls": true,
+  "port": 18883,
+  "simulated": true,
+  "job": "12b6511c-b5bd-45e4-84c2-51769ed2f362",
+  "body_sha256": "57b59bbb01822b9dde2323aac1f4cb80abb5c19654bafcd070c3b46c6d2e991c",
+  "http_requests": [
+    {
+      "case": "initial HTTP Start",
+      "status": 200,
+      "job": "12b6511c-b5bd-45e4-84c2-51769ed2f362",
+      "state": "Accepted",
+      "error": null
+    },
+    {
+      "case": "identical HTTP replay 1",
+      "status": 200,
+      "job": "12b6511c-b5bd-45e4-84c2-51769ed2f362",
+      "state": "Accepted",
+      "error": null
+    },
+    {
+      "case": "identical HTTP replay 2",
+      "status": 200,
+      "job": "12b6511c-b5bd-45e4-84c2-51769ed2f362",
+      "state": "Running",
+      "error": null
+    },
+    {
+      "case": "changed instructions, same identity",
+      "status": 409,
+      "error": {
+        "type": "conflict",
+        "code": "assembly_job_invalid",
+        "message": "This request identity already belongs to different assembly instructions.",
+        "details": null,
+        "param": null
+      }
+    },
+    {
+      "case": "different identity while active",
+      "status": 409,
+      "error": {
+        "type": "conflict",
+        "code": "assembly_job_invalid",
+        "message": "This sequencing run already has an active assembly attempt.",
+        "details": null,
+        "param": null
+      }
+    }
+  ],
+  "before_recovery": {
+    "id": "12b6511c-b5bd-45e4-84c2-51769ed2f362",
+    "state": "Running",
+    "provider": "dps-12b6511c-b5bd-45e4-84c2-51769ed2f362",
+    "start": "2026-10-21T23:48:11.004788+00:00",
+    "stop": null,
+    "disposition": null,
+    "attention": null,
+    "version": 4,
+    "simulated": "true",
+    "has_output": false
+  },
+  "tunnel_stopped_at_utc": "2026-10-21T23:48:11.906880+00:00",
+  "tunnel_outage_seconds": 12,
+  "tunnel_restored_at_utc": "2026-10-21T23:48:24.277961+00:00",
+  "api_before_started_at": "2026-10-21T23:14:22.356514817Z",
+  "api_restart_requested_at_utc": "2026-10-21T23:48:24.733705+00:00",
+  "api_after_started_at": "2026-10-21T23:48:24.988364647Z",
+  "api_restored_at_utc": "2026-10-21T23:48:31.325713+00:00",
+  "after_recovery": {
+    "id": "12b6511c-b5bd-45e4-84c2-51769ed2f362",
+    "state": "Running",
+    "provider": "dps-12b6511c-b5bd-45e4-84c2-51769ed2f362",
+    "start": "2026-10-21T23:48:11.004788+00:00",
+    "stop": null,
+    "disposition": null,
+    "attention": null,
+    "version": 4,
+    "simulated": "true",
+    "has_output": false
+  },
+  "finished_at_utc": "2026-10-21T23:50:50.812074+00:00",
+  "final_job": {
+    "id": "12b6511c-b5bd-45e4-84c2-51769ed2f362",
+    "state": "Succeeded",
+    "provider": "dps-12b6511c-b5bd-45e4-84c2-51769ed2f362",
+    "start": "2026-10-21T23:48:11.004788+00:00",
+    "stop": "2026-10-21T23:50:42.849887+00:00",
+    "disposition": "2026-10-21T23:50:43.058776+00:00",
+    "attention": null,
+    "version": 5,
+    "simulated": "true",
+    "has_output": true
+  },
+  "commands": [
+    {
+      "kind": "Run",
+      "attempts": 1,
+      "received": "2026-10-21T23:48:11.07129+00:00",
+      "confirmed": "2026-10-21T23:48:11.125849+00:00",
+      "suppressed": false
+    }
+  ],
+  "terminal_http_status": 200,
+  "output_count": 2,
+  "provider_unchanged_throughout": true,
+  "same_execution": true,
+  "active_assemblies": 0,
+  "result": "PASS"
+}

@@ -1,0 +1,25 @@
+{
+  "at_utc": "2026-10-21T23:51:10.860744+00:00",
+  "job": "12b6511c-b5bd-45e4-84c2-51769ed2f362",
+  "authenticated_http_outputs": [
+    {
+      "artifact_id": "ed1fd310-a207-4a41-8007-fcce897df07b",
+      "file_name": "assembly-output.fasta",
+      "size_bytes": 56,
+      "sha256": "da854250812c5640d9ba9e4efba7d462912f723d74fb474a33722c92b4f29077",
+      "version_pinned": true,
+      "simulated_download_name": true,
+      "match": true
+    },
+    {
+      "artifact_id": "38d11a83-664f-4d41-aa20-3ddcfa80bedb",
+      "file_name": "provenance-report.json",
+      "size_bytes": 280,
+      "sha256": "a82487e832cd1629867beb1ccd1cf0e0d911d3c98254fa2246b18e63c8321a17",
+      "version_pinned": true,
+      "simulated_download_name": true,
+      "match": true
+    }
+  ],
+  "result": "PASS"
+}

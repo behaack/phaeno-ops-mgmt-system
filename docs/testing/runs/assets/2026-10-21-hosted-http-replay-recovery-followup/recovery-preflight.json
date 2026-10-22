@@ -1,0 +1,27 @@
+{
+  "at_utc": "2026-10-21T23:47:55.333833+00:00",
+  "source": "79b0338f5f96b3a5fcbea24b86db89906e922f84",
+  "image_id": "sha256:3ced49a630f3596d79c1ddc31810dbca966bc617159a97c205b33b96cb101127",
+  "provider": {
+    "at_utc": "2026-10-21T23:47:54.860332+00:00",
+    "boot_id": "7cbf4515-b865-42cd-89c6-8f640079db9c",
+    "processes": [
+      {
+        "pid": 24335,
+        "comm": "dps",
+        "start_ticks": "8259682",
+        "executable": "/home/ubuntu/development/pipeline/apps/MQTT_Test/dps/bin/Debug/net9.0/dps",
+        "executable_sha256": "95fabb9c500a7eb3290236fccfc390739c844893631ef3a49a12d93d6e95b3d4",
+        "cwd": "/home/ubuntu/development/pipeline/apps/MQTT_Test/dps"
+      }
+    ]
+  },
+  "active_assemblies": 0,
+  "authenticated_http_read": 200,
+  "existing_active_session_only": true,
+  "token_lifetime_seconds": 60,
+  "credentials_persisted": false,
+  "port": 18883,
+  "tls": true,
+  "simulated": true
+}

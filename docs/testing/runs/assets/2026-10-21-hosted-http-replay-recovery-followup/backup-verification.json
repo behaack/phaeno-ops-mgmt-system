@@ -1,0 +1,9 @@
+{
+  "verified": true,
+  "isolated_restore": true,
+  "independent_offserver_decryption": true,
+  "no_plaintext_dump_retained": true,
+  "ciphertext_sha256": "4bd6957b6912341c4cd15f664d3272373360f35b530eb855a79cd13a9753c2f3",
+  "dump_sha256": "147e6ab92f4042bf191762b155b5baad4b3fa4db51e799ad9f4ccdf41832eeb2",
+  "tables": 250
+}

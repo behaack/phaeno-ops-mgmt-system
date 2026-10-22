@@ -2,6 +2,15 @@
 
 ## DPS timestamp hosted-test release — completed October 21, 2026
 
+Subsequent test-only follow-up passes actual terminal and active HTTP request
+replay/409 guards. Independent owned-tunnel/same-image API recovery completes
+Succeeded with one Start and no attention while DPS retains the same PID/start
+ticks/boot ID/executable hash/cwd through baseline plus 17 checks. Both HTTP
+outputs pass byte/hash/version verification; zero active work and original
+data/files preserved. No DPS restart, application/configuration change or new
+deployment. Simulated/TLS 18883 and the older retained conflict remain. See the
+[follow-up receipt](testing/runs/2026-10-21-hosted-http-replay-recovery-followup.md).
+
 API source `79b0338f5f96b3a5fcbea24b86db89906e922f84` is active, with
 Simulated and mutual TLS 18883 retained. Original cancellation reconciliation,
 fresh cancellation, controlled before-dispatch cancellation, active recovery,

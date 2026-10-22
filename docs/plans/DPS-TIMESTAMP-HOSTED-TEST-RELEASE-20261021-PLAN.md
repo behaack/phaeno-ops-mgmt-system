@@ -1,5 +1,18 @@
 # DPS timestamp hosted-test release and acceptance — October 21, 2026
 
+## Subsequent HTTP and independent recovery qualification
+
+The Owner-requested follow-up passes actual terminal and active HTTP replay,
+changed/concurrent request rejection, tunnel interruption and same-image API
+restart through successful completion with one Start and no attention. DPS
+PID 24335, start ticks, boot ID, executable hash and cwd remain identical
+through baseline plus 17 continuity checks. Both authenticated HTTP downloads
+match manifest size/hash and pinned versions. This closes the earlier HTTP
+replay and external-provider-restart qualifications. Original conflict history
+remains protected. Simulated/TLS 18883, original data/files, image/release and
+holds remain; zero active work. No new deployment or application source change.
+See the [follow-up receipt](../testing/runs/2026-10-21-hosted-http-replay-recovery-followup.md).
+
 ## Completed release and scoped acceptance
 
 Source `79b0338f5f96b3a5fcbea24b86db89906e922f84` is committed/pushed and

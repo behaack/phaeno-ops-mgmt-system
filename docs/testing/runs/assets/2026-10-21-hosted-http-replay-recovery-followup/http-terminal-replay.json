@@ -1,0 +1,47 @@
+{
+  "at_utc": "2026-10-21T23:32:25.274675+00:00",
+  "job": "60e1e783-ac75-4dd6-bd5a-c0d4c146aa8a",
+  "http_endpoint": "https://api.phaenobiotech.com/api/platform/lab-operations/work-orders/7722f311-e4ec-4d29-a533-29d5e97800f5/assembly-jobs",
+  "method": "POST",
+  "request_body_sha256": "a88da6576e08394c473c811ff879fc4dab528873608d02889bb0362814c64dcb",
+  "requests": [
+    {
+      "case": "exact replay 1",
+      "status": 200,
+      "id": "60e1e783-ac75-4dd6-bd5a-c0d4c146aa8a",
+      "state": "CancelledBeforeStart"
+    },
+    {
+      "case": "exact replay 2",
+      "status": 200,
+      "id": "60e1e783-ac75-4dd6-bd5a-c0d4c146aa8a",
+      "state": "CancelledBeforeStart"
+    },
+    {
+      "case": "changed request identity collision",
+      "status": 409,
+      "error": {
+        "type": "conflict",
+        "code": "assembly_job_invalid",
+        "message": "This request identity already belongs to different assembly instructions.",
+        "details": null,
+        "param": null
+      }
+    }
+  ],
+  "byte_identical_replays": true,
+  "job_unchanged": true,
+  "commands": [
+    {
+      "kind": "Run",
+      "attempts": 0,
+      "suppressed": true
+    }
+  ],
+  "active_assemblies": 0,
+  "authentication": "60-second token for existing active operator session",
+  "new_session_or_access_created": false,
+  "tls": true,
+  "port": 18883,
+  "simulated": true
+}

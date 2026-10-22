@@ -1,5 +1,19 @@
 # Backend Test Plan
 
+## Actual HTTP replay follow-up — October 21, 2026
+
+The public authenticated hosted endpoint passes two identical replays of saved
+synthetic CancelledBeforeStart request `60e1e783-ac75-4dd6-bd5a-c0d4c146aa8a`
+(200, same ID/state) and changed instructions under that ID (409). Saved
+job/version and zero suppressed Start deliveries are unchanged. A fresh actual
+HTTP Start/replay/changed/concurrent guard run also passes, then active tunnel/API
+recovery completes Succeeded with one Start and no attention. DPS PID 24335 and
+its start ticks/boot ID/executable hash/cwd remain unchanged across all 17
+post-baseline checks; both authenticated output hashes/bytes pass. No application
+source or software suite rerun. Simulated/TLS 18883 retained, zero active work,
+original data/files preserved. The earlier conflict remains protected. See the
+[follow-up receipt](../testing/runs/2026-10-21-hosted-http-replay-recovery-followup.md).
+
 ## Hosted timestamp release and acceptance — October 21, 2026
 
 API source `79b0338f` is active. Normal processing admits the original

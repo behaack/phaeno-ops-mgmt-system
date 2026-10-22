@@ -1,5 +1,19 @@
 # POMS–DPS MQTT messaging plan
 
+## HTTP replay follow-up — October 21, 2026
+
+Actual authenticated HTTP replay of a saved terminal request now passes:
+identical bytes return the same attempt and changed instructions reject with
+409, with unchanged state/version and zero Start deliveries. After DPS readiness,
+a fresh active HTTP replay/guard run and owned tunnel/same-image API recovery
+complete Succeeded with one Start and no attention. DPS PID/start ticks/boot ID/
+executable hash/cwd remain identical through baseline plus 17 checks. Both HTTP
+outputs verify exact size/hash/version. No application/configuration/deployment
+change; Simulated and TLS 18883 retained, zero active work. This closes the prior
+HTTP replay/external-restart qualifications; the older conflict remains retained.
+See the
+[follow-up receipt](../testing/runs/2026-10-21-hosted-http-replay-recovery-followup.md).
+
 ## Timestamp hosted-test release and acceptance — October 21, 2026
 
 Timestamp source `79b0338f5f96b3a5fcbea24b86db89906e922f84` is committed,

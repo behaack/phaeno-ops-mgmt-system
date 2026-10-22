@@ -1,5 +1,17 @@
 # Playwright E2E Test Plan
 
+## HTTP replay and independent recovery follow-up — October 21, 2026
+
+Actual hosted authenticated HTTP replay of the saved terminal request passes,
+including changed-content rejection and unchanged state/version/zero deliveries.
+This is HTTP client evidence; no new browser flow ran. A fresh active HTTP
+replay/409 guard run and independent tunnel/same-image API recovery now complete
+Succeeded, one Start, no attention, with the same DPS process throughout all 17
+post-baseline checks. Both actual HTTP output downloads pass size/hash checks.
+Simulated/TLS 18883 retained, zero active work. Automatic browser refresh and
+browser readback of this new attempt were not exercised. See the
+[follow-up receipt](../testing/runs/2026-10-21-hosted-http-replay-recovery-followup.md).
+
 ## Hosted timestamp release acceptance — October 21, 2026
 
 The signed-in Portal on API source `79b0338f` confirms original cancellation

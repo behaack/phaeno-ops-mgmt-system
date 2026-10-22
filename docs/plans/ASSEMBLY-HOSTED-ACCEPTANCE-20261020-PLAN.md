@@ -1,5 +1,25 @@
 # Hosted assembly acceptance — October 20, 2026
 
+## HTTP replay and independent recovery passed — October 21, 2026
+
+The requested actual authenticated HTTP replay passes: two byte-identical saved
+requests return the same CancelledBeforeStart attempt (200), changed instructions
+under that identity reject with 409, and the saved job/version and suppressed
+command remain unchanged with zero deliveries. After DPS readiness, one new
+isolated attempt `12b6511c-b5bd-45e4-84c2-51769ed2f362` also passes active HTTP
+replay, changed/active-request rejection, owned tunnel interruption and same-image
+API restart, then Succeeded with one Start and no attention. DPS PID 24335,
+start ticks, boot ID, executable hash and cwd stay identical through all 17
+continuity checks after baseline. Both authenticated output downloads pass
+byte/hash/version checks. This closes the HTTP replay and external-DPS-restart
+qualifications from the preceding run. Simulated/TLS 18883 retained, zero active
+work, all 610 original rows/115 unrelated files preserved. Fresh recovery
+restore/off-server verification and preservation checks pass. The earlier
+Failed/conflicted attempt remains protected; no scientific/physical acceptance.
+No application or deployment change. The Owner subsequently authorized publishing
+the acceptance records/plans; deployment remains held. See the
+[follow-up receipt](../testing/runs/2026-10-21-hosted-http-replay-recovery-followup.md).
+
 ## Released correction and resumed acceptance — October 21, 2026
 
 Source `79b0338f5f96b3a5fcbea24b86db89906e922f84` is committed/pushed and

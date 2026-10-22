@@ -1,0 +1,14 @@
+{
+  "at_utc": "2026-10-21T23:50:50.694558+00:00",
+  "boot_id": "7cbf4515-b865-42cd-89c6-8f640079db9c",
+  "processes": [
+    {
+      "pid": 24335,
+      "comm": "dps",
+      "start_ticks": "8259682",
+      "executable": "/home/ubuntu/development/pipeline/apps/MQTT_Test/dps/bin/Debug/net9.0/dps",
+      "executable_sha256": "95fabb9c500a7eb3290236fccfc390739c844893631ef3a49a12d93d6e95b3d4",
+      "cwd": "/home/ubuntu/development/pipeline/apps/MQTT_Test/dps"
+    }
+  ]
+}

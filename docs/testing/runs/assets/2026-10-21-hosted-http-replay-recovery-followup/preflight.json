@@ -1,0 +1,18 @@
+{
+  "at_utc": "2026-10-21T23:31:31.125276+00:00",
+  "source": "79b0338f5f96b3a5fcbea24b86db89906e922f84",
+  "image_id": "sha256:3ced49a630f3596d79c1ddc31810dbca966bc617159a97c205b33b96cb101127",
+  "provider": {
+    "at_utc": "2026-10-21T23:31:30.557883+00:00",
+    "boot_id": "7cbf4515-b865-42cd-89c6-8f640079db9c",
+    "processes": []
+  },
+  "active_assemblies": 0,
+  "authenticated_http_read": 200,
+  "existing_active_session_only": true,
+  "token_lifetime_seconds": 60,
+  "credentials_persisted": false,
+  "port": 18883,
+  "tls": true,
+  "simulated": true
+}
