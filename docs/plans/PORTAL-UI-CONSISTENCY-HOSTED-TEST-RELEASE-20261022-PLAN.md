@@ -84,3 +84,14 @@ Gallery checks establish shared control contracts, not every permission-dependen
 workflow or complete WCAG/screen-reader conformance. No physical/scientific,
 provider, commercial activation or populated-S3 disaster-recovery qualification
 is implied by this release.
+
+## Completion — October 22, 2026
+
+Source `0baf3adf57ae07b67d6f1497a01523774f98f7f9` is committed/pushed and
+active in both API and frontend. Recovery, preservation, exact-source CI/build,
+staged/canonical asset checks and bounded signed-in UI/help acceptance pass.
+No migration, business write, Website deployment or unrelated service restart
+occurred. Holds, the orphan fence and hosted-test S3 deferral remain. Exact
+identities, hashes, acceptance and limits are recorded in the
+[release receipt](../operations/portal-ui-consistency-test-release-20261022.md).
+The later documentation-only completion commit does not change deployed source.

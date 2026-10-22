@@ -91,5 +91,11 @@ were removed and the browser viewport was restored.
 
 This is component-level browser evidence, not authenticated whole-page acceptance
 of every workspace, a dirty-form walkthrough, a 320 px whole-page pass, or a
-screen-reader/WCAG conformance claim. Automated suites remain unrun because the
-Owner did not request them. Changes remain local, uncommitted and undeployed.
+screen-reader/WCAG conformance claim. The Owner subsequently requested targeted
+automated checks: the [gallery/guard plan](UI-DESIGN-SYSTEM-GUARDRAILS-PLAN.md)
+records 18 guard and 24 browser passes, also passing on GitHub. Source `0baf3adf`
+is committed/pushed and deployed to the existing hosted test Portal. Actual
+signed-in Company/assembly return styles, assembly return state, Company Actions
+keyboard/focus and matched help search pass. Broader per-workflow/dirty-form and
+screen-reader acceptance remains unperformed. See the
+[release receipt](../operations/portal-ui-consistency-test-release-20261022.md).

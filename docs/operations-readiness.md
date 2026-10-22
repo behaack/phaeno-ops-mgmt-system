@@ -1,5 +1,23 @@
 # Operations and production-readiness boundary
 
+## Portal UI consistency hosted-test release — completed October 22, 2026
+
+API/frontend source `0baf3adf57ae07b67d6f1497a01523774f98f7f9` is active,
+with standardized return controls, the UI style reference, isolated component
+gallery and automated drift checks. Exact-source CI passes 18 guard and 24
+gallery browser cases; production builds, staged/canonical asset identity and
+actual signed-in Company/assembly/Actions/help smoke pass. Matched 62-guide
+corpus/index `89e4a753a7d9` is active. No migration or business write occurred.
+
+Fresh isolated restore and independent off-server recovery verification pass.
+All 250 table fingerprints, Website intake history, 115 unrelated files,
+29 migrations, DPS TLS 18883/Simulated settings and OCIA service identities are
+preserved. API/database/scanner healthy, zero active assemblies. Automatic
+deployment holds, the orphan-run quarantine and populated-S3 recovery deferral
+remain. This is hosted-test UI acceptance; complete per-workflow accessibility,
+scientific and commercial qualification remain separate. See the
+[release receipt](operations/portal-ui-consistency-test-release-20261022.md).
+
 ## DPS timestamp hosted-test release — completed October 21, 2026
 
 Subsequent test-only follow-up passes actual terminal and active HTTP request

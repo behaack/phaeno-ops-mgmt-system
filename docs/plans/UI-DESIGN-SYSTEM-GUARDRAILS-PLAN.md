@@ -64,8 +64,9 @@ No Git publishing, deployment, migrations or live data writes are authorized.
   removed those presentation overrides instead of grandfathering them. The only
   remaining allowances are the two non-page active-tube scanner steps.
 - Added lint integration and the independent read-only `Portal UI quality`
-  workflow for frontend pull requests/pushes to main. The workflow is authored
-  locally; it has not run on GitHub. Branch-protection settings are unchanged.
+  workflow for frontend pull requests/pushes to main. Its exact-source GitHub
+  run 39809567603 passes, including all 18 guard and 24 browser cases.
+  Branch-protection settings are unchanged.
 - Updated engineering instructions and the durable UI guide. Corrected the
   frontend README's stale production-preview E2E claim and its conflicting
   blanket-test instruction to match current code and the repository policy.
@@ -90,6 +91,8 @@ browser checks establish the demonstrated component contracts. They do not
 establish every feature's permission-dependent layout, dirty-form journey,
 screen-reader behavior, scientific acceptance or complete WCAG conformance.
 
-Changes remain local and uncommitted. Deployment holds and release controls
-are unchanged. Review screenshots are retained separately from disposable build
-and test output.
+Committed/pushed source `0baf3adf` is deployed to the existing hosted test Portal.
+Signed-in Company/assembly/Actions/help smoke and preserving release checks pass;
+see the [release receipt](../operations/portal-ui-consistency-test-release-20261022.md).
+Deployment holds and release controls remain in place. Review screenshots are
+retained separately from disposable build and test output.

@@ -18,6 +18,7 @@ Execution: 24/24 cases pass in the four 1280/390 px light/dark projects, includi
 the 320 px reflow assertion. Four gallery axe scans report no violations.
 Desktop-light and narrow-dark captures were visually inspected. These results
 are isolated gallery/component evidence, not authenticated whole-app acceptance.
+The same 24 cases pass in exact-source GitHub UI quality run 39809567603.
 
 ## Shared page return navigation — October 22, 2026
 
@@ -30,7 +31,11 @@ guards. Distinct contextual return destinations wrap in one row, separate from
 record Actions. Do not count pagination, guide previous/next cards or modal steps
 as page returns. A standalone preview of the actual shared component establishes
 control-level evidence only; it does not establish authenticated whole-page
-acceptance. No automated E2E execution was requested. See the
+acceptance. Subsequent requested gallery browser checks pass; the hosted
+Company/assembly comparison, assembly return-state preservation, Company Actions
+keyboard/focus and Phaeno help checks pass without business writes. See the
+[release receipt](../operations/portal-ui-consistency-test-release-20261022.md).
+Broader per-feature, dirty-form and audience sessions remain unperformed. See the
 [owning plan](BACK-NAVIGATION-CONSISTENCY-PLAN.md).
 
 ## HTTP replay and independent recovery follow-up — October 21, 2026

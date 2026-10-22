@@ -15,8 +15,10 @@ Execution results and limits belong in the
 Execution: all 18 guard regressions pass; the guard passes over 739 source files
 with two exact scanner-step exceptions. Full lint and TypeScript pass. The 14
 manual Actions indicators and specimen tab-padding override found during the
-inventory were removed. The new read-only CI workflow is authored locally and
-has not run remotely.
+inventory were removed. Exact-source read-only GitHub UI quality run 39809567603
+passes, including all 18 guard and 24 browser cases. Hosted source `0baf3adf`
+passes the bounded signed-in Company/assembly/Actions/help checks in the
+[release receipt](../operations/portal-ui-consistency-test-release-20261022.md).
 
 ## Shared page return navigation — October 22, 2026
 
@@ -28,9 +30,9 @@ long labels, semantic theme colors and visible keyboard focus. Verify search,
 hash, parameters and onClick handlers survive composition without introducing
 history-based navigation. Native disabled buttons and disabled router links
 must remain unavailable; form Cancel/modal steps and pagination retain their
-own patterns. Automated tests are intentionally deferred for this presentation
-refactor under the request-only policy. TypeScript, scoped lint and direct local
-component-browser evidence are recorded in the
+own patterns. The subsequent requested gallery/guard checks pass locally and on
+GitHub. Dedicated per-feature and dirty-form journeys remain unperformed.
+TypeScript, lint and direct local component-browser evidence are recorded in the
 [owning plan](BACK-NAVIGATION-CONSISTENCY-PLAN.md).
 
 ## Internal order formatted notes — October 17, 2026
