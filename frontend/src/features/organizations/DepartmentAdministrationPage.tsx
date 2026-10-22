@@ -98,7 +98,7 @@ function CustomerDeliverySettings({ organizationId, organizationAdmin, managedDe
   }
 
   return <Card className="gap-0 py-0">
-    <CardHeader className="border-b bg-muted/50 p-4">
+    <CardHeader >
       <CardTitle><CustomerText message="m_e94bd442fd6a" /></CardTitle>
       <CardDescription><CustomerText message="m_bda4b1201955" /></CardDescription>
       {department ? <CardAction><Button size="sm" disabled={locations.isLoading || Boolean(locations.error)} onClick={() => setAdding(true)}><Plus aria-hidden="true" /><CustomerText message="m_119e50923ce6" /></Button></CardAction> : null}

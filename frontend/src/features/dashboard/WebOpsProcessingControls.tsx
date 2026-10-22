@@ -1,3 +1,4 @@
+import { formatDisplayTimestamp } from '#/lib/display-format'
 import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -12,7 +13,7 @@ import { Label } from '#/components/ui/label'
 import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/required-field'
 import { Textarea } from '#/components/ui/textarea'
 
-const formatTime = (value: string) => new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
+const formatTime = (value: string) => formatDisplayTimestamp(value, { locale: 'en-US' })
 const reasonSchema = z.object({ reason: z.string().trim().min(1, 'Enter a reason for this change.').max(500, 'Use 500 characters or fewer.') })
 
 export function WebOpsProcessingControls({ attentionOnly, onAttentionChange }: { attentionOnly: boolean; onAttentionChange: (value: boolean) => void }) {

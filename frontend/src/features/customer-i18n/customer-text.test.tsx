@@ -19,12 +19,11 @@ describe('Customer-only message boundaries', () => {
   it('uses the Customer display locale without changing the timestamp or other audience formatting', () => {
     const wrapper = ({ children }: { children: ReactNode }) => <CustomerLocaleContext.Provider value={{ customer: true, pseudo: true, locale: 'en-US' }}>{children}</CustomerLocaleContext.Provider>
     const { result } = renderHook(() => useCustomerDateFormatter(true), { wrapper })
-    expect(result.current.resolvedOptions().locale).toBe('en-US')
     const timestamp = new Date('2026-10-11T12:34:56Z')
-    expect(result.current.format(timestamp)).toBe(new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(timestamp))
+    expect(result.current.format(timestamp)).toBe(new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' }).format(timestamp))
     expect(timestamp.toISOString()).toBe('2026-10-11T12:34:56.000Z')
     const staff = renderHook(() => useCustomerDateFormatter(true), { wrapper: scope(false, true) })
-    expect(staff.result.current.resolvedOptions().locale).toBe(new Intl.DateTimeFormat().resolvedOptions().locale)
+    expect(staff.result.current.format(timestamp)).toBe(result.current.format(timestamp))
   })
   it.each([false, true])('keeps non-Customer copy English with pseudo=%s', pseudo => {
     const { result } = renderHook(useCustomerText, { wrapper: scope(false, pseudo) })

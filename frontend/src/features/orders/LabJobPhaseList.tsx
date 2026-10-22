@@ -1,3 +1,4 @@
+import { formatDisplayTimestamp } from '#/lib/display-format'
 import { RecordLink } from '#/components/ui/record-link'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
@@ -57,7 +58,7 @@ export function LabJobPhaseList({ order, plan, tracking, canCancel, onCancel, si
       const open = single || tracking.expandedPhaseId === phase.id
       const inactive = ['Cancelled', 'Superseded'].includes(phase.lifecycle)
       const phaseActions = labJobPhaseActions(phase, canCancel, tracking.onResults, onCancel)
-      const date = (value: string | null) => value ? new Date(value).toLocaleString() : 'Not established'
+      const date = (value: string | null) => value ? formatDisplayTimestamp(value, { seconds: true }) : 'Not established'
       return <section key={phase.id} id={single ? `phase-summary-${phase.id}` : undefined} tabIndex={single ? -1 : undefined} aria-label={single ? "Order progress" : phase.name} className="py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
         {single && phase.cancellationPending ? <p className="mb-3 text-sm text-muted-foreground"><CustomerText message="m_c07f337c6361" /></p> : null}
         <div className={single ? "grid grid-cols-2 gap-4 py-3 md:grid-cols-5" : cn(rowGrid, 'grid-cols-2 items-start px-3 py-3')}>
@@ -109,6 +110,6 @@ function PhaseShipments({ shipments, ready, single = false }: { shipments: Sampl
   return <div><h4 className="font-semibold"><CustomerText message="m_f41deb2033e4" /></h4>{!ready ? <p role="status" className="mt-1 text-sm text-muted-foreground"><CustomerText message="m_8006d374531d" /></p> : shipments.length ? <ul className="mt-2 divide-y">{shipments.map(shipment => <li key={shipment.id} className="space-y-1 py-2 text-sm">
     <div className="flex flex-wrap justify-between gap-2"><span className="wrap-anywhere"><RecordLink asChild><Link to="/sample-shipping/$shipmentId" params={{ shipmentId: shipment.id }} >{shipment.shipmentNumber}</Link></RecordLink></span><span>{humanizeStatus(shipment.status)}</span></div>
     <p className="text-muted-foreground wrap-anywhere">{shipment.carrier || 'Carrier not recorded'}{shipment.trackingNumber ? __customerText('m_a202b2edcefc', { p0: String(shipment.trackingNumber) }) : ''} · {shipment.destinationName}</p>
-    <p className="text-muted-foreground">{shipment.shippedAt ? __customerText('m_75c2977ea865', { p0: String(new Date(shipment.shippedAt).toLocaleString()) }) : __customerText('m_43f09128ac06')}{shipment.receivedTubeCount !== undefined && shipment.expectedTubeCount !== undefined ? __customerText('m_0b2ff1cd5bc8', { p0: String(shipment.receivedTubeCount), p1: String(shipment.expectedTubeCount) }) : ''}</p>
+    <p className="text-muted-foreground">{shipment.shippedAt ? __customerText('m_75c2977ea865', { p0: String(formatDisplayTimestamp(shipment.shippedAt, { seconds: true })) }) : __customerText('m_43f09128ac06')}{shipment.receivedTubeCount !== undefined && shipment.expectedTubeCount !== undefined ? __customerText('m_0b2ff1cd5bc8', { p0: String(shipment.receivedTubeCount), p1: String(shipment.expectedTubeCount) }) : ''}</p>
   </li>)}</ul> : <p className="mt-1 text-sm text-muted-foreground">{single ? <CustomerSourceText source={"No sample shipments recorded yet."} /> : __customerText('m_805798fb03e6')}</p>}</div>
 }

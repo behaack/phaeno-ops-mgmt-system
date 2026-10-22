@@ -1,3 +1,4 @@
+import { formatDisplayTimestamp } from '#/lib/display-format'
 import { NativeCheckbox } from '#/components/ui/native-checkbox'
 import { CustomerSourceText, useCustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { confirmPortal } from '#/components/PortalConfirmation'
@@ -20,7 +21,7 @@ import { FinanceField, FinanceValidationSummary, financeTextareaClass, validFina
 import { useOrderDraftGuard } from './use-order-draft-guard'
 
 const money = (value: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value)
-const date = (value: string) => new Date(value).toLocaleString()
+const date = (value: string) => formatDisplayTimestamp(value, { seconds: true })
 const reason = z.string().trim().min(1, 'Reason is required.').max(2000, 'Use 2,000 characters or fewer.')
 const sourceName = (value: string) => ({ PaymentReceipt: 'Receipt', PaymentAllocation: 'Allocation', PaymentAllocationReversal: 'Allocation reversal', InvoiceAdjustment: 'Invoice adjustment' })[value] ?? value
 

@@ -1,3 +1,5 @@
+import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
+import { availabilityTones } from '#/features/orders/configuration/availability-status'
 import { formatDisplayTimestamp } from '#/lib/display-format'
 import { BackLink } from '#/components/ui/back-link'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
@@ -268,7 +270,7 @@ export function SampleShippingConfigurationPanel({ apiEnabled, section, sampleTy
       </> : null}
 
       {section === 'destinations' && !destinationId ? <Card className="gap-0 py-0">
-        <CardHeader className="grid-cols-[minmax(0,1fr)_auto] gap-x-3 border-b bg-muted/50 p-4">
+        <CardHeader className="grid-cols-[minmax(0,1fr)_auto] gap-x-3">
           <CardTitle className="min-w-0"><CustomerText message="m_ebb6ab028a88" /></CardTitle>
           <Button className="col-start-2 row-start-1 justify-self-end" type="button" onClick={() => setDestinationEditor(null)}><Plus data-icon="inline-start" /><CustomerText message="m_48b7df13ccd6" /></Button>
           <CardDescription className="col-span-full"><CustomerText message="m_7ff2a283c64e" /></CardDescription>
@@ -317,7 +319,7 @@ export function SampleShippingConfigurationPanel({ apiEnabled, section, sampleTy
       </> : null}
 
       {section === 'sample-types' && !sampleTypeId ? <Card className="gap-0 py-0">
-        <CardHeader className="grid-cols-[minmax(0,1fr)_auto] gap-x-3 border-b bg-muted/50 p-4">
+        <CardHeader className="grid-cols-[minmax(0,1fr)_auto] gap-x-3">
           <CardTitle className="min-w-0"><CustomerText message="m_bd4e8f4f92d0" /></CardTitle>
           <Button className="col-start-2 row-start-1 justify-self-end" type="button" onClick={() => setSampleTypeEditor(null)}><Plus data-icon="inline-start" /><CustomerText message="m_ed830a72d799" /></Button>
           <CardDescription className="col-span-full"><CustomerText message="m_05c1b6eb62a0" /></CardDescription>
@@ -440,10 +442,10 @@ function DestinationDetails({ item, revisions, activeRevision, isDefault, defaul
   const latest = history[0]
   return <div className="space-y-5">
     <Card className="gap-0 py-0">
-      <CardHeader className="border-b bg-muted/50 p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><h2 className="break-words text-xl font-semibold">{item.name}</h2><div className="mt-2 flex flex-wrap items-center gap-2"><Badge variant="outline"><CustomerText message="m_e330d85ff901" />{item.revision}</Badge><ShippingActivationBadge item={item} />{isDefault && (latest.id === item.id || activeRevision?.id === item.id) ? <Badge><CustomerText message="m_21b111cbfe6e" /></Badge> : null}</div></div><DestinationActions item={item} revisions={revisions} activeRevision={activeRevision} isDefault={isDefault} defaultPending={defaultPending} onSetDefault={onSetDefault} onCreateRevision={onCreateRevision} onStatusChange={onStatusChange} triggerRef={triggerRef} /></div>{latest.id === item.id ? <DestinationActiveRevisionNote item={item} revisions={revisions} /> : null}</CardHeader>
+      <CardHeader ><div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><h2 className="break-words text-xl font-semibold">{item.name}</h2><div className="mt-2 flex flex-wrap items-center gap-2"><Badge variant="outline"><CustomerText message="m_e330d85ff901" />{item.revision}</Badge><ShippingActivationBadge item={item} />{isDefault && (latest.id === item.id || activeRevision?.id === item.id) ? <Badge><CustomerText message="m_21b111cbfe6e" /></Badge> : null}</div></div><DestinationActions item={item} revisions={revisions} activeRevision={activeRevision} isDefault={isDefault} defaultPending={defaultPending} onSetDefault={onSetDefault} onCreateRevision={onCreateRevision} onStatusChange={onStatusChange} triggerRef={triggerRef} /></div>{latest.id === item.id ? <DestinationActiveRevisionNote item={item} revisions={revisions} /> : null}</CardHeader>
       <CardContent className="space-y-4 p-4">{latest.id !== item.id ? <p className="text-sm"><CustomerText message="m_4ce10a1c71be" /><DestinationLink item={latest}><CustomerText message="m_70b71a22d565" />{latest.revision})</DestinationLink>.</p> : null}<dl className="grid gap-4 text-sm sm:grid-cols-2"><div><dt className="text-muted-foreground"><CustomerText message="m_71bf90935fc2" /></dt><dd className="break-all">{item.code}</dd></div><div><dt className="text-muted-foreground"><CustomerText message="m_bc53cda3bb3c" /></dt><dd>{formatEffectiveRange(item)}</dd></div><Detail label={__customerText('m_2e5b042d5d00')} value={item.recipientName} /><Detail label={__customerText('m_23d1886ab06e')} value={item.organizationName} /><Detail label={__customerText('m_56ef8f20955f')} value={[item.addressLine1, item.addressLine2, `${item.city}, ${item.stateOrProvince} ${item.postalCode}`, item.countryCode].filter(Boolean).join('\n')} /><Detail label={__customerText('m_b3fc5f3a4a1d')} value={item.receivingPhone} /><Detail label={__customerText('m_7a198ebd1a9f')} value={item.receivingEmail} /><Detail label={__customerText('m_cbc9319052d8')} value={item.receivingHours} /><Detail label={__customerText('m_1c6fb10cefd4')} value={item.timeZoneId} /><Detail label={__customerText('m_ed480d2dfb71')} value={item.closureInstructions} /><Detail label={__customerText('m_e9079d39da11')} value={item.deliveryInstructions} /><Detail label={__customerText('m_a13344e5100f')} value={item.carrierRestrictions} /><div><dt className="text-muted-foreground"><CustomerText message="m_030e445b8fed" /></dt><dd>{item.internationalShippingAllowed ? <CustomerSourceText source={"Allowed"} /> : __customerText('m_f0406a0e7eb1')}</dd></div></dl></CardContent>
     </Card>
-    <Card className="gap-0 py-0"><CardHeader className="border-b bg-muted/50 p-4"><CardTitle role="heading" aria-level={3}><CustomerText message="m_5ae0d3d186c7" /></CardTitle><CardDescription><CustomerText message="m_42446a6b72d8" /></CardDescription></CardHeader><CardContent className="p-4"><ul className="divide-y">{history.map(revision => <li key={revision.id} className="flex flex-wrap items-center justify-between gap-2 py-3"><div><DestinationLink item={revision}><CustomerText message="m_e330d85ff901" />{revision.revision} · {revision.name}</DestinationLink>{revision.id === item.id ? <span className="ml-2 text-xs text-muted-foreground"><CustomerText message="m_9dc859e86f2e" /></span> : null}<p className="mt-1 text-xs text-muted-foreground">{formatEffectiveRange(revision)}</p></div><ShippingActivationBadge item={revision} /></li>)}</ul></CardContent></Card>
+    <Card className="gap-0 py-0"><CardHeader ><CardTitle role="heading" aria-level={3}><CustomerText message="m_5ae0d3d186c7" /></CardTitle><CardDescription><CustomerText message="m_42446a6b72d8" /></CardDescription></CardHeader><CardContent className="p-4"><ul className="divide-y">{history.map(revision => <li key={revision.id} className="flex flex-wrap items-center justify-between gap-2 py-3"><div><DestinationLink item={revision}><CustomerText message="m_e330d85ff901" />{revision.revision} · {revision.name}</DestinationLink>{revision.id === item.id ? <span className="ml-2 text-xs text-muted-foreground"><CustomerText message="m_9dc859e86f2e" /></span> : null}<p className="mt-1 text-xs text-muted-foreground">{formatEffectiveRange(revision)}</p></div><ShippingActivationBadge item={revision} /></li>)}</ul></CardContent></Card>
   </div>
 }
 
@@ -480,7 +482,7 @@ function SampleTypeDetails({ item, revisions, onCreateRevision, configuration, a
   ]
   return <div className="space-y-5">
     <Card className="gap-0 py-0">
-      <CardHeader className="border-b bg-muted/50 p-4">
+      <CardHeader >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h2 className="break-words text-xl font-semibold">{item.name}</h2>
@@ -504,7 +506,7 @@ function SampleTypeDetails({ item, revisions, onCreateRevision, configuration, a
       </CardContent>
     </Card>
     <Card className="gap-0 py-0">
-      <CardHeader className="border-b bg-muted/50 p-4"><CardTitle><CustomerText message="m_eb52fc8f0dd2" /></CardTitle></CardHeader>
+      <CardHeader ><CardTitle><CustomerText message="m_eb52fc8f0dd2" /></CardTitle></CardHeader>
       <CardContent className="p-4"><dl className="space-y-5 text-sm">
         {requirements.map(([label, value]) => <div key={label}><dt className="font-medium">{label}</dt><dd className="mt-1 whitespace-pre-wrap break-words">{value || 'Not specified'}</dd></div>)}
       </dl></CardContent>
@@ -513,7 +515,7 @@ function SampleTypeDetails({ item, revisions, onCreateRevision, configuration, a
     {item.packagingInstructions || item.carrierRestrictions ? <details className="rounded-lg border p-4"><summary className="cursor-pointer text-sm font-medium"><CustomerText message="m_c7e76bc08469" /></summary><p className="mt-2 text-sm text-muted-foreground"><CustomerText message="m_bef96d0ca31b" /></p><dl className="mt-3 space-y-3"><Detail label={__customerText('m_0d62bb01df4e')} value={item.packagingInstructions} /><Detail label={__customerText('m_a13344e5100f')} value={item.carrierRestrictions} /></dl></details> : null}
     <ContainerSizesPanel apiEnabled={apiEnabled} configuration={configuration} sampleType={item} />
     <Card className="gap-0 py-0">
-      <CardHeader className="border-b bg-muted/50 p-4"><CardTitle><CustomerText message="m_5ae0d3d186c7" /></CardTitle><CardDescription><CustomerText message="m_da3591fd88fc" /></CardDescription></CardHeader>
+      <CardHeader ><CardTitle><CustomerText message="m_5ae0d3d186c7" /></CardTitle><CardDescription><CustomerText message="m_da3591fd88fc" /></CardDescription></CardHeader>
       <CardContent className="p-4"><ul className="divide-y">
         {history.map(revision => <li key={revision.id} className="flex flex-wrap items-center justify-between gap-2 py-3">
           <div><SampleTypeLink item={revision}><CustomerText message="m_e330d85ff901" />{revision.revision} · {revision.name}</SampleTypeLink>{revision.id === item.id ? <span className="ml-2 text-xs text-muted-foreground"><CustomerText message="m_9dc859e86f2e" /></span> : null}<p className="mt-1 text-xs text-muted-foreground">{formatEffectiveRange(revision)}</p></div>
@@ -721,7 +723,7 @@ function EffectiveBadge({ item }: { item: { effectiveFrom: string; effectiveTo: 
 
 
   const state = effectiveState(item)
-  return <Badge variant={state === 'Active now' ? "secondary" : "outline"}>{state}</Badge>
+  return <DomainStatusBadge status={state} tones={availabilityTones}>{state}</DomainStatusBadge>
 }
 
 function RevisionHistory<T extends { id: string }>({ items, currentItems, label }: { items: T[]; currentItems: T[]; label: (item: T) => string }) {

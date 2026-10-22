@@ -1,3 +1,4 @@
+import { RecordTableHeader } from '#/components/ui/record-list'
 import { useEffect, useState } from 'react'
 import { Button } from '#/components/ui/button'
 import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
@@ -9,7 +10,7 @@ export function ResearchNotebook({ blocks, experimentId, entryId }: { blocks: Re
   const files = useResearchQuery<Attachment[]>(`experiments/${experimentId}/entries/${entryId}/attachments`, undefined, Boolean(experimentId && entryId))
   return <div className="space-y-5"><ResearchFeedback error={files.error} />{blocks.length ? blocks.map(block => <section key={block.id} className="min-w-0 space-y-2"><h3 className="break-words font-semibold">{block.label}</h3>
     {block.kind === 'text' ? <p className="whitespace-pre-wrap break-words text-sm leading-6">{block.text || <span className="text-muted-foreground">No notes recorded.</span>}</p>
-      : block.kind === 'table' ? <div className="overflow-x-auto rounded-md border"><table className="w-full text-left text-sm"><caption className="sr-only">{block.label}</caption><thead><tr>{block.columns?.map((column, i) => <th className="border-b bg-muted px-3 py-2" key={i} scope="col">{column || `Column ${i + 1}`}</th>)}</tr></thead><tbody>{block.rows?.map((row, i) => <tr key={i}>{row.map((cell, j) => <td key={j} className="whitespace-pre-wrap border-b px-3 py-2">{cell}</td>)}</tr>)}</tbody></table>{!block.rows?.length ? <p className="p-3 text-sm text-muted-foreground">No values recorded.</p> : null}</div>
+      : block.kind === 'table' ? <div className="overflow-x-auto rounded-md border"><table className="w-full text-left text-sm"><caption className="sr-only">{block.label}</caption><RecordTableHeader><tr>{block.columns?.map((column, i) => <th className="border-b bg-muted px-3 py-2" key={i} scope="col">{column || `Column ${i + 1}`}</th>)}</tr></RecordTableHeader><tbody>{block.rows?.map((row, i) => <tr key={i}>{row.map((cell, j) => <td key={j} className="whitespace-pre-wrap border-b px-3 py-2">{cell}</td>)}</tr>)}</tbody></table>{!block.rows?.length ? <p className="p-3 text-sm text-muted-foreground">No values recorded.</p> : null}</div>
       : files.data?.find(f => f.id === block.attachmentId) ? <ResearchAttachmentView file={files.data.find(f => f.id === block.attachmentId)!} />
         : <p className="text-sm text-muted-foreground">{files.isLoading ? 'Loading attachment…' : 'Attachment metadata unavailable.'}</p>}
   </section>) : <p className="text-sm text-muted-foreground">This entry has no sections yet.</p>}</div>

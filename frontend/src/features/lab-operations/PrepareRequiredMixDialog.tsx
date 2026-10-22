@@ -1,3 +1,4 @@
+import { DialogDescription } from '#/components/ui/dialog'
 import { useRef } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
@@ -14,7 +15,7 @@ export function PrepareRequiredMixDialog({ requirement, onClose }: { requirement
   const workflow = workflows.data?.find(item => item.id === requirement.workflowId && item.status !== 'Retired')
   const revision = workflow?.revisions.find(item => item.revision === requirement.revision && item.status === 'Approved')
   const start = useMutation({ mutationFn: () => startMasterMix(requirement.workflowId, requirement.revision, request.current), onSuccess: () => client.invalidateQueries({ queryKey: masterMixesKey }) })
-  return <Dialog open onOpenChange={open => { if (!open && !start.isPending) onClose() }}><DialogContent><DialogHeader><DialogTitle>Prepare required master mix</DialogTitle></DialogHeader>
+  return <Dialog open onOpenChange={open => { if (!open && !start.isPending) onClose() }}><DialogContent><DialogHeader><DialogTitle>Prepare required master mix</DialogTitle><DialogDescription>Prepare the required mix in a new tab, then return to select it and scan its container.</DialogDescription></DialogHeader>
     <div className="space-y-3 text-sm">
       <p>Your entries stay in the waiting form. Complete the mix in a new tab, then return to select it and scan its container.</p>
       {workflows.isPending ? <p role="status">Loading the required recipe…</p> : workflows.isError ? <p role="alert">The required recipe could not be loaded.</p> : revision ? <p><strong>{revision.name}</strong> · approved revision {revision.revision}</p> : <p role="alert">This exact recipe revision is unavailable. Ask a supervisor to review the preparation workflow.</p>}

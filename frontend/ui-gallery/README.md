@@ -105,8 +105,10 @@ visual review rather than pretending that one platform's pixels define every
 browser. These checks do not establish every feature page's visual consistency,
 scientific acceptance, screen-reader coverage or complete WCAG conformance.
 Those gallery captures remain review artifacts. A separate, platform-specific
-pixel suite has 24 reviewed baselines under `visual-tests/__screenshots__`:
-list/detail/modal, ordinary/expanded Customer text, desktop/phone and light/dark.
+pixel suite has 48 reviewed baselines under `visual-tests/__screenshots__`:
+list/detail/modal with ordinary/expanded Customer text, plus actual Company People,
+source workspace, R&D experiments, sequencing inputs, sequencing assembly and
+Customer data components, each at desktop/phone sizes in light/dark themes.
 It uses Windows Chromium, bundled Geist, en-US, UTC, reduced motion and fixed
 viewports; a dedicated Windows CI job performs these comparisons. Port **4321**
 is isolated from the interactive and ordinary gallery servers. Visual failure
@@ -125,3 +127,19 @@ glyph-edge smoothing differences without accepting layout or content changes.
 When changing a shared pattern, update its gallery examples, relevant assertions,
 the [UI/UX guide](../../docs/ui-ux-principles.md) and
 [owning plan](../../docs/plans/UI-PATTERN-COMPLETENESS-PLAN.md) together.
+
+The gallery now has 16 sections. **Actual feature pages** links to the production
+components with isolated fictional transport. The separate `features.html` and
+`research.html` entries are engineering artifacts, absent from the Portal build.
+Their checks compare header bands, wrapping, accessibility and absence of API
+traffic in addition to reviewed pixels. Source guards also require shaded shared
+panel/table headings, owned status adapters and central timestamp formatting.
+
+Guide illustration maintenance uses `pnpm docs:captures:refresh` while the
+interactive gallery is running at port 4318. Inspect all 32 frames and 137 markers,
+then run `pnpm docs:captures:review` and the read-only
+`pnpm docs:captures:check`. The capture manifest records crops, scenarios, asset
+hashes and source dependencies. It fails for an invalid/outside annotation even
+if the help renderer could visually clamp it. CI never approves or refreshes
+references. All five guides also have image/alt/caption/marker browser checks in
+both themes and viewport sizes. See the [adoption plan](../../docs/plans/UI-CONSISTENCY-ADOPTION-AND-ILLUSTRATIONS-PLAN.md).

@@ -1,3 +1,5 @@
+import { portalAccessTones } from '#/features/organizations/access-status'
+import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
 import { Field as PortalField } from '#/components/ui/field'
 import { RecordLink } from '#/components/ui/record-link'
 import { useCrmPermissions } from './use-crm-permissions';
@@ -164,7 +166,7 @@ export function CrmCompanyPeople({
   return (
     <>
       <Card className="gap-0 py-0">
-        <CardHeader className="border-b bg-muted/50 p-4">
+        <CardHeader >
           <CardTitle>People</CardTitle>
           <CardDescription>
             {canAdminister ? 'Company contacts, Portal identities, invitations, and department access in one reviewed list.' : 'Company contacts and their roles. A Phaeno administrator manages Portal invitations and access.'}
@@ -283,9 +285,9 @@ function PersonRow({
               <span className="font-medium">{person.displayName}</span>
             )}
             {person.isPrimaryCompany ? <Badge>Primary</Badge> : null}
-            <Badge variant={person.portalAccessState === 'Active' ? 'secondary' : 'outline'}>
+            <DomainStatusBadge status={person.portalAccessState} tones={portalAccessTones}>
               {portalAccessLabel(person.portalAccessState)}
-            </Badge>
+            </DomainStatusBadge>
             {person.requiresIdentityReview ? (
               <Badge variant="outline">Identity review</Badge>
             ) : null}

@@ -1,3 +1,4 @@
+import { formatDisplayTimestamp } from '#/lib/display-format'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import { useEffect, useState } from 'react'
@@ -37,7 +38,7 @@ export function LabPhasesPanel({ order, internal = false, onSaved, tracking, onM
   const multiplePhases = hasMultipleLabPhases(order, plan)
   const pending = plan?.proposals.some(p => p.status === 'Pending')
   const money = (value: number) => new Intl.NumberFormat(undefined, { style: 'currency', currency: plan?.currency ?? 'USD' }).format(value)
-  const date = (value: string | null) => value ? new Date(value).toLocaleString() : 'Not established'
+  const date = (value: string | null) => value ? formatDisplayTimestamp(value, { seconds: true }) : 'Not established'
   const canCancel = Boolean(!internal && canManage && accepted && !closed)
   const onCancel = (phase: LabPhase) => {
     if (!plan) return

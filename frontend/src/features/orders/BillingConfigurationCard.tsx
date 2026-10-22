@@ -1,3 +1,4 @@
+import { DisplayTimestamp } from '#/components/ui/display-value'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { NativeSelect } from '#/components/ui/native-select'
 import { confirmPortal } from '#/components/PortalConfirmation'
@@ -101,7 +102,7 @@ export function BillingConfigurationCard({ apiEnabled, customers, customersLoadi
         <FinanceField id="billing-approval-notes" label="Finance approval notes" required error={approval.formState.errors.notes?.message}><Input required disabled={busy} {...approval.register('notes', { onChange: () => { if (approval.formState.errors.notes) void approval.trigger('notes') } })} /></FinanceField>
         {!modal ? <RequiredLegend /> : null}<Button type="submit" variant="outline" disabled={!apiEnabled || !selected.profileVersion || !selected.taxDecision || __formDraftDirty || busy}>{approve.isPending ? <CustomerSourceText source={"Approving…"} /> : <CustomerSourceText source={"Approve current tax decision"} />}</Button>
         {__formDraftDirty ? <p className="text-sm text-muted-foreground"><CustomerSourceText source={"Save billing changes before approving the current tax decision."} /></p> : null}
-        {selected.financeApprovedAtUtc ? <p className="text-xs text-muted-foreground"><CustomerSourceText source={"Approved"} /> {new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(selected.financeApprovedAtUtc))}<CustomerSourceText source={". Any billing or tax change requires a new approval."} /></p> : null}
+        {selected.financeApprovedAtUtc ? <p className="text-xs text-muted-foreground"><CustomerSourceText source={"Approved"} /> {<DisplayTimestamp value={selected.financeApprovedAtUtc} />}<CustomerSourceText source={". Any billing or tax change requires a new approval."} /></p> : null}
       </form>
     </> : !customersLoading ? <p className="text-sm text-muted-foreground"><CustomerSourceText source={"Select a Customer to configure PSeq billing."} /></p> : null}
   </>

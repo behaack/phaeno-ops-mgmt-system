@@ -1,5 +1,6 @@
+import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
+import { accessTones } from '#/features/organizations/access-status'
 import { organizationHealth } from './dashboard-data'
-import { Badge } from '#/components/ui/badge'
 import {
   Card,
   CardContent,
@@ -31,11 +32,9 @@ export function OrganizationHealthPanel() {
                   {organization.owner}
                 </p>
               </div>
-              <Badge
-                variant={organization.status === 'Ready' ? 'secondary' : 'outline'}
-              >
+              <DomainStatusBadge status={organization.status} tones={accessTones}>
                 {organization.status}
-              </Badge>
+              </DomainStatusBadge>
             </div>
             <p className="m-0 mt-3 text-sm text-muted-foreground">
               {organization.review}

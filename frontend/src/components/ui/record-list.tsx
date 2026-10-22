@@ -24,6 +24,11 @@ export function ListToolbar({ children, actions, className, ...props }: Componen
   </div>
 }
 
+/** Column labels retain native table semantics and the same shaded header surface. */
+export function RecordTableHeader({ className, ...props }: ComponentProps<'thead'>) {
+  return <thead {...props} data-slot="record-table-header" className={cn('bg-muted', className)} />
+}
+
 /** Tables own their captions/columns; this shared region contains narrow overflow. */
 export function RecordTable({ label, children, className, ...props }: ComponentProps<'section'> & { label: string }) {
   // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- A named scroll region needs keyboard focus for horizontal table scrolling.

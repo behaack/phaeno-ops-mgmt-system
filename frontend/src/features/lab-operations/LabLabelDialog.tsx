@@ -234,9 +234,9 @@ export function LabLabelDialog({
                   spellCheck={false}
                 />
                 {scannedBarcode && !scanMatches ? (
-                  <p className="mt-1 text-sm text-destructive" id="lab-label-scan-back-error" role="alert">
+                  <FieldError  id="lab-label-scan-back-error" role="alert">
                     This scan does not match the container label. Check the tube and print again if needed.
-                  </p>
+                  </FieldError>
                 ) : <FieldError id="lab-label-scan-back-error">{form.formState.errors.scannedBarcode?.message}</FieldError>}
                 <FieldDescription>Scan the physical tube label. The scan must match this container before success can be recorded.</FieldDescription>
                 </Field> : null}

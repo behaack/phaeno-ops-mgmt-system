@@ -93,7 +93,7 @@ export function OrganizationDepartmentsPanel({ organizationId, organizationAdmin
     <div className="space-y-5">
       {organizationAdmin && showOrganizationDefaults ? <OrganizationDefaultsPanel organizationId={organizationId} /> : null}
       <Card className="gap-0 py-0">
-        <CardHeader className="border-b bg-muted/50 p-4">
+        <CardHeader >
               <CardTitle>{m.departments}</CardTitle>
               <CardDescription>
                 {m.departmentDescription}

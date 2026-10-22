@@ -1,3 +1,4 @@
+import { DisplayTimestamp } from '#/components/ui/display-value'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRef, useState } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
@@ -42,13 +43,13 @@ export function LabShipmentReceiptPanel({ apiEnabled, canReceive, onAccession }:
       { value: 'received', label: 'Shipments received' },
     ]} />
     <div role="region" aria-label={view === 'receive' ? 'Receive a shipment' : view === 'expected' ? 'Expected shipments' : 'Shipments received'} className="min-w-0">
-    {view === 'receive' ? <Card className="gap-0 py-0"><CardHeader className="border-b bg-muted/50 p-4"><CardTitle>Receive a shipment</CardTitle><CardDescription>Scan the PH-P- barcode under “Scan to receive this shipment” in the body of the shipping insert when this container physically arrives. Submitting the scan records shipment receipt.</CardDescription></CardHeader><CardContent className="space-y-4 p-4">
+    {view === 'receive' ? <Card className="gap-0 py-0"><CardHeader ><CardTitle>Receive a shipment</CardTitle><CardDescription>Scan the PH-P- barcode under “Scan to receive this shipment” in the body of the shipping insert when this container physically arrives. Submitting the scan records shipment receipt.</CardDescription></CardHeader><CardContent className="space-y-4 p-4">
     {canReceive ? <form className="flex flex-wrap items-end gap-3" onSubmit={event => { event.preventDefault(); if (apiEnabled && barcode.trim() && !receipt.isPending) receipt.mutate(barcode.trim()) }}>
       <Field className="w-full max-w-xl"><Label htmlFor="container-receipt-barcode">Shipping insert barcode</Label><FieldDescription id="container-receipt-help">Use the complete PH-P- code. Order, shipment-reference, container and tube barcodes do not acknowledge receipt here.</FieldDescription><Input ref={input} id="container-receipt-barcode" aria-describedby="container-receipt-help" placeholder="PH-P-…" autoComplete="off" spellCheck={false} value={barcode} disabled={receipt.isPending} onChange={event => { setBarcode(event.target.value); receipt.reset() }} /></Field>
       <Button type="submit" disabled={!apiEnabled || !barcode.trim() || receipt.isPending}>{receipt.isPending ? 'Receiving…' : 'Receive shipment'}</Button>
     </form> : <p className="text-sm text-muted-foreground">A laboratory operator or supervisor can acknowledge shipment receipt.</p>}
     {receipt.error ? <Alert variant="destructive"><AlertTitle>Shipment receipt could not be confirmed</AlertTitle><AlertDescription>{getLabOperationsError(receipt.error, 'Scan the same insert again to check or record its receipt. Repeated scans do not create another receipt.')}</AlertDescription></Alert> : null}
-    {receipt.data ? <Alert><div className="flex flex-wrap items-center justify-between gap-2"><AlertTitle className="min-w-0 wrap-anywhere">{receipt.data.alreadyReceived ? 'Shipment already received' : 'Shipment received'} · {receipt.data.shipmentNumber}</AlertTitle><Button className="ml-auto shrink-0" onClick={() => onAccession(receipt.data.barcode)}>Accession samples</Button></div><AlertDescription><p>Received {new Date(receipt.data.receivedAt).toLocaleString()}. Next, accession the individual tubes.</p></AlertDescription></Alert> : null}
+    {receipt.data ? <Alert><div className="flex flex-wrap items-center justify-between gap-2"><AlertTitle className="min-w-0 wrap-anywhere">{receipt.data.alreadyReceived ? 'Shipment already received' : 'Shipment received'} · {receipt.data.shipmentNumber}</AlertTitle><Button className="ml-auto shrink-0" onClick={() => onAccession(receipt.data.barcode)}>Accession samples</Button></div><AlertDescription><p>Received {<DisplayTimestamp value={receipt.data.receivedAt} seconds />}. Next, accession the individual tubes.</p></AlertDescription></Alert> : null}
   </CardContent></Card> : view === 'expected' ? <LabShipmentQueue apiEnabled={apiEnabled} /> : <LabShipmentHistoryPanel apiEnabled={apiEnabled} />}
     </div>
   </div>

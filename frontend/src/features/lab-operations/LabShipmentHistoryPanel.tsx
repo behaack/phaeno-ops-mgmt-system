@@ -25,7 +25,7 @@ export function LabShipmentHistoryPanel({ apiEnabled }: { apiEnabled: boolean })
   const query = useQuery({ queryKey: ['lab-shipment-queue', 'history', debouncedSearch, page], queryFn: () => getLabShipmentHistory(debouncedSearch, page), enabled: apiEnabled && !waitingForSearch })
   const data = !apiEnabled || waitingForSearch ? undefined : query.data, pages = Math.max(1, Math.ceil((data?.totalCount ?? 0) / (data?.pageSize ?? 20)))
   return <Card className="min-w-0 gap-0 overflow-hidden py-0">
-    <CardHeader className="space-y-3 border-b bg-muted/50 p-4">
+    <CardHeader className="space-y-3">
       <div><CardTitle>Shipments received</CardTitle><CardDescription>Recorded container arrivals, most recent first, including completed accession. Container arrival and individual tube accession are separate steps.</CardDescription></div>
       <div className="flex flex-wrap items-end gap-2">
         <Field className="min-w-0 flex-1"><Label htmlFor="received-shipment-search" className="sr-only">Search received shipments</Label>

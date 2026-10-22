@@ -1,0 +1,2 @@
+export const shippingTones = { Draft: 'neutral', AwaitingShipment: 'pending', Submitted: 'pending', Expected: 'pending', Shipped: 'info', InTransit: 'info', Delivered: 'info', Received: 'info', Accessioned: 'info', Completed: 'success', Cancelled: 'neutral', Failed: 'error', Rejected: 'error', OnHold: 'warning' } as const
+export const inventoryTones = { Available: 'info', OnTheWay: 'info', Assigned: 'pending', InUse: 'info', Exhausted: 'neutral', Returned: 'neutral', Retired: 'neutral', Quarantined: 'warning' } as const

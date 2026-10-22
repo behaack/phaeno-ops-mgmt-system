@@ -1,9 +1,8 @@
 import { formatDisplayTimestamp } from '#/lib/display-format'
 import { PageHeader } from '#/components/ui/page-header'
-import { LoadingState } from '#/components/ui/content-state'
+import { ErrorState, LoadingState } from '#/components/ui/content-state'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useRouterState, useNavigate } from '@tanstack/react-router'
-import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 import { SearchableSelect } from '#/components/ui/searchable-select'
@@ -14,11 +13,11 @@ import { researchError, useResearchQuery } from './research-api'
 import { usePhaenoSession } from '#/features/auth/session-context'
 
 export function ResearchFeedback({ error }: { error: unknown }) {
-  return error ? <Alert variant="destructive"><AlertTitle>R&D request failed</AlertTitle><AlertDescription>{researchError(error)}</AlertDescription></Alert> : null
+  return error ? <ErrorState title="R&D request failed">{researchError(error)}</ErrorState> : null
 }
 export function ResearchLoading({ loading }: { loading: boolean }) { return loading ? <LoadingState label="Loading research records…" /> : null }
-export function ResearchHeader({ title, description, children }: { title: string; description?: string; children?: ReactNode }) {
-  return <PageHeader title={title} description={description} actions={children} />
+export function ResearchHeader({ title, description, status, children }: { title: string; description?: string; status?: ReactNode; children?: ReactNode }) {
+  return <PageHeader title={title} description={description} status={status} actions={children} />
 }
 export function useResearchSearch() {
   const search = useRouterState({ select: s => parseResearchSearch(s.location.search) })
@@ -47,9 +46,9 @@ export function ResearchSearchInput({ value, onChange, label }: { value: string;
   useEffect(() => { if (text === value) return; const timer = setTimeout(() => onChange(text), 300); return () => clearTimeout(timer) }, [text, value, onChange])
   return <Field><Label htmlFor="research-search">{label}</Label><Input id="research-search" type="search" maxLength={255} value={text} onChange={e => setText(e.target.value)} /></Field>
 }
-export function ResearchProjectSelect({ value, onChange, required = false, disabled = false, id = 'research-project' }: { value: string; onChange: (id: string) => void; required?: boolean; disabled?: boolean; id?: string }) {
+export function ResearchProjectSelect({ value, onChange, required = false, disabled = false, id = 'research-project', invalid, describedBy }: { value: string; onChange: (id: string) => void; required?: boolean; disabled?: boolean; id?: string; invalid?: boolean; describedBy?: string }) {
   const query = useResearchQuery<{ id: string; name: string }[]>('projects/choices')
-  return <div className="space-y-2"><SearchableSelect id={id} options={(query.data ?? []).map(p => ({ value: p.id, label: p.name }))}
+  return <div className="space-y-2"><SearchableSelect id={id} aria-invalid={invalid} aria-describedby={describedBy} options={(query.data ?? []).map(p => ({ value: p.id, label: p.name }))}
     value={value} onValueChange={onChange} placeholder="Find a project" emptyMessage={query.isLoading ? 'Loading projects…' : 'Create a project first.'}
     resultsLabel="Research projects" selectionMessage="Choose a research project." noMatchMessage="No matching research projects."
     narrowMessage={count => `Keep typing to narrow ${count} projects.`} required={required} disabled={disabled || query.isLoading}

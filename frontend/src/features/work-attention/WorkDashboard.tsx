@@ -1,3 +1,4 @@
+import { formatDisplayTimestamp } from '#/lib/display-format'
 import { PageTitle } from '#/components/ui/page-header'
 import { useCustomerText } from '#/features/customer-i18n/customer-text'
 import { useNavigate, useRouterState } from '@tanstack/react-router'
@@ -50,7 +51,7 @@ export function WorkDashboard({ full = false }: { full?: boolean }) {
     {data ? <section className="rounded-lg border bg-card px-4" aria-busy={query.isFetching}><WorkList items={data.items} />{!data.items.length ? <p role="status" className="py-8 text-sm text-muted-foreground">{messages.text(data.totalCount > 0 ? 'emptyPage' : kind === 'action' ? 'empty' : kind === 'waiting' ? 'emptyWaiting' : 'emptyUpdates')}</p> : null}
       <RecordPagination data={data} busy={query.isFetching} onPage={setPage} />
     </section> : null}
-    <footer className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground"><p>{data ? `${messages.text('updated')}: ${new Intl.DateTimeFormat(messages.locale, { timeStyle: 'short' }).format(new Date(data.evaluatedAtUtc))}${query.isFetching ? ` · ${messages.text('stale')}` : ''}` : messages.text('unknown')}</p>
+    <footer className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground"><p>{data ? `${messages.text('updated')}: ${formatDisplayTimestamp(data.evaluatedAtUtc, { locale: messages.locale })}${query.isFetching ? ` · ${messages.text('stale')}` : ''}` : messages.text('unknown')}</p>
       {!full ? <Button asChild variant="outline"><Link to="/dashboard/attention">{messages.text('openWork')}</Link></Button> : null}
     </footer>
   </main>

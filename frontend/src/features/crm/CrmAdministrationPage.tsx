@@ -1,3 +1,4 @@
+import { RecordTableHeader } from '#/components/ui/record-list'
 import { RequiredFieldName, RequiredLegend } from '#/components/ui/required-field'
 import { Field as PortalField } from '#/components/ui/field'
 import { NativeSelect } from '#/components/ui/native-select'
@@ -301,7 +302,7 @@ export function CrmAdministrationPage() {
               </header>
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
-                  <thead>
+                  <RecordTableHeader>
                     <tr className="text-xs text-muted-foreground">
                       <th className="p-3">Position</th>
                       <th className="p-3">Stage</th>
@@ -311,7 +312,7 @@ export function CrmAdministrationPage() {
                       <th className="p-3">Status</th>
                       <th className="p-3 text-right">Actions</th>
                     </tr>
-                  </thead>
+                  </RecordTableHeader>
                   <tbody className="divide-y">
                     {pipeline.stages.map((stage) => (
                       <tr key={stage.id}>

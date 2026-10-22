@@ -191,14 +191,14 @@ Document recovery only when the current interface provides the action. Distingui
 
 After the review, validate registered identities, same-audience links and anchors, portable Markdown, summaries, and review dates. Regenerate and check the documentation corpus. Content-only edits do not require an application test suite; a help navigation or rendering change needs the scoped UI coverage described above.
 
-## Future visual documentation
+## Visual documentation and capture maintenance
 
 Add screenshots to workflow guides after the corresponding screens and
 responsive behavior have stabilized. Screenshots should clarify spatial,
 state-dependent, or multi-step interactions; they should not be added merely
 to repeat labels already stated in the guide.
 
-The future implementation should:
+Maintained illustrations must:
 
 - capture the current Portal UI from deterministic seeded scenarios rather
   than customer, production, or confidential operational data;
@@ -219,11 +219,30 @@ The future implementation should:
 - verify referenced assets, image loading, captions, alternative text, narrow
   layouts, and light/dark readability as part of documentation coverage.
 
-Begin with the mature Data Provisioning, Order Operations, and Laboratory
-Operations guides. Prioritize overview, queue triage, detail workspace, and
-exception-recovery screens that benefit from visual orientation. Do not block
-documentation completeness on a screenshot while a screen is still changing;
-accurate prose remains the required source of truth.
+The five illustrated Phaeno how-to guides have 32 captures. Their stable asset
+names retain the original October 15/17 identifiers; the current capture and
+review dates are in `frontend/ui-gallery/documentation-captures.json`. Capture
+scenarios live in `frontend/scripts/guide-scenarios.mjs`. They render actual
+feature components with fictional data through isolated transports; unknown
+requests fail rather than reaching hosted services. This is illustration evidence,
+not live business, provider, physical or scientific acceptance.
+
+Run the independent gallery, then `pnpm docs:captures:refresh` from `frontend/`.
+The canonical capture is light, en-US, UTC, 1280 CSS pixels wide; each frame records
+its viewport and crop, including a taller table-editor scenario. Markers derive
+from named controls and receive coordinates relative to the new image. Review
+every image, numbered explanation, alternative text and caption before running
+`pnpm docs:captures:review`. No production record or email is needed.
+
+`pnpm docs:captures:check` is read-only. It validates all assets, hashes,
+annotations, guide references and fingerprints of the current feature/shared
+UI/capture sources and renderer dependency lock. Changed sources require a new
+capture/review; CI never refreshes or approves images. Engineering-only provenance
+stays out of the Portal bundle; the renderer receives only image dimensions and
+marker coordinates. Browser checks load every guide image in both themes at
+desktop and phone widths and verify caption/alt text and marker containment.
+
+Add images where spatial context helps; accurate prose remains the source of truth.
 
 ## Documentation search and metadata
 

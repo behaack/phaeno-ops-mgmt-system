@@ -1,3 +1,4 @@
+import { RecordTableHeader } from '#/components/ui/record-list'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import type { LabServiceOrder, Quote } from '#/api/order-management'
@@ -16,7 +17,7 @@ export function LabOrderScope({ order, quote, showSourceGroups = true, showTotal
     <p><strong><CustomerText message="m_d39c8ce0cc98" /></strong> {order.sampleTypeName ?? 'Not recorded for this earlier order'}</p>
     {showTotals ? <h3 className="font-semibold">{order.requestedSpecimenCount} {order.requestedSpecimenCount === 1 ? <CustomerSourceText source={"sample"} /> : __customerText('m_24baa7a731ce')} · {order.requestedSequencingRunCount ?? order.requestedSpecimenCount} <CustomerText message="m_ab39ac5729e8" /></h3> : null}
     {showSourceGroups ? order.sourceGroups.length ? <table className="w-full text-left">
-      <thead><tr className="border-b text-xs text-muted-foreground"><th scope="col" className="pb-2 font-medium"><CustomerText message="m_62cda8311410" /></th><th scope="col" className="pb-2 text-right font-medium"><CustomerText message="m_bc228b269ce0" /></th></tr></thead>
+      <RecordTableHeader><tr className="border-b text-xs text-muted-foreground"><th scope="col" className="pb-2 font-medium"><CustomerText message="m_62cda8311410" /></th><th scope="col" className="pb-2 text-right font-medium"><CustomerText message="m_bc228b269ce0" /></th></tr></RecordTableHeader>
       <tbody>{order.sourceGroups.map(group => <tr key={group.id} className="border-b last:border-0"><th scope="row" className="py-2 pr-4 font-normal wrap-anywhere">{group.biologicalSource || 'Source not specified'}</th><td className="py-2 text-right tabular-nums">{group.specimenCount}</td></tr>)}</tbody>
     </table> : order.sharedBiologicalSource ? <p>{order.sharedBiologicalSource}</p> : <p className="text-muted-foreground"><CustomerText message="m_dfe53e651f6c" /></p> : null}
   </section>

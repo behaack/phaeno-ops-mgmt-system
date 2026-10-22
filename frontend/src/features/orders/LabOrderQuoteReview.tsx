@@ -1,3 +1,4 @@
+import { RecordTableHeader } from '#/components/ui/record-list'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import type { ReactNode } from 'react'
@@ -69,7 +70,7 @@ function PhaseDetails({ phase, breakdown }: { phase: QuoteReviewPhase; breakdown
         {phase.scope.runsPerSample !== null ? <div className="sm:col-span-2"><dt className="inline font-bold"><CustomerText message="m_6625e4eb0a45" /></dt>{' '}<dd className="inline tabular-nums">{phase.scope.runsPerSample}{breakdown ? breakdown.additionalRunsPerSample === 0 ? " total (1 included)" : __customerText('m_49c2e83c81c9', { p0: String(breakdown.additionalRunsPerSample) }) : null}</dd></div> : null}</> : null}
     </dl>
     {phase.scope?.sources.length ? <table className="w-full text-left text-sm">
-      <thead><tr className="border-b text-xs text-muted-foreground"><th scope="col" className="pb-1 font-bold"><CustomerText message="m_62cda8311410" /></th><th scope="col" className="pb-1 text-right font-bold"><CustomerText message="m_bc228b269ce0" /></th></tr></thead>
+      <RecordTableHeader><tr className="border-b text-xs text-muted-foreground"><th scope="col" className="pb-1 font-bold"><CustomerText message="m_62cda8311410" /></th><th scope="col" className="pb-1 text-right font-bold"><CustomerText message="m_bc228b269ce0" /></th></tr></RecordTableHeader>
       <tbody>{phase.scope.sources.map((source, index) => <tr key={index} className="border-b last:border-0"><th scope="row" className="py-1 pr-4 font-normal wrap-anywhere">{source.biologicalSource}</th><td className="py-1 text-right tabular-nums">{source.specimenCount}</td></tr>)}</tbody>
     </table> : null}
   </>

@@ -2395,7 +2395,7 @@
       "title": "How to configure samples and shipping",
       "summary": "Prepare Shipping procedures, Sample types, Kit specifications and a Default receiving destination.",
       "order": 43,
-      "reviewedAt": "2026-10-15",
+      "reviewedAt": "2026-10-22",
       "navigationGroup": "order-operations",
       "contentType": "how-to",
       "topicIds": [
@@ -2421,12 +2421,12 @@
       "publicationStatus": "published",
       "id": "phaeno/how-to-configure-samples-shipping",
       "route": "/docs/phaeno/how-to-configure-samples-shipping",
-      "contentHash": "fb5097f00b085d5b0315ca8a1b7899cf0d781f756e484921b76b0728c8d84307",
+      "contentHash": "1e48a37ad07c5321880891c14f0e0a6fb59596c5e469f8cc2dd34ef842e2b787",
       "sections": [
         {
           "heading": "How to configure samples and shipping",
           "anchor": "how-to-configure-samples-and-shipping",
-          "text": "Use this guide to prepare the reusable configuration for new laboratory orders. Work in the Phaeno organization with samples/shipping configuration access. Open Samples & shipping settings from the user menu. On narrow layouts, expand Settings first. This setup defines what Customers may submit and how it reaches Phaeno; it does not record a shipment or assemble a physical kit."
+          "text": "Illustrations refreshed and reviewed October 22, 2026, from current components with fictional records. Use this guide to prepare the reusable configuration for new laboratory orders. Work in the Phaeno organization with samples/shipping configuration access. Open Samples & shipping settings from the user menu. On narrow layouts, expand Settings first. This setup defines what Customers may submit and how it reaches Phaeno; it does not record a shipment or assemble a physical kit."
         },
         {
           "heading": "Understand the four records",
@@ -2468,7 +2468,7 @@
       "title": "How to create and approve a lab protocol",
       "summary": "Write ordered instructions, review the bench presentation and release a complete protocol revision.",
       "order": 53.5,
-      "reviewedAt": "2026-10-15",
+      "reviewedAt": "2026-10-22",
       "navigationGroup": "laboratory-operations",
       "contentType": "how-to",
       "topicIds": [
@@ -2494,12 +2494,12 @@
       "publicationStatus": "published",
       "id": "phaeno/how-to-lab-protocol",
       "route": "/docs/phaeno/how-to-lab-protocol",
-      "contentHash": "e551d219c7231338ae49e76904c8a3ca738c9385ed3450acbd81a743444012b9",
+      "contentHash": "5789a93cc955672b7e118831a14d3891a80a307b498126426dabcda4aac56bdd",
       "sections": [
         {
           "heading": "How to create and approve a lab protocol",
           "anchor": "how-to-create-and-approve-a-lab-protocol",
-          "text": "Use this guide to author a complete library protocol in Lab settings → Protocols. Work in the Phaeno organization with protocol-management access. The approved protocol is a configuration reference; it does not record performed laboratory work."
+          "text": "Illustrations refreshed and reviewed October 22, 2026, from current components with fictional records. Use this guide to author a complete library protocol in Lab settings → Protocols. Work in the Phaeno organization with protocol-management access. The approved protocol is a configuration reference; it does not record performed laboratory work."
         },
         {
           "heading": "1. Start a protocol or a revision",
@@ -2531,7 +2531,7 @@
       "title": "How to onboard a Customer",
       "summary": "Request and approve online access, invite an administrator, enable the approved service, finish billing and tax review, and close both requests.",
       "order": 15.5,
-      "reviewedAt": "2026-10-15",
+      "reviewedAt": "2026-10-22",
       "navigationGroup": "customer-relationship-management",
       "contentType": "how-to",
       "topicIds": [
@@ -2570,7 +2570,7 @@
       "publicationStatus": "published",
       "id": "phaeno/how-to-onboard-customer",
       "route": "/docs/phaeno/how-to-onboard-customer",
-      "contentHash": "04589ae614980b475fce77936c02df78d72fc81febc00f3a86f984524f93266c",
+      "contentHash": "8bb7d90be852f13e87687ce0ffdf08a899ea72a4bd1de9bfc9e8f000cdc41825",
       "sections": [
         {
           "heading": "How to onboard a Customer",
@@ -2580,7 +2580,7 @@
         {
           "heading": "Before you start",
           "anchor": "before-you-start",
-          "text": "Work in the Phaeno organization. A platform administrator creates and reviews Company access/service requests and manages invitations. Commercial staff can prepare the Company and contact information within their permissions; involve an administrator for the controlled access steps. Finance staff with billing access own the billing profile and tax approval. The invited Customer administrator accepts their own access. Have the correct Company, intended administrator's name and email, Department scope, approved service and dates, billing contact/address, agreed payment terms and Finance's tax decision. Check for existing Companies, people, access and service permissions before adding records. Every screenshot below renders actual application components with explicitly fictional demonstration records. The numbered markers correspond to the written explanations immediately below each image. No invitation or email was sent and no Customer records were changed to make these illustrations. Example names, dates, terms and tax choices are illustrations, not values to copy into real work."
+          "text": "Work in the Phaeno organization. A platform administrator creates and reviews Company access/service requests and manages invitations. Commercial staff can prepare the Company and contact information within their permissions; involve an administrator for the controlled access steps. Finance staff with billing access own the billing profile and tax approval. The invited Customer administrator accepts their own access. Have the correct Company, intended administrator's name and email, Department scope, approved service and dates, billing contact/address, agreed payment terms and Finance's tax decision. Check for existing Companies, people, access and service permissions before adding records. Illustrations were refreshed and reviewed on October 22, 2026. They show focused parts of the workflow; surrounding navigation may be outside the image. Every screenshot below renders actual application components with explicitly fictional demonstration records. The numbered markers correspond to the written explanations immediately below each image. No invitation or email was sent and no Customer records were changed to make these illustrations. Example names, dates, terms and tax choices are illustrations, not values to copy into real work."
         },
         {
           "heading": "1. Prepare the Company, people and Departments",
@@ -2610,7 +2610,7 @@
         {
           "heading": "6. Verify the online-access request completed automatically",
           "anchor": "6-verify-the-online-access-request-completed-automatically",
-          "text": "Return to CRM → Requests → Completed / history. Completed online-access request showing the history tab, Completed status, automatic completion explanation and No service change. Completed / history: open the completed-request view; search by Company or request number if needed. Completed: verify the exact online-access request reached this state. Completed work: review the automatic-completion explanation. Company access must be enabled and an Organization or active-Department administrator must have accepted and gained active access. No service change: this access request did not enable a product/service. Access-only onboarding has no manual Complete request action. While an invitation is pending, it remains Waiting for acceptance. Expired/revoked invitations or inactive access require attention. If active administrator access already exists, approval can complete the request immediately. Progress normally refreshes every 15 seconds while Requests is open and when you return; use the displayed retry action if progress or automatic completion failed."
+          "text": "Return to CRM → Requests → Completed / history. Completed online-access request showing Company identity, Completed status, automatic completion explanation and No service change. Completed / history: open the completed-request view; search by Company or request number if needed. Completed: verify the exact online-access request reached this state. Completed work: review the automatic-completion explanation. Company access must be enabled and an Organization or active-Department administrator must have accepted and gained active access. No service change: this access request did not enable a product/service. Access-only onboarding has no manual Complete request action. While an invitation is pending, it remains Waiting for acceptance. Expired/revoked invitations or inactive access require attention. If active administrator access already exists, approval can complete the request immediately. Progress normally refreshes every 15 seconds while Requests is open and when you return; use the displayed retry action if progress or automatic completion failed."
         },
         {
           "heading": "7. Request the approved product or service",
@@ -2625,7 +2625,7 @@
         {
           "heading": "9. Resolve the request's Work needed checklist",
           "anchor": "9-resolve-the-requests-work-needed-checklist",
-          "text": "Open Approved / needs work and expand the relevant Instructions. Approved service request with the correct request number, verified Company access and service permission, remaining offering/billing blockers and expanded Finance instructions. Approved / needs work: approval and completion are separate states. Request number: follow the service request, not the completed access request. Service permission — Done: verify the permission is current, Ready, linked to this request and scoped to the Company or an active Department. Shared offering setup: a Phaeno configuration owner resolves missing shared service definitions; changing the Company permission alone cannot do this. Company billing: Finance completes the named Customer-specific fields. Expanded Instructions: follow the owner, destination, fields, save action and completion condition for each remaining item. The exact blockers depend on current saved configuration. For Customer PSeq requests, review all displayed requirements: Company and people: active Customer access, an accepted eligible administrator and current service permission; verify the intended Department. Order settings → Service catalog: an active, approved PSeq Lab Service offering using the supported sales unit. Quote & workflow supplies valid quote settings and supported sample/result workflows. Samples & shipping settings: effective Active Sample types, their usable Shipping procedures and kit configuration, an available Default receiving destination, and saved Order submission guidance. More → Finance → Customer billing: complete billing contact/address, agreed payment terms, effective tax decision and Finance approval. Manual operational block: resolve the recorded reason with its owner and have authorized staff clear the block. Completing other fields does not remove it. Use How to configure samples and shipping for shared shipping setup. Customer readiness in Company → Services also separates Before starting pricing, Before issuing a quote and Before invoicing. Billing may be finished after order acceptance but must be ready before invoicing; closing this service request requires its full readiness checklist. Do not treat a started pricing draft as proof onboarding is complete."
+          "text": "Open Approved / needs work and expand the relevant Instructions. Approved service request with the correct request number, verified Company access and service permission, remaining offering/billing blockers and expanded Finance instructions. Approved status: approval and completion are separate states. Request number: follow the service request, not the completed access request. Service permission — Done: verify the permission is current, Ready, linked to this request and scoped to the Company or an active Department. Shared offering setup: a Phaeno configuration owner resolves missing shared service definitions; changing the Company permission alone cannot do this. Company billing: Finance completes the named Customer-specific fields. Expanded Instructions: follow the owner, destination, fields, save action and completion condition for each remaining item. The exact blockers depend on current saved configuration. For Customer PSeq requests, review all displayed requirements: Company and people: active Customer access, an accepted eligible administrator and current service permission; verify the intended Department. Order settings → Service catalog: an active, approved PSeq Lab Service offering using the supported sales unit. Quote & workflow supplies valid quote settings and supported sample/result workflows. Samples & shipping settings: effective Active Sample types, their usable Shipping procedures and kit configuration, an available Default receiving destination, and saved Order submission guidance. More → Finance → Customer billing: complete billing contact/address, agreed payment terms, effective tax decision and Finance approval. Manual operational block: resolve the recorded reason with its owner and have authorized staff clear the block. Completing other fields does not remove it. Use How to configure samples and shipping for shared shipping setup. Customer readiness in Company → Services also separates Before starting pricing, Before issuing a quote and Before invoicing. Billing may be finished after order acceptance but must be ready before invoicing; closing this service request requires its full readiness checklist. Do not treat a started pricing draft as proof onboarding is complete."
         },
         {
           "heading": "10. Complete and save Customer billing and tax",
@@ -2640,12 +2640,12 @@
         {
           "heading": "12. Record completion of the service request",
           "anchor": "12-record-completion-of-the-service-request",
-          "text": "Return to CRM → Requests → Approved / needs work and review the saved progress. Service request showing Company access, current service permission and Customer operational readiness all Done, with the Complete request action. Approved / needs work: open the same service request again. Company Portal access — Done: the access scope is active. Service permission — Done: its dates, scope, configuration and source link pass. Customer operational readiness — Done: the required saved setup passes. All checklist items are complete: review any Needs review items as well; manual reviews cannot be attested by an automated check. Actions → Complete request: open the final completion dialog. If disabled, resolve the remaining items or retry progress verification first. Complete Company request dialog with the exact service request, completion consequence, optional completed-work note and Complete request button. Complete Company request: confirm the intended action. Company and request: verify the service request's identity and the work being confirmed. Completed work (optional): add useful closeout context; blank notes are allowed. Complete request: record completion. POMS rechecks current prerequisites. If another change blocks completion, refresh, resolve it and review again."
+          "text": "Return to CRM → Requests → Approved / needs work and review the saved progress. Service request showing Company access, current service permission and Customer operational readiness all Done, with the Complete request action. Approved status: verify that this is the same approved service request. Company Portal access — Done: the access scope is active. Service permission — Done: its dates, scope, configuration and source link pass. Customer operational readiness — Done: the required saved setup passes. All checklist items are complete: review any Needs review items as well; manual reviews cannot be attested by an automated check. Actions → Complete request: open the final completion dialog. If disabled, resolve the remaining items or retry progress verification first. Complete Company request dialog with the exact service request, completion consequence, optional completed-work note and Complete request button. Complete Company request: confirm the intended action. Company and request: verify the service request's identity and the work being confirmed. Completed work (optional): add useful closeout context; blank notes are allowed. Complete request: record completion. POMS rechecks current prerequisites. If another change blocks completion, refresh, resolve it and review again."
         },
         {
           "heading": "13. Verify both requests and hand off to ordering",
           "anchor": "13-verify-both-requests-and-hand-off-to-ordering",
-          "text": "Open Completed / history and find the Company or retained request numbers. Completed request history with the separate online-access and PSeq Lab Service requests, their Completed statuses and retained completion details. Completed / history: verify the final history view. Search completed requests: use the Company name or request number. Online access — Completed: acceptance of eligible administrator access is recorded. Service change — Completed: approved service setup and readiness are recorded. Completed work: review the retained closeout context for the correct request. Confirm the person's active Department/admin access in Company People, the current permission in Services, and the Finance-approved billing profile. The Customer is now prepared for its permitted service workflow. Follow How to place a Customer order for Draft/pricing/quote/acceptance steps; onboarding completion creates no order, specimen, laboratory execution or scientific-data grant. For recovery, see Company requests and approvals, POMS user administration, Customer lab authorization and Billing, cash and result release."
+          "text": "Open Completed / history and find the Company or retained request numbers. Completed request cards with the separate online-access and PSeq Lab Service requests, their Completed statuses and retained completion details. Completed / history: verify the final history view. Search completed requests: use the Company name or request number. Online access — Completed: acceptance of eligible administrator access is recorded. Service change — Completed: approved service setup and readiness are recorded. Completed work: review the retained closeout context for the correct request. Confirm the person's active Department/admin access in Company People, the current permission in Services, and the Finance-approved billing profile. The Customer is now prepared for its permitted service workflow. Follow How to place a Customer order for Draft/pricing/quote/acceptance steps; onboarding completion creates no order, specimen, laboratory execution or scientific-data grant. For recovery, see Company requests and approvals, POMS user administration, Customer lab authorization and Billing, cash and result release."
         }
       ]
     },
@@ -2657,7 +2657,7 @@
       "title": "How to place a Customer order",
       "summary": "Enter Customer scope, save a Draft, submit for pricing and understand the quote/acceptance handoff.",
       "order": 40.5,
-      "reviewedAt": "2026-10-17",
+      "reviewedAt": "2026-10-22",
       "navigationGroup": "order-operations",
       "contentType": "how-to",
       "topicIds": [
@@ -2682,7 +2682,7 @@
       "publicationStatus": "published",
       "id": "phaeno/how-to-place-customer-order",
       "route": "/docs/phaeno/how-to-place-customer-order",
-      "contentHash": "0b3bd1f98744656600bbadb631a60985416ef9c406f88985918514573af689f1",
+      "contentHash": "018f431726add8cbdbc42358838b7f5f56bfd14f908b5fe8d44713fc1d90436e",
       "sections": [
         {
           "heading": "How to place a Customer order",
@@ -2697,7 +2697,7 @@
         {
           "heading": "1. Identify the Customer and work",
           "anchor": "1-identify-the-customer-and-work",
-          "text": "Open Order ops → Order intake → New Order. This opens New Customer order. Empty New Customer order form showing Customer, Department, Job name, Catalog service and Sample type. Customer: search for and select the active Company. Review the readiness panel that appears after selection. Setup links let an authorized administrator complete missing setup without losing this form. Department: choose the Department that owns the Job. A sole available Department is selected automatically; choose explicitly when there are several. Job name: enter a unique, Customer-safe name for this work. Catalog service: choose the service for the whole order. It is required before pricing submission. Sample type: select the configured type that describes the material the Customer will submit. This also supplies the default storage requirements."
+          "text": "Open Order ops → Order intake → New Order. This opens the dedicated New Customer order page. Empty New Customer order form showing Customer, Department, Job name, Catalog service and Sample type. Customer: search for and select the active Company. Review the readiness panel that appears after selection. Setup links let an authorized administrator complete missing setup without losing this form. Department: choose the Department that owns the Job. A sole available Department is selected automatically; choose explicitly when there are several. Job name: enter a unique, Customer-safe name for this work. Catalog service: choose the service for the whole order. It is required before pricing submission. Sample type: select the configured type that describes the material the Customer will submit. This also supplies the default storage requirements."
         },
         {
           "heading": "2. Enter scope and handling",
@@ -2724,7 +2724,7 @@
       "summary": "Follow an illustrated notebook workflow: projects, experiments, dated notes, tables, files, history, completion and repeat setups.",
       "navigationGroup": "research",
       "order": 59.5,
-      "reviewedAt": "2026-10-17",
+      "reviewedAt": "2026-10-22",
       "contentType": "how-to",
       "topicIds": [
         "research"
@@ -2755,12 +2755,12 @@
       "parentSlug": "research-notebooks",
       "id": "phaeno/how-to-record-research",
       "route": "/docs/phaeno/how-to-record-research",
-      "contentHash": "b826264c185edf792838b2594e4964b29d4f2a84cb3c8a05caf1d167c060f251",
+      "contentHash": "bef7d920e2eecd24b5f99138066a8a279ba9a8d61bf9af1a641daa8f1271615e",
       "sections": [
         {
           "heading": "How to record an R&D experiment",
           "anchor": "how-to-record-an-rd-experiment",
-          "text": "Use this walkthrough to organize exploratory work, capture dated notes and measurements, and retain the history of an experiment. R&D is a shared electronic notebook. You can adapt its sections as the work develops."
+          "text": "Illustrations refreshed and reviewed October 22, 2026, from current components with fictional records. Use this walkthrough to organize exploratory work, capture dated notes and measurements, and retain the history of an experiment. R&D is a shared electronic notebook. You can adapt its sections as the work develops."
         },
         {
           "heading": "Before you start",
@@ -2805,7 +2805,7 @@
         {
           "heading": "8. Review history and reconcile shared edits",
           "anchor": "8-review-history-and-reconcile-shared-edits",
-          "text": "Choose View history from the entry's Actions menu, then select a revision. Projects and experiments also have their own history. Entry history dialog showing two saved revisions, a selected revision's dated content and Close history. Revision list: select a save by its revision number, action, author and time. Use the history page controls when needed. Saved snapshot: read that revision's title, date, sections, tables and retained attachments. History does not restore a previous revision automatically. Close history: return to the current record. If another researcher saves first, your input stays in the editor. Review the latest saved entry. Its Actions let you keep your edits against that revision or use the latest saved entry. Keeping your edits requires another explicit save and can replace the other researcher's values, so reconcile the work before saving. Refresh latest saved entry reloads the saved version while retaining your draft. If the experiment is completed during editing, use Reopen experiment inside the editor and confirm. Your draft stays in place. Review the latest entry and choose I reviewed the latest entry; keep my edits before saving. The same review becomes available when a colleague reopens the experiment elsewhere."
+          "text": "Choose View history from the entry's Actions menu, then select a revision. Projects and experiments also have their own history. Entry history dialog showing a saved revision, its selected snapshot's dated content and Close history. Revision list: select a save by its revision number, action, author and time. Use the history page controls when needed. Saved snapshot: read that revision's title, date, sections, tables and retained attachments. History does not restore a previous revision automatically. Close history: return to the current record. If another researcher saves first, your input stays in the editor. Review the latest saved entry. Its Actions let you keep your edits against that revision or use the latest saved entry. Keeping your edits requires another explicit save and can replace the other researcher's values, so reconcile the work before saving. Refresh latest saved entry reloads the saved version while retaining your draft. If the experiment is completed during editing, use Reopen experiment inside the editor and confirm. Your draft stays in place. Review the latest entry and choose I reviewed the latest entry; keep my edits before saving. The same review becomes available when a colleague reopens the experiment elsewhere."
         },
         {
           "heading": "9. Complete or reopen the experiment",
@@ -2820,7 +2820,7 @@
         {
           "heading": "11. Find earlier work",
           "anchor": "11-find-earlier-work",
-          "text": "Open Experiments to search across the team's work. Experiment discovery showing a buffer search, status and project filters, Active and Completed results, and result pagination. Search: match experiment titles and saved notebook text or table content. Attachment contents are not searched. Status and project: narrow the results to the relevant group or Active/Completed work. Clear all removes the filters. Experiment title: open its overview, then the relevant entry. Returning to the list preserves your filters and page. Result count and pages: check the full matching count and use Previous/Next when there is more than one page. R&D is currently standalone. It does not run approved Lab protocols, record operational sample or reagent consumption, or automatically link notebook content to Lab records. Use the appropriate Lab workflow for those operations. Saved notebooks and attachments have no permanent-delete action or automatic expiry. See R&D notebooks for the reference guide and POMS user administration for role administration."
+          "text": "Open Experiments to search across the team's work. Experiment discovery showing a buffer search, status and project filters, an Active result and result pagination. Search: match experiment titles and saved notebook text or table content. Attachment contents are not searched. Status and project: narrow the results to the relevant group or Active/Completed work. Clear all removes the filters. Experiment title: open its overview, then the relevant entry. Returning to the list preserves your filters and page. Result count and pages: check the full matching count and use Previous/Next when there is more than one page. R&D is currently standalone. It does not run approved Lab protocols, record operational sample or reagent consumption, or automatically link notebook content to Lab records. Use the appropriate Lab workflow for those operations. Saved notebooks and attachments have no permanent-delete action or automatic expiry. See R&D notebooks for the reference guide and POMS user administration for role administration."
         }
       ]
     },
@@ -4873,5 +4873,5 @@
       ]
     }
   ],
-  "corpusHash": "33311a4e20573316a08111ef3b445998e07735320dd7e70fba214d4376328f58"
+  "corpusHash": "9628fc1e68c15d0b4950a62a702d976fc36a27445c90a5cbfe2e38953b9d7439"
 }

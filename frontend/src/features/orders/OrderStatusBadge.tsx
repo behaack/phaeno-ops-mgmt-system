@@ -17,6 +17,7 @@ export const orderStatusTones: Readonly<Record<string, StatusTone>> = {
 }
 
 export function orderStatusTone(status: string): StatusTone { return orderStatusTones[status] ?? 'neutral' }
+export const paymentTones = { PaidRecorded: 'success', Outstanding: 'pending' } as const
 
 export function OrderStatusBadge({ status }: { status: string }) {
   return <StatusBadge tone={orderStatusTone(status)}>{humanizeStatus(status)}</StatusBadge>

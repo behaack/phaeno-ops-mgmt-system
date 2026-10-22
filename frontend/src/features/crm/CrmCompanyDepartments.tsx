@@ -36,7 +36,7 @@ export function CrmCompanyDepartments({ company }: { company: CrmCompany }) {
 
   return <>
     <Card className="gap-0 py-0">
-      <CardHeader className="border-b bg-muted/50 p-4">
+      <CardHeader >
         <CardTitle>Departments</CardTitle>
         <CardDescription>Set up this Company's departments and their settings.</CardDescription>
         <CardAction><Button id="add-department" size="sm" disabled={!company.isActive} onClick={() => { create.reset(); setAdding(true) }}>

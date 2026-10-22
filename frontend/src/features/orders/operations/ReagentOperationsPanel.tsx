@@ -1,3 +1,4 @@
+import { RecordTableHeader } from '#/components/ui/record-list'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
@@ -30,7 +31,7 @@ export function ReagentOperationsPanel({ order, offerings, onSaved }: { order: R
     <ActionMenu><DropdownMenuTrigger asChild><Button type="button" variant="outline">Actions</Button></DropdownMenuTrigger><DropdownMenuContent align="end">
       {mayPropose ? <DropdownMenuItem onSelect={() => setDialog('adjustment')}>Propose substitution</DropdownMenuItem> : null}
       {mayShip ? <DropdownMenuItem onSelect={() => setDialog('shipment')}>Record shipment</DropdownMenuItem> : null}
-    </DropdownMenuContent></ActionMenu></div></CardHeader><CardContent><div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead className="border-b text-muted-foreground"><tr><th className="py-2 pr-3">Item</th><th className="px-3 py-2">Ordered</th><th className="px-3 py-2">Shipped</th><th className="px-3 py-2">Cancelled</th><th className="py-2 pl-3">Remaining</th></tr></thead><tbody>{order.lines.map(line => <tr key={line.id} className="border-b last:border-0"><td className="py-3 pr-3">{line.description}</td><td className="px-3 py-3">{line.quantity}</td><td className="px-3 py-3">{line.shippedQuantity}</td><td className="px-3 py-3">{line.cancelledQuantity}</td><td className="py-2 pl-3">{line.remainingQuantity}</td></tr>)}</tbody></table></div></CardContent></Card>
+    </DropdownMenuContent></ActionMenu></div></CardHeader><CardContent><div className="overflow-x-auto"><table className="w-full text-left text-sm"><RecordTableHeader className="border-b text-muted-foreground"><tr><th className="py-2 pr-3">Item</th><th className="px-3 py-2">Ordered</th><th className="px-3 py-2">Shipped</th><th className="px-3 py-2">Cancelled</th><th className="py-2 pl-3">Remaining</th></tr></RecordTableHeader><tbody>{order.lines.map(line => <tr key={line.id} className="border-b last:border-0"><td className="py-3 pr-3">{line.description}</td><td className="px-3 py-3">{line.quantity}</td><td className="px-3 py-3">{line.shippedQuantity}</td><td className="px-3 py-3">{line.cancelledQuantity}</td><td className="py-2 pl-3">{line.remainingQuantity}</td></tr>)}</tbody></table></div></CardContent></Card>
     {dialog === 'shipment' ? <PSeqKitShipmentDialog order={order} onSaved={onSaved} onClose={() => setDialog(null)} /> : null}
     {dialog === 'adjustment' ? <SubstitutionDialog order={order} offerings={partnerOfferings} onSaved={onSaved} onClose={() => setDialog(null)} /> : null}
   </div>

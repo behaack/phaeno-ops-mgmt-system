@@ -1,3 +1,5 @@
+import { portalAccessTones } from '#/features/organizations/access-status'
+import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
 import { RequiredLegend } from '#/components/ui/required-field'
 import { RequiredFieldName } from '#/components/ui/required-field'
 import { DetailField, DetailSummary, DetailHeading } from '#/components/ui/detail-summary'
@@ -227,13 +229,13 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
             <Badge variant={company.isActive ? "outline" : "destructive"}>
               {company.isActive ? "Active" : "Inactive"}
             </Badge>
-            <Badge variant={company.portalAccessStatus === "Enabled" ? "secondary" : "outline"}>
+            <DomainStatusBadge status={company.portalAccessStatus} tones={portalAccessTones}>
               {company.portalAccessStatus === "Enabled"
                 ? "Portal access enabled"
                 : company.portalAccessStatus === "Suspended"
                   ? "Portal access suspended"
                   : "Portal access not enabled"}
-            </Badge>
+            </DomainStatusBadge>
           </div>} actions={<ActionMenu>
           <DropdownMenuTrigger asChild>
             <Button ref={actionsTrigger} variant="outline" className="shrink-0 self-start" aria-label={`Actions for ${company.name}`}>

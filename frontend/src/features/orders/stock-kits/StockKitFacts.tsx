@@ -13,7 +13,7 @@ export function StockKitFacts({ kit }: { kit: ShippingStockKit }) {
   const originNumber = kit.originatingJobNumber ?? kit.authorizationReference
   const assignedShipmentId = kit.boundSampleShipmentId ?? kit.reservedSampleShipmentId
   return <div className="space-y-4">
-    <Card className="gap-0 py-0"><CardHeader className="border-b bg-muted/50 p-4"><CardTitle><CustomerSourceText source={"Kit details"} /></CardTitle></CardHeader><CardContent className="grid items-start gap-6 p-4 lg:grid-cols-2">
+    <Card className="gap-0 py-0"><CardHeader ><CardTitle><CustomerSourceText source={"Kit details"} /></CardTitle></CardHeader><CardContent className="grid items-start gap-6 p-4 lg:grid-cols-2">
       <section aria-labelledby="kit-location-heading"><h3 id="kit-location-heading" className="font-medium"><CustomerSourceText source={"Location and assignment"} /></h3><dl className="mt-2 divide-y text-sm">
         {!atPhaeno ? <Fact label="Customer">{[kit.organizationName, kit.departmentName].filter(Boolean).join(' · ') || 'Not recorded'}</Fact> : null}
         <Fact label="Location">{atPhaeno ? <CustomerSourceText source={"Phaeno"} /> : kit.deliveryLocationLabel || 'Location not recorded'}</Fact>
@@ -29,7 +29,7 @@ export function StockKitFacts({ kit }: { kit: ShippingStockKit }) {
         {kit.productExpirations?.length ? <dl className="mt-2 divide-y text-sm">{kit.productExpirations.map(product => <Fact key={product.supplierProductId} label={product.supplierName + ' · ' + product.productNumber}>{product.expirationDate ? product.expirationDate + (product.expirationDate < new Date().toISOString().slice(0, 10) ? ' · Expired' : '') : product.canExpire ? 'Expiration unknown' : 'Expiration not required when recorded'}</Fact>)}</dl> : <p className="mt-2 text-sm text-muted-foreground"><CustomerSourceText source={"Expiration requirements and dates were not recorded for this kit."} /></p>}
       </section>
     </CardContent></Card>
-    <Card className="gap-0 py-0"><CardHeader className="border-b bg-muted/50 p-4"><CardTitle><CustomerSourceText source={"Dispatch history"} /></CardTitle></CardHeader><CardContent className="p-4">
+    <Card className="gap-0 py-0"><CardHeader ><CardTitle><CustomerSourceText source={"Dispatch history"} /></CardTitle></CardHeader><CardContent className="p-4">
       {!kit.fulfilledAt ? <p className="mb-2 text-sm text-muted-foreground"><CustomerSourceText source={"This kit has not been dispatched."} /></p> : null}
       <dl className="divide-y text-sm">
         {kit.transportationKitRequestId || kit.fulfilledAt ? <Fact label="Originating request">{kit.transportationKitRequestId ? <RecordLink asChild><Link to="/lab-operations/kit-requests/$requestId" params={{ requestId: kit.transportationKitRequestId }} search={{ section: 'kit-requests' }}><CustomerSourceText source={"Request"} /> {kit.transportationKitRequestId.slice(0, 8).toUpperCase()}</Link></RecordLink> : <CustomerSourceText source={"Not recorded"} />}</Fact> : null}
@@ -42,7 +42,7 @@ export function StockKitFacts({ kit }: { kit: ShippingStockKit }) {
 
 export function StockKitTubeRoster({ kit }: { kit: ShippingStockKit }) {
   const state = stockKitState(kit)
-  return <Card className="gap-0 py-0"><CardHeader className="border-b bg-muted/50 p-4">
+  return <Card className="gap-0 py-0"><CardHeader >
     <div className="flex flex-wrap items-center justify-between gap-2"><CardTitle><CustomerSourceText source={"Physical tube roster"} /></CardTitle><Badge variant={kit.tubes.length === kit.container.capacity ? 'secondary' : 'outline'}>{kit.tubes.length === kit.container.capacity ? <CustomerSourceText source={"All tubes recorded"} /> : <CustomerSourceText source={"Incomplete"} />}</Badge></div>
     <p className="text-sm text-muted-foreground">{kit.tubes.length} of {kit.container.capacity} <CustomerSourceText source={"tubes registered"} /></p>
   </CardHeader><CardContent className="space-y-3 p-4">

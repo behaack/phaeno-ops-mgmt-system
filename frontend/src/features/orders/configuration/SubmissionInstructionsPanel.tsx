@@ -73,7 +73,7 @@ export function SubmissionInstructionsEditor({ configuration }: { configuration:
   }
   return <>
     <Card className="gap-0 py-0">
-      <CardHeader className="border-b bg-muted/50 p-4">
+      <CardHeader >
         <div className="flex items-start justify-between gap-3"><CardTitle><CustomerText message="m_81dc291430fc" /></CardTitle><Button ref={opener} onClick={edit}><CustomerText message="m_23e275114309" /></Button></div>
         <CardDescription><CustomerText message="m_cf1896986d42" /></CardDescription>
       </CardHeader>

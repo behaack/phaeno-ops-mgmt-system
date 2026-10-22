@@ -1,3 +1,4 @@
+import { formatDisplayTimestamp } from '#/lib/display-format'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -62,7 +63,7 @@ export function SampleTypeActions({ item, revisions, onCreateRevision, onStatusC
         </DialogHeader>
         <div id="sample-type-status-consequences" className="space-y-2 text-sm">
           {change?.isActive
-            ? <><p><CustomerText message="m_767901a0a49c" />{future ? __customerText('m_d337f5a9ae6d', { p0: String(new Date(change.item.effectiveFrom).toLocaleString()) }) : __customerText('m_4ea6cf4a6d30')} <CustomerText message="m_d5ff8cd889b0" /></p><p><CustomerText message="m_83c695323a3a" /></p></>
+            ? <><p><CustomerText message="m_767901a0a49c" />{future ? __customerText('m_d337f5a9ae6d', { p0: String(formatDisplayTimestamp(change.item.effectiveFrom, { seconds: true })) }) : __customerText('m_4ea6cf4a6d30')} <CustomerText message="m_d5ff8cd889b0" /></p><p><CustomerText message="m_83c695323a3a" /></p></>
             : <p><CustomerText message="m_34ae561f5046" /></p>}
           <p><CustomerText message="m_1a4f11c06412" /></p>
         </div>

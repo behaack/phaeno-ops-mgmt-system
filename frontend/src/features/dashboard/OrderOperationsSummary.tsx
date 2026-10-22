@@ -12,7 +12,7 @@ export function OrderOperationsSummary({ capabilities }: { capabilities?: Sessio
 
   const sections = getOrderSections(capabilities)
   return <Card className="gap-0 py-0">
-    <CardHeader className="border-b bg-muted/50 p-4">
+    <CardHeader >
       <CardTitle>Order operations</CardTitle>
       <CardDescription>Open a workspace to review your current work.</CardDescription>
     </CardHeader>

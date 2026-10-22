@@ -1,7 +1,8 @@
+import { formatDisplayTimestamp } from '#/lib/display-format'
 import type { TrialScope } from '#/api/trials'
 
 export const trialLabel = (value: string) => value.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/_/g, ' ').replace(/^./, letter => letter.toUpperCase())
-export const trialDate = (value: string | null | undefined) => value ? new Date(value).toLocaleString() : 'Not set'
+export const trialDate = (value: string | null | undefined) => value ? formatDisplayTimestamp(value, { seconds: true }) : 'Not set'
 export const trialTerminal = (status: string) => ['Completed', 'Declined', 'Expired', 'Cancelled', 'ClosedIncomplete'].includes(status)
 export const trialChoices = (values: { id: string; name: string }[] = []) => values.map(value => ({ value: value.id, label: value.name }))
 export const trialUtc = (value: string) => value ? new Date(value).toISOString() : null

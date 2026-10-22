@@ -13,7 +13,7 @@ export function ResultsWorkQueue({ enabled }: { enabled: boolean }) {
   const pageQuery = useQuery({ queryKey: ['lab-scientific-review', list.page], queryFn: () => getLabScientificReviewPage(list.page), enabled })
   const query = { ...pageQuery, data: pageQuery.data?.items }
   return <Card className="gap-0 py-0">
-    <CardHeader className="border-b bg-muted/50 p-4">
+    <CardHeader >
       <CardTitle>Results &amp; scientific review</CardTitle>
       <CardDescription>Completed assembly outputs with verified files and passing QC, awaiting scientific review. Open a Job to review its pending packages.</CardDescription>
     </CardHeader>

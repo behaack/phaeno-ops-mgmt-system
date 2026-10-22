@@ -1,3 +1,4 @@
+import { formatDisplayTimestamp } from '#/lib/display-format'
 import { CustomerText } from '#/features/customer-i18n/customer-text'
 import type { EvidenceRow } from '#/api/lab-investigation'
 import { getLabOperationsError } from '#/api/lab-operations'
@@ -6,7 +7,7 @@ import { Button } from '#/components/ui/button'
 import { useState } from 'react'
 
 export const evidenceLabel = (value: string) => value.replace(/([a-z])([A-Z])/g, '$1 $2').replaceAll('_', ' ').replace(/^./, c => c.toUpperCase())
-export const evidenceDate = (value: unknown) => value ? new Date(String(value)).toLocaleString() : 'Not recorded'
+export const evidenceDate = (value: unknown) => value ? formatDisplayTimestamp(String(value), { seconds: true }) : 'Not recorded'
 export function EvidenceDetails({ value }: { value: unknown }) {
   if (value == null) return <span className="text-muted-foreground"><CustomerText message="m_b37c7879f6c3" /></span>
   if (Array.isArray(value)) return <ol className="space-y-2">{value.map((item, index) => <li key={index}><EvidenceDetails value={item} /></li>)}</ol>

@@ -1,3 +1,6 @@
+import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
+import { orderStatusTones } from '#/features/orders/OrderStatusBadge'
+import { RecordTableHeader } from '#/components/ui/record-list'
 import { ClearFiltersButton } from '#/components/ui/clear-filters-button'
 import { useState } from 'react'
 import { RecordPagination } from '#/components/RecordPagination'
@@ -33,8 +36,8 @@ export function ListExamples() {
       <Field><Label htmlFor="example-list-sort">Sort examples</Label><NativeSelect id="example-list-sort" value={sort} onChange={e=>{setSort(e.target.value);setPage(1)}}><option value="ascending">Name A–Z</option><option value="descending">Name Z–A</option></NativeSelect></Field>
     </ListToolbar>
     {search || status ? <p className="text-sm text-muted-foreground">Active filters: {search ? `“${search}”` : ''}{search && status ? ' · ' : ''}{status}</p> : null}
-    <div className="hidden @min-[40rem]:block"><RecordTable label="Example samples"><table><caption className="sr-only">Example samples</caption><thead><tr><th scope="col">Sample</th><th scope="col">Context</th><th scope="col">Status</th></tr></thead><tbody>{shown.map(r=><tr key={r.id}><td>{title(r)}</td><td>{r.context}</td><td>{r.status}</td></tr>)}</tbody></table></RecordTable></div>
-    <RecordList className="@min-[40rem]:hidden" aria-label="Example sample records">{shown.map(r=><RecordListItem key={r.id} title={title(r)} metadata={r.context} status={<Badge variant="outline">{r.status}</Badge>} />)}</RecordList>
+    <div className="hidden @min-[40rem]:block"><RecordTable label="Example samples"><table><caption className="sr-only">Example samples</caption><RecordTableHeader><tr><th scope="col">Sample</th><th scope="col">Context</th><th scope="col">Status</th></tr></RecordTableHeader><tbody>{shown.map(r=><tr key={r.id}><td>{title(r)}</td><td>{r.context}</td><td>{r.status}</td></tr>)}</tbody></table></RecordTable></div>
+    <RecordList className="@min-[40rem]:hidden" aria-label="Example sample records">{shown.map(r=><RecordListItem key={r.id} title={title(r)} metadata={r.context} status={<DomainStatusBadge status={r.status} tones={orderStatusTones}>{r.status}</DomainStatusBadge>} />)}</RecordList>
     {!shown.length ? <EmptyState kind="no-results" title="No matching example samples" action={<Button variant="outline" onClick={clear}>Clear example filters</Button>}>Adjust the search or clear the active filters.</EmptyState> : null}
     <RecordPagination label="Example sample pages" data={{totalCount:filtered.length,page,pageSize:2}} busy={false} onPage={setPage} />
     <div className="grid gap-4 @min-[40rem]:grid-cols-2" data-testid="sequencing-list-comparison">

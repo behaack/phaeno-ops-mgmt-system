@@ -31,7 +31,7 @@ export function SampleTypePackingPanel({ sampleType, configuration }: { sampleTy
     && containerDependencyWarnings(container, configuration).length === 0)
 
   return <Card className="gap-0 py-0">
-    <CardHeader className="border-b bg-muted/50 p-4">
+    <CardHeader >
       <CardTitle><CustomerText message="m_becb12c02837" /></CardTitle>
       <CardDescription><CustomerText message="m_397010f40e40" /></CardDescription>
     </CardHeader>

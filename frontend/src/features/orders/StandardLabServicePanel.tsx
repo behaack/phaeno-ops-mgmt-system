@@ -1,3 +1,5 @@
+import { DisplayDate } from '#/components/ui/display-value'
+import { FieldError } from '#/components/ui/field'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -222,7 +224,7 @@ export function StandardLabServicePanel({
               {committed.deliveryTargetBusinessDays
                 ? <><CustomerText message="m_d5b76e17a87c" />{committed.deliveryTargetBusinessDays} <CustomerText message="m_7db55fa12e0b" /></>
                 : <><CustomerText message="m_9cd0b037a749" />{committed.minimumTurnaroundDays}–{committed.maximumTurnaroundDays} <CustomerText message="m_a4733936bbd3" /></>} <CustomerText message="m_77d3cbce8e9a" />{' '}
-              {new Date(committed.committedAtUtc).toLocaleDateString()}.
+              {<DisplayDate value={committed.committedAtUtc} />}.
             </p>
           </>
         ) : (
@@ -383,9 +385,9 @@ export function StandardLabServicePanel({
                     {...form.register('purchaseOrderNumber')}
                   />
                   {form.formState.errors.purchaseOrderNumber ? (
-                    <p role="alert" className="mt-1 text-sm text-destructive">
+                    <FieldError role="alert" >
                       {<CustomerSourceText source={form.formState.errors.purchaseOrderNumber.message} />}
-                    </p>
+                    </FieldError>
                   ) : null}
                 </Field>
                 <label

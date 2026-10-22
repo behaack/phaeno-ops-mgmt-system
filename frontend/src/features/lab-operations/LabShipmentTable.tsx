@@ -1,3 +1,5 @@
+import { RecordTableHeader } from '#/components/ui/record-list'
+import { formatDisplayTimestamp } from '#/lib/display-format'
 import { RecordLink } from '#/components/ui/record-link'
 import { Link } from '@tanstack/react-router'
 import type { LabShipmentQueueItem } from '#/api/lab-shipment-receipt'
@@ -10,15 +12,15 @@ export function LabShipmentTable({ items, received = false, onOpen, returnSearch
   onOpen?: (barcode: string) => void
   returnSearch?: ShipmentHistorySearch
 }) {
-  return <div className="overflow-x-auto rounded-lg border"><table className="w-full min-w-[660px] text-left text-sm"><thead className="border-b bg-muted text-foreground"><tr>
+  return <div className="overflow-x-auto rounded-lg border"><table className="w-full min-w-[660px] text-left text-sm"><RecordTableHeader className="border-b text-foreground"><tr>
     <th className="px-2 py-3">Shipment / container</th><th className="px-2 py-3">Customer / Job</th><th className="px-2 py-3">Carrier / tracking</th><th className="px-2 py-3">Tubes</th><th className="px-2 py-3">{received ? 'Received' : 'Status'}</th>
-  </tr></thead><tbody>{items.map(item => <tr key={item.id} className="border-b bg-muted/20 last:border-0">
+  </tr></RecordTableHeader><tbody>{items.map(item => <tr key={item.id} className="border-b bg-muted/20 last:border-0">
     <td className="px-2 py-3">{received && item.packetBarcode && onOpen ? <Button variant="link" className="h-auto p-0" onClick={() => onOpen(item.packetBarcode!)}>{item.shipmentNumber}</Button> : <RecordLink asChild><Link to="/lab-operations/$workOrderId" params={{ workOrderId: item.labWorkOrderId }} search={{ section: 'receipt', receiptTab: returnSearch ? 'receiving' : received ? 'accession' : 'receiving', shipmentId: item.id, ...returnSearch }} >{item.shipmentNumber}</Link></RecordLink>}
       {item.packetBarcode ? <p className="font-mono text-xs text-muted-foreground wrap-anywhere"><span className="sr-only">Shipping insert: </span>{item.packetBarcode}</p> : null}
       <p className="text-xs text-muted-foreground">{item.destinationName}</p></td>
     <td className="px-2 py-3">{item.organizationName}<p className="text-xs text-muted-foreground">{item.authorizationReference}</p></td>
     <td className="px-2 py-3">{item.carrier || 'Carrier not recorded'}<p className="font-mono text-xs">{item.trackingNumber || 'Tracking not recorded'}</p></td>
     <td className="px-2 py-3">{received ? `${item.accessionedTubeCount} of ${item.expectedTubeCount} accessioned` : `${item.expectedTubeCount} expected`}</td>
-    <td className="px-2 py-3">{received && item.containerReceivedAt ? new Date(item.containerReceivedAt).toLocaleString() : item.status.replace(/([a-z])([A-Z])/g, '$1 $2')}</td>
+    <td className="px-2 py-3">{received && item.containerReceivedAt ? formatDisplayTimestamp(item.containerReceivedAt, { seconds: true }) : item.status.replace(/([a-z])([A-Z])/g, '$1 $2')}</td>
   </tr>)}</tbody></table></div>
 }

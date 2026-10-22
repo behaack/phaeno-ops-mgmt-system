@@ -1,0 +1,10 @@
+// Execution completion is not scientific approval or customer release.
+export const workflowTones = { Draft: 'neutral', Approved: 'info', Production: 'info', Retired: 'neutral', Archived: 'neutral' } as const
+export const executionTones = { Draft: 'neutral', Pending: 'pending', Planned: 'pending', Ready: 'info', InProgress: 'info', Completed: 'success', Cancelled: 'neutral', Failed: 'error', OnHold: 'warning' } as const
+export const materialTones = { Draft: 'neutral', Active: 'info', Available: 'info', Reserved: 'pending', Consumed: 'neutral', Exhausted: 'neutral', Released: 'success', Quarantined: 'warning', Rejected: 'error', Expired: 'warning', Disposed: 'neutral' } as const
+export const evidenceTones = { Pending: 'pending', InProgress: 'info', Ready: 'info', Completed: 'info', Succeeded: 'info', Accepted: 'info', Passed: 'info', Failed: 'error', Rejected: 'error', Abandoned: 'neutral', Cancelled: 'neutral', Superseded: 'neutral' } as const
+export const assemblyTones = { SimulatedCompleted: 'neutral', Queued: 'pending', Submitted: 'pending', Pending: 'pending', Running: 'info', InProgress: 'info', Succeeded: 'success', Failed: 'error', Terminated: 'neutral', Cancelled: 'neutral', CancelledBeforeStart: 'neutral' } as const
+export const investigationTones = { Open: 'warning', InProgress: 'info', Resolved: 'success', Closed: 'neutral', Cancelled: 'neutral' } as const
+export const deadlineTones = { Overdue: 'error', AtRisk: 'error', DueSoon: 'warning', AwaitingReceipt: 'pending', AwaitingAcceptance: 'pending', NoKnownRisk: 'neutral', CompleteOnTime: 'success', CompleteLate: 'warning', CompleteUndated: 'neutral', CompleteUnverified: 'neutral', Cancelled: 'neutral' } as const
+export const sampleUseTones = { Used: 'info', NotUsed: 'neutral', Unknown: 'neutral' } as const
+export const processingTones = { NotStarted: 'neutral', ReadyForPreparation: 'pending', LibraryPreparation: 'info', Sequencing: 'info', DataProcessing: 'info', QualityReview: 'pending', ReadyForRelease: 'info', Released: 'success', Completed: 'info', OnHold: 'warning', Failed: 'error', Cancelled: 'neutral' } as const

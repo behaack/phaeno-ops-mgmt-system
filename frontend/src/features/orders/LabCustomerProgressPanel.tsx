@@ -1,3 +1,4 @@
+import { DisplayDate } from '#/components/ui/display-value'
 import { CustomerSourceText, useCustomerSourceText } from '#/features/customer-i18n/customer-text'
 import type { LabServiceOrder } from '#/api/order-management'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
@@ -17,7 +18,7 @@ export function LabCustomerProgressPanel({ order }: { order: LabServiceOrder }) 
     <CardContent className="space-y-4">
       <div className="flex flex-wrap items-center gap-3"><OrderStatusBadge status={progress.currentStage} />
         {order.labScheduleHealth ? <span className="text-sm text-muted-foreground"><CustomerSourceText source={"Schedule:"} /> {humanizeStatus(order.labScheduleHealth)}</span> : null}
-        {(order.phaseCount ?? 1) === 1 && order.labExpectedCompletionAtUtc ? <span className="text-sm text-muted-foreground"><CustomerSourceText source={"Expected"} /> {new Date(order.labExpectedCompletionAtUtc).toLocaleDateString()}</span> : null}
+        {(order.phaseCount ?? 1) === 1 && order.labExpectedCompletionAtUtc ? <span className="text-sm text-muted-foreground"><CustomerSourceText source={"Expected"} /> {<DisplayDate value={order.labExpectedCompletionAtUtc} />}</span> : null}
       </div>
       <ol aria-label={__customerSource("Laboratory stages")} className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
         {customerLabStages.map(stage => <li key={stage} aria-current={progress.currentStage === stage ? 'step' : undefined}

@@ -1,3 +1,4 @@
+import { DisplayTimestamp } from '#/components/ui/display-value'
 import { RecordLink } from '#/components/ui/record-link'
 import { labAmount } from './lab-presentation'
 import { Link } from '@tanstack/react-router'
@@ -18,7 +19,7 @@ export function SequencingTubePairs({ members, canPrint, onPrint }: { members: S
         <div><dt className="text-xs text-muted-foreground">Actual volume transferred</dt><dd className="font-medium">{labAmount(item.transfer.quantityText ?? item.transfer.quantity)} {item.transfer.quantityUnit}</dd></div>
         <div><dt className="text-xs text-muted-foreground">Library balance after transfer</dt><dd className="font-medium">{item.transfer.exhaustedOverride ? 'Exhausted by operator override' : item.transfer.sourceQuantityAfter === null ? 'Unknown' : `${labAmount(item.transfer.sourceQuantityAfterText ?? item.transfer.sourceQuantityAfter)} ${item.transfer.quantityUnit}`}</dd></div>
         <div><dt className="text-xs text-muted-foreground">Catalog minimum</dt><dd className="font-medium">{item.minimumSequencingVolumeUlText ? `${labAmount(item.minimumSequencingVolumeUlText)} µL` : 'Not captured'}</dd></div>
-        <div className="sm:col-span-3"><dt className="text-xs text-muted-foreground">Performed / recorded</dt><dd>{new Date(item.transfer.performedAtUtc).toLocaleString()} / {new Date(item.transfer.recordedAtUtc).toLocaleString()}</dd></div>
+        <div className="sm:col-span-3"><dt className="text-xs text-muted-foreground">Performed / recorded</dt><dd>{<DisplayTimestamp value={item.transfer.performedAtUtc} seconds />} / {<DisplayTimestamp value={item.transfer.recordedAtUtc} seconds />}</dd></div>
       </dl> : null}
     </li>)}</ol>
   </section>

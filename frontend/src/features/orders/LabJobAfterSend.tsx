@@ -1,3 +1,4 @@
+import { DisplayDate } from '#/components/ui/display-value'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
@@ -18,7 +19,7 @@ export function LabJobAfterSend({ orderId }: { orderId: string }) {
     <ul className="divide-y">{sent.map(item => <li key={item.id} className="space-y-1 py-3 text-sm">
       <div className="flex flex-wrap justify-between gap-2"><span className="font-medium">{item.shipmentNumber}</span><span>{humanizeStatus(item.status)}</span></div>
       <p className="wrap-anywhere text-muted-foreground">{item.carrier || 'Carrier not recorded'}{item.trackingNumber ? ` · Tracking ${item.trackingNumber}` : ''}</p>
-      <p className="text-muted-foreground"><CustomerSourceText source={"Sent"} /> {new Date(item.shippedAt!).toLocaleDateString()} · {item.destinationName}</p>
+      <p className="text-muted-foreground"><CustomerSourceText source={"Sent"} /> {<DisplayDate value={item.shippedAt!} />} · {item.destinationName}</p>
       {item.receivedTubeCount !== undefined && item.expectedTubeCount !== undefined ? <p>{item.receivedTubeCount} of {item.expectedTubeCount} <CustomerSourceText source={"tubes received in this shipment."} /></p> : <p className="text-muted-foreground"><CustomerSourceText source={"Receipt count not available."} /></p>}
     </li>)}</ul>
   </div>

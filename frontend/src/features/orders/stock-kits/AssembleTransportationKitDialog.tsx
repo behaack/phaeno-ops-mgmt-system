@@ -1,3 +1,4 @@
+import { DialogDescription } from '#/components/ui/dialog'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
@@ -32,7 +33,7 @@ function SavedKitAssemblyDialog({ kit: initialKit, printOnOpen, onClose, onSaved
     const refreshed = await query.refetch()
     if (refreshed.data) await onSaved(refreshed.data)
   })
-  if (!assembly.run) return <Dialog open onOpenChange={open => { if (!open) onClose() }}><DialogContent><DialogHeader><DialogTitle><CustomerSourceText source={"Assemble transportation kit"} /></DialogTitle></DialogHeader>
+  if (!assembly.run) return <Dialog open onOpenChange={open => { if (!open) onClose() }}><DialogContent><DialogHeader><DialogTitle><CustomerSourceText source={"Assemble transportation kit"} /></DialogTitle><DialogDescription>Load the current kit and assembly record before recording packed contents.</DialogDescription></DialogHeader>
     {query.error || assembly.query.error ? <Alert variant="destructive"><AlertTitle><CustomerSourceText source={"Assembly unavailable"} /></AlertTitle><AlertDescription><CustomerSourceText source={"Refresh the kit and its assembly record before continuing."} /></AlertDescription></Alert> : <p role="status"><CustomerSourceText source={"Loading assembly…"} /></p>}
     <DialogFooter><Button variant="ghost" onClick={onClose}><CustomerSourceText source={"Close"} /></Button><Button variant="outline" onClick={() => { void query.refetch(); void assembly.query.refetch() }}><CustomerSourceText source={"Retry"} /></Button></DialogFooter>
   </DialogContent></Dialog>

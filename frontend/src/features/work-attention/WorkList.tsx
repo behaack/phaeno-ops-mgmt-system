@@ -1,3 +1,4 @@
+import { formatDisplayTimestamp } from '#/lib/display-format'
 import { RecordLink } from '#/components/ui/record-link'
 import { Link } from '@tanstack/react-router'
 import { workDestination, type WorkItem } from '#/api/work-attention'
@@ -15,7 +16,7 @@ export function WorkList({ items, preview = false, onNavigate }: { items: WorkIt
       {item.messageKey in workMessages ? messages.text(item.messageKey as WorkMessageId) : messages.text('open')}
     </Link></RecordLink></span><p className="mt-1 break-words text-sm">{item.recordLabel}</p>
       {!preview ? <p className="mt-1 text-xs text-muted-foreground">{item.kind === 'update' ? messages.text('available') : item.kind === 'waiting' ? messages.text('waitingOwner') : !staff ? messages.text('yourAction') : item.ownerUserId === session?.user?.id ? messages.text('assigned') : item.ownerUserId ? `${messages.text('otherOwner')}${item.ownerName ? ` · ${item.ownerName}` : ''}` : messages.text('eligible')}
-        {item.dueAtUtc ? ` · ${messages.text('due')}: ${new Intl.DateTimeFormat(messages.locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(item.dueAtUtc))}` : ''}</p> : null}
+        {item.dueAtUtc ? ` · ${messages.text('due')}: ${formatDisplayTimestamp(item.dueAtUtc, { locale: messages.locale })}` : ''}</p> : null}
     </div>{!preview ? <Badge variant={item.priority < 2 ? 'destructive' : 'outline'}>{messages.text(workPriorityLabel(item))}</Badge> : null}
   </li>)}</ul>
 }

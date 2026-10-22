@@ -1,3 +1,4 @@
+import { FieldError } from '#/components/ui/field'
 import { Field as PortalField } from '#/components/ui/field'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { NativeSelect } from '#/components/ui/native-select'
@@ -160,9 +161,9 @@ export function RequestActionDialog({
                   ))}
               </NativeSelect>
               {form.formState.errors.organizationId ? (
-                <p className="text-sm text-destructive" role="alert">
+                <FieldError  role="alert">
                   {<CustomerSourceText source={form.formState.errors.organizationId.message} />}
-                </p>
+                </FieldError>
               ) : null}
             </PortalField>
           ) : null}

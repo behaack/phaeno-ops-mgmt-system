@@ -1,3 +1,4 @@
+import { formatDisplayTimestamp } from '#/lib/display-format'
 import { RecordLink } from '#/components/ui/record-link'
 import { useState } from 'react'
 import { Link } from '@tanstack/react-router'
@@ -14,7 +15,7 @@ import { labCount, labStatus } from './lab-presentation'
 import { vendorStage, vendorEtaOverdue } from './vendor-workflow'
 
 const humanize = labStatus
-const formatDate = (value: string) => new Date(value).toLocaleString()
+const formatDate = (value: string) => formatDisplayTimestamp(value, { seconds: true })
 export function SequencingBatchList({ items, suppliers, canManage, onCreate, refresh }: {
   items: LabBatch[]; suppliers: LabSupplier[]; canManage: boolean; onCreate: () => void; refresh: () => Promise<unknown>
 }) {
@@ -23,7 +24,7 @@ export function SequencingBatchList({ items, suppliers, canManage, onCreate, ref
   return (
       <div className="space-y-5">
         <Card className="gap-0 py-0">
-          <CardHeader className="border-b bg-muted/50 p-4">
+          <CardHeader >
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <CardTitle>Sequencing batches</CardTitle>

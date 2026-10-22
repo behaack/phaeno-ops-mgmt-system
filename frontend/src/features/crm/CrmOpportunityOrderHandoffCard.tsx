@@ -1,3 +1,5 @@
+import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
+import { handoffTones } from '#/features/crm/crm-status'
 import { Field as PortalField } from '#/components/ui/field'
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -11,7 +13,6 @@ import {
   type CrmOpportunity,
 } from "#/api/crm";
 import { Alert, AlertDescription } from "#/components/ui/alert";
-import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "#/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "#/components/ui/dialog";
@@ -69,7 +70,7 @@ export function CrmOpportunityOrderHandoffCard({ opportunity }: { opportunity: C
               <div>
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-medium">{handoff.requestNumber}</span>
-                  <Badge variant="outline">{formatStatus(handoff.status)}</Badge>
+                  <DomainStatusBadge status={handoff.status} tones={handoffTones}>{formatStatus(handoff.status)}</DomainStatusBadge>
                 </div>
                 {handoff.orderBlockingReason ? <p className="mt-2 text-sm text-amber-700 dark:text-amber-300">{handoff.orderBlockingReason}</p> : null}
               </div>

@@ -1,3 +1,5 @@
+import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
+import { relationshipTones } from '#/features/crm/crm-status'
 import { RequiredLegend } from '#/components/ui/required-field'
 import { formatDisplayDate } from '#/lib/display-format'
 import { NativeSelect } from '#/components/ui/native-select'
@@ -248,7 +250,7 @@ export function CrmCompanyRelationships({
       ) : (
         <>
           <Card className="gap-0 py-0">
-            <CardHeader className="border-b bg-muted/50 p-4">
+            <CardHeader >
               <CardTitle>Company requests</CardTitle>
               <CardDescription>
                 Request online access, product or service changes, relationship
@@ -274,7 +276,7 @@ export function CrmCompanyRelationships({
                       </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <Badge variant="outline">{spaced(value.status)}</Badge>
+                      <DomainStatusBadge status={value.status} tones={relationshipTones}>{spaced(value.status)}</DomainStatusBadge>
                       <ActionMenu modal={false}>
                         <DropdownMenuTrigger asChild>
                           <Button size="sm" variant="outline" aria-label={`Actions for ${value.requestNumber}`}>

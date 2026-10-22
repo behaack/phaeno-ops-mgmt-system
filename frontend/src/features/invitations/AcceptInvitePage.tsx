@@ -114,20 +114,7 @@ export function AcceptInvitePage() {
     && Boolean(invitation.firstName?.trim() && invitation.lastName?.trim())
   const title = `${invitation.firstName ? `${invitation.firstName}, you’re` : 'You’re'} invited to ${invitation.organizationName}`
   return <InvitationFrame title={title}>
-    <div className="mb-6 flex items-start gap-3 rounded-lg border bg-muted/40 p-4">
-      <Mail className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
-      <div className="min-w-0">
-        <p className="font-medium">{[invitation.firstName, invitation.lastName].filter(Boolean).join(' ') || 'Your invitation'}</p>
-        <p className="mt-1 break-all text-muted-foreground">{invitation.email}</p>
-      </div>
-    </div>
-    {invitation.isOrganizationAdmin !== undefined ? <section className="mb-6 rounded-lg border p-4" aria-labelledby="invitation-proposed-access">
-      <h2 id="invitation-proposed-access" className="font-semibold">Access after acceptance</h2>
-      {invitation.isOrganizationAdmin ? <p className="mt-2">Organization administrator — all departments</p> : <>
-        <p className="mt-2">Member — assigned departments only</p>
-        <ul className="mt-2 list-disc pl-5">{invitation.departments?.map(department => <li key={department.departmentId}>{department.departmentName} — {department.isDepartmentAdmin ? 'Department administrator' : 'Member'}</li>)}</ul>
-      </>}
-    </section> : null}
+    <InvitationAccessSummary invitation={invitation} />
     {reviewChanged || accessChanged ? <p role="alert" className="mb-4 text-sm">The invitation changed. Review the updated access above, then select Accept invitation again if you agree.</p> : null}
     {!auth.clerkLoaded ? <p role="status">Preparing secure sign-in…</p> : !auth.signedIn ? (
       !auth.authConfigured ? <p role="alert">Sign-in is temporarily unavailable. Please try again later or contact the sender.</p> : <InvitationAuthentication invitation={invitation} token={token} registrationTicket={registrationTicket} accessAccepted={acceptedVersion !== null && acceptedVersion === invitation.version} onContinue={() => storeInviteAcceptance(invitation.version)} />
@@ -164,7 +151,7 @@ function ClerkInvitationReview(props: ReviewProps) {
 
 const namesSchema = z.object({ firstName: z.string().trim().min(1, 'Enter your first name.'), lastName: z.string().trim().min(1, 'Enter your last name.') })
 
-function InvitationReview({ invitation, completeAfterSignIn, pending, onAccept, onDecline, emailMatches, signedInEmail, switchAccount }: ReviewProps & { emailMatches: boolean; signedInEmail?: string; switchAccount?: ReactNode }) {
+export function InvitationReview({ invitation, completeAfterSignIn, pending, onAccept, onDecline, emailMatches, signedInEmail, switchAccount }: ReviewProps & { emailMatches: boolean; signedInEmail?: string; switchAccount?: ReactNode }) {
   const missingName = !invitation.firstName || !invitation.lastName
   const form = useForm({ resolver: zodResolver(namesSchema), defaultValues: { firstName: invitation.firstName ?? '', lastName: invitation.lastName ?? '' } })
   const completionStarted = useRef(false)
@@ -198,7 +185,7 @@ function InvitationReview({ invitation, completeAfterSignIn, pending, onAccept, 
   </form>
 }
 
-function InvitationFrame({ title, children }: { title: string; children: ReactNode }) {
+export function InvitationFrame({ title, children }: { title: string; children: ReactNode }) {
   return <main className="page-wrap flex flex-1 justify-center px-4 py-8 sm:py-14">
     <section className="w-full max-w-lg self-start overflow-hidden rounded-xl border bg-card text-card-foreground shadow-lg" aria-labelledby="invitation-title">
       <header className="border-b px-6 py-7 sm:px-8">
@@ -210,3 +197,19 @@ function InvitationFrame({ title, children }: { title: string; children: ReactNo
     </section>
   </main>
 }
+
+export function InvitationAccessSummary({ invitation }: { invitation: InvitationPreview }) { return <>    <div className="mb-6 flex items-start gap-3 rounded-lg border bg-muted/40 p-4">
+      <Mail className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
+      <div className="min-w-0">
+        <p className="font-medium">{[invitation.firstName, invitation.lastName].filter(Boolean).join(' ') || 'Your invitation'}</p>
+        <p className="mt-1 break-all text-muted-foreground">{invitation.email}</p>
+      </div>
+    </div>
+    {invitation.isOrganizationAdmin !== undefined ? <section className="mb-6 rounded-lg border p-4" aria-labelledby="invitation-proposed-access">
+      <h2 id="invitation-proposed-access" className="font-semibold">Access after acceptance</h2>
+      {invitation.isOrganizationAdmin ? <p className="mt-2">Organization administrator — all departments</p> : <>
+        <p className="mt-2">Member — assigned departments only</p>
+        <ul className="mt-2 list-disc pl-5">{invitation.departments?.map(department => <li key={department.departmentId}>{department.departmentName} — {department.isDepartmentAdmin ? 'Department administrator' : 'Member'}</li>)}</ul>
+      </>}
+    </section> : null}
+</> }

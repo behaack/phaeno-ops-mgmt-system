@@ -1,3 +1,6 @@
+import { scanTones } from '#/features/data-provisioning/DataStatusBadge'
+import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
+import { ProvisioningStatusBadge } from './DataStatusBadge'
 import { formatByteSize } from '#/lib/display-format'
 import { Field as PortalField } from '#/components/ui/field'
 import { PageTitle } from '#/components/ui/page-header'
@@ -221,7 +224,7 @@ export function SourceSampleWorkspace({ sourceSampleId }: { sourceSampleId: stri
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <PageTitle className="m-0">{source.label}</PageTitle>
-            <Badge variant={isDraft ? 'outline' : 'secondary'}>{source.status}</Badge>
+            <ProvisioningStatusBadge status={source.status} />
             {source.isSynthetic ? <Badge variant="outline">Synthetic fixture</Badge> : null}
           </div>
           <p className="mt-2 text-sm text-muted-foreground">
@@ -339,7 +342,7 @@ export function SourceSampleWorkspace({ sourceSampleId }: { sourceSampleId: stri
                 <div key={file.id} className="rounded-lg border bg-background p-3">
                   <div className="flex items-start justify-between gap-2">
                     <p className="m-0 min-w-0 truncate font-medium">{file.fileName}</p>
-                    <Badge variant={file.scanStatus === 'Clean' ? 'secondary' : 'outline'}>{file.scanStatus}</Badge>
+                    <DomainStatusBadge status={file.scanStatus} tones={scanTones}>{file.scanStatus}</DomainStatusBadge>
                   </div>
                   <p className="m-0 mt-1 text-xs text-muted-foreground">{file.fileKind} · {formatBytes(file.sizeBytes)}</p>
                   <p className="m-0 mt-2 break-all font-mono text-[0.6875rem] text-muted-foreground">{file.sha256}</p>

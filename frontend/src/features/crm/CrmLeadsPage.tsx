@@ -1,3 +1,6 @@
+import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
+import { leadTones } from '#/features/crm/crm-status'
+import { RecordTableHeader } from '#/components/ui/record-list'
 import { Field as PortalField } from '#/components/ui/field'
 import { NativeSelect } from '#/components/ui/native-select'
 import { NativeCheckbox } from '#/components/ui/native-checkbox'
@@ -115,7 +118,7 @@ export function CrmLeadsPage() {
           />
           <div className="overflow-x-auto rounded-lg border">
             <table className="w-full text-left text-sm">
-              <thead className="bg-muted/50 text-xs text-muted-foreground">
+              <RecordTableHeader className="text-xs text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3">Lead</th>
                   <th className="px-4 py-3">Company</th>
@@ -124,7 +127,7 @@ export function CrmLeadsPage() {
                   <th className="px-4 py-3">Next action</th>
                   <th className="px-4 py-3">Owner</th>
                 </tr>
-              </thead>
+              </RecordTableHeader>
               <tbody className="divide-y">
                 {(query.data?.items ?? []).map((lead) => (
                   <tr key={lead.id}>
@@ -143,15 +146,9 @@ export function CrmLeadsPage() {
                       {lead.source ?? "—"}
                     </td>
                     <td className="px-4 py-3">
-                      <Badge
-                        variant={
-                          lead.status === "Disqualified"
-                            ? "outline"
-                            : "secondary"
-                        }
-                      >
+                      <DomainStatusBadge status={lead.status} tones={leadTones}>
                         {lead.status}
-                      </Badge>
+                      </DomainStatusBadge>
                     </td>
                     <td className="max-w-xs truncate px-4 py-3 text-muted-foreground">
                       {lead.nextAction ?? "—"}

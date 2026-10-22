@@ -1,3 +1,5 @@
+import { DisplayTimestamp } from '#/components/ui/display-value'
+import { FieldError } from '#/components/ui/field'
 import { NativeCheckbox } from '#/components/ui/native-checkbox'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
@@ -74,20 +76,20 @@ export function IssueLabChangeQuote({ order, catalogItems, onSaved, renderTrigge
         <fieldset disabled={change.isPending} className="space-y-4">
           {sources.fields.map((field, index) => <div key={field.id} className="space-y-2 rounded-md border p-3">
             <Field><Label htmlFor={`change-source-${index}`}><RequiredFieldName><CustomerText message="m_62cda8311410" /></RequiredFieldName></Label><Input id={`change-source-${index}`} {...form.register(`sources.${index}.biologicalSource`)} aria-required aria-invalid={Boolean(form.formState.errors.sources?.[index]?.biologicalSource)} aria-describedby={`change-source-error-${index}`} />
-            <p id={`change-source-error-${index}`} role="alert" className="text-sm text-destructive">{<CustomerSourceText source={form.formState.errors.sources?.[index]?.biologicalSource?.message} />}</p>
+            <FieldError id={`change-source-error-${index}`} role="alert" >{<CustomerSourceText source={form.formState.errors.sources?.[index]?.biologicalSource?.message} />}</FieldError>
             </Field><Field><Label htmlFor={`change-count-${index}`}><RequiredFieldName><CustomerText message="m_7da418252ec3" /></RequiredFieldName></Label><Input id={`change-count-${index}`} type="number" min={1} max={10000} {...form.register(`sources.${index}.specimenCount`)} aria-required aria-invalid={Boolean(form.formState.errors.sources?.[index]?.specimenCount)} aria-describedby={`change-count-error-${index}`} />
-            <p id={`change-count-error-${index}`} role="alert" className="text-sm text-destructive">{<CustomerSourceText source={form.formState.errors.sources?.[index]?.specimenCount?.message} />}</p>
+            <FieldError id={`change-count-error-${index}`} role="alert" >{<CustomerSourceText source={form.formState.errors.sources?.[index]?.specimenCount?.message} />}</FieldError>
             </Field>{sources.fields.length > 1 ? <Button type="button" variant="ghost" onClick={() => sources.remove(index)}><CustomerText message="m_5339824edc7c" />{index + 1}</Button> : null}
           </div>)}
           <Button type="button" variant="outline" onClick={() => sources.append({ biologicalSource: '', specimenCount: 1 })}><CustomerText message="m_b117e4f52915" /></Button>
           <Field><Label htmlFor="change-runs"><CustomerText message="m_208c931edc2f" /></Label><Input id="change-runs" type="number" min={1} max={10000} step={1} placeholder={__customerText('m_91f10d0b47fd')} {...form.register('runs')} aria-invalid={Boolean(form.formState.errors.runs)} aria-describedby="change-runs-help" />
           <p id="change-runs-help" className="text-xs text-muted-foreground">{form.formState.errors.runs?.message ?? 'Leave blank for one run per new sample. Allocate these runs when identifying the additional samples.'}</p>
           </Field><Field><Label htmlFor="change-price"><RequiredFieldName><CustomerText message="m_9ddc78e7a54d" /></RequiredFieldName></Label><Input id="change-price" type="number" min="0.01" step="0.01" {...form.register('unitPrice')} aria-required aria-invalid={Boolean(form.formState.errors.unitPrice)} aria-describedby="change-price-error" />
-          <p id="change-price-error" role="alert" className="text-sm text-destructive">{<CustomerSourceText source={form.formState.errors.unitPrice?.message} />}</p>
+          <FieldError id="change-price-error" role="alert" >{<CustomerSourceText source={form.formState.errors.unitPrice?.message} />}</FieldError>
           <p className="text-xs text-muted-foreground"><CustomerText message="m_98e15dbb153c" /></p>
           <p className="text-xs text-muted-foreground"><CustomerText message="m_1bf9d1b9f07a" /></p>
           </Field>
-          {pricing.additionalRuns > 0 ? <Field><Label htmlFor="change-extra-price"><RequiredFieldName><CustomerText message="m_f983968eda19" /></RequiredFieldName></Label><Input id="change-extra-price" type="number" min={0} step="0.01" {...form.register('additionalRunPrice', { setValueAs: value => value === '' ? null : Number(value) })} aria-required aria-invalid={Boolean(form.formState.errors.additionalRunPrice)} aria-describedby="change-extra-price-error" /><p id="change-extra-price-error" role="alert" className="text-sm text-destructive">{<CustomerSourceText source={form.formState.errors.additionalRunPrice?.message} />}</p><p className="text-xs text-muted-foreground"><CustomerText message="m_6225176916e1" /></p></Field> : null}
+          {pricing.additionalRuns > 0 ? <Field><Label htmlFor="change-extra-price"><RequiredFieldName><CustomerText message="m_f983968eda19" /></RequiredFieldName></Label><Input id="change-extra-price" type="number" min={0} step="0.01" {...form.register('additionalRunPrice', { setValueAs: value => value === '' ? null : Number(value) })} aria-required aria-invalid={Boolean(form.formState.errors.additionalRunPrice)} aria-describedby="change-extra-price-error" /><FieldError id="change-extra-price-error" role="alert" >{<CustomerSourceText source={form.formState.errors.additionalRunPrice?.message} />}</FieldError><p className="text-xs text-muted-foreground"><CustomerText message="m_6225176916e1" /></p></Field> : null}
           <p className="text-sm">{sampleCount} <CustomerText message="m_2c0c2071d895" />{pricing.additionalRuns} <CustomerText message="m_53fbeae5c160" />{pricing.subtotal === null ? <CustomerSourceText source={"Complete the prices"} /> : money(pricing.subtotal)}</p>
         </fieldset>
       </form>
@@ -123,7 +125,7 @@ function ChangeQuote({ order, quote, onSaved }: { order: LabServiceOrder; quote:
   return <Card className="mb-5"><CardHeader><CardTitle><CustomerText message="m_d020aa6a671f" />{quote.revision} · {status}</CardTitle></CardHeader><CardContent className="space-y-3">
     <ul className="list-inside list-disc">{scope.additionalSources.map(source => <li key={source.biologicalSource}>{source.specimenCount} <CustomerText message="m_98f7b97ec46e" />{source.biologicalSource}</li>)}</ul>
     <p><CustomerText message="m_3ad705e2d394" />{quote.taxDecisionSnapshotJson ? <CustomerSourceText source={"total"} /> : __customerText('m_3547ab7ff4b5')}: <strong>{money(quote.total)}</strong><CustomerText message="m_4a9ca80bb3b0" /></p>
-    <p className="text-sm"><CustomerText message="m_d970e4fd1080" />{new Date(quote.expiresAt).toLocaleString()}.</p>
+    <p className="text-sm"><CustomerText message="m_d970e4fd1080" />{<DisplayTimestamp value={quote.expiresAt} seconds />}.</p>
     <ActionMenu><DropdownMenuTrigger asChild><Button id={`change-quote-actions-${quote.id}`} ref={trigger} variant="outline" aria-label={__customerText('change_quote_actions', { p0: quote.revision })}><CustomerText message="m_ff8059dc6752" /></Button></DropdownMenuTrigger>
       <DropdownMenuContent align="end" onCloseAutoFocus={event => { if (openingDecision.current) { event.preventDefault(); openingDecision.current = false } }}>
         <DropdownMenuItem disabled={download.isPending} onSelect={() => download.mutate()}><CustomerText message="m_e38fc1f91494" /></DropdownMenuItem>

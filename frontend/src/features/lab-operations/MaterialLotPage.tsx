@@ -1,3 +1,5 @@
+import { formatDisplayDate } from '#/lib/display-format'
+import { DisplayTimestamp } from '#/components/ui/display-value'
 import { RecordLink } from '#/components/ui/record-link'
 import { BackLink } from '#/components/ui/back-link'
 import { useState, type ReactNode } from 'react'
@@ -45,7 +47,7 @@ export function MaterialLotPage({ materialLotId }: { materialLotId: string }) {
           </dl>
         </PreparationPanel>
         {lot.quantityHoldReason ? <Alert><AlertTitle>Quantity reconciliation required</AlertTitle><AlertDescription>{lot.quantityHoldReason} This lot cannot be used until a Supervisor verifies its remaining quantity.</AlertDescription></Alert> : null}
-        {lot.quantityHistoryJson && lot.quantityHistoryJson !== '[]' ? <PreparationPanel title="Quantity history"><ul className="space-y-3">{(JSON.parse(lot.quantityHistoryJson) as { action: string; before: number; after: number; reason: string; utcNow: string; consumedQuantity?: number | null; balanceAdjustmentQuantity?: number | null }[]).map((entry, i) => <li key={i} className="space-y-1 text-sm"><p>{({ hold: 'Quantity placed on hold', reconciled: 'Quantity reconciled', consumed: 'Material used', exhausted: 'Material exhausted (operator override)' } as Record<string, string>)[entry.action] ?? entry.action} · {new Date(entry.utcNow).toLocaleString()}</p><p>{entry.before} → {entry.after} {lot.quantityUnit} · {entry.reason}</p>{entry.consumedQuantity != null ? <p>Actual amount used: {entry.consumedQuantity} {lot.quantityUnit}</p> : null}{entry.balanceAdjustmentQuantity != null ? <p>Remaining-balance adjustment: {entry.balanceAdjustmentQuantity} {lot.quantityUnit}</p> : null}</li>)}</ul></PreparationPanel> : null}
+        {lot.quantityHistoryJson && lot.quantityHistoryJson !== '[]' ? <PreparationPanel title="Quantity history"><ul className="space-y-3">{(JSON.parse(lot.quantityHistoryJson) as { action: string; before: number; after: number; reason: string; utcNow: string; consumedQuantity?: number | null; balanceAdjustmentQuantity?: number | null }[]).map((entry, i) => <li key={i} className="space-y-1 text-sm"><p>{({ hold: 'Quantity placed on hold', reconciled: 'Quantity reconciled', consumed: 'Material used', exhausted: 'Material exhausted (operator override)' } as Record<string, string>)[entry.action] ?? entry.action} · {<DisplayTimestamp value={entry.utcNow} seconds />}</p><p>{entry.before} → {entry.after} {lot.quantityUnit} · {entry.reason}</p>{entry.consumedQuantity != null ? <p>Actual amount used: {entry.consumedQuantity} {lot.quantityUnit}</p> : null}{entry.balanceAdjustmentQuantity != null ? <p>Remaining-balance adjustment: {entry.balanceAdjustmentQuantity} {lot.quantityUnit}</p> : null}</li>)}</ul></PreparationPanel> : null}
         <PreparationPanel title="Quality control">
           <dl className="grid gap-4 sm:grid-cols-2">
             <LotFact label="QC status"><Badge variant="outline">{lot.qcDisposition === 'ApprovedException' ? 'Approved exception' : lot.qcDisposition}</Badge></LotFact>
@@ -71,5 +73,5 @@ function LotFact({ label, children }: { label: string; children: ReactNode }) {
 }
 
 function dateOnly(value: string | null) {
-  return value ? new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeZone: 'UTC' }).format(new Date(`${value}T00:00:00Z`)) : 'Not recorded'
+  return value ? formatDisplayDate(value, { locale: 'en-US', timeZone: 'UTC' }) : 'Not recorded'
 }

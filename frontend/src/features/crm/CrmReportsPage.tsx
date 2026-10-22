@@ -1,3 +1,4 @@
+import { RecordTableHeader } from '#/components/ui/record-list'
 import { PageTitle } from '#/components/ui/page-header'
 import { useQuery } from "@tanstack/react-query";
 import { apiErrorMessage, getCrmReports } from "#/api/crm";
@@ -157,7 +158,7 @@ function Table({
   return (
     <div className="overflow-x-auto rounded-lg border">
       <table className="w-full text-left text-sm">
-        <thead className="bg-muted/50 text-xs text-muted-foreground">
+        <RecordTableHeader className="text-xs text-muted-foreground">
           <tr>
             {headers.map((header) => (
               <th key={header} className="whitespace-nowrap p-3">
@@ -165,7 +166,7 @@ function Table({
               </th>
             ))}
           </tr>
-        </thead>
+        </RecordTableHeader>
         <tbody className="divide-y">
           {rows.map((row, index) => (
             <tr key={index}>

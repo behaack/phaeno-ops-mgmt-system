@@ -1,3 +1,5 @@
+import { FieldError } from '#/components/ui/field'
+import { RecordTableHeader } from '#/components/ui/record-list'
 import { NativeCheckbox } from '#/components/ui/native-checkbox'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
@@ -242,7 +244,7 @@ export function StoreAcceptedTubesDialog({ rows, packet, work, available = true,
                 <Input id="placement-box" {...boxForm.register('barcode')} ref={node => { boxForm.register('barcode').ref(node); boxInput.current = node }} autoComplete="off" spellCheck={false} className="min-w-0 font-mono sm:flex-1" disabled={!canPlace || busy} aria-invalid={Boolean(boxForm.formState.errors.barcode)} aria-describedby={boxForm.formState.errors.barcode ? 'placement-box-help placement-box-error' : 'placement-box-help'} />
                 <Button type="submit" className="shrink-0" disabled={!canPlace || busy}>{expectedBox ? 'Resume box' : 'Open box'}</Button>
               </div>
-              {boxForm.formState.errors.barcode ? <p id="placement-box-error" role="alert" className="text-sm text-destructive">{boxForm.formState.errors.barcode.message}</p> : null}
+              {boxForm.formState.errors.barcode ? <FieldError id="placement-box-error" role="alert" >{boxForm.formState.errors.barcode.message}</FieldError> : null}
             </Field>
           </form> : null}
           {activeBox && !reviewing && !submitted ? <form id="place-accession-tube" onSubmit={tubeForm.handleSubmit(values => { if (canPlace && !busy) scan.mutate({ barcode: values.barcode, box: activeBox, epoch: context.current.epoch }) })}>
@@ -253,11 +255,11 @@ export function StoreAcceptedTubesDialog({ rows, packet, work, available = true,
                 <Input id="placement-tube" {...tubeForm.register('barcode')} ref={node => { tubeForm.register('barcode').ref(node); tubeInput.current = node }} className="min-w-0 font-mono sm:flex-1" autoComplete="off" spellCheck={false} disabled={!canPlace || busy} aria-invalid={Boolean(tubeForm.formState.errors.barcode)} aria-describedby={tubeForm.formState.errors.barcode ? 'placement-tube-help placement-tube-error' : 'placement-tube-help'} />
                 <Button type="submit" className="shrink-0" disabled={!canPlace || busy}>{scan.isPending ? 'Checking tube…' : 'Scan and place tube'}</Button>
               </div>
-              {tubeForm.formState.errors.barcode ? <p id="placement-tube-error" role="alert" className="text-sm text-destructive">{tubeForm.formState.errors.barcode.message}</p> : null}
+              {tubeForm.formState.errors.barcode ? <FieldError id="placement-tube-error" role="alert" >{tubeForm.formState.errors.barcode.message}</FieldError> : null}
             </Field>
           </form> : null}
           {scan.error && !submitted ? <Alert variant="destructive"><AlertTitle>Tube could not be checked</AlertTitle><AlertDescription>{getLabOperationsError(scan.error, 'Check the tube and scan again. It has not been added to this box.')}</AlertDescription></Alert> : null}
-          {reviewing || submitted ? <div className="overflow-x-auto rounded-lg border"><table className="w-full text-left text-sm"><caption className="sr-only">Tubes placed in {groupBox}</caption><thead className="border-b bg-muted/50"><tr><th scope="col" className="p-3 font-medium">Customer sample</th><th scope="col" className="p-3 font-medium">Tube barcode</th></tr></thead><tbody>{group.map(barcode => <tr key={barcode} className="border-b last:border-0"><td className="p-3 wrap-anywhere">{selection.find(row => row.supplierTubeBarcode === barcode)?.customerSampleId}</td><td className="p-3 font-mono wrap-anywhere">{barcode}</td></tr>)}</tbody></table></div> : <>
+          {reviewing || submitted ? <div className="overflow-x-auto rounded-lg border"><table className="w-full text-left text-sm"><caption className="sr-only">Tubes placed in {groupBox}</caption><RecordTableHeader className="border-b"><tr><th scope="col" className="p-3 font-medium">Customer sample</th><th scope="col" className="p-3 font-medium">Tube barcode</th></tr></RecordTableHeader><tbody>{group.map(barcode => <tr key={barcode} className="border-b last:border-0"><td className="p-3 wrap-anywhere">{selection.find(row => row.supplierTubeBarcode === barcode)?.customerSampleId}</td><td className="p-3 font-mono wrap-anywhere">{barcode}</td></tr>)}</tbody></table></div> : <>
             {undecidedRows.length ? <>
               <p className="text-sm text-muted-foreground">For a broken tube that cannot be scanned, record the rejection from its expected row. Do not record missing tubes as received.</p>
               <AccessionTubeTable rows={undecidedRows} tubes={tubesByBarcode} caption="Tubes awaiting an intake decision" pending={group} pendingBox={groupBox} disabled={!canPlace || busy} onException={row => { pause('Placement paused to record an exception. Rescan the box before continuing.'); setException(row) }} />
@@ -302,7 +304,7 @@ function AccessionTubeTable({ rows, tubes, caption, pending = [], pendingBox = n
 }) {
   return <div className="overflow-x-auto rounded-lg border"><table className="w-full text-left text-sm">
     <caption className="sr-only">{caption}</caption>
-    <thead className="border-b bg-muted/50"><tr>{['Customer sample', 'Tube barcode', 'Intake', 'Storage'].map(label => <th key={label} scope="col" className="p-3 font-medium">{label}</th>)}{onException ? <th scope="col" className="p-3"><span className="sr-only">Action</span></th> : null}</tr></thead>
+    <RecordTableHeader className="border-b"><tr>{['Customer sample', 'Tube barcode', 'Intake', 'Storage'].map(label => <th key={label} scope="col" className="p-3 font-medium">{label}</th>)}{onException ? <th scope="col" className="p-3"><span className="sr-only">Action</span></th> : null}</tr></RecordTableHeader>
     <tbody>{rows.map(row => {
       const tube = tubes.get(row.supplierTubeBarcode!)
       const placementPending = pending.includes(row.supplierTubeBarcode!)

@@ -1,5 +1,6 @@
 import type { DatasetGrantStatus, DatasetVersionStatus, GovernanceIncidentStatus, ProvisioningRunStatus, SourceSampleStatus } from '#/api/data-provisioning'
 import { StatusBadge, type StatusTone } from '#/components/ui/status-badge'
+export const scanTones = { Pending: 'pending', Scanning: 'info', Clean: 'success', Rejected: 'error', Unavailable: 'warning' } as const
 
 type ProvisioningStatus = DatasetGrantStatus | DatasetVersionStatus | ProvisioningRunStatus | SourceSampleStatus
 const provisioningTones = {

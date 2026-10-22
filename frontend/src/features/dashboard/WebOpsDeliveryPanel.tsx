@@ -1,9 +1,11 @@
+import { formatDisplayTimestamp } from '#/lib/display-format'
+import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
+import { deliveryTones } from '#/features/dashboard/dashboard-status'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useSearch } from '@tanstack/react-router'
 import { useRef, useState } from 'react'
 import { getWebOpsErrorMessage, getWebOpsNotificationAttempts, getWebOpsNotifications, resendWebOpsNotification, type WebOpsNotification } from '#/api/web-ops'
 import { Alert, AlertDescription } from '#/components/ui/alert'
-import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '#/components/ui/dialog'
@@ -12,7 +14,7 @@ import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger 
 
 const kindLabels = { MailingListAlert: 'Mailing-list staff alert', TechnicalBrief: 'Technical brief', DemoRequestAlert: 'Demo-request staff alert' }
 const stateLabels = { Pending: 'Queued', Processing: 'Sending', Accepted: 'Accepted by email provider', Failed: 'Needs attention', Cancelled: 'Cancelled' }
-const formatTime = (value: string) => new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
+const formatTime = (value: string) => formatDisplayTimestamp(value, { locale: 'en-US' })
 
 export function WebOpsDeliveryPanel() {
   const { deliveryId } = useSearch({ strict: false })
@@ -51,7 +53,7 @@ export function WebOpsDeliveryPanel() {
       {query.data && <ul className="divide-y">{query.data.items.map(item => <li key={item.id} className="space-y-2 py-4 first:pt-0">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0"><p className="font-medium break-words">{kindLabels[item.kind]} · {item.organizationName}</p><p className="text-sm text-muted-foreground">{item.contactName} · Intake {item.intakeId.slice(0, 8)}</p><p className="text-xs text-muted-foreground">{item.attemptCount} attempt(s){item.lastAttemptAtUtc && ` · Last attempted ${formatTime(item.lastAttemptAtUtc)}`}</p></div>
-          <Badge variant="outline" className={item.state === 'Failed' || item.isProcessingExpired ? 'border-destructive text-destructive' : undefined}>{item.isProcessingExpired ? 'Interrupted' : stateLabels[item.state]}</Badge>
+          <DomainStatusBadge status={item.isProcessingExpired ? 'Interrupted' : item.state} tones={deliveryTones}>{item.isProcessingExpired ? 'Interrupted' : stateLabels[item.state]}</DomainStatusBadge>
         </div>
         {item.lastError && <p className="text-sm text-destructive">{item.lastError}</p>}
         {item.nextAttemptAtUtc && <p className="text-xs text-muted-foreground">Next attempt: {formatTime(item.nextAttemptAtUtc)}</p>}

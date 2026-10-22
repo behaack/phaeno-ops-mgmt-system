@@ -9,7 +9,7 @@ function artifacts(directory) {
 }
 const production = artifacts(path.join(root, '.output'))
 const gallery = artifacts(path.join(root, 'dist/ui-gallery'))
-const markers = ['--gallery-reference', 'data-gallery-section', 'navigation-preview', 'workspace-preview', 'Edit fictional sample', 'Fictional record workspace']
+const markers = ['--gallery-reference', 'data-gallery-section', 'navigation-preview', 'workspace-preview', 'Edit fictional sample', 'Fictional record workspace', 'data-guide-scene', 'Unregistered fictional request:', 'fictionalData', 'DEMO-ASM-20261022']
 for (const file of production) {
   const contents = fs.readFileSync(file, 'utf8')
   for (const marker of markers) if (contents.includes(marker)) throw new Error(`Engineering gallery leaked into production output: ${path.relative(root, file)} (${marker})`)

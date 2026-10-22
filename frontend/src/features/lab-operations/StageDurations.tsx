@@ -1,3 +1,4 @@
+import { formatDisplayTimestamp } from '#/lib/display-format'
 import { Field as PortalField } from '#/components/ui/field'
 import { NativeCheckbox } from '#/components/ui/native-checkbox'
 import { NativeSelect } from '#/components/ui/native-select'
@@ -18,7 +19,7 @@ import { PreparationActions, PreparationField, PreparationPanel, prepRowClass, p
 import { formatCalendarDate } from './calendar-date'
 
 function Failure({ error }: { error: unknown }) { return error ? <p role="alert" className="text-sm text-destructive">{getLabOperationsError(error, 'The request could not be completed. Reload and try again.')}</p> : null }
-function dateLabel(value: string | null) { return value ? new Date(value).toLocaleString() : 'Not available' }
+function dateLabel(value: string | null) { return value ? formatDisplayTimestamp(value, { seconds: true }) : 'Not available' }
 
 export function StageDurations() {
   const query = useQuery({ queryKey: ['lab-forecast-configuration'], queryFn: getForecastConfiguration })

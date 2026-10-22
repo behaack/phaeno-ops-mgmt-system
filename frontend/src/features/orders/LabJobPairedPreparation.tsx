@@ -92,7 +92,7 @@ export function LabJobPairedPreparation({ order, phaseId }: { order: LabServiceO
   function submit(event: FormEvent) { event.preventDefault(); if (eligible && (phases.length <= 1 || phase)) add.mutate() }
   function submitKit(event: FormEvent) { event.preventDefault(); if (kitNumber.trim() && canScanKit && !saveKit.isPending) saveKit.mutate() }
   return <Card id="paired-sample-preparation" tabIndex={-1} className="scroll-mt-6 gap-0 py-0">
-    <CardHeader className="border-b bg-muted/50 py-3"><CardTitle><h3><CustomerText message="m_4d54dcdfec58" /></h3></CardTitle></CardHeader>
+    <CardHeader ><CardTitle><h3><CustomerText message="m_4d54dcdfec58" /></h3></CardTitle></CardHeader>
     <CardContent className="space-y-5 py-4">
       <p className="text-sm">{prepared ? __customerText('m_50b016a5a6e0', { p0: String(multiplePhases ? 'this phase’s' : 'your') }) : __customerText('m_3d120777995d')}</p>
       {workspace.isLoading ? <p role="status"><CustomerText message="m_94f80c63c55f" /></p> : null}

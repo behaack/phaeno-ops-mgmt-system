@@ -1,3 +1,7 @@
+import { DisplayDate } from '#/components/ui/display-value'
+import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
+import { inventoryTones } from '#/features/sample-shipping/shipping-status'
+import { RecordTableHeader } from '#/components/ui/record-list'
 import { RecordLink } from '#/components/ui/record-link'
 import { CustomerSourceText, useCustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
@@ -12,7 +16,6 @@ import { z } from 'zod'
 import { fulfillSampleReturnKit, getPlatformReturnKitShipments, registerSampleTubes, type SampleShipmentWorkflow } from '#/api/sample-shipping'
 import { getOrderErrorMessage } from '#/api/order-management'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
-import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
@@ -59,7 +62,7 @@ export function ReturnKitFulfillmentPanel({ apiEnabled, shipmentId, showEmpty = 
   if (!apiEnabled || (!showEmpty && !needle && !waitingForSearch && query.isSuccess && !data?.totalCount)) return null
 
   return <Card className="min-w-0 gap-0 py-0">
-    <CardHeader className="border-b bg-muted/50 p-4">
+    <CardHeader >
       <div className="flex items-start gap-3">
         <PackageCheck aria-hidden="true" className="mt-0.5 size-5 text-primary" />
         <div><CardTitle><CustomerSourceText source={"Shipment-specific kits sent"} /></CardTitle><CardDescription><CustomerSourceText source={"Review and complete shipment-specific kits and their fulfillment dates."} /></CardDescription></div>
@@ -75,13 +78,13 @@ export function ReturnKitFulfillmentPanel({ apiEnabled, shipmentId, showEmpty = 
       {waitingForSearch || query.isLoading ? <p role="status" className="text-sm text-muted-foreground"><CustomerSourceText source={"Loading return kits…"} /></p> : null}
       {shipments.length ? <div className="w-full min-w-0 max-w-full overflow-x-auto rounded-lg border">
         <table className="w-full min-w-[660px] text-left text-sm">
-          <thead className="border-b bg-muted text-foreground"><tr><th className="px-2 py-3 font-medium"><CustomerSourceText source={"Shipment"} /></th><th className="px-2 py-3 font-medium"><CustomerSourceText source={"Organization"} /></th><th className="px-2 py-3 font-medium"><CustomerSourceText source={"Kit"} /></th><th className="px-2 py-3 font-medium"><CustomerSourceText source={"Registered tubes"} /></th><th className="px-2 py-3 font-medium"><CustomerSourceText source={"Fulfillment date"} /></th><th className="px-2 py-3 font-medium"><span className="sr-only"><CustomerSourceText source={"Actions"} /></span></th></tr></thead>
+          <RecordTableHeader className="border-b text-foreground"><tr><th className="px-2 py-3 font-medium"><CustomerSourceText source={"Shipment"} /></th><th className="px-2 py-3 font-medium"><CustomerSourceText source={"Organization"} /></th><th className="px-2 py-3 font-medium"><CustomerSourceText source={"Kit"} /></th><th className="px-2 py-3 font-medium"><CustomerSourceText source={"Registered tubes"} /></th><th className="px-2 py-3 font-medium"><CustomerSourceText source={"Fulfillment date"} /></th><th className="px-2 py-3 font-medium"><span className="sr-only"><CustomerSourceText source={"Actions"} /></span></th></tr></RecordTableHeader>
           <tbody>{shipments.map(shipment => <tr key={shipment.id} className="border-b bg-muted/20 last:border-0">
             <td className="px-2 py-3"><RecordLink asChild><Link to="/lab-operations/$workOrderId" params={{ workOrderId: shipment.labWorkOrderId }} search={{ ...currentSearch, section: 'kit-requests', receiptTab: undefined, kitQueue: 'sent' }} >{shipment.shipmentNumber}</Link></RecordLink><p className="mt-1 text-xs text-muted-foreground">{shipment.authorizationReference}</p></td>
             <td className="px-2 py-3">{shipment.organizationName}</td>
-            <td className="px-2 py-3"><span className="font-mono">{shipment.returnKit!.kitNumber}</span><p className="mt-1"><Badge variant="outline">{humanize(shipment.returnKit!.status)}</Badge></p></td>
+            <td className="px-2 py-3"><span className="font-mono">{shipment.returnKit!.kitNumber}</span><p className="mt-1"><DomainStatusBadge status={shipment.returnKit!.status} tones={inventoryTones}>{humanize(shipment.returnKit!.status)}</DomainStatusBadge></p></td>
             <td className="px-2 py-3">{shipment.returnKit!.tubes.length + ' of ' + shipment.returnKit!.requiredTubeCount}</td>
-            <td className="px-2 py-3 whitespace-nowrap">{shipment.returnKit!.fulfilledAt ? <time dateTime={shipment.returnKit!.fulfilledAt}>{new Date(shipment.returnKit!.fulfilledAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</time> : '—'}</td>
+            <td className="px-2 py-3 whitespace-nowrap">{shipment.returnKit!.fulfilledAt ? <time dateTime={shipment.returnKit!.fulfilledAt}>{<DisplayDate value={shipment.returnKit!.fulfilledAt} />}</time> : '—'}</td>
             <td className="px-2 py-3"><div className="flex justify-end">
               {shipment.returnKit!.status === 'Preparing' ? <ActionMenu modal={false}><DropdownMenuTrigger asChild><Button ref={node => { if (node) triggers.current.set(shipment.id, node); else triggers.current.delete(shipment.id) }} size="sm" variant="outline" aria-label={'Actions for shipment ' + shipment.shipmentNumber}><CustomerSourceText source={"Actions"} /></Button></DropdownMenuTrigger><DropdownMenuContent align="end">
                 <DropdownMenuItem onSelect={() => openAction({ kind: 'tubes', shipment })}><ScanBarcode aria-hidden="true" /><CustomerSourceText source={"Register tubes"} /></DropdownMenuItem>

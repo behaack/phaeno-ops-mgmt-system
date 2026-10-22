@@ -155,7 +155,7 @@ export function ServiceWorkflowVersionBuilderPage({ workflowId, draftVersionId }
               const requirement = form.watch(`stages.${index}.requirement`)
               return (
                 <Card key={stage.id} size="sm" className="overflow-visible">
-                  <CardHeader className="border-b">
+                  <CardHeader >
                     <CardTitle>Stage {index + 1}</CardTitle>
                     <CardDescription>One controlled protocol and the handoff needed to continue.</CardDescription>
                     <CardAction><PreparationActions items={[

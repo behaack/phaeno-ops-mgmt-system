@@ -1,3 +1,5 @@
+import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
+import { relationshipTones } from '#/features/crm/crm-status'
 import { formatDisplayDate, formatDisplayCurrency } from '#/lib/display-format'
 import { Field as PortalField } from '#/components/ui/field'
 import { RecordLink } from '#/components/ui/record-link'
@@ -336,7 +338,7 @@ function SearchResult({
           {result.subtitle}
         </span>
       </span>
-      <Badge variant="outline">{result.status}</Badge>
+      <DomainStatusBadge status={result.status} tones={relationshipTones}>{result.status}</DomainStatusBadge>
     </Link>
   );
 }

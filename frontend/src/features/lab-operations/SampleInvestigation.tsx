@@ -1,3 +1,5 @@
+import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
+import { investigationTones } from '#/features/lab-operations/lab-status'
 import { RecordLink } from '#/components/ui/record-link'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
@@ -24,11 +26,11 @@ export function SampleInvestigation({ workOrderId, specimenId, view = 'history' 
   const results = [...(data?.evidence.results ?? []), ...(data?.evidence.legacyResults ?? [])]
   const people = new Map((data?.evidence.people ?? []).map(person => [person.id, String(person.name)]))
   return <Card className="gap-0 py-0" id="sample-history">
-    <CardHeader className="border-b bg-muted/50 p-4"><div className="flex items-start justify-between gap-3"><div><CardTitle role="heading" aria-level={2}>{view === 'results' ? 'Results & delivery' : view === 'processing' ? 'Processing evidence' : 'History & investigation'}</CardTitle><CardDescription className="mt-1">Review source tubes, laboratory work and the evidence behind a specific result.</CardDescription></div><Button variant="outline" size="sm" onClick={() => void query.refetch()}>Reload evidence</Button></div></CardHeader>
+    <CardHeader ><div className="flex items-start justify-between gap-3"><div><CardTitle role="heading" aria-level={2}>{view === 'results' ? 'Results & delivery' : view === 'processing' ? 'Processing evidence' : 'History & investigation'}</CardTitle><CardDescription className="mt-1">Review source tubes, laboratory work and the evidence behind a specific result.</CardDescription></div><Button variant="outline" size="sm" onClick={() => void query.refetch()}>Reload evidence</Button></div></CardHeader>
     <CardContent className="space-y-4 p-4">
       {query.isPending ? <p role="status">Loading sample history…</p> : query.isError ? <EvidenceError error={query.error} /> : data ? <>
         <p className="text-xs text-muted-foreground">As of {evidenceDate(data.capturedAtUtc)}. Recorded evidence is not a certification of scientific validity.</p>
-        <details className="rounded-lg border"><summary className="cursor-pointer bg-muted/50 p-3 text-sm font-medium">Evidence coverage and limits</summary><div className="grid gap-3 p-3 md:grid-cols-2">{data.coverage.map(item => <div key={item.area} className="rounded-lg border p-3"><div className="flex flex-wrap items-center justify-between gap-2"><h3 className="text-sm font-medium">{item.area}</h3><Badge variant="outline">{item.status}</Badge></div><p className="mt-1 text-xs text-muted-foreground">{item.explanation}</p></div>)}</div></details>
+        <details className="rounded-lg border"><summary className="cursor-pointer bg-muted/50 p-3 text-sm font-medium">Evidence coverage and limits</summary><div className="grid gap-3 p-3 md:grid-cols-2">{data.coverage.map(item => <div key={item.area} className="rounded-lg border p-3"><div className="flex flex-wrap items-center justify-between gap-2"><h3 className="text-sm font-medium">{item.area}</h3><DomainStatusBadge status={item.status} tones={investigationTones}>{item.status}</DomainStatusBadge></div><p className="mt-1 text-xs text-muted-foreground">{item.explanation}</p></div>)}</div></details>
         {view === 'results' ? <section aria-label="Result traceability" className="space-y-3"><h3 className="font-medium">Trace a result to its tube</h3>{results.length ? <>
           <Label htmlFor={`trace-result-${specimenId}`}>Result version</Label><NativeSelect id={`trace-result-${specimenId}`}  value={resultId} onChange={event => setResultId(event.target.value)}><option value="">Select a result</option>{results.map(result => <option key={result.id} value={result.id}>Version {String(result.packageVersion ?? result.releaseVersion ?? 'Unknown')} · {result.id}</option>)}</NativeSelect>
           {resultId ? <ResultTrace key={resultId} workOrderId={workOrderId} specimenId={specimenId} resultId={resultId} /> : null}

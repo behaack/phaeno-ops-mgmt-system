@@ -1,3 +1,4 @@
+import { DisplayDate } from '#/components/ui/display-value'
 import { Field as PortalField } from '#/components/ui/field'
 import { NativeSelect } from '#/components/ui/native-select'
 import { NativeCheckbox } from '#/components/ui/native-checkbox'
@@ -56,7 +57,7 @@ export function CancellationDecisionPanel({ workflowPath, recordId, version, req
     <Card>
       <CardHeader><CardTitle><CustomerSourceText source={"Cancellation requests"} /></CardTitle><CardDescription><CustomerSourceText source={"Decisions preserve completed work, shipment, release, and financial history."} /></CardDescription></CardHeader>
       <CardContent className="space-y-3">{requests.map(request => <div key={request.id} className="flex flex-wrap items-start justify-between gap-3 rounded-lg border p-3">
-        <div><div className="flex items-center gap-2"><span className="font-medium"><CustomerSourceText source={"Requested"} /> {new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' }).format(new Date(request.createdAt))}</span><OrderStatusBadge status={request.status} /></div>
+        <div><div className="flex items-center gap-2"><span className="font-medium"><CustomerSourceText source={"Requested"} /> {<DisplayDate value={request.createdAt} />}</span><OrderStatusBadge status={request.status} /></div>
           <p className="mt-2 text-sm">{request.reason}</p>{request.decisionReason ? <p className="mt-1 text-sm text-muted-foreground"><CustomerSourceText source={"Decision:"} /> {request.decisionReason}</p> : null}</div>
         {request.status === 'Pending' ? <Button type="button" variant="outline" onClick={() => {
           setSelected(request); setReviewedVersion(version); setReason(''); setDecision('Approved'); setLineQuantities({}); setSampleIds([]); setConfirmDiscard(false); mutation.reset()

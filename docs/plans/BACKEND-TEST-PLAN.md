@@ -3428,3 +3428,12 @@ release receipt; a build or domain test does not establish that evidence.
 
 See the [owning plan](LAB-SETUP-VISUAL-AUTHORING-PLAN.md) and
 [preserving release plan](LAB-AUTHORING-HOSTED-TEST-RELEASE-20261014-PLAN.md).
+
+
+## UI presentation and illustrated guides — October 22, 2026
+
+No API, authorization, persistence or database behavior changes in the UI adoption
+phase. Existing backend expectations remain unchanged; no backend test execution
+is claimed. The 62-guide generated API corpus is kept paired with the frontend
+documentation corpus. Hosted index activation and release are outside this scope.
+See [the adoption plan](UI-CONSISTENCY-ADOPTION-AND-ILLUSTRATIONS-PLAN.md).

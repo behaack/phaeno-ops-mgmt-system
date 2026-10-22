@@ -15,7 +15,7 @@ export function KitAssemblyRunPanel({ assembly }: { assembly: KitAssemblyState }
   if (query.isPending) return <p role="status"><CustomerSourceText source={"Loading kit assembly…"} /></p>
   if (query.error || !run) return <Alert variant="destructive"><AlertTitle><CustomerSourceText source={"Assembly record unavailable"} /></AlertTitle><AlertDescription>{getLabOperationsError(query.error, 'Refresh this kit before continuing.')} <Button variant="outline" onClick={() => void query.refetch()}><CustomerSourceText source={"Retry"} /></Button></AlertDescription></Alert>
   return <Card className="gap-0 py-0">
-    <CardHeader className="border-b bg-muted/50 p-4">
+    <CardHeader >
       <CardTitle><CustomerSourceText source={"Kit assembly"} /></CardTitle>
       <CardDescription>{run.status === 'Completed' ? <CustomerSourceText source={"Assembly completed. Recorded steps and component use are retained below."} /> : run.status === 'Abandoned' ? 'Assembly stopped. Recorded work and component use are retained.' : 'Resume assembly to record packing, label verification and completion together.'}</CardDescription>
       <dl className="col-span-full grid grid-cols-2 gap-3 pt-2 text-sm">

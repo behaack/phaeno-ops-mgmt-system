@@ -1,3 +1,4 @@
+import { FieldError } from '#/components/ui/field'
 import { Field as PortalField } from '#/components/ui/field'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { useCustomerMessages } from '#/features/customer-i18n/use-customer-messages'
@@ -86,7 +87,7 @@ export function DepartmentMembersDialog({ organizationId, department, onOpenChan
             aria-invalid={Boolean(form.formState.errors.email)}
             aria-describedby={`department-member-email-description${form.formState.errors.email ? ' department-member-email-error' : ''}`}
             {...form.register('email', { onChange: () => lookup.reset() })} />
-          {form.formState.errors.email ? <p id="department-member-email-error" role="alert" className="text-xs text-destructive">{<CustomerSourceText source={form.formState.errors.email.message} />}</p> : null}
+          {form.formState.errors.email ? <FieldError id="department-member-email-error" role="alert" >{<CustomerSourceText source={form.formState.errors.email.message} />}</FieldError> : null}
         </PortalField>
         <Button type="submit" variant="outline" disabled={!canChange || Boolean(changeTarget)}>{lookup.isPending ? m.lookingUp : m.lookup}</Button>
       </form>

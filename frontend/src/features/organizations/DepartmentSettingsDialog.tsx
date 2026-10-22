@@ -1,4 +1,4 @@
-import { Field as PortalField } from '#/components/ui/field'
+import { Field as PortalField, FieldError } from '#/components/ui/field'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { useCustomerMessages } from '#/features/customer-i18n/use-customer-messages'
 import { NativeSelect } from '#/components/ui/native-select'
@@ -92,7 +92,7 @@ export function DepartmentSettingsDialog({ target, pending, error, onClose, onSu
               return <div className="grid gap-1.5" key={name}>
                 <Label htmlFor={props.id}>{required ? <RequiredFieldName>{label}</RequiredFieldName> : label}</Label>
                 {multiline ? <Textarea {...props} rows={2} /> : <Input {...props} type={name.endsWith('Email') ? 'email' : 'text'} />}
-                {fieldError ? <p id={`department-${name}-error`} role="alert" className="text-xs text-destructive">{fieldError}</p> : null}
+                {fieldError ? <FieldError id={`department-${name}-error`}>{fieldError}</FieldError> : null}
               </div>
             })}
             <PortalField >

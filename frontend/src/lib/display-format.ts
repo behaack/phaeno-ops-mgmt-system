@@ -26,6 +26,19 @@ export function formatDisplayTimestamp(value: string | Date | null | undefined, 
   }).format(date)
 }
 
+/** Scientific evidence keeps the offset and precision recorded at performance time. */
+export function formatRecordedTimestamp(value: string, utcOffsetMinutes: number, precision: 'server' | 'minute' | string) {
+  const date = dateValue(value)
+  if (!date || !Number.isInteger(utcOffsetMinutes) || Math.abs(utcOffsetMinutes) > 840) return 'Not recorded'
+  const local = new Date(date.getTime() + utcOffsetMinutes * 60000)
+  const text = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'UTC', year: 'numeric', month: 'short', day: '2-digit', hour: 'numeric', minute: '2-digit',
+    ...(precision === 'server' ? { second: '2-digit' as const } : {}),
+  }).format(local)
+  const offset = `${utcOffsetMinutes < 0 ? '-' : '+'}${String(Math.floor(Math.abs(utcOffsetMinutes) / 60)).padStart(2, '0')}:${String(Math.abs(utcOffsetMinutes) % 60).padStart(2, '0')}`
+  return `${text} (UTC${offset})`
+}
+
 export function formatDisplayNumber(value: number | null | undefined, options: DisplayOptions & Intl.NumberFormatOptions = {}) {
   if (value == null || !Number.isFinite(value)) return missing(options)
   return new Intl.NumberFormat(options.locale ?? 'en-US', {

@@ -7,10 +7,10 @@ const root=fileURLToPath(new URL('../',import.meta.url))
 const directory=path.join(root,'ui-gallery/visual-tests/__screenshots__')
 const manifestPath=path.join(directory,'reviewed.json')
 const projects=['desktop-light','desktop-dark','narrow-light','narrow-dark']
-const scenes=['list','detail','modal','list-expanded','detail-expanded','modal-expanded']
+const scenes=['list','detail','modal','list-expanded','detail-expanded','modal-expanded','feature-company','feature-source','feature-assembly-inputs','feature-assembly-jobs','feature-customer','feature-research']
 const expected=projects.flatMap(project=>scenes.map(scene=>`${project}/${scene}.png`)).sort()
 const actual=fs.readdirSync(directory,{recursive:true}).map(p=>p.replaceAll('\\','/')).filter(p=>p.endsWith('.png')).sort()
-if(JSON.stringify(actual)!==JSON.stringify(expected))throw new Error('Visual reference must contain all 24 reviewed list/detail/modal frames, without missing or extra PNGs.')
+if(JSON.stringify(actual)!==JSON.stringify(expected))throw new Error('Visual reference must contain all 48 reviewed shared-pattern and actual-feature frames, without missing or extra PNGs.')
 const versions={
   playwright:JSON.parse(fs.readFileSync(path.join(root,'node_modules/@playwright/test/package.json'),'utf8')).version,
   font:JSON.parse(fs.readFileSync(path.join(root,'node_modules/@fontsource-variable/geist/package.json'),'utf8')).version,
@@ -30,4 +30,4 @@ if(process.argv.includes('--record-reviewed')){
   const manifest=JSON.parse(fs.readFileSync(manifestPath,'utf8'))
   if(manifest.schemaVersion!==1||manifest.platform!=='win32'||!manifest.reviewedAt||JSON.stringify(manifest.versions)!==JSON.stringify(versions)||JSON.stringify(manifest.images)!==JSON.stringify(images))throw new Error('Visual references or renderer versions changed without a recorded review. Inspect all frames and run ui:visual:review after an intentional baseline update.')
 }
-process.stdout.write('Visual reference check passed: 24 reviewed Windows Chromium page baselines.\n')
+process.stdout.write('Visual reference check passed: 48 reviewed Windows Chromium page baselines.\n')

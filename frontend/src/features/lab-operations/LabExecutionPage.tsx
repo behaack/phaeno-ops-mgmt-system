@@ -1,3 +1,5 @@
+import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
+import { executionTones } from '#/features/lab-operations/lab-status'
 import { formatDisplayTimestamp } from '#/lib/display-format'
 import { PageTitle } from '#/components/ui/page-header'
 import { RecordLink } from '#/components/ui/record-link'
@@ -97,7 +99,7 @@ export function LabExecutionWorkspace({ data, returnLink, reviewTubesLink, speci
     {data.preparationBatchId ? <div className="rounded-lg border bg-muted/30 p-4 text-sm">Shared preparation evidence is recorded from its tray. <RecordLink asChild><Link to="/lab-operations/preparation/$preparationBatchId" params={{ preparationBatchId: data.preparationBatchId }} search={{ section: 'work' }}>Open preparation batch</Link></RecordLink></div> : null}
     {returnLink}
     <header className="flex flex-wrap items-start justify-between gap-4">
-      <div className="min-w-0"><PageTitle ref={heading} tabIndex={-1} className="break-words">{data.protocolName}</PageTitle><p className="mt-2 text-sm text-muted-foreground">Protocol version {data.protocolVersion}{data.accessionNumber ? ` · Specimen ${data.accessionNumber}` : ' · Job-level execution'}</p><Badge variant="outline" className="mt-2">{data.execution.status === 'InProgress' ? 'In progress' : data.execution.status}</Badge></div>
+      <div className="min-w-0"><PageTitle ref={heading} tabIndex={-1} className="break-words">{data.protocolName}</PageTitle><p className="mt-2 text-sm text-muted-foreground">Protocol version {data.protocolVersion}{data.accessionNumber ? ` · Specimen ${data.accessionNumber}` : ' · Job-level execution'}</p><DomainStatusBadge status={data.execution.status} tones={executionTones} className="mt-2">{data.execution.status === 'InProgress' ? 'In progress' : data.execution.status}</DomainStatusBadge></div>
       {data.canAbandon || data.canOperate && (active || data.execution.status === 'Planned') ? <ActionMenu><DropdownMenuTrigger asChild><Button ref={actionTrigger} variant="outline" disabled={pending}>Actions </Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-max min-w-40">
         {data.canOperate && data.execution.status === 'Planned' ? <DropdownMenuItem disabled={pending || data.tubeAcceptanceRequired || data.sourceSelectionRequired} onSelect={() => { if (data.attemptId) { trigger.current = actionTrigger.current; setConfirmStart(true) } else void onTransition('start').catch(() => {}) }}>Start execution</DropdownMenuItem> : null}
         {data.canOperate && active ? <DropdownMenuItem disabled={pending || data.completionBlockers.length > 0} onSelect={() => openFinish('complete')}>Complete execution</DropdownMenuItem> : null}

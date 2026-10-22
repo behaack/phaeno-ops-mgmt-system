@@ -1,3 +1,4 @@
+import { RecordTableHeader } from '#/components/ui/record-list'
 import { NativeSelect } from '#/components/ui/native-select'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -67,5 +68,5 @@ export function FinanceReceiptImport({ apiEnabled, customerId, customers, onSave
 function ImportPreview({ json }: { json: string }) {
   let rows: Array<Record<string, unknown>> = []
   try { const value: unknown = JSON.parse(json); rows = Array.isArray(value) ? value : [] } catch { /* Older previews may contain summary-only information. */ }
-  return rows.length ? <div className="overflow-x-auto"><table className="w-full text-left text-sm"><caption className="mb-2 text-left font-medium"><CustomerSourceText source={"Receipts to import"} /></caption><thead><tr>{['External reference', 'Payer', 'Date', 'Amount', 'Reference'].map(label => <th key={label} className="p-2">{label}</th>)}</tr></thead><tbody>{rows.map((row, index) => <tr key={index} className="border-t">{['externalId', 'payer', 'receivedOn', 'amount', 'reference'].map(key => <td key={key} className="p-2">{String(row[key] ?? row[key[0].toUpperCase() + key.slice(1)] ?? '')}</td>)}</tr>)}</tbody></table></div> : <p className="text-sm"><CustomerSourceText source={"The batch passed duplicate, currency and required-field validation."} /></p>
+  return rows.length ? <div className="overflow-x-auto"><table className="w-full text-left text-sm"><caption className="mb-2 text-left font-medium"><CustomerSourceText source={"Receipts to import"} /></caption><RecordTableHeader><tr>{['External reference', 'Payer', 'Date', 'Amount', 'Reference'].map(label => <th key={label} className="p-2">{label}</th>)}</tr></RecordTableHeader><tbody>{rows.map((row, index) => <tr key={index} className="border-t">{['externalId', 'payer', 'receivedOn', 'amount', 'reference'].map(key => <td key={key} className="p-2">{String(row[key] ?? row[key[0].toUpperCase() + key.slice(1)] ?? '')}</td>)}</tr>)}</tbody></table></div> : <p className="text-sm"><CustomerSourceText source={"The batch passed duplicate, currency and required-field validation."} /></p>
 }

@@ -1,3 +1,5 @@
+import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
+import { assemblyTones } from '#/features/lab-operations/lab-status'
 import { formatDisplayTimestamp } from '#/lib/display-format'
 import { PageHeader, PageTitle } from '#/components/ui/page-header'
 import { Field } from '#/components/ui/field'
@@ -20,7 +22,7 @@ import { getLabOperationsError } from '#/api/lab-operations'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '#/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '#/components/ui/dialog'
 import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 import { Input } from '#/components/ui/input'
@@ -54,8 +56,8 @@ function ReadyAssemblyInputs({ enabled }: { enabled: boolean }) {
   const queue = useQuery({ queryKey: ['assembly-jobs'], queryFn: () => getAssemblyJobs(), enabled })
   const [selected, setSelected] = useState<{ work: string; specimen: string } | null>(null)
   const groups = [...new Map((inputs.data ?? []).map(i => [`${i.labSpecimenId}:${i.sequencingRunNumber}:${i.labSpecimenAttemptId}`, i])).entries()]
-  return <Card><CardHeader><CardTitle>Sequencing inputs</CardTitle></CardHeader><CardContent className="space-y-3">
-    <p className="text-sm text-muted-foreground">Verified FASTQ files for each PSeq Service specimen and run. Start assembly from an input set, then follow its progress in Sequencing assembly.</p>
+  return <Card><CardHeader><CardTitle>Sequencing inputs</CardTitle><CardDescription>Verified FASTQ files for each PSeq Service specimen and run. Start assembly from an input set, then follow its progress in Sequencing assembly.</CardDescription></CardHeader><CardContent className="space-y-3">
+
     {queue.data?.availability.available ? <div className="space-y-1 text-sm" role="status"><p className="font-medium">Processing connected</p>{queue.data.availability.recipes.map(recipe => <p key={recipe.key}>{recipe.name} · {recipe.version}{recipe.simulated ? <Badge variant="outline" className="ml-2">Simulated</Badge> : null}</p>)}</div> : null}
     {inputs.isPending && enabled ? <LoadingState label="Loading available input sets…" /> : null}
     {inputs.error ? <ErrorState title="Sequencing inputs could not be loaded" onRetry={() => void inputs.refetch()} retryLabel="Retry inputs" busy={inputs.isFetching}>{getLabOperationsError(inputs.error, 'Your current selection is retained. Try again.')}</ErrorState> : null}    {queue.error ? <ErrorState title="Processing availability could not be checked" onRetry={() => void queue.refetch()} retryLabel="Retry processing availability" busy={queue.isFetching}>{getLabOperationsError(queue.error, 'Retry the availability check before starting work.')}</ErrorState> : null}
@@ -76,7 +78,7 @@ function ReadyAssemblyInputs({ enabled }: { enabled: boolean }) {
 
 export function AssemblyJobProgress({ job }: { job: AssemblyJob }) {
   const percentage = currentAssemblyPercentage(job.progress, job.isTerminal)
-  if (job.isTerminal) return <Badge variant="outline">{job.simulated && job.state === 'Succeeded' ? 'Simulation completed' : assemblyStateLabel(job.state)}</Badge>
+  if (job.isTerminal) return <DomainStatusBadge status={job.simulated && job.state === 'Succeeded' ? 'SimulatedCompleted' : job.state} tones={assemblyTones}>{job.simulated && job.state === 'Succeeded' ? 'Simulation completed' : assemblyStateLabel(job.state)}</DomainStatusBadge>
   return <div className="min-w-0 space-y-2"><span className="text-sm">{job.cancellationRequested ? 'Cancellation requested' : assemblyStateLabel(job.state)}</span>
     <ProgressBar aria-label={`Assembly progress for ${job.sampleName}, run ${job.sequencingRunNumber}`} value={percentage}
       aria-valuetext={percentage === null ? 'Progress unavailable' : `${Math.round(percentage)}% reported`} />

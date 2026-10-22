@@ -3,13 +3,24 @@ import { AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import { api } from '../../src/api/client'
 import { newBlock, type Project, type Experiment, type Entry, type ResearchBlock } from '../../src/features/research/research-api'
 
-export function installResearchGuideData() {
+export function installResearchGuideData(options: { prepared?: boolean; completed?: boolean } = {}) {
   const stamp = '2026-10-17T16:00:00Z'
   const project: Project = { id: '11111111-1111-4111-8111-111111111111', name: 'DEMO — buffer exploration', description: 'Fictional example for learning the R&D notebook.', version: 1, updatedAt: stamp }
   const experiment: Experiment = { id: '22222222-2222-4222-8222-222222222222', researchProjectId: project.id, title: 'DEMO — compare buffer A and B', experimentDate: '2026-10-17', status: 'Active', version: 1, lastActivityAtUtc: stamp }
   const initialBlocks = () => ['Purpose', 'Method', 'Observations', 'Results', 'Conclusions'].map(label => newBlock('text', label.toLowerCase(), label))
   const entry = (experimentId: string, title = 'Experiment notebook', entryDate = '2026-10-17', blocks = initialBlocks()): Entry => ({ id: crypto.randomUUID(), researchExperimentId: experimentId, title, entryDate, blocks, createdByUserId: 'demo-researcher', updatedByUserId: 'demo-researcher', createdAt: stamp, updatedAt: stamp, version: 1 })
   const projects = [project]; const experiments = [experiment]; const entries = [entry(experiment.id)]
+  entries[0].id = '33333333-3333-4333-8333-333333333333'
+  if (options.prepared) {
+    entries[0].title = 'DEMO — buffer comparison observations'
+    entries[0].blocks = [
+      { ...newBlock('text', 'purpose', 'Purpose'), text: 'Compare fictional buffers A and B under the same demonstration conditions.' },
+      { ...newBlock('text', 'method', 'Method'), text: 'Prepare matched aliquots. Record buffer identity, concentration and handling conditions.' },
+      { ...newBlock('text', 'observations', 'Observations'), text: 'Fictional training observations only; no scientific conclusions are established.' },
+      { ...newBlock('table', 'results', 'Results'), columns: ['Buffer', 'Concentration (ng/µL)', 'RIN'], rows: [['A', '18.4', '8.1'], ['B', '17.9', '8.0']] },
+    ]
+  }
+  if (options.completed) experiment.status = 'Completed'
   const revisions: { id: string; kind: string; recordId: string; revision: number; action: string; snapshotJson: string; recordedByUserId: string; authorName: string; recordedAtUtc: string }[] = []
   const authors = [{ id: 'demo-researcher', name: 'Demo Researcher' }]
   const record = (kind: string, value: Project | Experiment | Entry, action: string) => revisions.unshift({ id: crypto.randomUUID(), kind, recordId: value.id, revision: value.version, action, snapshotJson: JSON.stringify(value), recordedByUserId: 'demo-researcher', authorName: 'Demo Researcher', recordedAtUtc: stamp })

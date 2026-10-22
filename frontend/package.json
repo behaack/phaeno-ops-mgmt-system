@@ -28,12 +28,15 @@
     "ui:gallery:build": "vite build --config ui-gallery/vite.config.ts",
     "ui:check": "node scripts/check-ui-drift.mjs",
     "ui:build:check": "node scripts/check-ui-build.mjs",
-    "ui:test": "node --test scripts/ui-drift.test.mjs",
-    "ui:test:components": "vitest run src/lib/display-format.test.ts src/components/ui/standardization.test.tsx src/features/orders/order-status.test.ts src/features/file-management/ReleasedDeliverablesPage.test.tsx --maxWorkers=2",
+    "ui:test": "node --test scripts/ui-drift.test.mjs scripts/documentation-captures.test.mjs",
+    "ui:test:components": "vitest run src/lib/display-format.test.ts src/components/ui/standardization.test.tsx src/features/orders/order-status.test.ts src/features/file-management/ReleasedDeliverablesPage.test.tsx --maxWorkers=2 src/components/ui/adoption.test.tsx src/features/customer-i18n/customer-text.test.tsx",
     "ui:test:browser": "playwright test --config playwright.ui-gallery.config.ts",
     "ui:test:visual": "node scripts/check-ui-visual.mjs && playwright test --config playwright.ui-visual.config.ts",
     "ui:visual:check": "node scripts/check-ui-visual.mjs",
-    "ui:visual:review": "node scripts/check-ui-visual.mjs --record-reviewed"
+    "ui:visual:review": "node scripts/check-ui-visual.mjs --record-reviewed",
+    "docs:captures:refresh": "node scripts/capture-documentation.mjs --capture",
+    "docs:captures:review": "node scripts/capture-documentation.mjs --record-reviewed",
+    "docs:captures:check": "node scripts/capture-documentation.mjs"
   },
   "dependencies": {
     "@bwip-js/browser": "4.11.4",

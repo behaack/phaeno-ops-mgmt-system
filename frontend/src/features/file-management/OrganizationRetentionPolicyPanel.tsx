@@ -1,5 +1,5 @@
 import { formatDisplayTimestamp } from '#/lib/display-format'
-import { Field as PortalField } from '#/components/ui/field'
+import { Field as PortalField, FieldError as PortalFieldError } from '#/components/ui/field'
 import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -244,7 +244,7 @@ function EffectiveValue({ label, source, value }: { label: string; source: Effec
 function OptionalDayField({ form, inherited, label, name }: { form: ReturnType<typeof useForm<OverrideFormValues>>; inherited: number; label: string; name: 'standardRetentionDays' | 'undownloadedWarningLeadDays' | 'undownloadedGraceDays' }) {
   const error = form.formState.errors[name]
   const id = `organization-policy-${name}`
-  return <PortalField><Label htmlFor={id}>{label}</Label><Input id={id} type="number" min={1} step={1} inputMode="numeric"  aria-invalid={Boolean(error)} aria-describedby={`${id}-help${error ? ` ${id}-error` : ''}`} {...form.register(name)} /><p id={`${id}-help`} className="mt-1 text-xs text-muted-foreground">Leave blank to inherit {inherited} days.</p>{error ? <p id={`${id}-error`} role="alert" className="mt-1 text-sm text-destructive">{error.message}</p> : null}</PortalField>
+  return <PortalField><Label htmlFor={id}>{label}</Label><Input id={id} type="number" min={1} step={1} inputMode="numeric"  aria-invalid={Boolean(error)} aria-describedby={`${id}-help${error ? ` ${id}-error` : ''}`} {...form.register(name)} /><p id={`${id}-help`} className="mt-1 text-xs text-muted-foreground">Leave blank to inherit {inherited} days.</p>{error ? <PortalFieldError id={`${id}-error`} role="alert" >{error.message}</PortalFieldError> : null}</PortalField>
 }
 
 function ReasonField({ id, error, registration }: { id: string; error?: FieldError; registration: UseFormRegisterReturn }) {

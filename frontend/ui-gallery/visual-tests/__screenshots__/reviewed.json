@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "reviewedAt": "2026-10-22T19:13:42.426Z",
+  "reviewedAt": "2026-10-22T21:50:10.330Z",
   "platform": "win32",
   "browser": "chromium",
   "locale": "en-US",
@@ -19,6 +19,36 @@
       "sha256": "e5bfb2ca6fed2f5975721fc2804e98f5794d63929d32cf86eb146ba0c3a0365d",
       "width": 1280,
       "height": 900
+    },
+    "desktop-dark/feature-assembly-inputs.png": {
+      "sha256": "71e3685ff36413708ab848c343f30d784e6381ccc7315236941f5c0f4fcc33f0",
+      "width": 1280,
+      "height": 900
+    },
+    "desktop-dark/feature-assembly-jobs.png": {
+      "sha256": "bd4500270455b665db887db6a3b3ade687ae2943d080ff0f364d43fe2dd43e2d",
+      "width": 1280,
+      "height": 900
+    },
+    "desktop-dark/feature-company.png": {
+      "sha256": "e08e1ee594731d3b954839d499af23ac73d02ca2665a4605b0ef815219e24d20",
+      "width": 1280,
+      "height": 900
+    },
+    "desktop-dark/feature-customer.png": {
+      "sha256": "058749a6658c0442540c07b3603dca5054b0e7f1d8df131b348ef9f4c9f45cf8",
+      "width": 1280,
+      "height": 926
+    },
+    "desktop-dark/feature-research.png": {
+      "sha256": "e9c2fe0909a9ba110ee1bcaa63fc250bd7652f2a1433e9e1d916517ed20fe984",
+      "width": 1280,
+      "height": 900
+    },
+    "desktop-dark/feature-source.png": {
+      "sha256": "ce1ac91e3985214830ac24ef0553195b243881a13d51f89bc1462c72dcd81b2c",
+      "width": 1280,
+      "height": 1425
     },
     "desktop-dark/list-expanded.png": {
       "sha256": "b91aa6ec9e133d7ec0199a707e1fd6de59799ee09e8e95a83f7931c297f518e0",
@@ -50,6 +80,36 @@
       "width": 1280,
       "height": 900
     },
+    "desktop-light/feature-assembly-inputs.png": {
+      "sha256": "58b569c8580a945e3ed41599d9721a0823a5bf2e40a7a1519b5544860fe1c9f1",
+      "width": 1280,
+      "height": 900
+    },
+    "desktop-light/feature-assembly-jobs.png": {
+      "sha256": "d2c487b086fef7b99a77cb7b37d5271006a8349cc5e442cfcfa2499e43c463c9",
+      "width": 1280,
+      "height": 900
+    },
+    "desktop-light/feature-company.png": {
+      "sha256": "b1faff66540f600a34c9ab6403874fe0ea7adf8b1b422ebe7464e0d94303ccce",
+      "width": 1280,
+      "height": 900
+    },
+    "desktop-light/feature-customer.png": {
+      "sha256": "d5c1c578ce3f3781b55e0c737d92e88aaeee8ae1cc52c44d86f29127ee62608f",
+      "width": 1280,
+      "height": 926
+    },
+    "desktop-light/feature-research.png": {
+      "sha256": "a9efae9e80d16f614787200d852c6fa03cee8c809a9985eacff47eb667a67446",
+      "width": 1280,
+      "height": 900
+    },
+    "desktop-light/feature-source.png": {
+      "sha256": "d1d29c89219d4dd5ced86013dccd240d0341aa873c1e13d2947e90e6d42df544",
+      "width": 1280,
+      "height": 1425
+    },
     "desktop-light/list-expanded.png": {
       "sha256": "8a040a805a597a7642ce1a0faae230a39c1eae9cd12279ee14d79783beb71ee0",
       "width": 1280,
@@ -80,6 +140,36 @@
       "width": 390,
       "height": 844
     },
+    "narrow-dark/feature-assembly-inputs.png": {
+      "sha256": "ee7fc04676d641072aabe90a7850de934897fe4c4d3e68b44bd91aa840087682",
+      "width": 390,
+      "height": 844
+    },
+    "narrow-dark/feature-assembly-jobs.png": {
+      "sha256": "9f61cb880cad0aca8e7b755ae548066fe275ee6da01864815305c4b40dcc076c",
+      "width": 390,
+      "height": 844
+    },
+    "narrow-dark/feature-company.png": {
+      "sha256": "2165436953832bb566d08e4320ab62725fce29fd810468afdb7b8b634e9539d7",
+      "width": 390,
+      "height": 844
+    },
+    "narrow-dark/feature-customer.png": {
+      "sha256": "f87dc1d3c774a4009346fa42aad47ff4fd361fec51c2f2bc291c3e633d9b0e7d",
+      "width": 390,
+      "height": 1050
+    },
+    "narrow-dark/feature-research.png": {
+      "sha256": "c3ae4dd9a2e940bee94fb5416a3d283d88554d89c61d738ce3245742b4386b6a",
+      "width": 390,
+      "height": 844
+    },
+    "narrow-dark/feature-source.png": {
+      "sha256": "c03d49228ed07d4f99cdfa4f354f02411ac4cc663270ddf2496cee8ee53a23c5",
+      "width": 390,
+      "height": 2363
+    },
     "narrow-dark/list-expanded.png": {
       "sha256": "8630d662ae2d7f5b93f6c8c58780b678cd49547089775a609b5b59122cd9db0a",
       "width": 390,
@@ -109,6 +199,36 @@
       "sha256": "ad7ed6c35aeffe1adf5f8319dfe6b90dcbeebfec94fc21082cb1465dbb918485",
       "width": 390,
       "height": 844
+    },
+    "narrow-light/feature-assembly-inputs.png": {
+      "sha256": "cb518d02dc9400f83a0d993c70db0b136f64d4b20526aa3c6a1985efa8cf4ab3",
+      "width": 390,
+      "height": 844
+    },
+    "narrow-light/feature-assembly-jobs.png": {
+      "sha256": "1abdd4e675c7f23d3ca524e3e680a1f78eb85774f5023d597d85fea60181cf7a",
+      "width": 390,
+      "height": 844
+    },
+    "narrow-light/feature-company.png": {
+      "sha256": "031cd88eb301a0e5eaabb624e6393071ec64c1ab6e4c09e0e90f3ce596041184",
+      "width": 390,
+      "height": 844
+    },
+    "narrow-light/feature-customer.png": {
+      "sha256": "97b9c2c306ab0102da6c30208fa891dfabe2f77e2bc8cdc5c853d5faac8bb648",
+      "width": 390,
+      "height": 1050
+    },
+    "narrow-light/feature-research.png": {
+      "sha256": "81bcf07b8f8a015c5c5acc354f0a7f51ee0bd802fa024438b0ca5eb86bd5f665",
+      "width": 390,
+      "height": 844
+    },
+    "narrow-light/feature-source.png": {
+      "sha256": "8d7fd87c2728dcc560d79913edb8a03a26592b1e58cbad9c8cae577286a11cd2",
+      "width": 390,
+      "height": 2363
     },
     "narrow-light/list-expanded.png": {
       "sha256": "5aa06410de958ec7150b043aed00c309b63211c240f5945e9fb66dc3a0c5f439",

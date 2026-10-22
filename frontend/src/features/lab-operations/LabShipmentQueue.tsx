@@ -14,7 +14,7 @@ export function LabShipmentQueue({ apiEnabled, received = false, onOpen, headerC
   headerContent?: ReactNode
 }) {
   const query = useQuery({ queryKey: ['lab-shipment-queue', received], queryFn: () => getLabShipmentQueue(received), enabled: apiEnabled })
-  return <Card className="min-w-0 gap-0 overflow-hidden py-0"><CardHeader className="border-b bg-muted/50 p-4"><CardTitle>{received ? 'Received containers awaiting accession' : 'Expected shipments'}</CardTitle>
+  return <Card className="min-w-0 gap-0 overflow-hidden py-0"><CardHeader ><CardTitle>{received ? 'Received containers awaiting accession' : 'Expected shipments'}</CardTitle>
     <CardDescription>{received ? 'Select a received container or enter its shipping insert barcode, then accession its individual tubes.' : 'One row per expected container, including its carrier and tracking number. When it physically arrives, scan its shipping insert in Receive a shipment.'}</CardDescription>
     {headerContent ? <div className="col-span-full space-y-4">{headerContent}</div> : null}</CardHeader>
     <CardContent className="p-4">

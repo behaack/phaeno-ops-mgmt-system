@@ -1,3 +1,5 @@
+import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
+import { executionTones } from '#/features/lab-operations/lab-status'
 import { ClearFiltersButton } from '#/components/ui/clear-filters-button'
 import { RecordLink } from '#/components/ui/record-link'
 import { RecordPagination, useRecordListState } from '#/components/RecordPagination'
@@ -9,7 +11,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { createPreparation, getPreparationIndex } from '#/api/lab-preparation'
 import { getLabOperationsError } from '#/api/lab-operations'
-import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import { PreparationActions, PreparationFormDialog, PreparationPanel, prepRowClass } from './preparation-ui'
 
@@ -36,7 +37,7 @@ export function PreparationBatchList() {
       ...(data.canOperate ? [{ label: 'New preparation batch', onClick: () => { create.reset(); request.current = { hash: '', id: '' }; setDialog('create') } }] : []),
     ]} />}>
 <div className="mb-4 flex flex-wrap gap-3"><Input aria-label="Search preparation batches" placeholder="Batch identifier" value={list.search} onChange={event => list.change({ listSearch: event.target.value, listPage: 1 })} /><NativeSelect aria-label="Preparation status" value={list.status} onChange={event => list.change({ listStatus: event.target.value, listPage: 1 })}><option value="">All batches</option><option value="active">Active</option><option value="closed">Closed</option></NativeSelect><ClearFiltersButton  onClick={() => list.change({ listSearch: "", listStatus: "", listPage: 1 })}></ClearFiltersButton></div>
-      {data.batches.length ? data.batches.map(batch => <div key={batch.id} className={`${prepRowClass} flex items-center justify-between gap-4`}><RecordLink asChild><Link to="/lab-operations/preparation/$preparationBatchId" params={{ preparationBatchId: batch.id }} search={{ section: 'work' }}>{batch.displayName ?? batch.name}</Link></RecordLink><Badge variant="secondary">{labStatus(batch.status)}</Badge></div>) : <p className="py-4 text-sm text-muted-foreground">No preparation batches yet. Create a batch using a library tray format and an approved workflow with preparation scopes.</p>}
+      {data.batches.length ? data.batches.map(batch => <div key={batch.id} className={`${prepRowClass} flex items-center justify-between gap-4`}><RecordLink asChild><Link to="/lab-operations/preparation/$preparationBatchId" params={{ preparationBatchId: batch.id }} search={{ section: 'work' }}>{batch.displayName ?? batch.name}</Link></RecordLink><DomainStatusBadge status={batch.status} tones={executionTones}>{labStatus(batch.status)}</DomainStatusBadge></div>) : <p className="py-4 text-sm text-muted-foreground">No preparation batches yet. Create a batch using a library tray format and an approved workflow with preparation scopes.</p>}
 <RecordPagination data={data} busy={query.isFetching} onPage={page => list.change({ listPage: page })} />
     </PreparationPanel>
     {dialog === 'create' ? <PreparationFormDialog title="New preparation batch" description="POMS assigns a service-and-timestamp batch identifier (UTC) when you create the batch. Partial trays and tubes from compatible jobs are allowed." fields={[

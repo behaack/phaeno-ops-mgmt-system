@@ -1,3 +1,5 @@
+import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
+import { workflowTones } from '#/features/lab-operations/lab-status'
 import { RequiredLegend } from '#/components/ui/required-field'
 import { Field as PortalField } from '#/components/ui/field'
 import { RecordLink } from '#/components/ui/record-link'
@@ -58,7 +60,7 @@ export function KitAssemblyWorkflowSettings({ canManage, actorId, isPlatformAdmi
     (showInactive || isShownByDefault(workflow))
     && (!needle || workflow.name.toLocaleLowerCase().includes(needle)))
   return <>
-    <Card className="gap-0 py-0"><CardHeader className="border-b bg-muted/50 p-4"><CardTitle>Transportation kit workflows</CardTitle><CardDescription>Reusable assembly procedures approved as a whole. Each Kit specification selects its method and defines its own required contents.</CardDescription>{canManage ? <CardAction><Button type="button" disabled={query.isPending || query.isError} onClick={() => setEditor('new')}><Plus data-icon="inline-start" /> New workflow</Button></CardAction> : null}<div className="col-span-full"><WorkflowListFilters id="kit-workflow" search={search} onSearchChange={setSearch} showInactive={showInactive} onShowInactiveChange={setShowInactive} /></div></CardHeader><CardContent className="space-y-3 p-4">
+    <Card className="gap-0 py-0"><CardHeader ><CardTitle>Transportation kit workflows</CardTitle><CardDescription>Reusable assembly procedures approved as a whole. Each Kit specification selects its method and defines its own required contents.</CardDescription>{canManage ? <CardAction><Button type="button" disabled={query.isPending || query.isError} onClick={() => setEditor('new')}><Plus data-icon="inline-start" /> New workflow</Button></CardAction> : null}<div className="col-span-full"><WorkflowListFilters id="kit-workflow" search={search} onSearchChange={setSearch} showInactive={showInactive} onShowInactiveChange={setShowInactive} /></div></CardHeader><CardContent className="space-y-3 p-4">
       {query.isPending ? <p role="status">Loading kit workflows…</p> : null}
       {query.error ? <Alert variant="destructive"><AlertTitle>Kit workflows unavailable</AlertTitle><AlertDescription>{getLabOperationsError(query.error, 'Refresh and try again.')} <Button variant="outline" onClick={() => void query.refetch()}>Retry</Button></AlertDescription></Alert> : null}
       {visibleWorkflows.length ? <ul className="divide-y" aria-label="Transportation kit workflows">
@@ -69,7 +71,7 @@ export function KitAssemblyWorkflowSettings({ canManage, actorId, isPlatformAdmi
             <div className="min-w-0 flex-1 basis-48">
               <div className="flex flex-wrap items-center gap-2">
                 <RecordLink asChild><Link to={procedureDetailRoute} params={{ kind: 'kit', recordId: workflow.id }} search={{ ...discovery, revision: displayed.revision }}>{workflow.name}</Link></RecordLink>
-                <Badge variant="outline">Rev {displayed.revision}</Badge><Badge variant={displayed.status === 'Approved' ? 'secondary' : 'outline'}>{displayed.status}</Badge><Badge variant="outline">{displayed.steps.length} instructions</Badge>
+                <Badge variant="outline">Rev {displayed.revision}</Badge><DomainStatusBadge status={displayed.status} tones={workflowTones}>{displayed.status}</DomainStatusBadge><Badge variant="outline">{displayed.steps.length} instructions</Badge>
               </div>
               {latest.status === 'Draft' && latest.revision !== displayed.revision ? <span className="block"><RecordLink asChild><Link to={procedureDetailRoute} params={{ kind: 'kit', recordId: workflow.id }} search={{ ...discovery, revision: latest.revision }}>Pending Draft revision {latest.revision}</Link></RecordLink></span> : null}
               <details className="mt-2 text-sm">

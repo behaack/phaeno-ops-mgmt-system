@@ -1,3 +1,5 @@
+import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
+import { accessTones } from '#/features/organizations/access-status'
 import { Field as PortalField } from '#/components/ui/field'
 import { NativeSelect } from '#/components/ui/native-select'
 import { Send, UserPlus } from 'lucide-react'
@@ -71,7 +73,7 @@ export function InvitePanel() {
                   {invite.role} - {invite.organization}
                 </p>
               </div>
-              <Badge variant="outline">{invite.state}</Badge>
+              <DomainStatusBadge status={invite.state} tones={accessTones}>{invite.state}</DomainStatusBadge>
             </div>
           ))}
         </div>

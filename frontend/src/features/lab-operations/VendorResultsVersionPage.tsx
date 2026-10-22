@@ -1,3 +1,4 @@
+import { formatDisplayTimestamp } from '#/lib/display-format'
 import { PageTitle } from '#/components/ui/page-header'
 import { BackLink } from '#/components/ui/back-link'
 import { useQuery } from '@tanstack/react-query'
@@ -7,7 +8,7 @@ import { Button } from '#/components/ui/button'
 import { usePhaenoSession } from '#/features/auth/session-context'
 import { PreparationPanel } from './preparation-ui'
 
-const date = (value: string | null) => value ? new Date(value).toLocaleString() : 'Not recorded'
+const date = (value: string | null) => value ? formatDisplayTimestamp(value, { seconds: true }) : 'Not recorded'
 export function VendorResultsVersionPage({ batchId, resultVersion }: { batchId: string; resultVersion: number }) {
   const { session, authProvider } = usePhaenoSession()
   const enabled = Boolean(session?.capabilities.canManageLabOperations && authProvider !== 'mock')

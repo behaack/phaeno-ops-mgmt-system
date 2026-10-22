@@ -1,3 +1,4 @@
+import { formatDisplayTimestamp } from '#/lib/display-format'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import type { LabServiceOrder } from '#/api/order-management'
@@ -22,7 +23,7 @@ export function LabJobHoldNotice({ order, onReview }: { order: LabServiceOrder; 
 
 export function LabJobTrackingSummary({ order }: { order: LabServiceOrder }) {
   const timing = order.timing
-  const date = (value: string | null | undefined) => value ? new Date(value).toLocaleString() : 'Not yet recorded'
+  const date = (value: string | null | undefined) => value ? formatDisplayTimestamp(value, { seconds: true }) : 'Not yet recorded'
   const receiptToAcceptance = timing?.firstReceivedAtUtc && timing.acceptedAtUtc
     ? Math.max(0, (Date.parse(timing.acceptedAtUtc) - Date.parse(timing.firstReceivedAtUtc)) / 86_400_000) : null
   return <div className="space-y-3">

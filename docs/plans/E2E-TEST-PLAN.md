@@ -4831,3 +4831,25 @@ running service has the previous help version. Generated API/UI artifacts match;
 paired activation and index refresh are required before search acceptance can pass.
 No authentication/session permissions, runtime or hosted deployment are changed.
 See the [owning plan](PORTAL-DOCUMENTATION-SEARCH-PLAN.md).
+
+
+## Actual feature references and refreshed illustrations — October 22, 2026
+
+The independent gallery browser matrix contains 128 cases across desktop/phone
+and light/dark: the existing 84 interaction scenarios, 24 actual feature views,
+and 20 guide-image scenarios. Feature views use real Company, source, R&D,
+sequencing-input, sequencing-job and Customer-data components with isolated
+fictional transport. Assertions cover header shading, full-width descriptions
+below actions, reflow, automatic accessibility checks and absence of API traffic.
+The guide cases load all 32 images and check alt/captions and marker containment.
+
+The Windows pixel suite contains 48 deliberately reviewed references: 24 shared
+list/detail/modal and expanded-label views plus 24 actual feature views. Normal
+runs cannot update snapshots; renderer versions and image hashes are checked.
+The existing strict 0.15/80-pixel tolerance remains unchanged. Capture source and
+annotation checks reject stale or invalid documentation even when the renderer's
+defensive marker clamp would make a broken annotation fit visually.
+
+Final local results are in [the adoption plan](UI-CONSISTENCY-ADOPTION-AND-ILLUSTRATIONS-PLAN.md).
+This is simulated component/browser verification, not hosted workflow, provider,
+physical laboratory, scientific qualification or complete screen-reader acceptance.

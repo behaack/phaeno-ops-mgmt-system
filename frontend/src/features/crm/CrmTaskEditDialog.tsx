@@ -1,3 +1,4 @@
+import { formatDisplayTimestamp } from '#/lib/display-format'
 import { Field as PortalField } from '#/components/ui/field'
 import { NativeSelect } from '#/components/ui/native-select'
 import { confirmPortal } from '#/components/PortalConfirmation'
@@ -118,8 +119,8 @@ export function CrmTaskEditDialog({ task, onClose, onRestoreFocus }: { task: Crm
           <div><dt className="inline font-medium">Title: </dt><dd className="inline">{review.title}</dd></div>
           <div><dt className="inline font-medium">Description: </dt><dd className="inline whitespace-pre-wrap">{review.description || 'None'}</dd></div>
           <div><dt className="inline font-medium">Owner / priority: </dt><dd className="inline">{review.ownerName} / {review.priority}</dd></div>
-          <div><dt className="inline font-medium">Due: </dt><dd className="inline">{review.dueAt ? new Date(review.dueAt).toLocaleString() : 'None'}</dd></div>
-          <div><dt className="inline font-medium">Reminder: </dt><dd className="inline">{review.reminderAt ? new Date(review.reminderAt).toLocaleString() : 'None'}</dd></div>
+          <div><dt className="inline font-medium">Due: </dt><dd className="inline">{review.dueAt ? formatDisplayTimestamp(review.dueAt, { seconds: true }) : 'None'}</dd></div>
+          <div><dt className="inline font-medium">Reminder: </dt><dd className="inline">{review.reminderAt ? formatDisplayTimestamp(review.reminderAt, { seconds: true }) : 'None'}</dd></div>
           <div><dt className="inline font-medium">Status / recurrence: </dt><dd className="inline">{review.status} / {review.recurrenceRule || 'Does not repeat'}</dd></div>
         </dl>
         <Button type="button" variant="outline" disabled={busy} onClick={() => { setReview(null); edit.reset() }}>I have reviewed the changes</Button>

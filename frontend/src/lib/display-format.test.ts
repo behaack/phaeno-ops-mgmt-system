@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { formatByteSize, formatDisplayCurrency, formatDisplayDate, formatDisplayNumber, formatDisplayTimestamp } from './display-format'
+import { formatByteSize, formatDisplayCurrency, formatDisplayDate, formatDisplayNumber, formatDisplayTimestamp, formatRecordedTimestamp } from './display-format'
 
 describe('shared record display',()=>{
+  it('preserves the original scientific offset and never invents seconds for minute entries',()=>{
+    const stamp='2026-11-01T08:05:07Z'
+    expect(formatRecordedTimestamp(stamp,-420,'server')).toBe('Nov 01, 2026, 1:05:07 AM (UTC-07:00)')
+    expect(formatRecordedTimestamp(stamp,-420,'minute')).toBe('Nov 01, 2026, 1:05 AM (UTC-07:00)')
+    expect(formatRecordedTimestamp(stamp,345,'minute')).toContain('(UTC+05:45)')
+    expect(formatRecordedTimestamp('invalid',0,'server')).toBe('Not recorded')
+  })
   it('keeps a calendar day fixed across viewer timezones and rejects invalid recorded days',()=>{
     for(const timeZone of ['America/Los_Angeles','Pacific/Kiritimati','UTC']){
       expect(formatDisplayDate('2026-10-22',{timeZone})).toBe('Oct 22, 2026')

@@ -1,3 +1,5 @@
+import { formatDisplayTimestamp } from '#/lib/display-format'
+import { FieldError } from '#/components/ui/field'
 import { Field as PortalField } from '#/components/ui/field'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { NativeSelect } from '#/components/ui/native-select'
@@ -74,7 +76,7 @@ const empty = {
   internalNote: '',
 }
 function display(value: string | null) {
-  return value ? new Date(value).toLocaleString() : 'Not yet recorded'
+  return value ? formatDisplayTimestamp(value, { seconds: true }) : 'Not yet recorded'
 }
 function localInput(value: string | null) {
   if (!value) return ''
@@ -284,9 +286,9 @@ export function LabServiceTimingPanel({
                     {...form.register('expectedCompletion')}
                   />
                   {form.formState.errors.expectedCompletion ? (
-                    <p role="alert" className="mt-1 text-sm text-destructive">
+                    <FieldError role="alert" >
                       {<CustomerSourceText source={form.formState.errors.expectedCompletion.message} />}
-                    </p>
+                    </FieldError>
                   ) : null}
                 </PortalField>
                 <PortalField>
@@ -324,9 +326,9 @@ export function LabServiceTimingPanel({
                     {...form.register('customerSafeNote')}
                   />
                   {form.formState.errors.customerSafeNote ? (
-                    <p role="alert" className="mt-1 text-sm text-destructive">
+                    <FieldError role="alert" >
                       {<CustomerSourceText source={form.formState.errors.customerSafeNote.message} />}
-                    </p>
+                    </FieldError>
                   ) : null}
                 </PortalField>
                 <PortalField>

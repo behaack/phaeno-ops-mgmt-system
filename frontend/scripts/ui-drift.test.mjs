@@ -7,6 +7,21 @@ const back = `import { BackLink as ReturnLink } from '#/components/ui/back-link'
 const menus = `import { ActionMenu, DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '#/components/ui/dropdown-menu';`
 const inspect = (code, messages) => inspectUiSource(code, 'src/features/example.tsx', messages)
 
+test('panel and table shading are owned by shared primitives, including import aliases and class constants',()=>{
+  assert.equal(inspect('<thead><tr><th scope="col">Name</th></tr></thead>')[0].rule,'shared-table-header')
+  assert.equal(inspect(`import {CardHeader as Heading} from '#/components/ui/card'; const local='bg-white px-7'; <Heading className={local}>Title</Heading>`)[0].rule,'panel-header-appearance')
+  assert.equal(inspect(`import {RecordTableHeader as Head} from '#/components/ui/record-list'; <Head className="bg-white"/>`)[0].rule,'table-header-appearance')
+  assert.deepEqual(inspect(`import {CardHeader} from '#/components/ui/card'; import {RecordTableHeader} from '#/components/ui/record-list'; <CardHeader><div className="flex gap-3">Title</div></CardHeader>; <RecordTableHeader><tr><th scope="col">Name</th></tr></RecordTableHeader>`),[])
+})
+test('raw timestamp formatting and raw status badges cannot bypass owned display rules',()=>{
+  assert.equal(inspect(`const evidenceDate=value=>new Date(value).toLocaleString()`)[0].rule,'shared-timestamp')
+  assert.equal(inspect(`const date=value=>new Intl.DateTimeFormat('en-US').format(new Date(value))`)[0].rule,'shared-timestamp')
+  assert.equal(inspect(`import {Badge as Pill} from '#/components/ui/badge'; <Pill>{task.status}</Pill>`)[0].rule,'domain-status')
+  assert.equal(inspect(`import {Badge} from '#/components/ui/badge'; <Badge>{accessLabel(person.portalAccessState)}</Badge>`)[0].rule,'domain-status')
+  assert.equal(inspect(`import {StatusBadge as Pill} from '#/components/ui/status-badge'; <Pill tone="info" className="bg-white">Active</Pill>`)[0].rule,'status-appearance')
+  assert.deepEqual(inspect(`import {Badge} from '#/components/ui/badge'; <Badge>Simulated</Badge>`),[])
+})
+
 test('detects an arrowless return even with an aliased router import', () => {
   assert.deepEqual(inspect(`${router} <RouteLink to="/">Back to samples</RouteLink>`).map(d => d.rule), ['shared-back-link'])
 })

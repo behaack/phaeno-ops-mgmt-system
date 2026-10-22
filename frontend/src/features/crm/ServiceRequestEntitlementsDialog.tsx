@@ -1,3 +1,5 @@
+import { DisplayDate } from '#/components/ui/display-value'
+import { FieldError } from '#/components/ui/field'
 import { Field as PortalField } from '#/components/ui/field'
 import { NativeSelect } from '#/components/ui/native-select'
 import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
@@ -174,7 +176,7 @@ export function ServiceRequestEntitlementsDialog({ request, mode, error, isPendi
                 onChange={event => chooseExisting(index, event.target.value)}>
                 <option value="">Create a new permission</option>
                 {candidates.map(candidate => <option key={candidate.id} value={candidate.id}>
-                  Update existing · {new Date(candidate.effectiveFrom).toLocaleDateString()} · {candidate.configurationStatus}
+                  Update existing · {<DisplayDate value={candidate.effectiveFrom} />} · {candidate.configurationStatus}
                 </option>)}
               </NativeSelect>
               <p className="text-xs text-muted-foreground">Update an existing overlapping permission to avoid a duplicate. Its current dates and status are loaded for review.</p>
@@ -183,12 +185,12 @@ export function ServiceRequestEntitlementsDialog({ request, mode, error, isPendi
               <PortalField >
                 <Label htmlFor={`service-start-${index}`}><RequiredFieldName>Effective from</RequiredFieldName></Label>
                 <Input id={`service-start-${index}`} type="datetime-local" aria-invalid={Boolean(form.formState.errors.grants?.[index]?.effectiveFrom)} {...form.register(`grants.${index}.effectiveFrom`)} />
-                {form.formState.errors.grants?.[index]?.effectiveFrom ? <p role="alert" className="text-sm text-destructive">{form.formState.errors.grants[index]?.effectiveFrom?.message}</p> : null}
+                {form.formState.errors.grants?.[index]?.effectiveFrom ? <FieldError role="alert" >{form.formState.errors.grants[index]?.effectiveFrom?.message}</FieldError> : null}
               </PortalField>
               <PortalField >
                 <Label htmlFor={`service-end-${index}`}>Effective to (optional)</Label>
                 <Input id={`service-end-${index}`} type="datetime-local" aria-invalid={Boolean(form.formState.errors.grants?.[index]?.effectiveTo)} {...form.register(`grants.${index}.effectiveTo`)} />
-                {form.formState.errors.grants?.[index]?.effectiveTo ? <p role="alert" className="text-sm text-destructive">{form.formState.errors.grants[index]?.effectiveTo?.message}</p> : null}
+                {form.formState.errors.grants?.[index]?.effectiveTo ? <FieldError role="alert" >{form.formState.errors.grants[index]?.effectiveTo?.message}</FieldError> : null}
               </PortalField>
             </div>
             <PortalField >

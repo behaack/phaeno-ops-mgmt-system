@@ -49,6 +49,7 @@ jobs:
       - run: pnpm lint:ci
       - run: pnpm typecheck
       - run: pnpm docs:check
+      - run: pnpm docs:captures:check
       - run: pnpm ui:gallery:build
       - run: pnpm build
       - run: pnpm ui:build:check

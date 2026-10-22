@@ -1,3 +1,4 @@
+import { FieldError } from '#/components/ui/field'
 import { Field as PortalField } from '#/components/ui/field'
 import { NativeSelect } from '#/components/ui/native-select'
 import { useQuery } from '@tanstack/react-query'
@@ -37,7 +38,7 @@ export function IntakeReviewFields({ value, onChange, previousDisposition, disab
         <option value="">Choose a reason</option>{reasons.data?.map(reason => <option key={reason.code} value={reason.code}>{reason.label}</option>)}
       </NativeSelect>
       {reasons.isPending ? <p role="status">Loading reasons…</p> : null}
-      {reasons.error ? <p role="alert">Reasons could not be loaded. <button type="button" className="cursor-pointer underline" onClick={() => void reasons.refetch()}>Try again</button></p> : null}
+      {reasons.error ? <FieldError role="alert">Reasons could not be loaded. <button type="button" className="cursor-pointer underline" onClick={() => void reasons.refetch()}>Try again</button></FieldError> : null}
     </PortalField> : null}
     <div>
       <Label htmlFor={`${id}-notes`}>{notesRequired ? <RequiredFieldName>{resolving ? 'Resolution note' : 'Explanation'}</RequiredFieldName> : 'Notes (optional)'}</Label>

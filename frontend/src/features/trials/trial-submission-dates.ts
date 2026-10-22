@@ -1,3 +1,4 @@
+import { formatDisplayDate } from '#/lib/display-format'
 const dayMilliseconds = 86_400_000
 
 export function isSubmissionDate(value: string) {
@@ -15,6 +16,5 @@ export function submissionDateInput(value: string | null | undefined, closing = 
 }
 
 export function submissionDateLabel(value: string | null | undefined, closing = false) {
-  return value ? new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeZone: 'UTC' })
-    .format(new Date(`${submissionDateInput(value, closing)}T00:00:00.000Z`)) : 'Not set'
+  return value ? formatDisplayDate(`${submissionDateInput(value, closing)}T00:00:00.000Z`, { timeZone: 'UTC' }) : 'Not set'
 }

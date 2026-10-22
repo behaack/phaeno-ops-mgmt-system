@@ -27,7 +27,7 @@ export function CrmCompanySales({ companyId, company }: { companyId: string; com
   return (
     <>
     <Card className="gap-0 py-0">
-      <CardHeader className="border-b bg-muted/50 p-4">
+      <CardHeader >
         <CardTitle>Sales</CardTitle>
         <CardDescription>
           Opportunities and commercial pursuits owned by Phaeno, separate from the Company&apos;s people.

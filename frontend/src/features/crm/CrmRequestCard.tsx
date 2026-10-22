@@ -1,3 +1,5 @@
+import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
+import { relationshipTones } from '#/features/crm/crm-status'
 import { RecordLink } from '#/components/ui/record-link'
 import { Link } from '@tanstack/react-router'
 import { Check, ChevronDown, Circle, Clock, ClipboardList } from 'lucide-react'
@@ -47,7 +49,7 @@ export function CrmRequestCard({ request, isPending, onAction, onRecover }: {
               </Link></RecordLink></span>
             ) : <span className="break-words font-medium">{request.candidateOrganizationName}</span>}
             <Badge variant="outline" className="h-auto min-h-5 max-w-full break-all whitespace-normal">{request.requestNumber}</Badge>
-            <Badge variant={approved ? 'secondary' : 'outline'}>{request.status === 'PendingReview' ? 'Pending review' : request.status === 'Applied' ? 'Completed' : waitingForAcceptance ? 'Waiting for acceptance' : request.status}</Badge>
+            <DomainStatusBadge status={request.status} tones={relationshipTones}>{request.status === 'PendingReview' ? 'Pending review' : request.status === 'Applied' ? 'Completed' : waitingForAcceptance ? 'Waiting for acceptance' : request.status}</DomainStatusBadge>
           </div>
           <p className="text-sm">{request.summary}</p>
           {request.decisionReason ? <p className="text-sm text-muted-foreground">Decision: {request.decisionReason}</p> : null}

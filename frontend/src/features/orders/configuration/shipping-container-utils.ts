@@ -1,3 +1,4 @@
+import { formatDisplayTimestamp } from '#/lib/display-format'
 import type { ShippingContainerDefinition } from '#/api/shipping-containers'
 
 export function latestContainerRevisions(items: ShippingContainerDefinition[]) {
@@ -20,7 +21,7 @@ export function containerEffectiveState(item: Pick<ShippingContainerDefinition, 
 }
 
 export function containerDateTime(value: string) {
-  return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
+  return formatDisplayTimestamp(value, { locale: 'en-US' })
 }
 
 export function localContainerDateTime(value = new Date()) {

@@ -35,7 +35,7 @@ export function AssemblyConfigurationPanel({ configuration }: { configuration: O
   const mutation = useMutation({ mutationFn: (values: Values) => saveAssemblyProfile(editing?.id ?? null, { ...values, version: editing?.version ?? 0 }), onSuccess: async () => { await client.invalidateQueries({ queryKey: ['order-configuration'] }); setEditing(undefined); form.reset(empty) } })
   function open(item: AssemblyProfile | null) { setEditing(item); form.reset(item ? { qboCatalogItemId: item.qboCatalogItemId, name: item.name, profileVersion: item.profileVersion, description: item.description, instructions: item.instructions, metadataSchemaJson: item.metadataSchemaJson, allowedFileKindsJson: item.allowedFileKindsJson, outputContractJson: item.outputContractJson, maximumFileSizeBytes: item.maximumFileSizeBytes, maximumTotalSizeBytes: item.maximumTotalSizeBytes, isActive: item.isActive, isSynthetic: item.isSynthetic } : empty) }
   return <><Card className="gap-0 py-0">
-    <CardHeader className="grid-cols-[minmax(0,1fr)_auto] gap-x-3 border-b bg-muted/50 p-4">
+    <CardHeader className="grid-cols-[minmax(0,1fr)_auto] gap-x-3">
       <CardTitle className="min-w-0"><CustomerSourceText source={"Data assembly profiles"} /></CardTitle>
       <Button className="col-start-2 row-start-1 justify-self-end" type="button" onClick={() => open(null)}><Plus data-icon="inline-start" /><CustomerSourceText source={"Add profile"} /></Button>
       <CardDescription className="col-span-full"><CustomerSourceText source={"Versioned intake, file, processing, and output contracts for Partner assembly work."} /></CardDescription>

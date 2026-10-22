@@ -60,6 +60,9 @@ export function inspectUiSource(source, file, messages = {}) {
     diagnostics.push({ file, rule, fingerprint, line: position.line + 1, column: position.character + 1, message })
   }
   function walk(node) {
+    if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression) && /^toLocale(?:Date|Time)?String$/.test(node.expression.name.text) && ts.isNewExpression(node.expression.expression) && node.expression.expression.expression.getText(ast) === 'Date') report(node, 'shared-timestamp', 'Use shared display helpers; preserve calendar days, timezone, precision and Customer locale.')
+    const editorialDate = file === 'src/features/documentation/DocumentationPage.tsx' && ancestors(node).some(parent => ts.isFunctionDeclaration(parent) && parent.name?.text === 'formatReviewDate')
+    if (file !== 'src/lib/display-format.ts' && !editorialDate && ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression) && node.expression.name.text === 'format' && ts.isNewExpression(node.expression.expression) && node.expression.expression.expression.getText(ast) === 'Intl.DateTimeFormat') report(node, 'shared-timestamp', 'Use shared display helpers instead of a local Intl date renderer.')
     if (file.startsWith('src/') && (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) && /(?:^|\/)(?:ui-gallery|navigation-preview|workspace-preview)(?:\/|$)/.test(node.text)) report(node, 'gallery-isolation', 'Keep the engineering gallery outside production Portal imports, routes and asset links.')
     if (ts.isFunctionDeclaration(node) && /^(?:formatDate|formatDateTime|formatTime|formatBytes|formatMoney)$/.test(node.name?.text ?? '') && /new Intl\.|toLocale(?:Date|Time)?String|\/\s*(?:1024|1_000)/.test(node.body?.getText(ast) ?? '')) report(node, 'shared-display-format', 'Use shared display-format helpers; retain calendar-day, timezone, precision and domain missing-value meaning.')
     const element = opening(node)
@@ -69,6 +72,11 @@ export function inspectUiSource(source, file, messages = {}) {
       const inRecordLink = parents.some(p => shared(p, 'RecordLink', 'record-link'))
       const label = text(node).replace(/\s+/g, ' ').trim()
       const imported = imports.get(name(node))
+      if (name(node) === 'thead') report(node, 'shared-table-header', 'Use RecordTableHeader for the shared shaded column-label band and retain native th scopes.')
+      if (shared(node, 'RecordTableHeader', 'record-list') && (/(?:^|\s)(?:[\w-]+:)*bg-/.test(attrText(node, 'className')) || attr(node, 'style'))) report(node, 'table-header-appearance', 'RecordTableHeader owns its shaded surface; preserve layout and native column semantics.')
+      if (shared(node, 'CardHeader', 'card') && (/(?:^|\s)(?:[\w-]+:)*(?:bg-|border-b(?:-|$)|p[xytrblse]?-(?:\d|\[))/.test(attrText(node, 'className')) || attr(node, 'style'))) report(node, 'panel-header-appearance', 'CardHeader owns the shaded surface, divider and padding. Keep layout on its children.')
+      if ((shared(node, 'StatusBadge', 'status-badge') || shared(node, 'DomainStatusBadge', 'domain-status-badge')) && (/(?:^|\s)(?:[\w-]+:)*(?:bg-|border-|text-|font-|rounded-|p[xytrblse]?-)/.test(attrText(node, 'className')) || attr(node, 'style'))) report(node, 'status-appearance', 'StatusBadge owns tone, shape, typography and padding; use explicit domain maps and keep only layout margins.')
+      if (shared(node, 'Badge', 'badge') && ts.isJsxElement(node) && node.children.some(child => ts.isJsxExpression(child) && /\.\s*\w*(?:status|state)\b/i.test(child.expression?.getText(ast) ?? ''))) report(node, 'domain-status', 'Use an explicit domain status adapter; retain label, unknown fallback and scientific meaning.')
       const navigation = name(node) === 'a' || imported?.name === 'Link' && imported.from === '@tanstack/react-router'
       const button = name(node) === 'button' || shared(node, 'Button', 'button')
       const inDialog = parents.some(p => shared(p, 'Dialog', 'dialog') || shared(p, 'DialogContent', 'dialog'))

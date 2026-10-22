@@ -1,3 +1,7 @@
+import { formatDisplayTimestamp } from '#/lib/display-format'
+import { DisplayTimestamp } from '#/components/ui/display-value'
+import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
+import { materialTones } from '#/features/lab-operations/lab-status'
 import { RecordLink } from '#/components/ui/record-link'
 import { NativeSelect } from '#/components/ui/native-select'
 import { confirmPortal } from '#/components/PortalConfirmation'
@@ -11,7 +15,6 @@ import { Plus } from 'lucide-react'
 import { z } from 'zod'
 import { listMasterMixWorkflows, masterMixesKey, masterMixWorkflowsKey, searchMasterMixes, startMasterMix } from '#/api/lab-master-mix'
 import { getLabOperationsError } from '#/api/lab-operations'
-import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '#/components/ui/dialog'
@@ -23,9 +26,7 @@ const startSchema = z.object({ workflowId: z.string().min(1, 'Choose an approved
 type StartValues = z.infer<typeof startSchema>
 type Filters = { search: string; status: string; page: number }
 const storageKey = 'phaeno-master-mix-list-filters'
-const labCutoff = (value: string) => new Intl.DateTimeFormat(undefined, {
-  dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Los_Angeles', timeZoneName: 'short',
-}).format(new Date(value))
+const labCutoff = (value: string) => formatDisplayTimestamp(value, { timeZone: 'America/Los_Angeles' })
 function initialFilters(): Filters {
   if (typeof window === 'undefined') return { search: '', status: '', page: 1 }
   try {
@@ -68,7 +69,7 @@ export function MasterMixWorkspace({ enabled, canOperate }: { enabled: boolean; 
       .map(revision => ({ id: `${item.id}:${revision.revision}`, label: `${revision.name} · revision ${revision.revision} · ${revision.quantityUnit}` }))) ?? []
   return <>
     <Card className="gap-0 py-0">
-      <CardHeader className="gap-4 border-b bg-muted/50 p-4">
+      <CardHeader className="gap-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <CardTitle>Master mixes</CardTitle>
@@ -84,7 +85,7 @@ export function MasterMixWorkspace({ enabled, canOperate }: { enabled: boolean; 
       </CardHeader>
       <CardContent className="space-y-4 p-4">
         {mixes.isPending ? <p role="status">Loading master mixes…</p> : mixes.isError ? <p role="alert">{getLabOperationsError(mixes.error, 'Master mixes could not be loaded.')}</p> : mixes.data.items.length ? <>
-          <ul className="space-y-2">{mixes.data.items.map(item => { const overdue = item.status !== 'Discarded' && new Date(item.useByUtc).getTime() <= Date.now(); return <li key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3"><div><RecordLink asChild><Link to="/lab-operations/master-mixes/$mixId" params={{ mixId: item.id }} >{item.barcode} · {item.workflowName}</Link></RecordLink><p className="text-sm text-muted-foreground">Revision {item.workflowRevision} · started {new Date(item.startedAtUtc).toLocaleString()} · {item.status === 'Ready' ? `${labAmount(item.remainingQuantityText ?? item.remainingQuantity)} ${item.quantityUnit} remaining · use by ${labCutoff(item.useByUtc)}` : item.status}</p>{overdue ? <p className="text-sm text-destructive">Overdue — discard this mix.</p> : null}</div><Badge variant="secondary">{item.status}</Badge></li> })}</ul>
+          <ul className="space-y-2">{mixes.data.items.map(item => { const overdue = item.status !== 'Discarded' && new Date(item.useByUtc).getTime() <= Date.now(); return <li key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3"><div><RecordLink asChild><Link to="/lab-operations/master-mixes/$mixId" params={{ mixId: item.id }} >{item.barcode} · {item.workflowName}</Link></RecordLink><p className="text-sm text-muted-foreground">Revision {item.workflowRevision} · started {<DisplayTimestamp value={item.startedAtUtc} seconds />} · {item.status === 'Ready' ? `${labAmount(item.remainingQuantityText ?? item.remainingQuantity)} ${item.quantityUnit} remaining · use by ${labCutoff(item.useByUtc)}` : item.status}</p>{overdue ? <p className="text-sm text-destructive">Overdue — discard this mix.</p> : null}</div><DomainStatusBadge status={item.status} tones={materialTones}>{item.status}</DomainStatusBadge></li> })}</ul>
           <div className="flex flex-wrap items-center justify-between gap-3 text-sm"><p>Showing page {mixes.data.page} of {Math.max(1, Math.ceil(mixes.data.total / mixes.data.pageSize))} · {labCount(mixes.data.total, 'mix', 'mixes')}</p><div className="flex gap-2"><Button type="button" variant="outline" disabled={filters.page <= 1} onClick={() => updateFilters({ ...filters, page: filters.page - 1 })}>Previous</Button><Button type="button" variant="outline" disabled={filters.page * mixes.data.pageSize >= mixes.data.total} onClick={() => updateFilters({ ...filters, page: filters.page + 1 })}>Next</Button></div></div>
         </> : <p className="text-sm text-muted-foreground">No master mixes match these filters.</p>}
       </CardContent>

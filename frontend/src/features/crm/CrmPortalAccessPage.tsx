@@ -178,7 +178,7 @@ export function CrmPortalAccessPage() {
       ) : null}
 
       <Card className="gap-0 py-0">
-        <CardHeader className="border-b bg-muted/50 p-4">
+        <CardHeader >
           <CardTitle>Company requests</CardTitle>
           <Tabs value={view} onValueChange={setView}><TabsList aria-label="Company request views" className="grid w-full grid-cols-3"><TabsTrigger value="decision">Needs decision ({allRequests.filter(r => r.status === 'PendingReview').length})</TabsTrigger><TabsTrigger value="work">Approved / needs work ({allRequests.filter(r => r.status === 'Approved').length})</TabsTrigger><TabsTrigger value="history">Completed / history</TabsTrigger></TabsList></Tabs>
           <CardDescription>

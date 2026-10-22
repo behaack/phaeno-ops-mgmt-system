@@ -18,7 +18,7 @@ import { installResearchGuideData } from './research-guide-data'
 import '../../src/styles.css'
 
 const settings = new URLSearchParams(location.search)
-if (settings.get('illustrate') === 'true') installResearchGuideData()
+if (settings.get('illustrate') === 'true') installResearchGuideData({ prepared: settings.get('prepared') === 'true', completed: settings.get('completed') === 'true' })
 const org = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
 configureApiAuth({ getSelectedOrganizationId: () => org })
 const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
@@ -36,8 +36,8 @@ function FixtureEditor() { const params = useParams({ strict: false }); return <
 function FixtureEntry() { const params = useParams({ strict: false }); return <ResearchEntryPage experimentId={params.experimentId ?? ''} entryId={params.entryId ?? ''} /> }
 const docs = createRoute({ getParentRoute: () => root, path: '/docs/phaeno/$slug', component: FixtureDocs })
 function FixtureDocs() { const params = useParams({ strict: false }); return <DocumentationLayout><DocumentationPage audience="phaeno" slug={params.slug} /></DocumentationLayout> }
-const start = settings.get('view') === 'howto' ? '/docs/phaeno/how-to-record-research' : settings.get('illustrate') === 'true' ? '/research' : settings.get('view') === 'editor' ? '/research/experiments/22222222-2222-2222-2222-222222222222/entries/33333333-3333-4333-8333-333333333333/edit' : '/research/experiments/22222222-2222-2222-2222-222222222222'
-const router = createRouter({ routeTree: root.addChildren([docs, workspace.addChildren([projects, experiments, project, experiment, editor, entry])]), history: createMemoryHistory({ initialEntries: [start] }) })
+const start = settings.get('view') === 'howto' ? `/docs/phaeno/${settings.get('slug') ?? 'how-to-record-research'}` : settings.get('illustrate') === 'true' ? '/research' : settings.get('view') === 'editor' ? '/research/experiments/22222222-2222-2222-2222-222222222222/entries/33333333-3333-4333-8333-333333333333/edit' : '/research/experiments/22222222-2222-2222-2222-222222222222'
+const router = createRouter({ routeTree: root.addChildren([docs, workspace.addChildren([projects, experiments, project, experiment, editor, entry])]), history: createMemoryHistory({ initialEntries: [settings.get('path') ?? start] }) })
 const session = { state: 'ready', user: { id: 'fixture-author', firstName: 'Fixture', lastName: 'Researcher', email: 'fixture@example.invalid', status: 'Active' },
   memberships: [{ organizationId: org, organizationKind: settings.get('external') === 'true' ? 'Customer' : 'Phaeno' }], selectedOrganization: { organizationId: org },
   isPlatformAdmin: false, capabilities: { canAccessResearch: settings.get('denied') !== 'true' } } as SessionResponse

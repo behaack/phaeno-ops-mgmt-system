@@ -1,3 +1,6 @@
+import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
+import { workflowTones } from '#/features/lab-operations/lab-status'
+import { formatDisplayTimestamp } from '#/lib/display-format'
 import { Field as PortalField } from '#/components/ui/field'
 import { NativeSelect } from '#/components/ui/native-select'
 import { useWorkflowDiscovery } from './configuration-discovery'
@@ -18,7 +21,6 @@ import {
   type LabServiceWorkflow,
 } from '#/api/lab-operations'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
-import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '#/components/ui/dialog'
@@ -98,7 +100,7 @@ export function ServiceWorkflowList({
   return (
     <>
       <Card className="gap-0 py-0">
-        <CardHeader className="border-b bg-muted/50 p-4">
+        <CardHeader >
           <div className="flex min-w-0 items-start justify-between gap-3">
             <div className="min-w-0 flex-1 wrap-anywhere">
               <CardTitle>Controlled service workflows</CardTitle>
@@ -143,9 +145,9 @@ export function ServiceWorkflowList({
                       <div key={version.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md bg-muted px-3 py-2 text-sm">
                         <div>
                           <span className="font-medium">v{version.workflowVersion}</span>
-                          <Badge className="ml-2" variant={version.status === 'Production' ? 'secondary' : 'outline'}>{version.status}</Badge>
+                          <DomainStatusBadge status={version.status} tones={workflowTones} className="ml-2">{version.status}</DomainStatusBadge>
                           <span className="ml-2 text-muted-foreground">{version.stages.length} stage(s)</span>
-                          {version.approvalOverrideReason ? <p className="mt-1 text-sm"><strong>Administrator override</strong> · {version.approvedAtUtc ? new Date(version.approvedAtUtc).toLocaleString() : ''} · {version.approvalOverrideReason}</p> : null}
+                          {version.approvalOverrideReason ? <p className="mt-1 text-sm"><strong>Administrator override</strong> · {version.approvedAtUtc ? formatDisplayTimestamp(version.approvedAtUtc, { seconds: true }) : ''} · {version.approvalOverrideReason}</p> : null}
                           {version.invalidationReason ? <p className="mt-1 text-xs text-muted-foreground">{version.invalidationReason}</p> : null}
                         </div>
                         {canManage && ['Draft', 'Invalid', 'Approved'].includes(version.status) ? (
@@ -213,7 +215,7 @@ export function ServiceWorkflowList({
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{confirmation ? transitionCopy[confirmation.action].title : 'Change workflow status?'}</DialogTitle>
+            <DialogTitle>{confirmation ? transitionCopy[confirmation.action].title : 'Change workflow status?'}</DialogTitle><DialogDescription>Review the workflow version and the consequence below before confirming.</DialogDescription>
           </DialogHeader>
           {confirmation ? (
             <div className="my-4 space-y-2 text-sm leading-6 text-muted-foreground" data-slot="dialog-body">

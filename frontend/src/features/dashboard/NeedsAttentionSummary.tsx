@@ -18,7 +18,7 @@ export function NeedsAttentionSummary({ capabilities, enabled }: { capabilities?
   const error = attention.error ?? summaries.error
   const disabled = isOrderFeatureDisabled(attention.error, 'attention_operations_disabled')
   return <Card className="mb-6 gap-0 py-0">
-    <CardHeader className="border-b bg-muted/50 p-4"><CardTitle>Needs attention</CardTitle><CardDescription>Unresolved work across your assigned service workflows.</CardDescription><CardAction><Button asChild size="sm" variant="outline"><Link to="/dashboard/attention">View all<span className="sr-only"> work needing attention</span></Link></Button></CardAction></CardHeader>
+    <CardHeader ><CardTitle>Needs attention</CardTitle><CardDescription>Unresolved work across your assigned service workflows.</CardDescription><CardAction><Button asChild size="sm" variant="outline"><Link to="/dashboard/attention">View all<span className="sr-only"> work needing attention</span></Link></Button></CardAction></CardHeader>
     <CardContent className="space-y-3 p-4">
       {!enabled ? <p className="text-sm text-muted-foreground">Use a connected session to load current work.</p> : <>
         {attention.isLoading || summaries.isLoading ? <p role="status">Loading attention…</p> : null}

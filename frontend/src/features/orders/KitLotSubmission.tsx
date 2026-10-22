@@ -1,3 +1,4 @@
+import { DisplayTimestamp } from '#/components/ui/display-value'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRef } from 'react'
@@ -30,7 +31,7 @@ export function KitLotAssessmentView({ assessment, usedOn }: { assessment: KitLo
 export function KitLotSubmissionSummary({ submission }: { submission?: KitLotSubmission | null }) {
   if (!submission) return <p className="text-sm text-muted-foreground">Submit the lot from the kit label before preparing or sequencing libraries. You can do this now, without assembly files. A lot and actual kit-use date are required before requesting assembly.</p>
   return <div className="space-y-2"><KitLotAssessmentView assessment={submission.currentAssessment} usedOn={submission.usedOn} />
-    <p className="text-xs text-muted-foreground">Lot submission saved {new Date(submission.checkedAt).toLocaleString()}. Current lot status is shown above.</p>
+    <p className="text-xs text-muted-foreground">Lot submission saved {<DisplayTimestamp value={submission.checkedAt} seconds />}. Current lot status is shown above.</p>
     {!submission.usedOn ? <p className="text-sm text-muted-foreground">Add the actual kit-use date when known, before submitting assembly inputs.</p> : null}</div>
 }
 

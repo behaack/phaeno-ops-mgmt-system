@@ -1,3 +1,4 @@
+import { RecordTableHeader } from '#/components/ui/record-list'
 import { ClearFiltersButton } from '#/components/ui/clear-filters-button'
 import { formatDisplayCurrency } from '#/lib/display-format'
 import { RecordLink } from '#/components/ui/record-link'
@@ -218,7 +219,7 @@ export function CatalogConfigurationPanel({
       {catalogItemId ? <div className="mb-4"><BackLink asChild><Link to="/order-configuration" search={{ ...listSearch, configurationSection: 'catalog' }}><CustomerSourceText source={"Back to service catalog"} /></Link></BackLink></div> : null}
       {catalogItemId && !selected ? <Alert variant="destructive"><AlertTitle><CustomerSourceText source={"Service item not found"} /></AlertTitle><AlertDescription><CustomerSourceText source={"Return to the catalog and select an available item."} /></AlertDescription></Alert> : selected ? <div className="space-y-5">
         <Card className="gap-0 py-0">
-          <CardHeader className="grid-cols-[minmax(0,1fr)_auto] gap-x-3 border-b bg-muted/50 p-4">
+          <CardHeader className="grid-cols-[minmax(0,1fr)_auto] gap-x-3">
             <div className="min-w-0 space-y-1">
               <CardTitle>{selected.name}</CardTitle>
               <CardDescription><CustomerSourceText source={"Commercial pricing and availability"} /></CardDescription>
@@ -242,7 +243,7 @@ export function CatalogConfigurationPanel({
         {selected.isPSeqLabService ? <LabServiceOfferingsPanel configuration={configuration} apiEnabled={apiEnabled} catalogItemId={selected.id} /> : null}
       </div> : (
       <Card className="gap-0 py-0">
-        <CardHeader className="grid-cols-[minmax(0,1fr)_auto] gap-x-3 border-b bg-muted/50 p-4">
+        <CardHeader className="grid-cols-[minmax(0,1fr)_auto] gap-x-3">
           <div className="min-w-0 space-y-1">
             <CardTitle><CustomerSourceText source={"Service catalog"} /></CardTitle>
             <CardDescription>
@@ -271,7 +272,7 @@ export function CatalogConfigurationPanel({
           {visibleItems.length ? (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
-                <thead className="border-b text-muted-foreground">
+                <RecordTableHeader className="border-b text-muted-foreground">
                   <tr>
                     <th className="py-3 pr-3 font-medium"><CustomerSourceText source={"Item"} /></th>
                     <th className="px-3 py-3 font-medium"><CustomerSourceText source={"Sales unit"} /></th>
@@ -281,7 +282,7 @@ export function CatalogConfigurationPanel({
                     <th className="px-3 py-3 text-right font-medium"><CustomerSourceText source={"Status"} /></th>
                     <th className="py-3 pl-3 text-right font-medium"><span className="sr-only"><CustomerSourceText source={"Actions"} /></span></th>
                   </tr>
-                </thead>
+                </RecordTableHeader>
                 <tbody>
                   {visibleItems.map((item) => (
                     <tr key={item.id} className="border-b last:border-0">

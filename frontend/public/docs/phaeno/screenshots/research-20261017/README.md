@@ -1,9 +1,17 @@
-# R&D how-to screenshots — October 17, 2026
+# R&D how-to illustrations
 
-These 14 original JPEGs capture the actual Portal R&D components in the local browser preview at 1280 × 720 (scrolling entry content has the intrinsic dimensions recorded in research-screenshots.ts). All visible projects, experiments, entries, people, observations and measurements are explicitly fictional.
+Fourteen captures were refreshed October 22, 2026, from the actual research
+components with fictional projects, experiments, entries, authors and measurements.
+The isolated in-memory illustration transport makes no hosted/provider writes.
+Recording, completion and copying shown here do not establish scientific approval.
 
-The research acceptance fixture's opt-in `illustrate=true` mode supplies an in-memory Axios adapter. Create, edit, history, complete, reopen and copy interactions use the production components against that temporary demonstration state. No backend, hosted database, invitation or provider write occurs. This is illustration provenance, not backend, scanner, storage, scientific or operational acceptance evidence.
+Stable names retain the original October 17 asset identity. Reproducible scenarios,
+viewport/crop, light theme, en-US locale, UTC timezone, source dependencies, image
+hashes and review are in `frontend/ui-gallery/documentation-captures.json`.
+The table-editor frame uses a taller viewport and focused crop. The shared help
+renderer uses display-only `documentation-capture-metadata.json`; the how-to MDX
+owns explanations, alt text and captions.
 
-The sequence covers Projects, project creation, experiment creation, experiment overview, Add entry, entry Actions, flexible editing, tables/files/save, saved entry, history, completion, reopen/copy, copy setup and discovery. Some screenshots show later saved states to explain the relevant control. The guide calls out those transitions explicitly.
-
-Original capture pixels are unchanged. Numbered annotations are separate responsive overlays in `research-screenshots.ts`; their accessible written explanations and image alternative text live in `how-to-record-research.mdx`. All captures were visually reviewed for complete rendering and fictional-only content. No credentials, Customer records or hosted personal information are included.
+Run the independent gallery and `pnpm docs:captures:refresh`, inspect all frames
+and markers, then `pnpm docs:captures:review`. Normal checks never rewrite or
+approve captures. No generated/reconstructed screen is presented as application UI.

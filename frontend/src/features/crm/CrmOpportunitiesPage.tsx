@@ -1,3 +1,4 @@
+import { RecordTableHeader } from '#/components/ui/record-list'
 import { Field as PortalField } from '#/components/ui/field'
 import { NativeSelect } from '#/components/ui/native-select'
 import { NativeCheckbox } from '#/components/ui/native-checkbox'
@@ -225,7 +226,7 @@ export function CrmOpportunitiesPage() {
               : <>
             <div className="overflow-x-auto hidden md:block">
               <table className="w-full text-left text-sm">
-                <thead>
+                <RecordTableHeader>
                   <tr className="text-xs text-muted-foreground">
                     <th className="whitespace-nowrap p-3">Opportunity</th>
                     <th className="whitespace-nowrap p-3">Company</th>
@@ -235,7 +236,7 @@ export function CrmOpportunitiesPage() {
                     <th className="whitespace-nowrap p-3">Owner</th>
                     <th className="whitespace-nowrap p-3">Next action</th>
                   </tr>
-                </thead>
+                </RecordTableHeader>
                 <tbody className="divide-y">
                   {records.map((value) => (
                     <tr key={value.id}>

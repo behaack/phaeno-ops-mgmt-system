@@ -1,3 +1,4 @@
+import { formatDisplayTimestamp } from '#/lib/display-format'
 import { formatByteSize } from '#/lib/display-format'
 import { CustomerText } from '#/features/customer-i18n/customer-text'
 import { Download } from 'lucide-react'
@@ -18,7 +19,7 @@ export function GovernedResultPackagePanel({ resultPackage, sampleName, isDownlo
       <div>
         <p className="font-medium">{sampleName} <CustomerText message="m_3d823c89afe9" />{resultPackage.packageVersion}</p>
         <p className="mt-1 text-xs text-muted-foreground">
-          <CustomerText message="m_f33deea9b100" />{resultPackage.releasedAtUtc ? new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(resultPackage.releasedAtUtc)) : '—'}
+          <CustomerText message="m_f33deea9b100" />{resultPackage.releasedAtUtc ? formatDisplayTimestamp(resultPackage.releasedAtUtc, { locale: 'en-US' }) : '—'}
           {' · '}<CustomerText message="m_5049200cfb3d" />{resultPackage.retentionState ?? 'Active'}
         </p>
       </div>

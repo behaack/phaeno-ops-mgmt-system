@@ -1,0 +1,879 @@
+{
+  "/docs/phaeno/screenshots/onboarding-20261015/01-company.jpg": {
+    "width": 1180,
+    "height": 519,
+    "points": [
+      {
+        "number": 1,
+        "x": 1.36,
+        "y": 24.66
+      },
+      {
+        "number": 2,
+        "x": 96.27,
+        "y": 50.48
+      },
+      {
+        "number": 3,
+        "x": 2.8,
+        "y": 74.57
+      },
+      {
+        "number": 4,
+        "x": 29.82,
+        "y": 36.03
+      },
+      {
+        "number": 5,
+        "x": 37.62,
+        "y": 36.03
+      }
+    ]
+  },
+  "/docs/phaeno/screenshots/onboarding-20261015/01-department.jpg": {
+    "width": 672,
+    "height": 844,
+    "points": [
+      {
+        "number": 1,
+        "x": 95.68,
+        "y": 18.6
+      },
+      {
+        "number": 2,
+        "x": 95.68,
+        "y": 26.66
+      },
+      {
+        "number": 3,
+        "x": 95.68,
+        "y": 40.4
+      },
+      {
+        "number": 4,
+        "x": 95.68,
+        "y": 92.77
+      }
+    ]
+  },
+  "/docs/phaeno/screenshots/onboarding-20261015/02-access-request.jpg": {
+    "width": 672,
+    "height": 464,
+    "points": [
+      {
+        "number": 1,
+        "x": 47.02,
+        "y": 28.23
+      },
+      {
+        "number": 2,
+        "x": 95.68,
+        "y": 28.23
+      },
+      {
+        "number": 3,
+        "x": 95.68,
+        "y": 42.89
+      },
+      {
+        "number": 4,
+        "x": 95.68,
+        "y": 57.54
+      },
+      {
+        "number": 5,
+        "x": 95.68,
+        "y": 86.85
+      }
+    ]
+  },
+  "/docs/phaeno/screenshots/onboarding-20261015/03-access-approval.jpg": {
+    "width": 512,
+    "height": 364,
+    "points": [
+      {
+        "number": 1,
+        "x": 3.13,
+        "y": 8.52
+      },
+      {
+        "number": 2,
+        "x": 3.13,
+        "y": 17.86
+      },
+      {
+        "number": 3,
+        "x": 94.34,
+        "y": 46.98
+      },
+      {
+        "number": 4,
+        "x": 94.34,
+        "y": 83.24
+      }
+    ]
+  },
+  "/docs/phaeno/screenshots/onboarding-20261015/04-send-invitation.jpg": {
+    "width": 576,
+    "height": 577,
+    "points": [
+      {
+        "number": 1,
+        "x": 2.78,
+        "y": 5.37
+      },
+      {
+        "number": 2,
+        "x": 2.78,
+        "y": 52.69
+      },
+      {
+        "number": 3,
+        "x": 2.78,
+        "y": 76.95
+      },
+      {
+        "number": 4,
+        "x": 5.9,
+        "y": 81.8
+      },
+      {
+        "number": 5,
+        "x": 94.97,
+        "y": 89.43
+      }
+    ]
+  },
+  "/docs/phaeno/screenshots/onboarding-20261015/05-accept-invitation.jpg": {
+    "width": 512,
+    "height": 676,
+    "points": [
+      {
+        "number": 1,
+        "x": 12.89,
+        "y": 38.61
+      },
+      {
+        "number": 2,
+        "x": 6.64,
+        "y": 50.15
+      },
+      {
+        "number": 3,
+        "x": 3.32,
+        "y": 68.05
+      },
+      {
+        "number": 4,
+        "x": 34.36,
+        "y": 78.99
+      }
+    ]
+  },
+  "/docs/phaeno/screenshots/onboarding-20261015/06-online-access-complete.jpg": {
+    "width": 1180,
+    "height": 296,
+    "points": [
+      {
+        "number": 1,
+        "x": 1.36,
+        "y": 15.54
+      },
+      {
+        "number": 2,
+        "x": 34.5,
+        "y": 40.54
+      },
+      {
+        "number": 3,
+        "x": 1.44,
+        "y": 73.31
+      },
+      {
+        "number": 4,
+        "x": 1.44,
+        "y": 80.74
+      }
+    ]
+  },
+  "/docs/phaeno/screenshots/onboarding-20261015/07-service-request.jpg": {
+    "width": 672,
+    "height": 532,
+    "points": [
+      {
+        "number": 1,
+        "x": 95.68,
+        "y": 24.62
+      },
+      {
+        "number": 2,
+        "x": 95.68,
+        "y": 37.41
+      },
+      {
+        "number": 3,
+        "x": 95.68,
+        "y": 50.38
+      },
+      {
+        "number": 4,
+        "x": 95.68,
+        "y": 62.97
+      },
+      {
+        "number": 5,
+        "x": 95.68,
+        "y": 88.53
+      }
+    ]
+  },
+  "/docs/phaeno/screenshots/onboarding-20261015/08-approve-services.jpg": {
+    "width": 672,
+    "height": 729,
+    "points": [
+      {
+        "number": 1,
+        "x": 93.15,
+        "y": 28.26
+      },
+      {
+        "number": 2,
+        "x": 47.32,
+        "y": 53.5
+      },
+      {
+        "number": 3,
+        "x": 93.15,
+        "y": 53.5
+      },
+      {
+        "number": 4,
+        "x": 93.15,
+        "y": 63.37
+      },
+      {
+        "number": 5,
+        "x": 95.68,
+        "y": 76.27
+      },
+      {
+        "number": 6,
+        "x": 95.68,
+        "y": 91.63
+      }
+    ]
+  },
+  "/docs/phaeno/screenshots/onboarding-20261015/09-work-needed.jpg": {
+    "width": 1180,
+    "height": 665,
+    "points": [
+      {
+        "number": 1,
+        "x": 34.05,
+        "y": 18.05
+      },
+      {
+        "number": 2,
+        "x": 27.28,
+        "y": 18.05
+      },
+      {
+        "number": 3,
+        "x": 1.44,
+        "y": 54.44
+      },
+      {
+        "number": 4,
+        "x": 1.44,
+        "y": 64.06
+      },
+      {
+        "number": 5,
+        "x": 3.47,
+        "y": 69.77
+      },
+      {
+        "number": 6,
+        "x": 3.47,
+        "y": 77.29
+      }
+    ]
+  },
+  "/docs/phaeno/screenshots/onboarding-20261015/10-billing-setup.jpg": {
+    "width": 1280,
+    "height": 642,
+    "points": [
+      {
+        "number": 1,
+        "x": 48.44,
+        "y": 24.14
+      },
+      {
+        "number": 2,
+        "x": 92.66,
+        "y": 24.14
+      },
+      {
+        "number": 3,
+        "x": 48.44,
+        "y": 35.05
+      },
+      {
+        "number": 4,
+        "x": 48.44,
+        "y": 67.76
+      },
+      {
+        "number": 5,
+        "x": 92.66,
+        "y": 67.76
+      },
+      {
+        "number": 6,
+        "x": 48.44,
+        "y": 78.66
+      }
+    ]
+  },
+  "/docs/phaeno/screenshots/onboarding-20261015/11-finance-approval.jpg": {
+    "width": 1280,
+    "height": 563,
+    "points": [
+      {
+        "number": 1,
+        "x": 92.66,
+        "y": 27.53
+      },
+      {
+        "number": 2,
+        "x": 48.44,
+        "y": 39.96
+      },
+      {
+        "number": 3,
+        "x": 92.66,
+        "y": 70.34
+      },
+      {
+        "number": 4,
+        "x": 21.9,
+        "y": 83.66
+      }
+    ]
+  },
+  "/docs/phaeno/screenshots/onboarding-20261015/12-ready-to-complete.jpg": {
+    "width": 1180,
+    "height": 573,
+    "points": [
+      {
+        "number": 1,
+        "x": 34.05,
+        "y": 20.94
+      },
+      {
+        "number": 2,
+        "x": 1.44,
+        "y": 52.01
+      },
+      {
+        "number": 3,
+        "x": 1.44,
+        "y": 63.18
+      },
+      {
+        "number": 4,
+        "x": 1.44,
+        "y": 74.35
+      },
+      {
+        "number": 5,
+        "x": 1.44,
+        "y": 84.82
+      },
+      {
+        "number": 6,
+        "x": 96.19,
+        "y": 20.77
+      }
+    ]
+  },
+  "/docs/phaeno/screenshots/onboarding-20261015/12-record-completion.jpg": {
+    "width": 512,
+    "height": 344,
+    "points": [
+      {
+        "number": 1,
+        "x": 3.13,
+        "y": 9.01
+      },
+      {
+        "number": 2,
+        "x": 3.13,
+        "y": 18.9
+      },
+      {
+        "number": 3,
+        "x": 94.34,
+        "y": 43.9
+      },
+      {
+        "number": 4,
+        "x": 94.34,
+        "y": 82.27
+      }
+    ]
+  },
+  "/docs/phaeno/screenshots/onboarding-20261015/13-completed-requests.jpg": {
+    "width": 1180,
+    "height": 470,
+    "points": [
+      {
+        "number": 1,
+        "x": 1.36,
+        "y": 9.79
+      },
+      {
+        "number": 2,
+        "x": 27.06,
+        "y": 62.55
+      },
+      {
+        "number": 3,
+        "x": 34.5,
+        "y": 62.55
+      },
+      {
+        "number": 4,
+        "x": 34.71,
+        "y": 25.53
+      },
+      {
+        "number": 5,
+        "x": 1.44,
+        "y": 46.17
+      }
+    ]
+  },
+  "/docs/phaeno/screenshots/research-20261017/01-projects.jpg": {
+    "width": 1280,
+    "height": 395,
+    "points": [
+      {
+        "number": 1,
+        "x": 18.05,
+        "y": 35.7
+      },
+      {
+        "number": 2,
+        "x": 18.05,
+        "y": 55.44
+      },
+      {
+        "number": 3,
+        "x": 96.56,
+        "y": 5.06
+      },
+      {
+        "number": 4,
+        "x": 22.58,
+        "y": 65.32
+      }
+    ]
+  },
+  "/docs/phaeno/screenshots/research-20261017/02-create-project.jpg": {
+    "width": 512,
+    "height": 390,
+    "points": [
+      {
+        "number": 1,
+        "x": 94.34,
+        "y": 34.36
+      },
+      {
+        "number": 2,
+        "x": 94.34,
+        "y": 53.85
+      },
+      {
+        "number": 3,
+        "x": 94.34,
+        "y": 84.36
+      }
+    ]
+  },
+  "/docs/phaeno/screenshots/research-20261017/03-create-experiment.jpg": {
+    "width": 512,
+    "height": 418,
+    "points": [
+      {
+        "number": 1,
+        "x": 94.34,
+        "y": 32.06
+      },
+      {
+        "number": 2,
+        "x": 94.34,
+        "y": 50.24
+      },
+      {
+        "number": 3,
+        "x": 94.34,
+        "y": 68.42
+      },
+      {
+        "number": 4,
+        "x": 94.34,
+        "y": 85.41
+      }
+    ]
+  },
+  "/docs/phaeno/screenshots/research-20261017/04-experiment.jpg": {
+    "width": 992,
+    "height": 472,
+    "points": [
+      {
+        "number": 1,
+        "x": 1.61,
+        "y": 19.92
+      },
+      {
+        "number": 2,
+        "x": 1.71,
+        "y": 56.36
+      },
+      {
+        "number": 3,
+        "x": 97.18,
+        "y": 36.02
+      },
+      {
+        "number": 4,
+        "x": 97.18,
+        "y": 14.41
+      }
+    ]
+  },
+  "/docs/phaeno/screenshots/research-20261017/05-add-entry.jpg": {
+    "width": 512,
+    "height": 418,
+    "points": [
+      {
+        "number": 1,
+        "x": 3.13,
+        "y": 33.01
+      },
+      {
+        "number": 2,
+        "x": 94.34,
+        "y": 50.24
+      },
+      {
+        "number": 3,
+        "x": 94.34,
+        "y": 68.42
+      },
+      {
+        "number": 4,
+        "x": 94.34,
+        "y": 85.41
+      }
+    ]
+  },
+  "/docs/phaeno/screenshots/research-20261017/06-entry-actions.jpg": {
+    "width": 1280,
+    "height": 266,
+    "points": [
+      {
+        "number": 1,
+        "x": 86.56,
+        "y": 50.38
+      },
+      {
+        "number": 2,
+        "x": 86.56,
+        "y": 60.9
+      },
+      {
+        "number": 3,
+        "x": 21.25,
+        "y": 17.29
+      }
+    ]
+  },
+  "/docs/phaeno/screenshots/research-20261017/07-entry-editor.jpg": {
+    "width": 1280,
+    "height": 659,
+    "points": [
+      {
+        "number": 1,
+        "x": 58.44,
+        "y": 23.07
+      },
+      {
+        "number": 2,
+        "x": 58.44,
+        "y": 48.1
+      },
+      {
+        "number": 3,
+        "x": 95.23,
+        "y": 48.1
+      },
+      {
+        "number": 4,
+        "x": 95.23,
+        "y": 62.67
+      },
+      {
+        "number": 5,
+        "x": 95.23,
+        "y": 37.48
+      }
+    ]
+  },
+  "/docs/phaeno/screenshots/research-20261017/08-table-and-save.jpg": {
+    "width": 1280,
+    "height": 739,
+    "points": [
+      {
+        "number": 1,
+        "x": 23.28,
+        "y": 24.9
+      },
+      {
+        "number": 2,
+        "x": 43.86,
+        "y": 35.18
+      },
+      {
+        "number": 3,
+        "x": 30.05,
+        "y": 45.33
+      },
+      {
+        "number": 4,
+        "x": 31.7,
+        "y": 58.46
+      },
+      {
+        "number": 5,
+        "x": 96.56,
+        "y": 68.47
+      },
+      {
+        "number": 6,
+        "x": 96.56,
+        "y": 81.87
+      }
+    ]
+  },
+  "/docs/phaeno/screenshots/research-20261017/09-saved-entry.jpg": {
+    "width": 1280,
+    "height": 672,
+    "points": [
+      {
+        "number": 1,
+        "x": 21.25,
+        "y": 25.6
+      },
+      {
+        "number": 2,
+        "x": 21.25,
+        "y": 33.04
+      },
+      {
+        "number": 3,
+        "x": 21.33,
+        "y": 72.17
+      }
+    ]
+  },
+  "/docs/phaeno/screenshots/research-20261017/10-history.jpg": {
+    "width": 768,
+    "height": 807,
+    "points": [
+      {
+        "number": 1,
+        "x": 96.09,
+        "y": 11.52
+      },
+      {
+        "number": 2,
+        "x": 2.08,
+        "y": 32.71
+      },
+      {
+        "number": 3,
+        "x": 96.22,
+        "y": 92.44
+      }
+    ]
+  },
+  "/docs/phaeno/screenshots/research-20261017/11-complete.jpg": {
+    "width": 512,
+    "height": 200,
+    "points": [
+      {
+        "number": 1,
+        "x": 3.13,
+        "y": 38
+      },
+      {
+        "number": 2,
+        "x": 60.94,
+        "y": 69.5
+      },
+      {
+        "number": 3,
+        "x": 94.34,
+        "y": 69.5
+      }
+    ]
+  },
+  "/docs/phaeno/screenshots/research-20261017/12-reopen-and-copy.jpg": {
+    "width": 1280,
+    "height": 286,
+    "points": [
+      {
+        "number": 1,
+        "x": 57.6,
+        "y": 25.17
+      },
+      {
+        "number": 2,
+        "x": 86.56,
+        "y": 46.85
+      },
+      {
+        "number": 3,
+        "x": 86.56,
+        "y": 63.64
+      }
+    ]
+  },
+  "/docs/phaeno/screenshots/research-20261017/13-copy-setup.jpg": {
+    "width": 512,
+    "height": 474,
+    "points": [
+      {
+        "number": 1,
+        "x": 94.34,
+        "y": 28.27
+      },
+      {
+        "number": 2,
+        "x": 94.34,
+        "y": 44.3
+      },
+      {
+        "number": 3,
+        "x": 94.34,
+        "y": 60.34
+      },
+      {
+        "number": 4,
+        "x": 94.34,
+        "y": 87.13
+      }
+    ]
+  },
+  "/docs/phaeno/screenshots/research-20261017/14-find-experiments.jpg": {
+    "width": 1280,
+    "height": 521,
+    "points": [
+      {
+        "number": 1,
+        "x": 45.73,
+        "y": 29.17
+      },
+      {
+        "number": 2,
+        "x": 71.15,
+        "y": 29.17
+      },
+      {
+        "number": 3,
+        "x": 22.58,
+        "y": 64.3
+      },
+      {
+        "number": 4,
+        "x": 21.25,
+        "y": 74.66
+      }
+    ]
+  },
+  "/docs/phaeno/screenshots/customer-order-20261015.jpg": {
+    "width": 1280,
+    "height": 545,
+    "points": [
+      {
+        "number": 1,
+        "x": 48.44,
+        "y": 42.39
+      },
+      {
+        "number": 2,
+        "x": 92.66,
+        "y": 42.39
+      },
+      {
+        "number": 3,
+        "x": 92.66,
+        "y": 56.33
+      },
+      {
+        "number": 4,
+        "x": 48.44,
+        "y": 70.28
+      },
+      {
+        "number": 5,
+        "x": 92.66,
+        "y": 70.28
+      }
+    ]
+  },
+  "/docs/phaeno/screenshots/sample-type-20261015.jpg": {
+    "width": 768,
+    "height": 968,
+    "points": [
+      {
+        "number": 1,
+        "x": 95.7,
+        "y": 13.53
+      },
+      {
+        "number": 2,
+        "x": 95.7,
+        "y": 34.3
+      },
+      {
+        "number": 3,
+        "x": 47.66,
+        "y": 71.9
+      }
+    ]
+  },
+  "/docs/phaeno/screenshots/protocol-editor-20261015.jpg": {
+    "width": 1280,
+    "height": 702,
+    "points": [
+      {
+        "number": 1,
+        "x": 26.8,
+        "y": 55.14
+      },
+      {
+        "number": 2,
+        "x": 62.81,
+        "y": 63.97
+      },
+      {
+        "number": 3,
+        "x": 98.75,
+        "y": 10.82
+      }
+    ]
+  }
+}

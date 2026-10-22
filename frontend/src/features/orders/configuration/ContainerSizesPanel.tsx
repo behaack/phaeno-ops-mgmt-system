@@ -1,3 +1,4 @@
+import { RecordTableHeader } from '#/components/ui/record-list'
 import { ClearFiltersButton } from '#/components/ui/clear-filters-button'
 import { Field as PortalField } from '#/components/ui/field'
 import { RecordLink } from '#/components/ui/record-link'
@@ -115,7 +116,7 @@ export function ContainerSizesPanel({ apiEnabled, configuration, sampleType }: {
     deactivate.reset()
     setDeactivation(item)
   }
-  return <Card id="container-sizes" className="gap-0 py-0"><CardHeader className="grid-cols-1 gap-x-3 border-b bg-muted/50 p-4 sm:grid-cols-[minmax(0,1fr)_auto]">
+  return <Card id="container-sizes" className="gap-0 py-0"><CardHeader className="grid-cols-1 gap-x-3 sm:grid-cols-[minmax(0,1fr)_auto]">
     <CardTitle className="min-w-0"><CustomerText message="m_6f2979e4d104" /></CardTitle>
     <div className="flex flex-wrap gap-2 sm:col-start-2 sm:row-start-1 sm:justify-self-end"><Button variant="outline" disabled={!apiEnabled || !query.data} onClick={() => setPreview(null)}><SearchCheck aria-hidden="true" /><CustomerText message="m_83efd961fce9" /></Button><Button disabled={!apiEnabled || !query.data} onClick={() => setEditing(null)}><Plus aria-hidden="true" /><CustomerText message="m_9df53a853f13" /></Button></div>
     <CardDescription className="sm:col-span-full">{sampleType ? __customerText('m_8caece6e4d17', { p0: String(sampleType.name) }) : __customerText('m_7835102a4eb6')}</CardDescription>
@@ -125,7 +126,7 @@ export function ContainerSizesPanel({ apiEnabled, configuration, sampleType }: {
     {query.isLoading ? <p role="status" className="text-sm text-muted-foreground"><CustomerText message="m_3e4c5a8a1329" /></p> : null}
     {query.error ? <Alert variant="destructive"><AlertTitle><CustomerText message="m_184792c907c0" /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(query.error, 'Refresh the list and try again.')} />} <Button variant="outline" size="sm" disabled={query.isFetching} onClick={() => void query.refetch()}><CustomerText message="m_942087cc2d41" /></Button></AlertDescription></Alert> : null}
     {query.data && items.length ? <div className="overflow-x-auto" role="region" aria-label={__customerText('m_86ae31211232')}><table className="w-full min-w-[28rem] table-fixed text-left text-sm">
-      <thead className="border-b text-xs text-muted-foreground"><tr><th className="pb-2 pr-3 font-medium"><CustomerText message="m_0c7823e8c759" /></th><th className="w-16 pb-2 pr-2 font-medium sm:w-24"><CustomerText message="m_b1186bc83c90" /></th><th className="w-24 pb-2"><span className="sr-only"><CustomerText message="m_ff8059dc6752" /></span></th></tr></thead>
+      <RecordTableHeader className="border-b text-xs text-muted-foreground"><tr><th className="pb-2 pr-3 font-medium"><CustomerText message="m_0c7823e8c759" /></th><th className="w-16 pb-2 pr-2 font-medium sm:w-24"><CustomerText message="m_b1186bc83c90" /></th><th className="w-24 pb-2"><span className="sr-only"><CustomerText message="m_ff8059dc6752" /></span></th></tr></RecordTableHeader>
       <tbody className="divide-y">{items.map(item => {
         const latestReleased = (query.data ?? []).filter(value => value.definitionKey === item.definitionKey && (value.lifecycle === 'Released' || value.lifecycle === 'Superseded' || value.lifecycle === 'Deactivated')).sort((a, b) => b.revision - a.revision)[0]
         const displayed = activeByKey.get(item.definitionKey) ?? (sampleType && item.sampleTypeAnchorId && familyIds.has(item.sampleTypeAnchorId) ? item : latestReleased) ?? item

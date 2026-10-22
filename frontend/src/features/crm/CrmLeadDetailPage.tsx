@@ -1,3 +1,5 @@
+import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
+import { leadTones } from '#/features/crm/crm-status'
 import { RequiredLegend } from '#/components/ui/required-field'
 import { RequiredFieldName } from '#/components/ui/required-field'
 import { Field as PortalField } from '#/components/ui/field'
@@ -133,7 +135,7 @@ export function CrmLeadDetailPage({ leadId }: { leadId: string }) {
         <div>
           <div className="mb-3 flex gap-2">
             <Badge variant="secondary">{lead.kind} lead</Badge>
-            <Badge variant="outline">{lead.status}</Badge>
+            <DomainStatusBadge status={lead.status} tones={leadTones}>{lead.status}</DomainStatusBadge>
           </div>
           <PageTitle>{lead.displayName}</PageTitle>
           <p className="mt-2 text-sm text-muted-foreground">

@@ -1,3 +1,4 @@
+import { FieldError as PortalFieldError } from '#/components/ui/field'
 import { NativeCheckbox } from '#/components/ui/native-checkbox'
 import { ProcedureSource } from './ProcedureSource'
 import { Field as FieldContainer } from '#/components/ui/field'
@@ -50,7 +51,7 @@ export function ProtocolStepEditor({
 
   return (
     <Card size="sm" className="overflow-visible">
-      <CardHeader className="border-b">
+      <CardHeader >
         <CardTitle>{catalog ? stepName || 'Lab step' : `Step ${index + 1}${stepName ? ` · ${stepName}` : ''}`}</CardTitle>
         <CardDescription>Instructions, required entries, resources, and quality controls.</CardDescription>
         <CardAction>
@@ -95,7 +96,7 @@ export function ProtocolStepEditor({
         </div>
 
         <Field label="Operator instructions" id={`step-${index}-instructions`} required>
-          <ScientificTextField id={`step-${index}-instructions`} control={form.control} name={`steps.${index}.instructions`} label="Operator instructions" multiline describedBy={instructionError ? `step-${index}-instructions-error` : undefined} supportingText={instructionError ? <p id={`step-${index}-instructions-error`} role="alert" className="text-sm text-destructive">{instructionError}</p> : undefined} />
+          <ScientificTextField id={`step-${index}-instructions`} control={form.control} name={`steps.${index}.instructions`} label="Operator instructions" multiline describedBy={instructionError ? `step-${index}-instructions-error` : undefined} supportingText={instructionError ? <PortalFieldError id={`step-${index}-instructions-error`} role="alert" >{instructionError}</PortalFieldError> : undefined} />
         </Field>
 
         <ProcedureSource source={form.watch(`steps.${index}.copiedFrom`)} />

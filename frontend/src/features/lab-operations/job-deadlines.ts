@@ -1,3 +1,5 @@
+import { formatDisplayDate, formatDisplayTimestamp } from '#/lib/display-format'
+
 export const deadlineLabels = {
   Overdue: 'Overdue', AtRisk: 'At risk', DueSoon: 'Due soon',
   AwaitingReceipt: 'Awaiting receipt', AwaitingAcceptance: 'Awaiting acceptance', NoKnownRisk: 'No known risk',
@@ -56,7 +58,7 @@ export function clearJobFilters(view: JobView): JobListSearch {
     : { jobSearch: undefined, jobDeadline: undefined, jobPage: undefined, jobFrom: undefined, jobTo: undefined, jobStatus: undefined }
 }
 export function deadlineDate(value: string | null | undefined) {
-  return value ? new Date(value).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : 'Not established'
+  return formatDisplayTimestamp(value, { empty: 'Not established' })
 }
 
 export function jobFilterSummary(filters: JobListSearch): string {
@@ -65,7 +67,7 @@ export function jobFilterSummary(filters: JobListSearch): string {
   const from = closed ? filters.jobClosedFrom : filters.jobFrom
   const to = closed ? filters.jobClosedTo : filters.jobTo
   const criteria: string[] = []
-  const date = (value: string) => new Date(`${value}T00:00:00`).toLocaleDateString('en-US', { dateStyle: 'medium' })
+  const date = formatDisplayDate
   if (search) criteria.push(`job or organization matching “${search}”`)
   if (from || to) {
     const range = from && to ? from === to ? `on ${date(from)}` : `from ${date(from)} through ${date(to)}`

@@ -1,3 +1,4 @@
+import { formatDisplayDate } from '#/lib/display-format'
 import { formatDisplayTimestamp } from '#/lib/display-format'
 import { RecordLink } from '#/components/ui/record-link'
 import { PageTitle } from '#/components/ui/page-header'
@@ -270,7 +271,7 @@ export function ProtocolList({ protocols, canManage, canOverride = false, actorI
   return (
     <>
       <Card className="gap-0 py-0">
-        <CardHeader className="border-b bg-muted/50 p-4">
+        <CardHeader >
           <div className="flex items-start justify-between gap-3">
             <div>
               <CardTitle>Controlled protocols</CardTitle>
@@ -619,7 +620,7 @@ export function MaterialList({ items, canManage, canApprove, onCreate, refresh }
   return (
     <>
       <Card className="gap-0 py-0">
-        <CardHeader className="border-b bg-muted/50 p-4">
+        <CardHeader >
           <div className="flex items-start justify-between gap-3">
             <div>
               <CardTitle>Material and prepared-reagent lots</CardTitle>
@@ -827,7 +828,7 @@ export function EquipmentList({ items, canManage, onCreate }: { items: Awaited<R
   return (
     <>
     <Card className="gap-0 overflow-hidden py-0">
-      <CardHeader className="border-b bg-muted/50 p-4">
+      <CardHeader >
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <CardTitle>Equipment</CardTitle>
@@ -848,7 +849,7 @@ export function EquipmentList({ items, canManage, onCreate }: { items: Awaited<R
                 <div className="min-w-0 wrap-anywhere">
                   <h3 className="font-medium">{item.name} · {item.assetCode}</h3>
                   <p className="text-xs text-muted-foreground">{item.equipmentType} · {item.location}{item.calibrationDueOn ? ` · calibration due ${formatDateOnly(item.calibrationDueOn)}` : ''}</p>
-                  {item.status === 'Retired' ? <p className="mt-2 text-xs text-muted-foreground">{item.retiredAtUtc ? `Retired ${new Date(item.retiredAtUtc).toLocaleDateString('en-US')} · ` : ''}{item.retirementReason ?? 'Retirement reason not recorded.'}</p> : null}
+                  {item.status === 'Retired' ? <p className="mt-2 text-xs text-muted-foreground">{item.retiredAtUtc ? `Retired ${formatDisplayDate(item.retiredAtUtc, { locale: 'en-US' })} · ` : ''}{item.retirementReason ?? 'Retirement reason not recorded.'}</p> : null}
                 </div>
                 <div className="flex flex-wrap items-center justify-end gap-2">
                   <Status value={item.status} />
@@ -911,7 +912,7 @@ function AccessDenied() { return <main className="page-wrap px-4 py-8"><Alert va
 function humanize(value: string) { return value.replace(/([a-z])([A-Z])/g, '$1 $2').replaceAll('_', ' ').replace(/^./, (character) => character.toUpperCase()) }
 function createActionLabel(kind: Exclude<CreateKind, null>) { return `Create ${humanize(kind).toLowerCase()}` }
 function formatDate(value: string) { return formatDisplayTimestamp(value) }
-function formatDateOnly(value: string) { return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeZone: 'UTC' }).format(new Date(`${value}T00:00:00Z`)) }
+function formatDateOnly(value: string) { return formatDisplayDate(value, { locale: 'en-US', timeZone: 'UTC' }) }
 function todayDateOnly() {
   const now = new Date()
   const local = new Date(now.getTime() - now.getTimezoneOffset() * 60_000)

@@ -4527,3 +4527,28 @@ service still has the prior version, so matching-version search acceptance remai
 pending a paired artifact activation/index refresh. The expected version guard
 was observed; do not count this as a successful new-guide search or bypass it.
 See the [owning plan](PORTAL-DOCUMENTATION-SEARCH-PLAN.md).
+
+
+## UI consistency adoption and illustrated guides — October 22, 2026
+
+The full frontend suite passed 1,576 tests with three existing skips. Later focused
+research/invitation and status/access checks passed 25 and 34 tests respectively.
+New component coverage verifies semantic shaded headings, explicit domain tones,
+unknown/cancelled/scientific/simulated distinctions, original performance offset
+and precision, and Customer-locale date rendering. Existing form, draft, callback,
+route-state and permission tests remain authoritative.
+
+The 31 source/capture guard regressions cover header ownership (including aliases
+and class constants), raw date/Intl rendering, status suffixes and appearance,
+real source dependencies, cross-platform newline normalization, stale dependency
+changes and invalid/background-dialog annotations. Existing two scanner-step
+exceptions retain their exact fingerprints and workflow reasons.
+
+Illustrated documentation has 32 current assets and 137 callouts with checked
+alt/captions and matching written numbers. The capture manifest stays outside the
+Portal bundle; only display dimensions/coordinates reach the help renderer. CI
+checks freshness and never approves or refreshes references. Guide API/UI corpus
+generation remains paired; no hosted index activation is claimed here.
+
+See [the owning adoption plan](UI-CONSISTENCY-ADOPTION-AND-ILLUSTRATIONS-PLAN.md)
+for final browser/visual/build evidence and the UI-versus-live-acceptance boundary.

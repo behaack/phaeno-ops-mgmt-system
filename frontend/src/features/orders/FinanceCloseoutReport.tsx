@@ -1,3 +1,4 @@
+import { formatDisplayTimestamp } from '#/lib/display-format'
 import { CustomerSourceText, useCustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { useState } from 'react'
 import { z } from 'zod'
@@ -59,7 +60,7 @@ export function FinanceCloseoutReport({ batch }: { batch: ReconciliationBatch })
     } catch { setDownloadFailed(true) }
     finally { anchor.remove(); if (url) { const downloadedUrl = url; window.setTimeout(() => URL.revokeObjectURL(downloadedUrl), 1000) } }
   }
-  const entries = [['Bank total', money(report.bankTotal)], ['Ledger receipts', money(report.ledgerReceiptTotal)], ['Difference', money(report.difference)], ['Period end', report.periodEnd], ['Included records', String(report.itemCount)], ['Approved', new Date(report.approvedAtUtc).toLocaleString()]]
+  const entries = [['Bank total', money(report.bankTotal)], ['Ledger receipts', money(report.ledgerReceiptTotal)], ['Difference', money(report.difference)], ['Period end', report.periodEnd], ['Included records', String(report.itemCount)], ['Approved', formatDisplayTimestamp(report.approvedAtUtc, { seconds: true })]]
   return <section aria-label={__customerSource("Closeout report")} className="min-w-0 rounded-lg border bg-muted/30 p-4">
     <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><h2 className="font-semibold"><CustomerSourceText source={"Closeout report"} /></h2><p className="mt-1 text-sm text-muted-foreground"><CustomerSourceText source={"Saved evidence for the approved reconciliation."} /></p></div><Button variant="outline" onClick={download}><CustomerSourceText source={"Download closeout report"} /></Button></div>
     {downloadFailed ? <p role="alert" className="mt-3 text-sm text-destructive"><CustomerSourceText source={"The report could not be downloaded. Try again."} /></p> : null}

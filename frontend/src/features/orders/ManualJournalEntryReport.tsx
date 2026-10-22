@@ -1,3 +1,6 @@
+import { paymentTones } from '#/features/orders/OrderStatusBadge'
+import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
+import { RecordTableHeader } from '#/components/ui/record-list'
 import { formatDisplayDate, formatDisplayCurrency } from '#/lib/display-format'
 import { Field as PortalField } from '#/components/ui/field'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
@@ -7,7 +10,6 @@ import { useState } from 'react'
 
 import { downloadManualJournalEntries, getOrderErrorMessage, listManualJournalEntries } from '#/api/order-management'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
-import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
 import { Input } from '#/components/ui/input'
@@ -49,14 +51,14 @@ export function ManualJournalEntryReport({ apiEnabled }: { apiEnabled: boolean }
       {report.isLoading ? <p role="status"><CustomerSourceText source={"Loading journal-entry source records…"} /></p> : null}
       {report.data?.length ? <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
-          <thead className="border-b text-muted-foreground"><tr><th className="py-3 pr-3 font-medium"><CustomerSourceText source={"Date / entry"} /></th><th className="px-3 py-3 font-medium"><CustomerSourceText source={"Organization"} /></th><th className="px-3 py-3 font-medium"><CustomerSourceText source={"Source"} /></th><th className="px-3 py-3 font-medium"><CustomerSourceText source={"Reference"} /></th><th className="px-3 py-3 text-right font-medium"><CustomerSourceText source={"Gross"} /></th><th className="py-3 pl-3 text-right font-medium"><CustomerSourceText source={"Balance"} /></th></tr></thead>
+          <RecordTableHeader className="border-b text-muted-foreground"><tr><th className="py-3 pr-3 font-medium"><CustomerSourceText source={"Date / entry"} /></th><th className="px-3 py-3 font-medium"><CustomerSourceText source={"Organization"} /></th><th className="px-3 py-3 font-medium"><CustomerSourceText source={"Source"} /></th><th className="px-3 py-3 font-medium"><CustomerSourceText source={"Reference"} /></th><th className="px-3 py-3 text-right font-medium"><CustomerSourceText source={"Gross"} /></th><th className="py-3 pl-3 text-right font-medium"><CustomerSourceText source={"Balance"} /></th></tr></RecordTableHeader>
           <tbody>{report.data.map((row) => <tr key={row.entryId} className="border-b align-top last:border-0">
             <td className="py-3 pr-3"><span>{formatDate(row.accountingDateUtc)}</span><span className="mt-1 block font-mono text-xs text-muted-foreground">{row.entryId}</span></td>
             <td className="px-3 py-3">{row.organizationName}</td>
             <td className="px-3 py-3"><span>{workflowLabel(row.workflowType)} {row.workflowNumber}</span><span className="mt-1 block text-xs text-muted-foreground"><CustomerSourceText source={"Document"} /> {row.sourceDocumentNumber}</span></td>
             <td className="px-3 py-3">{row.purchaseOrderNumber ?? row.customerOrProjectReference ?? '—'}</td>
             <td className="px-3 py-3 text-right tabular-nums">{formatMoney(row.grossAmount, row.currency)}</td>
-            <td className="py-3 pl-3 text-right"><span className="tabular-nums">{formatMoney(row.outstandingBalance, row.currency)}</span><span className="mt-1 block"><Badge variant="outline">{row.paymentStatus === 'PaidRecorded' ? <CustomerSourceText source={"Paid recorded"} /> : <CustomerSourceText source={"Outstanding"} />}</Badge></span></td>
+            <td className="py-3 pl-3 text-right"><span className="tabular-nums">{formatMoney(row.outstandingBalance, row.currency)}</span><span className="mt-1 block"><DomainStatusBadge status={row.paymentStatus} tones={paymentTones}>{row.paymentStatus === 'PaidRecorded' ? <CustomerSourceText source={"Paid recorded"} /> : <CustomerSourceText source={"Outstanding"} />}</DomainStatusBadge></span></td>
           </tr>)}</tbody>
         </table>
       </div> : !report.isLoading && rangeIsValid && !report.error ? <p className="py-8 text-center text-sm text-muted-foreground"><CustomerSourceText source={"No journal-entry source records fall in this date range."} /></p> : null}

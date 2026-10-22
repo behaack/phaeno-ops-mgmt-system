@@ -56,9 +56,10 @@ export function CustomerSourceText({ source }: { source?: string | null }) {
 }
 
 export function useCustomerDateFormatter(includeTime = false) {
-  const { customer, locale } = useContext(CustomerLocaleContext)
-  return useMemo(() => new Intl.DateTimeFormat(customer ? locale : undefined,
-    { dateStyle: 'medium', ...(includeTime ? { timeStyle: 'short' as const } : {}) }), [customer, locale, includeTime])
+  const { locale } = useContext(CustomerLocaleContext)
+  return useMemo(() => ({ format: (value: Date | number) => (includeTime ? formatDisplayTimestamp : formatDisplayDate)(
+    typeof value === 'number' ? new Date(value) : value, { locale },
+  ) }), [locale, includeTime])
 }
 
 export function useDisplayFormatters() {

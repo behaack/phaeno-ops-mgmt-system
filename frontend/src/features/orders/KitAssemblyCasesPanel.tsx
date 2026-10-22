@@ -1,3 +1,5 @@
+import { formatDisplayTimestamp } from '#/lib/display-format'
+import { FieldError } from '#/components/ui/field'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { confirmPortal } from '#/components/PortalConfirmation'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -83,7 +85,7 @@ const empty: Values = {
   trackingNumber: '',
 }
 const display = (value: string | null | undefined) =>
-  value ? new Date(value).toLocaleString() : 'Set when the kit ships'
+  value ? formatDisplayTimestamp(value, { seconds: true }) : 'Set when the kit ships'
 const titles = {
   extend: 'Extend submission deadline',
   cancel: 'Cancel unused assembly case',
@@ -195,9 +197,9 @@ export function KitAssemblyCasesPanel({
           {...form.register(name)}
         />
         {form.formState.errors[name] ? (
-          <p role="alert" className="mt-1 text-sm text-destructive">
+          <FieldError role="alert" >
             {<CustomerSourceText source={form.formState.errors[name]?.message} />}
-          </p>
+          </FieldError>
         ) : null}
       </Field>
     )
@@ -378,9 +380,9 @@ export function KitAssemblyCasesPanel({
                     {...form.register('reason')}
                   />
                   {form.formState.errors.reason ? (
-                    <p role="alert" className="mt-1 text-sm text-destructive">
+                    <FieldError role="alert" >
                       {<CustomerSourceText source={form.formState.errors.reason.message} />}
-                    </p>
+                    </FieldError>
                   ) : null}
                 </Field>
               </fieldset>

@@ -1,3 +1,6 @@
+import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
+import { materialTones } from '#/features/lab-operations/lab-status'
+import { formatDisplayTimestamp } from '#/lib/display-format'
 import { NativeCheckbox } from '#/components/ui/native-checkbox'
 import { RecordLink } from '#/components/ui/record-link'
 import { PageTitle } from '#/components/ui/page-header'
@@ -20,7 +23,6 @@ import {
 } from '#/api/lab-master-mix'
 import { getLabOperationsDashboard, getLabOperationsError, type LabExecutionStepInput, type LabEquipment } from '#/api/lab-operations'
 import { IdentifierQrCode } from '#/components/identifier-qr-code'
-import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '#/components/ui/dialog'
@@ -46,8 +48,8 @@ const discardSchema = textSchema.extend({ measuredDiscardQuantity: z.string() })
   if (value.measuredDiscardQuantity && !isMasterMixDecimalQuantity(value.measuredDiscardQuantity, true)) context.addIssue({ code: 'custom', path: ['measuredDiscardQuantity'], message: 'Enter an exact nonnegative decimal with up to 12 fractional places, or leave it blank.' })
 })
 
-function when(value: string | null | undefined) { return value ? new Date(value).toLocaleString() : 'Not recorded' }
-function labCutoff(value: string) { return new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/Los_Angeles', timeZoneName: 'short' }).format(new Date(value)) }
+function when(value: string | null | undefined) { return value ? formatDisplayTimestamp(value, { seconds: true }) : 'Not recorded' }
+function labCutoff(value: string) { return formatDisplayTimestamp(value, { timeZone: 'America/Los_Angeles' }) }
 function actor(mix: MasterMix, id: string | null | undefined) { return id ? mix.actors.find(item => item.id === id)?.name ?? id : 'Not recorded' }
 function useDiscardChanges(dirty: boolean, pending: boolean, onClose: () => void) {
   const [open, setOpen] = useState(false)
@@ -121,7 +123,7 @@ export function MasterMixPage({ mixId }: { mixId: string }) {
   if (!enabled) return <main className="page-wrap py-8"><p role="alert">You need a connected Phaeno laboratory session to view this mix.</p></main>
   return <main className="page-wrap space-y-5 py-8"><BackLink asChild><Link to="/lab-operations" search={{ section: 'master-mixes' }}>Back to master mixes</Link></BackLink>
     {query.isPending ? <p role="status">Loading master mix…</p> : query.isError ? <p role="alert">{getLabOperationsError(query.error, 'The mix could not be loaded.')}</p> : mix ? <>
-      <div className="flex flex-wrap items-start justify-between gap-4"><div><PageTitle>{mix.workflowName}</PageTitle><p className="mt-1 break-all font-mono text-sm">{mix.barcode}</p><p className="text-sm text-muted-foreground">Approved procedure revision {mix.workflowRevision} · Preparation {mix.id}</p></div><div className="flex items-center gap-2"><Badge variant="secondary">{mix.status}</Badge>{actions.length === 1 ? <Button type="button" onClick={() => selectAction(actions[0].key)}>{actions[0].label}</Button> : actions.length > 1 ? <ActionMenu><DropdownMenuTrigger asChild><Button type="button">Actions</Button></DropdownMenuTrigger><DropdownMenuContent align="end">{actions.map(item => <DropdownMenuItem key={item.key} onSelect={() => selectAction(item.key)}>{item.label}</DropdownMenuItem>)}</DropdownMenuContent></ActionMenu> : null}</div></div>
+      <div className="flex flex-wrap items-start justify-between gap-4"><div><PageTitle>{mix.workflowName}</PageTitle><p className="mt-1 break-all font-mono text-sm">{mix.barcode}</p><p className="text-sm text-muted-foreground">Approved procedure revision {mix.workflowRevision} · Preparation {mix.id}</p></div><div className="flex items-center gap-2"><DomainStatusBadge status={mix.status} tones={materialTones}>{mix.status}</DomainStatusBadge>{actions.length === 1 ? <Button type="button" onClick={() => selectAction(actions[0].key)}>{actions[0].label}</Button> : actions.length > 1 ? <ActionMenu><DropdownMenuTrigger asChild><Button type="button">Actions</Button></DropdownMenuTrigger><DropdownMenuContent align="end">{actions.map(item => <DropdownMenuItem key={item.key} onSelect={() => selectAction(item.key)}>{item.label}</DropdownMenuItem>)}</DropdownMenuContent></ActionMenu> : null}</div></div>
       {expired && mix.status !== 'Discarded' ? <p role="alert" className="rounded-md border border-destructive p-3 text-sm">This mix passed the end of its local work day. POMS blocks new ingredients, completion, and tray use. Discard it and prepare a new mix.</p> : null}
       {pending ? <div role="alert" className="space-y-2 rounded-md border border-amber-500 p-3 text-sm"><p>A source-lot save still needs confirmation. Do not record the ingredient again with a new request.</p>{mix.ingredients.some(item => item.id === pending.requestId) ? <Button type="button" variant="outline" onClick={async () => { await recovery.clear(pending.requestId); setUncertain(null); await refresh() }}>Saved use confirmed — clear recovery</Button> : <Button type="button" variant="outline" disabled={ingredientSave.isPending || recovery.isPending} onClick={() => ingredientSave.mutate(pending)}>{ingredientSave.isPending ? 'Checking…' : 'Retry the exact saved use'}</Button>}{ingredientSave.error ? <p role="alert" className="text-destructive">{getLabOperationsError(ingredientSave.error, 'The saved ingredient use could not be confirmed.')}</p> : null}</div> : null}
       <Card><CardHeader><CardTitle>Preparation and amount</CardTitle><CardDescription>One physical container may serve several trays until {labCutoff(mix.useByUtc)}. It is not inventory stock.</CardDescription></CardHeader><CardContent className="grid gap-2 text-sm sm:grid-cols-3"><p>Started: {when(mix.startedAtUtc)} by {actor(mix, mix.startedByUserId)}</p><p>Made: {mix.preparedQuantityText === null ? 'Not recorded' : `${labAmount(mix.preparedQuantityText)} ${mix.quantityUnit}`}</p><p>Completed: {when(mix.preparedAtUtc)} by {actor(mix, mix.preparedByUserId)}</p><p>Used on trays: {labAmount(mix.usedQuantityText)} {mix.quantityUnit}</p><p>Calculated unused: {mix.remainingQuantityText ?? 'Not known yet'} {mix.remainingQuantityText ? mix.quantityUnit : ''}</p><p>Use by: {labCutoff(mix.useByUtc)}</p>{mix.discardedAtUtc ? <p className="sm:col-span-3">Discarded {when(mix.discardedAtUtc)} by {actor(mix, mix.discardedByUserId)} · {mix.discardReason}. {mix.measuredDiscardQuantityText === null ? 'Discarded amount was not measured.' : `Measured discarded amount: ${labAmount(mix.measuredDiscardQuantityText)} ${mix.quantityUnit}.`}</p> : null}</CardContent></Card>

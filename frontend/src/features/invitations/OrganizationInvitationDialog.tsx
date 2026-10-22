@@ -1,3 +1,4 @@
+import { FieldError } from '#/components/ui/field'
 import { Field as PortalField } from '#/components/ui/field'
 import { NativeCheckbox } from '#/components/ui/native-checkbox'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
@@ -132,7 +133,7 @@ function InvitationForm({ departments, pending, onDirty, onSubmit, contact, orga
           autoComplete={field === 'firstName' ? 'given-name' : field === 'lastName' ? 'family-name' : 'email'}
           aria-invalid={Boolean(form.formState.errors[field])} aria-describedby={form.formState.errors[field] ? `organization-invite-${field}-error` : undefined}
           {...form.register(field)} />
-        {form.formState.errors[field] ? <p id={`organization-invite-${field}-error`} role="alert" className="text-xs text-destructive">{form.formState.errors[field]?.message}</p> : null}
+        {form.formState.errors[field] ? <FieldError id={`organization-invite-${field}-error`} role="alert" >{form.formState.errors[field]?.message}</FieldError> : null}
       </PortalField>)}
       </>}
       <section aria-labelledby="invitation-access-heading" className="grid gap-3">

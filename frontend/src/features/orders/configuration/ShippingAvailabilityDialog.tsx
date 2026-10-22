@@ -1,3 +1,4 @@
+import { formatDisplayTimestamp } from '#/lib/display-format'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -28,7 +29,7 @@ export function ShippingAvailabilityDialog({ change, configuration, onClose, res
   const isDefault = configuration.defaultDestinationDefinitionKey === change.item.definitionKey
   return <Dialog open onOpenChange={open => { if (!open && !mutation.isPending) onClose() }}><DialogContent showCloseButton={!mutation.isPending} onCloseAutoFocus={event => { event.preventDefault(); restoreFocus() }}>
     <DialogHeader><DialogTitle>{action} <CustomerText message="m_8796c7f27a00" /></DialogTitle><DialogDescription>{change.item.name} <CustomerText message="m_3b0e4579f573" />{change.item.revision}. {change.isActive
-      ? __customerText('m_c4b96c1a0699', { p0: String(future ? ` from ${new Date(change.item.effectiveFrom).toLocaleString()}` : ' now') })
+      ? __customerText('m_c4b96c1a0699', { p0: String(future ? ` from ${formatDisplayTimestamp(change.item.effectiveFrom, { seconds: true })}` : ' now') })
       : __customerText('m_dd416e560bc4')} <CustomerText message="m_1f9d0516b754" /></DialogDescription></DialogHeader>
     {!change.isActive && isDefault ? <Alert variant="destructive"><AlertTitle><CustomerText message="m_9c59dc1da91e" /></AlertTitle><AlertDescription><CustomerText message="m_98fd1c21894f" /></AlertDescription></Alert> : null}
     {mutation.error ? <Alert variant="destructive"><AlertTitle><CustomerText message="m_762139977717" /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(mutation.error, 'Refresh the destinations and try again.')} />}</AlertDescription></Alert> : null}

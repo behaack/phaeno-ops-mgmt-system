@@ -1,3 +1,5 @@
+import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
+import { attentionTones } from '#/features/dashboard/dashboard-status'
 import { PageTitle } from '#/components/ui/page-header'
 import { Link, useNavigate, useSearch } from '@tanstack/react-router'
 import {
@@ -302,7 +304,7 @@ function OperationsPanel({
 }) {
   return (
     <Card className="surface-motion">
-      <CardHeader className="border-b">
+      <CardHeader >
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <CardTitle>
@@ -372,15 +374,9 @@ function OperationsPanel({
                     </p>
                   </div>
                   <div className="flex items-center gap-2 sm:justify-end">
-                    <Badge
-                      variant={
-                        item.attention === 'critical'
-                          ? 'destructive'
-                          : 'secondary'
-                      }
-                    >
+                    <DomainStatusBadge status={item.attention} tones={attentionTones}>
                       {item.status}
-                    </Badge>
+                    </DomainStatusBadge>
                     <span className="w-12 text-right text-xs text-muted-foreground tabular-nums">
                       {item.updated}
                     </span>

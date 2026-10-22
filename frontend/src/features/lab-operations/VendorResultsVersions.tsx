@@ -1,3 +1,4 @@
+import { DisplayTimestamp } from '#/components/ui/display-value'
 import { RecordLink } from '#/components/ui/record-link'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
@@ -11,7 +12,7 @@ export function VendorResultsVersions({ batchId }: { batchId: string }) {
     {query.isPending ? <p role="status" className="text-sm">Loading results versions…</p> : query.isError ? <div className="space-y-2"><p role="alert" className="text-sm">{getLabOperationsError(query.error, 'Results versions could not be loaded.')}</p><Button variant="outline" onClick={() => void query.refetch()}>Reload versions</Button></div> : query.data.length ? <ol className="space-y-3">{query.data.map(version => <li key={version.id} className="rounded-md border p-3 text-sm">
       <RecordLink asChild><Link to="/lab-operations/batches/$batchId/results/$resultVersion" params={{ batchId, resultVersion: String(version.resultVersion) }} >Results v{version.resultVersion}</Link></RecordLink>
       {version.isCurrent ? <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-xs">Current</span> : null}
-      <p className="mt-1 text-muted-foreground">{new Date(version.recordedAtUtc).toLocaleString()} · {version.recordedByName}</p>
+      <p className="mt-1 text-muted-foreground">{<DisplayTimestamp value={version.recordedAtUtc} seconds />} · {version.recordedByName}</p>
       {version.note ? <p className="mt-1 whitespace-pre-wrap break-words">{version.note}</p> : null}
     </li>)}</ol> : <p className="text-sm">No results versions recorded.</p>}
   </PreparationPanel>

@@ -1,3 +1,4 @@
+import { FieldError } from '#/components/ui/field'
 import { Field as PortalField } from '#/components/ui/field'
 import { CustomerText } from '#/features/customer-i18n/customer-text'
 import type { UseFormRegisterReturn } from 'react-hook-form'
@@ -29,14 +30,14 @@ export function TubeMaterialAmountFields({ idPrefix, quantityField, unitField, q
       <p id={`${idPrefix}-amount-help`} className="text-xs text-muted-foreground"><CustomerText message="m_cfa8c4df223a" /></p>
       <Input id={`${idPrefix}-amount`} type="number" inputMode="decimal" min="0.000001" step="0.000001" disabled={disabled}
         aria-invalid={Boolean(quantityError)} aria-describedby={`${idPrefix}-amount-help${quantityError ? ` ${idPrefix}-amount-error` : ''}`} {...quantityField} />
-      {quantityError ? <p id={`${idPrefix}-amount-error`} role="alert" className="text-sm text-destructive">{quantityError}</p> : null}
+      {quantityError ? <FieldError id={`${idPrefix}-amount-error`} role="alert" >{quantityError}</FieldError> : null}
     </PortalField>
     <PortalField >
       <Label htmlFor={`${idPrefix}-unit`}><RequiredFieldName><CustomerText message="m_9c1992ff0594" /></RequiredFieldName></Label>
       <p id={`${idPrefix}-unit-help`} className="text-xs text-muted-foreground"><CustomerText message="m_88ae94c49d32" /></p>
       <Input id={`${idPrefix}-unit`} maxLength={50} autoComplete="off" disabled={disabled}
         aria-invalid={Boolean(unitError)} aria-describedby={`${idPrefix}-unit-help${unitError ? ` ${idPrefix}-unit-error` : ''}`} {...unitField} />
-      {unitError ? <p id={`${idPrefix}-unit-error`} role="alert" className="text-sm text-destructive">{unitError}</p> : null}
+      {unitError ? <FieldError id={`${idPrefix}-unit-error`} role="alert" >{unitError}</FieldError> : null}
     </PortalField>
   </div>
 }

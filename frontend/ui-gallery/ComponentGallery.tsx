@@ -5,7 +5,7 @@ import { z } from 'zod'
 import { AlertTriangle, CheckCircle2, Info, LoaderCircle } from 'lucide-react'
 import { BackLink } from '#/components/ui/back-link'
 import { Button } from '#/components/ui/button'
-import { Badge } from '#/components/ui/badge'
+import { StatusBadge } from '#/components/ui/status-badge'
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
 import { Field, FieldDescription, FieldError } from '#/components/ui/field'
 import { Label } from '#/components/ui/label'
@@ -32,6 +32,7 @@ const sections = [
   ['headers', 'Page headers'], ['lists', 'Lists and tables'], ['guarded-forms', 'Guarded forms'],
   ['async-feedback', 'Loading and recovery'], ['controls', 'More controls'], ['app-navigation', 'Application navigation'],
   ['standardization', 'Data, status and form standards'], ['page-previews', 'Complete page examples'],
+  ['feature-previews', 'Actual feature pages'],
 ] as const
 
 function GallerySection({ id, title, description, children }: { id: string; title: string; description: string; children: ReactNode }) {
@@ -65,6 +66,10 @@ export function ComponentGallery() {
       <nav aria-label="Gallery sections" className="mb-6 flex flex-wrap gap-x-5 gap-y-3">{sections.map(([id, title]) => <a key={id} href={`#${id}`} className={recordLinkClassName}>{title}</a>)}</nav>
       <p className="mb-6 text-sm text-muted-foreground" role="status" aria-live="polite" data-testid="gallery-notice">{message}</p>
       <div data-testid="gallery-preview" className="@container mx-auto w-full space-y-8" style={{ maxWidth: width === 'full' ? undefined : `${width}px` }}>
+        <GallerySection id="feature-previews" title="Actual feature pages" description="Current feature components with isolated fictional records. Reviewed in both themes at desktop and narrow widths; these examples make no hosted changes.">
+          <div className="flex flex-wrap gap-x-6 gap-y-3">{[['company','Company People'],['source','Source workspace'],['assembly-inputs','Sequencing inputs'],['assembly-jobs','Sequencing assembly'],['customer','Customer data']].map(([scene,label])=><a key={scene} className={recordLinkClassName} href={`/features.html?scene=${scene}&theme=${theme}`}>{label}</a>)}<a className={recordLinkClassName} href={`/research.html?illustrate=true&prepared=true&path=/research/experiments&dark=${theme==='dark'}`}>Research experiments</a></div>
+          <p className="text-sm text-muted-foreground">Panel and table headers use the same shaded band. Status adapters retain their domain meanings; completion of a process does not establish scientific approval. The illustrated guides use these components through reproducible capture scenarios.</p>
+        </GallerySection>
         <GallerySection id="navigation" title="Return navigation" description="One arrow, one destination, the same typography and focus treatment. Long labels wrap.">
           <div className="grid gap-4 @min-[40rem]:grid-cols-2">
             <Card><CardContent className="space-y-5 pt-5"><BackLink asChild><a href="#navigation?listPage=3">Back to companies</a></BackLink><h3 className="text-lg font-semibold">Company example</h3></CardContent></Card>
@@ -100,7 +105,7 @@ export function ComponentGallery() {
           <Tabs defaultValue="overview"><TabsList aria-label="Example record sections" className="flex w-full flex-wrap justify-start"><TabsTrigger value="overview">Overview</TabsTrigger><TabsTrigger value="samples">Samples and scientific context</TabsTrigger><TabsTrigger value="history" disabled>History (unavailable)</TabsTrigger></TabsList><TabsContent value="overview"><p className="py-3">The view-first record summary appears here.</p></TabsContent><TabsContent value="samples"><p className="py-3">Related samples appear here.</p></TabsContent></Tabs>
         </GallerySection>
         <GallerySection id="feedback" title="Status and feedback" description="Use text with semantic colors and icons; show unavailable and error states distinctly.">
-          <div className="flex flex-wrap gap-2"><Badge>In progress</Badge><Badge variant="secondary">Draft</Badge><Badge variant="outline">Completed</Badge><Badge variant="destructive">Needs correction</Badge></div>
+          <div className="flex flex-wrap gap-2"><StatusBadge tone="info">In progress</StatusBadge><StatusBadge tone="neutral">Draft</StatusBadge><StatusBadge tone="success">Completed</StatusBadge><StatusBadge tone="error">Needs correction</StatusBadge></div>
           <Alert><Info aria-hidden="true" /><AlertTitle>Informational example</AlertTitle><AlertDescription>Saved context remains available while related information refreshes.</AlertDescription></Alert>
           <Alert variant="warning"><AlertTriangle aria-hidden="true" /><AlertTitle>Review required</AlertTitle><AlertDescription>Review the recorded scope before continuing.</AlertDescription></Alert>
           <Alert variant="destructive"><AlertTriangle aria-hidden="true" /><AlertTitle>Example could not be saved</AlertTitle><AlertDescription>Your entries are retained. Correct the highlighted field and try again.</AlertDescription></Alert>

@@ -1,3 +1,4 @@
+import { DialogDescription } from '#/components/ui/dialog'
 import { useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -27,7 +28,7 @@ export function SendoutStatusDialog({ batch: currentBatch, status, sendout, onCl
   const save = useMutation({ mutationFn: (values: z.infer<typeof schema>) => transitionLabSendout(batch.sendoutId!, { status, version: batch.sendoutVersion!, occurredAtUtc: new Date(values.occurredAt).toISOString(), evidence: values.evidence, providerReference: values.providerReference || null, expectedCompletionAtUtc: values.eta ? new Date(values.eta).toISOString() : null }), onSuccess: async () => { await onSaved(); onClose() } })
   const dismissal = useOrderDecisionDismissal(__formDraftDirty, save.isPending, onClose, { scope: 'vendor status evidence', description: `Unsaved status evidence for ${batch.batchNumber} will be discarded. The saved vendor stage will remain ${vendorStageName(batch.sendoutStatus ?? 'Preparing').toLowerCase()}.` })
   return <DialogReturnFocus target={null} fallbackId={`sequencing-batch-actions-${batch.id}`}><Dialog open onOpenChange={open => { if (!open) dismissal.close() }}><DialogContent onOpenAutoFocus={event => { event.preventDefault(); cancel.current?.focus() }}><form className="contents" noValidate onSubmit={form.handleSubmit(values => save.mutate(values))}>
-    <DialogHeader><DialogTitle>Mark {vendorStageName(status).toLowerCase()}</DialogTitle></DialogHeader>
+    <DialogHeader><DialogTitle>Mark {vendorStageName(status).toLowerCase()}</DialogTitle><DialogDescription>Record the time and provider or custody evidence for this vendor stage.</DialogDescription></DialogHeader>
     <div className="space-y-4">
       <p className="break-words text-sm"><strong>{batch.batchNumber}</strong>{batch.name.trim() && batch.name !== batch.batchNumber ? ` · ${batch.name}` : ''} · Vendor: <strong>{reviewed.providerName}</strong></p>
       <dl className="space-y-2 rounded-md border p-3 text-sm">{[['Sequencing service', reviewed.vendorProductName], ['Saved destination', reviewed.destination], ['Carrier', reviewed.carrier], ['Tracking reference', reviewed.trackingReference]].map(([label, value]) => <div key={label}><dt className="text-muted-foreground">{label}</dt><dd className="whitespace-pre-line break-words">{value || 'Not recorded'}</dd></div>)}</dl>

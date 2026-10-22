@@ -1,3 +1,6 @@
+import { FieldError } from '#/components/ui/field'
+import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
+import { deadlineTones } from './lab-status'
 import { ClearFiltersButton } from '#/components/ui/clear-filters-button'
 import { Field as PortalField } from '#/components/ui/field'
 import { NativeSelect } from '#/components/ui/native-select'
@@ -20,8 +23,7 @@ import { Collapsible } from 'radix-ui'
 import { activeDeadlineLabels, clearJobFilters, deadlineDate, deadlineLabels, jobDateBoundary, jobFilterSummary, jobStatusLabel, jobStatusLabels, parseJobDate, parseJobListSearch, type DeadlineStatus, type JobListSearch, type JobView } from './job-deadlines'
 
 export function DeadlineBadge({ status }: { status: DeadlineStatus }) {
-  const urgent = status === 'Overdue' || status === 'AtRisk'
-  return <span className={`inline-block rounded-full border px-2 py-0.5 text-xs font-medium ${urgent ? 'border-destructive/30 bg-destructive/10 text-destructive' : 'bg-muted text-foreground'}`}>{deadlineLabels[status]}</span>
+  return <DomainStatusBadge status={status} tones={deadlineTones}>{deadlineLabels[status]}</DomainStatusBadge>
 }
 
 function JobDateFilter({ id, label, value, min, max, invalidRange, onCommit }: {
@@ -46,7 +48,7 @@ function JobDateFilter({ id, label, value, min, max, invalidRange, onCommit }: {
         if (next !== value) onCommit(next)
       }}
       onKeyDown={event => { if (event.key === 'Enter') event.currentTarget.blur() }} />
-    {incomplete ? <p id={`${id}-error`} role="alert" className="text-sm text-destructive">Enter a complete date with a four-digit year.</p> : null}
+    {incomplete ? <FieldError id={`${id}-error`} role="alert" >Enter a complete date with a four-digit year.</FieldError> : null}
   </PortalField>
 }
 
@@ -79,7 +81,7 @@ export function JobsList({ enabled }: { enabled: boolean }) {
   const switchView = (value: string) => void navigate({ to: '/lab-operations', search: previous => ({ ...previous, section: 'jobs', jobView: value === 'Closed' ? 'Closed' : 'Active' }), replace: true, resetScroll: false })
   const data = invalidRange || jobs.error ? undefined : jobs.data
   const content = <Card className="gap-0 py-0">
-    <CardHeader className="border-b bg-muted/50 p-4">
+    <CardHeader >
       <PillToggle label="Jobs grouping" value={grouping} options={[{ value: 'Phases', label: 'Phases' }, { value: 'Jobs', label: 'Jobs' }]}
         onValueChange={value => change(closed ? { jobClosedGrouping: value as 'Phases' | 'Jobs' } : { jobGrouping: value as 'Phases' | 'Jobs' })} />
       <CardDescription>{closed ? 'Find delivered and cancelled jobs.' : 'Track sent specimens through delivery of every sample’s results.'}</CardDescription>

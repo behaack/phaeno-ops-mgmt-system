@@ -1,3 +1,5 @@
+import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
+import { workflowTones } from '#/features/lab-operations/lab-status'
 import { RequiredLegend } from '#/components/ui/required-field'
 import { RecordLink } from '#/components/ui/record-link'
 import { BackLink } from '#/components/ui/back-link'
@@ -78,7 +80,7 @@ export function MasterMixWorkflowSettings({ canManage, actorId, isPlatformAdmin 
           ...(workflow.status !== 'Retired' && workflow.revisions.some(v => v.status === 'Approved') ? [{ label: 'Retire workflow', run: () => setDecision({ workflow, action: 'retire' as const }) }] : []),
         ] : []
         return <li key={workflow.id} className="flex flex-wrap items-start justify-between gap-3 py-4">
-          <div className="min-w-0 flex-1 basis-48"><div className="flex flex-wrap items-center gap-2"><RecordLink asChild><Link to={procedureDetailRoute} params={{ kind: 'masterMix', recordId: workflow.id }} search={{ ...discovery, revision: displayed.revision }}>{displayed.name}</Link></RecordLink><Badge variant="outline">Rev {displayed.revision}</Badge><Badge variant={displayed.status === 'Approved' ? 'secondary' : 'outline'}>{displayed.status}</Badge></div><p className="mt-1 text-sm text-muted-foreground">{displayed.quantityUnit} · {displayed.ingredients.length} ingredients · {displayed.steps.length} steps</p>
+          <div className="min-w-0 flex-1 basis-48"><div className="flex flex-wrap items-center gap-2"><RecordLink asChild><Link to={procedureDetailRoute} params={{ kind: 'masterMix', recordId: workflow.id }} search={{ ...discovery, revision: displayed.revision }}>{displayed.name}</Link></RecordLink><Badge variant="outline">Rev {displayed.revision}</Badge><DomainStatusBadge status={displayed.status} tones={workflowTones}>{displayed.status}</DomainStatusBadge></div><p className="mt-1 text-sm text-muted-foreground">{displayed.quantityUnit} · {displayed.ingredients.length} ingredients · {displayed.steps.length} steps</p>
             {workflow.status === 'Draft' && workflow.revision !== displayed.revision ? <span className="block"><RecordLink asChild><Link to={procedureDetailRoute} params={{ kind: 'masterMix', recordId: workflow.id }} search={{ ...discovery, revision: workflow.revision }}>Pending Draft revision {workflow.revision}</Link></RecordLink></span> : null}
             <details className="mt-2 text-sm"><summary className="cursor-pointer">Procedure revision history</summary><div className="mt-2 space-y-2">{workflow.revisions.map(revision => <ProcedureReview key={revision.revision} revision={revision} />)}</div></details>
           </div>

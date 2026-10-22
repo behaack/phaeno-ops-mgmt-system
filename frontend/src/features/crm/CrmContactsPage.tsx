@@ -1,3 +1,4 @@
+import { RecordTableHeader } from '#/components/ui/record-list'
 import { Field as PortalField } from '#/components/ui/field'
 import { RecordLink } from '#/components/ui/record-link'
 import { PageTitle } from '#/components/ui/page-header'
@@ -134,7 +135,7 @@ export function CrmContactsPage() {
           />
           <div className="overflow-x-auto rounded-lg border">
             <table className="w-full text-left text-sm">
-              <thead className="bg-muted/50 text-xs text-muted-foreground">
+              <RecordTableHeader className="text-xs text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3">Contact</th>
                   <th className="px-4 py-3">Email</th>
@@ -142,7 +143,7 @@ export function CrmContactsPage() {
                   <th className="px-4 py-3">Outreach</th>
                   <th className="px-4 py-3">Owner</th>
                 </tr>
-              </thead>
+              </RecordTableHeader>
               <tbody className="divide-y">
                 {(query.data?.items ?? []).map((contact) => (
                   <tr key={contact.id}>

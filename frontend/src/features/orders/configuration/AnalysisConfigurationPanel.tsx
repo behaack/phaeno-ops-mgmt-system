@@ -35,7 +35,7 @@ export function AnalysisConfigurationPanel({ configuration }: { configuration: O
   })
   function open(item: AnalysisDefinition | null) { setEditing(item); form.reset(item ? { qboCatalogItemId: item.qboCatalogItemId, name: item.name, description: item.description, submissionInstructions: item.submissionInstructions, requiredIntakeFieldsJson: item.requiredIntakeFieldsJson, resultContractJson: item.resultContractJson, isActive: item.isActive, isSynthetic: item.isSynthetic } : empty) }
   return <><Card className="gap-0 py-0">
-    <CardHeader className="grid-cols-[minmax(0,1fr)_auto] gap-x-3 border-b bg-muted/50 p-4">
+    <CardHeader className="grid-cols-[minmax(0,1fr)_auto] gap-x-3">
       <CardTitle className="min-w-0"><CustomerSourceText source={"Analysis definitions"} /></CardTitle>
       <Button className="col-start-2 row-start-1 justify-self-end" type="button" onClick={() => open(null)}><Plus data-icon="inline-start" /><CustomerSourceText source={"Add analysis"} /></Button>
       <CardDescription className="col-span-full"><CustomerSourceText source={"Scientific intake and result contracts linked to Phaeno commercial catalog items."} /></CardDescription>

@@ -36,7 +36,7 @@ export function CommercialConfigurationPanel({ configuration }: { configuration:
   const mutation = useMutation({ mutationFn: (values: Values) => saveCommercialProfile({ ...values, qboCustomerId: values.qboCustomerId || null, version: editing?.version }), onSuccess: async () => { await client.invalidateQueries({ queryKey: ['order-configuration'] }); setEditing(undefined); form.reset(empty) } })
   function open(profile: Profile | null) { setEditing(profile); form.reset(profile ? { organizationId: profile.organizationId, qboCustomerId: profile.qboCustomerId ?? '', labCreditApproved: profile.labCreditApproved, assemblyCreditApproved: profile.assemblyCreditApproved } : empty) }
   return <><Card className="gap-0 py-0">
-    <CardHeader className="grid-cols-[minmax(0,1fr)_auto] gap-x-3 border-b bg-muted/50 p-4">
+    <CardHeader className="grid-cols-[minmax(0,1fr)_auto] gap-x-3">
       <CardTitle className="min-w-0"><CustomerSourceText source={"Legacy credit and accounting links"} /></CardTitle>
       <Button className="col-start-2 row-start-1 justify-self-end" type="button" onClick={() => open(null)}><Plus data-icon="inline-start" /><CustomerSourceText source={"Add legacy link"} /></Button>
       <CardDescription className="col-span-full"><CustomerSourceText source={"These settings remain for partner kit, data-assembly, and historical QuickBooks workflows. PSeq billing and tax are managed in Finance, and PSeq result release is never payment-gated."} /></CardDescription>

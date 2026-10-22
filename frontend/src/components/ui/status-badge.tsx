@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Badge } from './badge'
+import { cn } from '#/lib/utils'
 
 export type StatusTone = 'neutral' | 'info' | 'pending' | 'success' | 'warning' | 'error'
 const tones: Record<StatusTone, string> = {
@@ -12,6 +13,6 @@ const tones: Record<StatusTone, string> = {
 }
 
 /** Domain adapters supply an explicit tone; labels never determine meaning. */
-export function StatusBadge({ tone, children }: { tone: StatusTone; children: ReactNode }) {
-  return <Badge variant="outline" data-slot="status-badge" data-tone={tone} className={`h-auto min-h-5 max-w-full whitespace-normal text-left ${tones[tone]}`}>{children}</Badge>
+export function StatusBadge({ tone, children, className }: { tone: StatusTone; children: ReactNode; className?: string }) {
+  return <Badge variant="outline" data-slot="status-badge" data-tone={tone} className={cn('h-auto min-h-5 max-w-full whitespace-normal text-left', tones[tone], className)}>{children}</Badge>
 }

@@ -1,3 +1,4 @@
+import { FieldError } from '#/components/ui/field'
 import { Field as PortalField } from '#/components/ui/field'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
@@ -155,9 +156,9 @@ export function RequestCustomWorkButton({
                       {...form.register('subject')}
                     />
                     {form.formState.errors.subject ? (
-                      <p role="alert" className="mt-1 text-sm text-destructive">
+                      <FieldError role="alert" >
                         {<CustomerSourceText source={form.formState.errors.subject.message} />}
-                      </p>
+                      </FieldError>
                     ) : null}
                   </PortalField>
                   <PortalField>
@@ -174,9 +175,9 @@ export function RequestCustomWorkButton({
                       {...form.register('description')}
                     />
                     {form.formState.errors.description ? (
-                      <p role="alert" className="mt-1 text-sm text-destructive">
+                      <FieldError role="alert" >
                         {<CustomerSourceText source={form.formState.errors.description.message} />}
-                      </p>
+                      </FieldError>
                     ) : null}
                   </PortalField>
                 </fieldset>

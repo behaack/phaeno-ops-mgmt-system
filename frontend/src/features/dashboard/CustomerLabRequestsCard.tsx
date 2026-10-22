@@ -24,7 +24,7 @@ export function CustomerLabRequestsCard({ view, page, onPageChange, query }: {
 
   const data = !mock && hasScope && !query.isError ? query.data?.requests : undefined
   return <Card id="customer-lab-requests" aria-labelledby="customer-lab-requests-heading" className="min-w-0 gap-0 py-0">
-    <CardHeader className="border-b bg-muted/50 p-4">
+    <CardHeader >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <CardTitle id="customer-lab-requests-heading">{view === 'attention' ? 'Requests requiring attention' : view === 'results' ? 'Jobs with new results' : 'Lab service requests'}</CardTitle>
         {data ? <Badge variant="outline">{data.totalCount} {view === 'active' ? 'active ' : ''}{view === 'results' ? data.totalCount === 1 ? 'Job' : 'Jobs' : data.totalCount === 1 ? 'request' : 'requests'}</Badge> : null}

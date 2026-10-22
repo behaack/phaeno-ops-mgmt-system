@@ -2,7 +2,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Button } from '#/components/ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogReturnFocus } from '#/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogReturnFocus } from '#/components/ui/dialog'
 import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/required-field'
 import { Field, FieldError } from '#/components/ui/field'
 import { Label } from '#/components/ui/label'
@@ -28,7 +28,7 @@ export function ResearchEntryDialog({ detail, onClose, onSaved, refresh }: {
     } catch { await refresh() }
   })
   return <DialogReturnFocus target={null} fallbackId="research-add-entry"><Dialog open onOpenChange={open => { if (!open) void guard.close(onClose) }}><DialogContent>
-    <DialogHeader><DialogTitle>Add notebook entry</DialogTitle><ResearchFeedback error={mutation.error} /></DialogHeader>
+    <DialogHeader><DialogTitle>Add notebook entry</DialogTitle><DialogDescription>Create a dated notebook entry in this experiment, then record its observations and results.</DialogDescription><ResearchFeedback error={mutation.error} /></DialogHeader>
     <form id="research-entry-create" className="space-y-4" onSubmit={e => void save(e)} noValidate>
       <p className="text-sm">Create entry permanently records its title and date in this experiment. You can then edit its notebook sections. Cancel leaves the experiment unchanged.</p>
       {completed ? <p role="status">This experiment was completed. Reopen it before creating an entry.</p> : null}

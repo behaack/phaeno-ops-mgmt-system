@@ -1,3 +1,6 @@
+import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
+import { shippingTones } from '#/features/sample-shipping/shipping-status'
+import { FieldError } from '#/components/ui/field'
 import { Field as PortalField } from '#/components/ui/field'
 import { PageTitle } from '#/components/ui/page-header'
 import { RecordLink } from '#/components/ui/record-link'
@@ -25,7 +28,6 @@ import {
 } from '#/api/sample-shipping'
 import { apiErrorMessage } from '#/api/organization-management'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
-import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '#/components/ui/dialog'
@@ -256,7 +258,7 @@ export function SampleShippingDetailPage({ shipmentId, autoOpenKitOrder = false,
           )}
           <div className="mt-3 flex flex-wrap items-center gap-3">
             <PageTitle className="wrap-anywhere">{shipment.shipmentNumber}</PageTitle>
-            <Badge variant="outline">{humanize(shipment.status)}</Badge>
+            <DomainStatusBadge status={shipment.status} tones={shippingTones}>{humanize(shipment.status)}</DomainStatusBadge>
           </div>
           <p className="mt-2 text-sm text-muted-foreground">{shipment.authorizationReference} · {shipment.destinationName}</p>
         </div>
@@ -377,14 +379,14 @@ function TubeAssignmentDialog({ item, replacesPacket, isPending, error, onOpenCh
         <PortalField >
           <Label htmlFor="supplier-barcode"><RequiredFieldName><CustomerText message="m_b7eabda0dead" /></RequiredFieldName></Label>
           <Input id="supplier-barcode" autoComplete="off" className="font-mono uppercase" disabled={isPending} aria-invalid={Boolean(form.formState.errors.supplierBarcode)} {...form.register('supplierBarcode')} />
-          {form.formState.errors.supplierBarcode ? <p role="alert" className="text-sm text-destructive">{<CustomerSourceText source={form.formState.errors.supplierBarcode.message} />}</p> : null}
+          {form.formState.errors.supplierBarcode ? <FieldError role="alert" >{<CustomerSourceText source={form.formState.errors.supplierBarcode.message} />}</FieldError> : null}
         </PortalField>
         <TubeMaterialAmountFields idPrefix="assignment" quantityField={form.register('customerDeclaredQuantity')} unitField={form.register('customerDeclaredQuantityUnit')} quantityError={form.formState.errors.customerDeclaredQuantity?.message} unitError={form.formState.errors.customerDeclaredQuantityUnit?.message} disabled={isPending} />
         {item?.supplierTubeBarcode ? <PortalField >
           <Label htmlFor="assignment-reason">{reasonRequired ? <RequiredFieldName><CustomerText message="m_f96404674470" /></RequiredFieldName> : __customerText('m_2e2badabaaac')}</Label>
           <p className="text-xs text-muted-foreground"><CustomerText message="m_d156a6b2b8a8" /></p>
           <Input id="assignment-reason" disabled={isPending} aria-invalid={Boolean(form.formState.errors.reason)} {...form.register('reason')} />
-          {form.formState.errors.reason ? <p role="alert" className="text-sm text-destructive">{<CustomerSourceText source={form.formState.errors.reason.message} />}</p> : null}
+          {form.formState.errors.reason ? <FieldError role="alert" >{<CustomerSourceText source={form.formState.errors.reason.message} />}</FieldError> : null}
         </PortalField> : null}
       </form>
       <RequiredDialogFooter>

@@ -1,3 +1,5 @@
+import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
+import { taskTones } from '#/features/crm/crm-status'
 import { RequiredLegend } from '#/components/ui/required-field'
 import { formatDisplayTimestamp } from '#/lib/display-format'
 import { NativeSelect } from '#/components/ui/native-select'
@@ -82,7 +84,7 @@ export function CrmRecordWork({ links }: { links: RecordLinks }) {
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       <Card className="gap-0 py-0">
-        <CardHeader className="border-b bg-muted/50 p-4">
+        <CardHeader >
           <CardTitle>Activity timeline</CardTitle>
           <CardDescription>
             Notes, calls, meetings, email, status changes, and Portal handoffs.
@@ -123,7 +125,7 @@ export function CrmRecordWork({ links }: { links: RecordLinks }) {
         </CardContent>
       </Card>
       <Card className="gap-0 py-0">
-        <CardHeader className="border-b bg-muted/50 p-4">
+        <CardHeader >
           <CardTitle>Tasks</CardTitle>
           <CardDescription>
             Durable follow-up, reminders, and recurring work.
@@ -144,13 +146,9 @@ export function CrmRecordWork({ links }: { links: RecordLinks }) {
               <div>
                 <div className="flex flex-wrap gap-2">
                   <span className="font-medium">{task.title}</span>
-                  <Badge
-                    variant={
-                      task.status === "Completed" ? "secondary" : "outline"
-                    }
-                  >
+                  <DomainStatusBadge status={task.status} tones={taskTones}>
                     {label(task.status)}
-                  </Badge>
+                  </DomainStatusBadge>
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {task.ownerName} ·{" "}

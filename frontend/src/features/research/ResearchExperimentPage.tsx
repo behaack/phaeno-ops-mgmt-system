@@ -1,3 +1,6 @@
+import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
+import { researchTones } from './research-status'
+import { formatDisplayDate } from '#/lib/display-format'
 import { RecordLink } from '#/components/ui/record-link'
 import { BackLink } from '#/components/ui/back-link'
 import { useState } from 'react'
@@ -36,7 +39,7 @@ export function ResearchExperimentPage({ experimentId }: { experimentId: string 
   }
   const detail = query.data
   return <main className="page-wrap space-y-5 px-4 py-8">{search.fromProjectId ? <BackLink asChild><Link to="/research/projects/$projectId" params={{ projectId: search.fromProjectId }} search={search}>Back to project experiments</Link></BackLink> : <BackLink asChild><Link to="/research/experiments" search={search}>Back to experiments</Link></BackLink>}<ResearchFeedback error={query.error || mutation.error} /><ResearchLoading loading={query.isLoading} />{query.isError ? <Button variant="outline" onClick={() => void query.refetch()}>Retry experiment</Button> : null}
-    {detail ? <><ResearchHeader title={detail.experiment.title} description={`${detail.project.name} · ${detail.experiment.status} · Experiment date: ${detail.experiment.experimentDate ?? 'not recorded'}`}>
+    {detail ? <><ResearchHeader title={detail.experiment.title} status={<DomainStatusBadge status={detail.experiment.status} tones={researchTones} />} description={`${detail.project.name} · Experiment date: ${formatDisplayDate(detail.experiment.experimentDate, { empty: 'not recorded' })}`}>
       <ActionMenu><DropdownMenuTrigger asChild><Button id="research-experiment-actions" variant="outline" disabled={mutation.isPending}>Actions</Button></DropdownMenuTrigger><DropdownMenuContent align="end">
         {detail.experiment.status === 'Active' ? <><DropdownMenuItem onSelect={() => setDialog('edit')}>Edit experiment</DropdownMenuItem><DropdownMenuItem onSelect={() => setTransition('complete')}>Complete experiment</DropdownMenuItem></> : <DropdownMenuItem onSelect={() => setTransition('reopen')}>Reopen experiment</DropdownMenuItem>}
         <DropdownMenuItem onSelect={() => setDialog('copy')}>Copy setup</DropdownMenuItem><DropdownMenuItem onSelect={() => setHistory({ kind: 'experiment', id: experimentId, title: detail.experiment.title })}>View history</DropdownMenuItem>

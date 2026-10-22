@@ -1,3 +1,6 @@
+import { portalAccessTones } from '#/features/organizations/access-status'
+import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
+import { RecordTableHeader } from '#/components/ui/record-list'
 import { formatDisplayDate } from '#/lib/display-format'
 import { Field as PortalField } from '#/components/ui/field'
 import { RecordLink } from '#/components/ui/record-link'
@@ -155,7 +158,7 @@ export function CrmCompaniesPage() {
 
           <div className="overflow-x-auto rounded-lg border">
             <table className="w-full text-left text-sm">
-              <thead className="bg-muted/50 text-xs text-muted-foreground">
+              <RecordTableHeader className="text-xs text-muted-foreground">
                 <tr>
                   <th scope="col" className="px-4 py-3 font-medium">
                     Company
@@ -176,7 +179,7 @@ export function CrmCompaniesPage() {
                     Updated
                   </th>
                 </tr>
-              </thead>
+              </RecordTableHeader>
               <tbody className="divide-y">
                 {(result?.items ?? []).map((company) => (
                   <tr key={company.id}>
@@ -203,20 +206,13 @@ export function CrmCompaniesPage() {
                       >
                         {company.isActive ? "Active" : "Inactive"}
                       </Badge>
-                      <Badge
-                        className="ml-2"
-                        variant={
-                          company.portalAccessStatus === "Enabled"
-                            ? "secondary"
-                            : "outline"
-                        }
-                      >
+                      <DomainStatusBadge status={company.portalAccessStatus} tones={portalAccessTones} className="ml-2">
                         {company.portalAccessStatus === "Enabled"
                           ? "Portal enabled"
                           : company.portalAccessStatus === "Suspended"
                             ? "Portal suspended"
                             : "Portal not enabled"}
-                      </Badge>
+                      </DomainStatusBadge>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {formatDate(company.updatedAt)}

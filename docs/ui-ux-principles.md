@@ -28,6 +28,7 @@ before choosing local sizes, colors, spacing or interaction behavior:
 | Page identity and header | `ui/page-header.tsx` — `PageTitle` and `PageHeader` |
 | Primary record identifiers | `ui/record-link.tsx` — `RecordLink` composed with the existing typed link |
 | Lists, filters and tables | `ui/record-list.tsx` — `RecordList`, `RecordListItem`, `ListToolbar`, `RecordTable`; `RecordPagination.tsx`, `ui/pagination-footer.tsx`, `ui/clear-filters-button.tsx` |
+| Panel and column-label bands | `ui/card.tsx` — `CardHeader`, `CardDescription`; `ui/record-list.tsx` — `RecordTableHeader` |
 | Loading, unavailable data and recovery | `ui/content-state.tsx` — `LoadingState`, `EmptyState`, `ErrorState` |
 | Buttons and action emphasis | `ui/button.tsx` — `Button` and its existing variants/sizes |
 | Contextual record actions | `ui/dropdown-menu.tsx` — `ActionMenu` with one labeled trigger |
@@ -507,6 +508,37 @@ the policy is not a claim that every Customer surface already meets it.
 - Scientific, clinical, financial, and regulatory translations require human review before becoming authoritative product content.
 
 ## Visual language and consistency
+
+Titled panels use `CardHeader`'s full-width `bg-muted` band, divider and padding.
+Put the title and its short explanation in `CardTitle` and `CardDescription`;
+descriptions span the full header width below the title/action row so they stay
+readable on narrow screens.
+Put filters, loading/recovery states and records in the panel body. Keep local
+layout on header children; do not override the shared shade or spacing. Column
+labels use `RecordTableHeader` with native `th scope="col"` semantics. Nested
+panels must not change the padding of an outer untitled card.
+
+Use feature-owned explicit status maps with `DomainStatusBadge`/`StatusBadge`.
+Unknown states remain neutral and retain their label. Cancellation is not a
+failure; processing completion is not scientific approval or Customer release;
+simulated completion must retain its simulation label and neutral tone. Keep
+measured progress separate from terminal status badges. Domain labels and
+permissions remain unchanged by presentation adoption.
+
+Dates and instants use `display-format` helpers; direct Customer-visible JSX can
+use `DisplayDate`/`DisplayTimestamp` to inherit the Customer locale. Calendar
+days never shift across timezones. Instants show their timezone and retain
+required seconds. Scientific performance evidence retains the original recorded
+offset and minute/server precision through `formatRecordedTimestamp`. Fixed
+laboratory cutoff zones remain explicit. Documentation review dates may use
+their longer editorial date format.
+
+The engineering gallery includes actual Company, source, R&D, sequencing inputs,
+sequencing assembly and Customer data components with fictional transport.
+Forty-eight reviewed Windows Chromium references cover those six workspaces and
+the shared list/detail/modal patterns at desktop/phone sizes in both themes.
+This representative set does not claim visual coverage of every route. Guide
+captures and freshness checks follow [user-documentation.md](user-documentation.md).
 
 Phaeno Portal and Clinical Diagnostics share an interaction language while retaining distinct branding and domain components.
 

@@ -1,3 +1,5 @@
+import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
+import { handoffTones } from '#/features/crm/crm-status'
 import { ClearFiltersButton } from '#/components/ui/clear-filters-button'
 import { formatDisplayTimestamp, formatDisplayCurrency } from '#/lib/display-format'
 import { Field as PortalField } from '#/components/ui/field'
@@ -90,7 +92,7 @@ export function CommercialOrderIntakePanel({
   return (
     <div className="space-y-5">
       <Card className="gap-0 overflow-hidden py-0">
-        <CardHeader className="border-b bg-muted/50 p-4">
+        <CardHeader >
           <div className="flex flex-wrap items-start justify-between gap-3">
             <CardTitle><CustomerSourceText source={"Commercial order intake"} /></CardTitle>
             <Button
@@ -233,7 +235,7 @@ function CrmHandoffRow({ item, canCreate, onStart }: { item: CrmOrderHandoff; ca
           <Badge variant={item.handoff.type === 'PortalEvaluation' || item.handoff.type === 'TrialProject' ? 'secondary' : 'outline'}>
             {item.handoff.type === 'PortalEvaluation' || item.handoff.type === 'TrialProject' ? <CustomerSourceText source={"Trial Project · No charge"} /> : <CustomerSourceText source={"Sales handoff"} />}
           </Badge>
-          <Badge variant="outline">{formatHandoffStatus(item.handoff.status)}</Badge>
+          <DomainStatusBadge status={item.handoff.status} tones={handoffTones}>{formatHandoffStatus(item.handoff.status)}</DomainStatusBadge>
         </div>
         <p className="mt-2 text-sm">{item.companyName}{item.opportunityName ? ` · ${item.opportunityName}` : ''}</p>
         <p className="mt-1 text-sm text-muted-foreground">{item.summary}</p>

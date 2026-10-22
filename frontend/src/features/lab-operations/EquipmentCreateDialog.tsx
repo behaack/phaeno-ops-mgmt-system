@@ -1,3 +1,4 @@
+import { FieldError } from '#/components/ui/field'
 import { Field as PortalField } from '#/components/ui/field'
 import { NativeSelect } from '#/components/ui/native-select'
 import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
@@ -368,7 +369,7 @@ function ReferenceCreateDialog({
               aria-invalid={Boolean(error)}
               onChange={(event) => onValueChange(event.target.value)}
             />
-            {error ? <p className="mt-1 text-sm text-destructive" role="alert">{error}</p> : null}
+            {error ? <FieldError  role="alert">{error}</FieldError> : null}
           </PortalField>
           <RequiredDialogFooter>
             <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>

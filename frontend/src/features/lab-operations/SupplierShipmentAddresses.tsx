@@ -42,7 +42,7 @@ export function SupplierShipmentAddresses({ supplier }: { supplier: CatalogSuppl
   const addresses = supplier.shipmentAddresses.filter(address => showInactive || address.isActive)
   const lastAddressRequired = supplier.isActive && supplier.products.some(product => product.isActive && product.productTypeId === sequencingServiceProductTypeId) && supplier.shipmentAddresses.filter(address => address.isActive).length === 1
   return <>
-    <Card className="gap-0 overflow-hidden py-0"><CardHeader className="border-b bg-muted/50 p-4">
+    <Card className="gap-0 overflow-hidden py-0"><CardHeader >
       <CardTitle>Shipment addresses</CardTitle><CardDescription>Name each vendor destination, such as a receiving laboratory. Prepared shipments retain a copy of the selected address.</CardDescription>
       <CardAction><Button id={`supplier-address-new-${supplier.id}`} disabled={!supplier.isActive} onClick={() => setEditor('new')}><Plus data-icon="inline-start" />New address</Button></CardAction>
       <label className="col-span-full mt-3 flex cursor-pointer items-center gap-2 text-sm"><NativeCheckbox id={`supplier-address-inactive-${supplier.id}`}  checked={showInactive} onChange={event => setShowInactive(event.target.checked)} />Show inactive addresses</label>

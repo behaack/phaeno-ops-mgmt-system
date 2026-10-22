@@ -1,3 +1,7 @@
+import { invitationDeliveryTones } from '#/features/organizations/access-status'
+import { DisplayDate } from '#/components/ui/display-value'
+import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
+import { accessTones } from '#/features/organizations/access-status'
 import { Field as PortalField } from '#/components/ui/field'
 import { NativeSelect } from '#/components/ui/native-select'
 import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
@@ -205,15 +209,9 @@ export function OrganizationUserManagementPanel({
                   </p>
                 </div>
                 <div className="flex shrink-0 flex-wrap items-center gap-2">
-                  <Badge
-                    variant={
-                      membership.isActive && user.status === 'Active'
-                        ? "secondary"
-                        : "outline"
-                    }
-                  >
+                  <DomainStatusBadge status={membership.isActive ? user.status : 'Inactive'} tones={accessTones}>
                     {membership.isActive ? user.status : __customerText('m_e695f3075af2')}
-                  </Badge>
+                  </DomainStatusBadge>
                   {membership.isActive ? (
                     <DropdownMenu modal={false}>
                       <DropdownMenuTrigger asChild>
@@ -268,16 +266,16 @@ export function OrganizationUserManagementPanel({
                   <CustomerText message="m_f06539e5b1d0" />{invitation.isExpired ? "Expired" : invitation.status}
                   {' · '}<CustomerText message="m_620b685b667f" />{invitation.deliveryStatus ?? 'Not queued'}
                   {' · '}<CustomerText message="m_58dae2b09750" />{invitation.sendCount}
-                  {' · '}<CustomerText message="m_d970e4fd1080" />{new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' }).format(new Date(invitation.expiresAt))}
+                  {' · '}<CustomerText message="m_d970e4fd1080" />{<DisplayDate value={invitation.expiresAt} />}
                 </p>
                 {invitation.lastSendError ? <p className="m-0 mt-1 text-sm text-destructive" role="status">{invitation.lastSendError}</p> : null}
                 {invitation.hasHardBounce ? <p className="m-0 mt-1 text-sm text-destructive"><CustomerText message="m_014c9b8659a2" /></p> : null}
               </div>
               <div className="flex shrink-0 flex-wrap items-center gap-2">
                 <Badge variant="outline"><CustomerText message="m_5cd314166bad" /></Badge>
-                <Badge variant={invitation.deliveryStatus === 'Delivered' || invitation.deliveryStatus === 'Accepted' ? "secondary" : "outline"}>
+                <DomainStatusBadge status={invitation.deliveryStatus ?? 'NotQueued'} tones={invitationDeliveryTones}>
                   <CustomerText message="m_969ccbd3cf63" />{invitation.deliveryStatus ?? 'Not queued'}
-                </Badge>
+                </DomainStatusBadge>
                 <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
                     <Button

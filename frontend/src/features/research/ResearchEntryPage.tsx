@@ -1,3 +1,6 @@
+import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
+import { researchTones } from './research-status'
+import { formatDisplayDate } from '#/lib/display-format'
 import { BackLink } from '#/components/ui/back-link'
 import { useState } from 'react'
 import { Link } from '@tanstack/react-router'
@@ -16,7 +19,7 @@ export function ResearchEntryPage({ experimentId, entryId }: { experimentId: str
   const author = (id: string | null) => detail?.authors.find(a => a.id === id)?.name ?? 'Team member'
   return <main className="page-wrap space-y-5 px-4 py-8"><BackLink asChild><Link to="/research/experiments/$experimentId" params={{ experimentId }} search={search}>Back to experiment</Link></BackLink>
     <ResearchFeedback error={query.error} /><ResearchLoading loading={query.isLoading} />{query.isError ? <Button variant="outline" onClick={() => void query.refetch()}>Retry entry</Button> : null}
-    {detail ? <><ResearchHeader title={detail.entry.title} description={`${detail.experiment.title} · ${detail.experiment.status} · Entry date: ${detail.entry.entryDate}`}>
+    {detail ? <><ResearchHeader title={detail.entry.title} status={<DomainStatusBadge status={detail.experiment.status} tones={researchTones} />} description={`${detail.experiment.title} · Entry date: ${formatDisplayDate(detail.entry.entryDate)}`}>
       <ActionMenu><DropdownMenuTrigger asChild><Button id={`research-entry-actions-${entryId}`} variant="outline">Actions</Button></DropdownMenuTrigger><DropdownMenuContent align="end">
         {detail.experiment.status === 'Active' ? <DropdownMenuItem asChild><Link to="/research/experiments/$experimentId/entries/$entryId/edit" params={{ experimentId, entryId }} search={search}>Edit entry</Link></DropdownMenuItem> : null}
         <DropdownMenuItem onSelect={() => setHistory(true)}>View history</DropdownMenuItem>

@@ -1,3 +1,6 @@
+import { formatDisplayDate } from '#/lib/display-format'
+import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
+import { accessTones } from '#/features/organizations/access-status'
 import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -263,11 +266,9 @@ export function PhaenoUserManagementPanel({
                 </p>
               </div>
               <div className="flex flex-nowrap items-center justify-self-end gap-2">
-                <Badge
-                  variant={user.status === 'Active' ? 'secondary' : 'outline'}
-                >
+                <DomainStatusBadge status={user.status} tones={accessTones}>
                   {user.status}
-                </Badge>
+                </DomainStatusBadge>
                 {(user.status === 'Active' &&
                   (canManageAccounts || canManageLabRoles)) ||
                 (canManageAccounts && user.status === 'Disabled') ? (
@@ -970,7 +971,5 @@ function deliveryBadgeVariant(invitation: Invitation) {
 }
 
 function formatInvitationDate(value: string) {
-  return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' }).format(
-    new Date(value),
-  )
+  return formatDisplayDate(value, { locale: 'en-US' })
 }

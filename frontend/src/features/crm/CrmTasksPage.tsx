@@ -1,3 +1,6 @@
+import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
+import { taskTones } from '#/features/crm/crm-status'
+import { RecordTableHeader } from '#/components/ui/record-list'
 import { formatDisplayTimestamp } from '#/lib/display-format'
 import { Field as PortalField } from '#/components/ui/field'
 import { NativeSelect } from '#/components/ui/native-select'
@@ -132,7 +135,7 @@ export function CrmTasksPage() {
           />
           <div className="overflow-x-auto rounded-lg border">
             <table className="w-full text-left text-sm">
-              <thead className="bg-muted/50 text-xs text-muted-foreground">
+              <RecordTableHeader className="text-xs text-muted-foreground">
                 <tr>
                   <th className="p-3">Task</th>
                   <th className="p-3">Related record</th>
@@ -144,7 +147,7 @@ export function CrmTasksPage() {
                     <span className="sr-only">Actions</span>
                   </th>
                 </tr>
-              </thead>
+              </RecordTableHeader>
               <tbody className="divide-y">
                 {(query.data?.items ?? []).map((task) => (
                   <tr key={task.id}>
@@ -165,13 +168,9 @@ export function CrmTasksPage() {
                     </td>
                     <td className="p-3">{task.priority}</td>
                     <td className="p-3">
-                      <Badge
-                        variant={
-                          task.status === "Blocked" ? "destructive" : "outline"
-                        }
-                      >
+                      <DomainStatusBadge status={task.status} tones={taskTones}>
                         {spaced(task.status)}
-                      </Badge>
+                      </DomainStatusBadge>
                     </td>
                     <td className="p-3">
                       <CrmTaskActions task={task} actions={taskActions} />
