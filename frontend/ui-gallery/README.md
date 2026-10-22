@@ -118,6 +118,9 @@ For an intentional visual change, run the visual suite on Windows with explicit
 have snapshot updates disabled. Never refresh images just to silence a failure.
 The manifest pins Playwright and font versions; changing either requires review.
 This page set is representative rather than a screenshot of every real route.
+The per-pixel color threshold is 0.15 (stricter than Playwright's 0.2 default),
+with at most 80 differing pixels. This tolerates small Windows workstation/server
+glyph-edge smoothing differences without accepting layout or content changes.
 
 When changing a shared pattern, update its gallery examples, relevant assertions,
 the [UI/UX guide](../../docs/ui-ux-principles.md) and

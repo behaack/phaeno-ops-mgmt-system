@@ -85,3 +85,16 @@ Gallery images and feature fixtures are representative checks, not every
 authenticated journey, full assistive-technology/WCAG certification, scientific/
 physical/provider acceptance or commercial activation. Remote CI and hosted
 acceptance must be recorded separately from the completed local evidence.
+
+## Initial CI renderer correction
+
+Source `45136e60` was pushed and staged without assigning the canonical domain.
+The first remote Windows image job passed sixteen frames and rejected eight
+light-theme list/detail frames at both widths. Visual inspection and the actual
+Playwright comparator establish glyph-edge color differences: 749–1,863 pixels
+at threshold 0.1, only 6–30 at 0.15, and zero at Playwright's default 0.2. Geometry
+and content match. Use the stricter-than-default 0.15 color threshold and retain
+the 80-pixel budget, reviewed PNGs and no-update gate. No baseline images are
+regenerated. Verify a deliberate one-pixel layout shift still fails, rerun local
+and exact-source remote comparisons, and release the corrective commit only
+after both CI jobs pass. The first staged candidate remains unpromoted.
