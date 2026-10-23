@@ -1,0 +1,56 @@
+{
+  "recorded_at_utc": "2026-10-23T16:32:18.196148+00:00",
+  "owner_authorization": "Review, commit and push DPS source and planning handoff; no deployment or real pilot.",
+  "review": "No blocking findings for source publication; all verified canonical source bytes and preserved evidence hashes match commits.",
+  "dps_repository": "phaenobiotech/pipeline",
+  "dps_repository_visibility": "private",
+  "dps_review_branch": "codex/real-assembly-sequences",
+  "dps_source_commit": "0aecd977f1f516fece22284a10f8b08f81939ab8",
+  "dps_complete_evidence_head": "45d75837e8875bbd2df1fcb4ad649beb7a13f40a",
+  "dps_source_files_verified": 35,
+  "dps_preserved_artifact_files_verified": 14,
+  "dps_push_status": "blocked_repository_write_permission",
+  "github_push_error": 403,
+  "configured_github_account": "behaack",
+  "github_reported_permissions": {
+    "pull": true,
+    "push": false,
+    "admin": false
+  },
+  "dps_checked_remote_main": "c68e584f29a0e8faa2a9a6537075d356de1929fc",
+  "private_evidence_path": "docs/engineering/real-assembly-20261023",
+  "public_portal_scope": "Planning handoff, living plans and publication index/status only; new native source and detailed evidence remain private.",
+  "original_package_preserved_sha256": {
+    "real-assembly-engineering.patch": "31420bba1f321f4636985208c3fb5e835bfc9bab60e25e30586bf3e54cb5db2f",
+    "source-receipt.json": "bf3ae2fc08bb13b5969c3203c46d73076d5dedc6e1c29e813feb0d65fddd4be0",
+    "verification.json": "eacae44821f1eb566487fc207561f7346d307f6e533b0cea27d6ccc36e442650"
+  },
+  "combined_source_patch_sha256": "81e029134dd58acfc14f98abbb29634baafa55baf8703ae884410db5701bd2d0",
+  "preserved_completion_source_receipt_sha256": "c2b7522d4704a377d42cf08defb19a37a3c6498963118859f0ed34f641ea04cb",
+  "preserved_completion_build_receipt_sha256": "a7614f01a2c130c1cd0aa39b21278c63ac310c5b1d8b0b70fe46663694eb3cad",
+  "preserved_completion_verification_sha256": "34da2e5716ec58cbabf561a7b5988f157d123ba06881e4223891885ca26935f3",
+  "retained_focused_tests": {
+    "linux_passed": 77,
+    "linux_failed": 0,
+    "linux_skipped": 0,
+    "windows_passed": 61,
+    "windows_failed": 0,
+    "windows_linux_only_skips": 16
+  },
+  "focused_tests_repeated_for_identical_source_publication": false,
+  "poms_dps_contract": "poms-dps/1.0",
+  "scientific_recipe_enabled": false,
+  "dps_merged": false,
+  "dps_deployed": false,
+  "portal_deployed": false,
+  "hosted_worker_started": false,
+  "real_pilot_run": false,
+  "original_provider_receipts_and_execution_history_modified": false,
+  "pending": [
+    "DPS repository write access and push of existing branch",
+    "Merge/release review if requested",
+    "Pinned ARM64/server qualification",
+    "Dataset/specimen/run/reference/settings/outputs/QC/reviewer approval",
+    "Separately authorized preserving deployment/integration and real pilot"
+  ]
+}

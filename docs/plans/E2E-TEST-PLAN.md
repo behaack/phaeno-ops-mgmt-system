@@ -1,5 +1,9 @@
 # Playwright E2E Test Plan
 
+## Local DPS native connection — October 23, 2026
+
+The [native proof](DPS-LOCAL-ASSEMBLY-ENGINEERING-HANDOFF-20261023.md) uses actual Cluster/Inchworm and Portal manifest validation with synthetic reads and isolated storage transport. It is not hosted browser/storage/scanner or scientific pilot acceptance. No E2E/browser source changed or suite was rerun. RA-09/10/11 retain separately authorized hosted UI, exactly-one-pilot/scientific review and original receipt/history preservation checks; the held worker was not started for this local task.
+
 ## Real assembly engineering — October 22, 2026
 
 RA-09–RA-11 in the [implementation plan](REAL-ASSEMBLY-HOSTED-TEST-IMPLEMENTATION-PLAN.md#verification-matrix) still require the signed-in real-input/recipe/admission/QC journey, one separately authorized scientific pilot, independent expected-result review and exact earlier receipt/history comparison. Local DPS process/storage fixtures and a disposable PostgreSQL admission journey are recorded in the [engineering handoff](../operations/real-assembly-engineering-20261022.md). No new browser test, hosted Run, service activation or real pilot occurs in this engineering scope. Existing quiet-refresh and Actions controls are untouched. Preserve the established Simulated specimen and all completed/reconciled attempts as diagnostic evidence; do not relabel them as real scientific qualification.

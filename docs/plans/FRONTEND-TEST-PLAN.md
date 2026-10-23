@@ -1,5 +1,9 @@
 # Frontend Test Plan
 
+## Local DPS native connection — October 23, 2026
+
+The [DPS follow-up](DPS-LOCAL-ASSEMBLY-ENGINEERING-HANDOFF-20261023.md) changes no Portal frontend/API, routes, controls, availability configuration or polling behavior. No frontend test source changed or suite was rerun. Existing quiet-refresh and simulation/scientific separation expectations remain. Hosted scientific selection/admission/QC UI acceptance stays in RA-09 behind scientific/deployment gates.
+
 ## Real assembly engineering — October 22, 2026
 
 RA-09 in the [implementation plan](REAL-ASSEMBLY-HOSTED-TEST-IMPLEMENTATION-PLAN.md#verification-matrix) retains approved-recipe availability, unavailable-provider feedback, simulation separation, scientific admission/QC presentation, quiet refresh and keyboard/focus/Actions acceptance. This engineering change touches no controls, polling or routes. Phaeno sequencing help now explains that admission/scanning recovery preserves the completed execution and receipts. Regenerate the paired help corpus and run focused documentation checks; results are in the [handoff](../operations/real-assembly-engineering-20261022.md). No new UI-specific test is needed for the backend size guard. Actual hosted scientific selection/admission remains held with the pilot.

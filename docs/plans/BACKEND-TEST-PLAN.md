@@ -1,5 +1,11 @@
 # Backend Test Plan
 
+## Native DPS assembled-sequences connection — October 23, 2026
+
+The [local handoff](DPS-LOCAL-ASSEMBLY-ENGINEERING-HANDOFF-20261023.md) adds nine `PseqAssemblyTests` cases in the separate DPS source. They cover every group/part/mate, gzip/plain derived bytes, changed request/input holds, missing/unknown/invalid settings, disk/expansion limits, actual Cluster→Inchworm→publication/recovery, offline candidate CLI without worker/ledger, and changed scope/reference/extra-input rejection. The native journey produces two SMIDs/two contigs from eight synthetic FASTQs, validates its manifest through the actual Portal validator and recovers final verification without another native invocation or upload.
+
+The focused simulation/lifecycle/timestamp/command/readiness/execution/native selection passes **77/77 on local Linux x64**, zero skips; Windows passes **61**, with **16 Linux-only skips** covered on Linux. Native release build and clean patch/source-hash checks pass. Raw receipts are in the [separate package](../../integrations/dps/local-assembly-20261023/README.md). No Portal backend/model/migration source changed; prior Portal admission proof was not rerun. ARM64 execution, real storage/scanner, hosted supervision/preservation and scientific acceptance remain held gates.
+
 ## Real assembly engineering — October 22, 2026
 
 The [real-assembly plan](REAL-ASSEMBLY-HOSTED-TEST-IMPLEMENTATION-PLAN.md#verification-matrix) owns RA-01–RA-08/11. `DpsAdmissionBudgetTests` adds seven effective scanner/output/set/parameter-budget cases, including a later oversized file rejecting the whole set. `DpsScientificAdmissionRetriesAfterScanFailureWithoutChangingExecutionOrStartingAgain` uses its own loopback PostgreSQL database migrated from empty: a second-file scan failure rolls back the first file, recovery registers exactly one linked analysis, repeat admission is a no-op, and original Succeeded facts, receipt and Run command compare unchanged. It exercises actual admission/verification/lineage services with synthetic pinned S3 transport and scanner verdicts; it is not a real ClamAV/S3 qualification. The focused contract/budget selection and original reconciliation-preservation regression pass; exact results are in the [engineering handoff](../operations/real-assembly-engineering-20261022.md).
