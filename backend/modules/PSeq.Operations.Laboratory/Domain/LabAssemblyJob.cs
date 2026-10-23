@@ -141,6 +141,6 @@ public sealed class LabAssemblyEvent
     public Guid? ActorUserId { get; private set; }
     public string EvidenceJson { get; private set; } = null!;
     private LabAssemblyEvent() { }
-    public LabAssemblyEvent(Guid jobId, string kind, DateTime recordedAtUtc, Guid? actorId, string evidenceJson)
-    { LabAssemblyJobId = jobId; Kind = kind; RecordedAtUtc = recordedAtUtc; ActorUserId = actorId; EvidenceJson = evidenceJson; }
+    public LabAssemblyEvent(Guid jobId, string kind, DateTime recordedAtUtc, Guid? actorId, string evidenceJson, Guid? id = null)
+    { Id = id ?? Guid.NewGuid(); LabAssemblyJobId = jobId; Kind = kind; RecordedAtUtc = recordedAtUtc; ActorUserId = actorId; EvidenceJson = evidenceJson; }
 }

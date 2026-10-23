@@ -19,7 +19,8 @@ import { BillingConfigurationCard } from '#/features/orders/BillingConfiguration
 import { CommercialOrderDraftPage } from '#/features/orders/CommercialOrderDraftPage'
 import { SampleShippingConfigurationPanel } from '#/features/orders/configuration/SampleShippingConfigurationPanel'
 import { ProtocolVersionBuilderPage } from '#/features/lab-operations/ProtocolVersionBuilderPage'
-import { DataAssemblyWorkspace } from '#/features/lab-operations/AssemblyJobs'
+import { AssemblyJobPage, DataAssemblyWorkspace } from '#/features/lab-operations/AssemblyJobs'
+import { assemblyReconciliationDetail } from './assembly-reconciliation-data'
 import { SourceSampleWorkspace } from '#/features/data-provisioning/SourceSampleWorkspace'
 import { DataLibraryPage } from '#/features/data-library/DataLibraryPage'
 import { company, request, person, billing, installFeatureData } from './feature-data'
@@ -39,7 +40,7 @@ const partner = scene === 'partner-assembly'
 const prospect = scene === 'trial'
 const allowed = state !== 'permission'
 const context: PhaenoSessionContextValue = {
-  authConfigured: true, authProvider: 'clerk', clerkLoaded: true, signedIn: true, isLoading: false, error: null,
+  authConfigured: true, authProvider: scene === 'assembly-reconciliation' ? 'mock' : 'clerk', clerkLoaded: true, signedIn: true, isLoading: false, error: null,
   selectedOrganizationId: customer || prospect || partner ? 'demo-customer' : 'demo-phaeno', selectedDepartmentId: 'demo-department', setSelectedOrganizationId: () => {},
   session: {
     state: 'ready', user: { id: 'demo-author', email: 'alex@example.invalid', firstName: 'Alex', lastName: 'Example', status: 'Active' }, isPlatformAdmin: !customer && !prospect && !partner,
@@ -63,6 +64,7 @@ function FeatureScene() {
   if (scene === 'shipping') return <SampleShippingPage />
   if (scene === 'qc') return <AssemblyQcPage jobId="demo-job" />
   if (['order-scope','order-blocked','order-submit','destination','kit-specification','protocol-preview','protocol-approval','partner-assembly','customer-results'].includes(scene)) return <GuideWorkflowScene scene={scene} />
+  if (scene === 'assembly-reconciliation') return <AssemblyJobPage jobId="demo-assembly-review" />
   if (scene === 'assembly-inputs' || scene === 'assembly-jobs') return <main className="page-wrap space-y-6 px-4 py-8"><PageHeader title="Lab operations" description="Sequencing inputs and assembly attempts." /><DataAssemblyWorkspace apiEnabled /></main>
   if (scene === 'protocol-editor') return <ProtocolVersionBuilderPage protocolId="demo-protocol" />
   if (scene === 'customer-order') return <CommercialOrderDraftPage />
@@ -87,4 +89,6 @@ const routes = ['/', '/crm/companies/$companyId', '/lab-operations', '/data-prov
 const entry = scene === 'company' || scene === '01-company' ? '/crm/companies/demo-company?section=people' : scene.startsWith('assembly') ? `/lab-operations?assemblyTab=${scene === 'assembly-jobs' ? 'jobs' : 'inputs'}` : '/'
 const router = createRouter({ routeTree: root.addChildren(routes), history: createMemoryHistory({ initialEntries: [entry] }) })
 document.documentElement.classList.toggle('dark', settings.get('theme') === 'dark' || matchMedia('(prefers-color-scheme: dark)').matches)
-createRoot(document.getElementById('root')!).render(<CustomerLocaleContext.Provider value={{ customer, locale: 'en-US', pseudo: settings.get('pseudo') === 'true' }}><PhaenoSessionContext.Provider value={context}><QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}><RouterProvider router={router} /></QueryClientProvider></PhaenoSessionContext.Provider></CustomerLocaleContext.Provider>)
+const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
+if (scene === 'assembly-reconciliation') queryClient.setQueryData(['assembly-job', 'demo-assembly-review'], assemblyReconciliationDetail)
+createRoot(document.getElementById('root')!).render(<CustomerLocaleContext.Provider value={{ customer, locale: 'en-US', pseudo: settings.get('pseudo') === 'true' }}><PhaenoSessionContext.Provider value={context}><QueryClientProvider client={queryClient}><RouterProvider router={router} /></QueryClientProvider></PhaenoSessionContext.Provider></CustomerLocaleContext.Provider>)

@@ -1,5 +1,11 @@
 # Sequencing data assembly and job traceability
 
+## Operations reconciliation and quiet refresh — October 22, 2026
+
+The Owner authorized a review workflow for retained assembly conflicts, preserving all receipts and original execution history, plus quiet background status refresh. The bounded [Operations reconciliation plan](ASSEMBLY-OPERATIONS-RECONCILIATION-PLAN.md) records eligibility, role checks, exact-evidence coverage, no-resumption verification, explicit linked repeat admission and validation. Implementation uses the existing immutable event journal; there is no schema change or migration. Hosted release and review of the retained `SIMULATED-ASM-20261020` attempt remain separate from local implementation.
+
+Active work retains a five-second polling fallback; ended attempts needing attention use thirty seconds. Notifications still invalidate current views promptly. Background requests preserve loaded records and do not insert a loading row. Existing input sets open their latest assembly attempt so repeat requests use its explicit reason/linkage flow.
+
 ## Assembly progress bars — October 9, 2026
 
 The Owner requested the upload-style progress presentation for data assembly.

@@ -34,7 +34,8 @@ import { ProgressBar } from '#/components/ui/progress-bar'
 import { usePhaenoSession } from '#/features/auth/session-context'
 import { useAssemblyNotifications } from './use-assembly-notifications'
 import { AssemblyStartDialog } from './AssemblyStartDialog'
-import { assemblyDuration, assemblyMatches, assemblyStateLabel, currentAssemblyPercentage } from './assembly-jobs'
+import { AssemblyReconciliationDialog, AssemblyReconciliationPanel } from './AssemblyReconciliation'
+import { assemblyDuration, assemblyMatches, assemblyRefreshInterval, assemblyStateLabel, currentAssemblyPercentage } from './assembly-jobs'
 
 const date = (value: string | null) => formatDisplayTimestamp(value, {seconds:true,empty:'Not reported'})
 const linkStyle = 'text-primary underline underline-offset-4'
@@ -52,6 +53,7 @@ export function DataAssemblyWorkspace({ apiEnabled }: { apiEnabled: boolean }) {
 }
 
 function ReadyAssemblyInputs({ enabled }: { enabled: boolean }) {
+  const navigate = useNavigate()
   const inputs = useQuery({ queryKey: ['assembly-inputs'], queryFn: () => getAssemblyInputs(), enabled })
   const queue = useQuery({ queryKey: ['assembly-jobs'], queryFn: () => getAssemblyJobs(), enabled })
   const [selected, setSelected] = useState<{ work: string; specimen: string } | null>(null)
@@ -63,11 +65,12 @@ function ReadyAssemblyInputs({ enabled }: { enabled: boolean }) {
     {inputs.error ? <ErrorState title="Sequencing inputs could not be loaded" onRetry={() => void inputs.refetch()} retryLabel="Retry inputs" busy={inputs.isFetching}>{getLabOperationsError(inputs.error, 'Your current selection is retained. Try again.')}</ErrorState> : null}    {queue.error ? <ErrorState title="Processing availability could not be checked" onRetry={() => void queue.refetch()} retryLabel="Retry processing availability" busy={queue.isFetching}>{getLabOperationsError(queue.error, 'Retry the availability check before starting work.')}</ErrorState> : null}
     {!inputs.isPending && !inputs.error && !groups.length ? <EmptyState kind="setup" title="No verified input sets">Record vendor results with complete verified FASTQ files to prepare assembly inputs.</EmptyState> : null}
     <RecordList aria-label="Sequencing input sets">{groups.map(([key, first]) => {
+      const latest = queue.data?.jobs.find(job => job.labSpecimenId === first.labSpecimenId && job.sequencingRunNumber === first.sequencingRunNumber)
       const active = queue.data?.jobs.some(j => !j.isTerminal && j.labSpecimenId === first.labSpecimenId && j.sequencingRunNumber === first.sequencingRunNumber)
       const reason = !queue.data?.availability.available ? queue.data?.availability.message || (queue.error ? 'Processing availability is unavailable. Retry the availability check.' : 'Processing availability is being checked.') : active ? 'An assembly is already active for this specimen and run.' : undefined
       return <RecordListItem key={key} title={<RecordLink asChild><Link to="/lab-operations/$workOrderId/specimens/$specimenId" params={{ workOrderId: first.labWorkOrderId, specimenId: first.labSpecimenId }} search={p => ({ ...p, section: 'jobs' })}>{first.sampleName} · Run {first.sequencingRunNumber}</Link></RecordLink>}
         metadata={<>{inputs.data?.filter(i => i.labSpecimenId === first.labSpecimenId && i.sequencingRunNumber === first.sequencingRunNumber && i.labSpecimenAttemptId === first.labSpecimenAttemptId).length} input files · {first.providerRunReference}</>}
-        actions={<Button disabled={!queue.data?.availability.available || Boolean(active)} aria-describedby={reason ? `assembly-input-${key}-reason` : undefined} onClick={() => setSelected({ work: first.labWorkOrderId, specimen: first.labSpecimenId })}>Start assembly</Button>}>
+        actions={latest ? <Button onClick={() => void navigate({ to: '/lab-operations/assembly-jobs/$jobId', params: { jobId: latest.id }, search: p => ({ ...p, section: 'assembly', assemblyTab: 'jobs' }) })}>View assembly</Button> : <Button disabled={!queue.data?.availability.available || Boolean(active)} aria-describedby={reason ? `assembly-input-${key}-reason` : undefined} onClick={() => setSelected({ work: first.labWorkOrderId, specimen: first.labSpecimenId })}>Start assembly</Button>}>
         {reason ? <p id={`assembly-input-${key}-reason`} className="text-xs text-muted-foreground">{reason}</p> : null}
       </RecordListItem>
     })}</RecordList>
@@ -94,14 +97,13 @@ export function AssemblyJobsList({ enabled, workOrderId, specimenId, search = ''
   const settled = useDebouncedSearch(search)
   const global = !workOrderId && !specimenId
   const query = useQuery({ queryKey: ['assembly-jobs', workOrderId, specimenId, global ? settled : '', global ? list.page : 1], queryFn: () => global ? getAssemblyJobsPage(settled,list.page) : getAssemblyJobs(workOrderId, specimenId), enabled: enabled && (!global || settled === search),
-    refetchInterval: q => q.state.data?.jobs.some(j => !j.isTerminal || j.attentionReason) ? 5000 : false })
-  const data = query.isError ? undefined : query.data
+    refetchInterval: q => assemblyRefreshInterval(q.state.data?.jobs) })
+  const data = query.data
   useAssemblyNotifications(data?.jobs.map(job => job.id) ?? [], enabled)
   return <Card><CardHeader><div className="flex flex-wrap items-center justify-between gap-3"><CardTitle>Sequencing assembly</CardTitle>
-    {workOrderId && specimenId && data?.canOperate ? <Button onClick={() => setCreating(true)} disabled={!data.availability.available}>Start assembly</Button> : null}</div></CardHeader><CardContent className="space-y-4">
+    {workOrderId && specimenId && data?.canOperate && !data.jobs.length ? <Button onClick={() => setCreating(true)} disabled={!data.availability.available}>Start assembly</Button> : null}</div></CardHeader><CardContent className="space-y-4">
     {!enabled ? <p className="text-sm text-muted-foreground">Connect with an authorized Phaeno session to view assembly jobs.</p> : null}
     {query.isPending && enabled ? <LoadingState label="Loading assembly jobs…" /> : null}
-    {query.isFetching && !query.isPending ? <LoadingState label="Refreshing assembly jobs…" refreshing /> : null}
     {query.error ? <ErrorState title="Assembly jobs could not be refreshed" onRetry={() => void query.refetch()} retryLabel="Refresh" busy={query.isFetching}>{getLabOperationsError(query.error, 'Refresh to recover the current job status.')}</ErrorState> : null}
     {data && !data.availability.available ? <Alert><AlertTitle>Assembly setup required</AlertTitle><AlertDescription>{data.availability.message}</AlertDescription></Alert> : null}
     {onSearch ? <p className="text-sm text-muted-foreground">Track requested PSeq Service assembly attempts here. Start a new assembly from <Link to="/lab-operations" search={p => ({ ...p, section: 'assembly', assemblyTab: 'inputs' })} className={linkStyle}>Sequencing inputs</Link>.</p> : null}
@@ -125,17 +127,20 @@ export function AssemblyJobPage({ jobId }: { jobId: string }) {
   const { session, authProvider } = usePhaenoSession()
   const allowed = Boolean(session?.capabilities.canManageLabOperations)
   const navigate = useNavigate()
-  const [action, setAction] = useState<'retry' | 'cancel' | 'analysis' | null>(null)
+  const [action, setAction] = useState<'retry' | 'cancel' | 'analysis' | 'reconcile' | null>(null)
   const query = useQuery({ queryKey: ['assembly-job', jobId], queryFn: () => getAssemblyJob(jobId), enabled: allowed && authProvider !== 'mock',
-    refetchInterval: q => q.state.data && (!q.state.data.job.isTerminal || q.state.data.job.attentionReason) ? 5000 : false })
+    refetchInterval: q => assemblyRefreshInterval(q.state.data ? [q.state.data.job] : undefined) })
   const data = query.data
   const job = data?.job
   if (!allowed) return <main className="page-wrap px-4 py-8"><PageTitle>Laboratory access required</PageTitle></main>
-  const actions: { label: string; action: 'retry' | 'cancel' | 'analysis' | 'qc' }[] = data && job && data.canOperate ? [
+  const actions: { label: string; action: 'retry' | 'cancel' | 'analysis' | 'qc' | 'reconcile' }[] = data && job ? [
+    ...(data.canReconcile && data.reconciliation.eligible ? [{ label: 'Reconcile for repeat', action: 'reconcile' as const }] : []),
+    ...(data.canOperate ? [
     ...(job.isTerminal && !job.attentionReason && data.availability.available ? [{ label: 'Repeat assembly', action: 'retry' as const }] : []),
     ...(!job.isTerminal && !job.cancellationRequested && (job.state === 'Queued' || data.availability.supportsCancellation) ? [{ label: 'Request cancellation', action: 'cancel' as const }] : []),
     ...(job.state === 'Succeeded' && !job.simulated && !job.attentionReason && !job.labAnalysisRunId && data.analyses.length ? [{ label: 'Link completed analysis', action: 'analysis' as const }] : []),
     ...(job.state === 'Succeeded' && !job.simulated && job.labAnalysisRunId && !job.attentionReason ? [{ label: 'Review QC', action: 'qc' as const }] : []),
+    ] : []),
   ] : []
   const openAction = (action: typeof actions[number]['action']) => action === 'qc' ? void navigate({ to: '/lab-operations/assembly-jobs/$jobId/qc', params: { jobId }, search: p => ({ ...p, section: 'assembly', assemblyTab: 'jobs' }) }) : setAction(action)
   return <main className="page-wrap space-y-5 px-4 py-8">
@@ -143,11 +148,12 @@ export function AssemblyJobPage({ jobId }: { jobId: string }) {
     {query.error ? <Alert variant="destructive"><AlertTitle>Assembly could not be refreshed</AlertTitle><AlertDescription>{getLabOperationsError(query.error, 'Refresh to recover the saved job.')}<Button variant="outline" onClick={() => void query.refetch()}>Refresh</Button></AlertDescription></Alert> : null}
     {!data ? <p role="status">{authProvider === 'mock' ? 'Use a connected Phaeno session to view this job.' : 'Loading assembly job…'}</p> : null}
     {data && job ? <>
-      <PageHeader title={<>{job.sampleName} · Run {job.sequencingRunNumber}</>}
+      <PageHeader title={<span id="assembly-attempt-heading" tabIndex={-1}>{job.sampleName} · Run {job.sequencingRunNumber}</span>}
         description={<>Assembly attempt · {data.recipe.name} {data.recipe.version}</>}
-        actions={actions.length === 1 ? <Button onClick={() => openAction(actions[0].action)}>{actions[0].label}</Button> : actions.length > 1 ? <ActionMenu><DropdownMenuTrigger asChild><Button variant="outline">Actions</Button></DropdownMenuTrigger><DropdownMenuContent align="end">{actions.map(item => <DropdownMenuItem key={item.action} onSelect={() => openAction(item.action)}>{item.label}</DropdownMenuItem>)}</DropdownMenuContent></ActionMenu> : null} />
+        actions={actions.length === 1 ? <Button id="assembly-context-actions" onClick={() => openAction(actions[0].action)}>{actions[0].label}</Button> : actions.length > 1 ? <ActionMenu><DropdownMenuTrigger asChild><Button id="assembly-context-actions" variant="outline">Actions</Button></DropdownMenuTrigger><DropdownMenuContent align="end">{actions.map(item => <DropdownMenuItem key={item.action} onSelect={() => openAction(item.action)}>{item.label}</DropdownMenuItem>)}</DropdownMenuContent></ActionMenu> : null} />
       {job.simulated ? <Alert><AlertTitle>Simulated assembly</AlertTitle><AlertDescription>The server processes this sample’s verified inputs with a mock pipeline. Outputs are diagnostic placeholders and cannot enter scientific QC or Customer release.</AlertDescription></Alert> : null}
       {job.attentionReason ? <Alert><AlertTitle>Attention required</AlertTitle><AlertDescription>{job.attentionReason}</AlertDescription></Alert> : null}
+      <AssemblyReconciliationPanel data={data} />
       {!data.availability.available ? <Alert><AlertDescription>{data.availability.message}</AlertDescription></Alert> : null}
       <Card><CardHeader><CardTitle>Execution</CardTitle></CardHeader><CardContent className="space-y-4"><AssemblyJobProgress job={job} />
         <dl className="grid gap-4 text-sm sm:grid-cols-2"><div><dt className="text-muted-foreground">Actual start</dt><dd>{date(job.startedAtUtc)}</dd></div><div><dt className="text-muted-foreground">Actual stop</dt><dd>{date(job.stoppedAtUtc)}</dd></div><div><dt className="text-muted-foreground">Elapsed duration</dt><dd>{assemblyDuration(job.durationSeconds)}</dd></div><div><dt className="text-muted-foreground">Final disposition</dt><dd>{job.isTerminal ? `${assemblyStateLabel(job.state)} · ${date(job.dispositionAtUtc)}` : 'Not yet confirmed'}</dd></div></dl>
@@ -173,6 +179,7 @@ export function AssemblyJobPage({ jobId }: { jobId: string }) {
       </CardContent></Card>
       <Card><CardHeader><CardTitle>Job history</CardTitle></CardHeader><CardContent><ol className="space-y-3 text-sm">{data.events.map(event => <li key={event.id} className="border-b pb-2"><span className="font-medium">{assemblyStateLabel(event.kind)}</span><p className="text-xs text-muted-foreground">Recorded {date(event.recordedAtUtc)}</p></li>)}</ol></CardContent></Card>
       {action === 'retry' ? <AssemblyStartDialog availability={data.availability} previous={job} workOrderId={job.labWorkOrderId} specimenId={job.labSpecimenId} onClose={() => setAction(null)} /> : null}
+      {action === 'reconcile' ? <AssemblyReconciliationDialog data={data} onClose={() => setAction(null)} /> : null}
       {action === 'cancel' || action === 'analysis' ? <AssemblyActionDialog data={data} action={action} onClose={() => setAction(null)} /> : null}
     </> : null}
   </main>

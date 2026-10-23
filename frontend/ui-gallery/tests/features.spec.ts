@@ -12,7 +12,7 @@ for(const [scene,url,title] of featurePages)test(`actual ${scene} page retains s
   await page.goto(`${url}&theme=${info.project.use.colorScheme}&dark=${info.project.use.colorScheme==='dark'}`)
   await expect(page.getByText(title,{exact:true}).first()).toBeVisible()
   if(scene==='source')await expect(page.getByLabel(/Internal label/)).toHaveValue('DEMO — source sample')
-  if(scene==='assembly-inputs')await expect(page.getByRole('button',{name:'Start assembly'})).toBeVisible()
+  if(scene==='assembly-inputs')await expect(page.getByRole('button',{name:'View assembly'})).toBeVisible()
   if(scene==='assembly-jobs')await expect(page.getByText('Simulation completed')).toBeVisible()
   if(scene==='company') {
     const header=page.locator('[data-slot=card-header]').first()

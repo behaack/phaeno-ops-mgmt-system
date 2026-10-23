@@ -1,5 +1,11 @@
 # Frontend Test Plan
 
+## Assembly Operations reconciliation and quiet polling — October 22, 2026
+
+Four focused files pass **20/20** cases: the real reconciliation dialog displays both retained receipts and exact timestamps; requires decision/evidence/stop confirmation; retains rejected input; blocks duplicate save/dismissal while pending; requires explicit review after evidence changes; and uses server-derived reconciliation access independently from ordinary operator access. Existing progress, simulated-result separation and API recovery checks remain covered. Assembly-list regression preserves the same loaded row during pending/failed background refresh without inserting a loading row. Interval checks retain five-second active polling, thirty-second ended attention polling and no interval for settled terminal work. Existing inputs open their latest attempt instead of offering an unlinked Start.
+
+Frontend lint (including UI drift), type checking and generated-help checks pass. The Phaeno sequencing guide and review date are updated. Browser acceptance and remaining hosted gates are recorded in [the verification record](../testing/runs/2026-10-22-assembly-operations-reconciliation.md).
+
 ## UI workflow coverage and quality gates — October 22, 2026
 
 Local implementation of the six follow-up priorities is recorded in [the owning plan](UI-WORKFLOW-COVERAGE-AND-GATES-PLAN.md). Source guard regressions cover titled panels, shared loading, heading ownership and scientific/print exclusions. Shared tests retain native headings/regions/refs/actions, loading announcements, permission guidance, retry handlers and pointer focus on a sole action. The full frontend suite passes 1,578 cases, with three pre-existing skips. Final focused verification covers the later spacing and shared-control refinements.

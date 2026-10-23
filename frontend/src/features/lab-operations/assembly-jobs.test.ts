@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { assemblyDuration, currentAssemblyPercentage } from './assembly-jobs'
+import { assemblyDuration, assemblyRefreshInterval, currentAssemblyPercentage } from './assembly-jobs'
 
 describe('assembly progress and execution times', () => {
+  it('checks active work frequently, ended attention less often and settled outcomes only on invalidation', () => {
+    expect(assemblyRefreshInterval(undefined)).toBe(false)
+    expect(assemblyRefreshInterval([])).toBe(false)
+    expect(assemblyRefreshInterval([{ isTerminal: true, attentionReason: null }])).toBe(false)
+    expect(assemblyRefreshInterval([{ isTerminal: true, attentionReason: 'Review required' }])).toBe(30000)
+    expect(assemblyRefreshInterval([{ isTerminal: false, attentionReason: null }, { isTerminal: true, attentionReason: 'Review required' }])).toBe(5000)
+  })
   const now = Date.parse('2026-09-22T12:00:00Z')
   const progress = { percentage: 43, receivedAtUtc: new Date(now).toISOString(), sequence: 4 }
   it('shows only fresh finite percentages for active jobs', () => {

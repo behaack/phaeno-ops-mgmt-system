@@ -1729,7 +1729,7 @@
       "title": "Libraries, batches, and sequencing",
       "summary": "Track library/tube lineage, verify FASTQ inputs, follow scientific or explicitly simulated assembly attempts, record QC and hand off approved Customer packages.",
       "order": 56,
-      "reviewedAt": "2026-10-14",
+      "reviewedAt": "2026-10-22",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1744,7 +1744,8 @@
         "vendor sequencing shipment tracking ETA",
         "batch success failure library exceptions",
         "batch ZIP FASTQ upload read pairs library mapping",
-        "assembly QC Pass Fail Hold Customer release"
+        "assembly QC Pass Fail Hold Customer release",
+        "assembly conflict Operations reconciliation safe repeat"
       ],
       "aliases": [
         "QC",

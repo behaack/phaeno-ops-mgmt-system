@@ -1,5 +1,11 @@
 # Playwright E2E Test Plan
 
+## Assembly Operations reconciliation — October 22, 2026
+
+The focused `playwright.assembly-reconciliation.config.ts` runs the actual attempt page and shared confirmation form with fictional isolated data. **Four Chromium cases pass** at desktop/light and 320 px phone/dark: failed/pending saves retain the entered review, initially focus Cancel, preserve the three modal regions, prevent pending Escape/duplicate action, invoke the dirty-discard guard and restore focus to the surviving trigger. The rejected-save form has no violations in the selected axe WCAG A/AA checks and neither viewport has horizontal dialog overflow. No requests escape to a live API/provider. This is component-browser acceptance, not hosted authenticated, full screen-reader, Firefox/WebKit, scientific or real reconciliation/repeat evidence. See [the verification record](../testing/runs/2026-10-22-assembly-operations-reconciliation.md).
+
+The two existing assembly pages also pass eight targeted behavior cases and eight strict Windows Chromium comparisons across desktop/phone and both themes. Four changed input-page references were deliberately reviewed for View assembly; the remaining assembly page references are unchanged. All 43 guide scenarios were recaptured and reviewed against the changed source fingerprint, retaining 42 byte-identical assets. Capture integrity, annotations, references, source freshness and the 94-frame coverage inventory pass. Normal checks and CI never accept new image references.
+
 The Firefox/WebKit CI job uses the official Playwright 1.59.1 Noble image pinned by digest, with a lockfile-package version assertion before tests. Browser binaries and OS libraries are preinstalled; required checks and behavior coverage remain unchanged. This avoids the Ubuntu mirror download timeout observed during the October 22 release. Validate the container through the full required job before release; Windows visual comparisons keep their existing renderer.
 
 ## UI workflow hosted-test acceptance — October 22, 2026

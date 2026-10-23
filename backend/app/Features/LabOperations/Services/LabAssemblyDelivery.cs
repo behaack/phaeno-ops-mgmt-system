@@ -70,6 +70,6 @@ public sealed class LabAssemblyDelivery(PSeqOperationsDbContext db, LabAssemblyS
         }
         return attention is not null && job.SetAttention(attention);
     }
-    public Task<bool> HasConflictAsync(Guid id, CancellationToken ct) => db.Set<LabAssemblyReceipt>()
-        .AnyAsync(r => r.LabAssemblyJobId == id && (r.Outcome == "Conflict" || r.ConflictSha256 != null), ct);
+    public Task<bool> HasConflictAsync(Guid id, CancellationToken ct) =>
+        LabAssemblyReconciliationService.HasUnresolvedConflictAsync(db, id, ct);
 }

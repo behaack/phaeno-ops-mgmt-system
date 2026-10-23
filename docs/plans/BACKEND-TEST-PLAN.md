@@ -1,5 +1,11 @@
 # Backend Test Plan
 
+## Assembly Operations reconciliation — October 22, 2026
+
+The [bounded reconciliation workflow](ASSEMBLY-OPERATIONS-RECONCILIATION-PLAN.md) adds six PostgreSQL cases covering immutable receipt/execution/history preservation; exact replay across receiver/service restart; concurrent identical review idempotency; stale evidence/version rejection; new events and repeated changed payload hashes reopening attention; independent no-resumption verification; active/successful/foreign-execution rejection; and assigned Supervisor/Operations authorization with operator denial. The actual repeat-history admission guard rejects before review and admits the reviewed predecessor afterward. Reconciliation sends no Start.
+
+The focused assembly/DPS selection passes **87/87, zero skipped**, against a disposable loopback PostgreSQL 18.3 cluster with all 29 current migrations. An initial broader name filter also selected an unrelated kit acceptance case that refused its separately required disposable-source settings; that case and its browser companion are outside this focused run. The corrected selection has no failures or skips. The solution builds with zero warnings/errors; EF reports no model changes. No hosted database, provider execution, live reconciliation, scientific QC or Customer release is exercised. See [the verification record](../testing/runs/2026-10-22-assembly-operations-reconciliation.md).
+
 ## Generated help and release-check gate — October 22, 2026
 
 The UI workflow consistency phase changes generated help content but no domain model, API, authentication or migration. The complete solution builds successfully with zero warnings/errors using isolated task output. The backend test suite was not rerun for this UI/generated-content change. Three focused Python release-gate tests cover exact workflow/source identity, newer failed/pending attempts superseding an older success, and required completed successful jobs (missing/skipped/cancelled fail closed). This is release validation, not production deployment or laboratory evidence. See [the owning plan](UI-WORKFLOW-COVERAGE-AND-GATES-PLAN.md).

@@ -1,6 +1,9 @@
 import type { AssemblyJob, AssemblyProgress } from '#/api/lab-assembly'
 
 export const assemblyStateLabel = (state: string) => state.replace(/([a-z])([A-Z])/g, '$1 $2')
+export function assemblyRefreshInterval(jobs: readonly Pick<AssemblyJob, 'isTerminal' | 'attentionReason'>[] | undefined) {
+  return jobs?.some(job => !job.isTerminal) ? 5000 : jobs?.some(job => job.attentionReason) ? 30000 : false
+}
 export function currentAssemblyPercentage(progress: AssemblyProgress | null, isTerminal: boolean, now = Date.now()) {
   if (isTerminal || !progress || !Number.isFinite(progress.percentage) || progress.percentage < 0 || progress.percentage > 100) return null
   const received = new Date(progress.receivedAtUtc).getTime()

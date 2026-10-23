@@ -25,6 +25,8 @@ export type AssemblyJob = {
 export type AssemblyInputChoice = { libraryKey?: string; fileName?: string | null; id: string; labWorkOrderId: string; labSpecimenId: string; sampleName: string | null; sequencingRunNumber: number; labSpecimenAttemptId: string; providerRunReference: string; sampleMappingReference: string; sizeBytes: number; sha256: string }
 export type AssemblyQueue = { availability: AssemblyAvailability; canOperate: boolean; jobs: AssemblyJob[] }
 export type AssemblyDetail = {
+  canReconcile: boolean
+  reconciliation: AssemblyReconciliationReview
   simulatedOutputs: { artifactId: string; role: string; fileName: string; sizeBytes: number }[]
   delivery: { kind: string; attemptCount: number; lastAttemptAtUtc: string | null; nextAttemptAtUtc: string | null;
     receivedAtUtc: string | null; confirmedAtUtc: string | null; escalatedAtUtc: string | null; suppressed: boolean }[]
@@ -34,6 +36,25 @@ export type AssemblyDetail = {
   analyses: { id: string; runReference: string; recordedAtUtc: string }[]
 }
 export type StartAssembly = { id: string; labSpecimenId: string; sequencingRunNumber: number; recipeKey: string; sequencingOutputIds: string[]; previousJobId?: string; reason?: string }
+export type AssemblyReceiptReview = {
+  id: string; eventId: string; sequence: number; outcome: string; payloadSha256: string; conflictSha256: string | null
+  occurredAtUtc: string; receivedAtUtc: string; state: string | null; providerJobId: string | null
+  startedAtUtc: string | null; stoppedAtUtc: string | null; dispositionAtUtc: string | null; reason: string | null
+}
+export type AssemblyReconciliationReview = {
+  hasUnresolvedConflict: boolean; eligible: boolean; ineligibleReason: string | null; evidenceFingerprint: string
+  receipts: AssemblyReceiptReview[]
+  additionalEvidence: { id: string; recordedAtUtc: string; eventId: string; payloadSha256: string; state: string | null;
+    startedAtUtc: string | null; stoppedAtUtc: string | null; reason: string | null }[]
+  decisions: { id: string; recordedAtUtc: string; actorUserId: string | null; decision: {
+    reason: string; verificationEvidence: string; confirmedStopped: boolean; evidenceFingerprint: string
+    savedExecution: { state: string; providerJobId: string | null; startedAtUtc: string | null; stoppedAtUtc: string | null;
+      dispositionAtUtc: string | null; dispositionReason: string | null }
+    providerObservation: { status: string; execution: { state: string } | null }; providerObservedAtUtc: string
+  } }[]
+}
+export type ReconcileAssembly = { id: string; version: number; evidenceFingerprint: string; reason: string;
+  verificationEvidence: string; confirmedStopped: boolean }
 const root = '/platform/lab-operations'
 async function get<T>(path: string, params?: object) { return (await api.get<{ data: T }>(root + path, { params })).data.data }
 async function post<T>(path: string, body: object) { return (await api.post<{ data: T }>(root + path, body)).data.data }
@@ -48,6 +69,7 @@ export const getAssemblyInputs = (workOrderId?: string, specimenId?: string) => 
 export const startAssembly = (workId: string, body: StartAssembly) => post<AssemblyJob>(`/work-orders/${workId}/assembly-jobs`, body)
 export const cancelAssembly = (job: AssemblyJob, reason: string) => post<AssemblyJob>(`/work-orders/${job.labWorkOrderId}/assembly-jobs/${job.id}/cancel`, { version: job.version, reason })
 export const linkAssemblyAnalysis = (job: AssemblyJob, analysisRunId: string) => post<AssemblyJob>(`/work-orders/${job.labWorkOrderId}/assembly-jobs/${job.id}/analysis`, { version: job.version, analysisRunId })
+export const reconcileAssembly = (job: AssemblyJob, body: ReconcileAssembly) => post<AssemblyJob>(`/work-orders/${job.labWorkOrderId}/assembly-jobs/${job.id}/reconcile`, body)
 export async function downloadSimulatedAssemblyOutput(jobId: string, artifactId: string, fileName: string) {
   const response = await api.get<Blob>(`${root}/assembly-jobs/${jobId}/simulated-outputs/${artifactId}`, { responseType: 'blob' })
   const url = URL.createObjectURL(response.data)
