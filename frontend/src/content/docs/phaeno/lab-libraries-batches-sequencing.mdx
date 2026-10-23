@@ -80,7 +80,21 @@ and Customer publication remain separate requirements.
 
 The attempt's **Delivery and recovery** section shows saved Run/Cancel delivery attempts and their confirmation status. Command delivery does not prove processing started. An unconfirmed receipt, start or cancellation remains visible as attention required; recovery retries with bounded delays and escalates after the configured interval (30 minutes by default). A successful result can arrive after a cancellation request and remains the recorded outcome. Conflicting evidence preserves saved execution facts and requires Operations reconciliation.
 
-Authorized Phaeno users receive refresh notifications for the assembly attempts they are viewing. The page reloads saved status from the API after a notification or reconnect and continues polling when notifications are unavailable. Closing the page does not cancel server recovery. Live DPS transport and independent Operations alerts still require integration setup.
+Authorized Phaeno users receive refresh notifications for the assembly attempts they are viewing. Status refreshes happen quietly while loaded records remain visible. Active attempts are checked every five seconds; ended attempts requiring attention are checked every thirty seconds. Closing the page does not cancel server recovery. Live DPS transport and independent Operations alerts still require integration setup.
+
+## Reconcile an ended assembly before repeating it
+
+Open the specimen's **Sequencing & analysis** tab and select its latest **Sequencing assembly** entry. Existing input sets also offer **View assembly**. The **Operations reconciliation** section retains the applied and conflicting receipts, including provider event identities, exact recorded execution times, failure reasons and payload checksums.
+
+A Laboratory Supervisor or Operations Administrator chooses **Reconcile for repeat**. This bounded action retains the saved Failed, Terminated or Cancelled before start outcome. It is unavailable for active or successful attempts, and active or successful disputed evidence requires further investigation.
+
+Review both receipts, enter the **Decision reason** and **Independent verification evidence**, and confirm that the original execution has stopped and cannot resume. A missing provider history or a NotAccepted reply alone does not establish that processing stopped. Document the independently verified facts and any remaining uncertainty; do not invent a replacement execution time or reinterpret a failure as success.
+
+Choose **Record reconciliation**. POMS checks for changed evidence and obtains a current provider observation. A provider report of active or successful processing blocks this review. When records change, your entered text is retained, but you must review the refreshed evidence and confirm again before saving.
+
+The saved review retains its reviewer, time, decision, verification evidence, provider observation and exact reviewed receipt references. Original execution facts and receipts remain unchanged. New conflicting evidence requires a new review; the earlier decision remains in history.
+
+Reconciliation does not start processing. An authorized operator separately chooses **Repeat assembly**, provides a reason and reviews the selected inputs. The repeat stays linked to the latest attempt and the same purchased run. Existing authorization, holds, current input verification and scientific QC/release requirements still apply.
 
 ## Prepare a library
 

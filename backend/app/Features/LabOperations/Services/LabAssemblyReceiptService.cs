@@ -55,8 +55,7 @@ public sealed class LabAssemblyReceiptService(PSeqOperationsDbContext db, LabAss
             if (receipt.LabAssemblyJobId != job.Id) throw LabAssemblyService.Error("Processing event identity belongs to another attempt.", 409);
             if (receipt.PayloadSha256 != hash)
             {
-                receipt.Conflict(hash, now);
-                if (job.SetAttention(LabAssemblyDelivery.ConflictAttention)) service.Record(job, "ReceiptConflict");
+                await LabAssemblyReconciliationService.RecordChangedPayloadAsync(db, service, job, receipt, hash, json, now, ct);
             }
         }
         else
@@ -76,14 +75,17 @@ public sealed class LabAssemblyReceiptService(PSeqOperationsDbContext db, LabAss
                 catch (Exception error) when (error is ArgumentException or InvalidOperationException or OrderManagementException or JsonException)
                 {
                     outcome = "Conflict";
-                    if (job.SetAttention(LabAssemblyDelivery.ConflictAttention)) service.Record(job, "ReceiptConflict");
+                    job.SetAttention(LabAssemblyDelivery.ConflictAttention);
+                    service.Record(job, "ReceiptConflict");
                 }
             }
             receipt = new(job.Id, message.ProviderKey, message.EventId, message.Sequence, message.OccurredAtUtc, now, hash, json, outcome);
             db.Add(receipt);
         }
-        await db.SaveChangesAsync(ct); await tx.CommitAsync(ct);
-        return new(receipt.Id, receipt.CanAcknowledge, duplicate, !receipt.CanAcknowledge);
+        await db.SaveChangesAsync(ct);
+        var ready = receipt.CanAcknowledge || !await LabAssemblyReconciliationService.HasUnresolvedConflictAsync(db, job.Id, ct);
+        await tx.CommitAsync(ct);
+        return new(receipt.Id, ready, duplicate, !ready);
     }
     public async Task ReceiveProgressAsync(Guid id, string providerKey, string providerJobId, double percentage, long sequence, CancellationToken ct)
     {

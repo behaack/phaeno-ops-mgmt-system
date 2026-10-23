@@ -56,7 +56,8 @@ public sealed partial class LabOperationsController
     }
 
     [HttpGet("assembly-jobs/{jobId:guid}")]
-    public async Task<object> AssemblyJob(Guid jobId, [FromServices] LabAssemblyService service, [FromServices] DpsHandoff handoff, CancellationToken ct)
+    public async Task<object> AssemblyJob(Guid jobId, [FromServices] LabAssemblyService service, [FromServices] DpsHandoff handoff,
+        [FromServices] LabAssemblyReconciliationService reconciliation, CancellationToken ct)
     {
         var actor = await requestContext.RequireAsync(HttpContext, ct, LabRole.Operator, LabRole.Supervisor, LabRole.ScientificReviewer, LabRole.OperationsAdministrator);
         var job = await service.RequireJobAsync(jobId, ct);
@@ -72,7 +73,9 @@ public sealed partial class LabOperationsController
             simulatedOutputs = handoff.SimulatedArtifacts(job).Select(a => new { a.ArtifactId, a.Role, a.FileName, a.S3.SizeBytes }),
             inputs = JsonSerializer.Deserialize<AssemblyFrozenInputs>(job.InputsJson, LabAssemblyService.Json)!.Inputs,
             recipe = JsonSerializer.Deserialize<AssemblyRecipe>(job.RecipeJson, LabAssemblyService.Json),
-            availability = service.Availability, canOperate = actor.HasAny(LabRole.Operator, LabRole.Supervisor) };
+            availability = service.Availability, canOperate = actor.HasAny(LabRole.Operator, LabRole.Supervisor),
+            canReconcile = actor.HasAny(LabRole.Supervisor, LabRole.OperationsAdministrator),
+            reconciliation = await reconciliation.ReviewAsync(job, ct) };
     }
 
     [HttpGet("assembly-jobs/{jobId:guid}/simulated-outputs/{artifactId:guid}")]
@@ -125,6 +128,15 @@ public sealed partial class LabOperationsController
                     $"DPS has not accepted cancellation for saved attempt {jobId:D}. Reconcile this attempt; cancellation has not been inferred.",
                     503, new { assemblyJobId = jobId, commandKind = "Cancel", dispatchConfirmed = false });
         }
+        return await service.ReadAsync(jobId, ct);
+    }
+
+    [HttpPost("work-orders/{workOrderId:guid}/assembly-jobs/{jobId:guid}/reconcile")]
+    public async Task<AssemblyJobDto> ReconcileAssembly(Guid workOrderId, Guid jobId, [FromBody] ReconcileAssemblyRequest request,
+        [FromServices] LabAssemblyReconciliationService reconciliation, [FromServices] LabAssemblyService service, CancellationToken ct)
+    {
+        var actor = await requestContext.RequireAsync(HttpContext, ct, LabRole.Supervisor, LabRole.OperationsAdministrator);
+        await reconciliation.ReconcileAsync(workOrderId, jobId, request, actor.User.Id, ct);
         return await service.ReadAsync(jobId, ct);
     }
 

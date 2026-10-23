@@ -63,11 +63,11 @@ public sealed class DpsEventReceiver(PSeqOperationsDbContext db, LabAssemblyRece
         if (existing is not null) {
             if (existing.LabAssemblyJobId != job.Id) throw DpsContract.Invalid();
             if (!existing.PayloadSha256.Equals(hash, StringComparison.OrdinalIgnoreCase)) {
-                existing.Conflict(hash, now); job.SetAttention(LabAssemblyDelivery.ConflictAttention); service.Record(job, "ReceiptConflict");
+                await LabAssemblyReconciliationService.RecordChangedPayloadAsync(db, service, job, existing, hash, json, now, ct);
             }
         } else {
             if (contradiction) {
-                if (job.SetAttention(LabAssemblyDelivery.ConflictAttention)) service.Record(job, "ReceiptConflict");
+                job.SetAttention(LabAssemblyDelivery.ConflictAttention); service.Record(job, "ReceiptConflict");
             } else if (evidence.Outcome == "Accepted") {
                 command.Receive(now);
                 if (evidence.CommandKind == "Start" && !job.IsTerminal && (job.State is "Queued" or "Dispatching" or "Accepted"))

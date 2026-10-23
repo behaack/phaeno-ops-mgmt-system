@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, expect, it, vi } from 'vitest'
 import { cleanup } from '@testing-library/react'
@@ -24,7 +24,8 @@ it.each([{available:false,active:false},{available:true,active:true}])('aligns a
   const links=screen.getAllByRole('link',{name:'Sample A · Run 2'})
   expect(links[0].className).toBe(links[1].className)
   expect(links.every(link=>link.closest('[data-slot="record-list-item"]'))).toBe(true)
-  expect(screen.getByRole('button',{name:'Start assembly'}).hasAttribute('disabled')).toBe(true)
+  if (active) expect(screen.getByRole('button',{name:'View assembly'})).toBeTruthy()
+  else expect(screen.getByRole('button',{name:'Start assembly'}).hasAttribute('disabled')).toBe(true)
   expect(screen.getAllByText(available?'An assembly is already active for this specimen and run.':'Processing unavailable.',{exact:true}).length).toBeGreaterThan(0)
   client.clear()
 })
@@ -83,6 +84,7 @@ it('shows a confirmed cancellation outcome without claiming an unsent cancellati
   mockApi.allowed = true
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   client.setQueryData(['assembly-job', job.id], { job: { ...job, state: 'Succeeded', isTerminal: true },
+    canReconcile: false, reconciliation: { hasUnresolvedConflict: false, eligible: false, receipts: [], additionalEvidence: [], decisions: [] },
     recipe: { name: 'TEST recipe', version: '1' }, inputs: [], events: [], canOperate: false,
     availability: { available: false, message: 'Processing connection is not configured.' },
     delivery: [{ kind: 'Cancel', attemptCount: 0, receivedAtUtc: null, confirmedAtUtc: new Date().toISOString(),
@@ -93,5 +95,24 @@ it('shows a confirmed cancellation outcome without claiming an unsent cancellati
   expect(screen.getByText('Cancellation request · Outcome confirmed')).toBeTruthy()
   expect(screen.getByText(/0 delivery attempts/)).toBeTruthy()
   expect(screen.queryByText(/Recovery continues until/)).toBeNull()
+  client.clear()
+})
+
+it('keeps loaded assembly rows stable and quiet during background refresh and a failed refresh', async () => {
+  mockApi.list.mockResolvedValueOnce({ jobs: [{ ...job, isTerminal: true, state: 'Failed', attentionReason: 'Review required' }], canOperate: false,
+    availability: { available: true, message: '', recipes: [] } })
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  render(<QueryClientProvider client={client}><AssemblyJobsList enabled /></QueryClientProvider>)
+  const original = await screen.findByRole('link', { name: 'Sample A · Run 2' })
+  let reject!: (error: Error) => void
+  mockApi.list.mockImplementationOnce(() => new Promise((_, fail) => { reject = fail }))
+  let refresh!: Promise<void>
+  act(() => { refresh = client.refetchQueries({ queryKey: ['assembly-jobs'] }) })
+  await waitFor(() => expect(reject).toBeTypeOf('function'))
+  expect(original.isConnected).toBe(true)
+  expect(screen.queryByText('Refreshing assembly jobs…')).toBeNull()
+  await act(async () => { reject(new Error('Temporary refresh failure')); await refresh })
+  expect(screen.getByRole('link', { name: 'Sample A · Run 2' })).toBe(original)
+  expect(await screen.findByText('Assembly jobs could not be refreshed')).toBeTruthy()
   client.clear()
 })

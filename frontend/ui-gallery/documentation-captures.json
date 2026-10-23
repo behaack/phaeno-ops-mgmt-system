@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "capturedAt": "2026-10-22T23:27:31.145Z",
-  "reviewedAt": "2026-10-22T23:28:14.933Z",
+  "capturedAt": "2026-10-23T02:32:00.553Z",
+  "reviewedAt": "2026-10-23T02:32:51.650Z",
   "browser": "Chromium",
   "platform": "win32",
   "locale": "en-US",
@@ -383,7 +383,7 @@
         "#handoff-summary",
         "button:has-text(\"Create pending request\")"
       ],
-      "sha256": "62b4ab7a9871fb9e925c54031901365abfa2625cd7475f8256cd50418c6e538e"
+      "sha256": "8b08e81d09ef6f0fd3c1f886c81d579d2cc5a064733b61a50d4cff56d4e9c5ac"
     },
     "/docs/phaeno/screenshots/onboarding-20261015/08-approve-services.jpg": {
       "width": 672,
@@ -1903,7 +1903,7 @@
     "src/api/file-management.ts": "8f28e7250bebe26a1c91ccecc62defd7923f048b71c983c0afb01f7fc55f4d04",
     "src/api/file-upload-progress.ts": "747cd81c49c8fd411eedde1a2685784f6ea145b1d7a38491e3db10ff125be30b",
     "src/api/invitations.ts": "33747a80e50ae45122dee5ac00d7b452e411843b81042846e30be416f48c71f9",
-    "src/api/lab-assembly.ts": "c27b8ee820cae134b722c88388d4d620eb784ac089df85014cea1c20a6bcf592",
+    "src/api/lab-assembly.ts": "c12b1122258a6841ac1ca1d3b4478224514adf636aeca364ee041cfdb8be63ff",
     "src/api/lab-fastq.ts": "6a92e220c334083615d0045dbacef204afdb79b31f5416240dcb41730b01d035",
     "src/api/lab-investigation.ts": "b2ba933cc57670d37c7d664be0fb300640511d8fe8360f24c9a2359db4793734",
     "src/api/lab-kit-assembly.ts": "a3fc56b47f89e1f34084560543d353466d48646886103cbf6b472dd81bab3c4d",
@@ -2016,7 +2016,7 @@
     "src/features/data-library/GovernanceNoticePanel.tsx": "d6a23adc0d28cd7ab9db5c6f8f0599883430ead01244bbf4992db7917a38cb1a",
     "src/features/data-provisioning/DataStatusBadge.tsx": "fd482d78818a7edc829fc10cd6a191443ae6eaa0b0da48c51e26c7b17aaa6567",
     "src/features/data-provisioning/SourceSampleWorkspace.tsx": "31bda4732b048fbc9954dc8d27d6ec5ffff63533dc4f79f106bfbdc01a24a9cd",
-    "src/features/documentation/documentation-catalog.json": "2cad1668492656e23d63854605ad3ab92ff56ce643e545722f8215467f8782a4",
+    "src/features/documentation/documentation-catalog.json": "063310e0c6af1272e6d7c72b630981bfcc900ab408b42fe46c7d8ae4d3cf94e0",
     "src/features/documentation/documentation-localization.ts": "c0a2c189020a76fe0ebf77c67d46c590664133bdcb1c84be1643534f43f8a364",
     "src/features/documentation/documentation-metadata.ts": "0ceff1f0d6c3c7baf9283d0b5b019de78593b60d77c2822ed9d724900719b3dd",
     "src/features/documentation/documentation-search.ts": "98d2a98d2f80b60094e6ea6312329f26ef7457c28524bd955279cc1612dc3880",
@@ -2030,9 +2030,10 @@
     "src/features/invitations/InvitationAccessDialog.tsx": "98dcf9504b48b70c86409f1e562c8f75f26904c830eab806fc3aaf18ebc6d74e",
     "src/features/invitations/InvitationAuthentication.tsx": "cbf20f0b5088950d3e3db7f0afcfa3836aa3cb405808492f4bf205b0cc1a4b0c",
     "src/features/invitations/OrganizationInvitationDialog.tsx": "efbb140edb5c7acbd52146a12ab0cd686aab85dc42dd92b8665458f0efca8b69",
-    "src/features/lab-operations/assembly-jobs.ts": "dd40dba14daf4d179347c2d3ca4e0b796d98306b51586babdd17dc6a6eeb217f",
-    "src/features/lab-operations/AssemblyJobs.tsx": "aad925b2d4795a98b6b68ab53de8a78bc7244409bd074b8f943266a269cd2a64",
+    "src/features/lab-operations/assembly-jobs.ts": "c522c51707c21609de496e956a0c283c74e68c6efc78c607b11cfd1677182754",
+    "src/features/lab-operations/AssemblyJobs.tsx": "d74e64a48b1ef89f9ea3aa9b59b495e4dab2fe7438cb61d968df1a86e4b08715",
     "src/features/lab-operations/AssemblyQcPage.tsx": "c1ffc2d523db1a0196ac77165b41d88442ecada6a8da6e3714dcced10a8354c3",
+    "src/features/lab-operations/AssemblyReconciliation.tsx": "535b2d6ba68e498a08614d3ae13c2b5c534a060dc49507a1bb20151262619e68",
     "src/features/lab-operations/AssemblyStartDialog.tsx": "016711ebec8ae2307d4754690b1e5d1ac941c4b02e8ba75184257b8296f84388",
     "src/features/lab-operations/configuration-discovery.ts": "04e3a39be1cb5ddf794f7b45c1c54e682f3420f734306e31d25f4e1236626d51",
     "src/features/lab-operations/ConfigurationPreview.tsx": "afe5713d81211c46023588fc6eba084dc3028726f3452f868c35b3b452740e4b",
@@ -2223,8 +2224,9 @@
     "src/test-helpers/sample-shipping.ts": "da7fabc01d4f4df320b42f8e56f67ceb5a3c6e4946dad363a48b9c640d54a878",
     "src/test-helpers/session.ts": "7357f776c3189b19cff3c825412ee910404fd670beaf24a5bfb3421c3c497a87",
     "src/test-helpers/trials.ts": "32d2faec11f8d7fa9fe4ca74b85e924946342c4ee7899b965ba0a51fb1911b3f",
-    "ui-gallery/feature-data.ts": "1e76863db711882980287b6f17479a8a991cf2e6e047b138c6b7b286ee646399",
-    "ui-gallery/FeatureScenes.tsx": "a983fb04cb28b6e196bc4906bf044dcebf88fe99cbc4231b46b49aef916b2868",
+    "ui-gallery/assembly-reconciliation-data.ts": "019775e12b920d1f7b65192875e0be97f211a46273b5d5cd9425d643f8ddcfa2",
+    "ui-gallery/feature-data.ts": "52a8567271f85e3434683223ee6d69fd5865c792fc3845f8a8650c7f534de682",
+    "ui-gallery/FeatureScenes.tsx": "7608193b7c5175acd2cd8e9bf27c7950028d3c8cb301230ee43c9d719b020359",
     "ui-gallery/GuideWorkflowScenes.tsx": "10becdaeb2d88c368e815a57c01b57b470bea356ad98ba6ca9fa091a1d1b8842",
     "ui-gallery/styles.css": "f019d202513ab1c8bb2ddf4ae740cf2e10b03c811aaa50074bb74eb55ab571a5",
     "ui-gallery/workflow-data.ts": "601c35929ad20a140d7cf9656f3cb5f07b72e451b82f2faec72baa91623b5a87"

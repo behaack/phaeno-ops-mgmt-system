@@ -178,6 +178,7 @@ builder.Services.AddScoped<LabAssemblyReceiptService>();
 builder.Services.AddHostedService<LabAssemblyNotificationWorker>();
 builder.Services.AddSingleton<LabAssemblyProgress>();
 builder.Services.AddScoped<LabAssemblyService>();
+builder.Services.AddScoped<LabAssemblyReconciliationService>();
 builder.Services.AddScoped<LabAssemblyProcessor>();
 builder.Services.AddHostedService<LabAssemblyWorker>();
 builder.Services.AddHostedService<LabOperationsProjectionDispatcher>();

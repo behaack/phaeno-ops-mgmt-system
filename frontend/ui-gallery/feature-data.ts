@@ -1,6 +1,7 @@
 import { api } from '#/api/client'
 import { AxiosError } from 'axios'
 import { workflowResponse } from './workflow-data'
+import { assemblyReconciliationDetail } from './assembly-reconciliation-data'
 import type { CrmCompany, CrmCompanyPerson } from '#/api/crm'
 import type { RelationshipRequest } from '#/api/organization-management'
 import type { AccountsReceivableCustomer } from '#/api/pseq-order-to-cash'
@@ -65,6 +66,7 @@ export function installFeatureData(scene: string, state = 'ready') {
     else if (/\/completion-readiness$/.test(path)) data = { canComplete: scene !== '09-work-needed', completesAutomatically: false, blockers: [] }
     else if (/\/operational-readiness$/.test(path)) data = { state: scene === '09-work-needed' ? 'Blocked' : 'Ready', canPlaceLabServiceOrders: scene !== '09-work-needed', blockers: scene === '09-work-needed' ? [{ code: 'ActivePSeqOfferingRequired', label: 'Active laboratory offering', nextAction: 'Review and activate the approved shared laboratory offering in Order settings.' }, { code: 'BillingRequired', label: 'Complete billing and Finance approval', nextAction: 'Review the Customer billing profile and obtain Finance approval.' }] : [], checks: [], services: [] }
     else if (path === '/invitations/preview') { raw = true; data = { email: person.email, firstName: person.firstName, lastName: person.lastName, organizationName: company.name, expiresAt: '2026-10-29T16:00:00Z', version: 1, isOrganizationAdmin: false, departments: [{ departmentId: 'demo-department', departmentName: 'Research', isDepartmentAdmin: true }] } }
+    else if (/\/assembly-jobs\/demo-assembly-review\/reconcile$/.test(path)) data = assemblyReconciliationDetail.job
     else if (/\/assembly-jobs\/inputs$/.test(path)) data = [1,2].map(n => ({ id: `demo-input-${n}`, labWorkOrderId: job.labWorkOrderId, labSpecimenId: job.labSpecimenId, sampleName: job.sampleName, sequencingRunNumber: 1, labSpecimenAttemptId: 'demo-attempt', providerRunReference: 'DEMO-RUN-001', sampleMappingReference: 'DEMO-MAP-001', sizeBytes: 1024, sha256: 'a'.repeat(64) }))
     else if (/\/assembly-jobs(?:\/page)?$/.test(path)) data = { availability, canOperate: true, jobs: [job, { ...job, id: 'demo-cancelled', state: 'CancelledBeforeStart', startedAtUtc: null, stoppedAtUtc: null, durationSeconds: null, dispositionAtUtc: '2026-10-22T16:01:00Z' }], page: 1, pageSize: 25, totalCount: 2 }
     else if (/\/source-samples\/demo-source$/.test(path)) data = { id: 'demo-source', label: 'DEMO — source sample', description: 'Fictional de-identified source', biologicalContext: 'Synthetic reference sample', assayContext: 'PSeq demonstration', analysisSummary: 'Illustration only', qcStatus: 'Reviewed example', provenance: 'Fictional training fixture', ownershipBasis: 'Synthetic content', ownershipEvidenceReference: null, deidentificationMethod: 'No personal information', deidentificationNotes: null, status: 'Draft', files: [], version: 1, createdAt: stamp, updatedAt: stamp }

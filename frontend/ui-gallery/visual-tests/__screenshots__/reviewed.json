@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "reviewedAt": "2026-10-22T23:53:43.195Z",
+  "reviewedAt": "2026-10-23T02:28:30.730Z",
   "platform": "win32",
   "browser": "chromium",
   "locale": "en-US",
@@ -21,7 +21,7 @@
       "height": 900
     },
     "desktop-dark/feature-assembly-inputs.png": {
-      "sha256": "71e3685ff36413708ab848c343f30d784e6381ccc7315236941f5c0f4fcc33f0",
+      "sha256": "b3b4588db0427ce9a49a6854b8cf295b0678f18c8ac89841fd24dfb1c2ac49cd",
       "width": 1280,
       "height": 900
     },
@@ -136,7 +136,7 @@
       "height": 900
     },
     "desktop-light/feature-assembly-inputs.png": {
-      "sha256": "58b569c8580a945e3ed41599d9721a0823a5bf2e40a7a1519b5544860fe1c9f1",
+      "sha256": "33202fd92902ba3258345fa95e7bba429bcdca82773512fa84eff399a6261324",
       "width": 1280,
       "height": 900
     },
@@ -251,7 +251,7 @@
       "height": 844
     },
     "narrow-dark/feature-assembly-inputs.png": {
-      "sha256": "ee7fc04676d641072aabe90a7850de934897fe4c4d3e68b44bd91aa840087682",
+      "sha256": "84ac2df4207743067339adc6d8ca044e17bbe3ff9e7413264dd664a41f89238d",
       "width": 390,
       "height": 844
     },
@@ -371,7 +371,7 @@
       "height": 844
     },
     "narrow-light/feature-assembly-inputs.png": {
-      "sha256": "cb518d02dc9400f83a0d993c70db0b136f64d4b20526aa3c6a1985efa8cf4ab3",
+      "sha256": "b02d69619779897d4993ecf0a1b1a67b9c1984c01bdf1f3bb99815ee18a314e6",
       "width": 390,
       "height": 844
     },

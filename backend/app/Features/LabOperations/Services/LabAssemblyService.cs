@@ -95,9 +95,7 @@ public sealed class LabAssemblyService(PSeqOperationsDbContext db, ILabAssemblyP
         if (await db.Set<LabAssemblyJob>().AnyAsync(j => j.LabSpecimenId == request.LabSpecimenId
             && j.SequencingRunNumber == request.SequencingRunNumber && !TerminalStates.Contains(j.State), ct))
             throw Error("This sequencing run already has an active assembly attempt.", 409);
-        var history = await db.Set<LabAssemblyJob>().Where(j => j.LabSpecimenId == request.LabSpecimenId
-            && j.SequencingRunNumber == request.SequencingRunNumber).OrderByDescending(j => j.RequestedAtUtc).FirstOrDefaultAsync(ct);
-        if (history?.AttentionReason is not null) throw Error("Reconcile the earlier attempt's outcome before starting another assembly.", 409);
+        var history = await RequireRepeatHistoryAsync(request.LabSpecimenId, request.SequencingRunNumber, ct);
         if (history?.Id != request.PreviousJobId || request.PreviousJobId.HasValue && string.IsNullOrWhiteSpace(request.Reason))
             throw Error("A repeat assembly must reference the latest attempt and include a reason.", 409);
         var inputs = await db.LabSequencingOutputs.AsNoTracking().Where(o => normalized.SequencingOutputIds.Contains(o.Id)
@@ -156,6 +154,21 @@ public sealed class LabAssemblyService(PSeqOperationsDbContext db, ILabAssemblyP
         await db.SaveChangesAsync(ct);
         if (tx is not null) await tx.CommitAsync(ct);
         return job;
+    }
+
+    internal async Task<LabAssemblyJob?> RequireRepeatHistoryAsync(Guid specimenId, int runNumber, CancellationToken ct)
+    {
+        var history = await db.Set<LabAssemblyJob>().Where(j => j.LabSpecimenId == specimenId && j.SequencingRunNumber == runNumber)
+            .OrderByDescending(j => j.RequestedAtUtc).ThenBy(j => j.Id).ToListAsync(ct);
+        foreach (var attempt in history)
+        {
+            // A late conflict on any ancestor must block further repeat admission.
+            await SampleShippingPackingData.LockAsync(db, "assembly-job:" + attempt.Id, ct);
+            await db.Entry(attempt).ReloadAsync(ct);
+            if (attempt.AttentionReason is not null || await LabAssemblyReconciliationService.HasUnresolvedConflictAsync(db, attempt.Id, ct))
+                throw Error("Reconcile the earlier attempt's outcome before starting another assembly.", 409);
+        }
+        return history.FirstOrDefault();
     }
 
     public async Task CancelAsync(Guid workId, Guid id, AssemblyReasonRequest request, Guid actorId, CancellationToken ct)
@@ -232,12 +245,12 @@ public sealed class LabAssemblyService(PSeqOperationsDbContext db, ILabAssemblyP
         return work;
     }
 
-    internal void Record(LabAssemblyJob job, string kind, Guid? actorId = null)
+    internal void Record(LabAssemblyJob job, string kind, Guid? actorId = null, object? evidence = null, Guid? eventId = null)
     {
-        var body = JsonSerializer.Serialize(new { job.Id, job.State, job.ProviderKey, job.ProviderJobId, job.SequencingRunNumber,
+        var body = JsonSerializer.Serialize(evidence ?? new { job.Id, job.State, job.ProviderKey, job.ProviderJobId, job.SequencingRunNumber,
             job.StartedAtUtc, job.StoppedAtUtc, job.DispositionAtUtc, job.DispositionReason, job.AttentionReason,
             job.CancellationReason, job.LabAnalysisRunId }, Json);
-        db.Add(new LabAssemblyEvent(job.Id, kind, Now, actorId, body));
+        db.Add(new LabAssemblyEvent(job.Id, kind, Now, actorId, body, eventId));
         db.LabWorkEvents.Add(new LabWorkEvent(job.LabWorkOrderId, job.LabSpecimenId, "Assembly" + kind, Now, actorId, body));
     }
 

@@ -15,6 +15,8 @@ Tab through controls, activate Actions, validate the example form, and open the
 fictional cancellation to inspect its header, body, footer and focus behavior.
 Examples remain in memory and reset on reload.
 
+The actual assembly conflict review is available at `features.html?scene=assembly-reconciliation&state=save-error` (or `state=pending`). The focused `playwright.assembly-reconciliation.config.ts` checks retained receipt evidence, cancel-first focus, guarded dismissal, failed/pending save behavior, accessibility and 320 px dark-theme reflow using fictional data and isolated transport.
+
 The gallery sections cover page headers; lists/tables and
 pagination; guarded form dialogs; loading/status/recovery; remaining controls;
 application navigation; native field validation; data formatting; explicit

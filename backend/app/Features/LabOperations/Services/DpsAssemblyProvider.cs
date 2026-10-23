@@ -13,7 +13,7 @@ public interface ILabAssemblySubmissionProvider
     Task<DpsSubmission> PrepareAsync(LabAssemblyJob job, AssemblyRecipe recipe, CancellationToken ct);
 }
 public sealed class DpsAssemblyProvider(DpsMqttClient transport, IServiceScopeFactory scopes, IOptions<DpsOptions> options,
-    DpsStorage storage, TimeProvider time, IWebHostEnvironment environment) : ILabAssemblyProvider, ILabAssemblySubmissionProvider
+    DpsStorage storage, TimeProvider time, IWebHostEnvironment environment) : ILabAssemblyProvider, ILabAssemblySubmissionProvider, ILabAssemblyReconciliationProvider
 {
     public string Key => DpsContract.Provider;
     public bool SupportsIdempotentStart => transport.Capabilities is { } data && data.GetProperty("supports_idempotent_start").GetBoolean()
@@ -67,6 +67,22 @@ public sealed class DpsAssemblyProvider(DpsMqttClient transport, IServiceScopeFa
         if (!declared.GetProperty("supported_read_layouts").EnumerateArray().Any(layout => layout.GetString() == submission.Instructions.ReadLayout)) throw DpsContract.Invalid();
         return submission;
     }
+    public async Task<AssemblyReconciliationObservation> ObserveForReconciliationAsync(Guid id, CancellationToken ct)
+    {
+        var requestId = Guid.NewGuid();
+        var response = await transport.RequestAsync("query", $"jobs/{id:D}/commands/query", 103,
+            new { request_id = requestId, job_id = id }, $"{options.Value.TopicRoot}/jobs/{id:D}/queries/{requestId:D}", requestId, ct);
+        if (response.GetProperty("job_id").GetGuid() != id) throw DpsContract.Invalid();
+        var status = response.GetProperty("status").GetString();
+        if (status == "NotAccepted") return new("MissingHistory");
+        if (status != "Found") return new("UnavailableOrInconsistent");
+        var evidence = DpsContract.Read<DpsEvent>(response.GetProperty("event"));
+        if (evidence.JobId != id || evidence.Environment != options.Value.Environment || evidence.EventType == "Progress") throw DpsContract.Invalid();
+        DpsContract.RequireUtc(evidence.OccurredAtUtc, time.GetUtcNow().UtcDateTime);
+        return new("Observed", new(evidence.ProviderJobId, evidence.EventType, evidence.StartedAtUtc,
+            evidence.StoppedAtUtc, evidence.DispositionAtUtc, evidence.Reason, NeverStarted: evidence.NeverStarted));
+    }
+
     public async Task<AssemblyProviderSnapshot?> FindAsync(Guid clientJobId, CancellationToken ct)
     {
         await using var scope = scopes.CreateAsyncScope();
