@@ -1,4 +1,6 @@
 import { api } from '#/api/client'
+import { AxiosError } from 'axios'
+import { workflowResponse } from './workflow-data'
 import type { CrmCompany, CrmCompanyPerson } from '#/api/crm'
 import type { RelationshipRequest } from '#/api/organization-management'
 import type { AccountsReceivableCustomer } from '#/api/pseq-order-to-cash'
@@ -37,11 +39,23 @@ const job: AssemblyJob = { id: 'demo-job', labWorkOrderId: 'demo-work', labSpeci
   outputsDeclared: true, providerKey: 'simulation', providerJobId: 'demo', requestedByUserId: 'demo-author', version: 1, progress: null, simulated: true }
 
 /** Strict in-memory transport: unknown requests throw; nothing reaches an API or email provider. */
-export function installFeatureData(scene: string) {
+export function installFeatureData(scene: string, state = 'ready') {
+  let failedRead = false
   api.defaults.adapter = async config => {
     const path = (config.url ?? '').split('?')[0]
+    const primary = /(?:\/invoices|\/sample-shipping\/page|\/trials\/trial-1|\/demo-job\/qc)$/.test(path)
+    const write = !['get', 'head'].includes(config.method ?? 'get')
+    if (state === 'loading' && primary || state === 'pending' && write) return new Promise(() => {})
+    if (state === 'error' && primary && !failedRead || write && ['save-error','conflict'].includes(state)) {
+      failedRead = true
+      const status = state === 'conflict' ? 409 : 503
+      throw new AxiosError('Fictional gallery request failed', 'ERR_BAD_RESPONSE', config, undefined, { config, status, statusText: 'Demonstration failure', headers: {}, data: { success: false, error: { code: status === 409 ? 'concurrency_conflict' : 'service_unavailable', message: status === 409 ? 'The record changed. Reload the current record and review your retained entries.' : 'The demonstration service is unavailable. Your entered values are retained.' } } })
+    }
     let data: unknown; let raw = false
-    if (path === '/platform/crm/companies/demo-company') data = company
+    const workflow = workflowResponse(path, state === 'empty', scene)
+    if (path === '/platform/accounts-receivable/customers') data = [billing]
+    else if (workflow !== undefined) data = workflow
+    else if (path === '/platform/crm/companies/demo-company') data = company
     else if (path === '/platform/crm/companies/demo-company/people') data = [person]
     else if (/\/platform\/crm\/(?:companies\/demo-company\/(?:contacts|handoffs)|opportunities|owners)$/.test(path)) data = []
     else if (/\/departments$/.test(path)) { raw = true; data = [{ id: 'demo-department', organizationId: 'demo-customer', code: 'RES', name: 'Research', description: 'Fictional research unit', isActive: true, isDefault: true, activeMemberCount: 1, version: 1 }] }

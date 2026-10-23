@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import { Link } from '@tanstack/react-router'
@@ -14,7 +15,7 @@ export function RelatedSampleShipments({ sourceId, staff = false, showSampleRece
     <h3 className="font-semibold"><CustomerText message="m_069c9ed08a56" /></h3>
     {!allowed ? <p className="text-sm text-muted-foreground"><CustomerText message="m_f448cbfd6b69" /></p>
       : shipments.error ? <div role="alert" className="text-sm"><CustomerText message="m_3c88f45d3c0a" /><Button variant="outline" onClick={() => { void shipments.refetch() }}><CustomerText message="m_6b505c2eafc9" /></Button></div>
-        : shipments.isLoading ? <p role="status" className="text-sm"><CustomerText message="m_1346b6eb5c93" /></p>
+        : shipments.isLoading ? <LoadingState  label={<><CustomerText message="m_1346b6eb5c93" /></>} />
           : related.length ? <>
             {unallocated > 0 ? <p className="text-sm font-medium">{unallocated} {unallocated === 1 ? <CustomerSourceText source={"tube still needs a shipping container."} /> : __customerText('m_58ff4c762b35')}</p> : null}
             {receipt ? <p className="text-sm">{receipt.orderReceivedTubeCount} of {receipt.orderExpectedTubeCount} <CustomerText message="m_0c5d9ee60168" /></p> : null}

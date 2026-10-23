@@ -1,3 +1,4 @@
+import { LoadingState, EmptyState } from '#/components/ui/content-state'
 import { Field as PortalField } from '#/components/ui/field'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { NativeSelect } from '#/components/ui/native-select'
@@ -106,7 +107,7 @@ export function OperationalAttentionPanel({
       </CardHeader>
       <CardContent>
         {error ? <Alert variant="destructive"><AlertTitle><CustomerSourceText source={"Attention queue could not be updated"} /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(error, 'Refresh and try again.')} />}</AlertDescription></Alert> : null}
-        {query.isLoading || query.isFetching ? <p role="status" className="py-4 text-sm text-muted-foreground"><CustomerSourceText source={"Checking attention queues…"} /></p> : null}
+        {query.isLoading || query.isFetching ? <LoadingState  label={<><CustomerSourceText source={"Checking attention queues…"} /></>} /> : null}
         <div className="divide-y">
           {query.data?.map((item) => (
             <article key={item.id} className="py-4">
@@ -131,7 +132,7 @@ export function OperationalAttentionPanel({
             </article>
           ))}
         </div>
-        {!query.isLoading && !query.isError && !query.data?.length ? <p className="py-8 text-center text-sm text-muted-foreground"><CustomerSourceText source={"No unresolved items in this queue."} /></p> : null}
+        {!query.isLoading && !query.isError && !query.data?.length ? <EmptyState  kind="empty" title={<><CustomerSourceText source={"No unresolved items in this queue."} /></>} /> : null}
 <RecordPagination data={pageQuery.data} busy={pageQuery.isFetching} onPage={page => list.change({ listPage: page })} />
       </CardContent>
     </Card>

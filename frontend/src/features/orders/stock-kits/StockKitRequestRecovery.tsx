@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useRef, useState } from 'react'
@@ -20,7 +21,7 @@ export function StockKitRequestRecovery({ kit, onSaved }: { kit: ShippingStockKi
   const request = requests.data ? matchingUnlinkedKitRequest(kit, requests.data) : null
   const error = requests.error
   if (error && !review) return <Alert variant="destructive" className="mb-5"><AlertTitle><CustomerSourceText source={"Kit request could not be checked"} /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(error, 'Try again before updating its request.')} />}<Button variant="outline" size="sm" onClick={() => { void requests.refetch() }}><CustomerSourceText source={"Retry kit request"} /></Button></AlertDescription></Alert>
-  if (requests.isPending) return <p role="status" className="mb-5 text-sm text-muted-foreground"><CustomerSourceText source={"Checking the kit request…"} /></p>
+  if (requests.isPending) return <LoadingState  label={<><CustomerSourceText source={"Checking the kit request…"} /></>} />
   if (!request && !review) return null
   return <>
     {request ? <Alert className="mb-5"><AlertTitle><CustomerSourceText source={"Update the matching kit request"} /></AlertTitle><AlertDescription>

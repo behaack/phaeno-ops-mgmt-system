@@ -113,7 +113,7 @@ export function LabManufacturingOrderPage({ workflow, orderId }: { workflow: Man
   })
 
   if (!apiEnabled) return <main className="page-wrap px-4 py-8"><Alert variant="destructive"><AlertTitle>Lab operations unavailable</AlertTitle><AlertDescription>An assigned Phaeno laboratory role is required.</AlertDescription></Alert></main>
-  if (order.isLoading) return <main className="page-wrap px-4 py-8"><p role="status">Loading manufacturing record…</p></main>
+  if (order.isLoading) return <main className="page-wrap px-4 py-8"><LoadingState  label={<>Loading manufacturing record…</>} /></main>
   if (order.error || !order.data) return <main className="page-wrap px-4 py-8"><Alert variant="destructive"><AlertTitle>Manufacturing record could not be loaded</AlertTitle><AlertDescription>{getLabOperationsError(order.error, 'Return to Lab operations and try again.')}</AlertDescription></Alert></main>
 
   const item = order.data

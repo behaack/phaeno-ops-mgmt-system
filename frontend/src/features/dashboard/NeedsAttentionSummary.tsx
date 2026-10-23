@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import type { SessionCapabilities } from '#/api/session'
@@ -21,7 +22,7 @@ export function NeedsAttentionSummary({ capabilities, enabled }: { capabilities?
     <CardHeader ><CardTitle>Needs attention</CardTitle><CardDescription>Unresolved work across your assigned service workflows.</CardDescription><CardAction><Button asChild size="sm" variant="outline"><Link to="/dashboard/attention">View all<span className="sr-only"> work needing attention</span></Link></Button></CardAction></CardHeader>
     <CardContent className="space-y-3 p-4">
       {!enabled ? <p className="text-sm text-muted-foreground">Use a connected session to load current work.</p> : <>
-        {attention.isLoading || summaries.isLoading ? <p role="status">Loading attention…</p> : null}
+        {attention.isLoading || summaries.isLoading ? <LoadingState  label={<>Loading attention…</>} /> : null}
         {disabled ? <p>Operational attention queues are not enabled.</p> : attention.error ? <p role="alert">{getOrderErrorMessage(attention.error, 'Operational attention could not be loaded. Open the queue to retry.')}</p> : null}
         {summaries.error ? <p role="alert">{getOrderErrorMessage(summaries.error, 'CRM recovery could not be loaded. Open the queue to retry.')}</p> : null}
         {operational && attention.data ? <><p className="text-sm">{items.length} unresolved operational items</p><ul className="divide-y" aria-label="Priority attention items">{items.slice().sort((a, b) => b.ageDays - a.ageDays).slice(0, 5).map(item => <li key={item.id} className="py-2"><p className="font-medium">{item.summary}</p><p className="text-xs text-muted-foreground">{item.nextAction} · {item.ownerUserId ? 'Assigned' : 'Unassigned'} · {item.ageDays} days</p></li>)}</ul></> : null}

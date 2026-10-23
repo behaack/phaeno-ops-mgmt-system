@@ -1,3 +1,4 @@
+import { EmptyState } from '#/components/ui/content-state'
 import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
 import { relationshipTones } from '#/features/crm/crm-status'
 import { RequiredLegend } from '#/components/ui/required-field'
@@ -209,9 +210,9 @@ export function CrmCompanyRelationships({
                   </Link></RecordLink></span>
                 ))}
                 {opportunities.isSuccess && opportunities.data.items.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
+                  <EmptyState  kind="empty" title={<>
                     No opportunities recorded.
-                  </p>
+                  </>} />
                 ) : null}
               </CardContent>
             </Card>

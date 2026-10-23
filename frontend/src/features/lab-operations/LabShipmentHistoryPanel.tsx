@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
@@ -36,7 +37,7 @@ export function LabShipmentHistoryPanel({ apiEnabled }: { apiEnabled: boolean })
       </div>
     </CardHeader>
     <CardContent className="space-y-4 p-4" aria-busy={query.isFetching}>
-      {!apiEnabled ? <p className="text-sm text-muted-foreground">A connected laboratory session is required.</p> : waitingForSearch || query.isPending ? <p role="status">Loading shipments…</p> : null}
+      {!apiEnabled ? <p className="text-sm text-muted-foreground">A connected laboratory session is required.</p> : waitingForSearch || query.isPending ? <LoadingState  label={<>Loading shipments…</>} /> : null}
       {apiEnabled && query.error && !waitingForSearch ? <Alert variant="destructive"><AlertTitle>Shipments could not be loaded</AlertTitle><AlertDescription>{getLabOperationsError(query.error, 'Refresh the history and try again.')} <Button variant="outline" onClick={() => void query.refetch()}>Retry shipments</Button></AlertDescription></Alert> : null}
       {data && !query.isError ? <>
         {data.items.length ? <LabShipmentTable items={data.items} received returnSearch={{ receiptView: 'received', shipmentHistorySearch: search || undefined, shipmentHistoryPage: data.page }} />

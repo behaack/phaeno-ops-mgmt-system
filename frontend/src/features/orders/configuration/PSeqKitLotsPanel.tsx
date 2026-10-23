@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { RecordTableHeader } from '#/components/ui/record-list'
 import { RecordLink } from '#/components/ui/record-link'
 import { BackLink } from '#/components/ui/back-link'
@@ -45,7 +46,7 @@ export function PSeqKitLotsPanel({ configuration, lotId, enabled }: { configurat
       {lotId ? <BackLink asChild><Link to="/order-configuration" search={previous => ({ ...previous, configurationSection: 'kit-lots' })}>Back to kit lots</Link></BackLink> : <Button disabled={!enabled || !products.length} onClick={() => setDialog('create')}>Create kit lot</Button>}</div></CardHeader>
       <CardContent className="space-y-4">
         {error ? <Alert variant="destructive"><AlertTitle>Kit lots could not be loaded</AlertTitle><AlertDescription>{getOrderErrorMessage(error, 'Try again.')} <Button variant="outline" onClick={() => void (lotId ? detail.refetch() : list.refetch())}>Retry</Button></AlertDescription></Alert> : null}
-        {(lotId ? detail.isLoading : list.isLoading) ? <p role="status">Loading kit lots…</p> : null}
+        {(lotId ? detail.isLoading : list.isLoading) ? <LoadingState  label={<>Loading kit lots…</>} /> : null}
         {lotId && detail.data ? <><dl className="grid gap-4 text-sm sm:grid-cols-2"><div><dt className="text-muted-foreground">Product</dt><dd>{detail.data.productName}</dd></div><div><dt className="text-muted-foreground">Lot number</dt><dd>{detail.data.lotNumber}</dd></div><div><dt className="text-muted-foreground">Labeled expiration</dt><dd>{detail.data.expirationDate ?? 'Unknown'}</dd></div><div><dt className="text-muted-foreground">Recall status</dt><dd>{detail.data.isRecalled ? 'Recalled' : 'No current recall'}</dd></div></dl>
           {detail.data.recallReason ? <p className="whitespace-pre-wrap text-sm">Last recall decision: {detail.data.recallReason}</p> : null}
           <Button variant={detail.data.isRecalled ? 'outline' : 'destructive'} onClick={() => setDialog('recall')}>{detail.data.isRecalled ? 'Lift recall' : 'Recall lot'}</Button>

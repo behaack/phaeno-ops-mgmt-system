@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { formatDisplayDate } from '#/lib/display-format'
 import { formatDisplayTimestamp } from '#/lib/display-format'
 import { RecordLink } from '#/components/ui/record-link'
@@ -129,7 +130,7 @@ export function LabOperationsPage({ section, shipmentId, receiptTab, onReceiptTa
           </section>
           {authProvider === 'mock' ? <Alert className="mb-5"><AlertTitle>Connected Lab operations are paused</AlertTitle><AlertDescription>Use a real Phaeno session to load or change laboratory records.</AlertDescription></Alert> : null}
           {needsDashboard && dashboard.error ? <Alert className="mb-5" variant="destructive"><AlertTitle>Lab operations could not be loaded</AlertTitle><AlertDescription>{getLabOperationsError(dashboard.error, 'Try refreshing the workspace.')}</AlertDescription></Alert> : null}
-          {needsDashboard && dashboard.isLoading ? <p role="status">Loading laboratory workspace…</p> : null}
+          {needsDashboard && dashboard.isLoading ? <LoadingState  label={<>Loading laboratory workspace…</>} /> : null}
           {section === 'receipt' ? <LabReceiptAccessionPanel canReceiveShipments={Boolean(session?.capabilities.canOperateLabWork)} tab={receiptTab} onTabChange={onReceiptTabChange} apiEnabled={apiEnabled} workOrders={[]} /> : null}
           {section === 'kit-requests' ? <section aria-labelledby="transportation-kit-requests-heading" className="space-y-5">
             <div className="space-y-1"><h2 id="transportation-kit-requests-heading" className="text-lg font-semibold">Transportation kit requests</h2><p className="text-sm text-muted-foreground">Fulfill Customer requests and track kit shipments and confirmed receipt.</p></div>

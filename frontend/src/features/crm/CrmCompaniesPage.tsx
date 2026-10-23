@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { portalAccessTones } from '#/features/organizations/access-status'
 import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
 import { RecordTableHeader } from '#/components/ui/record-list'
@@ -229,12 +230,9 @@ export function CrmCompaniesPage() {
               </p>
             ) : null}
             {companiesQuery.isLoading ? (
-              <p
-                className="p-8 text-center text-sm text-muted-foreground"
-                role="status"
-              >
+              <LoadingState  label={<>
                 Loading companies…
-              </p>
+              </>} />
             ) : null}
           </div>
 

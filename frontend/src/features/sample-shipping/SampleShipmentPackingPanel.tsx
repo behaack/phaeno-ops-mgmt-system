@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -53,7 +54,7 @@ export function SampleShipmentPackingPanel({ shipment, canManage, availableKits:
     <CardContent className="space-y-4">
       {locationControl}
       {sampleTypeName ? <p className="text-sm"><strong><CustomerText message="m_8dfc56436b67" /></strong> {sampleTypeName}</p> : null}
-      {query.isPending ? <p role="status"><CustomerText message="m_186b6404cb96" /></p> : query.error || !query.data ? <Alert variant="destructive"><AlertTitle><CustomerText message="m_c022019ff610" /></AlertTitle><AlertDescription><CustomerSourceText source={apiErrorMessage(query.error)} /> <Button variant="outline" onClick={() => void query.refetch()}><CustomerText message="m_2054a8f61d7b" /></Button></AlertDescription></Alert>
+      {query.isPending ? <LoadingState  label={<><CustomerText message="m_186b6404cb96" /></>} /> : query.error || !query.data ? <Alert variant="destructive"><AlertTitle><CustomerText message="m_c022019ff610" /></AlertTitle><AlertDescription><CustomerSourceText source={apiErrorMessage(query.error)} /> <Button variant="outline" onClick={() => void query.refetch()}><CustomerText message="m_2054a8f61d7b" /></Button></AlertDescription></Alert>
         : !query.data.canPack ? <p className="text-sm text-muted-foreground">{query.data.blockedReason ?? 'This shipment cannot be repacked. Contact Phaeno for help with its current assignments.'}</p>
           : !hasKits ? <p className="text-sm text-muted-foreground"><CustomerText message="m_54e38b3fd66b" /></p>
           : !query.data.containerTypes.length ? <p className="text-sm text-muted-foreground"><CustomerText message="m_9ece979eb225" /></p>

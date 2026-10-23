@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { Field as PortalField } from '#/components/ui/field'
 import { SignOutButton, useUser } from '@clerk/react'
 import { isAxiosError } from 'axios'
@@ -94,7 +95,7 @@ export function AcceptInvitePage() {
     </InvitationFrame>
   }
   if (!tokenReady || (token && preview.isPending)) {
-    return <InvitationFrame title="Opening your invitation"><p role="status">Checking your invitation details…</p></InvitationFrame>
+    return <InvitationFrame title="Opening your invitation"><LoadingState  label={<>Checking your invitation details…</>} /></InvitationFrame>
   }
   if (!token) {
     return <InvitationFrame title="Open your invitation email"><p>Use the newest invitation link in your email to continue. If the link is missing, ask the sender for a new invitation.</p></InvitationFrame>
@@ -140,7 +141,7 @@ type ReviewProps = {
 
 function ClerkInvitationReview(props: ReviewProps) {
   const { user, isLoaded } = useUser()
-  if (!isLoaded) return <p role="status">Checking your signed-in account…</p>
+  if (!isLoaded) return <LoadingState  label={<>Checking your signed-in account…</>} />
   // Match any verified address, including secondary emails, as the backend does.
   const emailMatches = Boolean(user?.emailAddresses.some(address =>
     address.emailAddress.toLowerCase() === props.invitation.email.toLowerCase() && address.verification.status === 'verified',

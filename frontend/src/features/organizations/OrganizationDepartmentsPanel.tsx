@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { useCustomerMessages } from '#/features/customer-i18n/use-customer-messages'
 import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
@@ -109,7 +110,7 @@ export function OrganizationDepartmentsPanel({ organizationId, organizationAdmin
           {departments.error ? (
             <Alert variant="destructive"><AlertDescription><CustomerSourceText source={apiErrorMessage(departments.error)} /></AlertDescription></Alert>
           ) : null}
-          {departments.isLoading ? <p className="text-sm text-muted-foreground" role="status"><CustomerText message="m_b6bf91228240" /></p> : null}
+          {departments.isLoading ? <LoadingState  label={<><CustomerText message="m_b6bf91228240" /></>} /> : null}
           {(departments.data ?? []).filter((department) => organizationAdmin || managedDepartmentIds.includes(department.id)).map((department) => (
             <article key={department.id} className="rounded-lg border p-4">
               <div className="flex items-start justify-between gap-3">

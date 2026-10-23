@@ -1,3 +1,4 @@
+import { LoadingState, EmptyState } from '#/components/ui/content-state'
 import { DisplayDate } from '#/components/ui/display-value'
 import { FieldError } from '#/components/ui/field'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
@@ -230,7 +231,7 @@ export function StandardLabServicePanel({
         ) : (
           <>
             {offerings.isLoading ? (
-              <p role="status"><CustomerText message="m_6b1e18db3b76" /></p>
+              <LoadingState  label={<><CustomerText message="m_6b1e18db3b76" /></>} />
             ) : null}
             {offerings.error ? (
               <Alert variant="destructive">
@@ -360,7 +361,7 @@ export function StandardLabServicePanel({
               <fieldset disabled={mutation.isPending} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="standard-sample-type-confirmed"><RequiredFieldName><CustomerText message="m_1e3f2e3f87c9" /></RequiredFieldName></Label>
-                  <p className="text-sm">{order.sampleTypeName ?? 'No Sample type selected'}</p>
+                  <EmptyState  kind="setup" title={<>{order.sampleTypeName ?? 'No Sample type selected'}</>} />
                   <label htmlFor="standard-sample-type-confirmed" className="flex cursor-pointer items-start gap-2 text-sm">
                     <Checkbox id="standard-sample-type-confirmed" checked={form.watch('sampleTypeConfirmed')} onCheckedChange={value => form.setValue('sampleTypeConfirmed', value === true, { shouldDirty: true, shouldValidate: true })} />
                     <span><CustomerText message="m_a2447be7c1e2" /></span>

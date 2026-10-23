@@ -1,3 +1,4 @@
+import { EmptyState } from '#/components/ui/content-state'
 import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
 import { handoffTones } from '#/features/crm/crm-status'
 import { Field as PortalField } from '#/components/ui/field'
@@ -88,7 +89,7 @@ export function CrmOpportunityOrderHandoffCard({ opportunity }: { opportunity: C
             </div>
           ))}
           {!handoffs.isLoading && opportunityHandoffs.length === 0 ? (
-            <p className="py-3 text-sm text-muted-foreground">No Customer order handoffs have been created for this Opportunity.</p>
+            <EmptyState  kind="empty" title={<>No Customer order handoffs have been created for this Opportunity.</>} />
           ) : null}
         </CardContent>
       </Card>

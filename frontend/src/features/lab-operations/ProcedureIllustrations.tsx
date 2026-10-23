@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { Field as PortalField } from '#/components/ui/field'
 import { useEffect, useId, useRef, useState } from 'react'
 import { useIsMutating, useMutation, useQuery } from '@tanstack/react-query'
@@ -22,7 +23,7 @@ export function ProcedureIllustration({ image }: { image: InstructionIllustratio
     return () => URL.revokeObjectURL(url)
   }, [query.data])
   return <figure className="procedure-figure my-3" data-procedure-loading={query.isPending || undefined} data-procedure-error={query.isError || decodeError || undefined}>
-    {query.isPending ? <p role="status" className="text-sm text-muted-foreground">Loading illustration…</p> : null}
+    {query.isPending ? <LoadingState  label={<>Loading illustration…</>} /> : null}
     {query.error || decodeError ? <p role="alert" className="text-sm text-destructive">Illustration unavailable: {image.altText}</p> : null}
     <img ref={ref} onError={() => setDecodeError(true)} alt={image.altText} className={`mx-auto max-h-[28rem] max-w-full rounded object-contain ${query.data ? '' : 'hidden'}`} />
     {image.caption ? <figcaption className="mt-2 text-sm text-muted-foreground">{image.caption}</figcaption> : null}

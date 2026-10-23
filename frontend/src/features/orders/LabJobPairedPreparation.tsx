@@ -1,3 +1,5 @@
+import { SectionPanel } from '#/components/ui/section-panel'
+import { LoadingState } from '#/components/ui/content-state'
 import { NativeCheckbox } from '#/components/ui/native-checkbox'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
@@ -95,7 +97,7 @@ export function LabJobPairedPreparation({ order, phaseId }: { order: LabServiceO
     <CardHeader ><CardTitle><h3><CustomerText message="m_4d54dcdfec58" /></h3></CardTitle></CardHeader>
     <CardContent className="space-y-5 py-4">
       <p className="text-sm">{prepared ? __customerText('m_50b016a5a6e0', { p0: String(multiplePhases ? 'this phase’s' : 'your') }) : __customerText('m_3d120777995d')}</p>
-      {workspace.isLoading ? <p role="status"><CustomerText message="m_94f80c63c55f" /></p> : null}
+      {workspace.isLoading ? <LoadingState  label={<><CustomerText message="m_94f80c63c55f" /></>} /> : null}
       {workspace.error ? <Alert variant="destructive"><AlertTitle><CustomerText message="m_473bff7d1460" /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(workspace.error, 'Refresh and try again.')} />} <Button variant="outline" size="sm" onClick={() => void workspace.refetch()}><CustomerText message="m_942087cc2d41" /></Button></AlertDescription></Alert> : null}
       {workspace.data ? <>
         <p role="status" className="text-sm font-medium">{activePairs.length} of {expectedCount} <CustomerText message="m_5e4903e7a2e6" />{allocatesAdditionalRuns ? __customerText('m_7667d3070370', { p0: String(allocatedRuns), p1: String(expectedRuns) }) : ''}</p>
@@ -104,8 +106,8 @@ export function LabJobPairedPreparation({ order, phaseId }: { order: LabServiceO
           const kitPairs = pairs.filter(pair => pair.stockKitId === kit.id)
           const enteringThisKit = activeKit?.id === kit.id && kit.availableTubeCount > 0
             && needsMoreSamples && !prepared && order.canEditSamples
-          return <section key={kit.id} className="overflow-hidden rounded-md border" aria-label={__customerText('m_2df3993953e3', { p0: String(kit.kitNumber) })}>
-            <div className="bg-muted/50 px-4 py-3"><h3 className="font-medium"><CustomerText message="m_cbfdb16cebd2" />{kitIndex + 1}: {kit.kitNumber}</h3><p className="text-xs text-muted-foreground">{kit.isUsable === false ? <CustomerSourceText source={"Kit needs review; correct its pairs and use a replacement"} /> : kit.finishedAt ? "Finished" : __customerText('m_adb995f1eb3f')} · {kitPairs.length} of {kit.tubeCapacity} <CustomerText message="m_54b79f6105d1" /></p></div>
+          return <SectionPanel key={kit.id} aria-label={__customerText('m_2df3993953e3', { p0: String(kit.kitNumber) })} className="overflow-hidden" heading={<h3 ><CustomerText message="m_cbfdb16cebd2" />{kitIndex + 1}: {kit.kitNumber}</h3>} description={<>{kit.isUsable === false ? <CustomerSourceText source={"Kit needs review; correct its pairs and use a replacement"} /> : kit.finishedAt ? "Finished" : __customerText('m_adb995f1eb3f')} · {kitPairs.length} of {kit.tubeCapacity} <CustomerText message="m_54b79f6105d1" /></>}>
+
             {kitPairs.length ? <ol className="divide-y border-t">{kitPairs.map(pair => <li key={pair.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-sm"><div><p className="font-medium">{pair.customerSampleId} ↔ {pair.supplierTubeBarcode}</p><p className="text-muted-foreground">{phases.length > 1 ? `${phases.find(p => p.id === pair.phaseId)?.name ?? 'Phase'} · ` : ''}{!workspace.data?.preparationPhaseIds.includes(pair.phaseId) ? <CustomerSourceText source={"Cancelled phase · not required for shipment · "} /> : ''}{pair.biologicalSource} · {pair.declaredQuantity} {pair.declaredQuantityUnit}{allocatesAdditionalRuns ? __customerText('m_4236b7598f59', { p0: String(pair.sequencingRunCount) }) : ''}</p></div>{!prepared && order.canEditSamples ? <Button type="button" variant="outline" size="sm" onClick={() => { remove.reset(); setRemoveId(pair.id) }}><CustomerText message="m_8addc0d04101" /></Button> : null}</li>)}</ol> : null}
             {enteringThisKit ? <form onSubmit={submit} className="space-y-3 border-t p-4" noValidate>
               <div><p className="font-medium"><CustomerText message="m_04abce21388f" /></p><p className="mt-1 text-xs text-muted-foreground"><CustomerText message="m_6e6f4136e089" /></p></div>
@@ -128,7 +130,7 @@ export function LabJobPairedPreparation({ order, phaseId }: { order: LabServiceO
             {activeKit?.id === kit.id && kitPairs.length > 0 && needsMoreSamples && !prepared && order.canEditSamples
               ? <div className="flex justify-end border-t px-4 py-3"><Button type="button" variant="outline" onClick={() => { finishKit.reset(); setFinishKitId(kit.id) }}><CustomerText message="m_f5c4cf28f12c" /></Button></div>
               : null}
-          </section>
+          </SectionPanel>
         })}
         {canScanKit && !prepared && order.canEditSamples ? <form onSubmit={submitKit} className="space-y-3 rounded-md border p-4" noValidate>
           <div><h3 className="font-medium">{kits.length ? <CustomerSourceText source={"Scan the next kit"} /> : multiplePhases ? "Scan the first kit for this phase" : __customerText('m_f6bcc0ebef9c')}</h3><p className="mt-1 text-sm text-muted-foreground"><CustomerText message="m_aa92f5c27294" /></p></div>

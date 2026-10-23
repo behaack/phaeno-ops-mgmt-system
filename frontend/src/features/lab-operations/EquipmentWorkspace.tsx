@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { PageTitle } from '#/components/ui/page-header'
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -29,7 +30,7 @@ export function EquipmentWorkspace() {
     </header>
     {!allowed ? <p>Equipment requires Phaeno laboratory access.</p> : authProvider === 'mock' ? <p>Use a connected Phaeno session to manage equipment.</p> : <>
       {query.isError ? <Alert variant="destructive"><AlertTitle>Equipment could not be loaded</AlertTitle><AlertDescription>{getLabOperationsError(query.error, 'Try refreshing the workspace.')}</AlertDescription></Alert> : null}
-      {query.isPending ? <p role="status">Loading equipment…</p> : query.data ? <>
+      {query.isPending ? <LoadingState  label={<>Loading equipment…</>} /> : query.data ? <>
         <EquipmentList items={query.data.equipment} canManage={Boolean(session?.capabilities.canSuperviseLabWork)} onCreate={() => setCreating(true)} />
         <EquipmentCreateDialog open={creating} equipment={query.data.equipment} protocols={query.data.protocols} storageLocations={query.data.storageLocations} onOpenChange={setCreating} onSaved={async () => { setCreating(false); await refresh() }} />
       </> : null}

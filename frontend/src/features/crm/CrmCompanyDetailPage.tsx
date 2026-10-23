@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { portalAccessTones } from '#/features/organizations/access-status'
 import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
 import { RequiredLegend } from '#/components/ui/required-field'
@@ -178,9 +179,9 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
   if (companyQuery.isLoading) {
     return (
       <main className="page-wrap px-4 py-8">
-        <p className="text-sm text-muted-foreground" role="status">
+        <LoadingState  label={<>
           Loading company…
-        </p>
+        </>} />
       </main>
     );
   }
@@ -463,7 +464,7 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
           <AlertTitle>Review the current Company before saving again</AlertTitle>
           <AlertDescription>
             <p>Your entries are retained. Review changes made since you opened this editor; saving again applies your entered values.</p>
-            {reloadCompany.isPending ? <p role="status">Loading current Company…</p> : reloadCompany.error ? <>
+            {reloadCompany.isPending ? <LoadingState  label={<>Loading current Company…</>} /> : reloadCompany.error ? <>
               <p>{apiErrorMessage(reloadCompany.error)}</p>
               <Button type="button" variant="outline" onClick={() => reloadCompany.mutate()}>Retry current record</Button>
             </> : reloadCompany.data && editTarget ? <>

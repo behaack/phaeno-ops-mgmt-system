@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { DisplayTimestamp } from '#/components/ui/display-value'
 import { NativeCheckbox } from '#/components/ui/native-checkbox'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
@@ -52,7 +53,7 @@ export function SpecimenHolds({ orderId, workOrderId, sampleIds, embedded = fals
   const close = dismissal.close
   function choose(value: Decision) { opener.current = document.getElementById(`hold-action-${value.specimen.id}`); mutation.reset(); form.reset(); setDecision(value) }
   if (!staff && !customerSpecimenHoldsEnabled) return null
-  if (query.isPending) return <p role="status"><CustomerText message="m_0bcf86164da3" /></p>
+  if (query.isPending) return <LoadingState  label={<><CustomerText message="m_0bcf86164da3" /></>} />
   if (query.isError) return <div><EvidenceError error={query.error} /><Button variant="outline" onClick={() => void query.refetch()}><CustomerText message="m_33bd6c3e5d54" /></Button></div>
   if (!query.data.workOrderId || !query.data.specimens.length) return null
   const specimens = query.data.specimens.filter(specimen => !sampleIds || sampleIds.includes(specimen.sampleId))

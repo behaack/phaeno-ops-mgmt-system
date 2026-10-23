@@ -2,20 +2,8 @@ name: Portal UI quality
 
 on:
   pull_request:
-    paths:
-      - 'frontend/**'
-      - 'backend/app/Features/OrderManagement/Domain/OrderEnums.cs'
-      - 'backend/app/Features/OrderManagement/Domain/KitBundleModels.cs'
-      - 'docs/ui-ux-principles.md'
-      - '.github/workflows/ui-quality.yml'
   push:
-    branches: [main]
-    paths:
-      - 'frontend/**'
-      - 'backend/app/Features/OrderManagement/Domain/OrderEnums.cs'
-      - 'backend/app/Features/OrderManagement/Domain/KitBundleModels.cs'
-      - 'docs/ui-ux-principles.md'
-      - '.github/workflows/ui-quality.yml'
+    branches: [main, 'codex/**']
   workflow_dispatch:
 
 permissions:
@@ -28,7 +16,7 @@ concurrency:
 jobs:
   ui-quality:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: frontend
@@ -44,6 +32,8 @@ jobs:
           cache-dependency-path: frontend/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
       - run: pnpm ui:test
+      - run: python ../deployment/hetzner/green/test-ui-quality-gate.py
+      - run: pnpm ui:coverage:check
       - run: pnpm ui:test:components
       - run: pnpm ui:visual:check
       - run: pnpm lint:ci
@@ -65,7 +55,7 @@ jobs:
 
   visual-baselines:
     runs-on: windows-2025
-    timeout-minutes: 15
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: frontend
@@ -87,5 +77,32 @@ jobs:
         with:
           name: portal-page-visual-diffs
           path: frontend/test-results/ui-visual
+          if-no-files-found: ignore
+          retention-days: 7
+
+  workflow-behavior:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.24.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps firefox webkit
+      - run: pnpm ui:test:cross-browser
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: portal-workflow-browser-evidence
+          path: frontend/test-results/ui-cross-browser
           if-no-files-found: ignore
           retention-days: 7

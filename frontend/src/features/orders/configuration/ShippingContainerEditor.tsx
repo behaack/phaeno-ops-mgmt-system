@@ -1,3 +1,5 @@
+import { LoadingState } from '#/components/ui/content-state'
+import { SectionPanel } from '#/components/ui/section-panel'
 import { FieldError } from '#/components/ui/field'
 import { Field as PortalField } from '#/components/ui/field'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
@@ -178,11 +180,8 @@ export function ShippingContainerEditor({ source, configuration, existingDefinit
         {input('tubeCapacity', 'Usable tube capacity', 'number', true, 'Approved capacity with packing materials in place.')}
         {input('displayOrder', 'Display order', 'number', true, 'Lower numbers appear first.')}
       </div>
-      <section aria-labelledby="kit-contents-heading" aria-describedby="kit-contents-help" className="rounded-md border bg-muted/20 p-3 sm:p-4">
-        <div className="flex flex-wrap items-start justify-between gap-2">
-          <h3 id="kit-contents-heading" className="text-sm font-medium"><CustomerText message="m_0d4a0be8b9d1" /></h3>
-          <Button type="button" variant="outline" disabled={mutation.isPending} onClick={() => contents.append({ supplierProductId: '', quantity: 1 })}><CustomerText message="m_61c2739652de" /></Button>
-        </div>
+      <SectionPanel aria-labelledby="kit-contents-heading" aria-describedby="kit-contents-help"  heading={<h3 id="kit-contents-heading" ><CustomerText message="m_0d4a0be8b9d1" /></h3>} actions={<><Button type="button" variant="outline" disabled={mutation.isPending} onClick={() => contents.append({ supplierProductId: '', quantity: 1 })}><CustomerText message="m_61c2739652de" /></Button></>}>
+
         <p id="kit-contents-help" className="mt-1 text-xs text-muted-foreground"><CustomerText message="m_3c905e940ee0" /></p>
         {usableTubeCapacity > 0 && !catalog.isPending && !catalog.isError && !configuredShipperAvailable ? <p className="mt-2 text-xs text-amber-700 dark:text-amber-400"><CustomerText message="m_fe62e5680e29" />{usableTubeCapacity} <CustomerText message="m_366a02b5754c" /></p> : null}
         {contents.fields.length > 0 || errors.kitContents?.message ? <div className="mt-3 space-y-1.5">
@@ -211,8 +210,8 @@ export function ShippingContainerEditor({ source, configuration, existingDefinit
         })}
         {errors.kitContents?.message ? <p role="alert" className="text-sm text-destructive">{<CustomerSourceText source={errors.kitContents.message} />}</p> : null}
         </div> : null}
-      </section>
-      {catalog.isPending ? <p role="status"><CustomerText message="m_843f09474237" /></p> : null}
+      </SectionPanel>
+      {catalog.isPending ? <LoadingState  label={<><CustomerText message="m_843f09474237" /></>} /> : null}
       {catalog.isError ? <Alert variant="destructive"><AlertTitle><CustomerText message="m_029e69472c1c" /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(catalog.error, 'Try loading the supplier catalog again.')} />}<Button type="button" variant="outline" disabled={catalog.isFetching || mutation.isPending} onClick={() => void catalog.refetch()}><CustomerText message="m_9bdd1d300f9e" /></Button></AlertDescription></Alert> : null}
       <ContainerField id="kit-temperature-control" label={__customerText('m_4ab06269eb93')} error={errors.temperatureControlInstructions?.message} help="Describe the approved cooling method for one complete kit, including when no cooling is needed.">
         <Textarea id="kit-temperature-control" rows={3} disabled={mutation.isPending} {...form.register('temperatureControlInstructions')} />

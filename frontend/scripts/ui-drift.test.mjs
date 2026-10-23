@@ -2,6 +2,27 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { inspectUiSource, compareUiBaseline } from './ui-drift.mjs'
 
+test('custom titled panels and raw loading paragraphs cannot bypass shared presentation', () => {
+  const source = `<section className="rounded-lg border p-4"><h2>Results</h2><p role="status">Loading results…</p></section>`
+  const rules = inspectUiSource(source, 'src/features/example/Results.tsx').map(d => d.rule)
+  assert.ok(rules.includes('shared-section-panel'))
+  assert.ok(rules.includes('shared-loading-state'))
+  assert.ok(inspectUiSource(`<div className="rounded-md border"><div><h3>Scope</h3><button>Edit</button></div></div>`, 'src/features/example/Scope.tsx').some(d => d.rule === 'shared-section-panel'))
+})
+
+test('scientific instruction documents and ordinary headings retain their own hierarchy', () => {
+  assert.equal(inspectUiSource(`<article className="procedure-document"><div className="rounded-lg border"><h3>Instruction</h3></div></article>`, 'src/features/example/Procedure.tsx').length, 0)
+  assert.equal(inspectUiSource(`<section className="border-t"><h2>Notes</h2></section>`, 'src/features/example/Notes.tsx').length, 0)
+  assert.equal(inspectUiSource(`<div role="status" className="rounded-lg border"><h2>No records</h2></div>`, 'src/features/example/Empty.tsx').length, 0)
+})
+
+test('shared section heading ownership includes aliases and inline appearance overrides',()=>{
+  const imports=`import { SectionPanel as Panel } from '#/components/ui/section-panel';`
+  assert.deepEqual(inspectUiSource(`${imports}<Panel heading={<h3 id="scope">Scope</h3>} className="mt-3" />`,'src/features/example/Scope.tsx'),[])
+  assert.deepEqual(inspectUiSource(`${imports}<Panel heading={<h3 className="rounded focus-visible:outline-2">Scope</h3>} />`,'src/features/example/Scope.tsx'),[])
+  for(const heading of ['<h3 className="bg-muted px-4">Scope</h3>','<h3 style={{fontSize:20}}>Scope</h3>','<h3 className="text-lg">Scope</h3>'])assert.ok(inspectUiSource(`${imports}<Panel heading={${heading}} />`,'src/features/example/Scope.tsx').some(d=>d.rule==='section-panel-appearance'))
+})
+
 const router = `import { Link as RouteLink } from '@tanstack/react-router';`
 const back = `import { BackLink as ReturnLink } from '#/components/ui/back-link';`
 const menus = `import { ActionMenu, DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '#/components/ui/dropdown-menu';`

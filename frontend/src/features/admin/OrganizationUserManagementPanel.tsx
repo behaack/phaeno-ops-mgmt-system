@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { invitationDeliveryTones } from '#/features/organizations/access-status'
 import { DisplayDate } from '#/components/ui/display-value'
 import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
@@ -180,8 +181,8 @@ export function OrganizationUserManagementPanel({
             </Alert>
           ) : null}
           {usersQuery.isLoading ? (
-            <p role="status" className="text-sm text-muted-foreground">
-              <CustomerText message="m_a53ec7ac2a7b" /></p>
+            <LoadingState  label={<>
+              <CustomerText message="m_a53ec7ac2a7b" /></>} />
           ) : null}
           {(usersQuery.data ?? []).map((user) => {
             const membership = user.memberships.find(

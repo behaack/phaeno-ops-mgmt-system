@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -134,10 +135,10 @@ export function LabJobPhaseShipping({ order, phasePlan, phaseState, onPhaseRefre
       </DropdownMenuContent></ActionMenu> : showKitOrder ? <Button variant="outline" size="sm" disabled={actionsDisabled} onClick={() => showReceipt(progress.request!.id)}><CustomerText message="m_14f8f70a5301" /></Button> : null : null}
     </CardHeader>
     <CardContent className="space-y-4">
-      {supply.isLoading ? <p role="status"><CustomerText message="m_299c1fe2030f" /></p> : null}
-      {phaseState === 'loading' ? <p role="status"><CustomerText message="m_1ef78cea439f" /></p> : null}
+      {supply.isLoading ? <LoadingState  label={<><CustomerText message="m_299c1fe2030f" /></>} /> : null}
+      {phaseState === 'loading' ? <LoadingState  label={<><CustomerText message="m_1ef78cea439f" /></>} /> : null}
       {phaseState === 'unavailable' ? <Alert variant="destructive"><AlertTitle><CustomerText message="m_369fb7cd3a65" /></AlertTitle><AlertDescription><CustomerText message="m_025c064ce062" /><Button variant="outline" onClick={onPhaseRefresh}><CustomerText message="m_edb85d9febd3" /></Button></AlertDescription></Alert> : null}
-      {phase && !progress && !supply.error ? <p role="status"><CustomerText message="m_f186bf2d370b" /></p> : null}
+      {phase && !progress && !supply.error ? <LoadingState  label={<><CustomerText message="m_f186bf2d370b" /></>} /> : null}
       {supply.error ? <Alert variant="destructive"><AlertTitle><CustomerText message="m_a0ff4cb29ec9" /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(supply.error, 'Your order is preserved.')} />} <Button variant="outline" onClick={() => void supply.refetch()}><CustomerText message="m_942087cc2d41" /></Button></AlertDescription></Alert> : null}
       {phase && progress ? <>
         <WorkflowProgress label={multiplePhases ? __customerText('m_334733a021ec', { p0: String(phase.phaseName) }) : __customerText('m_a588a5f0da90')} horizontalAt="md" steps={steps.map((step, index) => {

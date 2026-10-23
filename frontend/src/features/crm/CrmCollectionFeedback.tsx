@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
 
@@ -10,7 +11,7 @@ export type CrmCollectionQueryState = {
 }
 
 export function CrmCollectionFeedback({ name, query }: { name: string; query: CrmCollectionQueryState }) {
-  if (query.isPending) return <p role="status" className="text-sm text-muted-foreground">Loading {name}…</p>
+  if (query.isPending) return <LoadingState  label={<>Loading {name}…</>} />
   if (!query.isError) return null
   return <Alert variant="destructive">
     <AlertTitle>Could not load {name}</AlertTitle>

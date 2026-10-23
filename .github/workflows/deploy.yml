@@ -52,6 +52,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: phaeno-portal-green-production
@@ -83,6 +84,11 @@ jobs:
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.0.x
+
+      - name: Require exact-source Portal UI checks
+        run: python3 deployment/hetzner/green/verify-ui-quality.py "$GITHUB_SHA" --wait-seconds 900
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - name: Restore Portal API
         run: dotnet restore ./backend/PSeq.Operations.slnx

@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { NativeCheckbox } from '#/components/ui/native-checkbox'
 import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -98,7 +99,7 @@ export function InvitationAccessDialog({ invitation, onClose, onSaved, returnFoc
             <label className="flex cursor-pointer items-center gap-2 text-sm"><input type="radio" value="Member" {...form.register('role')} />Member — assigned departments only</label>
             <label className="flex cursor-pointer items-center gap-2 text-sm"><input type="radio" value="Administrator" {...form.register('role')} />Organization administrator — all departments</label>
           </fieldset>
-          {departments.isPending ? <p role="status">Loading departments…</p> : null}
+          {departments.isPending ? <LoadingState  label={<>Loading departments…</>} /> : null}
           {role === 'Member' ? <fieldset className="space-y-3 rounded-lg border p-3" aria-describedby={accessError ? 'invited-access-error' : undefined}>
             <legend className="px-1 text-sm font-medium"><RequiredFieldName>Department access</RequiredFieldName></legend>
             {active.map(department => {

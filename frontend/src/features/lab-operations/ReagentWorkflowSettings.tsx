@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
 import { workflowTones } from '#/features/lab-operations/lab-status'
 import { Field as PortalField } from '#/components/ui/field'
@@ -70,7 +71,7 @@ export function ReagentWorkflowSettings({ canManage, actorId, isPlatformAdmin }:
     <PreparationPanel title="Reagent manufacturing workflows" description="Each reagent has one workflow identity, with revisions of its ordered steps. Runs use the reagent name and capture the approved revision without a customer sample or tube. A second administrator approves each revision."
       actions={canManage ? <Button type="button" onClick={() => setEditor('new')}><Plus data-icon="inline-start" /> New reagent workflow</Button> : undefined}
       headerContent={<WorkflowListFilters id="reagent-workflow" search={search} onSearchChange={setSearch} showInactive={showInactive} onShowInactiveChange={setShowInactive} />}>
-      {query.isPending ? <p role="status">Loading reagent workflows…</p> : null}
+      {query.isPending ? <LoadingState  label={<>Loading reagent workflows…</>} /> : null}
       {query.isError ? <div className="space-y-3"><p role="alert">{getLabOperationsError(query.error, 'Reagent workflows could not be loaded.')}</p><Button variant="outline" onClick={() => void query.refetch()}>Reload reagent workflows</Button></div> : null}
       {visibleWorkflows.length ? <ul className="divide-y" aria-label="Reagent workflows">{visibleWorkflows.map(workflow => {
         const displayed = workflow.revisions.find(v => v.status === 'Approved') ?? workflow.revisions[0]

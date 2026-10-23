@@ -219,8 +219,7 @@ Maintained illustrations must:
 - verify referenced assets, image loading, captions, alternative text, narrow
   layouts, and light/dark readability as part of documentation coverage.
 
-The five illustrated Phaeno how-to guides have 32 captures. Their stable asset
-names retain the original October 15/17 identifiers; the current capture and
+Illustrated Phaeno, Customer, Partner and Prospect guides are registered in the generated [coverage inventory](../frontend/ui-gallery/COVERAGE.md). Stable earlier asset names retain their original October 15/17 identifiers; the current capture and
 review dates are in `frontend/ui-gallery/documentation-captures.json`. Capture
 scenarios live in `frontend/scripts/guide-scenarios.mjs`. They render actual
 feature components with fictional data through isolated transports; unknown
@@ -291,3 +290,5 @@ An index outage is shown separately from no matches; corpus mismatch offers a
 refresh and guide browsing. See [the operations runbook](documentation-search-operations.md)
 and [the owning plan](plans/PORTAL-DOCUMENTATION-SEARCH-PLAN.md) for release and
 verification boundaries.
+
+The capture registry also covers order scope/readiness/submission, kit and destination setup, protocol presentation/approval, Customer results/shipping, Partner assembly and Prospect Trial review. `ui:coverage:check` rejects missing, duplicated or unregistered guide references. Browser cases derive their audience, slug and image count from the same source and verify every image/caption/callout in both themes and viewport sizes. Customer illustrations currently cover en-US; translated guide illustrations require their own locale-qualified review.

@@ -7,8 +7,32 @@ import { DisplayDate, DisplayTimestamp } from './display-value'
 import { CustomerLocaleContext } from '#/features/customer-i18n/customer-text'
 import { leadTones, taskTones, relationshipTones } from '#/features/crm/crm-status'
 import { assemblyTones, evidenceTones, deadlineTones } from '#/features/lab-operations/lab-status'
+import { SectionPanel } from './section-panel'
+import { EmptyState, ErrorState, LoadingState } from './content-state'
+import { createRef } from 'react'
+import { fireEvent } from '@testing-library/react'
 
 describe('application-wide presentation ownership',()=>{
+  it('preserves native heading, region identity, ref and contextual controls in a shaded panel',()=>{
+    const region=createRef<HTMLElement>(), heading=createRef<HTMLHeadingElement>()
+    const {container}=render(<SectionPanel ref={region} aria-labelledby="panel-heading" heading={<h3 id="panel-heading" ref={heading}>Sample scope</h3>} description="Two samples" actions={<button type="button">Edit scope</button>} highlighted><p>Retained content</p></SectionPanel>)
+    expect(screen.getByRole('region',{name:'Sample scope'})).toBe(region.current)
+    expect(screen.getByRole('heading',{level:3})).toBe(heading.current)
+    expect(screen.getByText('Two samples').closest('[data-slot=card-header]')).not.toBeNull()
+    expect(screen.getByRole('button').closest('[data-slot=card-action]')).not.toBeNull()
+    expect(screen.getByText('Retained content').closest('[data-slot=section-panel-body]')).not.toBeNull()
+    expect(container.querySelector('[data-slot=card-header]')?.className).toContain('bg-muted')
+    expect(region.current?.getAttribute('data-highlighted')).toBe('true')
+  })
+  it('announces loading and preserves permission guidance and the exact retry handler',()=>{
+    let retries=0
+    render(<><LoadingState label="Loading samples" /><EmptyState kind="permission" title="Access required" action={<button>Request access</button>}>Ask your administrator.</EmptyState><ErrorState title="Samples unavailable" onRetry={()=>retries++} busy={false}>Your saved work remains available.</ErrorState></>)
+    expect(screen.getByRole('status').getAttribute('aria-live')).toBe('polite')
+    expect(screen.getByText('Access required').closest('[data-kind=permission]')).not.toBeNull()
+    fireEvent.click(screen.getByRole('button',{name:'Try again'}))
+    expect(retries).toBe(1)
+    expect(screen.getByRole('alert').textContent).toContain('Your saved work remains available.')
+  })
   it('keeps panel descriptions with their shared heading and table column semantics intact',()=>{
     const {container}=render(<Card><CardHeader><CardTitle>Sequencing inputs</CardTitle><CardDescription>Verified input files</CardDescription></CardHeader><CardContent><RecordTable label="Inputs"><table><RecordTableHeader><tr><th scope="col">Sample</th></tr></RecordTableHeader><tbody><tr><td>DEMO</td></tr></tbody></table></RecordTable></CardContent></Card>)
     expect(screen.getByText('Verified input files').closest('[data-slot=card-header]')).not.toBeNull()

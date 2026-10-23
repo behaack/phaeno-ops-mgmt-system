@@ -44,8 +44,8 @@ it('resolves the chosen delivered version and highlights its actual attempt', as
   fireEvent.change(select, { target: { value: 'delivered-v1' } })
   expect(await screen.findByText('Source tube: ACTUAL-TUBE')).toBeTruthy()
   expect(mocks.lineage).toHaveBeenCalledWith('work', 'specimen', 'delivered-v1')
-  await waitFor(() => expect(screen.getByLabelText('Attempt 2').className).toContain('border-primary'))
-  expect(screen.getByLabelText('Attempt 1').className).not.toContain('border-primary')
+  await waitFor(() => expect(screen.getByLabelText('Attempt 2').getAttribute('data-highlighted')).toBe('true'))
+  expect(screen.getByLabelText('Attempt 1').hasAttribute('data-highlighted')).toBe(false)
 })
 it('shows read failures as unavailable without claiming missing result attribution', async () => {
   mocks.science.mockRejectedValue(new Error('Scientific source unavailable'))

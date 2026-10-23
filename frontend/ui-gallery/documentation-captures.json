@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "capturedAt": "2026-10-22T21:49:28.221Z",
-  "reviewedAt": "2026-10-22T21:50:10.245Z",
+  "capturedAt": "2026-10-22T23:27:31.145Z",
+  "reviewedAt": "2026-10-22T23:28:14.933Z",
   "browser": "Chromium",
   "platform": "win32",
   "locale": "en-US",
@@ -75,17 +75,17 @@
       "points": [
         {
           "number": 1,
-          "x": 95.68,
+          "x": 11.73,
           "y": 18.6
         },
         {
           "number": 2,
-          "x": 95.68,
+          "x": 15.86,
           "y": 26.66
         },
         {
           "number": 3,
-          "x": 95.68,
+          "x": 24.45,
           "y": 40.4
         },
         {
@@ -119,22 +119,22 @@
       "points": [
         {
           "number": 1,
-          "x": 47.02,
+          "x": 36.86,
           "y": 28.23
         },
         {
           "number": 2,
-          "x": 95.68,
+          "x": 67.69,
           "y": 28.23
         },
         {
           "number": 3,
-          "x": 95.68,
+          "x": 28.59,
           "y": 42.89
         },
         {
           "number": 4,
-          "x": 95.68,
+          "x": 13.92,
           "y": 57.54
         },
         {
@@ -179,7 +179,7 @@
         },
         {
           "number": 3,
-          "x": 94.34,
+          "x": 36.49,
           "y": 46.98
         },
         {
@@ -351,12 +351,12 @@
       "points": [
         {
           "number": 1,
-          "x": 95.68,
+          "x": 36.86,
           "y": 24.62
         },
         {
           "number": 2,
-          "x": 95.68,
+          "x": 28.59,
           "y": 37.41
         },
         {
@@ -366,7 +366,7 @@
         },
         {
           "number": 4,
-          "x": 95.68,
+          "x": 13.92,
           "y": 62.97
         },
         {
@@ -383,7 +383,7 @@
         "#handoff-summary",
         "button:has-text(\"Create pending request\")"
       ],
-      "sha256": "8b08e81d09ef6f0fd3c1f886c81d579d2cc5a064733b61a50d4cff56d4e9c5ac"
+      "sha256": "62b4ab7a9871fb9e925c54031901365abfa2625cd7475f8256cd50418c6e538e"
     },
     "/docs/phaeno/screenshots/onboarding-20261015/08-approve-services.jpg": {
       "width": 672,
@@ -401,27 +401,27 @@
       "points": [
         {
           "number": 1,
-          "x": 93.15,
+          "x": 18.38,
           "y": 28.26
         },
         {
           "number": 2,
-          "x": 47.32,
+          "x": 22.21,
           "y": 53.5
         },
         {
           "number": 3,
-          "x": 93.15,
+          "x": 73.74,
           "y": 53.5
         },
         {
           "number": 4,
-          "x": 93.15,
+          "x": 29.39,
           "y": 63.37
         },
         {
           "number": 5,
-          "x": 95.68,
+          "x": 27.8,
           "y": 76.27
         },
         {
@@ -513,32 +513,32 @@
       "points": [
         {
           "number": 1,
-          "x": 48.44,
+          "x": 18.72,
           "y": 24.14
         },
         {
           "number": 2,
-          "x": 92.66,
+          "x": 62.87,
           "y": 24.14
         },
         {
           "number": 3,
-          "x": 48.44,
+          "x": 15.3,
           "y": 35.05
         },
         {
           "number": 4,
-          "x": 48.44,
+          "x": 19.28,
           "y": 67.76
         },
         {
           "number": 5,
-          "x": 92.66,
+          "x": 58.79,
           "y": 67.76
         },
         {
           "number": 6,
-          "x": 48.44,
+          "x": 18.54,
           "y": 78.66
         }
       ],
@@ -555,37 +555,37 @@
     },
     "/docs/phaeno/screenshots/onboarding-20261015/11-finance-approval.jpg": {
       "width": 1280,
-      "height": 563,
+      "height": 605,
       "viewport": {
         "width": 1280,
-        "height": 1000
+        "height": 1200
       },
       "crop": {
         "x": 0,
         "y": 441,
         "width": 1280,
-        "height": 563
+        "height": 605
       },
       "points": [
         {
           "number": 1,
-          "x": 92.66,
-          "y": 27.53
+          "x": 58.79,
+          "y": 25.62
         },
         {
           "number": 2,
-          "x": 48.44,
-          "y": 39.96
+          "x": 18.54,
+          "y": 37.19
         },
         {
           "number": 3,
-          "x": 92.66,
-          "y": 70.34
+          "x": 20.12,
+          "y": 65.45
         },
         {
           "number": 4,
           "x": 21.9,
-          "y": 83.66
+          "y": 77.85
         }
       ],
       "scenario": "/features.html?scene=11-finance-approval",
@@ -595,7 +595,7 @@
         "#billing-approval-notes",
         "button:has-text(\"Approve current tax decision\")"
       ],
-      "sha256": "f8c71633a12d95e1a77c3779e26d0cc74a41b39b1f0ab308bb883ac40dc9a712"
+      "sha256": "c36bf4aa90df255dd61ce9187a3b83c8946888da028417c3ec4969fa4ed86b8b"
     },
     "/docs/phaeno/screenshots/onboarding-20261015/12-ready-to-complete.jpg": {
       "width": 1180,
@@ -679,7 +679,7 @@
         },
         {
           "number": 3,
-          "x": 94.34,
+          "x": 39.87,
           "y": 43.9
         },
         {
@@ -807,12 +807,12 @@
       "points": [
         {
           "number": 1,
-          "x": 94.34,
+          "x": 24.82,
           "y": 34.36
         },
         {
           "number": 2,
-          "x": 94.34,
+          "x": 33.46,
           "y": 53.85
         },
         {
@@ -845,17 +845,17 @@
       "points": [
         {
           "number": 1,
-          "x": 94.34,
+          "x": 28.31,
           "y": 32.06
         },
         {
           "number": 2,
-          "x": 94.34,
+          "x": 17.07,
           "y": 50.24
         },
         {
           "number": 3,
-          "x": 94.34,
+          "x": 39.72,
           "y": 68.42
         },
         {
@@ -938,12 +938,12 @@
         },
         {
           "number": 2,
-          "x": 94.34,
+          "x": 20.54,
           "y": 50.24
         },
         {
           "number": 3,
-          "x": 94.34,
+          "x": 21.14,
           "y": 68.42
         },
         {
@@ -1001,7 +1001,7 @@
     },
     "/docs/phaeno/screenshots/research-20261017/07-entry-editor.jpg": {
       "width": 1280,
-      "height": 659,
+      "height": 672,
       "viewport": {
         "width": 1280,
         "height": 1000
@@ -1010,33 +1010,33 @@
         "x": 0,
         "y": 16,
         "width": 1280,
-        "height": 659
+        "height": 672
       },
       "points": [
         {
           "number": 1,
-          "x": 58.44,
-          "y": 23.07
+          "x": 29.39,
+          "y": 22.62
         },
         {
           "number": 2,
-          "x": 58.44,
-          "y": 48.1
+          "x": 32.35,
+          "y": 49.7
         },
         {
           "number": 3,
-          "x": 95.23,
-          "y": 48.1
+          "x": 70.59,
+          "y": 49.7
         },
         {
           "number": 4,
-          "x": 95.23,
-          "y": 62.67
+          "x": 27.98,
+          "y": 63.39
         },
         {
           "number": 5,
           "x": 95.23,
-          "y": 37.48
+          "y": 36.76
         }
       ],
       "scenario": "/research.html?illustrate=true&prepared=true&completed=false&path=%2Fresearch%2Fexperiments%2F22222222-2222-4222-8222-222222222222%2Fentries%2F33333333-3333-4333-8333-333333333333%2Fedit",
@@ -1047,7 +1047,7 @@
         "textarea >> nth=0",
         "button:has-text(\"Actions\") >> nth=0"
       ],
-      "sha256": "c4d7ec1d8692ec0ee6d390527fd20f0aa95bad08bd51803b974f7272e37533fd"
+      "sha256": "6fa787891597211c0453bd0560a75e608ad282273a6a135e5b64822a8397f0b3"
     },
     "/docs/phaeno/screenshots/research-20261017/08-table-and-save.jpg": {
       "width": 1280,
@@ -1058,7 +1058,7 @@
       },
       "crop": {
         "x": 0,
-        "y": 1350,
+        "y": 1402,
         "width": 1280,
         "height": 739
       },
@@ -1085,7 +1085,7 @@
         },
         {
           "number": 5,
-          "x": 96.56,
+          "x": 34.78,
           "y": 68.47
         },
         {
@@ -1103,7 +1103,7 @@
         "input[type=file]",
         "button:has-text(\"Save changes\")"
       ],
-      "sha256": "754017aef2b8c3899cf71f0d05f8b51dae15866a0cdff656510078a66aaf4d3e"
+      "sha256": "326b5fe36190d83ec089e2ae166bf9836bd61bcf3d480a4b7c1cadbd0c912520"
     },
     "/docs/phaeno/screenshots/research-20261017/09-saved-entry.jpg": {
       "width": 1280,
@@ -1145,32 +1145,32 @@
     },
     "/docs/phaeno/screenshots/research-20261017/10-history.jpg": {
       "width": 768,
-      "height": 807,
+      "height": 826,
       "viewport": {
         "width": 1280,
         "height": 1000
       },
       "crop": {
         "x": 256,
-        "y": 96.5,
+        "y": 87,
         "width": 768,
-        "height": 807
+        "height": 826
       },
       "points": [
         {
           "number": 1,
           "x": 96.09,
-          "y": 11.52
+          "y": 11.26
         },
         {
           "number": 2,
           "x": 2.08,
-          "y": 32.71
+          "y": 31.96
         },
         {
           "number": 3,
           "x": 96.22,
-          "y": 92.44
+          "y": 92.62
         }
       ],
       "scenario": "/research.html?illustrate=true&prepared=true&completed=false&path=%2Fresearch%2Fexperiments%2F22222222-2222-4222-8222-222222222222%2Fentries%2F33333333-3333-4333-8333-333333333333",
@@ -1179,7 +1179,7 @@
         "section[aria-label=\"Saved revision\"]",
         "button:has-text(\"Close history\")"
       ],
-      "sha256": "d05499a01ad63b5935b5f4d56f5f6390984292c94584b62e2246316de888dc49"
+      "sha256": "f2e5b9b3a6ba445771be03a30fc8a768f10761ca888dac20bee68f5095b38616"
     },
     "/docs/phaeno/screenshots/research-20261017/11-complete.jpg": {
       "width": 512,
@@ -1273,17 +1273,17 @@
       "points": [
         {
           "number": 1,
-          "x": 94.34,
+          "x": 28.31,
           "y": 28.27
         },
         {
           "number": 2,
-          "x": 94.34,
+          "x": 17.07,
           "y": 44.3
         },
         {
           "number": 3,
-          "x": 94.34,
+          "x": 39.72,
           "y": 60.34
         },
         {
@@ -1317,12 +1317,12 @@
       "points": [
         {
           "number": 1,
-          "x": 45.73,
+          "x": 45.36,
           "y": 29.17
         },
         {
           "number": 2,
-          "x": 71.15,
+          "x": 52.39,
           "y": 29.17
         },
         {
@@ -1361,27 +1361,27 @@
       "points": [
         {
           "number": 1,
-          "x": 48.44,
+          "x": 13.26,
           "y": 42.39
         },
         {
           "number": 2,
-          "x": 92.66,
+          "x": 58.6,
           "y": 42.39
         },
         {
           "number": 3,
-          "x": 92.66,
+          "x": 13.29,
           "y": 56.33
         },
         {
           "number": 4,
-          "x": 48.44,
+          "x": 27.11,
           "y": 70.28
         },
         {
           "number": 5,
-          "x": 92.66,
+          "x": 69.79,
           "y": 70.28
         }
       ],
@@ -1411,17 +1411,17 @@
       "points": [
         {
           "number": 1,
-          "x": 95.7,
+          "x": 10.79,
           "y": 13.53
         },
         {
           "number": 2,
-          "x": 95.7,
+          "x": 28.7,
           "y": 34.3
         },
         {
           "number": 3,
-          "x": 47.66,
+          "x": 23.97,
           "y": 71.9
         }
       ],
@@ -1454,7 +1454,7 @@
         },
         {
           "number": 2,
-          "x": 62.81,
+          "x": 38.27,
           "y": 63.97
         },
         {
@@ -1470,16 +1470,428 @@
         "button:has-text(\"Configuration preview\")"
       ],
       "sha256": "d147cb33cde1be53f33c6f7a52ee3a24366030a7cd25a99ca5365c8f25c524c9"
+    },
+    "/docs/phaeno/screenshots/workflows-20261022/order-scope.jpg": {
+      "width": 1148,
+      "height": 383,
+      "viewport": {
+        "width": 1280,
+        "height": 1400
+      },
+      "crop": {
+        "x": 66,
+        "y": 751.25,
+        "width": 1148,
+        "height": 383
+      },
+      "points": [
+        {
+          "number": 1,
+          "x": 13.22,
+          "y": 30.81
+        },
+        {
+          "number": 2,
+          "x": 90.63,
+          "y": 30.81
+        },
+        {
+          "number": 3,
+          "x": 31.87,
+          "y": 49.87
+        }
+      ],
+      "scenario": "/features.html?scene=order-scope",
+      "targets": [
+        "#draft-source-0-0",
+        "#draft-count-0-0",
+        "#draft-runs-0"
+      ],
+      "sha256": "e08b569fb93b495b947210314537e37fb718b84e4a6a337d55fe66afd129fe83"
+    },
+    "/docs/phaeno/screenshots/workflows-20261022/order-readiness.jpg": {
+      "width": 1148,
+      "height": 469,
+      "viewport": {
+        "width": 1280,
+        "height": 1000
+      },
+      "crop": {
+        "x": 66,
+        "y": 150,
+        "width": 1148,
+        "height": 469
+      },
+      "points": [
+        {
+          "number": 1,
+          "x": 1.39,
+          "y": 76.33
+        },
+        {
+          "number": 2,
+          "x": 96.6,
+          "y": 73.35
+        }
+      ],
+      "scenario": "/features.html?scene=order-blocked",
+      "targets": [
+        "text=Before starting pricing",
+        "button:has-text(\"Refresh readiness\")"
+      ],
+      "sha256": "e1af53bb0e560e356bfb53136a3fd8e5799fd176441258b5e504b0cc1410b1f6"
+    },
+    "/docs/phaeno/screenshots/workflows-20261022/order-submit.jpg": {
+      "width": 1280,
+      "height": 292,
+      "viewport": {
+        "width": 1280,
+        "height": 2400
+      },
+      "crop": {
+        "x": 0,
+        "y": 1693.5,
+        "width": 1280,
+        "height": 292
+      },
+      "points": [
+        {
+          "number": 1,
+          "x": 82.4,
+          "y": 54.11
+        },
+        {
+          "number": 2,
+          "x": 93.91,
+          "y": 54.11
+        }
+      ],
+      "scenario": "/features.html?scene=order-submit",
+      "targets": [
+        "button:has-text(\"Save draft\")",
+        "button:has-text(\"Submit for pricing\")"
+      ],
+      "sha256": "eaa11b55da44e53a04ddbbf4bf92d177e064e1b96b0bb04ce062d9cfb1cd6ef3"
+    },
+    "/docs/phaeno/screenshots/workflows-20261022/kit-specification.jpg": {
+      "width": 768,
+      "height": 968,
+      "viewport": {
+        "width": 1280,
+        "height": 1000
+      },
+      "crop": {
+        "x": 256,
+        "y": 16,
+        "width": 768,
+        "height": 968
+      },
+      "points": [
+        {
+          "number": 1,
+          "x": 24.19,
+          "y": 13.53
+        },
+        {
+          "number": 2,
+          "x": 11.63,
+          "y": 22.83
+        },
+        {
+          "number": 3,
+          "x": 14.77,
+          "y": 48.24
+        },
+        {
+          "number": 4,
+          "x": 20.77,
+          "y": 60.85
+        }
+      ],
+      "scenario": "/features.html?scene=kit-specification",
+      "targets": [
+        "#container-commonName",
+        "#container-sku",
+        "#kit-sample-type",
+        "#kit-assembly-method"
+      ],
+      "sha256": "7d98e8a820eeb32a5a9d7f652b45da4f4a930d5f89426bbacbddc069c16ff081"
+    },
+    "/docs/phaeno/screenshots/workflows-20261022/destination.jpg": {
+      "width": 768,
+      "height": 1328,
+      "viewport": {
+        "width": 1280,
+        "height": 1600
+      },
+      "crop": {
+        "x": 256,
+        "y": 136,
+        "width": 768,
+        "height": 1328
+      },
+      "points": [
+        {
+          "number": 1,
+          "x": 17.22,
+          "y": 9.86
+        },
+        {
+          "number": 2,
+          "x": 23.04,
+          "y": 52.86
+        },
+        {
+          "number": 3,
+          "x": 96.22,
+          "y": 95.41
+        }
+      ],
+      "scenario": "/features.html?scene=destination",
+      "targets": [
+        "#destination-name",
+        "#destination-time-zone",
+        "[role=dialog] button:has-text(\"Create\")"
+      ],
+      "sha256": "b0abbed66ed3fe18d424983e6d41c8071602eac3e227f4ea053e34df8d1b1b5b"
+    },
+    "/docs/phaeno/screenshots/workflows-20261022/protocol-preview.jpg": {
+      "width": 1280,
+      "height": 199,
+      "viewport": {
+        "width": 1280,
+        "height": 1000
+      },
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 199
+      },
+      "points": [
+        {
+          "number": 1,
+          "x": 14.11,
+          "y": 29.65
+        },
+        {
+          "number": 2,
+          "x": 33.87,
+          "y": 29.65
+        },
+        {
+          "number": 3,
+          "x": 92.58,
+          "y": 32.66
+        }
+      ],
+      "scenario": "/features.html?scene=protocol-preview",
+      "targets": [
+        "select[id$=\"-presentation\"]",
+        "select[id$=\"-paper\"]",
+        "button:has-text(\"Actions\")"
+      ],
+      "sha256": "c7fd4f07e2595329c9b50fe2cbf2fbdc4f1deb7935fbe46bd968ad791eef4ada"
+    },
+    "/docs/phaeno/screenshots/workflows-20261022/protocol-approval.jpg": {
+      "width": 768,
+      "height": 1048,
+      "viewport": {
+        "width": 1280,
+        "height": 1600
+      },
+      "crop": {
+        "x": 256,
+        "y": 276,
+        "width": 768,
+        "height": 1048
+      },
+      "points": [
+        {
+          "number": 1,
+          "x": 2.08,
+          "y": 25.76
+        },
+        {
+          "number": 2,
+          "x": 4.43,
+          "y": 85.97
+        },
+        {
+          "number": 3,
+          "x": 96.22,
+          "y": 94.18
+        }
+      ],
+      "scenario": "/features.html?scene=protocol-approval",
+      "targets": [
+        "text=Ordered protocol definition",
+        "[role=dialog] [role=checkbox]",
+        "button:has-text(\"Approve version 1\")"
+      ],
+      "sha256": "111f89ebcf114c32894b89ed56fd446df987cb44d1524609d0848f11a86c9a88"
+    },
+    "/docs/customer/en-US/screenshots/workflows-20261022/results.jpg": {
+      "width": 1148,
+      "height": 223,
+      "viewport": {
+        "width": 1280,
+        "height": 1000
+      },
+      "crop": {
+        "x": 66,
+        "y": 394,
+        "width": 1148,
+        "height": 223
+      },
+      "points": [
+        {
+          "number": 1,
+          "x": 1.39,
+          "y": 75.78
+        },
+        {
+          "number": 2,
+          "x": 97.56,
+          "y": 67.71
+        },
+        {
+          "number": 3,
+          "x": 97.56,
+          "y": 41.26
+        }
+      ],
+      "scenario": "/features.html?scene=customer-results",
+      "targets": [
+        "text=DEMO-transcripts.tsv",
+        "button:has-text(\"Download result\")",
+        "[data-slot=status-badge]:has-text(\"Released\")"
+      ],
+      "sha256": "cb66d527e5eafa6b80fd9d3422a666050751ee575554f595bec136ef73996e4f"
+    },
+    "/docs/customer/en-US/screenshots/workflows-20261022/shipping.jpg": {
+      "width": 1148,
+      "height": 352,
+      "viewport": {
+        "width": 1280,
+        "height": 1000
+      },
+      "crop": {
+        "x": 66,
+        "y": 142,
+        "width": 1148,
+        "height": 352
+      },
+      "points": [
+        {
+          "number": 1,
+          "x": 22.62,
+          "y": 29.83
+        },
+        {
+          "number": 2,
+          "x": 1.39,
+          "y": 67.61
+        },
+        {
+          "number": 3,
+          "x": 61.3,
+          "y": 29.83
+        }
+      ],
+      "scenario": "/features.html?scene=shipping",
+      "targets": [
+        "#shipment-search",
+        "a:has-text(\"DEMO-SHIP-001\")",
+        "select#shipment-status"
+      ],
+      "sha256": "6a675014c1a724c044abf3e827e2336b333f0a619e4719681da6deefac310e4e"
+    },
+    "/docs/partner/en-US/screenshots/workflows-20261022/assembly-cases.jpg": {
+      "width": 1280,
+      "height": 482,
+      "viewport": {
+        "width": 1280,
+        "height": 1000
+      },
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 482
+      },
+      "points": [
+        {
+          "number": 1,
+          "x": 21.11,
+          "y": 31.95
+        },
+        {
+          "number": 2,
+          "x": 4.92,
+          "y": 79.46
+        },
+        {
+          "number": 3,
+          "x": 10.96,
+          "y": 47.1
+        }
+      ],
+      "scenario": "/features.html?scene=partner-assembly",
+      "targets": [
+        "#assembly-search",
+        "a:has-text(\"DEMO-ASM-001\")",
+        "#assembly-status"
+      ],
+      "sha256": "0645dea53bd942de7a4ad6857d4b996d43e4e004bba527d298b6ff2769e3edef"
+    },
+    "/docs/prospect/en-US/screenshots/workflows-20261022/trial-review.jpg": {
+      "width": 672,
+      "height": 800,
+      "viewport": {
+        "width": 1280,
+        "height": 1000
+      },
+      "crop": {
+        "x": 304,
+        "y": 100,
+        "width": 672,
+        "height": 800
+      },
+      "points": [
+        {
+          "number": 1,
+          "x": 2.38,
+          "y": 3.88
+        },
+        {
+          "number": 2,
+          "x": 70.95,
+          "y": 83.13
+        },
+        {
+          "number": 3,
+          "x": 95.68,
+          "y": 92.38
+        }
+      ],
+      "scenario": "/features.html?scene=trial",
+      "targets": [
+        "[role=dialog] h2",
+        "[role=dialog] input[type=checkbox]",
+        "[role=dialog] button:has-text(\"Accept Trial scope\")"
+      ],
+      "sha256": "9c3328c53d4ec5d114755bf911f8f96e6aaff811b68a9555bc053617c513e589"
     }
   },
   "sources": {
     "e2e/fixtures/research-guide-data.ts": "d5b762d80b428dab5064a9f7c41afb207a2a4d323f23e99eee13a07a8791ea50",
-    "e2e/fixtures/research.tsx": "c06199a17733755fcabd468d3e2be892367083d4f62514fb971fcdc0bd3a6a06",
-    "package.json": "f6cf865f7c9460ce1703ddb732d691a6a8447cf00891664dc4dc93a375be488d",
+    "e2e/fixtures/research.tsx": "4a058cd1f8211abe9cc8576d8db3e7134177cc5d52c175397626cbfc20cfc74d",
+    "package.json": "80cd0f34b8afba38d736052ebeba332128d349169afbc30aa7eb6acc8e141c99",
     "pnpm-lock.yaml": "d5bab930448c3089855d51ebbee8a147e4a92d841dae349a7520ce17c7f71b96",
-    "scripts/capture-documentation.mjs": "e09204a10d7de2c7ed5fbb669c3c52dae8132d7a9a45ebde5373275576ce0eb5",
-    "scripts/documentation-captures.mjs": "b4749252ee295487a5304ebc554a7e93b970fafba3ca2e9b125700e2ce4740b3",
-    "scripts/guide-scenarios.mjs": "c972c8978c5b67539f2e55c815149ddb40565aecea6284cfcf93989cba7f7bee",
+    "scripts/capture-documentation.mjs": "fa8726f3c03a8d8f21da5b144101273c5f1b7839d05ff903fcc7ba9c6c306b2f",
+    "scripts/documentation-captures.mjs": "176809cceab0e32459d095406eef269c9227cea2d2f3427261b1af5c67fd6e2a",
+    "scripts/guide-scenarios.mjs": "3340f7db8dfb6dc88760336381ed3e3d942b53889071fffd5186b6a823899ab0",
     "src/api/api-error.ts": "95b520225d68ef9538479c1915fa7ea3335fb92e18d3281984e2d3b8a1e8bded",
     "src/api/client.ts": "5b8fd38c40b98a61d9207d347ad2804cd45aa5c06069981dbf95661ded81d301",
     "src/api/commercial-drafts.ts": "4fc2d15568bee87ca3b47484d9f53f5878cfeb617fa67a0a0258b2ce752abc6b",
@@ -1489,8 +1901,10 @@
     "src/api/customer-standard-orders.ts": "026573b92db1e5b11842a355cc8ee1a14b5a046b064f570b2c786ca54c8707f4",
     "src/api/data-provisioning.ts": "6228ca229906c09ff15c5e139019d924ed93a6d25095dc8dc2badfd2a6b63231",
     "src/api/file-management.ts": "8f28e7250bebe26a1c91ccecc62defd7923f048b71c983c0afb01f7fc55f4d04",
+    "src/api/file-upload-progress.ts": "747cd81c49c8fd411eedde1a2685784f6ea145b1d7a38491e3db10ff125be30b",
     "src/api/invitations.ts": "33747a80e50ae45122dee5ac00d7b452e411843b81042846e30be416f48c71f9",
     "src/api/lab-assembly.ts": "c27b8ee820cae134b722c88388d4d620eb784ac089df85014cea1c20a6bcf592",
+    "src/api/lab-fastq.ts": "6a92e220c334083615d0045dbacef204afdb79b31f5416240dcb41730b01d035",
     "src/api/lab-investigation.ts": "b2ba933cc57670d37c7d664be0fb300640511d8fe8360f24c9a2359db4793734",
     "src/api/lab-kit-assembly.ts": "a3fc56b47f89e1f34084560543d353466d48646886103cbf6b472dd81bab3c4d",
     "src/api/lab-master-mix.ts": "87235fd532e5b7099b82fd1ac57ae1e1f3327b8cfdcb666d82df323fa421631d",
@@ -1498,8 +1912,11 @@
     "src/api/lab-materials.ts": "a231c358c7fb3943486b0cd5f94c857dada87dddb7747cefd3308770ed419dbf",
     "src/api/lab-operations.ts": "e6482fe5a0cde92a8638fd79f54feb0e673922dd5ee5ab76dc133d6d2395cfc9",
     "src/api/lab-performance-review.ts": "90a2d8911809ce44660d44d061537bbccb3c679a356d1dd9ff4c7b07a8d6a80f",
+    "src/api/lab-phases.ts": "f0f098b542fbebbb1055ce319fa71f5e144c893290a2a0e08b6231ed92091375",
     "src/api/lab-preparation.ts": "ec647dc7b1611eb90d49a39da1402278bdbe27467580e7e2e9ca22dd1bd8d28a",
     "src/api/lab-procedures.ts": "855898fc4f5c4b36a71defc63ffd67dc199bc96de1484481636e15150b81fcd8",
+    "src/api/lab-s3-scientific.ts": "543f2a7661d6262d5815f2851a33e23730e22417a8d77e2d37a9ff99fddfb862",
+    "src/api/lab-scientific-evidence.ts": "1e87aede5fb75f88cf4de7b1576e6bbe86cdecc30fe823cbdf0169c2d6f1b6ad",
     "src/api/order-bundles.ts": "268cdd913e85f778f838fed91d5f3a17c36e194f2cc842f7e528977ca3a9a585",
     "src/api/order-management.ts": "9ab186e1052617a0c37dbe3a57cb7565669f53b6836692bca226a9c305b7e3f1",
     "src/api/organization-management.ts": "4887da6bf21c82513b5175929566e3576ea0ac5110ddbd9c557ea1c9edb163f0",
@@ -1512,6 +1929,8 @@
     "src/api/supplier-catalog.ts": "68731efc3b97fd91f102bf78a56ebb7407bd5752427a284d68e5b9608b0cf1d0",
     "src/api/transportation-kit-requests.ts": "ec114c3eefab48d53eadc29bb086e7a764c0feb908e6eb43fb4aa7e3ea8d6b26",
     "src/api/trials.ts": "29121d283a7623c4da593facc795f3b2f11675aeb1201fe7d70eb41409d2090a",
+    "src/components/GuardedFormDialog.tsx": "1653c6eafbdf6446cfd740cc9ba1e0ec29d8e5d251514540fd5eb958bdb8729a",
+    "src/components/identifier-qr-code.tsx": "723dc3bf1ab35a7a51dcbb6ecad0d844b11d595833ea87c542e2bb11499f6290",
     "src/components/PortalConfirmation.tsx": "b42712989747a0ed51c08263881c791f16fcb4da6ab92421595fb5c7fed08128",
     "src/components/RecordPagination.tsx": "d49381bc5d8fe7e6e58b7c8cc2429ff7f93916fb5f07d15c5e8533d0eda7565a",
     "src/components/ui/alert.tsx": "d6c8209faf1e44a43aa95ad6d3204c1caeda4930f24e8e44df93b1dce84d7270",
@@ -1521,13 +1940,14 @@
     "src/components/ui/card.tsx": "865fc3d85771f44e9d3652e50cdbfdd677fba3dc34492be8f424da96ad828a68",
     "src/components/ui/checkbox.tsx": "56cfd17cd5a20e45ebe64f076d4a5a2a7842c10e163bcd50e91f756c8eed0316",
     "src/components/ui/clear-filters-button.tsx": "9005c8f7f4fb895292cd9d434d966a0dfd02eecb0ee7157492a538c2bfd8d267",
-    "src/components/ui/content-state.tsx": "b3e21e886afe97a2420d915b6650e490f337796dd27c754b80346f4db0751636",
+    "src/components/ui/content-state.tsx": "dc8bd60af678e3b7e5057d38a730e29f37c67167064597a7198be5986adff82d",
     "src/components/ui/detail-summary.tsx": "88c4e1f8e7a0ca80e8880564cf3e2b7034244428114c5451fb1eaecc00f7c74c",
     "src/components/ui/dialog.tsx": "052b94cf32a3ccccd28c712e23dae4d32c86ea764f759645da1aea20b2e5934d",
     "src/components/ui/display-value.tsx": "91396d4d27262a347f04b8f873aa2c1b069eec17c9579fdaaf384385c26aaf8c",
     "src/components/ui/domain-status-badge.tsx": "31e9a5c83f587416c3ed20c344893ecfde028c93e763fd9ffde9b8ce3bd90bcb",
-    "src/components/ui/dropdown-menu.tsx": "66dfd75d03d8cfead1cd0cbe1019c876820ec3c1b678bac1f9e18e2748ab7566",
+    "src/components/ui/dropdown-menu.tsx": "f567b4ca1e5262ba43b904a04a35ab0ccd828f5fc644bd251350c7a2213ae403",
     "src/components/ui/field.tsx": "8c27fbcf3cd01a9b5053476f1968a5e6033e31c41b445208c0cb3d29b83ec95a",
+    "src/components/ui/file-upload-progress.tsx": "92b22436d6ad04b030d90198363cc28afb8337d9196faae5130b92be39845539",
     "src/components/ui/form-control.ts": "60799e065b4246c80254f10b5f70aa55281ab7e5fe81c0b92482b50a21110946",
     "src/components/ui/input.tsx": "b4091ae4be93ce7eadedb2c9c7f8bd3cff59de58b05103354a72adcb110b0754",
     "src/components/ui/label.tsx": "439b19051596e820ddafbafca9a3eec65e8820754e9d1ec17f65f44b8348467a",
@@ -1542,16 +1962,18 @@
     "src/components/ui/required-field.tsx": "9a546d1ab6021cc13eba235911ca51568a786d6c229770045d1a565754cd764d",
     "src/components/ui/required-indicator.tsx": "f11bb8518c0b19dad6175d115a0dedb7edd136c9338e2b010e2de39305b5833f",
     "src/components/ui/searchable-select.tsx": "3d49ebdfa8967ba78bf2a0b034d22ec8d219bb3829898b7afb41c3a4f670f343",
+    "src/components/ui/section-panel.tsx": "c7ab64f9f4a990a7e57aaa62411d066b35c0a1601cf3d4a7310971e0084e6a22",
     "src/components/ui/status-badge.tsx": "1a71dd75892ab0227ec5f80cd23c1e36b73d9a2985fd9f91ee8925c6a87693c6",
     "src/components/ui/tabs.tsx": "5d23e171be8438d63ab50e7990962f9674b4bb6023010d3d6cf58e353bf3b936",
     "src/components/ui/textarea.tsx": "16c527fbb75649dfe93566442c89229428c21cb1900a34aa9d62fdb9d5d1af99",
+    "src/components/ui/workflow-progress.tsx": "057ede6c38a23d679c874ad0e22fb0975ac31e141a8a85ba97f4105dddcaa35f",
     "src/components/use-debounced-search.ts": "24392c106e1cf92cb771c72fb9e963d8b26e971d73872ab3ee58fb0bd205fba4",
     "src/components/use-scoped-record-page.ts": "571b3fe578004dad6012878ff85e3c52fb8844de5fe0e728ef0eb81b53fe64a1",
     "src/components/WorkspaceSidebar.tsx": "75ebc5f0fbc2df4339b1ff7081144312b8b197278022807f37221afbea011070",
     "src/features/auth/invitation-storage.ts": "9c92cf113d17c9b13b2eb769c669aacff80c0b58e1d7ba610f51f3b383405a7e",
     "src/features/auth/session-context.tsx": "55bffa4d12bc73b935d4758dccd11fe29dae6be46ecdfd6349e0fa1da4919e29",
     "src/features/auth/sign-in.css": "f568d8a6105409bc13693f9e283ae57aaf7d65bd5c3e02bc2b33be9861cd7d6c",
-    "src/features/crm/CompanyLabServicePricing.tsx": "c81c5864d4f0cf9f85484781e16d63891884d6db99024376d5c501d0512119a1",
+    "src/features/crm/CompanyLabServicePricing.tsx": "94bbb78b563f87478cae37c1452e516e07f7e432163fbba1631060ea7842d4f8",
     "src/features/crm/crm-outreach.ts": "f9869de879f1de0c78fe040d485d54f949f345916ce1b8957e284d9c7c153dcc",
     "src/features/crm/crm-request-instructions.ts": "5cbbe3556fc3f7f1c277fde0d081dbc6cb74de55cf2c169663a7978003408d27",
     "src/features/crm/crm-request-work.ts": "7ac8bf0b2d6fa1cbca5dccb7dd7d025c8994398fc81dc44f0e1f01fb9a01ec61",
@@ -1559,42 +1981,42 @@
     "src/features/crm/crm-task-queries.ts": "1fe81453b6121c62b0467cddd2a289bc74033174ec76d0752ed4b3ac58e6680f",
     "src/features/crm/CrmAssociatePersonDialog.tsx": "415a6986c084d591a568e4892ebe18dd0fe3fc3052a8e930468ac4d97d47460a",
     "src/features/crm/CrmAssociationRecordCombobox.tsx": "e6a31a48c9bf36ffaa311de59d1fb80862c399fc713cf43e830b4968f16877ae",
-    "src/features/crm/CrmCollectionFeedback.tsx": "6e3d67cd8bd9311dd30a246dcd0670405f389a48184081fa4e1fcc9546c4a5db",
-    "src/features/crm/CrmCompaniesPage.tsx": "cebc4f5d16ac5ea7757e007781f05f6ccd0f59951fbd52c2e05b8fe86b5b3694",
+    "src/features/crm/CrmCollectionFeedback.tsx": "8a31d98aa88ba7c98d4b21264a9dc206c86f4347a44f1a7e1ed5c8478286fa3c",
+    "src/features/crm/CrmCompaniesPage.tsx": "9def52f467923decbbd0145d1256545009225fd225faaa61f3e5d8f745941e58",
     "src/features/crm/CrmCompanyContactEditDialog.tsx": "f9ecbfcc212e248398209573defead7611f50013b6b6c3a40216687bdb163b6e",
     "src/features/crm/CrmCompanyDepartments.tsx": "4b9f593078c219fbe2a873be4cde340ab55471971a8952c8b81ff9e355839c0e",
-    "src/features/crm/CrmCompanyDetailPage.tsx": "0929afc7a496d59e75e99b41fe6313eedaffde89f961c564dca7d61bc042e762",
+    "src/features/crm/CrmCompanyDetailPage.tsx": "f284a79971f71140ae7e9db9a3b47e970266ea78c2b4f1e5daccee4144139f99",
     "src/features/crm/CrmCompanyFormDialog.tsx": "a48de6df0ac8cbbf86deb29812027c16bfbe65b369b49ccbbc4f0213e868c3bd",
     "src/features/crm/CrmCompanyLifecycleDialog.tsx": "13dca169680f2921c3b7361a806906cabd7d5f94cce13bc9e919ad3d9d2aa02e",
     "src/features/crm/CrmCompanyPeople.tsx": "191526128634aaf421b96f809be938a76690711b55cac757f2f5c3a8bb58150f",
-    "src/features/crm/CrmCompanyRelationships.tsx": "b4aa06b0510794181d1a71b1e0bce55f03ed9b3a3c679b3abd08b1cdfab4e4d7",
-    "src/features/crm/CrmCompanySales.tsx": "704af8824c555cce11859253e62cabc4472c007b6bb869ccce9e5e62011b5716",
+    "src/features/crm/CrmCompanyRelationships.tsx": "139020f179622464268cb1d35f807a1f732c6a028a442ad6ec7cf6384de1ce71",
+    "src/features/crm/CrmCompanySales.tsx": "abacefc859176273b15df9bd680ea04acd477474ecb90ee6a76a3ef9d81da905",
     "src/features/crm/CrmContactDialog.tsx": "7286dea8d08d622c63606c888e3beda9ed6b1e9b71cd068e76e948bc8346fef7",
-    "src/features/crm/CrmContactEditor.tsx": "d7eb78e84c626eac74f3fec3526c5d68ab935aa4321b1281e11235fdc1699ddb",
+    "src/features/crm/CrmContactEditor.tsx": "04fc9b920dcf7a8304c524b4805ed8c6601c1c01e1890accc73c8166e6de11a5",
     "src/features/crm/CrmCustomFields.tsx": "8f4f8b14d8cec567e090b7cac12de0604d632363afcb818344129b2801a97101",
     "src/features/crm/CrmListNavigation.tsx": "4b1465aee41926e2db3b18055130e688017bd18785e5494d8db2cc71b2e60197",
     "src/features/crm/CrmMergeDialog.tsx": "c7eea490687188e586cb054970af7c167d7f507b9723efc83b7e19ce5ef367ab",
     "src/features/crm/CrmOpportunityDialog.tsx": "4bc9f233766faa9c64710e7697accbdb5e9fb60d98d8e57a14dbe270dc78c288",
     "src/features/crm/CrmOwnerSelect.tsx": "924c8ad93caa6d9101ba2f01c8a3c41dde8af207c32032abada15a1be0415117",
-    "src/features/crm/CrmPersonAccessDialog.tsx": "c31b022914994b88cfeeb52377752b8650c709992ceff85aa3a2c5ac93851916",
-    "src/features/crm/CrmPersonInvitationDialog.tsx": "dbd3f9079e2709c5272ee498048ca958f2dea144338169e99981ca3c15cd7a6d",
-    "src/features/crm/CrmRecordWork.tsx": "e7a511f61c24baef3d06823df6ac714cb355da4ce21f26ca87ca34741ba8b4ce",
+    "src/features/crm/CrmPersonAccessDialog.tsx": "55f05b8b335fdea02f34098e772cf2c7097ac6004d8c31896f5f2036027d0345",
+    "src/features/crm/CrmPersonInvitationDialog.tsx": "89339189d4be8afff1d8d7a62513d3d663a3ad523d226a3732318032d5f0672d",
+    "src/features/crm/CrmRecordWork.tsx": "00d06305eb688a3a2b3950fc43d1d3589ad977577bd2ced63081763eb8b6eb4b",
     "src/features/crm/CrmRelationshipRoleSelect.tsx": "466b53d14fb1ac7325d6ec6cde7747fbe0733316498a122febc38dfbae899ee7",
-    "src/features/crm/CrmRequestCard.tsx": "3fcd3b8085393901ca00e1c39b28a7a1e6cb432d2baca6ae2da896866b3b0c65",
+    "src/features/crm/CrmRequestCard.tsx": "79e4df03c66c5411dfa838dfefc1aeb36b3eae236ddbefe96e60f3d21868e42e",
     "src/features/crm/CrmSavedViewBar.tsx": "6e2d144b1a97d1d5621754187192316d81be93f36a8b9e2c4bce815db4412464",
     "src/features/crm/CrmTaskActions.tsx": "7bb0b51fcfa78fc881f67675e5c76227497726e6f434acd9ab5a1f2e1ffffd60",
     "src/features/crm/CrmTaskEditDialog.tsx": "434b4c7891720b9ed1893adf263c73196e894c7c5956571d1e5ad22e9892cfb9",
-    "src/features/crm/ServiceRequestEntitlementsDialog.tsx": "f91a5ae20e150888eed9cff2b46ba225b8202cdd8158ba74bc642d09554e4a75",
+    "src/features/crm/ServiceRequestEntitlementsDialog.tsx": "1385a38a175247ef48cd848bb0d4cafccdadbb57d809ea0dad6cb7bf4e559d1f",
     "src/features/crm/use-crm-permissions.ts": "801b667d486485b1d0bbcf820031acaffee1b234f60f9d8275a5a018c2cf67ae",
     "src/features/crm/use-crm-request-work.ts": "8ac8840c4526a00349b00c87d6dc2807a394fb2ad3853cdeb99c7bc6540538a3",
     "src/features/customer-i18n/customer-messages.generated.ts": "72bc2ab8d3fdf6b241588beaf78712d85b5008e631b333d21961268b77e5381f",
     "src/features/customer-i18n/customer-text.tsx": "34b9df74f339b73e2f5e7027b0e40adbe135b504d154b89211f7e4ed59e11ba6",
     "src/features/customer-i18n/use-customer-messages.ts": "886b2224fce6f8cd71f3ef1cf21656ba24713e0f07ec533b1af08565d1cb80ce",
-    "src/features/data-library/DataLibraryPage.tsx": "2f74956564ec5380893a5a922c28695e9cf4ada7c82deb56901708d6b4f72c53",
-    "src/features/data-library/GovernanceNoticePanel.tsx": "9eab8fa82afc6e81a025ad8f9e4b605a47b56a61aa67f92748de4cde575f9a86",
+    "src/features/data-library/DataLibraryPage.tsx": "012234a08621250cd0deb1d1de6627d6d29eb5b3e6cb13c8d73c02f6120c51ce",
+    "src/features/data-library/GovernanceNoticePanel.tsx": "d6a23adc0d28cd7ab9db5c6f8f0599883430ead01244bbf4992db7917a38cb1a",
     "src/features/data-provisioning/DataStatusBadge.tsx": "fd482d78818a7edc829fc10cd6a191443ae6eaa0b0da48c51e26c7b17aaa6567",
-    "src/features/data-provisioning/SourceSampleWorkspace.tsx": "c06e70de6c7b7f20fcb15ee1b7d52daa9bc61c6b3b0d0f5ac0ddfc4c294c752c",
-    "src/features/documentation/documentation-catalog.json": "8a4e96f7c02c81842257ba4cd24cb002eb40f3571759f68bf3dfc7c78487c5cd",
+    "src/features/data-provisioning/SourceSampleWorkspace.tsx": "31bda4732b048fbc9954dc8d27d6ec5ffff63533dc4f79f106bfbdc01a24a9cd",
+    "src/features/documentation/documentation-catalog.json": "2cad1668492656e23d63854605ad3ab92ff56ce643e545722f8215467f8782a4",
     "src/features/documentation/documentation-localization.ts": "c0a2c189020a76fe0ebf77c67d46c590664133bdcb1c84be1643534f43f8a364",
     "src/features/documentation/documentation-metadata.ts": "0ceff1f0d6c3c7baf9283d0b5b019de78593b60d77c2822ed9d724900719b3dd",
     "src/features/documentation/documentation-search.ts": "98d2a98d2f80b60094e6ea6312329f26ef7457c28524bd955279cc1612dc3880",
@@ -1603,80 +2025,144 @@
     "src/features/documentation/DocumentationSearch.tsx": "198c084bfc5c27bbe5b9c25bc44adb4a37371efd72175a21ba09838acd6881ef",
     "src/features/documentation/GuideContent.tsx": "8c193900c7ffa7ebf17ca9198500ec8c872e3a9432c63c75955656b903af0989",
     "src/features/documentation/mdx-components.tsx": "f93c53afcb34c2494ca317cde3d1e2493939fd3d4045a3b2e950c4d564bca32d",
-    "src/features/file-management/OrganizationRetentionPolicyPanel.tsx": "faa50a324c8fe2354867ec443d79f4778b3cbd6360d81055d8873908eae5cb44",
-    "src/features/invitations/AcceptInvitePage.tsx": "0e33f9118bdf5204fbf0cf8a3263a141a4609e8559dd6ff1a800bb1214dcda68",
-    "src/features/invitations/InvitationAccessDialog.tsx": "07d3d73e2e65414e4e3bdb528814eb3b21ce696a5b388bfa7b67ec1179a9c4ec",
+    "src/features/file-management/OrganizationRetentionPolicyPanel.tsx": "e08c594dba2a093a0ae268082790b3b90efc6763444b301d616c4f4a2e9bcec7",
+    "src/features/invitations/AcceptInvitePage.tsx": "4681910d2df2258ce18ba621f8b021e319cddd4b8bf2cb5551756505cf8b34c7",
+    "src/features/invitations/InvitationAccessDialog.tsx": "98dcf9504b48b70c86409f1e562c8f75f26904c830eab806fc3aaf18ebc6d74e",
     "src/features/invitations/InvitationAuthentication.tsx": "cbf20f0b5088950d3e3db7f0afcfa3836aa3cb405808492f4bf205b0cc1a4b0c",
     "src/features/invitations/OrganizationInvitationDialog.tsx": "efbb140edb5c7acbd52146a12ab0cd686aab85dc42dd92b8665458f0efca8b69",
     "src/features/lab-operations/assembly-jobs.ts": "dd40dba14daf4d179347c2d3ca4e0b796d98306b51586babdd17dc6a6eeb217f",
     "src/features/lab-operations/AssemblyJobs.tsx": "aad925b2d4795a98b6b68ab53de8a78bc7244409bd074b8f943266a269cd2a64",
+    "src/features/lab-operations/AssemblyQcPage.tsx": "c1ffc2d523db1a0196ac77165b41d88442ecada6a8da6e3714dcced10a8354c3",
     "src/features/lab-operations/AssemblyStartDialog.tsx": "016711ebec8ae2307d4754690b1e5d1ac941c4b02e8ba75184257b8296f84388",
     "src/features/lab-operations/configuration-discovery.ts": "04e3a39be1cb5ddf794f7b45c1c54e682f3420f734306e31d25f4e1236626d51",
     "src/features/lab-operations/ConfigurationPreview.tsx": "afe5713d81211c46023588fc6eba084dc3028726f3452f868c35b3b452740e4b",
     "src/features/lab-operations/decimal-quantity.ts": "e3aaa307befe0bc90313a7ed7ca1f3bde2dd60de96bf135c741e4874af30f512",
-    "src/features/lab-operations/InvestigationEvidence.tsx": "0f26e835f9c4c6ba8bf12e6d86be8a0c9cbd771358c94a05a9f66b2713f170a4",
+    "src/features/lab-operations/InvestigationEvidence.tsx": "13ae88e4e765d6f1fb319dd951b563e62fe09bfeaf71463093fef6cb6241d670",
     "src/features/lab-operations/lab-presentation.ts": "8eadbc9fefd097610346ddaafb5b4e1e9db5a8615c7726f39f6f2638b83836cb",
     "src/features/lab-operations/lab-status.ts": "55e792c59a6f77cf65af433c1b4563d0499209b7d27b2368f9be53ed6f067867",
     "src/features/lab-operations/material-transfer-barcode.ts": "1316f5e328a5960e79307a5500d9051fd77dce4db3fa344837e628e3d47eea76",
-    "src/features/lab-operations/MaterialConfigurationField.tsx": "e3e3f34568b180adcf4dc9dac62bad0e979b9ea60f539d5fe73d9eb114d592e0",
+    "src/features/lab-operations/MaterialConfigurationField.tsx": "136e9af8274e9dcbe001b68107d86abef53f4f01a01f743d7b16359f6c24aafa",
     "src/features/lab-operations/PerformerPicker.tsx": "37294f2e3ea921084543279950bf2e137f6c1276a39e64ec19a521bcd43d3cc7",
     "src/features/lab-operations/preparation-evidence.ts": "fbf62cbf4ea70cc0079b87a09d044221394a027af09f55e6b827ac0e59cdd7d9",
     "src/features/lab-operations/preparation-resource-fields.ts": "c0bcd88c4e71a7337100f4323d7d18b2f0115e185ac1ea0c08d700dbec96c9a2",
     "src/features/lab-operations/preparation-ui.tsx": "aedffe6da042c937b1487ee1eebe2caa5d37cf79f98f69fcbc22acc6db22890d",
     "src/features/lab-operations/PreparationResourceField.tsx": "99efee2e7e876408aa910af31757e89104ce82f1ac46fdc55cf87876fb2b3406",
-    "src/features/lab-operations/PreparationStepDialog.tsx": "e988ea3fe4f1f4201d78ee681e083ff06eae324ddb9deff4e293f613382d73a4",
-    "src/features/lab-operations/PrepareRequiredMixDialog.tsx": "92757df2591fe037fe03671c06767e80b3b5e7dedb377972398eb5abd90672b3",
+    "src/features/lab-operations/PreparationStepDialog.tsx": "473756dcef3c1a159fdf40b2190b74a8566fff2db0d9cd58a178aebdc35d5848",
+    "src/features/lab-operations/PrepareRequiredMixDialog.tsx": "86e7873bd88411c7d0910575f805c16179f270e0b8c74b9507b7f83d6202a74d",
     "src/features/lab-operations/procedure-navigation.ts": "4b242bfa62d3691ff4f87c854b8bd030f17da909f2e40aefb116f6cba312097e",
     "src/features/lab-operations/procedure-print.css": "df2cb75ee8d82cfea7081baf7944ce945a99bb5ceb236f58a05c4405c4ea1026",
     "src/features/lab-operations/procedure-types.ts": "4a34cb7ccf0e3801d45e1da9a47d94aa1c01b7941194a842cae6b02167f08201",
-    "src/features/lab-operations/ProcedureIllustrations.tsx": "a6a25aa7cfcd253a3a87121f7a485a19c47d571a20c44633b679d129da372418",
-    "src/features/lab-operations/ProcedureLibraryPicker.tsx": "d951bd52c23eae107e2b18180f2061240a4880299d5bf619ec02ea5b44e4502d",
+    "src/features/lab-operations/ProcedureIllustrations.tsx": "833bd473bf53fa7ab05c210989f361c13a32de623f2c2f92c130458e1b821175",
+    "src/features/lab-operations/ProcedureLibraryPicker.tsx": "3aa30820e95934787fb58404a682ade2c161b0bcf0191e6530b462a6dc583317",
     "src/features/lab-operations/ProcedurePresentation.tsx": "4fc80ac78f7d368dba952e08f8780d5e5f81c1d58360a7112ddd74351f34eaf0",
     "src/features/lab-operations/ProcedureSequence.tsx": "3e52107ae54ccdf52fb22bd110114dfc52815bdac633ea18ab7ba6f261a4776f",
     "src/features/lab-operations/ProcedureSource.tsx": "554af5e95f28abae2687395573be93a46ea8d0da6b4b8c64ca91ced17a675e95",
     "src/features/lab-operations/protocol-definition.ts": "2425996b4298e572e6c57330e6d89ae50372c70cb1cd27e05fe409649fa43906",
-    "src/features/lab-operations/ProtocolStepEditor.tsx": "e406e7755f52a0e30e8be6e8557f0f4748ae08204b6b14a30c29aa92e5b7061f",
-    "src/features/lab-operations/ProtocolVersionBuilderPage.tsx": "3878c3bb5b1dc5ae8d1ae3f1db861d5124d17c8584300eb4a6dd75468f3556ee",
+    "src/features/lab-operations/ProtocolApprovalDialog.tsx": "3c7dce6aedad74f95adcd98176489ea684748043fec860315901cac9e08bb8a1",
+    "src/features/lab-operations/ProtocolStepEditor.tsx": "dbe2ea17e831cc0fb83f189f6eef62011b3bf6733cabc8d4009067893724f915",
+    "src/features/lab-operations/ProtocolVersionBuilderPage.tsx": "99f7e9df03d521e7a5497b96c25223203fb56f7437d2c4f29377f6fa176fd13a",
+    "src/features/lab-operations/S3ScientificFileDialog.tsx": "63be52593a253a5d941f257e7521a3f36ca1af955f31158664b552bd5b88954c",
+    "src/features/lab-operations/ScientificFileDownload.tsx": "a721baccee1f31b50ed25b1a6ec9c4a6aca8b6eb195fe867d754346caa40f9dc",
+    "src/features/lab-operations/ScientificFilePicker.tsx": "17d47928214accc55fb2dbc46fb3476c5fd10a210dbca08da8b72b9830054bd4",
     "src/features/lab-operations/ScientificTextField.tsx": "34dee5f851d32acf45c9a0706a109cebb69cce22cb68bd59826fca6cd3ca732f",
     "src/features/lab-operations/step-performance.ts": "a21cdc8bc0366affdfa8031552e53b1e790bd724045846dc911d704ed3cb38f6",
     "src/features/lab-operations/StepTimingFields.tsx": "2e8ada4b2749d522227cf94326a437fcb45344127289c73f8ade3da200389195",
     "src/features/lab-operations/use-assembly-notifications.ts": "6ed8ab8d2b58a7e6fcd015893482f44c9b3840a29c3c4e6b4b01e2e4f9470bd4",
-    "src/features/orders/BillingConfigurationCard.tsx": "a16049425b2ec15c2fe4e3839d2fb01eafec7191402e75e68386e9c140bb2c36",
+    "src/features/orders/BillingConfigurationCard.tsx": "25bb440847704113266633e193c75459209e4793d03484ab068b3647205302c2",
     "src/features/orders/commercial-draft.ts": "f96efd5cad747c9a4720656797d7d2f70775a0e2919493f7df83b6fa75ee832c",
     "src/features/orders/CommercialDraftHandlingFields.tsx": "87c464ecf28429f7a9b8c23470a32fe05bca756578d703ba6be9573d47c3a2c6",
     "src/features/orders/CommercialDraftPhaseFields.tsx": "fc5fe5d05e735e9f47cedb34f565f0ab46afa58acf7d4f857daf4cc1048476a3",
     "src/features/orders/CommercialDraftPricingFields.tsx": "1ce1cdc9944a2f888a69b41d46703c3f8e761e816140f55dd8b4ad2e8b0ea99f",
-    "src/features/orders/CommercialOrderDraftPage.tsx": "11a1057af165d2f851017bba68b2dbf420ca9cd223eb73c077c2e00993453db1",
+    "src/features/orders/CommercialOrderDraftPage.tsx": "764524844a9af82962ef2b5eb7038140076694a9f077d7809d704eeeb4ce1770",
     "src/features/orders/configuration/availability-status.ts": "a1893d8a83b02352dbad0953efec46dc8c0fe13c4a80d574fbb4f08dad1d2952",
     "src/features/orders/configuration/catalog-lab-service.ts": "5e2ea93222305ee3850e88aab73caad4c9b771db88a0ce3149cbbf652da6581f",
     "src/features/orders/configuration/ContainerRecommendationDialog.tsx": "ca8b2b4ab6822a190a9689e3d1f7aa44f39143485736e2cb97b1df6eb6af60bf",
-    "src/features/orders/configuration/ContainerSizesPanel.tsx": "c37261aa6016113e95941bac40f99a4d430e08b156516c468cdc5c1bb1b4e9c1",
+    "src/features/orders/configuration/ContainerSizesPanel.tsx": "e059fbb85eab2761fab229978a52125278f2f7668129965b31a64d1b3c315901",
     "src/features/orders/configuration/current-shipping-procedure.ts": "52239f7205bb0ea469c67be141c3e1fa6906acfeb89cc83853eac8807e49cd52",
     "src/features/orders/configuration/destination-list-navigation.ts": "9ad4c3fa3cf5e14d7072d91512a5bcec5d947bee4e97b4770309b4cb7418b931",
     "src/features/orders/configuration/linkable-sample-types.ts": "81ad7e8c52bc7e55963a49075921ba798f35f1dccf671a210eb92e590669c44f",
     "src/features/orders/configuration/sample-type-list-navigation.ts": "5b66e2d2eb812dddd8c906102a592a79434cb8ce5117092e76bc82ebd1cc6bed",
     "src/features/orders/configuration/sample-type-options.ts": "10c1e3637a67812ea850d7c647e2093607d1058bca2adbebaae9e093827e8e5c",
-    "src/features/orders/configuration/SampleShippingConfigurationPanel.tsx": "3495a68b4fea1d8b0454eb3f03a2c313e58f399ea261f0ffa4b07743254c347d",
+    "src/features/orders/configuration/SampleShippingConfigurationPanel.tsx": "b3c091aa5b5066debd96d3db41117d9522e67b8e13207efc7be0ec15bac11bf8",
     "src/features/orders/configuration/SampleTypeActions.tsx": "5582dc8cd4fb8c941e0ba266f14723470bd71876f2cc639c3e9966ff1d48d87c",
-    "src/features/orders/configuration/SampleTypePackingPanel.tsx": "fddf5ab6faf0a01a1297d380d85cba72be5bc8d6b4c519881c257484b769da64",
+    "src/features/orders/configuration/SampleTypePackingPanel.tsx": "30f529ed727ef6cf767fd56a4e4c89e26c64d9b5cc7673116bf7fd9656653d5f",
     "src/features/orders/configuration/shipping-container-navigation.ts": "7e2706eee78519f7a1d13377f5e69de8e81754420a97fb8bd5fdefddb8e72299",
     "src/features/orders/configuration/shipping-container-utils.ts": "c8ee0b5de7ee1333af2b2a3b5cbbcdd1fa5bd39793b9ae869afeebf1d0b771aa",
     "src/features/orders/configuration/shipping-dependency-health.ts": "80b725885c5d9081a01f169829817d4e46a2b250f01e1c1715a34cbc164ceced",
     "src/features/orders/configuration/shipping-settings-navigation.ts": "8399426fe3ca6e186a9a992bb0e293c839d6306e7e71d31284475bfb094de28d",
     "src/features/orders/configuration/ShippingActivationBadge.tsx": "d52d3e77aba083b419505f9148fa45e580a6c775317034442f21baba3700cfa5",
     "src/features/orders/configuration/ShippingAvailabilityDialog.tsx": "78a76b4163dea3903128156d808a84cb795245d4813e43e88d1dfe6651281d44",
-    "src/features/orders/configuration/ShippingContainerEditor.tsx": "b25ce2c8a235584a5a2efb0bcd96b076a55f21e735102424cc0e0d0da2be897c",
+    "src/features/orders/configuration/ShippingContainerEditor.tsx": "f4980ec737db5f1ae90d71db710e72774aa77ec1dafb3c3649f740f258ae6a23",
     "src/features/orders/configuration/ShippingProceduresPanel.tsx": "b302724af2948938f6366722a18baf8a5c5b5517eb92d9d2eae6604927c89905",
     "src/features/orders/CustomerOrderReadiness.tsx": "6d1ac9294e6f79505eb362587d29c506ffafe36b10b4107344741f5cdd0e5592",
+    "src/features/orders/external-order-list-search.ts": "f12109e1ae8e42bab865c21e68c03f1c9fb6d5b60b9b4783b55d08c8bbba8f91",
+    "src/features/orders/ExternalOrderListPage.tsx": "fae904b9576e749052c8923d31887aef57fe05406dcd1281e8caf40927b6dc17",
+    "src/features/orders/finance-sections.ts": "1d3caf4aede286d46b518cdc074e880df090bb285872507214e4cf45cdc479d3",
+    "src/features/orders/FinanceActionDialog.tsx": "28c0f81cf7df2a19ea1c1abf78f4a561e39fe5492a641f249f2bcc3be395ed88",
+    "src/features/orders/FinanceCloseoutReport.tsx": "213800d4fb7abca2c9cbcd160d1ff1198fa2367e32f3f3fee56ee87028f8c10f",
+    "src/features/orders/FinanceCorrections.tsx": "f1bd50edf5f7b389d960c897b239c80441f8fdc2c24909aaa5cb6fd03d1f07ed",
     "src/features/orders/FinanceFormFields.tsx": "d3b5a157cd739042905dfadd7486f615770e3bef11f29d15fd1dd264234f4349",
+    "src/features/orders/FinanceOperationsPanel.tsx": "0af518da4ad23db6d1daee39c614fc5bdff2e6f3aeb8528457a30b55dfc7b622",
+    "src/features/orders/FinancePhaseInvoice.tsx": "aeee9e03e3195220cd91b98333871409b06a2c41f92b3a90b2af84a4f0528c11",
+    "src/features/orders/FinanceReceiptImport.tsx": "916c9d784a782a1a74b36f9645157e70f0a7c463c848077cd87ad90dead9cdef",
+    "src/features/orders/FinanceSidebar.tsx": "c5b915f0e664d3f2eb9f2129f110bedc9162dcd6d20625099213e02bf14e925d",
+    "src/features/orders/GovernedResultPackagePanel.tsx": "8b1a0b234dfe1b362c170b7139d1b2d7815a72c7acfd48c12a53ffb252a8018a",
+    "src/features/orders/lab-customer-progress.ts": "d9aaffcaf94c4f71ae43180be25de19087b2516130660b3db740b26091b09f7a",
+    "src/features/orders/lab-job-presentation.ts": "ed963e6ab696fc31148e0d55eac79455b12265103c34b8d89753d5b95e6b4ba0",
+    "src/features/orders/lab-job-progress.ts": "1edf518d58d79ae882bc98e27f94ef4cdeaf247b07b8a050eb68d490dfcb5774",
+    "src/features/orders/lab-job-visibility.ts": "af2c4d94ddaa2e23ffb39894a7aba5be55eb5a725c65777ded2c8f08a9d8983c",
+    "src/features/orders/lab-job-workspace-search.ts": "df2371befcf5a7586e2af424a05d433729baefbaff16dec10fce2191cae5fa0b",
+    "src/features/orders/lab-phase-progress.ts": "cba0246e9dcb9de975e1cd57f82fd49e0acc1622e85d02d4c2a9b54a47a1990d",
+    "src/features/orders/lab-phase-shipping.ts": "ec1bb4a02ea58a020085c8bc2df38ff738ecf7555a7f1357391c55e1d0a0932d",
+    "src/features/orders/LabChangeQuotes.tsx": "097d2336176649e970a3f4a51a9e1760bd67836ebba7bbcd1c477d4595be860b",
+    "src/features/orders/LabJobDetailTabs.tsx": "e561ab35da9ad2f0680ec0ddaad0507b56c198a7966f5adc8c30726bce15e63e",
+    "src/features/orders/LabJobHistory.tsx": "f63b4eb71cf1bdea62e04898ae7d963791e965cfa501a956a4af0e44f77eb2a1",
+    "src/features/orders/LabJobKitDeliveryPanel.tsx": "43116fd4785fe23b9b66e0063b285a135c9baa4c53aa7c10194a94717071ed35",
+    "src/features/orders/LabJobOrderProgress.tsx": "561acd969146f69e53659515b67f38bfb8bcf8a7b2babdac95922016f22df0df",
+    "src/features/orders/LabJobPairedPreparation.tsx": "98c12956d2718150dbb82d7fbf4bc072aa5113455a987a7a0cbe87c75841c242",
+    "src/features/orders/LabJobPhaseActions.tsx": "85a750221590a6c2dede78601667fc489bdb93eb12fe5612db0a30bb310d37d4",
+    "src/features/orders/LabJobPhaseList.tsx": "4e7fb2fb92be26e3ededfe70525c085449c101509e2c97e7069ab1419c319bf4",
+    "src/features/orders/LabJobPhaseShipping.tsx": "c7751ed4ae3c6092ae979bf6866fbaa85791ff68c8a9ad52f30dacc6e0c2ac40",
+    "src/features/orders/LabJobSamplesPanel.tsx": "e81885a3b2cbc9b6e7516ec08c92ac416204fd49e24e51957d2feb00cfa434a4",
+    "src/features/orders/LabJobShippingWorkspace.tsx": "a3e465190c3b7ca3f90a28f4b857fcfd816ba17eb3283fdf2a883a009e53974d",
+    "src/features/orders/LabJobTrackingSummary.tsx": "0fe9783c87b5d13f6e8ffa74b78c1fe494012b4b7fe28142ee0e5d4e916c5d44",
+    "src/features/orders/LabJobWorkspaceActions.tsx": "6a93e5ab0de4c4b874fcae0ae755561b15346215852fcc681a9119e558c8cb52",
+    "src/features/orders/LabManagedResultReleases.tsx": "488c8760f7b29646c73206f5b5e23d18fc450f6387157c93575bd5efe7194964",
+    "src/features/orders/LabOrderQuoteReview.tsx": "55f327de535e152ce6018d430e3fb31ba05518dcbf3b246401407bc78338ee70",
+    "src/features/orders/LabOrderScope.tsx": "eb13516d37e92d85d2e9c3c568f3a2b14ad457eae6a2574b62bae6a932a5ec06",
+    "src/features/orders/LabPhaseDialogs.tsx": "520d5bf309adbc64f5d0e5e1a9cfb810b941d996a9bfbafe59f5243916700211",
+    "src/features/orders/LabPhaseSampleProgress.tsx": "35a5082825def4d1cf0eea9f4ba3251fa9037ec81375e805da1a67150333f67d",
+    "src/features/orders/LabPhasesPanel.tsx": "8ea4cde48940252a7e8492156c662bc4fb65d1c65e3280fb95f0645fea69352d",
+    "src/features/orders/LabQuoteActions.tsx": "370db12c1fdae2ff7e5142b455acb0f75ffe8ae4cecd3fc077b17d77fedd1b2c",
+    "src/features/orders/LabQuoteDeclineDialog.tsx": "66617c7c51bb47664afe7966337cfe78ee638146046aee1e8a41b1b50e733a96",
+    "src/features/orders/LabQuoteExtensionDialog.tsx": "7c14cbe6332d6916d20f5d6ec9068f4fefebd087b61b08c2b813184d961bec08",
+    "src/features/orders/LabQuoteProposalDialog.tsx": "6326d1440d83334912e872ba489c604f363e14e3219fb3c17bdd22058c83e345",
+    "src/features/orders/LabSampleDialog.tsx": "c473d038ed0dbac4f2437762b6234803ae20deb8d9b980a7614c06aa8ccbbfd1",
+    "src/features/orders/LabServiceDetailPage.tsx": "4daab4b62ec796aad505e06beeeb7f8ee4a453895d4c6fb752666c171234d23f",
     "src/features/orders/order-rich-text.tsx": "ae9073637aeb5b0ff495613789a4ea2a7b0aa5f2389b4c32b4381cf37f9676b3",
+    "src/features/orders/OrderListFilters.tsx": "602308488df1557ff13c8402dc2d214efaae1edabd7677d416787800330972de",
     "src/features/orders/OrderNotesEditor.tsx": "2de96fe3a779aad0b32c0544b9c06f08c33b613e5cc231a9aafa0331de4ddb11",
+    "src/features/orders/OrderStatusBadge.tsx": "a6d8d3e8b2e6d1a16d50bea6e3dcfda1622f8954312cd6a5e8050dcca43800e2",
+    "src/features/orders/quote-decision-history.ts": "3be6f166e6a6f338d029e83db03634f879c992dbee41cecaaaf71f8732eed0f6",
+    "src/features/orders/quote-phase-review.ts": "b68d384003fc69390452ab0c5e192a3fb9fd08dd2c8d83c91bc51855ae7e22ff",
+    "src/features/orders/QuoteSummary.tsx": "b6810ac21e397f5ddc19c57d33ec4f0ff59a732a1a6ca805de4d891329eb3720",
+    "src/features/orders/QuoteTurnaround.tsx": "d6f52e8750b9af858df37185a05046e3668a77e8a14a2f25613efd68124207a4",
+    "src/features/orders/ReleasedDeliverableRetentionNotice.tsx": "d25ce6b2178d81920bc16e69ebfaf47a6f001ea9f9c02ec17748edca6b58d031",
+    "src/features/orders/RequestCustomWorkButton.tsx": "224348c0f0f285567e7ab2c6516307fd87c07623fb85b57717153943ee5d2be8",
     "src/features/orders/sample-service-pricing.ts": "a655f83a3f20a0394cb3b1e6af51a3e57180432cf5162fa636d7279f8c5055ef",
+    "src/features/orders/sample-source-capacity.ts": "ca07478363972ee16806ee9d7cf86e253cb72243517a6ff86345f40f4d7e7a22",
+    "src/features/orders/SampleIdentificationRows.tsx": "5f6679099738a63da0bfda8aeb481ecceb53ddbfc2b867a2cfd3d552f7839c34",
+    "src/features/orders/SpecimenHolds.tsx": "d375b6142324b23d35e3157768ba75c3ccdcc1bf6cba8827ba5df163e94206fb",
+    "src/features/orders/StandardLabServicePanel.tsx": "b1eb18889c5af9c4983512896971e87c68bb4c0a3936819864383aa0fc7446c4",
     "src/features/orders/use-commercial-draft.ts": "465cdcd1466fdacdc01396a63a1ed392465c12a97f63ffe1ba57202c055466e3",
+    "src/features/orders/use-lab-phases.ts": "24c2d03df1e3cd34e2eb126aa80fedab3491e12f12e6ffc65ea8f49c4ee79c40",
     "src/features/orders/use-modal-draft-guard.ts": "934b01d18fe44ef07ce19efb94c9d02ad02b44e9a04c7436c8f293d5a0a499d2",
     "src/features/orders/use-order-decision-dismissal.tsx": "baae9ff8c604a02e28e1c16a09e403eaca0781ba48137ee61ad6619d841b1d79",
     "src/features/orders/use-order-draft-guard.ts": "5c4d8dcc33a9ea92b720f781dddd5ede3c98fbd5957f7da51ba745d356a96082",
+    "src/features/orders/use-quote-status.ts": "dc85a7eacc01a3b759c06809a533051264405f35cb3461ab37b8482752bd090b",
+    "src/features/orders/use-specimen-holds.ts": "cc5cbfeccfa83b8ecffc8f263267e420f45e7353ff9160d70d6d392649883c66",
     "src/features/organizations/access-status.ts": "2d548a494189b3a950ab1954af45ca26640297baa9f329967b3a952f8e032c1d",
+    "src/features/organizations/delivery-locations/DeliveryLocationAddress.tsx": "0926aec26a79c6f3aea3068f22e87a878c1054a4534dafc6719f583601f2eee5",
     "src/features/organizations/department-localization.ts": "b6e493bbd502f4956f8566ae7c72e87f4cfedef87b30bfc812b37d2354e1861e",
     "src/features/organizations/DepartmentMembersDialog.tsx": "ed3af6a8e0fe7e9c36469277356027793a72eff54b9cd88ff68ea8e15d18d251",
     "src/features/organizations/DepartmentSettingsDialog.tsx": "0705203529fb10dc49b624a9bbaa5aa4fc4ca187ca2dafc50901fa167cf796f8",
@@ -1685,8 +2171,8 @@
     "src/features/organizations/LifecycleActionDialog.tsx": "6f22f24fcf9251205acddb59014b7c8a995d10fb1120bf64369001efadba0b3c",
     "src/features/organizations/OrganizationConversionDialog.tsx": "6df0e4f70454b384f32cc2cf49e2107094e777c7cc9ed99a23a46da54d3e6afd",
     "src/features/organizations/OrganizationDefaultsPanel.tsx": "60be50a9f4244f6c7f5e369bbd84d8996eb88d835029ae2822b1deaba81e7059",
-    "src/features/organizations/OrganizationDepartmentsPanel.tsx": "e427e7669ff7c98a37f50116f3a1bafd477315363f690cdf8e33b4fba084c5f6",
-    "src/features/organizations/OrganizationDetailPage.tsx": "aeade3bee307504058632ad4f4472fc7b19544672e9a77e40efebb633f83b8c8",
+    "src/features/organizations/OrganizationDepartmentsPanel.tsx": "72a0647822a030784ee81eea7eb49d09087f0f306e179953f4f757ad880003c5",
+    "src/features/organizations/OrganizationDetailPage.tsx": "175e7e19788be3c5a38416f8b70501ca49db1097d7686d4aa288698b1f80691e",
     "src/features/organizations/OrganizationFormDialog.tsx": "738c615fdd234acafc2a1c8cbdd97b00cd1c1434126e4e77dbf566c34a8a8ff1",
     "src/features/organizations/RequestActionDialog.tsx": "bc233dfbd0da22d28e1384f70329f1163a63ec4be46e52c8549012cff9d695d9",
     "src/features/research/research-api.ts": "7bbaf74e44bcc476afec16a6a85455e593df88aed6a85a9203d8e4038d9570d6",
@@ -1695,21 +2181,52 @@
     "src/features/research/research-status.ts": "4dd53d15350bf654621dc661251f06e90994310a0d40f4532b023206352a6419",
     "src/features/research/ResearchCommon.tsx": "47d9d47c7d88e044f83e2ffcbedb1127fb353fe59b711dcdcbe1b60b5b684449",
     "src/features/research/ResearchEntryDialog.tsx": "cadfcd8e0207fe253a6a4d5190faed81e2970d140117d8d11158f3798532c633",
-    "src/features/research/ResearchEntryEditor.tsx": "22e0798fbeeb81c2da5e8faab9e87e17223c2b884a88df896c7e1e734bfe5638",
+    "src/features/research/ResearchEntryEditor.tsx": "2aec6b97a66c5071f5dccc4a8dfa12a0c257f8acd7bad8fbf53267d972af336b",
     "src/features/research/ResearchEntryPage.tsx": "2b9fff70b19f05b982f3c9c7e2288a7642ea5b5b4e0d3d55a0ab3da3cfe32b3d",
     "src/features/research/ResearchExperimentPage.tsx": "67854f6308460f12288ed8373c15656a1f9f23953ac12e46928d357e367cdf8b",
-    "src/features/research/ResearchHistory.tsx": "32908629f263efef5dc77dfbe9b1d1547f8b0865c004386f82cd639798fcedfc",
+    "src/features/research/ResearchHistory.tsx": "60ac04f73baba17c3cfa8ec7d53393e76a2d9c66660e0dd2f5b2a5badec84f08",
     "src/features/research/ResearchLists.tsx": "f4e5e719cd4dbd4e5e12d368842d0ed41f8e3355887ea1d3a97d7673cb59d7ee",
-    "src/features/research/ResearchNotebook.tsx": "877f901230b666674759a2ea6f124a9f555a2bbea31c6d89908a199b938f43cc",
+    "src/features/research/ResearchNotebook.tsx": "e4ebcc421a4f5b292cdaabce7a7e3ed4b7ad7bdbcacb45697f78f6d608806a6b",
     "src/features/research/ResearchProjectPage.tsx": "fda24b5389256a56ac22c7e39ecbdeb7a9e3af168e2e66e69f06611d93ee8795",
     "src/features/research/ResearchRecordDialog.tsx": "8857de4854f5f477ac17db247eba01354ba7a2661f724568e06e27d9a69309ee",
     "src/features/research/ResearchShell.tsx": "78914cb3f99afb1c849c490e89fd3c782216f3ea8f8edff3f1b1d194f412c3e8",
+    "src/features/sample-shipping/RelatedSampleShipments.tsx": "6f55738d6c048071bf2012ef8f184ebf0333000e8e2699791fd11cfbb3559df2",
+    "src/features/sample-shipping/sample-shipping-packet.css": "fa553ee2cd1a24574762412c88938a900fa70735480bce6584930bf6f01d315c",
+    "src/features/sample-shipping/sample-tube-order.ts": "b0933d681af998f0d0d3ade8b83744815797c60b9733e498d302dd4ba142dc4a",
+    "src/features/sample-shipping/SampleShipmentPackingDialog.tsx": "d65b1f5e24b9f06c28aec6f1bc253c6399637ff9a444ebec20d9de00ab252621",
+    "src/features/sample-shipping/SampleShipmentPackingPanel.tsx": "df4847c3dd10ac1b27817729de5ebe4a2c880200458b37f73067ef58d19edce7",
+    "src/features/sample-shipping/SampleShipmentResetPacking.tsx": "cc228422c41cb5537af5bfa0568a01536264f4f939351f76cdac54e9a847c0bf",
+    "src/features/sample-shipping/SampleShippingDetailPage.tsx": "b8fa3d81739359751e73b07788b8a2be6b571843bc7d88810988965a476a0270",
+    "src/features/sample-shipping/SampleShippingPacketPage.tsx": "7036297052763a48ac85390222f1e053f4c020ad3de114cf8fa9d6e8aa9609b6",
+    "src/features/sample-shipping/SampleShippingPage.tsx": "4bb9f2a80c98a260feae490edf77d139a326826b7c937ac79c790b93be8b143a",
+    "src/features/sample-shipping/SampleTubeRow.tsx": "8992abe51a7f99fde4ed954d5dd1d41a8c3508fbd7db4975fe29ea8901861614",
+    "src/features/sample-shipping/SampleTubeScanner.tsx": "b6788b3be21a8ef9eea0050c757ab8ebe3298481bc7e040102575c5459a5b099",
+    "src/features/sample-shipping/shipping-insert-acknowledgement.ts": "40428ca4553abc7814da951d252ef67d341a0ebe53705556be5e251ed33ef4ec",
+    "src/features/sample-shipping/shipping-status.ts": "6afd12dd362a17b078d9c9dbcac3d77fc98aeb7b52838377fb985fe0c832aba4",
+    "src/features/sample-shipping/ShippingBarcode.tsx": "3d680a4c13a69a2a0e4d2292a8be199ac414890f60825e4b19c7ca4de98c021c",
+    "src/features/sample-shipping/ShippingContainerSelector.tsx": "ef06fbe80555aea67b0e65631d58f456b55460bdfc73a7acee67737cfd6eab6b",
+    "src/features/sample-shipping/ShippingInsertPrintFrame.tsx": "644647dc54ba4acb3c74ff71fe4fa623f12cfe1505f7cc056843cc8eee994f6e",
+    "src/features/sample-shipping/TransportationKitsPanel.tsx": "036118fdc31f3dcb6633d8b182c536a12cf937cf5d5678553d020e1300fc1654",
+    "src/features/sample-shipping/TubeMaterialAmountFields.tsx": "6c2c62c996b3570b671013cd7fc54b2b3f6a485ed71a4bcd9ea5623494c85207",
+    "src/features/sample-shipping/use-source-sample-shipments.ts": "4273886704cd0abff84f8e92806f880756897a1370f6057c96c9173f54eed083",
+    "src/features/trials/trial-hooks.ts": "c00924f02d096dc7d8fecc3b38ba57094a35fe70aba8e8265c7a783d58851877",
+    "src/features/trials/trial-presentation.ts": "ed37eb21811788e5c7a81c7cfa8cbd5a48dfdf6ae72244482fbf814d52eafeae",
+    "src/features/trials/trial-source-schema.ts": "f12d961943338f7201721b8c45d594a12160e3309fd45f9c1a4acbf04c09ae81",
+    "src/features/trials/trial-submission-dates.ts": "2f46dc23ccadd2d48eed83c5b54ad360d568df6393f88df739e0d41d17667d6f",
+    "src/features/trials/TrialDetailPage.tsx": "feb0fed9f0639e6967748996dcd9935d5dc0040ed1e2ac2d2cb77b43bd06c226",
+    "src/features/trials/TrialFormDialog.tsx": "0d9ae789226b54417b7a23f6c066ce41023b3ca81a9fc1242a7ca6b2a9b6f2be",
+    "src/features/trials/TrialSampleDialog.tsx": "5888332ab8bfbc441c4978f251d78cd7ae572a50ebf172576a512e55465eb5a3",
     "src/lib/display-format.ts": "34e3227df7d318b54ca15667e87b4bf179214d4723a7696a4d4f91767b0aab7b",
     "src/lib/utils.ts": "7c8c3dfc0cdd370d44932828eb067ef771c8fe7996693221d5d4b90af6d54f2d",
     "src/styles.css": "2ef6c78f916589a62445407f1d5531315dfb6458e57462023a24df94399f550e",
+    "src/test-helpers/bundled-orders.ts": "fc2469631dc019220836a045de3004e1e08162142d19b9aeefe14a2238d62e89",
+    "src/test-helpers/sample-shipping.ts": "da7fabc01d4f4df320b42f8e56f67ceb5a3c6e4946dad363a48b9c640d54a878",
     "src/test-helpers/session.ts": "7357f776c3189b19cff3c825412ee910404fd670beaf24a5bfb3421c3c497a87",
-    "ui-gallery/feature-data.ts": "f5d736fc9b9ed4d25939eb933a97fb088a852daff92ebc57593c22b4fc566509",
-    "ui-gallery/FeatureScenes.tsx": "85a6c120dcc95e6b8a69cfdafc52147174b71f48ff64a333a70ebd1f5124065b",
-    "ui-gallery/styles.css": "f019d202513ab1c8bb2ddf4ae740cf2e10b03c811aaa50074bb74eb55ab571a5"
+    "src/test-helpers/trials.ts": "32d2faec11f8d7fa9fe4ca74b85e924946342c4ee7899b965ba0a51fb1911b3f",
+    "ui-gallery/feature-data.ts": "1e76863db711882980287b6f17479a8a991cf2e6e047b138c6b7b286ee646399",
+    "ui-gallery/FeatureScenes.tsx": "a983fb04cb28b6e196bc4906bf044dcebf88fe99cbc4231b46b49aef916b2868",
+    "ui-gallery/GuideWorkflowScenes.tsx": "10becdaeb2d88c368e815a57c01b57b470bea356ad98ba6ca9fa091a1d1b8842",
+    "ui-gallery/styles.css": "f019d202513ab1c8bb2ddf4ae740cf2e10b03c811aaa50074bb74eb55ab571a5",
+    "ui-gallery/workflow-data.ts": "601c35929ad20a140d7cf9656f3cb5f07b72e451b82f2faec72baa91623b5a87"
   }
 }

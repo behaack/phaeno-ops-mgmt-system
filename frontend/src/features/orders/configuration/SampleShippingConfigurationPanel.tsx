@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
 import { availabilityTones } from '#/features/orders/configuration/availability-status'
 import { formatDisplayTimestamp } from '#/lib/display-format'
@@ -252,7 +253,7 @@ export function SampleShippingConfigurationPanel({ apiEnabled, section, sampleTy
   const sampleTypePage = Math.min(sampleTypeListSearch.sampleTypePage ?? 1, sampleTypePageCount)
   const visibleSampleTypes = filteredSampleTypes.slice((sampleTypePage - 1) * sampleTypePageSize, sampleTypePage * sampleTypePageSize)
 
-  if (configuration.isLoading) return <p role="status"><CustomerText message="m_32825631d9ce" /></p>
+  if (configuration.isLoading) return <LoadingState  label={<><CustomerText message="m_32825631d9ce" /></>} />
   if (configuration.error) {
     return <Alert variant="destructive"><AlertTitle><CustomerText message="m_ac52d17f83f8" /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(configuration.error, 'Refresh the configuration and try again.')} />} <Button variant="outline" onClick={() => void configuration.refetch()}><CustomerText message="m_942087cc2d41" /></Button></AlertDescription></Alert>
   }

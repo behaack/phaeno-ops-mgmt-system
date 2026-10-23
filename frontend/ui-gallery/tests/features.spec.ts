@@ -1,14 +1,8 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
+import coverage from '../coverage.json' with { type: 'json' }
 
-export const featurePages = [
-  ['company','/features.html?scene=company','DEMO — Example Research'],
-  ['source','/features.html?scene=source','DEMO — source sample'],
-  ['assembly-inputs','/features.html?scene=assembly-inputs','Sequencing inputs'],
-  ['assembly-jobs','/features.html?scene=assembly-jobs','Sequencing assembly'],
-  ['customer','/features.html?scene=customer','Data Library'],
-  ['research','/research.html?illustrate=true&prepared=true&path=/research/experiments','Experiments'],
-] as const
+export const featurePages = coverage.features.map(example => [example.id, example.url, example.title])
 
 for(const [scene,url,title] of featurePages)test(`actual ${scene} page retains shared presentation and reflow`,async({page},info)=>{
   const errors:string[]=[],requests:string[]=[]

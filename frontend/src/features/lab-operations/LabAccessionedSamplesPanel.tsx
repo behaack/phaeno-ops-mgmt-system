@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { sampleUseTones } from '#/features/lab-operations/lab-status'
 import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
 import { RecordTableHeader } from '#/components/ui/record-list'
@@ -42,7 +43,7 @@ export function LabAccessionedSamplesPanel({ apiEnabled }: { apiEnabled: boolean
       </div>
     </CardHeader>
     <CardContent className="space-y-4 p-4" aria-busy={query.isFetching || waiting}>
-      {!apiEnabled ? <p className="text-sm text-muted-foreground">A connected laboratory session is required.</p> : waiting || query.isPending ? <p role="status">Loading accessioned samples…</p> : null}
+      {!apiEnabled ? <p className="text-sm text-muted-foreground">A connected laboratory session is required.</p> : waiting || query.isPending ? <LoadingState  label={<>Loading accessioned samples…</>} /> : null}
       {apiEnabled && query.error && !waiting ? <Alert variant="destructive"><AlertTitle>Samples could not be loaded</AlertTitle><AlertDescription>{getLabOperationsError(query.error, 'Try loading the samples again.')} <Button variant="outline" onClick={() => void query.refetch()}>Retry samples</Button></AlertDescription></Alert> : null}
       {data ? <>
         {data.items.length ? <div className="overflow-x-auto rounded-lg border"><table className="w-full text-left text-sm"><caption className="sr-only">Accessioned samples</caption><RecordTableHeader className="border-b"><tr>{['Sample / accession', 'Customer / Job', 'Intake status', 'Sample use', 'Tubes / storage'].map(label => <th key={label} scope="col" className="p-3 font-medium">{label}</th>)}</tr></RecordTableHeader><tbody>{data.items.map(sample => <tr key={sample.id} className="border-b last:border-0">

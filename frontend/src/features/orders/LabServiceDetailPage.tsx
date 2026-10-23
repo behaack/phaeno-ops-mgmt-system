@@ -1,3 +1,5 @@
+import { SectionPanel } from '#/components/ui/section-panel'
+import { LoadingState } from '#/components/ui/content-state'
 import { formatDisplayCurrency, formatDisplayDate, formatDisplayTimestamp } from '#/lib/display-format'
 import { NativeCheckbox } from '#/components/ui/native-checkbox'
 import { PageTitle } from '#/components/ui/page-header'
@@ -155,7 +157,7 @@ export function LabServiceDetailPage({ orderId, workspace: controlledWorkspace, 
   }
 
   if (!apiEnabled) return <main className="page-wrap px-4 py-8"><Alert><AlertTitle><CustomerText message="m_7987be1195d6" /></AlertTitle><AlertDescription><CustomerText message="m_5e08cb7ae25b" /></AlertDescription></Alert></main>
-  if (orderQuery.isLoading) return <main className="page-wrap px-4 py-8"><p role="status"><CustomerText message="m_e0529f3395ae" /></p></main>
+  if (orderQuery.isLoading) return <main className="page-wrap px-4 py-8"><LoadingState  label={<><CustomerText message="m_e0529f3395ae" /></>} /></main>
   if (orderQuery.error || !orderQuery.data) return <main className="page-wrap px-4 py-8"><Alert variant="destructive"><AlertTitle><CustomerText message="m_f47886b0bfc9" /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(orderQuery.error, 'Return to Lab services and try again.')} />}</AlertDescription></Alert></main>
 
   const order = orderQuery.data
@@ -267,8 +269,8 @@ export function LabServiceDetailPage({ orderId, workspace: controlledWorkspace, 
             <CardContent>
               {phasePlan.data && phasePlan.data.phases.length > 1 ? <Field className="mb-4 max-w-sm"><Label htmlFor="result-phase-filter"><CustomerText message="m_46342ec1eec9" /></Label><NativeSelect id="result-phase-filter" value={workspace.resultPhaseId ?? ''} onChange={event => { void changeWorkspace({ resultPhaseId: event.target.value || undefined }) }}><option value=""><CustomerText message="m_aa556a303839" /></option>{phasePlan.data.phases.map(phase => <option key={phase.id} value={phase.id}>{phase.name}</option>)}</NativeSelect></Field> : null}
               {workspace.resultPhaseId && !phasePlan.data?.phases.some(phase => phase.id === workspace.resultPhaseId) ? <Alert><AlertTitle><CustomerText message="m_37b0c82e4f15" /></AlertTitle><AlertDescription><Button variant="outline" size="sm" onClick={() => { void changeWorkspace({ resultPhaseId: undefined }) }}><CustomerText message="m_3d48c2f198c3" /></Button></AlertDescription></Alert> : null}
-              {resultPackagesQuery.isLoading ? <p role="status" className="text-sm text-muted-foreground"><CustomerText message="m_878f481f7f0c" /></p> : null}
-              {resultPackagesQuery.isFetching && !resultPackagesQuery.isLoading ? <p role="status" className="text-xs text-muted-foreground"><CustomerText message="m_1689a053e214" /></p> : null}
+              {resultPackagesQuery.isLoading ? <LoadingState  label={<><CustomerText message="m_878f481f7f0c" /></>} /> : null}
+              {resultPackagesQuery.isFetching && !resultPackagesQuery.isLoading ? <LoadingState  label={<><CustomerText message="m_1689a053e214" /></>} refreshing /> : null}
               {resultPackagesQuery.error || resultDownload.error ? <Alert variant="destructive"><AlertTitle><CustomerText message="m_a211600e6914" /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(resultPackagesQuery.error ?? resultDownload.error, 'Refresh and try again.')} />}</AlertDescription></Alert> : null}
               {filteredResultPackages.length ? <div className="divide-y">{filteredResultPackages.map((resultPackage) => <GovernedResultPackagePanel
                 key={resultPackage.id} resultPackage={resultPackage}
@@ -281,8 +283,8 @@ export function LabServiceDetailPage({ orderId, workspace: controlledWorkspace, 
             </CardContent>
           </Card>} billing={<><StandardLabServicePanel order={order} />
           <LabChangeQuotes order={order} onSaved={async () => { await queryClient.invalidateQueries({ queryKey: ['lab-service-order', orderId] }); await queryClient.invalidateQueries({ queryKey: ['lab-service-orders'] }) }} />
-          <section aria-labelledby="order-details-heading" className="rounded-lg border bg-card p-4">
-            <div className="flex flex-wrap items-center justify-between gap-3"><h2 id="order-details-heading" className="font-semibold"><CustomerText message="m_7d54ddc64644" /></h2>{quoteActions}</div>
+          <SectionPanel aria-labelledby="order-details-heading" heading={<h2 id="order-details-heading" ><CustomerText message="m_7d54ddc64644" /></h2>} actions={<>{quoteActions}</>}>
+
             <LabOrderQuoteReview order={order} quote={quote} status={quoteStatus ?? quote?.status}
               quoteHelp={proposal ? <Alert className="mt-4"><AlertTitle><CustomerText message="m_1d16371e105b" /></AlertTitle><AlertDescription><p><CustomerText message="m_dc6044766f60" />{proposal.quoteRevision} <CustomerText message="m_d9389ab07474" />{formatDateTime(proposal.proposedAt)}</p><p className="whitespace-pre-wrap break-words">{proposal.reason}</p><p><CustomerText message="m_b12fc116d79c" /></p></AlertDescription></Alert> : awaitingQuoteAcceptance ? <div className="mt-4 space-y-3">
               {canManageQuotes ? acceptanceBlocked && acceptanceExplanation ? <p id="quote-acceptance-help" className="text-sm text-muted-foreground">{acceptanceExplanation}</p> : null
@@ -290,10 +292,10 @@ export function LabServiceDetailPage({ orderId, workspace: controlledWorkspace, 
               {extensionPending ? <div className="space-y-1" role="status"><p className="text-sm font-medium"><CustomerText message="m_1fe40ba22755" /></p><p className="text-sm text-muted-foreground"><CustomerText message="m_012c1a1ffd9b" /></p></div> : null}
             </div> : null}
               billing={<>
-                {canViewInvoices && invoicesQuery.isLoading ? <p role="status" className="mt-4 border-t pt-4 text-sm text-muted-foreground"><CustomerText message="m_7a4d8bede775" /></p> : null}{canViewInvoices && invoicesQuery.isFetching && !invoicesQuery.isLoading ? <p role="status" className="mt-4 text-xs text-muted-foreground"><CustomerText message="m_045508ade6dc" /></p> : null}{canViewInvoices && (invoicesQuery.error || invoiceDownload.error) ? <Alert variant="destructive" className="mt-4"><AlertTitle><CustomerText message="m_04b00896e096" /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(invoicesQuery.error ?? invoiceDownload.error, 'Refresh and try again.')} />}</AlertDescription></Alert> : null}{invoices.map((invoice) => <div key={invoice.id} className="mt-4 border-t pt-4"><div className="flex items-center justify-between gap-2"><span className="text-sm font-medium"><CustomerText message="m_87f71c5a66fa" />{invoice.invoiceNumber}</span><OrderStatusBadge status={invoice.status} /></div><p className="mt-1 text-sm text-muted-foreground"><CustomerText message="m_2d52d03bbb9a" />{formatDate(invoice.dueOn)} <CustomerText message="m_4c774f7c7333" />{formatMoney(invoice.balance, invoice.currency)}</p><Button type="button" size="sm" variant="outline" className="mt-2" disabled={invoiceDownload.isPending} onClick={() => invoiceDownload.mutate(invoice)}><Download data-icon="inline-start" /><CustomerText message="m_e2a4727b6c13" /></Button></div>)}{canViewInvoices && !invoicesQuery.isLoading && !invoicesQuery.error && !invoices.length ? <p className="mt-4 border-t pt-4 text-sm text-muted-foreground"><CustomerText message="m_e55d0ff405bc" /></p> : null}{!canViewInvoices ? <p className="mt-4 border-t pt-4 text-sm text-muted-foreground"><CustomerText message="m_fcbf16cc951b" /></p> : null}{order.documents.map((document) => <div key={document.id} className="mt-4 border-t pt-4"><div className="flex items-center justify-between gap-2"><span className="text-sm font-medium"><CustomerText message="m_39be3539aa58" />{document.kind} {document.documentNumber ?? ''}</span><OrderStatusBadge status={document.syncStatus} /></div><p className="mt-1 text-sm text-muted-foreground"><CustomerText message="m_39cdc892b489" />{formatMoney(document.balance, document.currency)}</p>{document.documentUrl ? <a href={document.documentUrl} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm text-primary hover:underline"><CustomerText message="m_856a8bdcb772" /></a> : null}</div>)}
+                {canViewInvoices && invoicesQuery.isLoading ? <LoadingState  label={<><CustomerText message="m_7a4d8bede775" /></>} /> : null}{canViewInvoices && invoicesQuery.isFetching && !invoicesQuery.isLoading ? <LoadingState  label={<><CustomerText message="m_045508ade6dc" /></>} refreshing /> : null}{canViewInvoices && (invoicesQuery.error || invoiceDownload.error) ? <Alert variant="destructive" className="mt-4"><AlertTitle><CustomerText message="m_04b00896e096" /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(invoicesQuery.error ?? invoiceDownload.error, 'Refresh and try again.')} />}</AlertDescription></Alert> : null}{invoices.map((invoice) => <div key={invoice.id} className="mt-4 border-t pt-4"><div className="flex items-center justify-between gap-2"><span className="text-sm font-medium"><CustomerText message="m_87f71c5a66fa" />{invoice.invoiceNumber}</span><OrderStatusBadge status={invoice.status} /></div><p className="mt-1 text-sm text-muted-foreground"><CustomerText message="m_2d52d03bbb9a" />{formatDate(invoice.dueOn)} <CustomerText message="m_4c774f7c7333" />{formatMoney(invoice.balance, invoice.currency)}</p><Button type="button" size="sm" variant="outline" className="mt-2" disabled={invoiceDownload.isPending} onClick={() => invoiceDownload.mutate(invoice)}><Download data-icon="inline-start" /><CustomerText message="m_e2a4727b6c13" /></Button></div>)}{canViewInvoices && !invoicesQuery.isLoading && !invoicesQuery.error && !invoices.length ? <p className="mt-4 border-t pt-4 text-sm text-muted-foreground"><CustomerText message="m_e55d0ff405bc" /></p> : null}{!canViewInvoices ? <p className="mt-4 border-t pt-4 text-sm text-muted-foreground"><CustomerText message="m_fcbf16cc951b" /></p> : null}{order.documents.map((document) => <div key={document.id} className="mt-4 border-t pt-4"><div className="flex items-center justify-between gap-2"><span className="text-sm font-medium"><CustomerText message="m_39be3539aa58" />{document.kind} {document.documentNumber ?? ''}</span><OrderStatusBadge status={document.syncStatus} /></div><p className="mt-1 text-sm text-muted-foreground"><CustomerText message="m_39cdc892b489" />{formatMoney(document.balance, document.currency)}</p>{document.documentUrl ? <a href={document.documentUrl} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm text-primary hover:underline"><CustomerText message="m_856a8bdcb772" /></a> : null}</div>)}
               </>}
             />
-          </section></>} history={<LabJobHistory order={order} />} />
+          </SectionPanel></>} history={<LabJobHistory order={order} />} />
 
       <Dialog open={dialog === 'accept'} onOpenChange={(open) => { if (!open) closeDecision() }}>
         <DialogContent showCloseButton={!action.isPending} aria-busy={action.isPending} onOpenAutoFocus={event => { event.preventDefault(); document.getElementById('accept-quote-keep-reviewing')?.focus() }} onCloseAutoFocus={event => { event.preventDefault(); restoreQuoteFocus() }}>
@@ -301,14 +303,14 @@ export function LabServiceDetailPage({ orderId, workspace: controlledWorkspace, 
             <DialogTitle><CustomerText message="m_1496d7b4cb10" />{order.orderNumber}?</DialogTitle>
             <DialogDescription><CustomerText message="m_acd59941d249" /></DialogDescription>
           </DialogHeader>{action.error ? <Alert variant="destructive"><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(action.error, 'Review the details and try again.')} />}</AlertDescription></Alert> : null}
-          {decisionQuote ? <section aria-labelledby="accept-quote-details" className="overflow-hidden rounded-lg border">
-            <h3 id="accept-quote-details" className="border-b bg-muted/50 px-4 py-2 text-sm font-medium"><CustomerText message="m_1ac739e38967" /></h3>
-            <div className="p-4"><QuoteSummary quote={decisionQuote} status={decisionQuote.id === quote?.id ? quoteStatus ?? decisionQuote.status : decisionQuote.status} /><QuoteTurnaround quote={decisionQuote} /></div>
-          </section> : null}
+          {decisionQuote ? <SectionPanel aria-labelledby="accept-quote-details" className="overflow-hidden" heading={<h3 id="accept-quote-details" ><CustomerText message="m_1ac739e38967" /></h3>}>
+
+            <div><QuoteSummary quote={decisionQuote} status={decisionQuote.id === quote?.id ? quoteStatus ?? decisionQuote.status : decisionQuote.status} /><QuoteTurnaround quote={decisionQuote} /></div>
+          </SectionPanel> : null}
           {acceptanceBlocked || decisionQuote?.id !== quote?.id ? <Alert variant="destructive"><AlertTitle><CustomerText message="m_eae692216c4a" /></AlertTitle><AlertDescription>{decisionQuote?.id !== quote?.id ? <CustomerSourceText source={"The quote changed. Close this dialog and review the current revision."} /> : acceptanceExplanation || 'Close this dialog and review the current quote.'}</AlertDescription></Alert> : null}
-          <section aria-labelledby="accept-order-details" className="overflow-hidden rounded-lg border">
-            <h3 id="accept-order-details" className="border-b bg-muted/50 px-4 py-2 text-sm font-medium"><CustomerText message="m_1e3f2e3f87c9" /></h3>
-            <div className="space-y-4 p-4">
+          <SectionPanel aria-labelledby="accept-order-details" className="overflow-hidden" heading={<h3 id="accept-order-details" ><CustomerText message="m_1e3f2e3f87c9" /></h3>}>
+
+            <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="confirmed-lab-sample-type"><RequiredFieldName><CustomerText message="m_1e3f2e3f87c9" /></RequiredFieldName></Label>
                 <p className="text-sm">{order.sampleTypeName ?? 'No Sample type was quoted'}</p>
@@ -317,14 +319,14 @@ export function LabServiceDetailPage({ orderId, workspace: controlledWorkspace, 
 
             </div>
             <p className="border-t bg-muted/30 px-4 py-3 text-xs text-muted-foreground"><CustomerText message="m_1d0f307875fa" />{hasMultipleLabPhases(order, phasePlan.data) ? <CustomerSourceText source={"each phase’s"} /> : __customerText('m_4d040d3f6466')} <CustomerText message="m_d5f480af35e6" /></p>
-          </section>
+          </SectionPanel>
           {requiresPurchaseOrder ? (
-            <section aria-labelledby="accept-billing-reference" className="overflow-hidden rounded-lg border">
-              <h3 id="accept-billing-reference" className="border-b bg-muted/50 px-4 py-2 text-sm font-medium"><CustomerText message="m_0bdb56b3d9c3" /></h3>
-              <Field className="p-4"><Label htmlFor="labPurchaseOrderNumber"><RequiredFieldName><CustomerText message="m_65b4c1324e67" /></RequiredFieldName></Label>
+            <SectionPanel aria-labelledby="accept-billing-reference" className="overflow-hidden" heading={<h3 id="accept-billing-reference" ><CustomerText message="m_0bdb56b3d9c3" /></h3>}>
+
+              <Field><Label htmlFor="labPurchaseOrderNumber"><RequiredFieldName><CustomerText message="m_65b4c1324e67" /></RequiredFieldName></Label>
                 <Input disabled={action.isPending} id="labPurchaseOrderNumber" value={purchaseOrderNumber} onChange={(event) => setPurchaseOrderNumber(event.target.value)} />
               </Field>
-            </section>
+            </SectionPanel>
           ) : null}
           <RequiredDialogFooter showLegend>
             <DialogClose asChild><Button id="accept-quote-keep-reviewing" type="button" variant="outline" disabled={action.isPending}><CustomerText message="m_34411a1bde47" /></Button></DialogClose>

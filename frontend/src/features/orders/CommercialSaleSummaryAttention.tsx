@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { RecordLink } from '#/components/ui/record-link'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { commercialRecordRoute } from '#/features/orders/service-workspaces'
@@ -22,7 +23,7 @@ export function CommercialSaleSummaryAttention({ enabled }: { enabled: boolean }
   return <Card className="mt-6">
     <CardHeader><CardTitle><CustomerSourceText source={"CRM sale summaries"} /></CardTitle><CardDescription><CustomerSourceText source={"Recover summaries awaiting publication to CRM. The committed order remains valid while publication is retried."} /></CardDescription></CardHeader>
     <CardContent className="space-y-4">
-      {query.isPending ? <p role="status"><CustomerSourceText source={"Loading sale summaries…"} /></p> : query.isError ? <Alert variant="destructive"><AlertTitle><CustomerSourceText source={"Sale summaries unavailable"} /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(query.error, "The sale summaries could not be loaded.")} />} <Button variant="outline" disabled={query.isFetching} onClick={() => { void query.refetch() }}><CustomerSourceText source={"Try again"} /></Button></AlertDescription></Alert> : <>
+      {query.isPending ? <LoadingState  label={<><CustomerSourceText source={"Loading sale summaries…"} /></>} /> : query.isError ? <Alert variant="destructive"><AlertTitle><CustomerSourceText source={"Sale summaries unavailable"} /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(query.error, "The sale summaries could not be loaded.")} />} <Button variant="outline" disabled={query.isFetching} onClick={() => { void query.refetch() }}><CustomerSourceText source={"Try again"} /></Button></AlertDescription></Alert> : <>
         {!query.data?.items.length ? <p><CustomerSourceText source={"No sale summaries need attention."} /></p> : <ul className="divide-y">{query.data.items.map(summary => <li key={summary.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
           <span className="min-w-0 break-words"><RecordLink asChild><Link to={commercialRecordRoute(summary.workflowType === 'LabService' ? 'lab' : 'reagent')} params={{ orderId: summary.orderId }} >{summary.productSummary}</Link></RecordLink></span><Button variant="outline" disabled={retry.isPending} onClick={() => retry.mutate(summary)} aria-label={`Retry CRM summary for ${summary.productSummary}`}><CustomerSourceText source={"Retry publication"} /></Button>
         </li>)}</ul>}

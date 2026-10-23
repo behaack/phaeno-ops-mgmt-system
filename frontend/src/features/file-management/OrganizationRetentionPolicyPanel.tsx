@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { formatDisplayTimestamp } from '#/lib/display-format'
 import { Field as PortalField, FieldError as PortalFieldError } from '#/components/ui/field'
 import { confirmPortal } from '#/components/PortalConfirmation'
@@ -156,7 +157,7 @@ export function OrganizationRetentionPolicyPanel({
   }
 
   if (!enabled) return null
-  if (query.isLoading) return <p role="status">Loading retention policy…</p>
+  if (query.isLoading) return <LoadingState  label={<>Loading retention policy…</>} />
   const loadError = query.error ? <Alert variant="destructive"><AlertTitle>Retention policy could not be loaded</AlertTitle><AlertDescription>{fileManagementErrorMessage(query.error, 'Try loading the policy again.')} <Button variant="outline" disabled={query.isFetching} onClick={() => void query.refetch()}>Retry</Button></AlertDescription></Alert> : null
   if (query.error && !query.data) return loadError
   if (!query.data) return null

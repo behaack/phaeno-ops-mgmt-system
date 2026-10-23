@@ -1,4 +1,4 @@
-import { EmptyState } from '#/components/ui/content-state'
+import { EmptyState, LoadingState, ErrorState } from '#/components/ui/content-state'
 import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
 import { orderStatusTones } from '#/features/orders/OrderStatusBadge'
 import { Field as PortalField } from '#/components/ui/field'
@@ -13,7 +13,6 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import * as finance from '#/api/pseq-order-to-cash'
 import { getOrderErrorMessage } from '#/api/order-management'
 import { Button } from '#/components/ui/button'
-import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
 import { Label } from '#/components/ui/label'
 import { Input } from '#/components/ui/input'
@@ -91,15 +90,15 @@ export function FinanceOperationsPanel({ apiEnabled, canBill, canManageCash, can
   const actionError = exportReport.error ?? downloadEvidence.error ?? changeBatch.error
   const title = invoice?.invoiceNumber ?? payment?.receiptNumber ?? customer?.organizationName ?? batch?.batchNumber
   const recordLink = (kind: FinanceRecord['kind'], id: string, label: string) => <RecordLink asChild><Link to="/finance/$kind/$recordId" params={{ kind, recordId: id }} search={previous => ({ ...previous, financeSection: section, financeCustomer: customerId || undefined })}>{label}</Link></RecordLink>
-  if (!recordAllowed) return <div className="space-y-4"><BackLink asChild><Link to="/finance" search={previous => ({ ...previous,  })}><CustomerSourceText source={"Back to Finance"} /></Link></BackLink><p><CustomerSourceText source={"This record is unavailable in your current Finance view."} /></p></div>
+  if (!recordAllowed) return <div className="space-y-4"><BackLink asChild><Link to="/finance" search={previous => ({ ...previous,  })}><CustomerSourceText source={"Back to Finance"} /></Link></BackLink><EmptyState kind="permission" title={<CustomerSourceText source="This record is unavailable in your current Finance view." />} /></div>
   return <div className="space-y-5">
     {record ? <BackLink asChild><Link to="/finance" search={previous => previous}><CustomerSourceText source={"Back to Finance"} /></Link></BackLink> : null}
     <section aria-label={record ? 'Finance record' : available.find(item => item.value === section)?.label ?? 'Finance information'} className="space-y-5">
     {error ? <Failure title={__customerSource("Finance information is unavailable")} error={error} retry={() => { void currentQuery.refetch() }} retrying={currentQuery.isFetching} /> : null}
     {customers.error && currentQuery !== customers ? <Failure title={__customerSource("Customer information is unavailable")} error={customers.error} retry={() => { void customers.refetch() }} retrying={customers.isFetching} /> : null}
     {actionError ? <Failure title={__customerSource("Finance action was not completed")} error={actionError} /> : null}
-    {loading ? <p role="status"><CustomerSourceText source={"Loading Finance records…"} /></p> : null}
-    {record && !loading && !error && !title ? <p><CustomerSourceText source={"This record is unavailable in your current Finance view."} /></p> : null}
+    {loading ? <LoadingState  label={<><CustomerSourceText source={"Loading Finance records…"} /></>} /> : null}
+    {record && !loading && !error && !title ? <EmptyState kind="permission" title={<CustomerSourceText source="This record is unavailable in your current Finance view." />} /> : null}
     {record && title ? <Card><CardHeader className={customer ? 'grid-cols-[minmax(0,1fr)_auto] gap-x-3' : undefined}>
       <CardTitle className={customer ? 'min-w-0 self-center wrap-anywhere' : undefined}>{title}</CardTitle>
       {customer ? <CardAction className="row-span-1"><Button onClick={event => openAction('billing', event.currentTarget)}><CustomerSourceText source={"Edit billing and tax"} /></Button></CardAction> : null}
@@ -147,4 +146,4 @@ export function FinanceRecordPage({ record }: { record: FinanceRecord }) {
 function Summary({ entries }: { entries: Array<[string, string]> }) { return <dl className="grid gap-4 sm:grid-cols-3">{entries.map(([label, value]) => <div key={label}><dt className="text-xs text-muted-foreground">{label}</dt><dd className="mt-1 break-words font-medium">{value}</dd></div>)}</dl> }
 function Row({ title, detail, status }: { title: ReactNode; detail: string; status: string }) { return <div className="flex flex-wrap items-center justify-between gap-3 py-4"><div>{title}<p className="mt-1 text-sm text-muted-foreground">{detail}</p></div><DomainStatusBadge status={status} tones={orderStatusTones}>{status}</DomainStatusBadge></div> }
 function Empty({ children }: { children: ReactNode }) { return <EmptyState title={children} /> }
-function Failure({ title, error, retry, retrying }: { title: string; error: unknown; retry?: () => void; retrying?: boolean }) { return <Alert variant="destructive"><AlertTitle>{title}</AlertTitle><AlertDescription><p>{<CustomerSourceText source={getOrderErrorMessage(error, 'Try again. Your entered values are retained.')} />}</p>{retry ? <Button className="mt-2" variant="outline" disabled={retrying} onClick={retry}>{retrying ? <CustomerSourceText source={"Retrying…"} /> : <CustomerSourceText source={"Retry"} />}</Button> : null}</AlertDescription></Alert> }
+function Failure({ title, error, retry, retrying }: { title: string; error: unknown; retry?: () => void; retrying?: boolean }) { return <ErrorState title={title} onRetry={retry} busy={retrying} retryLabel={retrying ? <CustomerSourceText source="Retrying…" /> : <CustomerSourceText source="Retry" />}><CustomerSourceText source={getOrderErrorMessage(error, "Try again. Your entered values are retained.")} /></ErrorState> }

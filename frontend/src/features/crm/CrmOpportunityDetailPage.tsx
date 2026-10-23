@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { formatDisplayTimestamp } from '#/lib/display-format'
 import { Field as PortalField } from '#/components/ui/field'
 import { NativeSelect } from '#/components/ui/native-select'
@@ -99,11 +100,11 @@ export function CrmOpportunityDetailPage({
   if (!opportunity)
     return (
       <main className="page-wrap px-4 py-8">
-        <p role="status" className="text-sm text-muted-foreground">
+        <LoadingState  label={<>
           {query.isLoading
             ? "Loading opportunity…"
             : "The opportunity could not be loaded."}
-        </p>
+        </>} />
       </main>
     );
   const stages =

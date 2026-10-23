@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { useQuery } from '@tanstack/react-query'
 import { getShippingContainerDefinitions, type ShippingStockKit } from '#/api/shipping-containers'
@@ -19,6 +20,6 @@ export function PrepareRequestedKitsDialog({ neededSizeIds, onClose, onSaved }: 
   />
   return <Dialog open onOpenChange={open => { if (!open) onClose() }}><DialogContent>
     <DialogHeader><DialogTitle><CustomerSourceText source={"Prepare kits"} /></DialogTitle><DialogDescription><CustomerSourceText source={"Load the kit specifications still needed for this request."} /></DialogDescription></DialogHeader>
-    {definitions.error ? <Alert variant="destructive"><AlertTitle><CustomerSourceText source={"Kit sizes could not be loaded"} /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(definitions.error, 'Try again.')} />} <Button variant="outline" onClick={() => void definitions.refetch()}><CustomerSourceText source={"Retry"} /></Button></AlertDescription></Alert> : <p role="status"><CustomerSourceText source={"Loading kit sizes…"} /></p>}
+    {definitions.error ? <Alert variant="destructive"><AlertTitle><CustomerSourceText source={"Kit sizes could not be loaded"} /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(definitions.error, 'Try again.')} />} <Button variant="outline" onClick={() => void definitions.refetch()}><CustomerSourceText source={"Retry"} /></Button></AlertDescription></Alert> : <LoadingState  label={<><CustomerSourceText source={"Loading kit sizes…"} /></>} />}
   </DialogContent></Dialog>
 }

@@ -1,6 +1,17 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { dependencies, sourceFingerprint, validateCaptureSources, validateAnnotation } from './documentation-captures.mjs'
+import { dependencies, sourceFingerprint, validateCaptureSources, validateAnnotation, validateCaptureDimensions, guideScreenshots, root } from './documentation-captures.mjs'
+import fs from 'node:fs'
+import path from 'node:path'
+
+test('all illustrated audiences participate and cropped images must match annotation geometry',()=>{
+  assert.deepEqual([...new Set(guideScreenshots().map(g=>g.audience))].sort(),['customer','partner','phaeno','prospect'])
+  const metadata=JSON.parse(fs.readFileSync(path.join(root,'src/features/documentation/documentation-capture-metadata.json'),'utf8'))
+  const [url,image]=Object.entries(metadata)[0],bytes=fs.readFileSync(path.join(root,'public',url))
+  assert.doesNotThrow(()=>validateCaptureDimensions(bytes,image,url))
+  assert.throws(()=>validateCaptureDimensions(bytes,{...image,height:image.height+1},url),/dimensions differ/)
+  assert.throws(()=>validateCaptureDimensions(Buffer.from('not an image'),image,url),/Invalid JPEG/)
+})
 
 test('capture dependencies include real feature implementations, shared bands, theme styles and renderer lock',()=>{
   const sources=dependencies()

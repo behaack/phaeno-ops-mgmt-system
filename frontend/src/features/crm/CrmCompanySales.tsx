@@ -1,3 +1,4 @@
+import { EmptyState } from '#/components/ui/content-state'
 import { RecordLink } from '#/components/ui/record-link'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
@@ -52,7 +53,7 @@ export function CrmCompanySales({ companyId, company }: { companyId: string; com
           </Link></RecordLink></span>
         ))}
         {opportunities.isSuccess && opportunities.data.items.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No opportunities recorded.</p>
+          <EmptyState  kind="empty" title={<>No opportunities recorded.</>} />
         ) : null}
         <CrmListPagination result={opportunities.data} page={page} onPageChange={setPage} busy={opportunities.isFetching} />
       </CardContent>

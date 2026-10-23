@@ -1,3 +1,4 @@
+import { EmptyState } from '#/components/ui/content-state'
 import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
 import { relationshipTones } from '#/features/crm/crm-status'
 import { formatDisplayDate, formatDisplayCurrency } from '#/lib/display-format'
@@ -222,9 +223,9 @@ export function CrmHomePage() {
               </div>
             ))}
             {!dashboard.isLoading && !(dashboard.data?.tasks.length ?? 0) ? (
-              <p className="text-sm text-muted-foreground">
+              <EmptyState  kind="empty" title={<>
                 No open tasks are assigned to you.
-              </p>
+              </>} />
             ) : null}
             <Button asChild variant="ghost" size="sm">
               <Link to="/crm/tasks">

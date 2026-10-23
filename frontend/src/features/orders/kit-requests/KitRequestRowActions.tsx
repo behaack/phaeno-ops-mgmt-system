@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useSearch } from '@tanstack/react-router'
@@ -52,7 +53,7 @@ export function KitRequestListActionDialog({ action, onClose }: { action: KitReq
   const blocked = !active ? 'This request no longer has kits awaiting dispatch.' : action.kind === 'prepare' ? 'The requested kits are already ready. Use Record kit shipment after carrier handoff.' : detail?.dispatchBlockedReason ?? 'Prepare fully registered kits before recording this shipment.'
   return <Dialog open onOpenChange={open => { if (!open) onClose() }}><DialogContent onOpenAutoFocus={event => { event.preventDefault(); closeRef.current?.focus() }}>
     <DialogHeader><DialogTitle>{title}</DialogTitle><DialogDescription>{kitRequestReference(action.request)} <CustomerSourceText source={"· Job"} /> {action.request.jobNumber}</DialogDescription></DialogHeader>
-    <div>{query.error ? <Alert variant="destructive"><AlertTitle><CustomerSourceText source={"Request could not be refreshed"} /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(query.error, 'Try again before making changes.')} />}</AlertDescription></Alert> : !refreshed ? <p role="status"><CustomerSourceText source={"Checking the current request and available kits…"} /></p> : <p>{action.kind === 'cancel' ? <CustomerSourceText source={"This request can no longer be cancelled. Cancellation is available only before dispatch."} /> : blocked}</p>}</div>
+    <div>{query.error ? <Alert variant="destructive"><AlertTitle><CustomerSourceText source={"Request could not be refreshed"} /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(query.error, 'Try again before making changes.')} />}</AlertDescription></Alert> : !refreshed ? <LoadingState  label={<><CustomerSourceText source={"Checking the current request and available kits…"} /></>} /> : <p>{action.kind === 'cancel' ? <CustomerSourceText source={"This request can no longer be cancelled. Cancellation is available only before dispatch."} /> : blocked}</p>}</div>
     <DialogFooter><Button ref={closeRef} variant="outline" onClick={onClose}><CustomerSourceText source={"Close"} /></Button>{query.error ? <Button onClick={() => void query.refetch()}><CustomerSourceText source={"Retry"} /></Button> : null}</DialogFooter>
   </DialogContent></Dialog>
 }

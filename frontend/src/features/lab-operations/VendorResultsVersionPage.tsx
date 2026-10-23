@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { formatDisplayTimestamp } from '#/lib/display-format'
 import { PageTitle } from '#/components/ui/page-header'
 import { BackLink } from '#/components/ui/back-link'
@@ -16,7 +17,7 @@ export function VendorResultsVersionPage({ batchId, resultVersion }: { batchId: 
   const query = useQuery({ queryKey: ['lab-result-version', batchId, resultVersion], queryFn: () => getVendorResultsVersion(batchId, resultVersion), enabled: enabled && valid })
   if (!enabled) return <main className="page-wrap py-8"><p role="alert">A connected Phaeno laboratory session is required.</p></main>
   if (!valid) return <main className="page-wrap py-8"><p role="alert">Choose a valid results version.</p></main>
-  if (query.isPending) return <main className="page-wrap py-8"><p role="status">Loading results version…</p></main>
+  if (query.isPending) return <main className="page-wrap py-8"><LoadingState  label={<>Loading results version…</>} /></main>
   if (query.isError) return <main className="page-wrap space-y-3 py-8"><p role="alert">{getLabOperationsError(query.error, 'This results version could not be loaded.')}</p><Button variant="outline" onClick={() => void query.refetch()}>Reload version</Button></main>
   const { version, snapshot } = query.data
   return <main className="page-wrap space-y-5 py-8">

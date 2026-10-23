@@ -1,3 +1,4 @@
+import { EmptyState, LoadingState } from '#/components/ui/content-state'
 import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
 import { leadTones } from '#/features/crm/crm-status'
 import { RequiredLegend } from '#/components/ui/required-field'
@@ -118,9 +119,9 @@ export function CrmLeadDetailPage({ leadId }: { leadId: string }) {
   if (!lead)
     return (
       <main className="page-wrap px-4 py-8">
-        <p role="status" className="text-sm text-muted-foreground">
+        <LoadingState  label={<>
           {query.isLoading ? "Loading lead…" : "The lead could not be loaded."}
-        </p>
+        </>} />
       </main>
     );
   const mutable = lead.status !== "Converted" && lead.status !== "Disqualified";
@@ -138,10 +139,10 @@ export function CrmLeadDetailPage({ leadId }: { leadId: string }) {
             <DomainStatusBadge status={lead.status} tones={leadTones}>{lead.status}</DomainStatusBadge>
           </div>
           <PageTitle>{lead.displayName}</PageTitle>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <EmptyState  kind="empty" title={<>
             {lead.companyName ?? "No company recorded"} · owned by{" "}
             {lead.ownerName}
-          </p>
+          </>} />
         </div>
         <div className="flex items-start">
           <CrmActionsMenu label={`Actions for ${lead.displayName}`} items={[
@@ -219,9 +220,9 @@ export function CrmLeadDetailPage({ leadId }: { leadId: string }) {
                 />
               </dl>
             ) : (
-              <p className="text-sm text-muted-foreground">
+              <EmptyState  kind="empty" title={<>
                 No qualification decision has been recorded.
-              </p>
+              </>} />
             )}
             {lead.convertedCompanyId ? (
               <div className="flex flex-wrap gap-2">

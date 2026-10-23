@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { DisplayDate } from '#/components/ui/display-value'
 import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
 import { inventoryTones } from '#/features/sample-shipping/shipping-status'
@@ -75,7 +76,7 @@ export function ReturnKitFulfillmentPanel({ apiEnabled, shipmentId, showEmpty = 
     <CardContent className="min-w-0 p-4">
       {shipmentId ? <p className="mb-4 text-sm"><CustomerSourceText source={"Showing the selected shipment."} /> <Link to="/lab-operations" search={{ ...currentSearch, shipmentId: undefined, section: 'kit-requests', receiptTab: undefined, kitQueue: 'sent' }} className="text-primary underline"><CustomerSourceText source={"Show all shipments"} /></Link></p> : null}
       {error ? <Alert variant="destructive" className="mb-4"><AlertTitle><CustomerSourceText source={"Return kits could not be updated"} /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(error, 'Refresh and try again.')} />}</AlertDescription></Alert> : null}
-      {waitingForSearch || query.isLoading ? <p role="status" className="text-sm text-muted-foreground"><CustomerSourceText source={"Loading return kits…"} /></p> : null}
+      {waitingForSearch || query.isLoading ? <LoadingState  label={<><CustomerSourceText source={"Loading return kits…"} /></>} /> : null}
       {shipments.length ? <div className="w-full min-w-0 max-w-full overflow-x-auto rounded-lg border">
         <table className="w-full min-w-[660px] text-left text-sm">
           <RecordTableHeader className="border-b text-foreground"><tr><th className="px-2 py-3 font-medium"><CustomerSourceText source={"Shipment"} /></th><th className="px-2 py-3 font-medium"><CustomerSourceText source={"Organization"} /></th><th className="px-2 py-3 font-medium"><CustomerSourceText source={"Kit"} /></th><th className="px-2 py-3 font-medium"><CustomerSourceText source={"Registered tubes"} /></th><th className="px-2 py-3 font-medium"><CustomerSourceText source={"Fulfillment date"} /></th><th className="px-2 py-3 font-medium"><span className="sr-only"><CustomerSourceText source={"Actions"} /></span></th></tr></RecordTableHeader>

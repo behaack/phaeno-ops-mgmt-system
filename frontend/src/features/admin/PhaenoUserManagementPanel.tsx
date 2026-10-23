@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { formatDisplayDate } from '#/lib/display-format'
 import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
 import { accessTones } from '#/features/organizations/access-status'
@@ -251,9 +252,9 @@ export function PhaenoUserManagementPanel({
             </Alert>
           ) : null}
           {usersQuery.isLoading ? (
-            <p role="status" className="text-sm text-muted-foreground">
+            <LoadingState  label={<>
               Loading Phaeno users…
-            </p>
+            </>} />
           ) : null}
           {(usersQuery.data ?? []).map((user) => (
             <div

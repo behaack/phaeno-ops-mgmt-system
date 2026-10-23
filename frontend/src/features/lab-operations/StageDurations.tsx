@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { formatDisplayTimestamp } from '#/lib/display-format'
 import { Field as PortalField } from '#/components/ui/field'
 import { NativeCheckbox } from '#/components/ui/native-checkbox'
@@ -25,7 +26,7 @@ export function StageDurations() {
   const query = useQuery({ queryKey: ['lab-forecast-configuration'], queryFn: getForecastConfiguration })
   const [workflowId, setWorkflowId] = useState('')
   const [edit, setEdit] = useState<'durations' | 'apply' | null>(null)
-  if (query.isPending) return <p role="status">Loading stage durations…</p>
+  if (query.isPending) return <LoadingState  label={<>Loading stage durations…</>} />
   if (query.isError) return <><Failure error={query.error} /><Button variant="outline" onClick={() => void query.refetch()}>Reload</Button></>
   const { workflows, calendars, canConfigure } = query.data
   const workflow = workflows.find(w => w.id === workflowId) ?? workflows[0]

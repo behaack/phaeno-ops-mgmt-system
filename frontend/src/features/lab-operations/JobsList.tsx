@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { FieldError } from '#/components/ui/field'
 import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
 import { deadlineTones } from './lab-status'
@@ -120,7 +121,7 @@ export function JobsList({ enabled }: { enabled: boolean }) {
       </Collapsible.Root>
     </CardHeader>
     <CardContent className="space-y-3 p-4" aria-busy={jobs.isFetching}>
-      {jobs.isLoading ? <p role="status">Loading jobs…</p> : null}
+      {jobs.isLoading ? <LoadingState  label={<>Loading jobs…</>} /> : null}
       {jobs.error ? <Alert variant="destructive"><AlertDescription>{getLabOperationsError(jobs.error, 'Jobs could not be loaded. Try Refresh.')}</AlertDescription></Alert> : null}
       {data?.items.map(({ job, deadlineStatus, reason, jobStatus, forecast, phaseId, phaseName, stageCounts, heldSamples, failedSamples, containerCount, sentContainers, arrivedContainers, expectedTubes, receivedTubes, accessionedTubes }) => {
         const statusLabel = jobStatusLabel(jobStatus)

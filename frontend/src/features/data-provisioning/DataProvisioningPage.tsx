@@ -1,3 +1,4 @@
+import { SectionPanel } from '#/components/ui/section-panel'
 import { EmptyState as SharedEmptyState, ErrorState, LoadingState } from '#/components/ui/content-state'
 import { ProvisioningStatusBadge as StatusBadge } from './DataStatusBadge'
 import { formatDisplayTimestamp } from '#/lib/display-format'
@@ -515,9 +516,9 @@ function CuratedCatalogPanel({ apiEnabled }: { apiEnabled: boolean }) {
                   )
                 })}
                 {dataset.versions.length === 0 ? (
-                  <p className="m-0 rounded-md border border-dashed p-3 text-sm text-muted-foreground">
+                  <SharedEmptyState kind="empty" title={<>
                     No immutable versions yet.
-                  </p>
+                  </>} />
                 ) : null}
               </div>
             </div>
@@ -708,8 +709,8 @@ function OrganizationGrantsPanel({ apiEnabled }: { apiEnabled: boolean }) {
 
           {selectedOrganizationId ? (
             <div className="grid gap-4 lg:grid-cols-2">
-              <section aria-labelledby="provisioning-runs-heading" className="rounded-lg border p-4">
-                <h3 id="provisioning-runs-heading" className="m-0 font-medium">Provisioning history</h3>
+              <SectionPanel aria-labelledby="provisioning-runs-heading" heading={<h3 id="provisioning-runs-heading" >Provisioning history</h3>}>
+
                 <div className="mt-3 space-y-2">
                   {(runsQuery.data ?? []).map((run) => (
                     <div key={run.id} className="rounded-md border p-3 text-sm">
@@ -726,12 +727,12 @@ function OrganizationGrantsPanel({ apiEnabled }: { apiEnabled: boolean }) {
                       ) : null}
                     </div>
                   ))}
-                  {!runsQuery.isLoading && !runsQuery.isError && runsQueryPage.data?.totalCount === 0 ? <p className="m-0 text-sm text-muted-foreground">No provisioning attempts recorded.</p> : null}
+                  {!runsQuery.isLoading && !runsQuery.isError && runsQueryPage.data?.totalCount === 0 ? <SharedEmptyState kind="empty" title={<>No provisioning attempts recorded.</>} /> : null}
                 </div>
               <RecordPagination label={'Provisioning history pages'} data={runsQueryPage.isError ? undefined : runsQueryPage.data} busy={runsQueryPage.isFetching} onPage={runsQuerySelection.setPage} />
-              </section>
-              <section aria-labelledby="organization-activity-heading" className="rounded-lg border p-4">
-                <h3 id="organization-activity-heading" className="m-0 font-medium">Organization activity</h3>
+              </SectionPanel>
+              <SectionPanel aria-labelledby="organization-activity-heading" heading={<h3 id="organization-activity-heading" >Organization activity</h3>}>
+
                 <div className="mt-3 space-y-2">
                   {(activityQuery.data ?? []).map((notice) => (
                     <div key={notice.id} className="rounded-md border p-3 text-sm">
@@ -742,10 +743,10 @@ function OrganizationGrantsPanel({ apiEnabled }: { apiEnabled: boolean }) {
                       <p className="m-0 mt-1 text-muted-foreground">{notice.body}</p>
                     </div>
                   ))}
-                  {!activityQuery.isLoading && !activityQuery.isError && activityQueryPage.data?.totalCount === 0 ? <p className="m-0 text-sm text-muted-foreground">No organization notices recorded.</p> : null}
+                  {!activityQuery.isLoading && !activityQuery.isError && activityQueryPage.data?.totalCount === 0 ? <SharedEmptyState kind="empty" title={<>No organization notices recorded.</>} /> : null}
                 </div>
                 <RecordPagination label="Organization activity pages" data={activityQueryPage.isError ? undefined : activityQueryPage.data} busy={activityQueryPage.isFetching} onPage={activityQuerySelection.setPage} />
-              </section>
+              </SectionPanel>
             </div>
           ) : null}
           <MutationError error={retryMutation.error} fallback="The provisioning retry could not be completed." />

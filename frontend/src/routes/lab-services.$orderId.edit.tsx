@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { CustomerText } from '#/features/customer-i18n/customer-text'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
@@ -21,7 +22,7 @@ function LabServiceEditRoute() {
   })
 
   if (!apiEnabled) return <main className="page-wrap px-4 py-8"><Alert><AlertTitle><CustomerText message="m_e8abf9efaf0c" /></AlertTitle><AlertDescription><CustomerText message="m_e81345ae1936" /></AlertDescription></Alert></main>
-  if (order.isLoading) return <main className="page-wrap px-4 py-8"><p role="status"><CustomerText message="m_23c25897615e" /></p></main>
+  if (order.isLoading) return <main className="page-wrap px-4 py-8"><LoadingState  label={<><CustomerText message="m_23c25897615e" /></>} /></main>
   if (order.error || !order.data) return <main className="page-wrap px-4 py-8"><Alert variant="destructive"><AlertTitle><CustomerText message="m_c3a22f244305" /></AlertTitle><AlertDescription>{getOrderErrorMessage(order.error, 'Return to the request and try again.')}</AlertDescription></Alert></main>
 
   return (

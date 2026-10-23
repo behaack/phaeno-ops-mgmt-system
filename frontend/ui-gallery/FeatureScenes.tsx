@@ -23,21 +23,30 @@ import { DataAssemblyWorkspace } from '#/features/lab-operations/AssemblyJobs'
 import { SourceSampleWorkspace } from '#/features/data-provisioning/SourceSampleWorkspace'
 import { DataLibraryPage } from '#/features/data-library/DataLibraryPage'
 import { company, request, person, billing, installFeatureData } from './feature-data'
+import { FinanceOperationsPanel } from '#/features/orders/FinanceOperationsPanel'
+import { TrialDetailPage } from '#/features/trials/TrialDetailPage'
+import { SampleShippingPage } from '#/features/sample-shipping/SampleShippingPage'
+import { AssemblyQcPage } from '#/features/lab-operations/AssemblyQcPage'
+import { GuideWorkflowScene } from './GuideWorkflowScenes'
 import './styles.css'
 
 const settings = new URLSearchParams(location.search)
 const scene = settings.get('scene') ?? 'company'
-installFeatureData(scene)
-const customer = scene === 'customer'
+const state = settings.get('state') ?? 'ready'
+installFeatureData(scene, state)
+const customer = scene === 'customer' || scene === 'shipping' || scene === 'customer-results'
+const partner = scene === 'partner-assembly'
+const prospect = scene === 'trial'
+const allowed = state !== 'permission'
 const context: PhaenoSessionContextValue = {
   authConfigured: true, authProvider: 'clerk', clerkLoaded: true, signedIn: true, isLoading: false, error: null,
-  selectedOrganizationId: customer ? 'demo-customer' : 'demo-phaeno', selectedDepartmentId: 'demo-department', setSelectedOrganizationId: () => {},
+  selectedOrganizationId: customer || prospect || partner ? 'demo-customer' : 'demo-phaeno', selectedDepartmentId: 'demo-department', setSelectedOrganizationId: () => {},
   session: {
-    state: 'ready', user: { id: 'demo-author', email: 'alex@example.invalid', firstName: 'Alex', lastName: 'Example', status: 'Active' }, isPlatformAdmin: !customer,
-    memberships: [{ membershipId: 'demo-membership', organizationId: customer ? 'demo-customer' : 'demo-phaeno', organizationName: customer ? company.name : 'Phaeno', organizationKind: customer ? 'Customer' : 'Phaeno', isOrganizationAdmin: true }],
-    selectedOrganization: { organizationId: customer ? 'demo-customer' : 'demo-phaeno', membershipId: 'demo-membership', isAvailable: true },
+    state: 'ready', user: { id: 'demo-author', email: 'alex@example.invalid', firstName: 'Alex', lastName: 'Example', status: 'Active' }, isPlatformAdmin: !customer && !prospect && !partner,
+    memberships: [{ membershipId: 'demo-membership', organizationId: customer || prospect || partner ? 'demo-customer' : 'demo-phaeno', organizationName: customer || prospect || partner ? company.name : 'Phaeno', organizationKind: customer ? 'Customer' : prospect ? 'Prospect' : partner ? 'Partner' : 'Phaeno', isOrganizationAdmin: true }],
+    selectedOrganization: { organizationId: customer || prospect || partner ? 'demo-customer' : 'demo-phaeno', membershipId: 'demo-membership', isAvailable: true },
     selectedDepartment: { organizationId: 'demo-customer', departmentId: 'demo-department', isAvailable: true, isDepartmentAdmin: true },
-    capabilities: { ...noSessionCapabilities, canAccessCrm: true, canAdministerCrm: true, canManageLabProtocols: true, canManageDatasetDrafts: true, canOperateLabWork: true, canViewOrganizationDatasets: true, canCreateLabServiceRequests: true, canQuoteLabServiceWork: true },
+    capabilities: { ...noSessionCapabilities, canAccessCrm: allowed, canAdministerCrm: allowed, canManageLabProtocols: allowed, canManageDatasetDrafts: allowed, canOperateLabWork: allowed, canManageLabOperations: allowed, canViewOrganizationDatasets: allowed, canCreateLabServiceRequests: allowed, canQuoteLabServiceWork: allowed, canViewTrialProjects: allowed, canViewSampleShipping: allowed, canViewDataAssemblyRequests: allowed, canViewLabServiceOrders: allowed },
   },
 }
 const noop = () => {}
@@ -49,6 +58,11 @@ function FeatureScene() {
   if (scene === 'company' || scene === '01-company') return <CrmCompanyDetailPage companyId={company.id} />
   if (scene === 'source') return <SourceSampleWorkspace sourceSampleId="demo-source" />
   if (scene === 'customer') return <DataLibraryPage />
+  if (scene === 'finance') return <main className="page-wrap space-y-5 px-4 py-8"><PageHeader title="Finance" description="Fictional invoices and billing records." /><FinanceOperationsPanel apiEnabled canBill={allowed} canManageCash={allowed} canReconcile={allowed} record={!allowed ? {kind:'invoice',id:'demo-invoice'} : undefined} /></main>
+  if (scene === 'trial') return <TrialDetailPage trialId="trial-1" />
+  if (scene === 'shipping') return <SampleShippingPage />
+  if (scene === 'qc') return <AssemblyQcPage jobId="demo-job" />
+  if (['order-scope','order-blocked','order-submit','destination','kit-specification','protocol-preview','protocol-approval','partner-assembly','customer-results'].includes(scene)) return <GuideWorkflowScene scene={scene} />
   if (scene === 'assembly-inputs' || scene === 'assembly-jobs') return <main className="page-wrap space-y-6 px-4 py-8"><PageHeader title="Lab operations" description="Sequencing inputs and assembly attempts." /><DataAssemblyWorkspace apiEnabled /></main>
   if (scene === 'protocol-editor') return <ProtocolVersionBuilderPage protocolId="demo-protocol" />
   if (scene === 'customer-order') return <CommercialOrderDraftPage />
@@ -69,7 +83,7 @@ function FeatureScene() {
   </main>
 }
 const root = createRootRoute({ component: () => <><Outlet /><PortalConfirmation /></> })
-const routes = ['/', '/crm/companies/$companyId', '/lab-operations', '/data-provisioning/source-samples/$sourceSampleId', '/data-library', '/sample-shipping-settings'].map(path => createRoute({ getParentRoute: () => root, path, validateSearch: (search: Record<string, unknown>) => search, component: FeatureScene }))
+const routes = ['/', '/crm/companies/$companyId', '/lab-operations', '/data-provisioning/source-samples/$sourceSampleId', '/data-library', '/sample-shipping-settings', '/finance', '/order-operations/lab-services/trials/$trialId', '/sample-shipping', '/lab-operations/assembly-jobs/$jobId/qc'].map(path => createRoute({ getParentRoute: () => root, path, validateSearch: (search: Record<string, unknown>) => search, component: FeatureScene }))
 const entry = scene === 'company' || scene === '01-company' ? '/crm/companies/demo-company?section=people' : scene.startsWith('assembly') ? `/lab-operations?assemblyTab=${scene === 'assembly-jobs' ? 'jobs' : 'inputs'}` : '/'
 const router = createRouter({ routeTree: root.addChildren(routes), history: createMemoryHistory({ initialEntries: [entry] }) })
 document.documentElement.classList.toggle('dark', settings.get('theme') === 'dark' || matchMedia('(prefers-color-scheme: dark)').matches)

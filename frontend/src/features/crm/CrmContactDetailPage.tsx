@@ -1,3 +1,4 @@
+import { EmptyState } from '#/components/ui/content-state'
 import { RequiredLegend } from '#/components/ui/required-field'
 import { RequiredFieldName } from '#/components/ui/required-field'
 import { Field as PortalField } from '#/components/ui/field'
@@ -314,9 +315,9 @@ export function CrmContactDetailPage({ contactId }: { contactId: string }) {
               </div>
             ))}
             {companies.isSuccess && companies.data.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
+              <EmptyState  kind="empty" title={<>
                 No Company association has been recorded.
-              </p>
+              </>} />
             ) : null}
           </CardContent>
         </Card>

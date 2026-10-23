@@ -1,3 +1,4 @@
+import { LoadingState, EmptyState } from '#/components/ui/content-state'
 import { formatDisplayDate } from '#/lib/display-format'
 import { DisplayTimestamp } from '#/components/ui/display-value'
 import { RecordLink } from '#/components/ui/record-link'
@@ -25,7 +26,7 @@ export function MaterialLotPage({ materialLotId }: { materialLotId: string }) {
     <BackLink asChild><Link to="/purchasing" search={{ section: 'materials' }}>Back to purchased materials</Link></BackLink>
     {!allowed ? <p>You do not have access to laboratory materials.</p> : authProvider === 'mock' ? <p>Use a connected Phaeno session to view material lots.</p> : <>
       {query.isError ? <Alert variant="destructive"><AlertTitle>Material lot could not be refreshed</AlertTitle><AlertDescription>{getLabOperationsError(query.error, 'Try again to load the latest lot details.')}<Button variant="outline" onClick={() => void query.refetch()}>Try again</Button></AlertDescription></Alert> : null}
-      {query.isPending ? <p role="status">Loading material lot…</p> : lot ? <>
+      {query.isPending ? <LoadingState  label={<>Loading material lot…</>} /> : lot ? <>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0"><h2 className="text-2xl font-semibold wrap-anywhere">{lot.name} · {lot.lotNumber}</h2><p className="mt-1 text-sm text-muted-foreground">{lot.kind === 'PreparedReagent' ? 'Prepared reagent' : 'Supplier lot'}</p></div>
           <PreparationActions items={[
@@ -59,7 +60,7 @@ export function MaterialLotPage({ materialLotId }: { materialLotId: string }) {
           {lot.components.length ? <ul className="divide-y">{lot.components.map(component => <li key={component.id} className="flex flex-wrap items-start justify-between gap-3 py-3">
             <div className="min-w-0"><span className="wrap-anywhere"><RecordLink asChild><Link to="/purchasing/materials/$materialLotId" params={{ materialLotId: component.componentMaterialLotId }} >{component.materialName} · {component.lotNumber}</Link></RecordLink></span><p className="mt-1 text-sm text-muted-foreground">{component.materialKey}</p></div>
             <p className="text-sm">{component.quantity} {component.quantityUnit}</p>
-          </li>)}</ul> : <p className="text-sm text-muted-foreground">No source component lots were recorded.</p>}
+          </li>)}</ul> : <EmptyState  kind="empty" title={<>No source component lots were recorded.</>} />}
         </PreparationPanel> : null}
         {reconciling ? <MaterialLotQuantityDialog lot={lot} onClose={() => setReconciling(false)} /> : null}
         {assigning ? <MaterialLotProductDialog lot={lot} onClose={() => setAssigning(false)} /> : null}

@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { useQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import { getLabShipmentQueue } from '#/api/lab-shipment-receipt'
@@ -18,7 +19,7 @@ export function LabShipmentQueue({ apiEnabled, received = false, onOpen, headerC
     <CardDescription>{received ? 'Select a received container or enter its shipping insert barcode, then accession its individual tubes.' : 'One row per expected container, including its carrier and tracking number. When it physically arrives, scan its shipping insert in Receive a shipment.'}</CardDescription>
     {headerContent ? <div className="col-span-full space-y-4">{headerContent}</div> : null}</CardHeader>
     <CardContent className="p-4">
-      {!apiEnabled ? <p className="text-sm text-muted-foreground">A connected laboratory session is required.</p> : query.isLoading ? <p role="status">Loading shipments…</p> : null}
+      {!apiEnabled ? <p className="text-sm text-muted-foreground">A connected laboratory session is required.</p> : query.isLoading ? <LoadingState  label={<>Loading shipments…</>} /> : null}
       {query.error ? <Alert variant="destructive"><AlertTitle>Shipments could not be loaded</AlertTitle><AlertDescription>{getLabOperationsError(query.error, 'Refresh the queue and try again.')} <Button variant="outline" onClick={() => void query.refetch()}>Retry shipments</Button></AlertDescription></Alert> : null}
       {query.data?.length ? <LabShipmentTable items={query.data} received={received} onOpen={onOpen} /> : apiEnabled && query.isSuccess ? <p className="py-5 text-sm text-muted-foreground">{received ? 'No received containers are awaiting accession.' : 'No containers are currently expected.'}</p> : null}
     </CardContent></Card>

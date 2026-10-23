@@ -1,0 +1,56 @@
+[
+  {
+    "audience": "customer",
+    "locale": "en-US",
+    "slug": "results-and-billing",
+    "count": 1
+  },
+  {
+    "audience": "customer",
+    "locale": "en-US",
+    "slug": "sample-shipping",
+    "count": 1
+  },
+  {
+    "audience": "partner",
+    "locale": "en-US",
+    "slug": "data-assembly",
+    "count": 1
+  },
+  {
+    "audience": "phaeno",
+    "locale": null,
+    "slug": "how-to-configure-samples-shipping",
+    "count": 3
+  },
+  {
+    "audience": "phaeno",
+    "locale": null,
+    "slug": "how-to-lab-protocol",
+    "count": 3
+  },
+  {
+    "audience": "phaeno",
+    "locale": null,
+    "slug": "how-to-onboard-customer",
+    "count": 15
+  },
+  {
+    "audience": "phaeno",
+    "locale": null,
+    "slug": "how-to-place-customer-order",
+    "count": 4
+  },
+  {
+    "audience": "phaeno",
+    "locale": null,
+    "slug": "how-to-record-research",
+    "count": 14
+  },
+  {
+    "audience": "prospect",
+    "locale": "en-US",
+    "slug": "trial-projects",
+    "count": 1
+  }
+]

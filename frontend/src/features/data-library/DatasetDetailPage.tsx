@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { useDisplayFormatters } from '#/features/customer-i18n/customer-text'
 import { DetailField, DetailSummary, DetailHeading } from '#/components/ui/detail-summary'
 import { PageTitle } from '#/components/ui/page-header'
@@ -51,7 +52,7 @@ export function DatasetDetailPage({ datasetId }: { datasetId: string }) {
     return <main className="page-wrap px-4 py-8"><LibraryReturnLink /><Alert className="mt-4"><AlertTitle><CustomerText message="m_ebb08438dc3c" /></AlertTitle><AlertDescription><CustomerText message="m_ebefce8e5318" /></AlertDescription></Alert></main>
   }
   if (datasetQuery.isLoading) {
-    return <main className="page-wrap px-4 py-8"><p><CustomerText message="m_59e2daab594e" /></p></main>
+    return <main className="page-wrap px-4 py-8"><LibraryReturnLink /><LoadingState label={<CustomerText message="m_59e2daab594e" />} /></main>
   }
   if (!dataset || datasetQuery.error) {
     return <main className="page-wrap px-4 py-8"><LibraryReturnLink /><Alert variant="destructive" className="mt-4" role="alert"><AlertTitle><CustomerText message="m_8949b1570015" /></AlertTitle><AlertDescription><CustomerSourceText source={getApiErrorMessage(datasetQuery.error, 'This package is not available to the selected organization.')} /></AlertDescription></Alert></main>

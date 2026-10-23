@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { PageTitle } from '#/components/ui/page-header'
 import { BackLink } from '#/components/ui/back-link'
 import { CustomerSourceText, useCustomerSourceText } from '#/features/customer-i18n/customer-text'
@@ -40,7 +41,7 @@ export function CommercialOrderDraftPage({ orderId, organizationId = '', sourceR
   const enabled = authProvider !== 'mock' && Boolean(session?.capabilities.canQuoteLabServiceWork)
   const data = useCommercialDraftData(orderId, '', '', enabled)
   if (!enabled) return <main className="page-wrap px-4 py-8"><Alert><AlertTitle><CustomerSourceText source={"Draft entry unavailable"} /></AlertTitle><AlertDescription><CustomerSourceText source={"A real Phaeno session with Commercial Operator access is required."} /></AlertDescription></Alert></main>
-  if (orderId && data.order.isLoading) return <main className="page-wrap px-4 py-8"><p role="status"><CustomerSourceText source={"Loading Draft…"} /></p></main>
+  if (orderId && data.order.isLoading) return <main className="page-wrap px-4 py-8"><LoadingState  label={<><CustomerSourceText source={"Loading Draft…"} /></>} /></main>
   if (orderId && (data.order.error || !data.order.data)) return <main className="page-wrap px-4 py-8"><Alert variant="destructive"><AlertTitle><CustomerSourceText source={"Draft unavailable"} /></AlertTitle><AlertDescription>{<CustomerSourceText source={getOrderErrorMessage(data.order.error, 'Reload the order and try again.')} />} <Button variant="outline" onClick={() => void data.order.refetch()}><CustomerSourceText source={"Retry"} /></Button></AlertDescription></Alert></main>
   const order = data.order.data && 'samples' in data.order.data ? data.order.data as LabServiceOrder : undefined
   if (orderId && !order?.commercialDraft) return <main className="page-wrap px-4 py-8"><p><CustomerSourceText source={"This order has already been submitted for pricing."} /></p><Button asChild variant="outline"><Link to="/order-operations/lab-services/orders/$orderId" params={{ orderId }}><CustomerSourceText source={"Open order"} /></Link></Button></main>

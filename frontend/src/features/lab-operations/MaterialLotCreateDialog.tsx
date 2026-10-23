@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { NativeCheckbox } from '#/components/ui/native-checkbox'
 import { NativeSelect } from '#/components/ui/native-select'
 import { useModalDraftGuard } from '#/features/orders/use-modal-draft-guard'
@@ -368,7 +369,7 @@ export function MaterialLotCreateDialog({
                         {(productCatalog.data?.find(s => s.id === supplierSelection)?.products ?? []).map(p => <option key={p.id} value={p.id}>{p.productNumber} — {p.description}</option>)}
                       </NativeSelect>
                     </FormField>
-                    {productCatalog.isPending ? <p role="status" className="mt-2 text-sm">Loading products…</p> : productCatalog.isError ? <div role="alert" className="mt-2 text-sm">Products could not be loaded. <Button type="button" variant="outline" onClick={() => void productCatalog.refetch()}>Retry products</Button></div> : supplierSelection && !productCatalog.data?.find(s => s.id === supplierSelection)?.products.length ? <p className="mt-2 text-sm text-muted-foreground">Add or activate this supplier's product in Suppliers &amp; products before receiving its lot.</p> : null}
+                    {productCatalog.isPending ? <LoadingState  label={<>Loading products…</>} /> : productCatalog.isError ? <div role="alert" className="mt-2 text-sm">Products could not be loaded. <Button type="button" variant="outline" onClick={() => void productCatalog.refetch()}>Retry products</Button></div> : supplierSelection && !productCatalog.data?.find(s => s.id === supplierSelection)?.products.length ? <p className="mt-2 text-sm text-muted-foreground">Add or activate this supplier's product in Suppliers &amp; products before receiving its lot.</p> : null}
                   </div>
                 </>
               ) : null}

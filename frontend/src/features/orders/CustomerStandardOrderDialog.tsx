@@ -1,3 +1,4 @@
+import { SectionPanel } from '#/components/ui/section-panel'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { CustomerText, useCustomerText } from '#/features/customer-i18n/customer-text'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -224,10 +225,10 @@ export function CustomerStandardOrderDialog({ open, order, onOpenChange, onSaved
         <RequiredDialogFooter><Button variant="outline" disabled={busy || placementUncertain} onClick={back}>{reviewNeeded ? <CustomerSourceText source={"Refresh review"} /> : __customerText('m_edcd18a75f92')}</Button><Button disabled={!enabled || busy || reviewNeeded || !review.preview.canPlaceStandardOrder || !confirmed || !typeConfirmed || requiresPo && !po.trim()} onClick={() => place.mutate()}>{place.isPending ? <CustomerSourceText source={"Placing…"} /> : placementUncertain ? "Retry placement" : __customerText('m_17eb518d8561')}</Button></RequiredDialogFooter>
       </> : <>
         <form id="customer-order-scope" noValidate onSubmit={e => { e.preventDefault(); submit('review') }}>
-          {conflict?.changes.length ? <section aria-label={__customerText('m_0ae07b1f302d')} className="mb-4 rounded-lg border p-3 text-sm">
-            <h3 className="mb-2 font-medium"><CustomerText message="m_5e738362aef4" /></h3>
+          {conflict?.changes.length ? <SectionPanel aria-label={__customerText('m_0ae07b1f302d')} className="mb-4 text-sm" heading={<h3 ><CustomerText message="m_5e738362aef4" /></h3>}>
+
             <dl className="space-y-2">{conflict.changes.map(change => <div key={change.label} className="break-words"><dt className="font-medium">{change.label}</dt><dd>{change.value}</dd></div>)}</dl>
-          </section> : null}
+          </SectionPanel> : null}
           <fieldset disabled={busy} className="space-y-4">
             <Field><Label htmlFor="customer-order-service"><RequiredFieldName><CustomerText message="m_d677190e0a99" /></RequiredFieldName></Label><NativeSelect id="customer-order-service" {...form.register('offeringId')} aria-invalid={Boolean(form.formState.errors.offeringId)} aria-describedby="customer-order-service-error"><option value=""><CustomerText message="m_75c533071d94" /></option>{offerings.data?.map(o => <option key={o.id} value={o.id}>{o.name} · {money(o.unitPrice, o.currency)} <CustomerText message="m_99f779ccfb3f" /></option>)}</NativeSelect><FieldError id="customer-order-service-error">{form.formState.errors.offeringId?.message}</FieldError><FieldDescription><CustomerText message="m_8c747669a123" /></FieldDescription>{offering ? <p className="text-sm">{money(offering.unitPrice, offering.currency)} <CustomerText message="m_9e8e42a74c9a" />{offering.priceProvenance?.source === 'Standard' ? <CustomerSourceText source={"Standard price"} /> : __customerText('m_650c47c5c9b5')}</p> : null}</Field>
             <Field><Label htmlFor="customer-order-job"><RequiredFieldName><CustomerText message="m_be8102601363" /></RequiredFieldName></Label><Input id="customer-order-job" {...form.register('jobName')} aria-invalid={Boolean(form.formState.errors.jobName)} aria-describedby="customer-order-job-error" /><FieldError id="customer-order-job-error">{form.formState.errors.jobName?.message}</FieldError></Field>

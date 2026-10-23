@@ -1,3 +1,4 @@
+import { EmptyState } from '#/components/ui/content-state'
 import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
 import { taskTones } from '#/features/crm/crm-status'
 import { RequiredLegend } from '#/components/ui/required-field'
@@ -118,9 +119,9 @@ export function CrmRecordWork({ links }: { links: RecordLinks }) {
             </article>
           ))}
           {!activities.isLoading && !(activities.data?.items.length ?? 0) ? (
-            <p className="text-sm text-muted-foreground">
+            <EmptyState  kind="empty" title={<>
               No activity has been recorded.
-            </p>
+            </>} />
           ) : null}
         </CardContent>
       </Card>

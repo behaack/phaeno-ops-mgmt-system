@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { ProcedureIllustration } from '#/features/lab-operations/ProcedureIllustrations'
 import { CustomerSourceText } from '#/features/customer-i18n/customer-text'
 import { ChevronDown } from 'lucide-react'
@@ -12,7 +13,7 @@ import { RecordKitPackedContentsDialog } from './RecordKitPackedContentsDialog'
 
 export function KitAssemblyRunPanel({ assembly }: { assembly: KitAssemblyState }) {
   const { query, run, used, completedComponents } = assembly
-  if (query.isPending) return <p role="status"><CustomerSourceText source={"Loading kit assembly…"} /></p>
+  if (query.isPending) return <LoadingState  label={<><CustomerSourceText source={"Loading kit assembly…"} /></>} />
   if (query.error || !run) return <Alert variant="destructive"><AlertTitle><CustomerSourceText source={"Assembly record unavailable"} /></AlertTitle><AlertDescription>{getLabOperationsError(query.error, 'Refresh this kit before continuing.')} <Button variant="outline" onClick={() => void query.refetch()}><CustomerSourceText source={"Retry"} /></Button></AlertDescription></Alert>
   return <Card className="gap-0 py-0">
     <CardHeader >

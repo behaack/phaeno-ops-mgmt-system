@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { PageTitle } from '#/components/ui/page-header'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useSearch } from '@tanstack/react-router'
@@ -17,7 +18,7 @@ import { parseWebsiteOperationsSearch, websiteOperationsSection, type WebsiteOpe
 export function WebsiteOperationsWorkspace() {
   const { session, isLoading, selectedOrganizationId } = usePhaenoSession()
   const membership = getSelectedMembership(session, selectedOrganizationId)
-  if (isLoading) return <main className="page-wrap px-4 py-8"><p role="status">Loading Website operations…</p></main>
+  if (isLoading) return <main className="page-wrap px-4 py-8"><LoadingState  label={<>Loading Website operations…</>} /></main>
   if (session?.state !== 'ready' || !session.isPlatformAdmin || membership?.organizationKind !== 'Phaeno') {
     return <main className="page-wrap space-y-3 px-4 py-8">
       <PageTitle>Website operations</PageTitle>

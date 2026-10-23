@@ -1,3 +1,4 @@
+import { LoadingState } from '#/components/ui/content-state'
 import { RecordLink } from '#/components/ui/record-link'
 import { Link } from '@tanstack/react-router'
 import { type CustomerLabDashboardView, type OrderListItem } from '#/api/order-management'
@@ -38,7 +39,7 @@ export function CustomerLabRequestsCard({ view, page, onPageChange, query }: {
             <AlertDescription>Refresh to see the current work for this Department.
               <Button type="button" variant="outline" disabled={query.isFetching} onClick={() => { void query.refetch() }}>Retry requests</Button>
             </AlertDescription></Alert>
-            : query.isPending ? <p role="status" className="text-sm text-muted-foreground">Loading your requests…</p>
+            : query.isPending ? <LoadingState  label={<>Loading your requests…</>} />
               : data?.items.length ? <ul className="divide-y" aria-label={view === 'results' ? 'Jobs with new results' : 'Active laboratory requests'}>
                 {data.items.map(order => {
                   const next = view === 'results' ? { label: 'View results', owner: 'New results', detail: 'Open Files and results to download the released packages for this Job.' } : requestNextStep(order, session?.capabilities)
