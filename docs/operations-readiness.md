@@ -1,5 +1,9 @@
 # Operations and production-readiness boundary
 
+## Genuine DPS simulation — hosted October 22, 2026
+
+DPS correction `e4857ef538315932a02a4a636e8acc2f09e307b8` is deployed separately from the unchanged Portal API/frontend. Its reserved Simulated recipe runs in-process without Phaeno-Runner. All 38 focused Linux checks pass. Exactly one additional linked repeat `e1572182-c16b-446a-9ecb-a45a2d3ec15e` completed Succeeded in 15 seconds with one delivery and a committed final acknowledgment. Authenticated output downloads match saved lengths/checksums. All five prior attempts, 24 receipts, 37 events, eight commands and three prior DPS ledger records remain exactly unchanged, including both disputed receipts and reconciliation. Pre/post Portal and DPS recovery copies are verified off-server; Website intake and deployment holds remain. No scientific analysis/release, Portal runtime deployment or migration occurred. [DPS PR #2](https://github.com/phaenobiotech/pipeline/pull/2) is published; its merge awaits approval after automatic review rejected bypassing it with a direct main push. See the [release receipt](operations/dps-genuine-simulation-test-release-20261022.md).
+
 ## Assembly reconciliation and quiet refresh — hosted October 22, 2026
 
 Reviewed source `0dc6391c74ebe39fa10bdeae73bf67706f86ba87` is deployed to the existing hosted test API/Portal after protected PR checks, matching production builds and restore-verified encrypted recovery. The actual signed-in ended-conflict list polls quietly at thirty seconds with unchanged row geometry. Operations reconciled `SIMULATED-ASM-20261020` after independent no-resumption checks, retaining both disputed terminal receipts, all eight original receipts, six original history events, original Run delivery and original Failed execution facts. One review decision was appended.

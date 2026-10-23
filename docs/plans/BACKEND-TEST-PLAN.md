@@ -1,5 +1,9 @@
 # Backend Test Plan
 
+## Genuine DPS simulation — October 22, 2026
+
+External `pipeline` source `e4857ef` adds ten simulator cases at `apps/pseq_server/dps_test.tests/DpsSimulationTests.cs`: identity-bound dispatch without a scientific-runner call, other-identity separation, cancellation, completion-progress ownership and duration bounds. Ten pass on Windows; all 38 selected simulation/lifecycle-percentage/timestamp/command cases pass on Linux ARM64 Release. Six older Windows ledger-cleanup lock failures pass on Linux. Actual hosted acceptance verifies one linked Succeeded repeat, exact frozen inputs, one delivery, committed final acknowledgment, authenticated diagnostic output hashes and complete earlier row/ledger preservation. No Portal backend/model change or scientific acceptance. See the [release receipt](../operations/dps-genuine-simulation-test-release-20261022.md).
+
 ## Assembly Operations reconciliation — October 22, 2026
 
 Subsequent authorized hosted acceptance passes actual reconciliation, original receipt/event/command/execution preservation and one linked repeat with one delivery. That repeat ends Failed because the current external DPS recipe invokes a missing Phaeno-Runner executable despite Portal's Simulated classification; successful simulation/output acceptance remains pending. No second repeat was sent. See the [hosted receipt](../operations/assembly-reconciliation-test-release-20261022.md).

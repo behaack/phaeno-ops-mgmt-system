@@ -1,5 +1,9 @@
 # Playwright E2E Test Plan
 
+## Genuine DPS simulation — October 22, 2026
+
+Signed-in hosted manual acceptance passes exactly one additional linked repeat after the external DPS correction: same specimen/run/frozen inputs, visible progress, Simulation completed after 15 seconds, correct previous-attempt link, one confirmed delivery and authenticated output downloads matching sizes/checksums. Every earlier attempt, receipt, event and command remains unchanged; no scientific analysis/release is created. See the [release receipt and screenshot](../operations/dps-genuine-simulation-test-release-20261022.md). No frontend source or browser regression test changed; earlier quiet-refresh checks remain applicable. Diagnostic simulated acceptance does not establish scientific qualification.
+
 ## Assembly Operations reconciliation — October 22, 2026
 
 Subsequent actual hosted signed-in acceptance passes quiet ended-attention refresh, immutable receipt/history preservation, independent no-resumption review and one linked Simulated-classified repeat delivered once. It ends Failed because the current DPS recipe calls a missing Phaeno-Runner executable; the provider/classification mismatch and successful output acceptance remain pending. No second execution or DPS modification occurred. All three exact-source required CI jobs and merged-source CI pass. See the [hosted receipt](../operations/assembly-reconciliation-test-release-20261022.md).

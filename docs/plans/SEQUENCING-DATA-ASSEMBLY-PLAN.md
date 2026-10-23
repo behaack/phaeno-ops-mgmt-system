@@ -1,5 +1,9 @@
 # Sequencing data assembly and job traceability
 
+## Genuine hosted DPS simulation — October 22, 2026
+
+The external DPS reserved Simulated recipe now executes a genuine in-process diagnostic simulation, without the scientific runner. Exactly one additional linked repeat succeeded, with authenticated output verification and all prior receipts/history unchanged. The current-path fix, focused Linux checks, recovery and pending source PR merge are recorded in the [release receipt](../operations/dps-genuine-simulation-test-release-20261022.md). Scientific QC and Customer release remain separate.
+
 ## Operations reconciliation and quiet refresh — October 22, 2026
 
 The Owner authorized a review workflow for retained assembly conflicts, preserving all receipts and original execution history, plus quiet background status refresh. The bounded [Operations reconciliation plan](ASSEMBLY-OPERATIONS-RECONCILIATION-PLAN.md) records eligibility, role checks, exact-evidence coverage, no-resumption verification, explicit linked repeat admission and validation. Implementation uses the existing immutable event journal; there is no schema change or migration. The separately authorized [hosted release](../operations/assembly-reconciliation-test-release-20261022.md) and original-attempt reconciliation are complete with original evidence unchanged. One linked, Portal-classified Simulated repeat ran once and ended Failed on a missing Phaeno-Runner executable. Correct the external provider's simulation/classification mismatch before any additional Simulated repeat; successful output acceptance remains pending.
