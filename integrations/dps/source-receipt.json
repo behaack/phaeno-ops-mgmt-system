@@ -1,0 +1,93 @@
+{
+  "base_commit": "c68e584f29a0e8faa2a9a6537075d356de1929fc",
+  "base_tree": "e2f00ad3902da19e0d8dbe33ba5c3694a70dc03e",
+  "patch_sha256": "31420bba1f321f4636985208c3fb5e835bfc9bab60e25e30586bf3e54cb5db2f",
+  "scientific_recipe_enabled": false,
+  "hosted_activated": false,
+  "files": [
+    {
+      "path": "apps/pseq_server/deploy/REAL-ASSEMBLY.md",
+      "sha256": "9fa4269581b5b3966865a663514fcde8616292d68881cce76aeb69f8a53e71a0"
+    },
+    {
+      "path": "apps/pseq_server/deploy/catalog.simulation-only.json",
+      "sha256": "cc9fc07397ae874c6ad1a215d3b229efb76bc327040a09e80439b800d9cc2dbc"
+    },
+    {
+      "path": "apps/pseq_server/deploy/dps.service",
+      "sha256": "6a2a44e30c0ab6fa5671c86d17188546ac80f84ae25346b4fe480ef79338d0b3"
+    },
+    {
+      "path": "apps/pseq_server/deploy/prepare-release.sh",
+      "sha256": "0dc8e0fd7857c198ebb3e69ee2c3c2bc773ab8841eb44819e3fc24c2ec8805bb"
+    },
+    {
+      "path": "apps/pseq_server/deploy/report-exit.sh",
+      "sha256": "d742ce5671ac1f5ea5f70b5ac56810d1ae0ac547f0b146a24701b71bc782a288"
+    },
+    {
+      "path": "apps/pseq_server/dps/Program.cs",
+      "sha256": "46cd4d7df28c0d9218eb1db17d5170b17d8cf15f6ac2ebfbbb2973a72bbb54a6"
+    },
+    {
+      "path": "apps/pseq_server/dps/src/DpsConfig.cs",
+      "sha256": "773c91623060a85ac95ef0398faee1c86fd3f4eebdf4bff5f51e53f1d396dbba"
+    },
+    {
+      "path": "apps/pseq_server/dps/src/DpsContract.cs",
+      "sha256": "4c640632fedfdb73289c65cb1418be42fd68cd187c697f8571e3474f62860cc5"
+    },
+    {
+      "path": "apps/pseq_server/dps/src/DpsJobRunner.cs",
+      "sha256": "118333aa452da83245caf11eb592b03efdc6cfb7142daeda939e3ff03d28766c"
+    },
+    {
+      "path": "apps/pseq_server/dps/src/DpsLedger.cs",
+      "sha256": "92be61662e831ab852703f65bb6a8a27109f1cc9f3eaf4b4c544035e671ac0c6"
+    },
+    {
+      "path": "apps/pseq_server/dps/src/DpsMqttServer.cs",
+      "sha256": "cf229e9befb64b6626fb248c1eb7de7fa6a5c4bc346ba9c10ef0222e7f29e5cd"
+    },
+    {
+      "path": "apps/pseq_server/dps/src/DpsRecipeCatalog.cs",
+      "sha256": "a2578998ae57f7b50876e6d685f4bb52f45747477c47c26f30c6060403e8aa19"
+    },
+    {
+      "path": "apps/pseq_server/dps/src/DpsValidation.cs",
+      "sha256": "8b7759a9cebfa7fe16e37580b4c404dbab3b34f2741ff954fcbcfa51c4dda8f0"
+    },
+    {
+      "path": "apps/pseq_server/dps/src/PSeqRecipe.cs",
+      "sha256": null
+    },
+    {
+      "path": "apps/pseq_server/dps/src/S3StorageClient.cs",
+      "sha256": "2d97a075229dc06021a5f6f5d0f8d91993ec0e1dfd48cb59f409f06a3c8ba5aa"
+    },
+    {
+      "path": "apps/pseq_server/dps/src/ScientificExecution.cs",
+      "sha256": "b9f86e0b61128d727b65f0846cc5e10de4a9f6a01465b563cfc74b34e1bc1b2b"
+    },
+    {
+      "path": "apps/pseq_server/dps/src/ScientificProcess.cs",
+      "sha256": "d4a48f2ab8ad6f0c6b6262fa7bed98ca73c61962470c3988bc923623ff74f064"
+    },
+    {
+      "path": "apps/pseq_server/dps_test.tests/DpsLifecyclePercentageTests.cs",
+      "sha256": "b94e747be24fc6a332efa5d702a1dcb4476e18e7d1a857f18f64591f03a979e7"
+    },
+    {
+      "path": "apps/pseq_server/dps_test.tests/PSeqRecipeTests.cs",
+      "sha256": null
+    },
+    {
+      "path": "apps/pseq_server/dps_test.tests/ScientificExecutionTests.cs",
+      "sha256": "525f0a70bee39dac64ad9a4884138a161ea3538a9b5afb8b53a2bde47461c233"
+    },
+    {
+      "path": "apps/pseq_server/dps_test.tests/ScientificReadinessTests.cs",
+      "sha256": "6fb17c17764ff42ed90db2b2d0976ed1d18e57e7ae5606fe332ee5437958a7b9"
+    }
+  ]
+}

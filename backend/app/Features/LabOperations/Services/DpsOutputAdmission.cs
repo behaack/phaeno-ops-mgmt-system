@@ -7,11 +7,13 @@ using PhaenoPortal.App.Features.LabOperations.DTOs;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.Services;
 using PhaenoPortal.App.Infrastructure.Persistence;
+using PhaenoPortal.App.Infrastructure.Storage;
 using PSeq.Operations.Laboratory.Domain;
 
 /// <summary>Execution acknowledgment and scientific-file admission have independent recovery boundaries.</summary>
 public sealed class DpsOutputAdmission(PSeqOperationsDbContext db, DpsS3Objects objects,
-    IOperationalFileScanner scanner, IOptions<DpsOptions> options, LabAssemblyService service, TimeProvider time)
+    IOperationalFileScanner scanner, IOptions<DpsOptions> options, LabAssemblyService service, TimeProvider time,
+    IOptions<FileScanningOptions> scanning)
 {
     public const string Pending = "DPS outputs await verified scientific-file admission. Recovery will continue.";
     public async Task AdmitAsync(Guid id, CancellationToken ct)
@@ -30,6 +32,7 @@ public sealed class DpsOutputAdmission(PSeqOperationsDbContext db, DpsS3Objects 
         if (manifest.ProviderJobId != job.ProviderJobId || manifest.StartedAtUtc.Ticks / 10 != job.StartedAtUtc?.Ticks / 10
             || manifest.StoppedAtUtc.Ticks / 10 != job.StoppedAtUtc?.Ticks / 10)
             throw DpsContract.Invalid();
+        RequireAdmissionBudget(manifest, submission.Parameters, options.Value, scanning.Value);
         var documents = new List<LabScientificDocument>(); long bytes = 0;
         foreach (var artifact in manifest.Outputs) {
             if (artifact.S3.SizeBytes > options.Value.MaximumOutputFileBytes || bytes > options.Value.MaximumOutputSetBytes - artifact.S3.SizeBytes
@@ -66,6 +69,18 @@ public sealed class DpsOutputAdmission(PSeqOperationsDbContext db, DpsS3Objects 
         if (job.AttentionReason?.StartsWith("DPS outputs ", StringComparison.Ordinal) == true) job.SetAttention(null);
         service.Record(job, "DpsOutputsAdmitted", job.RequestedByUserId);
         await db.SaveChangesAsync(ct); if (tx is not null) await tx.CommitAsync(ct);
+    }
+    internal static void RequireAdmissionBudget(DpsOutputManifest manifest, DpsObject parameters, DpsOptions options, FileScanningOptions scanning)
+    {
+        // Check the entire frozen set before any download, scan, file row or analysis is attempted.
+        var maximum = Math.Min(options.MaximumOutputFileBytes, scanning.MaximumStreamBytes);
+        long bytes = 0;
+        foreach (var address in manifest.Outputs.Select(output => output.S3).Append(parameters)) {
+            if (maximum < 1 || address.SizeBytes < 1 || address.SizeBytes > maximum
+                || address.SizeBytes > options.MaximumOutputSetBytes - bytes)
+                throw new OrderManagementException("dps_output_scan_limit", "DPS output admission exceeds the configured file-scanning limits. Operations must review the limits before retrying; the saved execution outcome is unchanged.", 409);
+            bytes += address.SizeBytes;
+        }
     }
     private async Task<LabScientificFile> AdmitFileAsync(LabAssemblyJob job, DpsObject address, string prefix, string name, CancellationToken ct)
     {

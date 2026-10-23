@@ -1,5 +1,9 @@
 # Playwright E2E Test Plan
 
+## Real assembly engineering — October 22, 2026
+
+RA-09–RA-11 in the [implementation plan](REAL-ASSEMBLY-HOSTED-TEST-IMPLEMENTATION-PLAN.md#verification-matrix) still require the signed-in real-input/recipe/admission/QC journey, one separately authorized scientific pilot, independent expected-result review and exact earlier receipt/history comparison. Local DPS process/storage fixtures and a disposable PostgreSQL admission journey are recorded in the [engineering handoff](../operations/real-assembly-engineering-20261022.md). No new browser test, hosted Run, service activation or real pilot occurs in this engineering scope. Existing quiet-refresh and Actions controls are untouched. Preserve the established Simulated specimen and all completed/reconciled attempts as diagnostic evidence; do not relabel them as real scientific qualification.
+
 ## Genuine DPS simulation — October 22, 2026
 
 Signed-in hosted manual acceptance passes exactly one additional linked repeat after the external DPS correction: same specimen/run/frozen inputs, visible progress, Simulation completed after 15 seconds, correct previous-attempt link, one confirmed delivery and authenticated output downloads matching sizes/checksums. Every earlier attempt, receipt, event and command remains unchanged; no scientific analysis/release is created. See the [release receipt and screenshot](../operations/dps-genuine-simulation-test-release-20261022.md). No frontend source or browser regression test changed; earlier quiet-refresh checks remain applicable. Diagnostic simulated acceptance does not establish scientific qualification.

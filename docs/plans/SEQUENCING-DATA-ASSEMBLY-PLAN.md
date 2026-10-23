@@ -1,5 +1,11 @@
 # Sequencing data assembly and job traceability
 
+## Real scientific assembly readiness — October 22, 2026
+
+The Owner authorized local engineering under the [implementation/acceptance plan](REAL-ASSEMBLY-HOSTED-TEST-IMPLEMENTATION-PLAN.md), with the real pilot held pending dataset, reference and scientific QC approval. The [engineering handoff](../operations/real-assembly-engineering-20261022.md) records the separate DPS patch, approval-bound catalog, exact-byte workspaces, native process/checkpoint ownership, actual-file publication/provenance, preserving recovery and Portal admission preflight/fixtures. The shipped catalog contains only the simulator. The actual PSeq CLI/profile, native ARM64/tools/references and scientific expectations still require qualification; no demonstrated native command or dataset is substituted for that decision.
+
+Treat the 9:24:10 PM PDT DPS stop as intentional by Owner direction. The [readiness report](../operations/real-assembly-hosted-test-readiness-20261022.md) preserves that inspection baseline, distinct from the earlier healthy checkpoint. No hosted restart, configuration/data write, new assembly, migration, Git publication or deployment occurred in this engineering scope. Preserve all original receipt/execution records and recheck the complete baseline before future activation.
+
 ## Genuine hosted DPS simulation — October 22, 2026
 
 The external DPS reserved Simulated recipe now executes a genuine in-process diagnostic simulation, without the scientific runner. Exactly one additional linked repeat succeeded, with authenticated output verification and all prior receipts/history unchanged. The current-path fix, focused Linux checks, recovery and Owner-approved PR #2 merge `c68e584f` with passing post-merge hosted health are recorded in the [release receipt](../operations/dps-genuine-simulation-test-release-20261022.md). Scientific QC and Customer release remain separate.
