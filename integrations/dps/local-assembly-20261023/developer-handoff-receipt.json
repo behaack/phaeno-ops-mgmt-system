@@ -1,0 +1,38 @@
+{
+  "recorded_at_utc": "2026-10-23T16:40:28.745063+00:00",
+  "record_type": "Superseding owner direction and DPS developer handoff",
+  "owner_directions": [
+    "You may not change the phaenobiotech/pipeline repository.",
+    "If changes need to be made to DPS, the DPS developer needs to make them."
+  ],
+  "repository": "phaenobiotech/pipeline",
+  "codex_may_modify_dps_repository": false,
+  "dps_developer_owns_implementation_review_and_publication": true,
+  "codex_scope": "Portal-side planning and integration only",
+  "earlier_dps_push_authorization_superseded": true,
+  "codex_dps_push_planned": false,
+  "earlier_local_prototype_source_commit": "0aecd977f1f516fece22284a10f8b08f81939ab8",
+  "earlier_local_reference_evidence_head": "45d75837e8875bbd2df1fcb4ad649beb7a13f40a",
+  "local_prototype_is_reference_only": true,
+  "earlier_dps_push_rejected_http": 403,
+  "remote_dps_change_from_rejected_push": false,
+  "further_codex_dps_mutation_after_direction": false,
+  "previous_publication_receipt": "publication-receipt.json",
+  "previous_publication_receipt_sha256": "18f4497993a1a81dfdae316d1df18a4282eb320854ecb6d7484a75e7c3bf86ea",
+  "previous_receipts_rewritten": false,
+  "original_provider_receipts_and_execution_history_modified": false,
+  "dps_developer_contacted": false,
+  "email_requested_as_suggestion_only": true,
+  "dps_deployment_authorized": false,
+  "hosted_worker_started": false,
+  "real_pilot_authorized": false,
+  "real_pilot_run": false,
+  "contract": "poms-dps/1.0",
+  "first_milestone": "Assembled sequences; reference matching and gene summaries deferred",
+  "remaining_gates": [
+    "DPS developer implements/reviews required DPS changes in their own repository",
+    "Pinned target-server/native/tool qualification and integration proof",
+    "Dataset/specimen/run/reference/settings/expected outputs/QC/reviewer approval",
+    "Separate preserving deployment and one real-pilot authorization"
+  ]
+}

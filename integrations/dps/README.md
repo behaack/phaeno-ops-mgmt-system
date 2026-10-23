@@ -1,6 +1,6 @@
 # DPS real-assembly engineering package
 
-The later [October 23 assembled-sequences publication index](local-assembly-20261023/README.md) records reviewed/local-committed native engineering and its separate source/build/test receipts. New native source/detailed proof stay in private DPS; its push awaits repository write access. Deployment and the real pilot remain held. The original patch and receipts below are unchanged; do not apply both packages on top of one another.
+The later [October 23 DPS developer handoff index](local-assembly-20261023/README.md) records a local reference proposal and preserved proof. The Owner directed that Codex must not change `phaenobiotech/pipeline`; the DPS developer must make any DPS changes. The earlier rejected push changed nothing remotely. New native source/detailed evidence remain private/local, and deployment/pilot remain held. Original receipts below are unchanged; do not apply both packages on top of one another.
 
 Engineering handoff for the separate private `phaenobiotech/pipeline` repository. This original package preserves its reviewed source change as a Portal artifact. It was published with the [Portal-only release](../../docs/operations/dps-admission-portal-test-release-20261023.md); at that checkpoint no changes had been published to pipeline, deployed to DPS or made to historical provider data. The later publication index above records subsequent source work separately.
 
