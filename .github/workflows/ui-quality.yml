@@ -103,6 +103,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Verify the preinstalled browser version
         run: node -e "if (require('@playwright/test/package.json').version !== '1.59.1') throw new Error('Update the matching Playwright CI image before running browser checks')"
+      - name: Align the isolated CI home ownership for Firefox
+        run: chown "$(id -u):$(id -g)" /github/home
       - run: pnpm ui:test:cross-browser
       - uses: actions/upload-artifact@v4
         if: always()
