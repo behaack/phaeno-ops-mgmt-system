@@ -2,7 +2,9 @@
 
 ## Operations conflict review — October 22, 2026
 
-Local implementation of the [Operations reconciliation workflow](ASSEMBLY-OPERATIONS-RECONCILIATION-PLAN.md) adds an appended, exact-evidence review decision for ended unsuccessful attempts. It preserves original receipts, payloads, hashes, outcomes and execution times, and requires independently documented verification that the old execution cannot resume. A read-only DPS Query observation never applies disputed receipts or treats lost history as proof that execution never occurred. Active/successful provider observations block this bounded review. Newly conflicting evidence reopens the hold; covered exact replays can be acknowledged after the decision commits. No external contract, schema, migration or hosted record changes are included.
+The [Operations reconciliation workflow](ASSEMBLY-OPERATIONS-RECONCILIATION-PLAN.md) adds an appended, exact-evidence review decision for ended unsuccessful attempts. It preserves original receipts, payloads, hashes, outcomes and execution times, and requires independently documented verification that the old execution cannot resume. A read-only DPS Query observation never applies disputed receipts or treats lost history as proof that execution never occurred. Active/successful provider observations block this bounded review. Newly conflicting evidence reopens the hold; covered exact replays can be acknowledged after the decision commits. There is no external contract, schema or migration change.
+
+The separately authorized [hosted release and workflow receipt](../operations/assembly-reconciliation-test-release-20261022.md) records successful reconciliation of the original conflict with all original evidence intact. Exactly one linked, Portal-classified Simulated repeat was delivered once and ended Failed because current DPS invokes a missing Phaeno-Runner executable. The provider/classification mismatch must be corrected before further Simulated execution; successful output acceptance remains pending. No second repeat or DPS modification was performed.
 
 ## HTTP replay follow-up — October 21, 2026
 

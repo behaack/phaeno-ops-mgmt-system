@@ -1,5 +1,11 @@
 # Operations and production-readiness boundary
 
+## Assembly reconciliation and quiet refresh — hosted October 22, 2026
+
+Reviewed source `0dc6391c74ebe39fa10bdeae73bf67706f86ba87` is deployed to the existing hosted test API/Portal after protected PR checks, matching production builds and restore-verified encrypted recovery. The actual signed-in ended-conflict list polls quietly at thirty seconds with unchanged row geometry. Operations reconciled `SIMULATED-ASM-20261020` after independent no-resumption checks, retaining both disputed terminal receipts, all eight original receipts, six original history events, original Run delivery and original Failed execution facts. One review decision was appended.
+
+Exactly one linked, Portal-classified Simulated repeat `b3187a23-d258-4c85-8866-900021cff3d5` was delivered once and ended Failed: Phaeno-Runner executable missing. The current external DPS implementation invokes that runner despite Portal's Simulated classification. Restore or explicitly map genuine simulation behavior before another Simulated repeat; successful output/provider/scientific acceptance is not established. No second repeat, DPS modification, migration, identity/storage cutover or Customer release occurred. Deployment holds, orphan quarantine, Website intake preservation and hosted-test S3 recovery deferral remain. See the [release receipt](operations/assembly-reconciliation-test-release-20261022.md).
+
 ## Portal UI workflow coverage and gates — completed October 22, 2026
 
 API/frontend source `531d13fa58c22f01bc40824ce5d61be8acf19dbf` is live with

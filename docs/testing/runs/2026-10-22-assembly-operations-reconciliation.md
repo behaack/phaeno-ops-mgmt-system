@@ -32,6 +32,8 @@ The backend filter selects assembly/DPS/lifecycle-delivery coverage and excludes
 
 ## Remaining release and Operations work
 
+Subsequent Owner-authorized hosted execution is recorded in the [release receipt](../../operations/assembly-reconciliation-test-release-20261022.md). Publication/deployment, actual quiet-refresh verification and Operations reconciliation pass with the original receipts/history unchanged. Exactly one linked Simulated-classified repeat was delivered once and ended Failed because the current DPS recipe calls a missing Phaeno-Runner executable. Successful simulation/output acceptance and correction of that provider/classification mismatch remain pending. The following paragraph describes the earlier local-verification boundary.
+
 No Git staging/commit/push, deployment, hosted reconciliation, provider restart, receipt deletion, timestamp replacement, actual assembly Start or scientific/customer release was performed. The retained `SIMULATED-ASM-20261020` conflict remains unchanged in the hosted environment. After a separately authorized release, Operations must supply the actual independent verification and record the review; an authorized operator can then request a reasoned repeat. This workflow does not repair DPS ledger durability or establish an authoritative replacement stop time.
 
 The full frontend/backend/browser suites, Firefox/WebKit matrix, production frontend build, full screen-reader acceptance and live provider/scientific acceptance were not run for this bounded local change. Existing production build outputs and running development sessions are preserved. The disposable database, task-owned browser results and visual-review scratch files were removed after verification.
