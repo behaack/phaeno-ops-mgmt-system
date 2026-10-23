@@ -1,8 +1,8 @@
 # Operations and production-readiness boundary
 
-## Portal-only DPS admission release — authorized October 22, 2026
+## Portal-only DPS admission release — completed October 23, 2026
 
-The Owner authorized publishing the reviewed engineering work and deploying only the Portal API and matching frontend/help. The [preserving release plan](plans/DPS-ADMISSION-PORTAL-TEST-RELEASE-20261023-PLAN.md) retains the existing database, receipts/history, Website intake, DPS installation, deployment holds, orphan quarantine and scientific-pilot hold. Hosted activation and acceptance will be recorded separately; publication of the saved DPS source patch does not activate it.
+Portal API/frontend source `b3b72ac787957e7fdc9395b7ea69ef3e70e502b1` is live after protected PR #7, exact-source checks, restore/off-server verified recovery and matching frontend promotion. The [release receipt](operations/dps-admission-portal-test-release-20261023.md) records all 250 tables unchanged, 115 unrelated files preserved, unchanged six-attempt/28-receipt/42-event/nine-command assembly history and the matching 62-guide help index. API/database/scanner are healthy. DPS remains stopped with its original four-job ledger; only the Portal-owned tunnel followed the replacement API namespace. Existing provider/auth settings, Website intake, OCIA identities, release holds, orphan quarantine, S3 recovery deferral and scientific-pilot hold remain. The [preserving plan](plans/DPS-ADMISSION-PORTAL-TEST-RELEASE-20261023-PLAN.md) is complete; the published DPS source patch remains an unactivated handoff artifact.
 
 ## Real assembly readiness — October 22, 2026
 

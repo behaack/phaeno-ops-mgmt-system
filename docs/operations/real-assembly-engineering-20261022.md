@@ -1,8 +1,8 @@
 # Real assembly engineering handoff
 
-Status: **implemented and verified locally; no hosted activation or real pilot**. October 22, 2026 PDT. The Owner authorized engineering implementation and focused isolated tests while holding the pilot until dataset, references and scientific QC criteria are approved. The [owning plan](../plans/REAL-ASSEMBLY-HOSTED-TEST-IMPLEMENTATION-PLAN.md) retains those gates and the preserving release procedure.
+Status: **engineering verified; Portal portion released; DPS activation and real pilot held**. The local implementation was completed October 22, 2026 PDT. The Owner authorized engineering implementation and focused isolated tests while holding the pilot until dataset, references and scientific QC criteria are approved. The [owning plan](../plans/REAL-ASSEMBLY-HOSTED-TEST-IMPLEMENTATION-PLAN.md) retains those gates and the preserving release procedure.
 
-Subsequent authorization covers committing the reviewed work and deploying only the Portal API and matching frontend/help under the [Portal-only release plan](../plans/DPS-ADMISSION-PORTAL-TEST-RELEASE-20261023-PLAN.md). DPS activation and the real pilot remain held. The implementation-time observations below remain the local engineering receipt.
+The reviewed work was subsequently published and its Portal API/frontend portion deployed under the [Portal-only release plan](../plans/DPS-ADMISSION-PORTAL-TEST-RELEASE-20261023-PLAN.md); the [October 23 release receipt](dps-admission-portal-test-release-20261023.md) records hosted acceptance and preservation. DPS activation and the real pilot remain held. The implementation-time observations below remain the local engineering receipt.
 
 ## Delivered
 

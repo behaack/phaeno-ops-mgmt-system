@@ -1,6 +1,6 @@
 # DPS output admission — Portal-only hosted-test release
 
-Status: **authorized for preparation, publication and Portal-only deployment**. October 22, 2026 PDT / October 23 UTC. The Owner approved committing the reviewed changes and deploying the Portal API and matching frontend/help. This does not authorize deploying, installing, starting or changing DPS, or running any assembly or real pilot.
+Status: **completed October 23, 2026 PDT**. The Owner approved committing the reviewed changes and deploying the Portal API and matching frontend/help. The [release receipt](../operations/dps-admission-portal-test-release-20261023.md) records exact source, recovery, activation and preservation evidence. This did not authorize deploying, installing, starting or changing DPS, or running any assembly or real pilot.
 
 ## Scope
 
