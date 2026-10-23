@@ -2,6 +2,8 @@
 
 ## Assembly Operations reconciliation and quiet polling — October 22, 2026
 
+Hosted signed-in acceptance verifies actual thirty-second ended-attention polling and identical loaded row geometry across refresh, both retained terminal receipts, authorized reconciliation and the separate linked repeat action. Existing signed-in tabs receive the released build after the release-boundary update. The one repeat ends Failed on a missing external runner, so successful live simulation/output acceptance is not claimed. See the [hosted receipt](../operations/assembly-reconciliation-test-release-20261022.md).
+
 Four focused files pass **20/20** cases: the real reconciliation dialog displays both retained receipts and exact timestamps; requires decision/evidence/stop confirmation; retains rejected input; blocks duplicate save/dismissal while pending; requires explicit review after evidence changes; and uses server-derived reconciliation access independently from ordinary operator access. Existing progress, simulated-result separation and API recovery checks remain covered. Assembly-list regression preserves the same loaded row during pending/failed background refresh without inserting a loading row. Interval checks retain five-second active polling, thirty-second ended attention polling and no interval for settled terminal work. Existing inputs open their latest attempt instead of offering an unlinked Start.
 
 Frontend lint (including UI drift), type checking and generated-help checks pass. The Phaeno sequencing guide and review date are updated. Browser acceptance and remaining hosted gates are recorded in [the verification record](../testing/runs/2026-10-22-assembly-operations-reconciliation.md).
