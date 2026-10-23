@@ -83,6 +83,10 @@ jobs:
   workflow-behavior:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    container:
+      # Match the locked Playwright package; avoid per-run Ubuntu mirror downloads.
+      image: mcr.microsoft.com/playwright:v1.59.1-noble@sha256:b0ab6f3cb99aa7803adbc14d9027ec1785fc6e433b97e134e0f8fe61683b6b53
+      options: --init
     defaults:
       run:
         working-directory: frontend
@@ -97,7 +101,8 @@ jobs:
           cache: pnpm
           cache-dependency-path: frontend/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
-      - run: pnpm exec playwright install --with-deps firefox webkit
+      - name: Verify the preinstalled browser version
+        run: node -e "if (require('@playwright/test/package.json').version !== '1.59.1') throw new Error('Update the matching Playwright CI image before running browser checks')"
       - run: pnpm ui:test:cross-browser
       - uses: actions/upload-artifact@v4
         if: always()
