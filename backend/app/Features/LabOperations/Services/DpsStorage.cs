@@ -14,6 +14,13 @@ public sealed class DpsStorage : IDisposable
     public bool Available { get; }
     public IAmazonS3 Client => Available ? client.Value : throw DpsMqttClient.Unavailable();
 
+    internal DpsStorage(S3FileStorageOptions settings, IAmazonS3 objectClient)
+    {
+        Settings = settings;
+        Available = !string.IsNullOrWhiteSpace(settings.BucketName) && !string.IsNullOrWhiteSpace(settings.Region);
+        client = new(() => objectClient);
+    }
+
     public DpsStorage(IOptions<DpsOptions> dps, IOptions<FileStorageOptions> files)
     {
         var dedicated = dps.Value.S3;

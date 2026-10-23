@@ -1,5 +1,9 @@
 # Frontend Test Plan
 
+## Real assembly engineering — October 22, 2026
+
+RA-09 in the [implementation plan](REAL-ASSEMBLY-HOSTED-TEST-IMPLEMENTATION-PLAN.md#verification-matrix) retains approved-recipe availability, unavailable-provider feedback, simulation separation, scientific admission/QC presentation, quiet refresh and keyboard/focus/Actions acceptance. This engineering change touches no controls, polling or routes. Phaeno sequencing help now explains that admission/scanning recovery preserves the completed execution and receipts. Regenerate the paired help corpus and run focused documentation checks; results are in the [handoff](../operations/real-assembly-engineering-20261022.md). No new UI-specific test is needed for the backend size guard. Actual hosted scientific selection/admission remains held with the pilot.
+
 ## Assembly Operations reconciliation and quiet polling — October 22, 2026
 
 Hosted signed-in acceptance verifies actual thirty-second ended-attention polling and identical loaded row geometry across refresh, both retained terminal receipts, authorized reconciliation and the separate linked repeat action. Existing signed-in tabs receive the released build after the release-boundary update. The one repeat ends Failed on a missing external runner, so successful live simulation/output acceptance is not claimed. See the [hosted receipt](../operations/assembly-reconciliation-test-release-20261022.md).

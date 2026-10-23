@@ -2962,7 +2962,7 @@
       "publicationStatus": "published",
       "id": "phaeno/lab-libraries-batches-sequencing",
       "route": "/docs/phaeno/lab-libraries-batches-sequencing",
-      "contentHash": "58dd92872490db71fc3874c727d66dcdb5e09cc9be74b1fb67a28fc15d71a6b3",
+      "contentHash": "ce06cd4fa77408be1d69466493e136e90f041f0969e44ee6731acb7d970a82c1",
       "sections": [
         {
           "heading": "Libraries, batches, and sequencing",
@@ -3022,7 +3022,7 @@
         {
           "heading": "Respect the implementation boundary",
           "anchor": "respect-the-implementation-boundary",
-          "text": "POMS owns verified uploaded FASTQ custody, result/file-set bindings, processing attempts and QC evidence. Configured test DPS can execute labelled simulations; POMS records the remote server's actual lifecycle and verifies its diagnostic outputs. A validated scientific recipe and complete scientific output provenance are still required for actual results. Scientific approval and explicit Customer publication remain separate. The current DPS contract requires a commercial Lab Job and one complete current FASTQ set for a specimen/purchased sequencing run. Trial processing requires a separate contract extension. Holds, cancelled work, incomplete inputs and unconfirmed earlier attempts retain their existing restrictions. A successful simulation is separate from scientific assembly, approval or Customer publication."
+          "text": "POMS owns verified uploaded FASTQ custody, result/file-set bindings, processing attempts and QC evidence. Configured test DPS can execute labelled simulations; POMS records the remote server's actual lifecycle and verifies its diagnostic outputs. A validated scientific recipe and complete scientific output provenance are still required for actual results. Scientific approval and explicit Customer publication remain separate. Scientific outputs must also pass file verification and scanning before POMS links their analysis. If admission needs recovery or exceeds the configured scanning limits, the recorded execution outcome and receipts remain intact. Operations resolves the admission issue and retries the same completed attempt. The current DPS contract requires a commercial Lab Job and one complete current FASTQ set for a specimen/purchased sequencing run. Trial processing requires a separate contract extension. Holds, cancelled work, incomplete inputs and unconfirmed earlier attempts retain their existing restrictions. A successful simulation is separate from scientific assembly, approval or Customer publication."
         },
         {
           "heading": "Record library quality evidence",
@@ -4914,5 +4914,5 @@
       ]
     }
   ],
-  "corpusHash": "7e53c40e62e014069ddeeca91f24e97e44704b7a23f76c3e3a75898a1c941bda"
+  "corpusHash": "9aae02df9751634cbb72bff7c7f7390f6b21867fad686bd785de9ec3506e32e0"
 }

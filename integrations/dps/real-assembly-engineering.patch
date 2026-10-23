@@ -1,0 +1,2778 @@
+diff --git a/apps/pseq_server/dps/Program.cs b/apps/pseq_server/dps/Program.cs
+index e195b650..4db926a1 100644
+--- a/apps/pseq_server/dps/Program.cs
++++ b/apps/pseq_server/dps/Program.cs
+@@ -2,6 +2,26 @@
+ // Program.cs: Main entry point for the Data Pipeline Server (DPS) application.
+ 
+ using Dps;
++using System.Runtime.InteropServices;
++
++if (args.Length == 3 && args[0] == "--scientific-stage") {
++    try { return await ScientificProcess.HostAsync(args[1], args[2]); }
++    catch { Console.Error.WriteLine("Scientific stage host failed; inspect the protected journal."); return 125; }
++}
++
++if (args.Length == 3 && args[0] == "--qualification-digests") {
++    try {
++        var catalog = DpsRecipeCatalog.Load(args[1]);
++        var manifest = JsonTools.Deserialize<INPUT_MANIFEST_DTO>(File.ReadAllText(args[2])) ?? throw new InvalidOperationException();
++        var profile = catalog.Scientific(manifest.recipe) ?? throw new InvalidOperationException();
++        Console.WriteLine(JsonTools.SerializeIndented(new { profile_sha256 = profile.DefinitionHash(), dataset_sha256 = ScientificProfile.DatasetHash(manifest),
++            references_sha256 = profile.ReferencesHash(), qc_criteria_sha256 = profile.qc_criteria.sha256 }));
++        return 0;
++    } catch { Console.Error.WriteLine("Qualification documents are invalid; no approvals or executions were created."); return 2; }
++}
++if (args.Length != 0 && !(args.Length == 1 && args[0] == "--check")) {
++    Console.Error.WriteLine("Use --check or --qualification-digests <catalog> <input-manifest>; no worker was started."); return 2;
++}
+ 
+ 
+ Console.WriteLine("Phaeno Data Pipeline Server (DPS)");
+@@ -21,12 +41,20 @@ catch (Exception ex)
+ 
+ 
+ using CancellationTokenSource shutdown = new();
++using var terminate = OperatingSystem.IsWindows() ? null : PosixSignalRegistration.Create(PosixSignal.SIGTERM,
++    context => { context.Cancel = true; Console.WriteLine("DPS stopping: SIGTERM."); shutdown.Cancel(); });
+ Console.CancelKeyPress += (_, e) =>
+ {
+     e.Cancel = true;
+     shutdown.Cancel();
+ };
+ 
++if (args.Length == 1 && args[0] == "--check") {
++    Console.WriteLine("Configuration valid. Available recipes: " + string.Join(", ", config.Recipes.Available().Select(r => r.key + ":" + r.version)));
++    foreach (var profile in config.Recipes.scientific_profiles) Console.WriteLine(profile.key + ": " + (profile.ReadinessReason() ?? "preflight ready; pilot authorization remains separate"));
++    return 0;
++}
++
+ 
+ DpsMqttServer server;
+ try
+@@ -42,7 +70,8 @@ catch (InvalidOperationException ex)
+ 
+ using (server)
+ {
+-    await server.RunAsync(shutdown.Token);
++    try { await server.RunAsync(shutdown.Token); }
++    finally { Console.WriteLine("DPS worker exited; source " + System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>(typeof(DpsConfig).Assembly)?.InformationalVersion + "."); }
+ }
+ 
+ 
+diff --git a/apps/pseq_server/dps/src/DpsConfig.cs b/apps/pseq_server/dps/src/DpsConfig.cs
+index a1c0fac4..d1e0bf95 100644
+--- a/apps/pseq_server/dps/src/DpsConfig.cs
++++ b/apps/pseq_server/dps/src/DpsConfig.cs
+@@ -19,12 +19,8 @@ public sealed class DpsConfig : MqttConfig   // MqttConfig contains the common b
+     public TimeSpan     AlertAfter;
+     public bool         AllowFixtureS3;
+     public TimeSpan     SimulatedRunTime;
+-    public string       RecipeKey = "";
+-    public string       RecipeName = "";
+-    public string       RecipeVersion = "";
+-    public List<string> RequiredOutputRoles = new();
+-    public List<string> SupportedReadLayouts = new();
+-    public JsonElement  RecipeParametersSchema;
++    internal DpsRecipeCatalog Recipes = new();
++    public string WorkspacePath = "";
+ 
+     // ----------------------------------------------------------------------------------------------------------------------------
+ 
+@@ -56,9 +52,6 @@ public sealed class DpsConfig : MqttConfig   // MqttConfig contains the common b
+         int               mqttPort         = Util.ReadIntEV("MQTT_PORT",       BROKER_PORT);
+         string            ledgerPath       = Util.ReadStrEV("DPS_LEDGER_PATH",    DefaultLocalPath(environment, "ledger.json"));
+         string            alertLogPath     = Util.ReadStrEV("DPS_ALERT_LOG_PATH", DefaultLocalPath(environment, "alerts.log"));
+-        string            recipeSchemaJson = Util.ReadStrEV("DPS_RECIPE_PARAMETERS_SCHEMA_JSON", "{\"type\":\"object\",\"additionalProperties\":true}");
+-
+-        using JsonDocument schemaDoc = JsonDocument.Parse(recipeSchemaJson);
+ 
+         //
+         // Check for a password file which contains the password for the client certificate.
+@@ -101,22 +94,8 @@ public sealed class DpsConfig : MqttConfig   // MqttConfig contains the common b
+         config.SimulatedRunTime         = SimulatedAssemblyRecipe.Duration(Util.ReadIntEV("DPS_SIMULATED_RUN_SECONDS", 15));
+ 
+ 
+-        //
+-        // TODO: Mock recipe. Replace these defaults (and the DPS_RECIPE_PARAMETERS_SCHEMA_JSON default
+-        //       above) with the real pipeline's recipe key, version, parameter schema, supported read
+-        //       layouts and required output roles. Describe advertises exactly these to POMS.
+-        //
+-        config.RecipeKey              = Util.ReadStrEV("DPS_RECIPE_KEY", DpsContract.PSEQ_RECIPE_KEY);
+-        config.RecipeName             = Util.ReadStrEV("DPS_RECIPE_NAME", DpsContract.PSEQ_RECIPE_NAME);
+-        config.RecipeVersion          = Util.ReadStrEV("DPS_RECIPE_VERSION", DpsContract.PSEQ_RECIPE_VERSION);
+-        config.RequiredOutputRoles    = Util.ReadCsvEV("DPS_REQUIRED_OUTPUT_ROLES", "assembly_output,provenance_report");
+-        config.SupportedReadLayouts   = Util.ReadCsvEV("DPS_SUPPORTED_READ_LAYOUTS", "PairedEnd");
+-        config.RecipeParametersSchema = schemaDoc.RootElement.Clone();
+-
+-        if (config.RequiredOutputRoles.Count == 0)
+-        {
+-            throw new InvalidOperationException("At least one required output role must be configured.");
+-        }
++        config.Recipes = DpsRecipeCatalog.Load(Util.ReadNullableEV("DPS_RECIPE_CATALOG_PATH"));
++        config.WorkspacePath = Path.GetFullPath(Util.ReadStrEV("DPS_WORKSPACE_PATH", Path.Combine(Path.GetDirectoryName(Path.GetFullPath(ledgerPath))!, "attempts")));
+ 
+         return config;
+     }
+diff --git a/apps/pseq_server/dps/src/DpsContract.cs b/apps/pseq_server/dps/src/DpsContract.cs
+index d54a2cb0..89dae288 100644
+--- a/apps/pseq_server/dps/src/DpsContract.cs
++++ b/apps/pseq_server/dps/src/DpsContract.cs
+@@ -414,6 +414,15 @@ internal sealed class PROVENANCE_DTO
+     public string engine_version = "";
+     public List<PROVENANCE_TOOL_DTO> tools = new();
+     public List<string> container_images = new();
++    public List<REFERENCE_DATA_DTO> reference_data = new();
++    public string? reference_data_not_applicable;
++}
++
++internal sealed class REFERENCE_DATA_DTO
++{
++    public string name = "";
++    public string version = "";
++    public string sha256 = "";
+ }
+ 
+ // ----------------------------------------------------------------------------------------------------------------------------
+diff --git a/apps/pseq_server/dps/src/DpsJobRunner.cs b/apps/pseq_server/dps/src/DpsJobRunner.cs
+index 595db6c2..b6c32da0 100644
+--- a/apps/pseq_server/dps/src/DpsJobRunner.cs
++++ b/apps/pseq_server/dps/src/DpsJobRunner.cs
+@@ -13,6 +13,25 @@ internal sealed class DpsJobRunner
+     private readonly Func<DPS_EVENT_DTO, Task> m_publishEvent;
+     private readonly Action<string> m_log;
+     private readonly ConcurrentDictionary<string, CancellationTokenSource> m_running = new(StringComparer.Ordinal);
++    private readonly ConcurrentDictionary<string, Task> m_tasks = new(StringComparer.Ordinal);
++    private readonly ConcurrentDictionary<string, string> m_held = new(StringComparer.Ordinal);
++    private readonly SemaphoreSlim m_capacity = new(1, 1);
++    private readonly object m_scheduleGate = new();
++    private bool m_stopping;
++
++    internal string? HoldReason(string jobId) => m_held.GetValueOrDefault(jobId);
++    internal bool Available => !m_stopping && m_held.IsEmpty;
++
++    internal async Task StopAsync()
++    {
++        Task[] tasks;
++        lock (m_scheduleGate) {
++            m_stopping = true;
++            foreach (var cancellation in m_running.Values) cancellation.Cancel();
++            tasks = m_tasks.Values.ToArray();
++        }
++        await Task.WhenAll(tasks);
++    }
+ 
+     // --------------------------------------------------------------------------------------------------------------------
+ 
+@@ -35,9 +54,16 @@ internal sealed class DpsJobRunner
+ 
+     public void StartPendingJobs()
+     {
+-        foreach (string jobId in m_ledger.ActiveJobIds())
+-        {
+-            EnsureRunning(jobId);
++        PrepareRecovery();
++        foreach (string jobId in m_ledger.ActiveJobIds()) EnsureRunning(jobId);
++    }
++
++    internal void PrepareRecovery()
++    {
++        foreach (var job in m_ledger.Read(d => d.jobs.Values.Where(j => j.status == "Running"
++            && !SimulatedAssemblyRecipe.Matches(j.start.recipe.key, j.start.recipe.version)).ToArray())) {
++            try { ScientificExecution.RequireRecoverable(m_config.WorkspacePath, job.job_id); }
++            catch { m_held[job.job_id] = "Interrupted scientific execution requires Operations reconciliation. No stage was restarted."; }
+         }
+     }
+ 
+@@ -45,42 +71,37 @@ internal sealed class DpsJobRunner
+ 
+     public void EnsureRunning(string jobId)
+     {
+-        if (m_running.ContainsKey(jobId))
+-        {
+-            return;
+-        }
+-
+-        CancellationTokenSource cancellation = new();
+-        if (m_running.TryAdd(jobId, cancellation) == false)
+-        {
+-            cancellation.Dispose();
+-            return;
+-        }
+-
+-        _ = Task.Run(async () =>
+-        {
+-            try
+-            {
+-                await RunJobAsync(jobId, cancellation.Token);
+-            }
+-            finally
+-            {
+-                if (m_running.TryRemove(jobId, out CancellationTokenSource? removed))
+-                {
+-                    removed.Dispose();
++        lock (m_scheduleGate) {
++            if (m_stopping || m_running.ContainsKey(jobId) || m_held.ContainsKey(jobId)) return;
++            var cancellation = new CancellationTokenSource();
++            m_running[jobId] = cancellation;
++            m_tasks[jobId] = Task.Run(async () => {
++                bool acquired = false;
++                try {
++                    await m_capacity.WaitAsync(cancellation.Token); acquired = true;
++                    // An ambiguous prior native execution holds the whole worker, not just its row.
++                    if (!m_held.IsEmpty) { m_held[jobId] = "Scientific processing is held pending Operations reconciliation."; return; }
++                    await RunJobAsync(jobId, cancellation.Token);
++                } catch (OperationCanceledException) when (cancellation.IsCancellationRequested) {
++                    if (!acquired && !m_stopping) {
++                        var cancelled = AddLifecycleEvent(jobId, "CancelledBeforeStart", null, null, "Cancellation accepted before execution started.", null);
++                        if (cancelled is not null) await m_publishEvent(cancelled);
++                    }
+                 }
+-            }
+-        });
++                catch (Exception ex) { m_held[jobId] = "DPS execution reporting requires Operations reconciliation."; m_log($"Job {jobId}: reporting held ({ex.GetType().Name})."); }
++                finally {
++                    if (acquired) m_capacity.Release();
++                    lock (m_scheduleGate) { m_running.TryRemove(jobId, out _); m_tasks.TryRemove(jobId, out _); cancellation.Dispose(); }
++                }
++            });
++        }
+     }
+ 
+     // --------------------------------------------------------------------------------------------------------------------
+ 
+     public void CancelRunningJob(string jobId)
+     {
+-        if (m_running.TryGetValue(jobId, out CancellationTokenSource? cancellation))
+-        {
+-            cancellation.Cancel();
+-        }
++        lock (m_scheduleGate) if (m_running.TryGetValue(jobId, out var cancellation)) cancellation.Cancel();
+     }
+ 
+     // --------------------------------------------------------------------------------------------------------------------
+@@ -118,6 +139,13 @@ internal sealed class DpsJobRunner
+             return;
+         }
+ 
++        bool recovering = job.status == "Running";
++        bool simulated = SimulatedAssemblyRecipe.Matches(job.start.recipe.key, job.start.recipe.version);
++        if (recovering && !simulated) {
++            try { ScientificExecution.RequireRecoverable(m_config.WorkspacePath, jobId); }
++            catch (Exception) { m_held[jobId] = "Interrupted scientific execution requires Operations reconciliation. No native stage was restarted."; return; }
++            if (job.cancellation_requested) { m_held[jobId] = "Interrupted scientific cancellation requires Operations reconciliation."; return; }
++        }
+         string startedAt;
+         if (StringComparer.Ordinal.Equals(job.status, "Running") && string.IsNullOrWhiteSpace(job.started_at_utc) == false)
+         {
+@@ -127,7 +155,7 @@ internal sealed class DpsJobRunner
+             //
+             startedAt = job.started_at_utc;
+ 
+-            if (job.cancellation_requested)
++            if (job.cancellation_requested && simulated)
+             {
+                 m_log($"Job {jobId} was cancelled before DPS restarted; terminating instead of resuming.");
+ 
+@@ -176,18 +204,23 @@ internal sealed class DpsJobRunner
+                 throw new InvalidOperationException(string.Join(" ", manifestErrors));
+             }
+ 
+-            await VerifyInputsAsync(jobId, manifest, cancellationToken);
+-
+-
+-            await SimulatedAssemblyRecipe.ExecuteAsync(start.recipe, m_config.SimulatedRunTime,
+-                async percent => { await PublishJobProgress(jobId, percent); },
+-                () => new PSeqRecipe(PublishJobProgress).RunRecipe(jobId, manifest, cancellationToken),
+-                cancellationToken);
+-
+-            cancellationToken.ThrowIfCancellationRequested();
+-
+-            string stoppedAt = JsonTools.UtcNowString();
+-            S3_OBJECT_DTO outputManifest = await WriteOutputsAsync(start, manifest, startedAt, stoppedAt, cancellationToken);
++            string stoppedAt;
++            S3_OBJECT_DTO outputManifest;
++            if (simulated) {
++                await VerifyInputsAsync(jobId, manifest, cancellationToken);
++                await SimulatedAssemblyRecipe.ExecuteAsync(start.recipe, m_config.SimulatedRunTime,
++                    async percent => { await PublishJobProgress(jobId, percent); },
++                    () => throw new InvalidOperationException("Simulation cannot invoke native work."), cancellationToken);
++                cancellationToken.ThrowIfCancellationRequested();
++                stoppedAt = JsonTools.UtcNowString();
++                outputManifest = await WriteOutputsAsync(start, manifest, startedAt, stoppedAt, cancellationToken);
++            } else {
++                // A recovered cancellation must inspect the journal before any terminal claim: an old child may still exist.
++                var scientific = new ScientificExecution(m_config, m_storage, async percent => { await PublishJobProgress(jobId, percent); });
++                var completed = await scientific.ExecuteAsync(start, manifest, startedAt, recovering, cancellationToken);
++                stoppedAt = completed.StoppedAt; outputManifest = completed.Manifest;
++                await PublishJobProgress(jobId, 100);
++            }
+             string dispositionAt = JsonTools.UtcNowString();
+ 
+             DPS_EVENT_DTO ? succeeded = AddLifecycleEvent(jobId, "Succeeded", startedAt, stoppedAt, null, outputManifest, dispositionAt);
+@@ -196,10 +229,20 @@ internal sealed class DpsJobRunner
+                 await m_publishEvent(succeeded);
+             }
+         }
++        catch (ExecutionHeldException ex)
++        {
++            m_held[jobId] = "Scientific execution is held for Operations reconciliation (" + ex.Message + "). Saved execution facts remain unchanged.";
++            m_log($"Job {jobId}: {ex.Message}.");
++        }
+         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+         {
+-            string stoppedAt = JsonTools.UtcNowString();
+-            DPS_EVENT_DTO ? terminated = AddLifecycleEvent(jobId, "Terminated", startedAt, stoppedAt, "Cancellation requested by POMS.", null, stoppedAt);
++            if (recovering && !simulated) {
++                m_held[jobId] = "Interrupted scientific execution requires Operations reconciliation before cancellation can be confirmed.";
++                return;
++            }
++            string stoppedAt = simulated ? JsonTools.UtcNowString() : ScientificExecution.RecordedStop(m_config.WorkspacePath, jobId) ?? JsonTools.UtcNowString();
++            DPS_EVENT_DTO ? terminated = AddLifecycleEvent(jobId, "Terminated", startedAt, stoppedAt,
++                m_stopping ? "Controlled DPS shutdown; owned processing has stopped." : "Cancellation requested by POMS.", null, JsonTools.UtcNowString());
+             if (terminated is not null)
+             {
+                 await m_publishEvent(terminated);
+@@ -207,8 +250,15 @@ internal sealed class DpsJobRunner
+         }
+         catch (Exception ex)
+         {
+-            string stoppedAt = JsonTools.UtcNowString();
+-            DPS_EVENT_DTO ? failed = AddLifecycleEvent(jobId, "Failed", startedAt, stoppedAt, JsonTools.ClipReason(ex.Message), null, stoppedAt);
++            if (!simulated && ScientificExecution.RequiresHold(m_config.WorkspacePath, jobId)) {
++                m_held[jobId] = "Scientific processing or output publication requires recovery. Native work will not be repeated; saved history is retained.";
++                m_log($"Job {jobId}: recovery held ({ex.GetType().Name}).");
++                return;
++            }
++            string stoppedAt = simulated ? JsonTools.UtcNowString() : ScientificExecution.RecordedStop(m_config.WorkspacePath, jobId) ?? JsonTools.UtcNowString();
++            m_log($"Job {jobId}: execution failed ({ex.GetType().Name}).");
++            DPS_EVENT_DTO ? failed = AddLifecycleEvent(jobId, "Failed", startedAt, stoppedAt,
++                simulated ? JsonTools.ClipReason(ex.Message) : "Scientific execution failed validation or processing. Protected diagnostics require Operations review.", null, JsonTools.UtcNowString());
+             if (failed is not null)
+             {
+                 await m_publishEvent(failed);
+@@ -368,16 +418,15 @@ internal sealed class DpsJobRunner
+     private PROVENANCE_DTO BuildProvenance()
+     {
+         PROVENANCE_DTO provenance = new();
+-        bool simulated = SimulatedAssemblyRecipe.Matches(m_config.RecipeKey, m_config.RecipeVersion);
+-        provenance.engine = simulated ? "Phaeno-DPS-Simulator" : "Phaeno-DataPipelineServer";
+-        provenance.engine_version = m_config.RecipeVersion;
++        provenance.engine = "Phaeno-DPS-Simulator";
++        provenance.engine_version = DpsContract.PSEQ_RECIPE_VERSION;
+         provenance.container_images = new List<string>();
+         provenance.tools = new List<PROVENANCE_TOOL_DTO>
+         {
+             new PROVENANCE_TOOL_DTO
+             {
+-                name = simulated ? "phaeno-dps-simulation" : "phaeno-dps-console",
+-                version = m_config.RecipeVersion
++                name = "phaeno-dps-simulation",
++                version = DpsContract.PSEQ_RECIPE_VERSION
+             }
+         };
+         return provenance;
+diff --git a/apps/pseq_server/dps/src/DpsLedger.cs b/apps/pseq_server/dps/src/DpsLedger.cs
+index 454a2726..72cd778f 100644
+--- a/apps/pseq_server/dps/src/DpsLedger.cs
++++ b/apps/pseq_server/dps/src/DpsLedger.cs
+@@ -216,9 +216,7 @@ internal sealed class DpsLedger : IDisposable
+             Directory.CreateDirectory(directory);
+         }
+ 
+-        string tempPath = $"{m_path}.tmp";
+-        File.WriteAllText(tempPath, JsonTools.SerializeIndented(m_document));
+-        File.Move(tempPath, m_path, true);
++        DurableFile.Write(m_path, JsonTools.SerializeIndented(m_document));
+     }
+ 
+     // ----------------------------------------------------------------------------------------------------------------------------
+diff --git a/apps/pseq_server/dps/src/DpsMqttServer.cs b/apps/pseq_server/dps/src/DpsMqttServer.cs
+index 63242337..84062b8b 100644
+--- a/apps/pseq_server/dps/src/DpsMqttServer.cs
++++ b/apps/pseq_server/dps/src/DpsMqttServer.cs
+@@ -26,6 +26,7 @@ internal sealed class DpsMqttServer : IDisposable
+         m_config = config;
+         m_ledger = new DpsLedger(config.LedgerPath);
+         m_runner = new DpsJobRunner(config, m_ledger, m_storage, PublishEventAsync, Log);
++        m_runner.PrepareRecovery(); // Resolve ambiguity before subscribing to any new Start deliveries.
+     }
+ 
+     // ------------------------------------------------------------------------------------------------------------------------
+@@ -82,6 +83,8 @@ internal sealed class DpsMqttServer : IDisposable
+         {
+         }
+ 
++        // Keep MQTT and the ledger alive until all owned children are fenced and outcomes are durable.
++        await m_runner.StopAsync();
+         await m_client.StopAsync();
+         await retryTask;
+     }
+@@ -206,8 +209,14 @@ internal sealed class DpsMqttServer : IDisposable
+             return;
+         }
+ 
+-        List<string> errors = DpsValidation.ValidateStart(dto, m_config);
+         string commandHash = SafeHash(payload);
++        // An identical retained command returns its original receipt even after a profile is disabled.
++        var retained = m_ledger.Read(document => document.jobs.Values.Select(job => new { job,
++            receipt = DpsLedger.FindReceipt(job, dto.command_id) }).FirstOrDefault(x => x.receipt is not null
++                && x.job.command_hashes.GetValueOrDefault(dto.command_id) == commandHash));
++        if (retained is not null) { await PublishReceiptAsync(retained.receipt!); return; }
++        List<string> errors = DpsValidation.ValidateStart(dto, m_config);
++        if (!m_runner.Available) errors.Add("DPS execution is paused or held pending Operations reconciliation.");
+         if (errors.Count > 0)
+         {
+             COMMAND_RECEIPT_DTO rejected = CreateReceipt(dto.command_id, dto.job_id, "Start", "Rejected", null, string.Join(" ", errors));
+@@ -302,6 +311,7 @@ internal sealed class DpsMqttServer : IDisposable
+         }
+ 
+         QUERY_RESPONSE_DTO response = m_ledger.Read(document => BuildQueryResponse(document, dto, m_config.Environment));
++        response.reason = m_runner.HoldReason(dto.job_id) ?? response.reason;
+ 
+         await PublishJsonAsync(DpsContract.QueryResponseTopic(m_config, dto.job_id, dto.request_id), response, MqttQualityOfServiceLevel.AtLeastOnce);
+     }
+@@ -392,15 +402,9 @@ internal sealed class DpsMqttServer : IDisposable
+         capabilities.environment = m_config.Environment;
+         capabilities.request_id = dto.request_id;
+         capabilities.instance_id = m_config.InstanceId;
++        capabilities.available = m_runner.Available;
+         capabilities.message = "DPS is available for configured recipes. Fixture S3 locations are rejected unless explicitly enabled.";
+-        CAPABILITY_RECIPE_DTO recipe = new();
+-        recipe.key = m_config.RecipeKey;
+-        recipe.name = m_config.RecipeName;
+-        recipe.version = m_config.RecipeVersion;
+-        recipe.parameters_schema = m_config.RecipeParametersSchema;
+-        recipe.required_output_roles = m_config.RequiredOutputRoles.ToList();
+-        recipe.supported_read_layouts = m_config.SupportedReadLayouts.ToList();
+-        capabilities.recipes.Add(recipe);
++        capabilities.recipes = m_config.Recipes.Available();
+ 
+         await PublishJsonAsync(DpsContract.CapabilityResponseTopic(m_config, dto.request_id), capabilities, MqttQualityOfServiceLevel.AtLeastOnce);
+     }
+@@ -646,11 +650,7 @@ internal sealed class DpsMqttServer : IDisposable
+             return;
+         }
+ 
+-#if DEBUG
+-        payload = Util.PrettyPrintJson(payload);
+-#endif
+-
+-        Log($"Publishing '{topic}', {payload}");
++        Log($"Publishing '{topic}', {Encoding.UTF8.GetByteCount(payload)} bytes.");
+         await m_client.EnqueueAsync(message);
+     }
+ 
+diff --git a/apps/pseq_server/dps/src/DpsValidation.cs b/apps/pseq_server/dps/src/DpsValidation.cs
+index dc0be1b8..75cf41fa 100644
+--- a/apps/pseq_server/dps/src/DpsValidation.cs
++++ b/apps/pseq_server/dps/src/DpsValidation.cs
+@@ -140,7 +140,9 @@ internal static class DpsValidation
+         RequireUtc(manifest.created_at_utc, "input manifest created_at_utc", errors);
+         ValidateRecipeIdentity(manifest.recipe, start.recipe, errors);
+ 
+-        if (config.SupportedReadLayouts.Contains(manifest.read_layout, StringComparer.Ordinal) == false)
++        var layouts = SimulatedAssemblyRecipe.Matches(start.recipe.key, start.recipe.version)
++            ? DpsRecipeCatalog.Simulation().supported_read_layouts : config.Recipes.Scientific(start.recipe)?.supported_read_layouts ?? [];
++        if (layouts.Contains(manifest.read_layout, StringComparer.Ordinal) == false)
+         {
+             errors.Add("input manifest read_layout is not supported by this DPS recipe.");
+         }
+@@ -210,6 +212,8 @@ internal static class DpsValidation
+         {
+             return false;
+         }
++        if (prefix.Contains('\\') || prefix.Any(char.IsControl) || prefix.Split('/').Any(part => part is "." or "..")
++            || bucket.Any(c => !(char.IsAsciiLetterOrDigit(c) || c is '-' or '.'))) return false;
+ 
+         result = new S3UriParts();
+         result.Bucket = bucket;
+@@ -329,27 +333,11 @@ internal static class DpsValidation
+ 
+     private static void ValidateRecipe(RECIPE_DTO recipe, DpsConfig config, List<string> errors)
+     {
+-        if (StringComparer.Ordinal.Equals(recipe.key, config.RecipeKey) == false)
+-        {
+-            errors.Add($"recipe.key ({recipe.key}) is not supported by this DPS instance ({config.RecipeKey}).");
+-        }
+-
+-        if (StringComparer.Ordinal.Equals(recipe.version, config.RecipeVersion) == false)
+-        {
+-            errors.Add($"recipe.version ({recipe.version}) is not supported by this DPS instance ({config.RecipeVersion}).");
+-        }
+-
+-        if (recipe.parameters.ValueKind is not JsonValueKind.Object)
+-        {
+-            errors.Add("recipe.parameters must be an object.");
+-        }
+-
+-        //
+-        // TODO: Validate recipe.parameters against config.RecipeParametersSchema once the real recipe
+-        //       defines its parameters, so a Start with parameters the pipeline can't use is Rejected.
+-        //
+-
+-        ValidateRoles(recipe.required_output_roles, config.RequiredOutputRoles, errors);
++        var reason = config.Recipes.Validate(recipe);
++        if (reason is not null) errors.Add(reason);
++        var roles = SimulatedAssemblyRecipe.Matches(recipe.key, recipe.version)
++            ? DpsRecipeCatalog.Simulation().required_output_roles : config.Recipes.Scientific(recipe)?.Capability().required_output_roles ?? [];
++        ValidateRoles(recipe.required_output_roles, roles, errors);
+     }
+ 
+     // ------------------------------------------------------------------------------------------------------------------------
+diff --git a/apps/pseq_server/dps/src/PSeqRecipe.cs b/apps/pseq_server/dps/src/PSeqRecipe.cs
+deleted file mode 100644
+index e15e6ba3..00000000
+--- a/apps/pseq_server/dps/src/PSeqRecipe.cs
++++ /dev/null
+@@ -1,411 +0,0 @@
+-﻿///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+-// PSeqRecipe.cs: Run the Phaeno PSeq™ recipe for molecular phenotype mapping.
+-
+-using System;
+-using System.Collections.Generic;
+-using System.Diagnostics;
+-using System.Text;
+-using System.Threading.Tasks;
+-using pb_utility;
+-
+-namespace Dps;
+-
+-
+-/// <summary>
+-/// Phaeno's PSeq™ maps the molecular phenotype. (PS = Phased Sequencing)
+-/// 
+-/// Gene-level counts compress biology. Isoforms capture splicing, promoter usage, UTR variation, and 
+-/// transcript-specific regulation—often the true functional drivers.
+-/// 
+-/// PSeq reveals the biological drivers obscured by gene-level summaries and incomplete isoform resolution.
+-/// 
+-/// https://www.phaenobiotech.com/
+-/// </summary>
+-internal class PSeqRecipe
+-{
+-    // ------------------------------------------------------------------------------------------------------------------------
+-
+-    string m_jobId = string.Empty;
+-    INPUT_MANIFEST_DTO ? m_manifest;
+-    CancellationToken m_cancellationToken;
+-    long m_total_bytes = 0;
+-    string ? m_datasetHome;
+-
+-    internal List<(string StandardOutput, string StandardError)> RunnerOutput { get; } = [];
+-
+-    string m_PB58               = string.Empty;    // $PB_DATASET_HOME/PB58
+-    string m_sample_info_file   = string.Empty;    // $PB_DATASET_HOME/config/sample/PB58_Sample_Info.toml
+-
+-    // Output from Cluster --> $PB_DATASET_HOME/PB58/cluster_reads/09/SMIDs
+-    // Which is the input to Inchworm and Blast_SMIDs.
+-    string m_cluster_out_09     = string.Empty;
+-    string m_sample_09          = string.Empty;    // $PB_DATASET_HOME/PB58/fastq/PB58-09
+-
+-
+-    // Callback to update the progress.
+-    //   public async Task<DPS_EVENT_DTO ?> PublishProgressEvent(string jobId, double percent)
+-    Func<string, double, Task<DPS_EVENT_DTO ?>> m_PublishJobProgress;
+-
+-
+-    // ------------------------------------------------------------------------------------------------------------------------
+-
+-    //
+-    // public async Task<DPS_EVENT_DTO ?> PublishProgressEvent(string jobId, double percent)
+-    // 
+-    public PSeqRecipe(Func<string, double, Task<DPS_EVENT_DTO?>> publishJobProgress)
+-    {
+-        m_PublishJobProgress = publishJobProgress;
+-    }
+-
+-    // ------------------------------------------------------------------------------------------------------------------------
+-
+-    /// <summary>
+-    /// Run Mark's recipe.
+-    /// All input will have been validated before this method is called.
+-    /// </summary>
+-    /// <param name="jobId"></param>
+-    /// <param name="manifest"></param>
+-    /// <param name="cancellationToken"></param>
+-    /// <returns></returns>
+-    public async Task RunRecipe(string jobId, INPUT_MANIFEST_DTO manifest, CancellationToken cancellationToken)
+-    {
+-        m_jobId = jobId;
+-        m_manifest = manifest;
+-        m_cancellationToken = cancellationToken;
+-
+-        common_init();
+-
+-
+-        //
+-        // Each task initializes and returns how many total bytes will be read/processed. Used for progress reporting. 
+-        // 
+-        var cluster_bytes     = init_cluster();
+-        var tally_kmers_bytes = init_tally_kmers();
+-        var inchworm_bytes    = init_inchworm();
+-        var blast_smids_bytes = init_blast_smids();
+-
+-        m_total_bytes = cluster_bytes + tally_kmers_bytes + inchworm_bytes + blast_smids_bytes;
+-
+-
+-
+-        //
+-        // Run the data pipeline jobs!
+-        //
+-        await run_cluster(6, 25);
+-        await run_tally_kmers(26, 45);
+-        await run_inchworm(46, 65);
+-        await run_blast_smids(66, 100);
+-    }
+-
+-    // ------------------------------------------------------------------------------------------------------------------------
+-
+-    // Initialize any common variables used by the jobs.
+-    private void common_init()
+-    {
+-        m_datasetHome = Util.ReadNullableEV("PB_DATASET_HOME");
+-
+-        // $PB_DATASET_HOME/PB58
+-        m_PB58 = Path.Combine(m_datasetHome, "PB58");
+-
+-        // $PB_DATASET_HOME/config/sample/PB58_Sample_Info.toml
+-        m_sample_info_file = Path.Combine(m_datasetHome, "config", "sample", "PB58_Sample_Info.toml");
+-
+-        // $PB_DATASET_HOME/PB58/cluster_reads/09/SMIDs
+-        m_cluster_out_09 = Path.Combine(m_PB58, "cluster_reads", "09", "SMIDs");
+-
+-
+-        //
+-        // --samples 09   -->   "$PB_DATASET_HOME/PB58/fastq/PB58-09"
+-        //
+-        m_sample_09 = Path.Combine(m_PB58, "fastq", "PB58-09");
+-    }
+-
+-    // ------------------------------------------------------------------------------------------------------------------------
+-
+-    //
+-    // Initialize and return how many total bytes will be read/processed.
+-    //
+-    private long init_cluster()
+-    {
+-        long bytes = 0;
+-
+-        //
+-        // --samples 09
+-        // Total bytes of all the files "$PB_DATASET_HOME/PB58/fastq/PB58-09"
+-        //
+-
+-
+-        return bytes;
+-    }
+-
+-    //
+-    // Run the cluster job, reporting progress from startPercent to endPercent.
+-    //
+-    private async Task run_cluster(uint startPercent, uint endPercent)
+-    {
+-        /*
+-        phaeno cluster \
+-         --sample_info_file $PB_DATASET_HOME/config/sample/PB58_Sample_Info.toml \
+-         --samples            09   \
+-         --max_mismatch_wrap  2    \
+-         --max_mismatch_smid  1    \
+-         --min_smid_len       19   \
+-         --read_from_files    yes  \
+-         --write_smid_files   yes  \
+-         --free_cores         1    \
+-         --fast_blast         yes  \
+-         --path_out           $PB_DATASET_HOME/PB58/cluster_reads/09/SMIDs \
+-         --filetype           FastQ
+-        */
+-
+-        //m_sample_info_file
+-        // path_out = m_cluster_out_09
+-        //m_sample_09
+-
+-
+-        await CallPhaenoRunner(startPercent, endPercent, m_cancellationToken,
+-            "cluster",
+-            "--sample_info_file",    m_sample_info_file,
+-            "--samples",            "09",
+-            "--max_mismatch_wrap",  "2",
+-            "--max_mismatch_smid",  "1",
+-            "--min_smid_len",       "19",
+-            "--read_from_files",    "yes",
+-            "--write_smid_files",   "yes",
+-            "--free_cores",         "1",
+-            "--fast_blast",         "yes",
+-            "--path_out",            m_cluster_out_09,
+-            "--filetype",           "FastQ");
+-    }
+-
+-    // ------------------------------------------------------------------------------------------------------------------------
+-
+-    //
+-    // Initialize and return how many total bytes will be read/processed.
+-    //
+-    private long init_tally_kmers()
+-    {
+-        long bytes = 0;
+-
+-        //
+-        // --samples 09
+-        // Total bytes of all the files "$PB_DATASET_HOME/PB58/fastq/PB58-09"
+-        //
+-
+-        //m_sample_09
+-
+-
+-        return bytes;
+-    }
+-
+-    //
+-    // Run the tally_kmers job, reporting progress from startPercent to endPercent.
+-    //
+-    private async Task run_tally_kmers(uint startPercent, uint endPercent)
+-    {
+-        /*
+-        phaeno tally-kmers \
+-         --dataset PB58    \
+-         --samples 09      \
+-         --source  enst    \
+-         --threads 7
+-        */
+-
+-        //m_sample_09
+-
+-        var threads_value = Math.Max(1, Environment.ProcessorCount - 1);
+-
+-        await CallPhaenoRunner(startPercent, endPercent, m_cancellationToken,
+-            "tally-kmers",
+-            "--dataset", "PB58",
+-            "--samples", "09",
+-            "--source", "enst",
+-            "--threads", threads_value.ToString());
+-    }
+-
+-    // ------------------------------------------------------------------------------------------------------------------------
+-
+-    //
+-    // Initialize and return how many total bytes will be read/processed.
+-    //
+-    private long init_inchworm()
+-    {
+-        long bytes = 0;
+-
+-        /*
+-        size of the file --> "$PB_DATASET_HOME/PB58/cluster_reads/09/SMIDs/TGT-ACA-TTA-ATC-GTA-CGG"
+-        */
+-
+-        string smid = Path.Combine(m_cluster_out_09, "TGT-ACA-TTA-ATC-GTA-CGG");
+-
+-
+-        return bytes;
+-    }
+-
+-    //
+-    // Run the inchworm job, reporting progress from startPercent to endPercent.
+-    //
+-    private async Task run_inchworm(uint startPercent, uint endPercent)
+-    {
+-        /*
+-         phaeno inchworm --reads "$PB_DATASET_HOME/PB58/cluster_reads/09/SMIDs/TGT-ACA-TTA-ATC-GTA-CGG"
+-         */
+-
+-        string smid = Path.Combine(m_cluster_out_09, "TGT-ACA-TTA-ATC-GTA-CGG");
+-
+-
+-        await CallPhaenoRunner(startPercent, endPercent, m_cancellationToken,
+-            "inchworm", "--reads", smid);
+-    }
+-
+-    // ------------------------------------------------------------------------------------------------------------------------
+-
+-    //
+-    // Initialize and return how many total bytes will be read/processed.
+-    //
+-    private long init_blast_smids()
+-    {
+-        long bytes = 0;
+-
+-        /*
+-        total bytes of all the files in folder  "$PB_DATASET_HOME/PB58/cluster_reads/09/SMIDs".
+-        */
+-
+-        // m_cluster_out_09
+-
+-
+-        return bytes;
+-    }
+-
+-    //
+-    // Run the blast_smids job, reporting progress from startPercent to endPercent.
+-    //
+-    private async Task run_blast_smids(uint startPercent, uint endPercent)
+-    {
+-        /*
+-        phaeno blast-smids                                                \
+-         --smid_input_dir "$PB_DATASET_HOME/PB58/cluster_reads/09/SMIDs"  \
+-         --output_folder "$PB_DATASET_HOME/PB58/blast/09/SMIDs"           \
+-         --subject_db "$PB_DATASET_HOME/mark/blast_db/cdna_all"           \
+-         --num_threads 7                                                  \
+-         --blast_threads 1
+-        */
+-
+-        string smid_input_dir = m_cluster_out_09;
+-        string output_folder  = Path.Combine(m_PB58, "blast", "09", "SMIDs");
+-        var num_threads_value = Math.Max(1, Environment.ProcessorCount - 1);
+-        string subject_db     = Path.Combine(m_datasetHome!, "mark", "blast_db", "cdna_all");
+-
+-        await CallPhaenoRunner(startPercent, endPercent, m_cancellationToken,
+-            "blast-smids",
+-            "--smid_input_dir", smid_input_dir,
+-            "--output_folder",  output_folder,
+-            "--subject_db",     subject_db,
+-            "--num_threads",    num_threads_value.ToString(),
+-            "--blast_threads",  "1");
+-    }
+-
+-    // ------------------------------------------------------------------------------------------------------------------------
+-
+-    internal async Task CallPhaenoRunner(
+-        uint startPercent,
+-        uint endPercent,
+-        CancellationToken cancellationToken,
+-        params string[] arguments)
+-    {
+-        cancellationToken.ThrowIfCancellationRequested();
+-        if (endPercent <= startPercent)
+-        {
+-            throw new ArgumentOutOfRangeException(nameof(endPercent));
+-        }
+-
+-        string ? runnerFolder = Util.ReadNullableEV("PB_RUNNER");
+-        if (string.IsNullOrWhiteSpace(runnerFolder))
+-        {
+-            throw new InvalidOperationException("PB_RUNNER must specify the Phaeno-Runner folder.");
+-        }
+-
+-        string executable = Path.Combine(runnerFolder, OperatingSystem.IsWindows() ? "phaeno.exe" : "phaeno");
+-        if (File.Exists(executable) == false)
+-        {
+-            throw new FileNotFoundException($"Phaeno-Runner executable '{executable}' was not found.", executable);
+-        }
+-
+-        ProcessStartInfo startInfo = new(executable)
+-        {
+-            UseShellExecute = false,
+-            RedirectStandardOutput = true,
+-            RedirectStandardError = true,
+-            CreateNoWindow = true
+-        };
+-        foreach (string argument in arguments)
+-        {
+-            startInfo.ArgumentList.Add(argument);
+-        }
+-
+-        using Process process = new() { StartInfo = startInfo };
+-        process.Start();
+-        Task<string> standardOutput = process.StandardOutput.ReadToEndAsync();
+-        Task<string> standardError  = process.StandardError.ReadToEndAsync();
+-
+-        try
+-        {
+-            double percent = startPercent;
+-            await PublishProgress(percent);
+-
+-            Task exited = process.WaitForExitAsync(cancellationToken);
+-            using PeriodicTimer timer = new(TimeSpan.FromSeconds(5));
+-            while (exited.IsCompleted == false)
+-            {
+-                Task<bool> tick = timer.WaitForNextTickAsync(cancellationToken).AsTask();
+-                await Task.WhenAny(exited, tick);
+-                if (exited.IsCompleted)
+-                {
+-                    break;
+-                }
+-
+-                await tick;
+-                cancellationToken.ThrowIfCancellationRequested();
+-                percent = Math.Min(percent + 1, endPercent - 1);
+-                await PublishProgress(percent);
+-            }
+-
+-            await exited;
+-        }
+-        finally
+-        {
+-            if (process.HasExited == false)
+-            {
+-                try
+-                {
+-                    process.Kill(entireProcessTree: true);
+-                }
+-                catch (InvalidOperationException) when (process.HasExited)
+-                {
+-                }
+-            }
+-
+-            await process.WaitForExitAsync();
+-            await Task.WhenAll(standardOutput, standardError);
+-            RunnerOutput.Add((await standardOutput, await standardError));
+-        }
+-
+-        cancellationToken.ThrowIfCancellationRequested();
+-        if (process.ExitCode != 0)
+-        {
+-            throw new InvalidOperationException(
+-                $"Phaeno-Runner exited with code {process.ExitCode}.{Environment.NewLine}" +
+-                $"{await standardOutput}{Environment.NewLine}{await standardError}");
+-        }
+-
+-        await PublishProgress(endPercent);
+-    }
+-
+-    // ------------------------------------------------------------------------------------------------------------------------
+-
+-    private async Task PublishProgress(double percent)
+-    {
+-        await m_PublishJobProgress(m_jobId, percent);
+-    }
+-
+-}
+diff --git a/apps/pseq_server/dps/src/S3StorageClient.cs b/apps/pseq_server/dps/src/S3StorageClient.cs
+index dfab7144..9307f806 100644
+--- a/apps/pseq_server/dps/src/S3StorageClient.cs
++++ b/apps/pseq_server/dps/src/S3StorageClient.cs
+@@ -124,14 +124,67 @@ internal sealed class S3Credentials
+ 
+ internal sealed class S3StorageClient : IDisposable
+ {
+-    private readonly HttpClient m_http = new();
++    private readonly HttpClient m_http;
++    private readonly Func<S3Credentials> m_credentials;
++
++    internal S3StorageClient(HttpMessageHandler? handler = null, Func<S3Credentials>? credentials = null)
++    {
++        m_http = handler is null ? new HttpClient() : new HttpClient(handler);
++        m_credentials = credentials ?? S3Credentials.FromEnvironment;
++    }
++
++    // The only local input bytes made visible to a recipe are the exact verified S3 version.
++    internal async Task MaterializeAsync(S3_OBJECT_DTO expected, string path, long limit, CancellationToken ct)
++    {
++        if (expected.size_bytes < 1 || expected.size_bytes > limit) throw new InvalidOperationException("Input byte limit exceeded.");
++        SafePath.NoLinks(path);
++        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
++        var temp = path + "." + Guid.NewGuid().ToString("N") + ".part";
++        try {
++            using var response = await SendSignedAsync(HttpMethod.Get, expected.bucket, expected.region, expected.key, expected.version_id, null, null, ct);
++            await EnsureSuccessAsync(response, ct);
++            if (!response.Headers.TryGetValues("x-amz-version-id", out var versions) || versions.SingleOrDefault() != expected.version_id)
++                throw new InvalidOperationException("Pinned S3 version mismatch.");
++            await using (var output = new FileStream(temp, FileMode.CreateNew, FileAccess.Write, FileShare.None, 65536, FileOptions.Asynchronous)) {
++                if (!OperatingSystem.IsWindows()) File.SetUnixFileMode(temp, UnixFileMode.UserRead | UnixFileMode.UserWrite);
++                await using var input = await response.Content.ReadAsStreamAsync(ct);
++                using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
++                var buffer = new byte[65536]; long total = 0;
++                int count;
++                while ((count = await input.ReadAsync(buffer, ct)) != 0) {
++                    if (count > expected.size_bytes - total) throw new InvalidOperationException("Pinned S3 size mismatch.");
++                    total += count; hash.AppendData(buffer, 0, count); await output.WriteAsync(buffer.AsMemory(0, count), ct);
++                }
++                VerifyHashAndSize(expected, new HashedContent { SizeBytes = total, Sha256 = Convert.ToHexString(hash.GetHashAndReset()).ToLowerInvariant() });
++                output.Flush(true);
++            }
++            File.Move(temp, path, false);
++        } finally { if (File.Exists(temp)) File.Delete(temp); }
++    }
++
++    internal async Task<S3_OBJECT_DTO> PutFileAndVerifyAsync(string bucket, string region, string key, string path, string contentType, CancellationToken ct,
++        Action<S3_OBJECT_DTO>? written = null)
++    {
++        SafePath.NoLinks(path);
++        await using var file = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 65536, FileOptions.Asynchronous);
++        var digest = Convert.ToHexString(await SHA256.HashDataAsync(file, ct)).ToLowerInvariant();
++        using var response = await SendSignedAsync(HttpMethod.Put, bucket, region, key, null, null, contentType, ct, path, digest);
++        await EnsureSuccessAsync(response, ct);
++        var version = response.Headers.TryGetValues("x-amz-version-id", out var versions) ? versions.SingleOrDefault() : null;
++        if (string.IsNullOrWhiteSpace(version) || version == "null") throw new InvalidOperationException("Versioned S3 writes are required.");
++        var address = new S3_OBJECT_DTO { bucket = bucket, region = region, key = key, version_id = version, sha256 = digest, size_bytes = file.Length };
++        written?.Invoke(address); // Persist the exact version before verification, so retry does not upload again.
++        await VerifyObjectAsync(address, ct);
++        return address;
++    }
+ 
+     // ------------------------------------------------------------------------------------------------------------------------
+ 
+     public async Task<string> GetVerifiedTextAsync(S3_OBJECT_DTO expected, long maxBytes, CancellationToken cancellationToken)
+     {
+-        HttpResponseMessage response = await SendSignedAsync(HttpMethod.Get, expected.bucket, expected.region, expected.key, expected.version_id, null, null, cancellationToken);
++        using HttpResponseMessage response = await SendSignedAsync(HttpMethod.Get, expected.bucket, expected.region, expected.key, expected.version_id, null, null, cancellationToken);
+         await EnsureSuccessAsync(response, cancellationToken);
++        RequireVersion(response, expected);
+ 
+         HashedContent content = await ReadAndHashAsync(response.Content, maxBytes, true, cancellationToken);
+         VerifyHashAndSize(expected, content);
+@@ -142,10 +195,11 @@ internal sealed class S3StorageClient : IDisposable
+ 
+     public async Task VerifyObjectAsync(S3_OBJECT_DTO expected, CancellationToken cancellationToken)
+     {
+-        HttpResponseMessage response = await SendSignedAsync(HttpMethod.Get, expected.bucket, expected.region, expected.key, expected.version_id, null, null, cancellationToken);
++        using HttpResponseMessage response = await SendSignedAsync(HttpMethod.Get, expected.bucket, expected.region, expected.key, expected.version_id, null, null, cancellationToken);
+         await EnsureSuccessAsync(response, cancellationToken);
++        RequireVersion(response, expected);
+ 
+-        HashedContent content = await ReadAndHashAsync(response.Content, long.MaxValue, false, cancellationToken);
++        HashedContent content = await ReadAndHashAsync(response.Content, expected.size_bytes, false, cancellationToken);
+         VerifyHashAndSize(expected, content);
+     }
+ 
+@@ -153,7 +207,7 @@ internal sealed class S3StorageClient : IDisposable
+ 
+     public async Task<S3_OBJECT_DTO> PutAndVerifyAsync(string bucket, string region, string key, byte[] bytes, string contentType, CancellationToken cancellationToken)
+     {
+-        HttpResponseMessage response = await SendSignedAsync(HttpMethod.Put, bucket, region, key, null, bytes, contentType, cancellationToken);
++        using HttpResponseMessage response = await SendSignedAsync(HttpMethod.Put, bucket, region, key, null, bytes, contentType, cancellationToken);
+         await EnsureSuccessAsync(response, cancellationToken);
+ 
+         string? versionId = null;
+@@ -162,7 +216,7 @@ internal sealed class S3StorageClient : IDisposable
+             versionId = values.FirstOrDefault();
+         }
+ 
+-        if (string.IsNullOrWhiteSpace(versionId))
++        if (string.IsNullOrWhiteSpace(versionId) || versionId == "null")
+         {
+             throw new InvalidOperationException("S3 write succeeded but no version ID was returned. Bucket versioning is required.");
+         }
+@@ -201,6 +255,12 @@ internal sealed class S3StorageClient : IDisposable
+         }
+     }
+ 
++    private static void RequireVersion(HttpResponseMessage response, S3_OBJECT_DTO expected)
++    {
++        if (!response.Headers.TryGetValues("x-amz-version-id", out var values) || values.SingleOrDefault() != expected.version_id)
++            throw new InvalidOperationException("Pinned S3 version mismatch.");
++    }
++
+     // ------------------------------------------------------------------------------------------------------------------------
+ 
+     private async Task<HttpResponseMessage> SendSignedAsync(
+@@ -211,9 +271,9 @@ internal sealed class S3StorageClient : IDisposable
+         string? versionId,
+         byte[]? body,
+         string? contentType,
+-        CancellationToken cancellationToken)
++        CancellationToken cancellationToken, string? filePath = null, string? fileHash = null)
+     {
+-        S3Credentials credentials = S3Credentials.FromEnvironment();
++        S3Credentials credentials = m_credentials();
+         bool pathStyle = bucket.Contains('.', StringComparison.Ordinal);
+         string host = pathStyle ? $"s3.{region}.amazonaws.com" : $"{bucket}.s3.{region}.amazonaws.com";
+         string canonicalUri = pathStyle ? $"/{EncodePath($"{bucket}/{key}")}" : $"/{EncodePath(key)}";
+@@ -223,7 +283,7 @@ internal sealed class S3StorageClient : IDisposable
+         DateTimeOffset now = DateTimeOffset.UtcNow;
+         string amzDate = now.ToString("yyyyMMdd'T'HHmmss'Z'");
+         string dateStamp = now.ToString("yyyyMMdd");
+-        string payloadHash = body is null ? "UNSIGNED-PAYLOAD" : JsonTools.Sha256Hex(body);
++        string payloadHash = fileHash ?? (body is null ? "UNSIGNED-PAYLOAD" : JsonTools.Sha256Hex(body));
+ 
+         SortedDictionary<string, string> headers = new(StringComparer.Ordinal);
+         headers["host"] = host;
+@@ -239,6 +299,7 @@ internal sealed class S3StorageClient : IDisposable
+         {
+             headers["content-type"] = contentType;
+         }
++        if (filePath is not null) headers["if-none-match"] = "*";
+ 
+         string canonicalHeaders = string.Concat(headers.Select(item => $"{item.Key}:{NormalizeHeaderValue(item.Value)}\n"));
+         string signedHeaders = string.Join(';', headers.Keys);
+@@ -265,20 +326,23 @@ internal sealed class S3StorageClient : IDisposable
+         string signature = Convert.ToHexString(Hmac(signingKey, stringToSign)).ToLowerInvariant();
+         string authorization = $"AWS4-HMAC-SHA256 Credential={credentials.AccessKeyId}/{credentialScope}, SignedHeaders={signedHeaders}, Signature={signature}";
+ 
+-        HttpRequestMessage request = new(method, url);
++        using HttpRequestMessage request = new(method, url);
+         request.Headers.Host = host;
+         request.Headers.TryAddWithoutValidation("x-amz-date", amzDate);
+         request.Headers.TryAddWithoutValidation("x-amz-content-sha256", payloadHash);
+         request.Headers.TryAddWithoutValidation("Authorization", authorization);
++        if (filePath is not null) request.Headers.TryAddWithoutValidation("If-None-Match", "*");
+ 
+         if (string.IsNullOrWhiteSpace(credentials.SessionToken) == false)
+         {
+             request.Headers.TryAddWithoutValidation("x-amz-security-token", credentials.SessionToken.Trim());
+         }
+ 
+-        if (body is not null)
++        if (body is not null || filePath is not null)
+         {
+-            ByteArrayContent requestBody = new(body);
++            HttpContent requestBody = filePath is not null
++                ? new StreamContent(new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 65536, FileOptions.Asynchronous))
++                : new ByteArrayContent(body!);
+             if (string.IsNullOrWhiteSpace(contentType) == false)
+             {
+                 requestBody.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+@@ -299,13 +363,8 @@ internal sealed class S3StorageClient : IDisposable
+             return;
+         }
+ 
+-        string error = await response.Content.ReadAsStringAsync(cancellationToken);
+-        if (error.Length > 500)
+-        {
+-            error = error[..500];
+-        }
+-
+-        throw new InvalidOperationException($"S3 request failed with {(int)response.StatusCode} {response.StatusCode}: {error}");
++        // Provider bodies can contain private keys, object names and data. Never put them in MQTT reasons.
++        throw new InvalidOperationException($"S3 request failed ({(int)response.StatusCode}).");
+     }
+ 
+     // ------------------------------------------------------------------------------------------------------------------------
+diff --git a/apps/pseq_server/dps_test.tests/DpsLifecyclePercentageTests.cs b/apps/pseq_server/dps_test.tests/DpsLifecyclePercentageTests.cs
+index 956be6c1..37f4642c 100644
+--- a/apps/pseq_server/dps_test.tests/DpsLifecyclePercentageTests.cs
++++ b/apps/pseq_server/dps_test.tests/DpsLifecyclePercentageTests.cs
+@@ -45,7 +45,7 @@ public sealed class DpsLifecyclePercentageTests
+     [TestMethod]
+     public void RunnerEmitsNullOnLifecycleAndNumberOnProgress()
+     {
+-        DpsLedger ledger = SeedLedger("ledger.json");
++        using DpsLedger ledger = SeedLedger("ledger.json");
+         List<DPS_EVENT_DTO> emitted = RunSucceededJob(ledger);
+ 
+         foreach (DPS_EVENT_DTO evt in emitted)
+@@ -74,7 +74,7 @@ public sealed class DpsLifecyclePercentageTests
+     [DataRow("Terminated")]
+     public void UnsuccessfulTerminalEventsHaveNullPercentage(string eventType)
+     {
+-        DpsLedger ledger = SeedLedger("ledger.json");
++        using DpsLedger ledger = SeedLedger("ledger.json");
+         DpsJobRunner runner = Runner(ledger);
+         runner.AddLifecycleEvent(JobId, "Running", "2026-10-21T03:41:29Z", null, null, null);
+         runner.AddProgressEvent(JobId, 27.69);
+@@ -91,7 +91,7 @@ public sealed class DpsLifecyclePercentageTests
+         // Hosted failure: the worker reconciles Query before dispatching Cancel; the invalid Running
+         // event made that Query invalid, so zero Cancel delivery attempts were made.
+         //
+-        DpsLedger ledger = SeedLedger("ledger.json");
++        using DpsLedger ledger = SeedLedger("ledger.json");
+         DpsJobRunner runner = Runner(ledger);
+         runner.AddLifecycleEvent(JobId, "Running", "2026-10-21T03:41:29Z", null, null, null);
+         runner.AddProgressEvent(JobId, 27.69);
+@@ -128,7 +128,7 @@ public sealed class DpsLifecyclePercentageTests
+         string path = WriteLegacyLedger();
+         LedgerDocument before = JsonTools.Deserialize<LedgerDocument>(File.ReadAllText(path))!;
+ 
+-        DpsLedger ledger = new(path);
++        using DpsLedger ledger = new(path);
+ 
+         JobRecord job = ledger.Read(document => document.jobs[JobId]);
+         JobRecord original = before.jobs[JobId];
+@@ -230,7 +230,7 @@ public sealed class DpsLifecyclePercentageTests
+     //
+     private string WriteLegacyLedger()
+     {
+-        DpsLedger ledger = SeedLedger("legacy-source.json");
++        using DpsLedger ledger = SeedLedger("legacy-source.json");
+         RunSucceededJob(ledger);
+ 
+         LedgerDocument document = ledger.Read(item => item);
+diff --git a/apps/pseq_server/dps_test.tests/PSeqRecipeTests.cs b/apps/pseq_server/dps_test.tests/PSeqRecipeTests.cs
+deleted file mode 100644
+index 73bff1f6..00000000
+--- a/apps/pseq_server/dps_test.tests/PSeqRecipeTests.cs
++++ /dev/null
+@@ -1,144 +0,0 @@
+-using Dps;
+-using Microsoft.VisualStudio.TestPlatform.Utilities;
+-using Microsoft.VisualStudio.TestTools.UnitTesting;
+-using System.Text;
+-
+-namespace DpsTest.UnitTests;
+-
+-[TestClass]
+-[DoNotParallelize]
+-public sealed class PSeqRecipeTests
+-{
+-    private string m_folder = string.Empty;
+-    private string? m_previousRunner;
+-    private readonly List<double> m_progress = [];
+-    private PSeqRecipe m_recipe = null!;
+-
+-    [TestInitialize]
+-    public void Initialize()
+-    {
+-        m_previousRunner = Environment.GetEnvironmentVariable("PB_RUNNER");
+-        m_folder = Path.Combine(Path.GetTempPath(), $"phaeno runner tests {Guid.NewGuid():N}");
+-        Directory.CreateDirectory(m_folder);
+-        string executable = Path.Combine(m_folder, OperatingSystem.IsWindows() ? "phaeno.exe" : "phaeno");
+-        
+-        //
+-        // Copies a system command shell into the temporary test folder, renaming it to look like Phaeno-Runner:
+-        //  • Windows: cmd.exe → phaeno.exe
+-        //  • Linux: / bin / sh → phaeno
+-        // This is a test substitute, not the real Phaeno-Runner. It lets the tests generate output, delays, and exit codes through simple shell commands while exercising CallPhaenoRunner().
+-        // 
+-        File.Copy(OperatingSystem.IsWindows() ? Path.Combine(Environment.SystemDirectory, "cmd.exe") : "/bin/sh", executable);
+-
+-        if (OperatingSystem.IsWindows() == false)
+-        {
+-            File.SetUnixFileMode(executable, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+-        }
+-
+-        Environment.SetEnvironmentVariable("PB_RUNNER", m_folder);
+-        m_recipe = new PSeqRecipe((jobId, percent) =>
+-        {
+-            m_progress.Add(percent);
+-            return Task.FromResult<DPS_EVENT_DTO?>(null);
+-        });
+-    }
+-
+-    [TestCleanup]
+-    public void Cleanup()
+-    {
+-        Environment.SetEnvironmentVariable("PB_RUNNER", m_previousRunner);
+-        Directory.Delete(m_folder, true);
+-    }
+-
+-    private static string[] Command(string windows, string linux)
+-    {
+-        return OperatingSystem.IsWindows() ? ["/d", "/c", windows] : ["-c", linux];
+-    }
+-
+-    [TestMethod]
+-    public async Task CapturesBothOutputStreamsAndPublishesEndpoints()
+-    {
+-        await m_recipe.CallPhaenoRunner(6, 25, CancellationToken.None,
+-            Command("echo standard output & echo standard error 1>&2", "printf 'standard output\n'; printf 'standard error\n' >&2"));
+-
+-        Assert.AreEqual(1, m_recipe.RunnerOutput.Count);
+-        StringAssert.Contains(m_recipe.RunnerOutput[0].StandardOutput, "standard output");
+-        StringAssert.Contains(m_recipe.RunnerOutput[0].StandardError, "standard error");
+-        CollectionAssert.AreEqual(new double[] { 6, 25 }, m_progress);
+-    }
+-
+-    [TestMethod]
+-    public async Task DrainsLargeOutputWithoutPipeDeadlock()
+-    {
+-        using CancellationTokenSource cancellation = new(TimeSpan.FromSeconds(30));
+-        await m_recipe.CallPhaenoRunner(26, 45, cancellation.Token,
+-            Command("(for /L %i in (1,1,20000) do @echo output) & (for /L %i in (1,1,20000) do @echo error 1>&2)",
+-                "i=0; while [ $i -lt 20000 ]; do echo output; echo error >&2; i=$((i+1)); done"));
+-
+-        Assert.IsTrue(m_recipe.RunnerOutput[0].StandardOutput.Length >= 140000);
+-        Assert.IsTrue(m_recipe.RunnerOutput[0].StandardError.Length >= 120000);
+-    }
+-
+-    [TestMethod]
+-    public async Task NonzeroExitCapturesDiagnosticsWithoutCompletingProgress()
+-    {
+-        InvalidOperationException error = await Assert.ThrowsExceptionAsync<InvalidOperationException>(() =>
+-            m_recipe.CallPhaenoRunner(46, 65, CancellationToken.None,
+-                Command("echo failed 1>&2 & exit /b 7", "echo failed >&2; exit 7")));
+-
+-        StringAssert.Contains(error.Message, "code 7");
+-        StringAssert.Contains(error.Message, "failed");
+-        StringAssert.Contains(m_recipe.RunnerOutput[0].StandardError, "failed");
+-        Assert.IsFalse(m_progress.Contains(65));
+-    }
+-
+-    [TestMethod]
+-    public async Task CancellationStopsRunnerWithoutCompletingProgress()
+-    {
+-        using CancellationTokenSource cancellation = new(TimeSpan.FromSeconds(1));
+-        await Assert.ThrowsExceptionAsync<OperationCanceledException>(() =>
+-            m_recipe.CallPhaenoRunner(66, 100, cancellation.Token,
+-                Command("echo started & ping -n 30 127.0.0.1 >nul", "echo started; sleep 30")));
+-
+-        Assert.AreEqual(1, m_recipe.RunnerOutput.Count);
+-        StringAssert.Contains(m_recipe.RunnerOutput[0].StandardOutput, "started");
+-        Assert.IsFalse(m_progress.Contains(100));
+-    }
+-
+-    [TestMethod]
+-    public async Task ProgressTicksEveryFiveSecondsAndWaitsBelowEnd()
+-    {
+-        using CancellationTokenSource cancellation = new(TimeSpan.FromSeconds(30));
+-        await m_recipe.CallPhaenoRunner(6, 8, cancellation.Token,
+-            Command("ping -n 12 127.0.0.1 >nul", "sleep 11"));
+-
+-        Assert.IsTrue(m_progress.Count >= 4);
+-        Assert.AreEqual(6d, m_progress[0]);
+-        Assert.AreEqual(8d, m_progress[^1]);
+-        foreach (double percent in m_progress.Skip(1).SkipLast(1))
+-        {
+-            Assert.AreEqual(7d, percent);
+-        }
+-    }
+-
+-    [TestMethod]
+-    public async Task MissingRunnerEnvironmentFailsClearly()
+-    {
+-        Environment.SetEnvironmentVariable("PB_RUNNER", null);
+-        InvalidOperationException error = await Assert.ThrowsExceptionAsync<InvalidOperationException>(() =>
+-            m_recipe.CallPhaenoRunner(6, 25, CancellationToken.None));
+-
+-        StringAssert.Contains(error.Message, "PB_RUNNER");
+-        Assert.AreEqual(0, m_progress.Count);
+-    }
+-
+-    [TestMethod]
+-    public async Task MissingExecutableFailsClearly()
+-    {
+-        Environment.SetEnvironmentVariable("PB_RUNNER", Path.Combine(m_folder, "missing"));
+-        await Assert.ThrowsExceptionAsync<FileNotFoundException>(() =>
+-            m_recipe.CallPhaenoRunner(6, 25, CancellationToken.None));
+-
+-        Assert.AreEqual(0, m_progress.Count);
+-    }
+-}
+diff --git a/apps/pseq_server/deploy/REAL-ASSEMBLY.md b/apps/pseq_server/deploy/REAL-ASSEMBLY.md
+new file mode 100644
+index 00000000..490eb980
+--- /dev/null
++++ b/apps/pseq_server/deploy/REAL-ASSEMBLY.md
+@@ -0,0 +1,33 @@
++# Scientific adapter and controlled service
++
++This release implements execution plumbing. It does not qualify the native PSeq workflow, approve data/references/QC, install a service or authorize a pilot. The shipped catalog contains no scientific profile. Keep hosted DPS intentionally stopped until a preserving activation is authorized.
++
++## Configuration
++
++`DPS_RECIPE_CATALOG_PATH` is the single protected catalog. Remove the former `DPS_RECIPE_KEY`, `DPS_RECIPE_VERSION`, `DPS_RECIPE_NAME`, `DPS_RECIPE_PARAMETERS_SCHEMA_JSON`, `DPS_REQUIRED_OUTPUT_ROLES` and `DPS_SUPPORTED_READ_LAYOUTS` from the future runtime configuration conversion; they are no longer read. Retain existing broker/TLS/AWS identity and ledger. `DPS_WORKSPACE_PATH` defaults to `attempts/` beside that ledger. One worker holds the exclusive ledger lock and runs one attempt at a time.
++
++Each `scientific_profiles` entry uses the fields in `ScientificProfile`. An approved profile pins an absolute, read-only executable (`engine`), every transitive tool and every reference file by `name`, actual release `version`, `path`, and lowercase compressed/file-byte `sha256`. Pin a read-only `qc_criteria` document too. Reference database shards must each be listed. Native dependencies and architecture still require actual qualification; a configured version string alone is not version proof. Preserve the native build/version receipts with these pins.
++
++Specify exact frozen `parameters`, supported read layouts, named `stages` with an argument array, and distinct required `outputs` (`role`, relative native-workspace `path`, `format`). Scientific outputs currently support FASTA, JSON, plain text and rectangular TSV/unquoted CSV. Qualify a different parser before enabling quoted CSV or another format. `provenance_report` and `provenance-report.json` are adapter-owned. The adapter appends that required role to Describe. No scientific commands, default SMIDs, sample IDs, references or acceptance values are invented by this release.
++
++The approved executable must consume the generated `bindings.json` and `parameters.json`, directly or through a qualified native adapter. Argument tokens are `{bindings}`, `{parameters}`, `{workspace}` only; arguments never pass through a shell and user values are never interpolated into commands. The same paths are exposed as `DPS_BINDINGS_PATH` and `DPS_PARAMETERS_PATH`. Bindings retain original input IDs/names, exact S3 versions, read/group/part order, local verified file locations, expanded sizes and read-identifier hashes, plus pinned tools/references. Gzip files remain exact compressed originals; decompression is validated and bounded. The engine must process the complete mapping. Any derived concatenation/decompression must be produced inside its workspace and its relationship included in qualified scientific outputs. No directory search or global demonstration dataset is used.
++
++`enabled` defaults false. A nonempty `approval` must bind `profile_sha256`, `dataset_sha256`, `references_sha256`, and `qc_criteria_sha256`. `dataset`, `references`, and `scientific_qc` each require a real approving actor, UTC approval time and retained evidence ID. The protected deployment process records those actual decisions; the digest helper never creates approvals. Dataset binding includes the full specimen/run scope, recipe parameters, ordered file mappings and exact pinned objects, while excluding attempt/time/output prefix so an authorized linked repeat can reuse the same approved dataset. Changing parameters, tool/stage/output/limit/reference/QC pins invalidates the profile approval.
++
++`dps --qualification-digests <catalog> <input-manifest>` prints binding digests without connecting to MQTT, creating a ledger, enabling a recipe or executing native work. `dps --check` validates configuration and prints availability/hold reasons without a broker connection or Start. Unknown command-line options fail without starting the worker.
++
++## Ownership and recovery
++
++Every scientific attempt has a separate versioned `execution.json` sidecar. The existing ledger retains receipts, commands, lifecycle events and final acknowledgment identities in its existing format. Writes flush file and Linux directory metadata before native intent, checkpoint and publication promotion. Never delete/recreate a ledger or attempt directory to make a retry work.
++
++A stage host starts a Linux session, records PID, kernel start ticks, boot identity and nonce, and clears cloud/broker credentials from the native environment. Bounded protected diagnostics are drained even after their retention limit. Cancellation waits for process-group fencing before terminal reporting. The service uses `KillMode=control-group` so worker death also stops owned descendants. A journal with an in-flight stage, missing ownership/result or missing journal for an already-running scientific attempt holds the entire worker for Operations review. It never silently starts that stage again. Keep all such evidence, stop/fence the exact owned processes, and resolve the observation through a separately reviewed reconciliation; do not hand-edit the journal or fabricate a stop time. Automatic computation recovery from an ambiguous stage is deliberately unavailable.
++
++Completed stages are not repeated during output recovery. Outputs are frozen into publication copies, validated, assigned durable IDs and written create-only inside the authorized attempt prefix. S3 version locators are journaled before verification. A retry with a recorded version re-verifies it; an upload intent without a durable locator is held rather than overwritten/reuploaded. A published manifest reuses its exact bytes, hash, versions and stop time. Final ledger events/ACKs remain idempotent. 100 percent belongs to verified manifest completion, never a native process exit. A temporary Portal admission/scan failure preserves DPS Succeeded and retries file/analysis admission without another Start.
++
++## Release preparation and remaining gates
++
++`prepare-release.sh` is a preparation-only Linux ARM64 build procedure using exact committed source, the existing SDK and locked Cargo dependencies. It does not install missing tools. The native `phaeno` candidate and transitive tool/reference releases, complete CLI/sample mapping and output roles must be qualified against the approved dataset; these build assets have not done that qualification. Store an actual native version readback alongside hashes, compiler/toolchain identities and measured resource budgets before activation.
++
++Review the supplied service paths against the protected runtime configuration and preserve the existing user, certificates, ledger and backups. Pin scientific binaries/reference stores outside the writable attempt root; the service makes the rest of the filesystem read-only. Prepare configuration conversion and backup/restore evidence before any activation. `Restart=on-failure` is bounded to three starts per five minutes; an intentional service stop stays stopped. The stop hook records systemd exit code, signal/status, result and build identity in the journal. Do not install, enable or start this unit as a side effect of preparing it.
++
++Initial scientific output files are capped at 100 MiB and the set at 400,000,000 bytes. Portal additionally checks its effective scanner/file/set limits including parameters before admission. Expanded input, workspace, free-space reserve, run-duration and diagnostic budgets are profile-bound. The parent samples workspace growth/free disk each second and fences processing on a limit breach; allocation can exceed the soft sampled limit between samples, so a qualified host/filesystem quota is still needed for a hard scratch bound. The supplied service also caps memory at 50 GiB (48 GiB high watermark) and 512 tasks. Measure and review these limits against the approved dataset before activation. Do not disable scanning, increase limits or downsample data silently. Provider success is separate from independent scientific QC and Customer release.
+diff --git a/apps/pseq_server/deploy/catalog.simulation-only.json b/apps/pseq_server/deploy/catalog.simulation-only.json
+new file mode 100644
+index 00000000..d8ef30db
+--- /dev/null
++++ b/apps/pseq_server/deploy/catalog.simulation-only.json
+@@ -0,0 +1,3 @@
++{
++  "scientific_profiles": []
++}
+diff --git a/apps/pseq_server/deploy/dps.service b/apps/pseq_server/deploy/dps.service
+new file mode 100644
+index 00000000..6dccb9f0
+--- /dev/null
++++ b/apps/pseq_server/deploy/dps.service
+@@ -0,0 +1,37 @@
++[Unit]
++Description=Phaeno Data Pipeline Server
++After=network-online.target
++Wants=network-online.target
++StartLimitIntervalSec=300
++StartLimitBurst=3
++
++[Service]
++Type=simple
++User=ubuntu
++Group=ubuntu
++WorkingDirectory=/home/ubuntu/.phaeno/DPS/current
++EnvironmentFile=/home/ubuntu/.phaeno/DPS/runtime.env
++ExecStartPre=/home/ubuntu/.phaeno/DPS/current/dps --check
++ExecStart=/home/ubuntu/.phaeno/DPS/current/dps
++ExecStopPost=/home/ubuntu/.phaeno/DPS/current/report-exit.sh
++Restart=on-failure
++RestartSec=15
++KillSignal=SIGTERM
++KillMode=control-group
++TimeoutStopSec=45
++SendSIGKILL=yes
++UMask=0077
++NoNewPrivileges=yes
++MemoryHigh=48G
++MemoryMax=50G
++TasksMax=512
++PrivateTmp=yes
++ProtectSystem=strict
++ProtectHome=read-only
++ReadWritePaths=/home/ubuntu/.phaeno/DPS/local
++StandardOutput=journal
++StandardError=journal
++SyslogIdentifier=phaeno-dps
++
++[Install]
++WantedBy=multi-user.target
+diff --git a/apps/pseq_server/deploy/prepare-release.sh b/apps/pseq_server/deploy/prepare-release.sh
+new file mode 100644
+index 00000000..7d0cc6ec
+--- /dev/null
++++ b/apps/pseq_server/deploy/prepare-release.sh
+@@ -0,0 +1,46 @@
++#!/bin/sh
++set -eu
++# Preparation only: no installation, service start, active-pointer change, ledger access or pilot.
++if test "$#" -ne 3; then
++    echo 'Usage: prepare-release.sh <pipeline-source> <exact-source-commit> <new-empty-release-directory>' >&2
++    exit 2
++fi
++source_root=$(realpath "$1")
++commit=$2
++release=$(realpath -m "$3")
++test "$(uname -s)" = Linux
++test "$(uname -m)" = aarch64
++test "$(git -C "$source_root" rev-parse HEAD)" = "$commit"
++test -z "$(git -C "$source_root" status --porcelain -- apps/pseq_server apps/phaeno Cargo.lock)"
++test ! -e "$release"
++command -v dotnet >/dev/null
++cargo_path=${CARGO:-"$HOME/.cargo/bin/cargo"}
++test -x "$cargo_path"
++test -f "$source_root/apps/phaeno/Cargo.toml"
++mkdir -m 700 "$release"
++dotnet publish "$source_root/apps/pseq_server/dps/dps.csproj" -c Release -r linux-arm64 --self-contained true \
++    -p:ContinuousIntegrationBuild=true "-p:SourceRevisionId=$commit" "-p:InformationalVersion=$commit" -o "$release/dps"
++"$cargo_path" build --locked --release --manifest-path "$source_root/apps/phaeno/Cargo.toml"
++# The Cargo workspace may centralize target output. Resolve it from Cargo, never guess a demo path.
++target=$("$cargo_path" metadata --locked --offline --no-deps --format-version 1 --manifest-path "$source_root/apps/phaeno/Cargo.toml" | python3 -c 'import json,sys; print(json.load(sys.stdin)["target_directory"])')
++test -x "$target/release/phaeno"
++mkdir -m 700 "$release/science"
++cp "$target/release/phaeno" "$release/science/phaeno"
++cp "$source_root/apps/pseq_server/deploy/report-exit.sh" "$release/dps/report-exit.sh"
++chmod 500 "$release/science/phaeno" "$release/dps/report-exit.sh"
++python3 - "$release" "$commit" <<'PY'
++import datetime, hashlib, json, pathlib, platform, sys
++root = pathlib.Path(sys.argv[1])
++files = []
++for path in sorted(root.rglob('*')):
++    if path.is_file():
++        digest = hashlib.sha256()
++        with path.open('rb') as stream:
++            for chunk in iter(lambda: stream.read(1024*1024), b''):
++                digest.update(chunk)
++        files.append({'path': str(path.relative_to(root)), 'sha256': digest.hexdigest(), 'size_bytes': path.stat().st_size})
++receipt = {'source_commit': sys.argv[2], 'architecture': platform.machine(), 'prepared_at_utc': datetime.datetime.now(datetime.timezone.utc).isoformat(),
++           'files': files, 'scientifically_qualified': False, 'activated': False}
++(root/'dps'/'build-receipt.json').write_text(json.dumps(receipt, indent=2)+'\n')
++PY
++echo 'Candidate release prepared only. Tool/reference qualification, preserving activation and pilot approvals remain required.'
+diff --git a/apps/pseq_server/deploy/report-exit.sh b/apps/pseq_server/deploy/report-exit.sh
+new file mode 100644
+index 00000000..2c97bfa5
+--- /dev/null
++++ b/apps/pseq_server/deploy/report-exit.sh
+@@ -0,0 +1,7 @@
++#!/bin/sh
++set -eu
++# systemd supplies these values even when the worker dies before it can log its own exit.
++printf 'DPS service exit: code=%s status=%s result=%s\n' "${EXIT_CODE:-unknown}" "${EXIT_STATUS:-unknown}" "${SERVICE_RESULT:-unknown}"
++if test -f /home/ubuntu/.phaeno/DPS/current/build-receipt.json; then
++    cat /home/ubuntu/.phaeno/DPS/current/build-receipt.json
++fi
+diff --git a/apps/pseq_server/dps/src/DpsRecipeCatalog.cs b/apps/pseq_server/dps/src/DpsRecipeCatalog.cs
+new file mode 100644
+index 00000000..ec679600
+--- /dev/null
++++ b/apps/pseq_server/dps/src/DpsRecipeCatalog.cs
+@@ -0,0 +1,247 @@
++using System.Security.Cryptography;
++using System.Text.Json;
++
++namespace Dps;
++
++// This is protected deployment configuration, never a user-supplied command or an approval UI.
++internal sealed class DpsRecipeCatalog
++{
++    public List<ScientificProfile> scientific_profiles = [];
++
++    internal static DpsRecipeCatalog Load(string? path)
++    {
++        if (string.IsNullOrWhiteSpace(path)) return new(); // Diagnostic simulation only.
++        if (new FileInfo(path).Length > 1_000_000) throw new InvalidOperationException("Recipe catalog exceeds its limit.");
++        var catalog = JsonTools.Deserialize<DpsRecipeCatalog>(File.ReadAllText(path))
++            ?? throw new InvalidOperationException("Recipe catalog is invalid.");
++        if (catalog.scientific_profiles.Count > 16) throw new InvalidOperationException("Too many scientific profiles.");
++        var identities = new HashSet<string>(StringComparer.Ordinal);
++        foreach (var profile in catalog.scientific_profiles) {
++            if (profile.key == DpsContract.PSEQ_RECIPE_KEY || !identities.Add(profile.key + ":" + profile.version))
++                throw new InvalidOperationException("Reserved or duplicate recipe identity.");
++        }
++        return catalog;
++    }
++
++    internal ScientificProfile? Scientific(RECIPE_DTO recipe) => scientific_profiles.SingleOrDefault(p => p.key == recipe.key && p.version == recipe.version);
++
++    internal List<CAPABILITY_RECIPE_DTO> Available()
++    {
++        List<CAPABILITY_RECIPE_DTO> result = [Simulation()];
++        foreach (var profile in scientific_profiles) if (profile.ReadinessReason() is null) result.Add(profile.Capability());
++        return result;
++    }
++
++    internal static CAPABILITY_RECIPE_DTO Simulation() => new() {
++        key = DpsContract.PSEQ_RECIPE_KEY, name = DpsContract.PSEQ_RECIPE_NAME, version = DpsContract.PSEQ_RECIPE_VERSION,
++        parameters_schema = JsonSerializer.SerializeToElement(new { type = "object", additionalProperties = true }),
++        supported_read_layouts = ["PairedEnd"], required_output_roles = ["assembly_output", "provenance_report"]
++    };
++
++    internal string? Validate(RECIPE_DTO recipe)
++    {
++        if (SimulatedAssemblyRecipe.Matches(recipe.key, recipe.version)) return recipe.parameters.ValueKind == JsonValueKind.Object ? null : "recipe.parameters must be an object.";
++        var profile = Scientific(recipe);
++        if (profile is null) return "Recipe identity is not supported.";
++        var reason = profile.ReadinessReason();
++        if (reason is not null) return reason;
++        return JsonTools.CanonicalHash(recipe.parameters) == JsonTools.CanonicalHash(profile.parameters) ? null : "Scientific parameters do not match the approved profile.";
++    }
++}
++
++internal sealed class ScientificProfile
++{
++    public string key = "pseq_scientific_assembly";
++    public string name = "PSeq scientific assembly";
++    public string version = "0.1.0";
++    public string runtime_identifier = "linux-arm64";
++    public bool enabled; // Deliberately false in every shipped example.
++    public JsonElement parameters = JsonSerializer.SerializeToElement(new { });
++    public List<string> supported_read_layouts = ["PairedEnd"];
++    public PinnedFile engine = new();
++    public List<PinnedFile> tools = [];
++    public List<PinnedFile> references = [];
++    public PinnedFile qc_criteria = new();
++    public List<ScientificStage> stages = [];
++    public List<ScientificOutput> outputs = [];
++    public long maximum_input_bytes = 10L * 1024 * 1024 * 1024;
++    public long maximum_expanded_input_bytes = 40L * 1024 * 1024 * 1024;
++    public long maximum_output_file_bytes = 100L * 1024 * 1024;
++    public long maximum_output_set_bytes = 400_000_000;
++    public long minimum_free_disk_bytes = 1024L * 1024 * 1024;
++    public long maximum_workspace_bytes = 50L * 1024 * 1024 * 1024;
++    public int maximum_run_seconds = 86400;
++    public int diagnostic_bytes_per_stream = 1024 * 1024;
++    public ScientificApproval? approval;
++
++    internal string DefinitionHash() => JsonTools.CanonicalHash(JsonSerializer.SerializeToElement(new {
++        key, name, version, runtime_identifier, parameters, supported_read_layouts, engine, tools, references, qc_criteria, stages, outputs,
++        maximum_input_bytes, maximum_expanded_input_bytes, maximum_output_file_bytes, maximum_output_set_bytes,
++        minimum_free_disk_bytes, maximum_workspace_bytes, maximum_run_seconds, diagnostic_bytes_per_stream
++    }, JsonTools.Options));
++
++    internal string ReferencesHash() => JsonTools.CanonicalHash(JsonSerializer.SerializeToElement(references, JsonTools.Options));
++
++    internal void ValidateDefinition()
++    {
++        if (!DpsValidation.IsRoleName(key) || string.IsNullOrWhiteSpace(version) || version.Length > 100 || name.Length is < 1 or > 255
++            || runtime_identifier is not ("linux-arm64" or "linux-x64")
++            || parameters.ValueKind != JsonValueKind.Object || supported_read_layouts.Count == 0
++            || supported_read_layouts.Distinct().Count() != supported_read_layouts.Count
++            || supported_read_layouts.Any(x => x is not ("PairedEnd" or "SingleEnd"))
++            || maximum_input_bytes < 1 || maximum_expanded_input_bytes < maximum_input_bytes || minimum_free_disk_bytes < 0
++            || maximum_workspace_bytes < maximum_input_bytes || maximum_output_set_bytes > maximum_workspace_bytes - maximum_input_bytes
++            || maximum_output_file_bytes is < 1 or > 104857600 || maximum_output_set_bytes < maximum_output_file_bytes
++            || maximum_output_set_bytes > 400_000_000 || maximum_run_seconds is < 1 or > 604800
++            || diagnostic_bytes_per_stream is < 1024 or > 10485760 || tools.Count > 62 || references.Count is < 1 or > 64
++            || stages.Count is < 1 or > 32 || outputs.Count is < 1 or > 62
++            || stages.Select(s => s.name).Distinct(StringComparer.Ordinal).Count() != stages.Count
++            || outputs.Select(o => o.role).Distinct(StringComparer.Ordinal).Count() != outputs.Count
++            || outputs.Any(o => !DpsValidation.IsRoleName(o.role) || o.role == "provenance_report" || o.path == "provenance-report.json" || !SafePath.IsRelative(o.path)
++                || o.format is not ("FASTA" or "JSON" or "TSV" or "CSV" or "TEXT"))
++            || outputs.Select(o => o.path).Distinct(StringComparer.Ordinal).Count() != outputs.Count
++            || stages.Any(s => !DpsValidation.IsRoleName(s.name) || s.arguments.Count is < 1 or > 128
++                || s.arguments.Any(a => a.Length > 8192 || a.Contains('\0')
++                    || a.Replace("{bindings}", "").Replace("{parameters}", "").Replace("{workspace}", "").IndexOfAny(['{', '}']) >= 0)))
++            throw new InvalidOperationException("Scientific profile definition is invalid.");
++        foreach (var file in new[] { engine, qc_criteria }.Concat(tools).Concat(references)) file.ValidateDefinition();
++    }
++
++    internal string? ReadinessReason()
++    {
++        try {
++        if (!enabled || approval is null) return "Scientific recipe is held pending dataset, reference and scientific QC approval.";
++        if (!OperatingSystem.IsLinux() || System.Runtime.InteropServices.RuntimeInformation.RuntimeIdentifier != runtime_identifier)
++            return "Scientific recipe requires its pinned Linux architecture.";
++        if (approval.profile_sha256 != DefinitionHash() || approval.references_sha256 != ReferencesHash()
++            || approval.qc_criteria_sha256 != qc_criteria.sha256 || !PinnedFile.IsHash(approval.dataset_sha256)
++            || !approval.dataset.IsValid() || !approval.references.IsValid() || !approval.scientific_qc.IsValid())
++            return "Scientific approvals do not bind the current profile, dataset, references and QC criteria.";
++            ValidateDefinition();
++            foreach (var file in new[] { engine, qc_criteria }.Concat(tools).Concat(references)) file.Verify();
++        } catch { return "Scientific pinned executable, tool, reference or QC preflight failed."; }
++        return null;
++    }
++
++    internal CAPABILITY_RECIPE_DTO Capability() => new() { key = key, name = name, version = version,
++        parameters_schema = JsonSerializer.SerializeToElement(new { type = "object", @const = parameters }),
++        supported_read_layouts = supported_read_layouts.ToList(), required_output_roles = outputs.Select(o => o.role).Append("provenance_report").ToList() };
++
++    // Excludes attempt/time/output prefix, so an explicitly linked repeat can use the same approved dataset.
++    internal static string DatasetHash(INPUT_MANIFEST_DTO manifest) => JsonTools.CanonicalHash(JsonSerializer.SerializeToElement(new {
++        manifest.scope, manifest.read_layout, manifest.recipe,
++        files = manifest.files.OrderBy(f => f.group_number).ThenBy(f => f.part_number).ThenBy(f => f.read_number).ThenBy(f => f.file_id, StringComparer.Ordinal)
++    }, JsonTools.Options));
++}
++
++internal sealed class ScientificApproval
++{
++    public string profile_sha256 = "";
++    public string dataset_sha256 = "";
++    public string references_sha256 = "";
++    public string qc_criteria_sha256 = "";
++    public ApprovalRecord dataset = new();
++    public ApprovalRecord references = new();
++    public ApprovalRecord scientific_qc = new();
++}
++
++internal sealed class ApprovalRecord
++{
++    public string approved_by = "";
++    public string approved_at_utc = "";
++    public string evidence_id = "";
++    internal bool IsValid() => !string.IsNullOrWhiteSpace(approved_by) && !string.IsNullOrWhiteSpace(evidence_id)
++        && approved_at_utc.EndsWith('Z') && DateTimeOffset.TryParse(approved_at_utc, out var at) && at <= DateTimeOffset.UtcNow;
++}
++
++internal sealed class PinnedFile
++{
++    public string name = "";
++    public string version = "";
++    public string path = "";
++    public string sha256 = "";
++    private string? verifiedIdentity;
++    internal static bool IsHash(string value) => value.Length == 64 && value.All(c => c is >= '0' and <= '9' or >= 'a' and <= 'f');
++    internal void ValidateDefinition()
++    {
++        if (name.Length is < 1 or > 255 || version.Length is < 1 or > 1000 || !Path.IsPathFullyQualified(path) || !IsHash(sha256))
++            throw new InvalidOperationException("Pinned file identity is invalid.");
++    }
++    internal void Verify(bool force = false)
++    {
++        ValidateDefinition();
++        SafePath.NoLinks(path);
++        if (!OperatingSystem.IsWindows() && (File.GetUnixFileMode(path) & (UnixFileMode.UserWrite | UnixFileMode.GroupWrite | UnixFileMode.OtherWrite)) != 0)
++            throw new InvalidOperationException("Pinned files must be read-only.");
++        var info = new FileInfo(path);
++        var identity = path + ":" + sha256 + ":" + info.Length + ":" + info.LastWriteTimeUtc.Ticks;
++        if (!force && identity == verifiedIdentity) return;
++        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
++        if (Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant() != sha256) throw new InvalidOperationException("Pinned file changed.");
++        verifiedIdentity = identity;
++    }
++}
++
++internal sealed class ScientificStage
++{
++    public string name = "";
++    // No shell, PATH search, or user parameter interpolation. The approved engine reads the frozen JSON bindings.
++    public List<string> arguments = [];
++}
++
++internal sealed class ScientificOutput
++{
++    public string role = "";
++    public string path = ""; // Relative to this attempt's native/ directory.
++    public string format = "";
++}
++
++internal static class SafePath
++{
++    internal static bool IsRelative(string value) => !string.IsNullOrWhiteSpace(value) && !Path.IsPathRooted(value)
++        && !value.Contains('\\') && !value.Contains(':') && !value.Any(char.IsControl)
++        && value.Split('/').All(p => p.Length > 0 && p is not ("." or ".."));
++
++    internal static string Child(string root, string relative)
++    {
++        if (!IsRelative(relative)) throw new InvalidOperationException("Unsafe workspace path.");
++        var full = Path.GetFullPath(Path.Combine(root, relative));
++        NoLinks(root);
++        NoLinks(full);
++        return full;
++    }
++
++    internal static void NoLinks(string path)
++    {
++        for (string? part = Path.GetFullPath(path); !string.IsNullOrEmpty(part); part = Path.GetDirectoryName(part)) {
++            try {
++                if ((File.GetAttributes(part) & FileAttributes.ReparsePoint) != 0)
++                    throw new InvalidOperationException("Links are forbidden in protected execution paths.");
++            } catch (FileNotFoundException) { } catch (DirectoryNotFoundException) { }
++        }
++    }
++}
++
++internal static class DurableFile
++{
++    [System.Runtime.InteropServices.DllImport("libc", SetLastError = true)] private static extern int open(string path, int flags);
++    [System.Runtime.InteropServices.DllImport("libc", SetLastError = true)] private static extern int fsync(int descriptor);
++    [System.Runtime.InteropServices.DllImport("libc")] private static extern int close(int descriptor);
++    internal static void Write(string path, string content)
++    {
++        SafePath.NoLinks(path);
++        var temp = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
++        using (var stream = new FileStream(temp, FileMode.CreateNew, FileAccess.Write, FileShare.None, 65536, FileOptions.WriteThrough)) {
++            if (!OperatingSystem.IsWindows()) File.SetUnixFileMode(temp, UnixFileMode.UserRead | UnixFileMode.UserWrite);
++            using var writer = new StreamWriter(stream, new System.Text.UTF8Encoding(false), leaveOpen: true);
++            writer.Write(content); writer.Flush(); stream.Flush(true);
++        }
++        File.Move(temp, path, true);
++        if (OperatingSystem.IsLinux()) {
++            int directory = open(Path.GetDirectoryName(Path.GetFullPath(path))!, 65536); // O_DIRECTORY | O_RDONLY
++            if (directory < 0) throw new IOException("Could not sync journal directory.");
++            try { if (fsync(directory) != 0) throw new IOException("Could not sync journal directory."); }
++            finally { close(directory); }
++        }
++    }
++}
+diff --git a/apps/pseq_server/dps/src/ScientificExecution.cs b/apps/pseq_server/dps/src/ScientificExecution.cs
+new file mode 100644
+index 00000000..5fa8f46f
+--- /dev/null
++++ b/apps/pseq_server/dps/src/ScientificExecution.cs
+@@ -0,0 +1,401 @@
++using System.IO.Compression;
++using System.Security.Cryptography;
++using System.Text;
++using System.Text.Json;
++
++namespace Dps;
++
++internal sealed class ExecutionJournal
++{
++    public int version = 1;
++    public string job_id = "";
++    public string start_sha256 = "";
++    public string input_manifest_sha256 = "";
++    public string profile_sha256 = "";
++    public string started_at_utc = "";
++    public string? stopped_at_utc;
++    public string phase = "Preparing";
++    public string? failure_code;
++    public List<StageCheckpoint> stages = [];
++    public List<PublishedArtifact> artifacts = [];
++    public string? output_manifest_json;
++    public string? provenance_report_json;
++    public string manifest_upload_state = "Pending";
++    public S3_OBJECT_DTO? output_manifest;
++}
++
++internal sealed class StageCheckpoint
++{
++    public string name = "";
++    public string state = "Pending";
++    public string nonce = "";
++    public StageResult? result;
++}
++
++internal sealed class PublishedArtifact
++{
++    public string path = "";
++    public string sha256 = "";
++    public long size_bytes;
++    public string upload_state = "Pending";
++    public OUTPUT_FILE_DTO artifact = new();
++    public S3_OBJECT_DTO? uploaded;
++}
++
++internal sealed record ScientificCompletion(S3_OBJECT_DTO Manifest, string StoppedAt);
++
++internal sealed class ScientificExecution(DpsConfig config, S3StorageClient storage, Func<double, Task> progress)
++{
++    internal async Task<ScientificCompletion> ExecuteAsync(START_COMMAND_DTO start, INPUT_MANIFEST_DTO manifest,
++        string startedAt, bool recovering, CancellationToken ct)
++    {
++        var profile = config.Recipes.Scientific(start.recipe) ?? throw new ExecutionHeldException("scientific_profile_missing");
++        if (profile.ReadinessReason() is not null) throw new ExecutionHeldException("scientific_approval_or_preflight_hold");
++        if (JsonTools.CanonicalHash(start.recipe.parameters) != JsonTools.CanonicalHash(profile.parameters)
++            || !start.recipe.required_output_roles.SequenceEqual(profile.Capability().required_output_roles))
++            throw new InvalidOperationException("scientific_instructions_not_approved");
++        if (profile.approval!.dataset_sha256 != ScientificProfile.DatasetHash(manifest))
++            throw new InvalidOperationException("scientific_dataset_not_approved");
++        foreach (var pinned in new[] { profile.engine, profile.qc_criteria }.Concat(profile.tools).Concat(profile.references)) pinned.Verify(force: true);
++        var work = Workspace(config.WorkspacePath, start.job_id);
++        var journalPath = SafePath.Child(work, "execution.json");
++        ExecutionJournal journal;
++        if (File.Exists(journalPath)) {
++            journal = JsonTools.Deserialize<ExecutionJournal>(File.ReadAllText(journalPath)) ?? throw new ExecutionHeldException("scientific_journal_invalid");
++            RequireBinding(journal, start, profile, startedAt);
++        } else {
++            if (recovering || Directory.Exists(work)) throw new ExecutionHeldException("scientific_journal_missing");
++            Directory.CreateDirectory(work);
++            if (!OperatingSystem.IsWindows()) File.SetUnixFileMode(work, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
++            journal = new() { job_id = start.job_id, start_sha256 = JsonTools.CanonicalHash(JsonTools.Serialize(start)),
++                input_manifest_sha256 = start.input_manifest.sha256, profile_sha256 = profile.DefinitionHash(), started_at_utc = startedAt,
++                stages = profile.stages.Select(s => new StageCheckpoint { name = s.name, nonce = JsonTools.NewGuidString() }).ToList() };
++            Save();
++        }
++        if (journal.stages.Any(s => s.state == "InFlight")) throw new ExecutionHeldException("scientific_interrupted_stage_requires_reconciliation");
++        if (journal.failure_code is not null) throw new InvalidOperationException(journal.failure_code);
++        // Only a completely bound, verified publication can resume terminal reporting without computation.
++        if (journal.phase == "Published") {
++            if (journal.output_manifest is null || journal.stopped_at_utc is null) throw new ExecutionHeldException("scientific_publication_ambiguous");
++            await storage.VerifyObjectAsync(journal.output_manifest, ct);
++            return new(journal.output_manifest, journal.stopped_at_utc);
++        }
++        using var budget = CancellationTokenSource.CreateLinkedTokenSource(ct);
++        var elapsed = DateTimeOffset.UtcNow - DateTimeOffset.Parse(startedAt, System.Globalization.CultureInfo.InvariantCulture);
++        if (elapsed.TotalSeconds >= profile.maximum_run_seconds && journal.stages.Any(s => s.state != "Complete"))
++            throw new InvalidOperationException("scientific_execution_budget_exceeded");
++        budget.CancelAfter(TimeSpan.FromSeconds(Math.Max(1, profile.maximum_run_seconds - elapsed.TotalSeconds)));
++        var runToken = budget.Token;
++        if (journal.phase == "Preparing") {
++            foreach (var folder in new[] { "inputs", "native", "scratch", "publication" }) Directory.CreateDirectory(SafePath.Child(work, folder));
++            var bindings = await MaterializeAsync(manifest, profile, work, runToken);
++            DurableFile.Write(SafePath.Child(work, "parameters.json"), JsonTools.Serialize(start.recipe.parameters));
++            DurableFile.Write(SafePath.Child(work, "bindings.json"), JsonTools.SerializeIndented(new {
++                job_id = start.job_id, manifest.scope, manifest.read_layout, input_manifest_sha256 = start.input_manifest.sha256,
++                parameters_sha256 = JsonTools.CanonicalHash(start.recipe.parameters), files = bindings,
++                references = profile.references, tools = profile.tools, profile_sha256 = profile.DefinitionHash()
++            }));
++            journal.phase = "Executing"; Save();
++        }
++        if (journal.phase == "Executing") {
++            // Reverify the prepared inputs on recovery, including compression, pairing and read counts.
++            await MaterializeAsync(manifest, profile, work, runToken);
++            await progress(10);
++            for (int i = 0; i < journal.stages.Count; i++) {
++                var stage = journal.stages[i];
++                if (stage.state == "Complete") continue;
++                runToken.ThrowIfCancellationRequested();
++                stage.state = "InFlight"; Save(); // No native invocation before this durable intent.
++                StageResult result;
++                try { result = await ScientificProcess.RunAsync(new() { nonce = stage.nonce, workspace = work, index = i, profile = profile }, runToken); }
++                catch (OperationCanceledException) when (ct.IsCancellationRequested) {
++                    // RunAsync throws cancellation only after it has fenced its process group.
++                    stage.state = "Cancelled"; journal.stopped_at_utc = JsonTools.UtcNowString(); journal.failure_code = "scientific_cancelled"; Save(); throw;
++                }
++                catch (OperationCanceledException) { stage.state = "Failed"; journal.stopped_at_utc = JsonTools.UtcNowString(); journal.failure_code = "scientific_execution_budget_exceeded"; Save(); throw new InvalidOperationException(journal.failure_code); }
++                catch (ScientificResourceException) { stage.state = "Failed"; journal.stopped_at_utc = JsonTools.UtcNowString(); journal.failure_code = "scientific_scratch_budget_exceeded"; Save(); throw new InvalidOperationException(journal.failure_code); }
++                catch (Exception) { throw new ExecutionHeldException("scientific_stage_ownership_requires_reconciliation"); }
++                stage.result = result;
++                if (result.exit_code != 0) {
++                    stage.state = "Failed"; journal.stopped_at_utc = result.fenced_at_utc!; journal.failure_code = "scientific_native_stage_failed"; Save();
++                    throw new InvalidOperationException(journal.failure_code);
++                }
++                stage.state = "Complete"; Save();
++                await progress(10 + 70.0 * (i + 1) / journal.stages.Count);
++            }
++            journal.stopped_at_utc = journal.stages.Last().result!.fenced_at_utc!;
++            journal.phase = "Collecting"; Save();
++        }
++        // Engine processes have stopped. Publication and verification never restart a completed stage.
++        if (journal.phase == "Collecting") {
++            if (journal.provenance_report_json is null) {
++                journal.provenance_report_json = JsonTools.SerializeIndented(new { job_id = start.job_id, scientific_use = true,
++                    input_manifest_sha256 = start.input_manifest.sha256, profile_sha256 = profile.DefinitionHash(), parameters_sha256 = JsonTools.CanonicalHash(start.recipe.parameters),
++                    dataset_sha256 = ScientificProfile.DatasetHash(manifest), qc_criteria_sha256 = profile.qc_criteria.sha256,
++                    approval = profile.approval, provenance = Provenance(profile), stages = journal.stages.Select(s => new { s.name, s.result }) });
++                Save();
++            }
++            journal.artifacts = await CollectAsync(profile, start, manifest, work, journal, ct);
++            journal.phase = "Publishing"; Save();
++        }
++        if (journal.phase != "Publishing") throw new ExecutionHeldException("scientific_journal_phase_invalid");
++        foreach (var item in journal.artifacts) {
++            var path = SafePath.Child(work, item.path);
++            await RequireLocalAsync(path, item.sha256, item.size_bytes, ct);
++            if (item.uploaded is null) {
++                if (item.upload_state != "Pending") throw new ExecutionHeldException("scientific_upload_receipt_missing");
++                item.upload_state = "Uploading"; Save();
++                item.uploaded = await storage.PutFileAndVerifyAsync(manifest.output_destination.bucket, manifest.output_destination.region,
++                    manifest.output_destination.prefix + item.artifact.artifact_id + "/" + item.artifact.file_name, path, ContentType(item.artifact.format), ct,
++                    address => { item.uploaded = address; Save(); });
++            } else await storage.VerifyObjectAsync(item.uploaded, ct);
++            item.artifact.s3 = item.uploaded; item.upload_state = "Verified"; Save();
++        }
++        await progress(95);
++        if (journal.output_manifest_json is null) {
++            var output = new OUTPUT_MANIFEST_DTO { environment = config.Environment, job_id = start.job_id, provider_job_id = "dps-" + start.job_id,
++                scope = manifest.scope, recipe = start.recipe, input_manifest_sha256 = start.input_manifest.sha256,
++                started_at_utc = startedAt, stopped_at_utc = journal.stopped_at_utc!, created_at_utc = JsonTools.UtcNowString(),
++                provenance = Provenance(profile), outputs = journal.artifacts.Select(a => a.artifact).ToList() };
++            journal.output_manifest_json = JsonTools.SerializeIndented(output); Save();
++        }
++        var manifestPath = SafePath.Child(work, "publication/output-manifest.json");
++        DurableFile.Write(manifestPath, journal.output_manifest_json);
++        if (journal.output_manifest is null) {
++            if (journal.manifest_upload_state != "Pending") throw new ExecutionHeldException("scientific_manifest_receipt_missing");
++            journal.manifest_upload_state = "Uploading"; Save();
++            journal.output_manifest = await storage.PutFileAndVerifyAsync(manifest.output_destination.bucket, manifest.output_destination.region,
++                DpsValidation.TryParseS3Uri(start.data_folder, out var destination) ? destination!.Prefix + "output-manifest.json" : throw new InvalidOperationException(),
++                manifestPath, "application/json", ct, address => { journal.output_manifest = address; Save(); });
++        } else await storage.VerifyObjectAsync(journal.output_manifest, ct);
++        journal.manifest_upload_state = "Verified"; journal.phase = "Published"; Save();
++        return new(journal.output_manifest, journal.stopped_at_utc!);
++
++        void Save() => DurableFile.Write(journalPath, JsonTools.SerializeIndented(journal));
++    }
++
++    internal static string Workspace(string root, string jobId)
++    {
++        if (!Guid.TryParseExact(jobId, "D", out var id) || id.ToString("D") != jobId) throw new InvalidOperationException("Invalid attempt identity.");
++        return SafePath.Child(Path.GetFullPath(root), jobId);
++    }
++
++    internal static void RequireRecoverable(string root, string jobId)
++    {
++        var path = SafePath.Child(Workspace(root, jobId), "execution.json");
++        if (!File.Exists(path)) throw new ExecutionHeldException("scientific_journal_missing");
++        var journal = JsonTools.Deserialize<ExecutionJournal>(File.ReadAllText(path));
++        if (journal is null || journal.job_id != jobId || journal.version != 1 || journal.stages.Any(s => s.state == "InFlight"))
++            throw new ExecutionHeldException("scientific_interrupted_stage_requires_reconciliation");
++    }
++
++    internal static bool RequiresHold(string root, string jobId)
++    {
++        try {
++            var path = SafePath.Child(Workspace(root, jobId), "execution.json");
++            if (!File.Exists(path)) return Directory.Exists(Workspace(root, jobId));
++            var journal = JsonTools.Deserialize<ExecutionJournal>(File.ReadAllText(path));
++            return journal is null || journal.stages.Any(s => s.state == "InFlight") || journal.phase is "Collecting" or "Publishing" or "Published";
++        } catch { return true; }
++    }
++
++    internal static string? RecordedStop(string root, string jobId)
++    {
++        var path = SafePath.Child(Workspace(root, jobId), "execution.json");
++        return File.Exists(path) ? JsonTools.Deserialize<ExecutionJournal>(File.ReadAllText(path))?.stopped_at_utc : null;
++    }
++
++    internal static void RequireBinding(ExecutionJournal journal, START_COMMAND_DTO start, ScientificProfile profile, string startedAt)
++    {
++        if (journal.version != 1 || journal.job_id != start.job_id || journal.start_sha256 != JsonTools.CanonicalHash(JsonTools.Serialize(start))
++            || journal.input_manifest_sha256 != start.input_manifest.sha256 || journal.profile_sha256 != profile.DefinitionHash()
++            || journal.started_at_utc != startedAt || !journal.stages.Select(s => s.name).SequenceEqual(profile.stages.Select(s => s.name)))
++            throw new ExecutionHeldException("scientific_journal_binding_mismatch");
++    }
++
++    private async Task<List<object>> MaterializeAsync(INPUT_MANIFEST_DTO manifest, ScientificProfile profile, string work, CancellationToken ct)
++    {
++        long compressed = 0, expanded = 0;
++        foreach (var file in manifest.files) {
++            if (file.s3.size_bytes < 1 || file.s3.size_bytes > profile.maximum_input_bytes - compressed) throw new InvalidOperationException("scientific_input_budget_exceeded");
++            compressed += file.s3.size_bytes;
++        }
++        if (new DriveInfo(Path.GetPathRoot(work)!).AvailableFreeSpace < profile.minimum_free_disk_bytes + profile.maximum_output_set_bytes + compressed)
++            throw new InvalidOperationException("scientific_scratch_budget_unavailable");
++        var bindings = new List<object>();
++        var pairedHeaders = new Dictionary<(int, int), string>();
++        foreach (var file in manifest.files.OrderBy(f => f.group_number).ThenBy(f => f.part_number).ThenBy(f => f.read_number)) {
++            var relative = "inputs/" + file.file_id + (file.compression == "gzip" ? ".fastq.gz" : ".fastq");
++            var path = SafePath.Child(work, relative);
++            if (File.Exists(path)) await RequireLocalAsync(path, file.s3.sha256, file.s3.size_bytes, ct);
++            else await storage.MaterializeAsync(file.s3, path, profile.maximum_input_bytes, ct);
++            var checkedFile = await ValidateFastqAsync(path, file.compression, file.read_count, profile.maximum_expanded_input_bytes - expanded, ct);
++            expanded += checkedFile.Size;
++            if (manifest.read_layout == "PairedEnd") {
++                var key = (file.group_number, file.part_number);
++                if (pairedHeaders.TryGetValue(key, out var headers) && headers != checkedFile.HeadersHash) throw new InvalidOperationException("scientific_paired_headers_mismatch");
++                pairedHeaders[key] = checkedFile.HeadersHash;
++            }
++            bindings.Add(new { source = file, local_path = path, expanded_size_bytes = checkedFile.Size, read_identifiers_sha256 = checkedFile.HeadersHash });
++        }
++        foreach (var pair in manifest.files.GroupBy(f => (f.group_number, f.part_number)))
++            if (manifest.read_layout == "PairedEnd" && (pair.Count() != 2 || pair.Select(f => f.read_count).Distinct().Count() != 1))
++                throw new InvalidOperationException("scientific_paired_read_count_mismatch");
++        foreach (var parts in manifest.files.GroupBy(f => (f.group_number, f.read_number)))
++            if (!parts.Select(f => f.part_number).Order().SequenceEqual(Enumerable.Range(1, parts.Count())))
++                throw new InvalidOperationException("scientific_part_sequence_incomplete");
++        return bindings;
++    }
++
++    internal static async Task<long> FastqAsync(string path, string compression, long expectedReads, long maximum, CancellationToken ct)
++        => (await ValidateFastqAsync(path, compression, expectedReads, maximum, ct)).Size;
++
++    private static async Task<(long Size, string HeadersHash)> ValidateFastqAsync(string path, string compression, long expectedReads, long maximum, CancellationToken ct)
++    {
++        await using var file = File.OpenRead(path);
++        await using Stream source = compression == "gzip" ? new GZipStream(file, CompressionMode.Decompress, leaveOpen: true) : file;
++        await using var bounded = new BoundedReadStream(source, maximum);
++        using var reader = new BoundedLineReader(new StreamReader(bounded, new UTF8Encoding(false, true), detectEncodingFromByteOrderMarks: false, bufferSize: 65536));
++        using var headers = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
++        long count = 0;
++        while (await reader.ReadLineAsync(ct) is { } header) {
++            var sequence = await reader.ReadLineAsync(ct); var plus = await reader.ReadLineAsync(ct); var quality = await reader.ReadLineAsync(ct);
++            if (!header.StartsWith('@') || sequence is null || sequence.Length == 0 || plus is null || !plus.StartsWith('+') || quality is null
++                || quality.Length != sequence.Length || sequence.Any(c => "ACGTUNacgtun".IndexOf(c) < 0) || quality.Any(c => c is < '!' or > '~'))
++                throw new InvalidOperationException("scientific_fastq_invalid");
++            if (++count > expectedReads) throw new InvalidOperationException("scientific_read_count_mismatch");
++            var identity = header.Split(' ', '\t')[0];
++            if (identity.EndsWith("/1", StringComparison.Ordinal) || identity.EndsWith("/2", StringComparison.Ordinal)) identity = identity[..^2];
++            headers.AppendData(Encoding.UTF8.GetBytes(identity + "\n"));
++        }
++        if (count != expectedReads) throw new InvalidOperationException("scientific_read_count_mismatch");
++        return (bounded.Total, Convert.ToHexString(headers.GetHashAndReset()).ToLowerInvariant());
++    }
++
++    private static async Task<List<PublishedArtifact>> CollectAsync(ScientificProfile profile, START_COMMAND_DTO start, INPUT_MANIFEST_DTO manifest,
++        string work, ExecutionJournal journal, CancellationToken ct)
++    {
++        long retained = 0;
++        foreach (var file in Directory.EnumerateFiles(work, "*", new EnumerationOptions { RecurseSubdirectories = true, AttributesToSkip = FileAttributes.ReparsePoint })) {
++            long size = new FileInfo(file).Length;
++            if (size > profile.maximum_workspace_bytes - retained) throw new InvalidOperationException("scientific_publication_workspace_budget_exceeded");
++            retained += size;
++        }
++        if (profile.maximum_output_set_bytes > profile.maximum_workspace_bytes - retained
++            || new DriveInfo(Path.GetPathRoot(work)!).AvailableFreeSpace < profile.minimum_free_disk_bytes + profile.maximum_output_set_bytes)
++            throw new InvalidOperationException("scientific_publication_workspace_budget_exceeded");
++        var report = SafePath.Child(work, "native/provenance-report.json");
++        var reportBytes = Encoding.UTF8.GetBytes(journal.provenance_report_json!);
++        if (File.Exists(report)) await RequireLocalAsync(report, JsonTools.Sha256Hex(reportBytes), reportBytes.Length, ct);
++        else DurableFile.Write(report, journal.provenance_report_json!);
++        var result = new List<PublishedArtifact>(); long total = 0;
++        foreach (var output in profile.outputs.Append(new ScientificOutput { role = "provenance_report", path = "provenance-report.json", format = "JSON" })) {
++            var source = SafePath.Child(SafePath.Child(work, "native"), output.path);
++            var size = new FileInfo(source).Length;
++            if (size < 1 || size > profile.maximum_output_file_bytes || size > profile.maximum_output_set_bytes - total)
++                throw new InvalidOperationException("scientific_output_budget_exceeded");
++            await ValidateOutputAsync(source, output.format, ct); total += size;
++            var id = JsonTools.NewGuidString();
++            var extension = output.format switch { "FASTA" => ".fasta", "JSON" => ".json", "TSV" => ".tsv", "CSV" => ".csv", _ => ".txt" };
++            var relative = "publication/" + id + extension;
++            var target = SafePath.Child(work, relative);
++            using (var input = File.OpenRead(source))
++            using (var copy = new FileStream(target, FileMode.CreateNew, FileAccess.Write, FileShare.None)) { await input.CopyToAsync(copy, ct); copy.Flush(true); }
++            if (!OperatingSystem.IsWindows()) File.SetUnixFileMode(target, UnixFileMode.UserRead);
++            using var hashInput = File.OpenRead(target);
++            var hash = Convert.ToHexString(await SHA256.HashDataAsync(hashInput, ct)).ToLowerInvariant();
++            result.Add(new() { path = relative, sha256 = hash, size_bytes = size,
++                artifact = new() { artifact_id = id, role = output.role, format = output.format, file_name = output.role + extension } });
++        }
++        return result;
++    }
++
++    internal static async Task ValidateOutputAsync(string path, string format, CancellationToken ct)
++    {
++        if (format == "JSON") {
++            await using var json = File.OpenRead(path); using var document = await JsonDocument.ParseAsync(json, new() { MaxDepth = 48 }, ct);
++            RejectDiagnostic(document.RootElement); return;
++        }
++        using var reader = new BoundedLineReader(new StreamReader(path, new UTF8Encoding(false, true)));
++        bool header = false, bases = false, anyInformativeBase = false; int columns = 0, lines = 0;
++        while (await reader.ReadLineAsync(ct) is { } line) {
++            lines++;
++            if (line.Contains("SIMULATED", StringComparison.OrdinalIgnoreCase) || line.Contains("placeholder", StringComparison.OrdinalIgnoreCase) || line.Any(c => char.IsControl(c) && c != '\t'))
++                throw new InvalidOperationException("scientific_placeholder_or_invalid_text");
++            if (format == "FASTA") {
++                if (line.StartsWith('>')) { if (header && !bases || line.Length < 2) throw new InvalidOperationException("scientific_fasta_invalid"); header = true; bases = false; }
++                else { if (!header || line.Length == 0 || line.Any(c => "ACGTURYSWKMBDHVNacgturyswkmbdhvn".IndexOf(c) < 0)) throw new InvalidOperationException("scientific_fasta_invalid"); bases = true; anyInformativeBase |= line.Any(c => "ACGTUacgtu".Contains(c)); }
++            } else if (format is "TSV" or "CSV") {
++                // CSV is deliberately limited to unquoted records; a qualified quoted CSV parser needs explicit scope.
++                if (format == "CSV" && line.Contains('"')) throw new InvalidOperationException("scientific_csv_quoted_format_not_qualified");
++                int count = line.Split(format == "TSV" ? '\t' : ',').Length;
++                if (count < 2 || columns != 0 && columns != count) throw new InvalidOperationException("scientific_table_invalid"); columns = count;
++            }
++        }
++        if (lines == 0 || format == "FASTA" && (!header || !bases || !anyInformativeBase)) throw new InvalidOperationException("scientific_output_incomplete");
++    }
++
++    private static void RejectDiagnostic(JsonElement value)
++    {
++        if (value.ValueKind == JsonValueKind.Object) foreach (var property in value.EnumerateObject()) {
++            if (property.Name == "simulated" && property.Value.ValueKind == JsonValueKind.True
++                || property.Name == "scientific_use" && property.Value.ValueKind == JsonValueKind.False)
++                throw new InvalidOperationException("scientific_diagnostic_output_rejected");
++            RejectDiagnostic(property.Value);
++        }
++        else if (value.ValueKind == JsonValueKind.Array) foreach (var item in value.EnumerateArray()) RejectDiagnostic(item);
++        else if (value.ValueKind == JsonValueKind.String && value.GetString()!.Contains("_placeholder", StringComparison.OrdinalIgnoreCase))
++            throw new InvalidOperationException("scientific_diagnostic_output_rejected");
++    }
++
++    internal static PROVENANCE_DTO Provenance(ScientificProfile profile) => new() {
++        engine = profile.engine.name, engine_version = profile.engine.version,
++        tools = profile.tools.Prepend(profile.engine).Select(t => new PROVENANCE_TOOL_DTO { name = t.name, version = t.version }).ToList(),
++        reference_data = profile.references.Select(r => new REFERENCE_DATA_DTO { name = r.name, version = r.version, sha256 = r.sha256 }).ToList()
++    };
++
++    internal static async Task RequireLocalAsync(string path, string hash, long size, CancellationToken ct)
++    {
++        SafePath.NoLinks(path); using var input = File.OpenRead(path);
++        if (input.Length != size || Convert.ToHexString(await SHA256.HashDataAsync(input, ct)).ToLowerInvariant() != hash)
++            throw new ExecutionHeldException("scientific_local_bytes_changed");
++    }
++
++    private static string ContentType(string format) => format == "JSON" ? "application/json" : "text/plain";
++}
++
++// Bound a malformed line while reading buffered chunks, before allocating an unbounded string.
++internal sealed class BoundedLineReader(StreamReader reader) : IDisposable
++{
++    private readonly char[] buffer = new char[8192];
++    private int position, count;
++    internal async Task<string?> ReadLineAsync(CancellationToken ct)
++    {
++        ct.ThrowIfCancellationRequested();
++        var line = new StringBuilder();
++        while (true) {
++            if (position == count) { count = await reader.ReadAsync(buffer.AsMemory(), ct); position = 0; }
++            if (count == 0) return line.Length == 0 ? null : line.ToString().TrimEnd('\r');
++            int end = Array.IndexOf(buffer, '\n', position, count - position);
++            int take = (end < 0 ? count : end) - position;
++            if (line.Length + take > 1_000_000) throw new InvalidOperationException("scientific_line_limit_exceeded");
++            line.Append(buffer, position, take); position += take;
++            if (end >= 0) { position++; return line.ToString().TrimEnd('\r'); }
++        }
++    }
++    public void Dispose() => reader.Dispose();
++}
++
++internal sealed class BoundedReadStream(Stream inner, long maximum) : Stream
++{
++    internal long Total { get; private set; }
++    public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken ct = default) {
++        int count = await inner.ReadAsync(buffer[..(int)Math.Min(buffer.Length, Math.Max(1, maximum - Total + 1))], ct);
++        Total += count; if (Total > maximum) throw new InvalidOperationException("scientific_expansion_budget_exceeded"); return count;
++    }
++    public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
++    public override bool CanRead => true; public override bool CanSeek => false; public override bool CanWrite => false;
++    public override long Length => throw new NotSupportedException(); public override long Position { get => Total; set => throw new NotSupportedException(); }
++    public override void Flush() => throw new NotSupportedException(); public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
++    public override void SetLength(long length) => throw new NotSupportedException(); public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
++}
+diff --git a/apps/pseq_server/dps/src/ScientificProcess.cs b/apps/pseq_server/dps/src/ScientificProcess.cs
+new file mode 100644
+index 00000000..88dd20cc
+--- /dev/null
++++ b/apps/pseq_server/dps/src/ScientificProcess.cs
+@@ -0,0 +1,209 @@
++using System.Diagnostics;
++using System.Runtime.InteropServices;
++
++namespace Dps;
++
++internal sealed class ExecutionHeldException(string code) : Exception(code);
++internal sealed class ScientificResourceException : Exception;
++
++internal sealed class StageLaunch
++{
++    public string nonce = "";
++    public string workspace = "";
++    public int index;
++    public ScientificProfile profile = new();
++}
++
++internal sealed class StageOwner
++{
++    public string nonce = "";
++    public int pid;
++    public long process_start_ticks;
++    public string boot_id = "";
++}
++
++internal sealed class StageResult
++{
++    public string nonce = "";
++    public int exit_code;
++    public string started_at_utc = "";
++    public string stopped_at_utc = "";
++    public string? fenced_at_utc;
++}
++
++// Each native stage gets its own session. Recovery never reruns an in-flight stage.
++internal static class ScientificProcess
++{
++    [DllImport("libc", SetLastError = true)] private static extern int setsid();
++    [DllImport("libc", SetLastError = true)] private static extern int kill(int pid, int signal);
++
++    internal static string StagePath(string workspace, int index, string suffix) => SafePath.Child(workspace, $"stage-{index:D2}.{suffix}");
++
++    internal static async Task<StageResult> RunAsync(StageLaunch launch, CancellationToken ct)
++    {
++        ct.ThrowIfCancellationRequested();
++        if (!OperatingSystem.IsLinux()) throw new InvalidOperationException("Scientific execution requires the qualified Linux service.");
++        var launchPath = StagePath(launch.workspace, launch.index, "launch.json");
++        DurableFile.Write(launchPath, JsonTools.Serialize(launch));
++        var executable = Environment.ProcessPath ?? throw new InvalidOperationException("Worker executable is unavailable.");
++        if (Path.GetFileNameWithoutExtension(executable) is not ("dotnet" or "dps"))
++            executable = Path.GetFullPath(Path.Combine(RuntimeEnvironment.GetRuntimeDirectory(), "..", "..", "..", "dotnet"));
++        var info = new ProcessStartInfo(executable) { UseShellExecute = false, WorkingDirectory = launch.workspace };
++        if (Path.GetFileNameWithoutExtension(executable) == "dotnet") info.ArgumentList.Add(typeof(ScientificProcess).Assembly.Location);
++        info.ArgumentList.Add("--scientific-stage"); info.ArgumentList.Add(launchPath); info.ArgumentList.Add(launch.nonce);
++        // No broker keys, AWS keys, certificate passwords or ambient scientific data paths.
++        info.Environment.Clear();
++        using var process = Process.Start(info) ?? throw new InvalidOperationException("Stage host did not start.");
++        var startTicks = ProcessStartTicks(process.Id);
++        using var limits = CancellationTokenSource.CreateLinkedTokenSource(ct);
++        bool exceeded = false;
++        var monitor = MonitorAsync();
++        try { await process.WaitForExitAsync(limits.Token); }
++        catch (OperationCanceledException) {
++            SignalOwned(process, launch, startTicks, 15);
++            try { await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(10)); }
++            catch (TimeoutException) { SignalOwned(process, launch, startTicks, 9); await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(10)); }
++            await FenceGroupAsync(launch, process.Id, startTicks);
++            if (exceeded) throw new ScientificResourceException();
++            throw;
++        }
++        finally { limits.Cancel(); await monitor; }
++        await FenceGroupAsync(launch, process.Id, startTicks);
++        var resultPath = StagePath(launch.workspace, launch.index, "result.json");
++        if (!File.Exists(resultPath)) throw new ExecutionHeldException("scientific_stage_result_missing");
++        var result = JsonTools.Deserialize<StageResult>(File.ReadAllText(resultPath));
++        if (result is null || result.nonce != launch.nonce || process.ExitCode != result.exit_code)
++            throw new ExecutionHeldException("scientific_stage_result_ambiguous");
++        result.fenced_at_utc = JsonTools.UtcNowString();
++        DurableFile.Write(StagePath(launch.workspace, launch.index, "fence.json"), JsonTools.Serialize(new {
++            launch.nonce, pid = process.Id, process_start_ticks = startTicks, result.fenced_at_utc
++        }));
++        return result;
++
++        async Task MonitorAsync()
++        {
++            try {
++                while (!limits.IsCancellationRequested) {
++                    long bytes = 0;
++                    foreach (var file in Directory.EnumerateFiles(launch.workspace, "*", new EnumerationOptions { RecurseSubdirectories = true, AttributesToSkip = FileAttributes.ReparsePoint })) {
++                        long size; try { size = new FileInfo(file).Length; } catch (FileNotFoundException) { continue; }
++                        if (size > launch.profile.maximum_workspace_bytes - bytes) { exceeded = true; break; } bytes += size;
++                    }
++                    if (exceeded || new DriveInfo(Path.GetPathRoot(launch.workspace)!).AvailableFreeSpace < launch.profile.minimum_free_disk_bytes) {
++                        exceeded = true; limits.Cancel(); return;
++                    }
++                    await Task.Delay(1000, limits.Token);
++                }
++            } catch (OperationCanceledException) when (limits.IsCancellationRequested) { }
++            catch { exceeded = true; limits.Cancel(); }
++        }
++    }
++
++    private static StageOwner Owner(StageLaunch launch, int pid, long startTicks)
++    {
++        var path = StagePath(launch.workspace, launch.index, "owner.json");
++        if (!File.Exists(path)) throw new ExecutionHeldException("scientific_process_ownership_missing");
++        var owner = JsonTools.Deserialize<StageOwner>(File.ReadAllText(path));
++        if (owner is null || owner.nonce != launch.nonce || owner.pid != pid || owner.process_start_ticks != startTicks
++            || owner.boot_id != File.ReadAllText("/proc/sys/kernel/random/boot_id").Trim())
++            throw new ExecutionHeldException("scientific_process_ownership_ambiguous");
++        return owner;
++    }
++
++    private static void SignalOwned(Process process, StageLaunch launch, long ticks, int signal)
++    {
++        // Before owner publication the host has not launched the engine. Never signal a stale PID.
++        if (!File.Exists(StagePath(launch.workspace, launch.index, "owner.json"))) {
++            if (!process.HasExited) process.Kill(entireProcessTree: true);
++            return;
++        }
++        Owner(launch, process.Id, ticks);
++        if (kill(-process.Id, signal) != 0 && Marshal.GetLastPInvokeError() != 3)
++            throw new ExecutionHeldException("scientific_process_fence_failed");
++    }
++
++    private static long ProcessStartTicks(int pid)
++    {
++        var text = File.ReadAllText($"/proc/{pid}/stat");
++        return long.Parse(text[(text.LastIndexOf(')') + 2)..].Split(' ')[19], System.Globalization.CultureInfo.InvariantCulture);
++    }
++
++    private static async Task FenceGroupAsync(StageLaunch launch, int pid, long ticks)
++    {
++        Owner(launch, pid, ticks);
++        if (kill(-pid, 9) != 0 && Marshal.GetLastPInvokeError() != 3)
++            throw new ExecutionHeldException("scientific_process_fence_failed");
++        // Zombies have stopped and cannot compute. Live residual members require reconciliation.
++        for (int poll = 0; poll < 100; poll++) {
++          bool live = false;
++          foreach (var directory in Directory.EnumerateDirectories("/proc")) {
++            if (!int.TryParse(Path.GetFileName(directory), out _)) continue;
++            try {
++                var text = File.ReadAllText(Path.Combine(directory, "stat"));
++                var fields = text[(text.LastIndexOf(')') + 2)..].Split(' ');
++                if (fields[0] != "Z" && int.Parse(fields[2]) == pid) live = true;
++            } catch (IOException) { } catch (UnauthorizedAccessException) { }
++          }
++          if (!live) return;
++          await Task.Delay(50);
++        }
++        throw new ExecutionHeldException("scientific_process_group_still_running");
++    }
++
++    // Invoked before configuration loading; this host has no MQTT client or ledger writer.
++    internal static async Task<int> HostAsync(string launchPath, string nonce)
++    {
++        if (!OperatingSystem.IsLinux() || setsid() != Environment.ProcessId) return 125;
++        SafePath.NoLinks(launchPath);
++        var launch = JsonTools.Deserialize<StageLaunch>(File.ReadAllText(launchPath)) ?? throw new InvalidOperationException();
++        if (launch.nonce != nonce || launchPath != StagePath(launch.workspace, launch.index, "launch.json")) return 125;
++        var profile = launch.profile;
++        if (profile.ReadinessReason() is not null || launch.index < 0 || launch.index >= profile.stages.Count) return 125;
++        var owner = new StageOwner { nonce = nonce, pid = Environment.ProcessId,
++            process_start_ticks = ProcessStartTicks(Environment.ProcessId),
++            boot_id = File.ReadAllText("/proc/sys/kernel/random/boot_id").Trim() };
++        DurableFile.Write(StagePath(launch.workspace, launch.index, "owner.json"), JsonTools.Serialize(owner));
++        using var cancelled = new CancellationTokenSource(TimeSpan.FromSeconds(profile.maximum_run_seconds));
++        using var term = PosixSignalRegistration.Create(PosixSignal.SIGTERM, c => { c.Cancel = true; cancelled.Cancel(); });
++        using var interrupt = PosixSignalRegistration.Create(PosixSignal.SIGINT, c => { c.Cancel = true; cancelled.Cancel(); });
++        var work = SafePath.Child(launch.workspace, "native");
++        var info = new ProcessStartInfo(profile.engine.path) { UseShellExecute = false, WorkingDirectory = work,
++            RedirectStandardOutput = true, RedirectStandardError = true };
++        info.Environment.Clear();
++        info.Environment["PATH"] = string.Join(':', profile.tools.Append(profile.engine).Select(p => Path.GetDirectoryName(p.path)).Distinct());
++        info.Environment["HOME"] = work;
++        info.Environment["TMPDIR"] = SafePath.Child(launch.workspace, "scratch");
++        info.Environment["DPS_BINDINGS_PATH"] = SafePath.Child(launch.workspace, "bindings.json");
++        info.Environment["DPS_PARAMETERS_PATH"] = SafePath.Child(launch.workspace, "parameters.json");
++        foreach (var argument in profile.stages[launch.index].arguments) info.ArgumentList.Add(argument
++            .Replace("{bindings}", info.Environment["DPS_BINDINGS_PATH"], StringComparison.Ordinal)
++            .Replace("{parameters}", info.Environment["DPS_PARAMETERS_PATH"], StringComparison.Ordinal)
++            .Replace("{workspace}", work, StringComparison.Ordinal));
++        var result = new StageResult { nonce = nonce, started_at_utc = JsonTools.UtcNowString() };
++        using var process = Process.Start(info) ?? throw new InvalidOperationException();
++        Task stdout = CopyBoundedAsync(process.StandardOutput.BaseStream, StagePath(launch.workspace, launch.index, "stdout.log"), profile.diagnostic_bytes_per_stream);
++        Task stderr = CopyBoundedAsync(process.StandardError.BaseStream, StagePath(launch.workspace, launch.index, "stderr.log"), profile.diagnostic_bytes_per_stream);
++        try { await process.WaitForExitAsync(cancelled.Token); result.exit_code = process.ExitCode; }
++        catch (OperationCanceledException) {
++            if (!process.HasExited) process.Kill(entireProcessTree: true);
++            await process.WaitForExitAsync(); result.exit_code = 124;
++        }
++        try { await Task.WhenAll(stdout, stderr).WaitAsync(TimeSpan.FromSeconds(5)); }
++        catch (TimeoutException) { result.exit_code = 125; }
++        result.stopped_at_utc = JsonTools.UtcNowString();
++        DurableFile.Write(StagePath(launch.workspace, launch.index, "result.json"), JsonTools.Serialize(result));
++        return result.exit_code;
++    }
++
++    internal static async Task CopyBoundedAsync(Stream input, string path, int maximum)
++    {
++        using var output = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.Read);
++        if (!OperatingSystem.IsWindows()) File.SetUnixFileMode(path, UnixFileMode.UserRead | UnixFileMode.UserWrite);
++        var buffer = new byte[65536]; int total = 0, count;
++        while ((count = await input.ReadAsync(buffer)) != 0) {
++            int keep = Math.Min(count, maximum - total);
++            if (keep > 0) { await output.WriteAsync(buffer.AsMemory(0, keep)); total += keep; }
++        }
++        output.Flush(true);
++    }
++}
+diff --git a/apps/pseq_server/dps_test.tests/ScientificExecutionTests.cs b/apps/pseq_server/dps_test.tests/ScientificExecutionTests.cs
+new file mode 100644
+index 00000000..f47de614
+--- /dev/null
++++ b/apps/pseq_server/dps_test.tests/ScientificExecutionTests.cs
+@@ -0,0 +1,283 @@
++using Dps;
++using Microsoft.VisualStudio.TestTools.UnitTesting;
++using System.Net;
++using System.Text;
++using System.Text.Json;
++
++namespace DpsTest.UnitTests;
++
++[TestClass]
++public sealed class ScientificExecutionTests
++{
++    [TestMethod]
++    public async Task MaterializationUsesPinnedVersionAndNeverPromotesWrongBytes()
++    {
++        using var fixture = new NativeFixture(false);
++        var source = fixture.Manifest.files[0].s3; var path = Path.Combine(fixture.Root, "materialized.fastq");
++        await fixture.Storage.MaterializeAsync(source, path, 1024, default);
++        Assert.AreEqual("@read\nACGT\n+\nIIII\n", await File.ReadAllTextAsync(path));
++        StringAssert.Contains(fixture.Objects.LastQuery!, "versionId=v1");
++        File.Delete(path); fixture.Objects.CorruptGet = true;
++        await Assert.ThrowsExceptionAsync<InvalidOperationException>(() => fixture.Storage.MaterializeAsync(source, path, 1024, default));
++        Assert.IsFalse(File.Exists(path)); Assert.AreEqual(0, Directory.GetFiles(fixture.Root, "*.part").Length);
++    }
++
++    [TestMethod]
++    public async Task FileUploadPersistsVersionBeforeVerificationAndUsesCreateOnlyStreamingContent()
++    {
++        using var fixture = new NativeFixture(false);
++        var path = Path.Combine(fixture.Root, "large.txt"); await File.WriteAllTextAsync(path, new string('A', 200_000));
++        S3_OBJECT_DTO? saved = null; fixture.Objects.CorruptGet = true;
++        await Assert.ThrowsExceptionAsync<InvalidOperationException>(() => fixture.Storage.PutFileAndVerifyAsync("fixture-bucket", "us-east-2", "attempt/large", path,
++            "text/plain", default, address => saved = address));
++        Assert.IsNotNull(saved); Assert.AreEqual("v1", saved.version_id); Assert.AreEqual(200_000L, saved.size_bytes);
++        Assert.IsTrue(fixture.Objects.CreateOnly); Assert.IsTrue(fixture.Objects.Streamed);
++        fixture.Objects.CorruptGet = false; await fixture.Storage.VerifyObjectAsync(saved, default);
++        Assert.AreEqual(1, fixture.Objects.PutCount);
++    }
++
++    [TestMethod]
++    public async Task LinuxNativeBindingPublicationAndRestartExecuteExactlyOnceWithStableArtifacts()
++    {
++        if (!OperatingSystem.IsLinux()) { Assert.Inconclusive("Linux process-group fixture."); return; }
++        using var fixture = new NativeFixture(true);
++        var completed = await fixture.Execution.ExecuteAsync(fixture.Start, fixture.Manifest, fixture.Started, false, default);
++        var workspace = ScientificExecution.Workspace(fixture.Config.WorkspacePath, fixture.Start.job_id);
++        Assert.AreEqual("1", (await File.ReadAllTextAsync(Path.Combine(workspace, "native", "executions.txt"))).Trim());
++        var journalJson = await File.ReadAllTextAsync(Path.Combine(workspace, "execution.json"));
++        var journal = JsonTools.Deserialize<ExecutionJournal>(journalJson)!;
++        Assert.AreEqual("Published", journal.phase); Assert.AreEqual(2, journal.artifacts.Count);
++        using var manifest = JsonDocument.Parse(journal.output_manifest_json!);
++        PhaenoPortal.App.Features.LabOperations.Services.DpsContract.Validate("output_manifest", manifest.RootElement);
++        Assert.AreEqual(fixture.Profile.engine.version, manifest.RootElement.GetProperty("provenance").GetProperty("engine_version").GetString());
++        Assert.AreEqual(fixture.Profile.references[0].sha256, manifest.RootElement.GetProperty("provenance").GetProperty("reference_data")[0].GetProperty("sha256").GetString());
++        var before = fixture.Objects.PutCount;
++        var resumed = await fixture.Execution.ExecuteAsync(fixture.Start, fixture.Manifest, fixture.Started, true, default);
++        Assert.AreEqual(JsonTools.Serialize(completed.Manifest), JsonTools.Serialize(resumed.Manifest)); Assert.AreEqual(completed.StoppedAt, resumed.StoppedAt);
++        Assert.AreEqual(before, fixture.Objects.PutCount); Assert.AreEqual(journalJson, await File.ReadAllTextAsync(Path.Combine(workspace, "execution.json")));
++        Assert.AreEqual("1", (await File.ReadAllTextAsync(Path.Combine(workspace, "native", "executions.txt"))).Trim());
++    }
++
++    [TestMethod]
++    public async Task LinuxInterruptedStageIsHeldWithoutLaunchingNativeOrChangingJournal()
++    {
++        if (!OperatingSystem.IsLinux()) { Assert.Inconclusive("Linux execution fixture."); return; }
++        using var fixture = new NativeFixture(true);
++        var workspace = ScientificExecution.Workspace(fixture.Config.WorkspacePath, fixture.Start.job_id); Directory.CreateDirectory(workspace);
++        var journal = new ExecutionJournal { job_id = fixture.Start.job_id, start_sha256 = JsonTools.CanonicalHash(JsonTools.Serialize(fixture.Start)),
++            input_manifest_sha256 = fixture.Start.input_manifest.sha256, profile_sha256 = fixture.Profile.DefinitionHash(), started_at_utc = fixture.Started,
++            stages = [new() { name = "assemble", state = "InFlight", nonce = Guid.NewGuid().ToString("D") }] };
++        var path = Path.Combine(workspace, "execution.json"); var before = JsonTools.Serialize(journal); DurableFile.Write(path, before);
++        await Assert.ThrowsExceptionAsync<ExecutionHeldException>(() => fixture.Execution.ExecuteAsync(fixture.Start, fixture.Manifest, fixture.Started, true, default));
++        Assert.AreEqual(before, await File.ReadAllTextAsync(path)); Assert.AreEqual(0, fixture.Objects.PutCount);
++        Assert.IsFalse(Directory.Exists(Path.Combine(workspace, "native")));
++    }
++
++    [DataTestMethod]
++    [DataRow(1)]
++    [DataRow(2)]
++    [DataRow(3)]
++    public async Task LinuxOutputVerificationRetryReusesEveryWrittenVersionAndNeverRepeatsNative(int failedPut)
++    {
++        if (!OperatingSystem.IsLinux()) { Assert.Inconclusive("Linux publication recovery fixture."); return; }
++        using var fixture = new NativeFixture(true); fixture.Objects.FailVerificationAtPut = failedPut;
++        await Assert.ThrowsExceptionAsync<InvalidOperationException>(() => fixture.Execution.ExecuteAsync(fixture.Start, fixture.Manifest, fixture.Started, false, default));
++        Assert.IsTrue(ScientificExecution.RequiresHold(fixture.Config.WorkspacePath, fixture.Start.job_id));
++        var result = await fixture.Execution.ExecuteAsync(fixture.Start, fixture.Manifest, fixture.Started, true, default);
++        Assert.AreEqual(3, fixture.Objects.PutCount, "A known immutable version was uploaded twice.");
++        var work = ScientificExecution.Workspace(fixture.Config.WorkspacePath, fixture.Start.job_id);
++        Assert.AreEqual("1", (await File.ReadAllTextAsync(Path.Combine(work, "native", "executions.txt"))).Trim());
++        Assert.IsNotNull(result.Manifest.version_id);
++    }
++
++    [TestMethod]
++    public async Task LinuxNativeFailureRetainsBoundedDiagnosticsAndHasNoScientificOutputs()
++    {
++        if (!OperatingSystem.IsLinux()) { Assert.Inconclusive("Linux execution fixture."); return; }
++        using var fixture = new NativeFixture(true, "fail");
++        var error = await Assert.ThrowsExceptionAsync<InvalidOperationException>(() => fixture.Execution.ExecuteAsync(fixture.Start, fixture.Manifest, fixture.Started, false, default));
++        Assert.AreEqual("scientific_native_stage_failed", error.Message); Assert.AreEqual(0, fixture.Objects.PutCount);
++        var work = ScientificExecution.Workspace(fixture.Config.WorkspacePath, fixture.Start.job_id);
++        Assert.IsTrue(new FileInfo(Path.Combine(work, "stage-00.stderr.log")).Length <= fixture.Profile.diagnostic_bytes_per_stream);
++        var journal = JsonTools.Deserialize<ExecutionJournal>(await File.ReadAllTextAsync(Path.Combine(work, "execution.json")))!;
++        Assert.AreEqual("Failed", journal.stages[0].state); Assert.IsNotNull(journal.stopped_at_utc);
++        Assert.AreEqual(17, journal.stages[0].result!.exit_code);
++    }
++
++    [TestMethod]
++    public async Task LinuxCancellationFencesNativeChildGroupBeforeReturning()
++    {
++        if (!OperatingSystem.IsLinux()) { Assert.Inconclusive("Linux process-group fixture."); return; }
++        using var fixture = new NativeFixture(true, "wait"); using var ct = new CancellationTokenSource();
++        var running = fixture.Execution.ExecuteAsync(fixture.Start, fixture.Manifest, fixture.Started, false, ct.Token);
++        var work = ScientificExecution.Workspace(fixture.Config.WorkspacePath, fixture.Start.job_id);
++        var childFile = Path.Combine(work, "native", "child.pid");
++        for (int i = 0; i < 200 && !File.Exists(childFile) && !running.IsCompleted; i++) await Task.Delay(25);
++        Assert.IsTrue(File.Exists(childFile), "Native test child did not start.");
++        var child = int.Parse(await File.ReadAllTextAsync(childFile)); ct.Cancel();
++        try { await running; Assert.Fail("Cancelled native work returned success."); } catch (OperationCanceledException) { }
++        if (File.Exists($"/proc/{child}/stat")) {
++            var stat = await File.ReadAllTextAsync($"/proc/{child}/stat"); Assert.AreEqual('Z', stat[stat.LastIndexOf(')') + 2]);
++        }
++        var journal = JsonTools.Deserialize<ExecutionJournal>(await File.ReadAllTextAsync(Path.Combine(work, "execution.json")))!;
++        Assert.AreEqual("Cancelled", journal.stages[0].state); Assert.AreEqual(0, fixture.Objects.PutCount);
++    }
++
++    [TestMethod]
++    public async Task LinuxControlledWorkerShutdownWaitsForNativeStopAndPreservesBothReceipts()
++    {
++        if (!OperatingSystem.IsLinux()) { Assert.Inconclusive("Linux worker shutdown fixture."); return; }
++        using var fixture = new NativeFixture(true, "wait");
++        fixture.Manifest.created_at_utc = fixture.Started;
++        var manifestBytes = Encoding.UTF8.GetBytes(JsonTools.Serialize(fixture.Manifest));
++        fixture.Start.input_manifest.sha256 = JsonTools.Sha256Hex(manifestBytes); fixture.Start.input_manifest.size_bytes = manifestBytes.Length;
++        fixture.Objects.Data[fixture.Start.input_manifest.key] = manifestBytes;
++        using var ledger = new DpsLedger(Path.Combine(fixture.Root, "ledger.json"));
++        var receipts = new List<COMMAND_RECEIPT_DTO> { new() { receipt_id = "original-receipt-one" }, new() { receipt_id = "original-receipt-two" } };
++        var before = JsonTools.Serialize(receipts);
++        ledger.Update(document => document.jobs[fixture.Start.job_id] = new() { job_id = fixture.Start.job_id, provider_job_id = "dps-" + fixture.Start.job_id,
++            status = "Accepted", start = fixture.Start, command_receipts = receipts });
++        var runner = new DpsJobRunner(fixture.Config, ledger, fixture.Storage, _ => Task.CompletedTask, _ => { });
++        runner.StartPendingJobs();
++        var work = ScientificExecution.Workspace(fixture.Config.WorkspacePath, fixture.Start.job_id);
++        var childFile = Path.Combine(work, "native", "child.pid");
++        try {
++            for (int i = 0; i < 200 && !File.Exists(childFile); i++) await Task.Delay(25);
++            Assert.IsTrue(File.Exists(childFile), "Worker did not start its isolated native child.");
++        } finally { await runner.StopAsync(); }
++        var job = ledger.Read(d => d.jobs[fixture.Start.job_id]);
++        Assert.AreEqual("Terminated", job.status); Assert.AreEqual(before, JsonTools.Serialize(job.command_receipts));
++        Assert.AreEqual(1, job.events.Count(e => e.event_type == "Running")); Assert.AreEqual(1, job.events.Count(e => e.event_type == "Terminated"));
++        Assert.AreEqual(ScientificExecution.RecordedStop(fixture.Config.WorkspacePath, fixture.Start.job_id), job.events.Last().stopped_at_utc);
++        Assert.IsTrue(DateTimeOffset.Parse(job.events.Last().disposition_at_utc!) >= DateTimeOffset.Parse(job.events.Last().stopped_at_utc!));
++        StringAssert.Contains(job.events.Last().reason!, "Controlled DPS shutdown"); Assert.AreEqual(0, fixture.Objects.PutCount);
++    }
++
++    [TestMethod]
++    public async Task LinuxChangedDatasetOrUnapprovedParametersNeverStartNative()
++    {
++        if (!OperatingSystem.IsLinux()) { Assert.Inconclusive("Linux approved profile fixture."); return; }
++        using var fixture = new NativeFixture(true);
++        fixture.Start.recipe.parameters = JsonSerializer.SerializeToElement(new { threads = 99 });
++        Assert.IsNotNull(fixture.Config.Recipes.Validate(fixture.Start.recipe));
++        fixture.Manifest.files[0].s3.version_id = "unapproved-version";
++        await Assert.ThrowsExceptionAsync<InvalidOperationException>(() => fixture.Execution.ExecuteAsync(fixture.Start, fixture.Manifest, fixture.Started, false, default));
++        Assert.IsFalse(Directory.Exists(fixture.Config.WorkspacePath)); Assert.AreEqual(0, fixture.Objects.PutCount);
++    }
++
++    [TestMethod]
++    public async Task LinuxScratchLimitStopsNativeBeforeScientificPublication()
++    {
++        if (!OperatingSystem.IsLinux()) { Assert.Inconclusive("Linux resource fixture."); return; }
++        using var fixture = new NativeFixture(true, "scratch");
++        var error = await Assert.ThrowsExceptionAsync<InvalidOperationException>(() => fixture.Execution.ExecuteAsync(fixture.Start, fixture.Manifest, fixture.Started, false, default));
++        Assert.AreEqual("scientific_scratch_budget_exceeded", error.Message); Assert.AreEqual(0, fixture.Objects.PutCount);
++        var journal = JsonTools.Deserialize<ExecutionJournal>(await File.ReadAllTextAsync(Path.Combine(ScientificExecution.Workspace(fixture.Config.WorkspacePath, fixture.Start.job_id), "execution.json")))!;
++        Assert.AreEqual("Failed", journal.stages[0].state); Assert.IsNotNull(journal.stopped_at_utc);
++    }
++
++    [TestMethod]
++    public async Task LinuxMissingMultipartInputIsRejectedBeforeNativeStarts()
++    {
++        if (!OperatingSystem.IsLinux()) { Assert.Inconclusive("Linux input fixture."); return; }
++        using var fixture = new NativeFixture(true);
++        fixture.Manifest.files[0].part_number = 2;
++        fixture.Profile.approval!.dataset_sha256 = ScientificProfile.DatasetHash(fixture.Manifest);
++        var error = await Assert.ThrowsExceptionAsync<InvalidOperationException>(() => fixture.Execution.ExecuteAsync(fixture.Start, fixture.Manifest, fixture.Started, false, default));
++        Assert.AreEqual("scientific_part_sequence_incomplete", error.Message); Assert.AreEqual(0, fixture.Objects.PutCount);
++        Assert.IsFalse(File.Exists(Path.Combine(ScientificExecution.Workspace(fixture.Config.WorkspacePath, fixture.Start.job_id), "native", "executions.txt")));
++    }
++
++    private sealed class NativeFixture : IDisposable
++    {
++        internal readonly string Root = Path.Combine(Path.GetTempPath(), "dps-scientific-fixture-" + Guid.NewGuid().ToString("N"));
++        internal readonly DpsConfig Config;
++        internal readonly ScientificProfile Profile = new();
++        internal readonly INPUT_MANIFEST_DTO Manifest;
++        internal readonly START_COMMAND_DTO Start;
++        internal readonly ObjectHandler Objects = new();
++        internal readonly S3StorageClient Storage;
++        internal readonly ScientificExecution Execution;
++        internal readonly string Started = JsonTools.UtcNowString();
++
++        internal NativeFixture(bool native, string mode = "success")
++        {
++            Directory.CreateDirectory(Root);
++            Config = new() { Environment = "local", WorkspacePath = Path.Combine(Root, "attempts"), AllowFixtureS3 = true };
++            Storage = new(Objects, () => new() { AccessKeyId = "TEST-ONLY", SecretAccessKey = "TEST-ONLY" });
++            var bytes = Encoding.ASCII.GetBytes("@read\nACGT\n+\nIIII\n");
++            var address = new S3_OBJECT_DTO { bucket = "fixture-bucket", region = "us-east-2", key = "inputs/R1.fastq", version_id = "v1", sha256 = JsonTools.Sha256Hex(bytes), size_bytes = bytes.Length };
++            Objects.Data[address.key] = bytes;
++            Profile.parameters = JsonSerializer.SerializeToElement(new { threads = 1 });
++            Profile.runtime_identifier = System.Runtime.InteropServices.RuntimeInformation.RuntimeIdentifier;
++            var id = Guid.NewGuid().ToString("D");
++            var scope = new SCOPE_DTO { organization_id = Id(), commercial_order_id = Id(), lab_work_order_id = Id(), specimen_id = Id(), library_id = Id(), sequencing_batch_id = Id(), vendor_results_version = 1, fastq_set_id = Id(), fastq_set_version = 1, sequencing_run_number = 1 };
++            Manifest = new() { contract_version = DpsContract.Version, environment = "local", document_type = "input_manifest", job_id = id, scope = scope,
++                read_layout = "SingleEnd", recipe = new() { key = Profile.key, version = Profile.version, parameters = Profile.parameters, required_output_roles = ["assembly_output", "provenance_report"] },
++                files = [new() { file_id = Id(), sequencing_output_id = Id(), original_file_name = "original.fastq", stored_file_name = "original.fastq", group_number = 1, part_number = 1, read_number = 1, group_description = "TEST ONLY", compression = "none", read_count = 1, s3 = address }],
++                output_destination = new() { bucket = "fixture-bucket", region = "us-east-2", prefix = "attempt/outputs/" } };
++            Start = new() { job_id = id, command_id = Id(), environment = "local", data_folder = "s3://fixture-bucket/attempt/", recipe = Manifest.recipe,
++                input_manifest = new() { bucket = "fixture-bucket", region = "us-east-2", key = "attempt/input-manifest.json", version_id = "v1", sha256 = new string('a', 64), size_bytes = 100 } };
++            if (native && OperatingSystem.IsLinux()) {
++                string python = new FileInfo("/usr/bin/python3").ResolveLinkTarget(true)!.FullName;
++                var copiedPython = Path.Combine(Root, "python3"); File.Copy(python, copiedPython); File.SetUnixFileMode(copiedPython, UnixFileMode.UserRead | UnixFileMode.UserExecute);
++                Profile.tools = [Pin("python-fixture", copiedPython)];
++                var engine = Path.Combine(Root, "fixture-engine");
++                File.WriteAllText(engine, "#!" + copiedPython + "\n" + "import json,os,sys,time,subprocess\n" +
++                    "b=json.load(open(os.environ['DPS_BINDINGS_PATH']))\n" +
++                    "assert json.load(open(os.environ['DPS_PARAMETERS_PATH'])) == {'threads':1}\n" +
++                    "assert all(open(f['local_path']).read() == '@read\\nACGT\\n+\\nIIII\\n' for f in b['files'])\n" +
++                    "open('executions.txt','a').write('1\\n')\n" +
++                    (mode == "fail" ? "sys.stderr.write('private diagnostic\\n'*100000); sys.exit(17)\n" :
++                        mode == "wait" ? "p=subprocess.Popen(['/bin/sleep','60']); open('child.pid','w').write(str(p.pid)); time.sleep(60)\n" :
++                        mode == "scratch" ? "open('oversized-scratch','w').write('x'*1000000); time.sleep(60)\n" : "open('assembly.fasta','w').write('>transcript_1\\nACGTACGT\\n')\n"));
++                File.SetUnixFileMode(engine, UnixFileMode.UserRead | UnixFileMode.UserExecute);
++                var reference = Path.Combine(Root, "reference.fa"); File.WriteAllText(reference, ">TEST_ONLY\nACGT\n"); File.SetUnixFileMode(reference, UnixFileMode.UserRead);
++                var qc = Path.Combine(Root, "qc.json"); File.WriteAllText(qc, "{\"fixture_only\":true}"); File.SetUnixFileMode(qc, UnixFileMode.UserRead);
++                Profile.engine = Pin("fixture-engine", engine); Profile.references = [Pin("fixture-reference", reference)]; Profile.qc_criteria = Pin("fixture-QC", qc);
++                Profile.stages = [new() { name = "assemble", arguments = ["{bindings}"] }]; Profile.outputs = [new() { role = "assembly_output", path = "assembly.fasta", format = "FASTA" }];
++                Profile.supported_read_layouts = ["SingleEnd"]; Profile.enabled = true; Profile.maximum_run_seconds = 60; Profile.minimum_free_disk_bytes = 0;
++                if (mode == "scratch") { Profile.maximum_input_bytes = 1024; Profile.maximum_output_file_bytes = 4096; Profile.maximum_output_set_bytes = 8192; Profile.maximum_workspace_bytes = 65536; }
++                Profile.approval = new() { profile_sha256 = Profile.DefinitionHash(), dataset_sha256 = ScientificProfile.DatasetHash(Manifest), references_sha256 = Profile.ReferencesHash(), qc_criteria_sha256 = Profile.qc_criteria.sha256,
++                    dataset = Approval(), references = Approval(), scientific_qc = Approval() };
++                Config.Recipes.scientific_profiles.Add(Profile);
++            }
++            Execution = new(Config, Storage, _ => Task.CompletedTask);
++        }
++        private static string Id() => Guid.NewGuid().ToString("D");
++        private static ApprovalRecord Approval() => new() { approved_by = "ISOLATED TEST FIXTURE", approved_at_utc = "2026-01-01T00:00:00Z", evidence_id = "NOT A SCIENTIFIC APPROVAL" };
++        private static PinnedFile Pin(string name, string path) => new() { name = name, version = "TEST-ONLY-1", path = path, sha256 = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(path))).ToLowerInvariant() };
++        public void Dispose() {
++            foreach (var log in Directory.EnumerateFiles(Root, "*.stderr.log", SearchOption.AllDirectories)) {
++                using var reader = File.OpenText(log); var excerpt = new char[1000]; int count = reader.Read(excerpt, 0, excerpt.Length);
++                if (count > 0) Console.WriteLine("Synthetic fixture diagnostics: " + new string(excerpt, 0, count));
++            }
++            Storage.Dispose(); Directory.Delete(Root, true);
++        }
++    }
++
++    private sealed class ObjectHandler : HttpMessageHandler
++    {
++        internal readonly Dictionary<string, byte[]> Data = new(StringComparer.Ordinal);
++        internal bool CorruptGet, CreateOnly, Streamed;
++        internal string? LastQuery;
++        internal int PutCount;
++        internal int FailVerificationAtPut;
++        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
++        {
++            var key = Uri.UnescapeDataString(request.RequestUri!.AbsolutePath.TrimStart('/')); LastQuery = request.RequestUri.Query;
++            if (request.Method == HttpMethod.Put) {
++                PutCount++; CreateOnly = request.Headers.IfNoneMatch.Any(x => x.Tag == "*"); Streamed = request.Content is StreamContent;
++                if (Data.ContainsKey(key) && CreateOnly) return new(HttpStatusCode.PreconditionFailed);
++                Data[key] = await request.Content!.ReadAsByteArrayAsync(ct);
++                var put = new HttpResponseMessage(HttpStatusCode.OK); put.Headers.Add("x-amz-version-id", "v1"); return put;
++            }
++            var bytes = Data[key];
++            if (CorruptGet || FailVerificationAtPut > 0 && PutCount == FailVerificationAtPut) {
++                bytes = Encoding.ASCII.GetBytes("wrong bytes"); FailVerificationAtPut = 0;
++            }
++            var response = new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(bytes) };
++            response.Headers.Add("x-amz-version-id", "v1"); return response;
++        }
++    }
++}
+diff --git a/apps/pseq_server/dps_test.tests/ScientificReadinessTests.cs b/apps/pseq_server/dps_test.tests/ScientificReadinessTests.cs
+new file mode 100644
+index 00000000..4dd67968
+--- /dev/null
++++ b/apps/pseq_server/dps_test.tests/ScientificReadinessTests.cs
+@@ -0,0 +1,123 @@
++using Dps;
++using Microsoft.VisualStudio.TestTools.UnitTesting;
++using System.IO.Compression;
++using System.Text;
++using System.Text.Json;
++
++namespace DpsTest.UnitTests;
++
++[TestClass]
++public sealed class ScientificReadinessTests
++{
++    [TestMethod]
++    public void DefaultCatalogAdvertisesOnlyReservedSimulationAndRejectsUnknownScientificIdentity()
++    {
++        var catalog = DpsRecipeCatalog.Load(null);
++        Assert.AreEqual("pseq_data_assembler", catalog.Available().Single().key);
++        Assert.IsNotNull(catalog.Validate(new() { key = "pseq_scientific_assembly", version = "0.1.0", parameters = JsonSerializer.SerializeToElement(new { }) }));
++    }
++
++    [TestMethod]
++    public void EnablingProfileWithoutAllThreeBoundApprovalsCannotAdvertiseOrExecuteIt()
++    {
++        var profile = new ScientificProfile { enabled = true };
++        var catalog = new DpsRecipeCatalog { scientific_profiles = [profile] };
++        Assert.AreEqual(1, catalog.Available().Count);
++        Assert.IsNotNull(profile.ReadinessReason());
++        profile.approval = new() { dataset_sha256 = new string('a', 64), profile_sha256 = profile.DefinitionHash() };
++        Assert.IsNotNull(profile.ReadinessReason());
++    }
++
++    [TestMethod]
++    public void ApprovalFingerprintBindsProfileParametersStagesReferencesAndQc()
++    {
++        var profile = new ScientificProfile();
++        var original = profile.DefinitionHash();
++        profile.parameters = JsonSerializer.SerializeToElement(new { threads = 2 }); Assert.AreNotEqual(original, profile.DefinitionHash());
++        var changed = profile.DefinitionHash(); profile.stages.Add(new() { name = "assemble", arguments = ["{bindings}"] }); Assert.AreNotEqual(changed, profile.DefinitionHash());
++        changed = profile.DefinitionHash(); profile.references.Add(new() { name = "ref", version = "v1", path = "/pinned/ref", sha256 = new string('b', 64) }); Assert.AreNotEqual(changed, profile.DefinitionHash());
++        changed = profile.DefinitionHash(); profile.qc_criteria.sha256 = new string('c', 64); Assert.AreNotEqual(changed, profile.DefinitionHash());
++    }
++
++    [DataTestMethod]
++    [DataRow("../other.fastq")]
++    [DataRow("/absolute.fastq")]
++    [DataRow("folder/../other")]
++    [DataRow("folder\\other")]
++    [DataRow("C:/other")]
++    public void TraversingNativeOutputPathsAreRejected(string path) => Assert.IsFalse(SafePath.IsRelative(path));
++
++    [TestMethod]
++    public void LinuxBrokenLinksCannotEscapeProtectedWorkspacePaths()
++    {
++        if (!OperatingSystem.IsLinux()) { Assert.Inconclusive("Linux symbolic-link fixture."); return; }
++        var root = Path.Combine(Path.GetTempPath(), "dps-links-" + Guid.NewGuid().ToString("N")); Directory.CreateDirectory(root);
++        try {
++            File.CreateSymbolicLink(Path.Combine(root, "broken"), Path.Combine(root, "absent-target"));
++            Assert.ThrowsException<InvalidOperationException>(() => SafePath.Child(root, "broken"));
++            Assert.IsFalse(File.Exists(Path.Combine(root, "absent-target")));
++        } finally { Directory.Delete(root, true); }
++    }
++
++    [TestMethod]
++    public void DatasetApprovalIgnoresAttemptIdentityButBindsScopePinnedVersionAndReadMapping()
++    {
++        var manifest = new INPUT_MANIFEST_DTO { recipe = new() { parameters = JsonSerializer.SerializeToElement(new { }) }, files = [new() { file_id = Guid.NewGuid().ToString("D"), group_number = 1, read_number = 1, part_number = 1,
++            s3 = new() { key = "exact-input", version_id = "v1", sha256 = new string('a', 64) } }] };
++        var original = ScientificProfile.DatasetHash(manifest);
++        manifest.job_id = Guid.NewGuid().ToString("D"); manifest.output_destination.prefix = "another-attempt/";
++        Assert.AreEqual(original, ScientificProfile.DatasetHash(manifest));
++        manifest.files[0].s3.version_id = "v2"; Assert.AreNotEqual(original, ScientificProfile.DatasetHash(manifest));
++        manifest.files[0].s3.version_id = "v1"; manifest.files[0].read_number = 2; Assert.AreNotEqual(original, ScientificProfile.DatasetHash(manifest));
++    }
++
++    [TestMethod]
++    public async Task GzipReadCountsAndExpansionBudgetAreEnforced()
++    {
++        var path = Path.Combine(Path.GetTempPath(), "fastq-" + Guid.NewGuid() + ".gz");
++        try {
++            using (var file = File.Create(path)) using (var gzip = new GZipStream(file, CompressionMode.Compress)) gzip.Write(Encoding.ASCII.GetBytes("@read\nACGT\n+\nIIII\n"));
++            Assert.AreEqual(18L, await ScientificExecution.FastqAsync(path, "gzip", 1, 100, default));
++            await Assert.ThrowsExceptionAsync<InvalidOperationException>(() => ScientificExecution.FastqAsync(path, "gzip", 2, 100, default));
++            await Assert.ThrowsExceptionAsync<InvalidOperationException>(() => ScientificExecution.FastqAsync(path, "gzip", 1, 5, default));
++        } finally { File.Delete(path); }
++    }
++
++    [DataTestMethod]
++    [DataRow(">SIMULATED_placeholder\nN\n")]
++    [DataRow("ACGT\n")]
++    [DataRow(">empty\n")]
++    [DataRow(">uninformative\nNNNN\n")]
++    public async Task PlaceholderIncompleteAndInvalidScientificFastaReject(string text)
++    {
++        var path = Path.GetTempFileName();
++        try { await File.WriteAllTextAsync(path, text); await Assert.ThrowsExceptionAsync<InvalidOperationException>(() => ScientificExecution.ValidateOutputAsync(path, "FASTA", default)); }
++        finally { File.Delete(path); }
++    }
++
++    [TestMethod]
++    public async Task DiagnosticsAreBoundedButTheWholePipeIsDrained()
++    {
++        var path = Path.GetTempFileName(); File.Delete(path);
++        try {
++            using var input = new MemoryStream(new byte[1_000_000]);
++            await ScientificProcess.CopyBoundedAsync(input, path, 1024);
++            Assert.AreEqual(1024L, new FileInfo(path).Length); Assert.AreEqual(input.Length, input.Position);
++        } finally { File.Delete(path); }
++    }
++
++    [TestMethod]
++    public void MissingOrInFlightJournalNeverLicensesRerunAndDoesNotModifyLedger()
++    {
++        var root = Path.Combine(Path.GetTempPath(), "dps-journal-" + Guid.NewGuid()); var id = Guid.NewGuid().ToString("D");
++        Directory.CreateDirectory(root);
++        try {
++            File.WriteAllText(Path.Combine(root, "ledger.json"), "original receipts and history");
++            Assert.ThrowsException<ExecutionHeldException>(() => ScientificExecution.RequireRecoverable(root, id));
++            Directory.CreateDirectory(Path.Combine(root, id));
++            DurableFile.Write(Path.Combine(root, id, "execution.json"), JsonTools.Serialize(new ExecutionJournal { job_id = id, stages = [new() { state = "InFlight" }] }));
++            Assert.ThrowsException<ExecutionHeldException>(() => ScientificExecution.RequireRecoverable(root, id));
++            Assert.AreEqual("original receipts and history", File.ReadAllText(Path.Combine(root, "ledger.json")));
++        } finally { Directory.Delete(root, true); }
++    }
++}

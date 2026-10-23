@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "recorded_at_utc": "2026-10-23T05:57:13.019916+00:00",
+  "patch_sha256": "31420bba1f321f4636985208c3fb5e835bfc9bab60e25e30586bf3e54cb5db2f",
+  "base_tree": "e2f00ad3902da19e0d8dbe33ba5c3694a70dc03e",
+  "checks": {
+    "dps_windows": {
+      "passed": 39,
+      "linux_only_skipped": 12,
+      "failed": 0
+    },
+    "dps_local_linux_x64": {
+      "passed": 51,
+      "skipped": 0,
+      "failed": 0,
+      "native_fixture": "synthetic binding-aware executable"
+    },
+    "portal_focused": {
+      "passed": 36,
+      "skipped": 0,
+      "failed": 0,
+      "database": "guarded disposable loopback PostgreSQL",
+      "storage_and_scanner": "synthetic transport/verdicts"
+    },
+    "documentation_publication": {
+      "passed": 5,
+      "guides": 62,
+      "corpus": "9aae02df9751",
+      "paired_generation_check": "passed"
+    },
+    "source_build": "zero warnings/errors",
+    "patch_reverse_check": "passed",
+    "clean_base_forward_check": "passed",
+    "release_script_syntax": "passed without execution",
+    "new_handoff_links": "passed"
+  },
+  "scope": {
+    "hosted_activation": false,
+    "hosted_data_writes": false,
+    "git_publication": false,
+    "real_pilot": false,
+    "scientific_qualification": false,
+    "scientific_catalog_enabled": false
+  }
+}

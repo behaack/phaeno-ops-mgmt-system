@@ -1,0 +1,2 @@
+# Generated diffs retain literal context whitespace and exact hashed LF bytes.
+*.patch -text -whitespace
