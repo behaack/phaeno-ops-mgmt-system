@@ -1,5 +1,25 @@
 # Operations and production-readiness boundary
 
+## Portal UI workflow coverage and gates — completed October 22, 2026
+
+API/frontend source `531d13fa58c22f01bc40824ce5d61be8acf19dbf` is live with
+the six UI priorities, shared panels/feedback, expanded actual-workflow gallery,
+strict required checks and 43 reviewed guide images/169 callouts across four
+audiences. Exact-source CI passes all three jobs, including 244 Chromium,
+42 Firefox/WebKit and 84 visual cases covering 94 reviewed frames. The pinned
+official browser image avoids the dependency-download timeout found in release
+verification. Matching 62-guide corpus/index `538ebc79bacd` is active; live asset
+and all guide image hashes match the release. The gallery remains isolated.
+
+Fresh isolated restoration/off-server decryption and final readback pass:
+250 table fingerprints, complete Website intake history, 29 migrations,
+115 unrelated files, runtime/provider flags and OCIA identities are preserved.
+API/database/scanner healthy; actual TLS 18883 discovery, signed-in sequencing,
+refreshed help/search, authorization denials and bounded diagnostics pass. No
+migration or business write occurred. Deployment holds, orphan quarantine,
+required-check protection and hosted-test S3 recovery deferral remain. See the
+[release receipt](operations/portal-ui-workflow-test-release-20261022.md).
+
 ## Portal UI adoption and illustrated help — completed October 22, 2026
 
 API/frontend source `9d869522352dd77e4be009238259398696ff8d41` is live with
