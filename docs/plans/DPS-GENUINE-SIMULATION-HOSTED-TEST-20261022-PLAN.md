@@ -1,6 +1,6 @@
 # Genuine DPS simulation — hosted-test correction
 
-Status: deployed and successful hosted acceptance completed October 22 PDT / October 23 UTC. Current correction `e4857ef538315932a02a4a636e8acc2f09e307b8` is published in [pipeline PR #2](https://github.com/phaenobiotech/pipeline/pull/2); its default-branch merge remains pending approval. See the [release receipt](../operations/dps-genuine-simulation-test-release-20261022.md).
+Status: deployed and successful hosted acceptance completed October 22 PDT / October 23 UTC. Current correction `e4857ef538315932a02a4a636e8acc2f09e307b8` is merged through [pipeline PR #2](https://github.com/phaenobiotech/pipeline/pull/2) as `c68e584f29a0e8faa2a9a6537075d356de1929fc`, following the Owner's explicit merge approval. The merged source tree matches the deployed simulator; post-merge hosted health checks pass without restarting or repeating an assembly. See the [release receipt](../operations/dps-genuine-simulation-test-release-20261022.md).
 
 The Owner authorized fixing DPS so Simulated assemblies use genuine simulation, deploying that fix to hosted test, and requesting exactly one additional linked repeat for `SIMULATED-ASM-20261020`. Preserve every receipt and execution history record, including the original reconciled conflict and failed repeat `b3187a23-d258-4c85-8866-900021cff3d5`.
 

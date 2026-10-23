@@ -2,7 +2,7 @@
 
 ## Genuine hosted DPS simulation — October 22, 2026
 
-The external DPS reserved Simulated recipe now executes a genuine in-process diagnostic simulation, without the scientific runner. Exactly one additional linked repeat succeeded, with authenticated output verification and all prior receipts/history unchanged. The current-path fix, focused Linux checks, recovery and pending source PR merge are recorded in the [release receipt](../operations/dps-genuine-simulation-test-release-20261022.md). Scientific QC and Customer release remain separate.
+The external DPS reserved Simulated recipe now executes a genuine in-process diagnostic simulation, without the scientific runner. Exactly one additional linked repeat succeeded, with authenticated output verification and all prior receipts/history unchanged. The current-path fix, focused Linux checks, recovery and Owner-approved PR #2 merge `c68e584f` with passing post-merge hosted health are recorded in the [release receipt](../operations/dps-genuine-simulation-test-release-20261022.md). Scientific QC and Customer release remain separate.
 
 ## Operations reconciliation and quiet refresh — October 22, 2026
 

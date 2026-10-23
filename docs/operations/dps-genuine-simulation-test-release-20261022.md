@@ -4,13 +4,15 @@ The Owner authorized a DPS simulation correction, hosted-test deployment and exa
 
 ## Published source and deployed behavior
 
-Correction **`e4857ef538315932a02a4a636e8acc2f09e307b8`**, based on upstream `ff84df7a81ebba9f02e0a46dd049c009e2b309e2`, is published in [pipeline PR #2](https://github.com/phaenobiotech/pipeline/pull/2).
+Correction **`e4857ef538315932a02a4a636e8acc2f09e307b8`**, based on upstream `ff84df7a81ebba9f02e0a46dd049c009e2b309e2`, is merged through [pipeline PR #2](https://github.com/phaenobiotech/pipeline/pull/2) as **`c68e584f29a0e8faa2a9a6537075d356de1929fc`**.
 
 The reserved `pseq_data_assembler` 0.1.0 recipe verifies pinned input bytes, runs an in-process cancellable simulation and uploads checksum/version-verified diagnostic outputs. This exact identity never invokes `PSeqRecipe`, reads `PB_RUNNER` or starts Phaeno-Runner. Other identities retain their separate runner path. Duration defaults to 15 seconds, bounded to 0–900. Only verified output/manifest completion publishes 100%; existing durable lifecycle and final acknowledgment behavior remains. FASTA/JSON and provenance explicitly identify simulation and `scientific_use: false`.
 
 During preparation, the maintainer independently stopped PID 45969, removed its old build and moved source from `apps/MQTT_Test` to `apps/pseq_server`. The initial correction `f79e82c` was staged but never activated. After the Owner instructed retrying, the same five-file fix was applied to the current relocated source, preserving the maintainer's unrelated runner-error improvements. Because the former executable had already been removed externally, rollback was reconstructed from retained upstream `ff84df7` in a separate directory. Existing launcher settings, the existing CN=dps client identity, shared storage profile and original ledger were retained without issuing or changing credentials.
 
-Automatic approval review rejected a direct fast-forward push to default `main`, stating that hosted-test deployment authorization did not clearly authorize bypassing the open review PR. No default-branch mutation occurred. PR #2 remains open for review and explicit merge approval; the verified hosted deployment is active independently of that merge.
+During release, automatic approval review rejected a direct fast-forward push to default `main`, stating that hosted-test deployment authorization did not clearly authorize bypassing the open review PR. That direct push was not performed. The Owner subsequently explicitly approved merging PR #2 and confirming hosted health. GitHub merged the exact reviewed head through the normal PR merge endpoint at `2026-10-23T04:18:04Z` (October 22, 9:18:04 PM PDT), using the existing deployment identity after the desktop connections lacked merge access. No credential or permission changed. Merge tree `e2f00ad3902da19e0d8dbe33ba5c3694a70dc03e` equals the deployed source tree, so no runtime restart or new assembly was needed.
+
+Post-merge readback at `2026-10-23T04:18:47Z` confirms the same PID 51269 and binary hash, one connected DPS worker on TLS 18883, its exclusive ledger lock, unchanged earlier ledger records, the successful repeat with committed final acknowledgment and zero active jobs. Portal API/database/scanner remain healthy with the exact previous image identities; Website intake counts remain 12 contacts / six orders, the orphan quarantine remains and `Deploy Portal Green` stays disabled. Public `/api/health` and Portal HTTPS both return 200. The authenticated repeat page reloads with Simulation completed, its retained parent link, one confirmed delivery and both verified diagnostic downloads available. Scientific and release boundaries are unchanged.
 
 ## Checks and activation
 
@@ -84,4 +86,4 @@ Provider pre/post encrypted packages also passed independent off-server decrypti
 | DPS pre | `b3854098c81c47e24ff91109d2f76e83e360b3bf15dce263ab638feb11f49851` |
 | DPS post | `2af7e964c6456e1a828542302d155350ab81eaea11776cd604eeddd33d4f583c` |
 
-Successful diagnostic simulation is established. Scientific runner qualification, scientific QC, Customer release, commercial activation and DPS default-branch merge remain separate gates.
+Successful diagnostic simulation and the approved DPS source merge are complete. Scientific runner qualification, scientific QC, Customer release and commercial activation remain separate gates.
