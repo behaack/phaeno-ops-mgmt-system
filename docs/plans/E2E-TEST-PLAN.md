@@ -1,5 +1,7 @@
 # Playwright E2E Test Plan
 
+The Firefox/WebKit CI job uses the official Playwright 1.59.1 Noble image pinned by digest, with a lockfile-package version assertion before tests. Browser binaries and OS libraries are preinstalled; required checks and behavior coverage remain unchanged. This avoids the Ubuntu mirror download timeout observed during the October 22 release. Validate the container through the full required job before release; Windows visual comparisons keep their existing renderer.
+
 ## Actual workflow state coverage — October 22, 2026
 
 See [the owning plan](UI-WORKFLOW-COVERAGE-AND-GATES-PLAN.md) and generated [coverage inventory](../../frontend/ui-gallery/COVERAGE.md). Actual Finance, Prospect Trial, Customer shipping and Assembly QC components participate in loading/error/retry/permission/empty checks. Trial acceptance exercises rejected saves, retained choices after conflict, pending dismissal/duplicate protection and focus return. Reflow covers 320 px and tablet widths, plus 200% root text sizing at desktop width (zoom-equivalent checks, not native browser zoom certification). Firefox desktop/light and WebKit phone/dark run these behavior checks; WebKit pointer focus exposed and now guards the shared sole-action focus fix.
