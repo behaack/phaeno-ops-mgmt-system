@@ -1,6 +1,6 @@
 # UI workflow consistency review — October 22, 2026
 
-All six approved follow-up priorities are implemented locally against baseline `62a9cd1e`. The live release was not changed. See the [owning plan](../plans/UI-WORKFLOW-COVERAGE-AND-GATES-PLAN.md) and generated [coverage inventory](../../frontend/ui-gallery/COVERAGE.md).
+All six approved follow-up priorities were implemented against baseline `62a9cd1e`. This record describes the original local implementation phase, which did not change the live release. The subsequently authorized publication/deployment is complete; see its [release receipt](portal-ui-workflow-test-release-20261022.md), the [owning plan](../plans/UI-WORKFLOW-COVERAGE-AND-GATES-PLAN.md) and generated [coverage inventory](../../frontend/ui-gallery/COVERAGE.md). The release follow-up retains 84 visual cases while the complete-page Trial sections bring the current inventory to 94 frames.
 
 ## Delivered
 

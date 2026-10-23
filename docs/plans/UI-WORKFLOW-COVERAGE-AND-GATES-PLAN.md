@@ -58,13 +58,18 @@ Git publication or deployment.
 
 ## Status
 
+Subsequent authorized publication and hosted-test deployment are complete for
+`531d13fa58c22f01bc40824ce5d61be8acf19dbf`; see the
+[release receipt](../operations/portal-ui-workflow-test-release-20261022.md).
+The paragraphs below retain the original implementation-phase boundaries.
+
 Baseline source: `62a9cd1e`. All six priorities are implemented locally; final verification is recorded in [the review record](../operations/ui-workflow-coverage-20261022.md).
 
 The adoption adds 49 shared titled sections, 204 shared loading call sites, 78 empty/setup/no-results call sites and 10 shared error call sites in the previously captured application source inventory. Original identity, handler, form and navigation attributes were compared against the pre-change snapshot; explicitly replaced retry handlers remain in shared ErrorState props, and selected-attempt highlighting is now an owned data state. Scientific/print layouts and preparation execution remain scoped. Two existing scanner-return source allowances remain unchanged; no new baseline allowance was added.
 
 Main branch protection was read back after application: strict required checks `ui-quality`, `visual-baselines`, `workflow-behavior`, each bound to GitHub Actions app 15368, including administrators. No human approval requirement or bypass grant was introduced. Earlier protection was absent (404) and repository rulesets were empty. Evidence snapshots are under `.artifacts/ui-workflow-six-20261022/protection-{before,request,write,after}.json`. The first request was rejected with 422 because it supplied both API check-list forms; the corrected checks-only request succeeded. This repository is public, so the direct-host gate can use read-only unauthenticated access and fails closed on unavailable API evidence; workflow execution uses its scoped Actions read token.
 
-The new workflow job and exact-source deployment guard remain unpublished local changes until the Owner requests Git publication. A subsequent release must publish on a codex branch, satisfy all required checks and merge through the protected path. No source has been staged, committed or pushed in this phase, and no Portal deployment, workflow enable/disable, Vercel hold or production data operation was performed.
+The original implementation phase left the workflow job and exact-source guard unpublished, with no Git publication or deployment in that phase. The subsequent separately authorized release used codex branches, all required checks and protected merges before activation; its receipt records deployment, preservation and unchanged holds.
 
 The gallery and guide counts come from the generated [coverage inventory](../../frontend/ui-gallery/COVERAGE.md). All guide JPEG dimensions are checked against actual encoded dimensions. Review found and corrected an approval acknowledgment below the scroll boundary and two viewport-clipped images; the capture runner now rejects those geometry mismatches. Canonical captures remain light/en-US with audience-specific paths; external locale illustration expansion beyond en-US is separate work.
 

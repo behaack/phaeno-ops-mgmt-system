@@ -2,6 +2,18 @@
 
 The Firefox/WebKit CI job uses the official Playwright 1.59.1 Noble image pinned by digest, with a lockfile-package version assertion before tests. Browser binaries and OS libraries are preinstalled; required checks and behavior coverage remain unchanged. This avoids the Ubuntu mirror download timeout observed during the October 22 release. Validate the container through the full required job before release; Windows visual comparisons keep their existing renderer.
 
+## UI workflow hosted-test acceptance — October 22, 2026
+
+Source `531d13fa` passes all three exact-source jobs: 244 Chromium browser cases,
+42 Firefox/WebKit workflow cases and 84 Windows visual cases/94 strict references.
+Actual signed-in Edge verifies both shaded sequencing bands, settled job history,
+no horizontal overflow, refreshed protocol help with three images/nine callouts,
+and 13 `protocol` search results. All 43 public guide images match released Git
+and reviewed capture hashes. API health/authorization, full data/file preservation,
+unchanged holds/quarantine and diagnostics pass. See the [receipt](../operations/portal-ui-workflow-test-release-20261022.md)
+for exact identities and the distinction between representative CI/read-only
+hosted checks and full provider/scientific/accessibility acceptance.
+
 ## Actual workflow state coverage — October 22, 2026
 
 See [the owning plan](UI-WORKFLOW-COVERAGE-AND-GATES-PLAN.md) and generated [coverage inventory](../../frontend/ui-gallery/COVERAGE.md). Actual Finance, Prospect Trial, Customer shipping and Assembly QC components participate in loading/error/retry/permission/empty checks. Trial acceptance exercises rejected saves, retained choices after conflict, pending dismissal/duplicate protection and focus return. Reflow covers 320 px and tablet widths, plus 200% root text sizing at desktop width (zoom-equivalent checks, not native browser zoom certification). Firefox desktop/light and WebKit phone/dark run these behavior checks; WebKit pointer focus exposed and now guards the shared sole-action focus fix.

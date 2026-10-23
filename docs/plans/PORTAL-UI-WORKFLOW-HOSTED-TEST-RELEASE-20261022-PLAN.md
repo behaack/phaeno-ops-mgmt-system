@@ -73,9 +73,19 @@ provider, scientific, physical, populated-S3 recovery and commercial acceptance.
 
 ## Status
 
-Authorized release preparation in progress. No migration or destructive data
-operation is required or authorized.
+Completed for source `531d13fa58c22f01bc40824ce5d61be8acf19dbf`. All three
+required PR/exact-source checks, fresh recovery, protected activation, exact
+staging/promotion, live assets/images, signed-in UI/help and final preservation
+acceptance pass. No migration or destructive data operation occurred. See the
+[release receipt](../operations/portal-ui-workflow-test-release-20261022.md).
+Documentation-only completion publication does not change the deployed source.
 
 ### Required CI renderer follow-up
 
 The first release branch exposed 125/128 scattered glyph-edge differences on the two light-theme full Trial pages; all other 82 references passed. Layout and content matched. The Trial references now cover the complete page in contiguous 600 px sections with an asserted total section count. The generated inventory has 94 images. Every image retains the original 0.15 color and 80-pixel tolerances; no mask, threshold relaxation or omitted page region is used. New references require local review and exact-source CI before release.
+
+The first merged candidate's Firefox/WebKit preparation twice timed out while
+downloading Ubuntu packages before tests. The protected follow-up uses the
+official matching Playwright image pinned by digest and checks package alignment;
+only the ephemeral CI home ownership is aligned for Firefox. All unchanged
+42 browser cases and the other required checks pass on the final merged source.
