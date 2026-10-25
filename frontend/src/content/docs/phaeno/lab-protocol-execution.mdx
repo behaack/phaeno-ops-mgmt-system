@@ -213,6 +213,8 @@ In a compatible library preparation step, select the Ready mix, **scan the barco
 
 If an ingredient save has an uncertain response, the mix record offers **Retry the exact saved use**. Check its retained request before any new source-lot entry; if POMS finds it already recorded, clear the confirmed recovery. A source-lot save is not safe to repeat as a new entry merely because the response was interrupted.
 
+Each new ingredient withdrawal freezes the lot conditions available when it is recorded, including QC, expiry/retest, supplier, product and storage. Expand **Lot conditions at withdrawal** in Source ingredients to review them. A later QC or catalog edit does not change that saved evidence. An older withdrawal without a snapshot remains unknown; current lot details cannot establish its historical condition.
+
 After the final tray use, open the mix and choose **Discard remainder**. Enter a reason and, if measured, the amount physically discarded. POMS shows the calculated unused balance separately from a measured discard amount. Discarding prevents further use; the ingredient and tray records, operators, times and corrections remain readable. Use **Discard preparation** with a reason if preparation ends before the mix is ready.
 
 A Supervisor can correct an ingredient or tray-use entry. Choose **Verified void** only after confirming that no material was physically dispensed for that entry. POMS keeps the original entry and correction reason, restores an ordinary source-lot deduction or mix allocation as applicable, and discards a mix whose ingredient entry was voided. If the source had an exhaustion override, POMS holds it for a physical count instead of guessing its restored balance. For material that was dispensed or whose fate is uncertain, choose **Discrepancy**: POMS retains the use, discards the mix, and holds an affected ingredient source lot for Supervisor reconciliation in Purchased Materials. Review the affected tray's record before continuing its work.
@@ -325,3 +327,14 @@ If another user changes the execution during a save, POMS reloads the current re
 Source and attempt actions require an effective Operator or Supervisor role. Each protocol step additionally checks its required role. POMS retains the actual person recording each action; an earlier assignment never grants permission to perform a step.
 
 If you edit an attempt action and then cancel, press Escape, or leave the page, POMS asks before discarding your unsaved details. Declining keeps your entries. While a save is pending, wait for its result before closing or navigating away. If another operator changes the record, your entries remain available; close the action, review the latest specimen state, and reopen the action that is still appropriate.
+
+
+## Actual intervals and participants
+
+An approved procedure can require actual step start/end times and a minimum number of named people. Record observed times to the minute with explicit UTC offsets. The end cannot precede the start, exceed the performed time or be in the future. Workflow start/complete timestamps do not supply this evidence.
+
+Expand **Actual duration and additional participants** to enter the interval and identified Phaeno staff with their roles in the step. Additional participant attribution requires a reason and independent supervisor review, just as recording another person's work does. The primary performer and recorder remain separately identified. Sample history retains original and reviewed evidence; a supervisor's proposed amendment can change intervals and participants without overwriting the original.
+
+In shared preparation, the common performance applies to every covered tube. Use **Different performance for an individual tube** when the actual performer, interval or participants differ; include an explanation for the exception. Corrections of captured values retain the original performance. Earlier procedures and historical records acquire no inferred interval or participant requirement.
+
+Master-mix step recording also supports actual timing and participants. An attributed mix step must receive a different supervisor's approval before the mix becomes ready; rejected entries remain visible and do not become verified work.

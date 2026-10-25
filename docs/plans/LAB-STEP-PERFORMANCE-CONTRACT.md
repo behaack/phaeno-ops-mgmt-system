@@ -65,3 +65,10 @@ The governance extension checks verified performer/time coverage on profiled ana
 ## Local verification checkpoint
 
 The full backend solution build passed (zero warnings/errors), frontend typecheck and changed-file lint passed, and documentation generation/check passed for 56 guides. EF reports no pending model changes. Diff and plan link checks passed. Unit/PostgreSQL/E2E cases are authored but unrun; browser/physical acceptance is pending. No migration, commit, push, deployment or production activation occurred for this slice.
+
+
+## Phase 3 interval and participant extension — October 24, 2026
+
+Approved procedures can specify `timingRequired` and `minimumParticipants` (up to 20 including the primary performer). Performance input accepts `interval: {startedAt, completedAt}` with explicit offsets and minute precision, and distinct additional `participants: [{userId, role}]`. Saved evidence retains UTC times, original offsets and roles separately from entry/workflow times. End precedes neither start nor actual performance, and cannot exceed recording time. No historical timing is inferred.
+
+Additional participants require a reason and create pending attribution for independent supervisor review. Sample amendments explicitly retain/change the full interval/participant evidence. Shared preparation accepts an explained per-tube performance override inside the exact covered-member command. Captured-value corrections preserve original performance. Master-mix steps support the same capture; immutable independent mix-step decisions gate readiness. Instruction/note-only reagent procedures do not acquire scientific timing requirements without an approved structured procedure. This supersedes the earlier exclusion of multiple performers/intervals in this contract; unrelated cross-step scientific chronology is not inferred from workflow timestamps.

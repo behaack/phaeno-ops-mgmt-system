@@ -46,7 +46,7 @@ public sealed partial class LabOperationsController
         var physicalTubes = await dbContext.LabContainers.Where(c => tubeIds.Contains(c.Id)).ToListAsync(cancellationToken);
         foreach (var tube in physicalTubes)
         {
-            if (tube.Status != LabContainerStatus.Available) throw Conflict("sequencing_tube_unavailable", "A submitted sequencing tube is no longer available.");
+            if (tube.PhysicalHoldReason is not null || tube.Status != LabContainerStatus.Available) throw Conflict("sequencing_tube_unavailable", "A submitted sequencing tube is no longer available.");
             dbContext.Entry(tube).Property(c => c.UpdatedAt).IsModified = true;
         }
         var members = await (from member in dbContext.LabBatchMembers.AsNoTracking()

@@ -266,6 +266,7 @@ public sealed class LabMasterMixStepRecord
 
 public sealed class LabMasterMixIngredientUse
 {
+    public string? ResourceSnapshotJson { get; private set; }
     public int StepSequence { get; private set; }
     public string FieldKey { get; private set; } = null!;
     public Guid Id { get; private set; } = Guid.NewGuid();
@@ -280,7 +281,7 @@ public sealed class LabMasterMixIngredientUse
     public Guid? VoidedByUserId { get; private set; }
     private LabMasterMixIngredientUse() { }
     public LabMasterMixIngredientUse(Guid id, Guid preparationId, Guid sourceLotId, decimal quantity,
-        string unit, bool exhausted, Guid actorId, DateTime utcNow, int stepSequence, string fieldKey)
+        string unit, bool exhausted, Guid actorId, DateTime utcNow, int stepSequence, string fieldKey, string resourceSnapshotJson)
     {
         if (id == Guid.Empty || preparationId == Guid.Empty || sourceLotId == Guid.Empty || quantity <= 0
             || quantity >= 10000000000000000m || decimal.Round(quantity, 12) != quantity || actorId == Guid.Empty)
@@ -296,6 +297,7 @@ public sealed class LabMasterMixIngredientUse
         if (stepSequence < 0) throw new ArgumentException("Choose the reagent's step occurrence.");
         StepSequence = stepSequence;
         FieldKey = LabAuditedEntity.Required(fieldKey, nameof(fieldKey), 100);
+        ResourceSnapshotJson = LabAuditedEntity.Required(resourceSnapshotJson, nameof(resourceSnapshotJson), 1_048_576);
     }
     public void VoidUndispensed(Guid actorId, DateTime utcNow)
     {

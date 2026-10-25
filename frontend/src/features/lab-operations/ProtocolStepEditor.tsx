@@ -68,6 +68,12 @@ export function ProtocolStepEditor({
         </CardAction>
       </CardHeader>
       <CardContent className="space-y-5">
+        <div className="space-y-3">
+          <Label className="flex items-center gap-2"><NativeCheckbox {...form.register(`steps.${index}.timingRequired`)} />Require actual start and end times</Label>
+          <Field label="Minimum named participants (including primary performer)" id={`step-${index}-participants`} error={stepErrors?.minimumParticipants?.message}>
+            <Input id={`step-${index}-participants`} type="number" min={1} max={20} {...form.register(`steps.${index}.minimumParticipants`, { valueAsNumber: true })} />
+          </Field>
+        </div>
         {catalog ? <Field label="Process" id={`step-${index}-process`} error={stepErrors?.processType?.message} description="Master-mix steps define reagents and planned amounts for one preparation.">
           <NativeSelect id={`step-${index}-process`} {...form.register(`steps.${index}.processType`, { onChange: event => {
             if (event.target.value !== 'masterMix') return

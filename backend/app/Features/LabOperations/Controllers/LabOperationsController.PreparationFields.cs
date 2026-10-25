@@ -124,7 +124,7 @@ public sealed partial class LabOperationsController
                     {
                         if (entry is not null) throw new ArgumentException("An output already exists for this tube. Retain its identity rather than creating it again.");
                         output = await dbContext.LabContainers.SingleAsync(c => c.Id == member.OutputContainerId && c.LabSpecimenAttemptId == member.LabSpecimenAttemptId, ct);
-                        if (output.Status != LabContainerStatus.Available) throw new InvalidOperationException("The existing output is not available.");
+                        if (output.PhysicalHoldReason is not null || output.Status != LabContainerStatus.Available) throw new InvalidOperationException("The existing output is not available.");
                     }
                     else if (entry is not null)
                     {

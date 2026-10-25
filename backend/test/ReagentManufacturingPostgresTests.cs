@@ -1,9 +1,11 @@
 namespace PhaenoPortal.Test;
 
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Features.LabOperations.Controllers;
 using PhaenoPortal.App.Features.LabOperations.DTOs;
+using PhaenoPortal.App.Features.LabOperations.Services;
 using PhaenoPortal.App.Features.OrderManagement.Services;
 
 public partial class SampleShippingPostgresTests
@@ -70,6 +72,11 @@ public partial class SampleShippingPostgresTests
             run = await controller.RecordReagentMaterialUse(run.Id,
                 new(source.Id, 3, "mL", false, run.Version), default);
             Assert.Single(run.MaterialUses);
+            var frozenWithdrawal = run.MaterialUses[0].ResourceSnapshotJson;
+            using (var snapshot = JsonDocument.Parse(frozenWithdrawal!)) {
+                Assert.Equal("Passed", snapshot.RootElement.GetProperty("qcDisposition").GetString());
+                Assert.Equal(supplier.Name, snapshot.RootElement.GetProperty("supplier").GetProperty("name").GetString());
+            }
             Assert.Equal(7, (await db.LabMaterialLots.AsNoTracking()
                 .SingleAsync(item => item.Id == source.Id)).AvailableQuantity);
             var stale = await Assert.ThrowsAsync<OrderManagementException>(() =>
@@ -83,6 +90,11 @@ public partial class SampleShippingPostgresTests
             Assert.Equal(7, (await db.LabMaterialLots.AsNoTracking()
                 .SingleAsync(item => item.Id == source.Id)).AvailableQuantity);
             Assert.Equal(0, run.AvailableQuantity);
+            source.RecordQc(LabQcDisposition.Failed, DateOnly.FromDateTime(DateTime.UtcNow), "TEST ONLY later QC", "{}", scope.PlatformUser.Id, DateTime.UtcNow);
+            await db.SaveChangesAsync();
+            Assert.Equal(frozenWithdrawal, (await controller.ReadReagentRun(run.Id, default)).MaterialUses[0].ResourceSnapshotJson);
+            source.RecordQc(LabQcDisposition.Passed, DateOnly.FromDateTime(DateTime.UtcNow), null, "{}", scope.PlatformUser.Id, DateTime.UtcNow);
+            await db.SaveChangesAsync();
             var abandonedLotVersion = (await db.LabMaterialLots.AsNoTracking()
                 .SingleAsync(item => item.Id == run.MaterialLotId)).Version;
             var blockedQc = await Assert.ThrowsAsync<OrderManagementException>(() =>
@@ -93,7 +105,18 @@ public partial class SampleShippingPostgresTests
 
             var completed = await controller.StartReagentRun(new(outputDefinitionId, location.Id), default);
             completed = await controller.RecordReagentMaterialUse(completed.Id,
-                new(source.Id, 2, "mL", false, completed.Version), default);
+                new(source.Id, 1, "mL", false, completed.Version), default);
+            var firstCompletedWithdrawal = completed.MaterialUses[0].ResourceSnapshotJson;
+            var trackedWithdrawal = await db.LabReagentMaterialUses.SingleAsync(u => u.RunId == completed.Id);
+            db.Entry(trackedWithdrawal).Property(u => u.ResourceSnapshotJson).CurrentValue = "{}";
+            await Assert.ThrowsAsync<InvalidOperationException>(() => db.SaveChangesAsync());
+            db.Entry(trackedWithdrawal).Property(u => u.ResourceSnapshotJson).CurrentValue = firstCompletedWithdrawal;
+            db.Entry(trackedWithdrawal).State = EntityState.Unchanged;
+            supplier.Rename(supplier.Name + " updated");
+            source.RecordQc(LabQcDisposition.Passed, DateOnly.FromDateTime(DateTime.UtcNow), null, "{\"capture\":2}", scope.PlatformUser.Id, DateTime.UtcNow);
+            await db.SaveChangesAsync();
+            completed = await controller.RecordReagentMaterialUse(completed.Id,
+                new(source.Id, 1, "mL", false, completed.Version), default);
             completed = await controller.RecordReagentStep(completed.Id,
                 new(0, "Mixed according to the procedure", completed.Version), default);
             var missingExpiry = await Assert.ThrowsAsync<OrderManagementException>(() =>
@@ -126,6 +149,21 @@ public partial class SampleShippingPostgresTests
                 .SingleAsync(item => item.PreparedMaterialLotId == completed.MaterialLotId);
             Assert.Equal(source.Id, component.ComponentMaterialLotId);
             Assert.Equal(2, component.Quantity);
+            var prepared = await db.LabMaterialLots.SingleAsync(l => l.Id == completed.MaterialLotId);
+            var preparationSnapshot = await LabResourceSnapshot.MaterialAsync(db, prepared, default);
+            using (var snapshot = JsonDocument.Parse(preparationSnapshot))
+                Assert.Equal(2, snapshot.RootElement.GetProperty("components")[0].GetProperty("withdrawalIds").GetArrayLength());
+            source.RecordQc(LabQcDisposition.Failed, DateOnly.FromDateTime(DateTime.UtcNow), "TEST ONLY later condition", "{}", scope.PlatformUser.Id, DateTime.UtcNow);
+            var fixture = await SeedRestoreEvidence(scope, new PreparationReportTestFiles(), includeResult: false);
+            var execution = await db.LabProtocolExecutions.AsNoTracking().SingleAsync(e => e.LabWorkOrderId == fixture.WorkId);
+            db.LabMaterialConsumptions.Add(new(execution.Id, prepared.Id, null, 1, "mL", scope.PlatformUser.Id, LabEvidenceTime.UtcNow, resourceSnapshotJson: preparationSnapshot));
+            await db.SaveChangesAsync();
+            var investigation = await controller.Investigation(fixture.WorkId, fixture.SpecimenId, default);
+            var projected = JsonSerializer.SerializeToElement(investigation.Evidence["reagentComponents"], JsonSerializerOptions.Web);
+            var withdrawals = Assert.Single(projected.EnumerateArray()).GetProperty("withdrawals");
+            Assert.Equal(2, withdrawals.GetArrayLength());
+            Assert.All(withdrawals.EnumerateArray(), use => Assert.Equal("Passed", JsonDocument.Parse(use.GetProperty("resourceSnapshotJson").GetString()!).RootElement.GetProperty("qcDisposition").GetString()));
+            Assert.Equal(2, withdrawals.EnumerateArray().Select(use => JsonDocument.Parse(use.GetProperty("resourceSnapshotJson").GetString()!).RootElement.GetProperty("supplier").GetProperty("name").GetString()).Distinct().Count());
         }
         finally { await transaction.RollbackAsync(); scope.ClearTrackedState(); }
     }

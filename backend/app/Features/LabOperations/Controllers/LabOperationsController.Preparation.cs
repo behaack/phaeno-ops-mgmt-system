@@ -150,7 +150,7 @@ public sealed partial class LabOperationsController
             .ToDictionaryAsync(mix => mix.Id, ct);
         var evidenceByExecution = executions.ToDictionary(e => e.Id, e => LabProtocolEvidence.Read(e.CapturedResultsJson));
         var peopleIds = evidenceByExecution.Values.SelectMany(e => e.Records)
-            .SelectMany(r => new[] { r.RecordedByUserId, r.Performance?.PerformedByUserId ?? r.RecordedByUserId })
+            .SelectMany(r => new[] { r.RecordedByUserId, r.Performance?.PerformedByUserId ?? r.RecordedByUserId }.Concat((r.Performance?.Participants ?? []).Select(p => p.UserId)))
             .Concat(records.Select(r => r.ActorUserId)).Distinct().ToList();
         var recorders = await dbContext.Users.AsNoTracking().Where(u => peopleIds.Contains(u.Id))
             .Select(u => new LabExecutionRecorderDto(u.Id, u.FirstName + " " + u.LastName)).ToListAsync(ct);
@@ -160,7 +160,7 @@ public sealed partial class LabOperationsController
         var materialTubes = await dbContext.LabContainers.AsNoTracking().Where(c => sourceIds.Contains(c.Id) || libraryTubeIds.Contains(c.Id)).ToDictionaryAsync(c => c.Id, ct);
         var libraries = await dbContext.LabLibraries.AsNoTracking().Where(l => members.Select(m => m.LabLibraryId).Contains(l.Id)).ToListAsync(ct);
         var availableOutputs = await dbContext.LabContainers.AsNoTracking().Where(c => c.LabSpecimenAttemptId.HasValue && ids.Contains(c.LabSpecimenAttemptId.Value)
-            && c.Kind == LabContainerKind.Library && c.Status == LabContainerStatus.Available && c.Quantity > 0 && c.QuantityUnit != null
+            && c.Kind == LabContainerKind.Library && c.PhysicalHoldReason == null && c.Status == LabContainerStatus.Available && c.Quantity > 0 && c.QuantityUnit != null
             && !libraryTubeIds.Contains(c.Id) && !dbContext.LabLibraries.Any(l => l.LibraryContainerId == c.Id)).ToListAsync(ct);
         var sequencing = await (from m in dbContext.LabBatchMembers.AsNoTracking() join b in dbContext.LabOperationalBatches.AsNoTracking() on m.LabOperationalBatchId equals b.Id
             where libraries.Select(l => l.Id).Contains(m.LabLibraryId) orderby m.AddedAtUtc descending, m.Id descending select new { m.LabLibraryId, b.Id, b.BatchNumber, b.Name }).ToListAsync(ct);
@@ -217,7 +217,7 @@ public sealed partial class LabOperationsController
         var executions = dbContext.LabProtocolExecutions.AsNoTracking().Where(e => e.Status != LabExecutionStatus.Abandoned);
         var candidates = from t in dbContext.LabContainers.AsNoTracking() join s in dbContext.LabSpecimens.AsNoTracking() on t.LabSpecimenId equals s.Id
             join w in dbContext.LabWorkOrders.AsNoTracking() on t.LabWorkOrderId equals w.Id
-            where t.Kind == LabContainerKind.SubmittedSpecimen && t.IntakeDisposition == LabSpecimenIntakeDisposition.Accepted && t.Status == LabContainerStatus.Available
+            where t.Kind == LabContainerKind.SubmittedSpecimen && t.IntakeDisposition == LabSpecimenIntakeDisposition.Accepted && t.PhysicalHoldReason == null && t.Status == LabContainerStatus.Available
                 && w.ServiceKey == serviceKey
                 && (w.AuthorizationSource != LabAuthorizationSource.TrialProject || w.LabServiceWorkflowVersionId == null || w.LabServiceWorkflowVersionId == batch.LabServiceWorkflowVersionId)
                 && (w.TubeUsePolicyKey == LabTubeUsePolicy.RunOneWithFailureFallback || w.TubeUsePolicyKey == LabTubeUsePolicy.RunAuthorizedWithFailureFallback)

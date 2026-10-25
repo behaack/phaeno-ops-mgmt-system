@@ -1,5 +1,43 @@
 # Playwright E2E Test Plan
 
+## Full requested browser acceptance - October 24, 2026
+
+All four connected sample-tracking matrices pass: **16 scenarios**, Chromium desktop/320px phone, light/dark, zero final failures/skips/flaky retries. Latest assertions include visible late-handling conflicts with unchanged custody, departed registered location context, frozen mix-equipment conditions after retirement and exactly covered equipment search matches. The specimen History/Processing storage-location section was missing and is now shown. Phase 1 uses one page routing handler to avoid remount races; final teardown awaits in-flight forwarding without ignored errors. Selected axe, keyboard/focus, reduced-motion and overflow checks pass; representative new screenshots were manually reviewed without changing image baselines.
+
+See the [final browser report](../testing/runs/2026-10-24-sample-tracking-full-browser-acceptance.md) and [compact ledger](../testing/runs/2026-10-24-sample-tracking-browser-acceptance-ledger.json). Raw test artifacts were removed at the Owner's request after consolidation. This is local synthetic connected acceptance; hosted/physical/provider/scientific gates remain separate.
+
+## Final sample-tracking review corrections - October 24, 2026
+
+The Phase 3 connected scenario's disposition inputs now use observed second/fractional-second timestamps instead of rounding them before a just-recorded placement. This preserves the physical chronology guard. The present follow-up adds real HTTP command/report and frontend component regressions; prior connected browser results remain dated prior evidence unless a new browser execution is explicitly recorded. No reviewed screenshot baseline changes. Hosted, physical, provider, scientific and full accessibility acceptance remain separate.
+
+## Sample-tracking review corrections — October 24, 2026
+
+The Trial repair has a real HTTP regression in `TrialPhysicalCustodyHttpPostgresTests.cs`, including the actual MVC filter; it is distinct from the commercial-source Playwright fixture. Phase 4's four connected desktop/phone/light/dark browser scenarios are rerun against independent restored data with the updated Trial guard, actual-time history projection and failure-safe cleanup. A teardown race is repaired by awaiting in-flight forwarded routes before Playwright closes the context; errors are not ignored. No application UI source or reviewed screenshot baseline changes. The [review-fix record](../testing/runs/2026-10-24-sample-tracking-review-fixes.md) records final results; full hosted/physical/scientific acceptance remains open.
+
+## Phase 4 connected sample-tracking recovery — October 24, 2026
+
+The initial [Phase 4 implementation](../testing/runs/2026-10-24-sample-tracking-phase4-verification.md) connected real commercial/laboratory/review/release controllers, PostgreSQL and local private storage with explicit synthetic external observations. The Owner subsequently requested browser acceptance. `sample-recovery.phase4-connected.spec.ts` and `playwright.sample-recovery-phase4.config.ts` now run through the guarded runner's `-Browser` mode after independent database/private-file restore with original storage offline. The bounded test host uses real MVC/envelope/domain/EF responses, synthetic test-only identities and explicit fixture fault preparation. It starts neither Program/hosted workers nor DPS.
+
+The four-scenario matrix covers desktop/320px phone × light/dark, exact frozen report bytes/hash, contributor-independent released result-to-source-tube analysis/input identity, preserved physical hold history, a committed report whose response is lost and idempotently retried from the UI, missing/corrupt raw/report errors and healthy retries, oversized-report refusal without creating a report, long-history paging with a frozen boundary and independently appended event, keyboard Actions opening/Escape/focus return, no horizontal overflow, selected axe checks and no runtime page errors. The browser consumes forwarded actual feature responses. It does not prove full Active/Closed routing, hosted Clerk identity/provider/scanner/storage, full assistive-technology, actual bench/scientific or Owner acceptance; those remain in the [crosswalk](SAMPLE-TRACKING-PHASE4-ACCEPTANCE.md). No reviewed visual baseline is updated by these checks.
+
+**All four final scenarios pass**, zero failures/skips, including expanded result-lineage reflow. The wrapper and post-browser stock/use/physical/assembly/report preservation assertions pass; generated databases/private roots are removed. Sixteen final screenshots are retained and representative viewports inspected. See the [requested verification record and raw receipts](../testing/runs/2026-10-24-sample-tracking-phase4-regression-and-browser-verification.md).
+
+## Phase 2 capture at source — October 24, 2026
+
+The Owner requested execution. **Four connected Chromium scenarios pass**, desktop/320 px phone × light/dark, in `sample-capture.phase2-connected.spec.ts` using `playwright.sample-capture-phase2.config.ts` and the opt-in `Phase2CaptureBrowserUsesRealControllersAndFrozenEvidence` PostgreSQL wrapper. Real MVC/controller/envelope/EF responses drive the production vendor-results form/version page, master-mix/reagent pages and sample investigation component. The fixture supplies synthetic session identities, verified-file metadata and review-package states; it does not start the full application or provider workers.
+
+Each scenario verifies two actual acquisitions/file sets under one vendor job, missing-run/document-fingerprint refusals, saved/reloaded draft entries, stale-draft restart with three dialog regions and keyboard/focus return, exact timestamp/input preservation for notes edits, protected-result refusal, explicit fixture withdrawal and linked provenance correction, unchanged other-sample inputs, original vendor version preservation, frozen ingredient conditions after QC/catalog edits, an unknown historical withdrawal, and a real investigation-manifest download/checksum with other-sample run/index exclusion. Axe WCAG 2/2.1/2.2 A/AA checks, no horizontal overflow and no runtime page errors pass; final screenshots were retained and representative viewports reviewed. The hidden array-level validation explanation was fixed. Receipt/catalog fixture setup, unique synthetic submission IDs and order-independent selectors were corrected without weakening application rules. Backend regressions separately cover coverage limits, voids and purchased-run separation. No reviewed image baselines changed.
+
+See the [verification record and raw receipts](../testing/runs/2026-10-24-sample-tracking-phase2-verification.md). This is local synthetic connected feature acceptance, not hosted Clerk sign-in/full Job navigation, actual provider/scanner/storage, Firefox/WebKit, full assistive-technology, physical or scientific qualification. No deployment or DPS changes.
+
+## Shared-resource investigation coverage — October 24, 2026
+
+The Owner requested execution of the [Phase 1 follow-up](SAMPLE-TRACEABILITY-AND-INVESTIGATION-PLAN.md#shared-resource-attribution-and-investigation-coverage--october-24-2026). **Eight Chromium scenarios pass with zero skips**: `sample-investigation.phase1-connected.spec.ts` runs four desktop/320 px phone × light/dark cases against real loopback MVC/controller/envelope/EF/PostgreSQL responses, and the existing `sample-investigation.spec.ts` runs four intercepted-response cases. The opt-in PostgreSQL wrapper (`PSEQ_PHASE1_BROWSER_VERIFICATION=1`, main mixed-tray case) starts only the bounded test host and browser fixture. It does not start the application workers or DPS.
+
+Connected cases verify both Jobs' shared resource coverage, explicit physical-total/sample-allocation meanings, transitive component-lot lookup, failed/unperformed/corrected frozen vendor versions without other sample details, History/Processing, actual source limits/error report refusal, report save/download and exact downloaded SHA-256. Anonymous/customer rejection uses test-only synthetic identities. Keyboard expansion, Actions Escape/focus return, no horizontal overflow, zero selected axe WCAG A/AA violations and no runtime page errors pass. Final screenshots were reviewed; the mobile header was fixed and its geometry is asserted. PostgreSQL regressions separately prove excluded/zero-use and voided exposure, instrument-run privacy, organization boundaries and earlier report preservation. No reviewed image references were changed. See the [verification record and raw evidence](../testing/runs/2026-10-24-sample-investigation-phase1.md).
+
+This is local synthetic feature acceptance with real persisted reads, not hosted Clerk sign-in/full Job navigation, live providers, Firefox/WebKit, full screen-reader, physical or scientific qualification. No deployment or DPS changes occurred.
+
 ## Local DPS native connection — October 23, 2026
 
 The [native proof](DPS-LOCAL-ASSEMBLY-ENGINEERING-HANDOFF-20261023.md) uses actual Cluster/Inchworm and Portal manifest validation with synthetic reads and isolated storage transport. It is not hosted browser/storage/scanner or scientific pilot acceptance. No E2E/browser source changed or suite was rerun. RA-09/10/11 retain separately authorized hosted UI, exactly-one-pilot/scientific review and original receipt/history preservation checks; the held worker was not started for this local task.
@@ -4893,3 +4931,13 @@ defensive marker clamp would make a broken annotation fit visually.
 Final local results are in [the adoption plan](UI-CONSISTENCY-ADOPTION-AND-ILLUSTRATIONS-PLAN.md).
 This is simulated component/browser verification, not hosted workflow, provider,
 physical laboratory, scientific qualification or complete screen-reader acceptance.
+
+
+## Sample tracking Phase 3 — October 24, 2026
+
+Phase 3 acceptance is pending execution: known/unknown accession box confirmation; register and collectively move a populated box; occupied optional position/stale-version/idempotency conflicts; tray departure and sample-scoped movement history; due/unknown/hold queues; paid agreed terms and frozen Trial terms; held material consumption and active-work disposition rejection; return tracking; procedure timing/participants, per-tube exception, independent sample/mix review and amendment. Check desktop/320px, light/dark, keyboard/focus/draft guards, dialog regions, error visibility, axe and overflow. Use isolated synthetic local data only; physical scanners/bench/scientific/hosted verification remain separate. No Phase 3 browser execution has been requested or claimed.
+
+
+### Phase 3 requested verification result
+
+Requested Phase 3 connected acceptance now passes four desktop/320px phone × light/dark Chromium scenarios with zero skips/failures, using `sample-lifecycle.phase3-connected.spec.ts` and an opt-in real MVC/EF/PostgreSQL wrapper. Coverage includes physical scan/storage/disposition/holds, independent mix/sample review, interval amendments, keyboard focus/draft preservation, axe/overflow and report hash/privacy. [Verification and remaining external gates](../testing/runs/2026-10-24-sample-tracking-phase3-verification.md). This supersedes the earlier unrun Phase 3 status; scanner/bench/scientific/hosted acceptance remains separate.

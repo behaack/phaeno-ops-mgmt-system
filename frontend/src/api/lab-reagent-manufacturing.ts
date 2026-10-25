@@ -17,7 +17,7 @@ export type ReagentWorkflow = {
   approvalOverrideReason: string | null; version: number; revisions: ReagentWorkflowRevision[]
 }
 export type ReagentRunStep = { sequence: number; stepKey: string; name: string; instructions: string; notes: string; performedByUserId: string; performedAtUtc: string }
-export type ReagentMaterialUse = { id: string; sourceMaterialLotId: string; sourceName: string; sourceLotNumber: string; quantity: number; quantityUnit: string; materialExhausted: boolean; recordedByUserId: string; recordedAtUtc: string }
+export type ReagentMaterialUse = { resourceSnapshotJson: string | null; id: string; sourceMaterialLotId: string; sourceName: string; sourceLotNumber: string; quantity: number; quantityUnit: string; materialExhausted: boolean; recordedByUserId: string; recordedAtUtc: string }
 export type ReagentRun = {
   id: string; workflowId: string; workflowRevision: number; workflowName: string
   materialLotId: string; materialName: string; lotNumber: string

@@ -39,7 +39,11 @@ public sealed partial class LabOperationsController
         if (!string.IsNullOrWhiteSpace(request.RetainedStorageLocation))
         {
             if (tube.Location is not null) throw Invalid("intake_location_unchanged", "An intake correction does not move stored material.");
-            Execute(() => tube.Move(request.RetainedStorageLocation));
+            var box = await RequirePhysicalBoxAsync(request.RetainedStorageLocation, cancellationToken);
+            Execute(() => tube.PlaceInBox(box, null));
+            var now = LabEvidenceTime.UtcNow;
+            dbContext.Set<LabPhysicalEvent>().Add(new(Guid.NewGuid(), tube.Id, "Placed", actor.User.Id, now, now, request.Notes,
+                JsonSerializer.Serialize(new { destination = box.Barcode, boxId = box.Id }, JsonOptions), PhysicalHash(new { tube.Id, boxId = box.Id }), box.Id));
         }
         if (!Enum.TryParse<LabSpecimenIntakeDisposition>(request.Disposition, true, out var disposition))
             throw Invalid("tube_intake_invalid", "Choose Accepted, On hold or Rejected.");

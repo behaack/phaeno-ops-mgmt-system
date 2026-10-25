@@ -75,6 +75,8 @@ public partial class SampleShippingPostgresTests
         await Assert.ThrowsAsync<OrderManagementException>(() => lab.AcceptRemainingTubes(fixture.WorkOrder.Id, fixture.Shipment.Id,
             request with { WorkOrderVersion = request.WorkOrderVersion - 1 }, default));
         scope.ClearTrackedState();
+        await scope.RegisterTestBoxAsync("REAL-BOX-1");
+        await scope.RegisterTestBoxAsync("REAL-BOX-2");
         var accepted = await lab.AcceptRemainingTubes(fixture.WorkOrder.Id, fixture.Shipment.Id, request, default);
         scope.ClearTrackedState();
         var replay = await lab.AcceptRemainingTubes(fixture.WorkOrder.Id, fixture.Shipment.Id, request, default);

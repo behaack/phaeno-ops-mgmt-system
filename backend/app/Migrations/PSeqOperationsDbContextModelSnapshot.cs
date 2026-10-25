@@ -12312,6 +12312,11 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("parent_container_id");
 
+                    b.Property<string>("PhysicalHoldReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("physical_hold_reason");
+
                     b.Property<decimal?>("Quantity")
                         .HasColumnType("numeric")
                         .HasColumnName("quantity");
@@ -12343,6 +12348,15 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("character varying(50)")
                         .HasColumnName("status");
 
+                    b.Property<Guid?>("StorageBoxId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("storage_box_id");
+
+                    b.Property<string>("StoragePosition")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("storage_position");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
@@ -12373,6 +12387,10 @@ namespace PSeq.Operations.Api.Migrations
                         .IsUnique();
 
                     b.HasIndex("LabWorkOrderId", "LabSpecimenId");
+
+                    b.HasIndex("StorageBoxId", "StoragePosition")
+                        .IsUnique()
+                        .HasFilter("storage_position IS NOT NULL");
 
                     b.ToTable("lab_containers", "lab_ops");
                 });
@@ -13790,6 +13808,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("recorded_by_user_id");
 
+                    b.Property<string>("ResourceSnapshotJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("resource_snapshot_json");
+
                     b.Property<Guid>("SourceMaterialLotId")
                         .HasColumnType("uuid")
                         .HasColumnName("source_material_lot_id");
@@ -13813,6 +13835,35 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasIndex("SourceMaterialLotId");
 
                     b.ToTable("lab_master_mix_ingredients", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabMasterMixPerformanceDecision", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("Approved")
+                        .HasColumnType("boolean")
+                        .HasColumnName("approved");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("reason");
+
+                    b.Property<DateTime>("ReviewedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("reviewed_at_utc");
+
+                    b.Property<Guid>("ReviewedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("reviewed_by_user_id");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("lab_master_mix_performance_decisions", "lab_ops");
                 });
 
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabMasterMixPreparation", b =>
@@ -14803,6 +14854,65 @@ namespace PSeq.Operations.Api.Migrations
                     b.ToTable("lab_performance_proposals", "lab_ops");
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabPhysicalEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ActorUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_user_id");
+
+                    b.Property<string>("DetailsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("details_json");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("kind");
+
+                    b.Property<Guid>("LabContainerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_container_id");
+
+                    b.Property<DateTime>("OccurredAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("occurred_at_utc");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("reason");
+
+                    b.Property<DateTime>("RecordedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("recorded_at_utc");
+
+                    b.Property<string>("RequestHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("request_hash");
+
+                    b.Property<Guid?>("StorageBoxId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("storage_box_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StorageBoxId");
+
+                    b.HasIndex("LabContainerId", "RecordedAtUtc");
+
+                    b.ToTable("lab_physical_events", "lab_ops");
+                });
+
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabPreparationBatch", b =>
                 {
                     b.Property<Guid>("Id")
@@ -15561,6 +15671,10 @@ namespace PSeq.Operations.Api.Migrations
                     b.Property<Guid>("RecordedByUserId")
                         .HasColumnType("uuid")
                         .HasColumnName("recorded_by_user_id");
+
+                    b.Property<string>("ResourceSnapshotJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("resource_snapshot_json");
 
                     b.Property<Guid>("RunId")
                         .HasColumnType("uuid")
@@ -16738,6 +16852,115 @@ namespace PSeq.Operations.Api.Migrations
                         .IsUnique();
 
                     b.ToTable("lab_step_versions", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabStorageBox", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Barcode")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("barcode");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("Freezer")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("freezer");
+
+                    b.Property<string>("Rack")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("rack");
+
+                    b.Property<string>("Room")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("room");
+
+                    b.Property<string>("Shelf")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("shelf");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Barcode")
+                        .IsUnique();
+
+                    b.ToTable("lab_storage_boxes", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabStorageBoxMove", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ActorUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_user_id");
+
+                    b.Property<string>("DetailsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("details_json");
+
+                    b.Property<Guid>("LabStorageBoxId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_storage_box_id");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("reason");
+
+                    b.Property<DateTime>("RecordedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("recorded_at_utc");
+
+                    b.Property<string>("RequestHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("request_hash");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabStorageBoxId", "RecordedAtUtc");
+
+                    b.ToTable("lab_storage_box_moves", "lab_ops");
                 });
 
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabStorageLocation", b =>
@@ -23258,6 +23481,11 @@ namespace PSeq.Operations.Api.Migrations
                         .WithMany()
                         .HasForeignKey("ParentContainerId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabStorageBox", null)
+                        .WithMany()
+                        .HasForeignKey("StorageBoxId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabContainerBarcode", b =>
@@ -23659,6 +23887,15 @@ namespace PSeq.Operations.Api.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabMasterMixPerformanceDecision", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabMasterMixStepRecord", null)
+                        .WithOne()
+                        .HasForeignKey("PSeq.Operations.Laboratory.Domain.LabMasterMixPerformanceDecision", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabMasterMixPreparation", b =>
                 {
                     b.HasOne("PSeq.Operations.Laboratory.Domain.LabMasterMixWorkflow", null)
@@ -23814,6 +24051,20 @@ namespace PSeq.Operations.Api.Migrations
                         .HasForeignKey("LabWorkOrderId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabPhysicalEvent", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabContainer", null)
+                        .WithMany()
+                        .HasForeignKey("LabContainerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabStorageBox", null)
+                        .WithMany()
+                        .HasForeignKey("StorageBoxId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabPreparationBatch", b =>
@@ -24157,6 +24408,15 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasOne("PSeq.Operations.Laboratory.Domain.LabStep", null)
                         .WithMany()
                         .HasForeignKey("LabStepId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabStorageBoxMove", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabStorageBox", null)
+                        .WithMany()
+                        .HasForeignKey("LabStorageBoxId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });

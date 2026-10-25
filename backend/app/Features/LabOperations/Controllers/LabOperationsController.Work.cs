@@ -268,6 +268,15 @@ public sealed partial class LabOperationsController
             quantityBasis: registeredTube is not null && customerDeclaredQuantity.HasValue ? "CustomerDeclared" : null,
             labelVerificationRequired: barcodeSource == LabContainerBarcodeSource.PhaenoGenerated,
             barcodeNamespace: registeredTube?.BarcodeNamespace);
+        if (!string.IsNullOrWhiteSpace(request.Location))
+        {
+            var storageBox = await RequirePhysicalBoxAsync(request.Location, cancellationToken);
+            container.PlaceInBox(storageBox, null);
+            dbContext.Set<LabPhysicalEvent>().Add(new(Guid.NewGuid(), container.Id, "Placed", actor.User.Id,
+                LabEvidenceTime.UtcNow, LabEvidenceTime.UtcNow, "Storage confirmed during accession.",
+                JsonSerializer.Serialize(new { destination = storageBox.Barcode, storageBoxId = storageBox.Id, position = (string?)null }, JsonOptions),
+                PhysicalHash(new { containerId = container.Id, boxId = storageBox.Id }), storageBox.Id));
+        }
         if (registeredTube is not null)
         {
             Execute(() => registeredTube.RecordReceipt(DateTime.UtcNow));
@@ -401,32 +410,9 @@ public sealed partial class LabOperationsController
     public async Task<LabContainerDto> MoveContainer(Guid containerId,
         [FromBody] MoveLabContainerRequest request, CancellationToken cancellationToken)
     {
-        var actor = await requestContext.RequireAsync(HttpContext, cancellationToken, LabRole.Operator, LabRole.Supervisor);
-        var container = await dbContext.LabContainers.SingleOrDefaultAsync(item => item.Id == containerId, cancellationToken)
-            ?? throw Missing();
-        await RequireWorkOrderAsync(container.LabWorkOrderId, cancellationToken);
-        EnsureVersion(container.Version, request.Version);
-        if (container.Status == LabContainerStatus.Rejected && container.Location is null)
-            throw Conflict("container_not_retained", "This rejected tube has no retained physical material to move.");
-        if (!SupplierTubeBarcode.TryNormalize(request.ScannedContainerBarcode, out var scanned)
-            || !await dbContext.LabContainerBarcodes.AnyAsync(alias => alias.LabContainerId == containerId && alias.Value == scanned, cancellationToken))
-            throw Invalid("container_scan_mismatch", "Scan the selected physical container before recording its move.");
-        var destination = request.ScannedDestinationBarcode?.Trim();
-        if (string.IsNullOrWhiteSpace(destination) || destination.Length > 255 || destination.Any(char.IsControl))
-            throw Invalid("destination_scan_required", "Scan the physical destination barcode (up to 255 characters).");
-        if (string.Equals(destination, scanned, StringComparison.OrdinalIgnoreCase))
-            throw Invalid("destination_scan_mismatch", "Scan the destination location, not the container again.");
-        if (!request.Confirmed)
-            throw Invalid("move_confirmation_required", "Confirm the scanned container and destination before saving the move.");
-        if (destination == container.Location)
-            throw Conflict("container_already_at_destination", "This container is already recorded at that destination.");
-        var previousLocation = container.Location;
-        container.Move(destination);
-        dbContext.LabWorkEvents.Add(new LabWorkEvent(container.LabWorkOrderId, container.LabSpecimenId,
-            "ContainerMoved", DateTime.UtcNow, actor.User.Id,
-            JsonSerializer.Serialize(new { containerId, scannedBarcode = scanned, previousLocation, destinationBarcode = destination }, JsonOptions)));
-        await dbContext.SaveChangesAsync(cancellationToken);
-        return MapContainer(container);
+        if (!request.Confirmed) throw Invalid("move_confirmation_required", "Confirm the scanned container and destination before saving the move.");
+        return await RecordPhysicalContainer(containerId, new(Guid.NewGuid(), request.Version, "Placed",
+            request.ScannedContainerBarcode ?? "", "Scanned tube relocation.", Destination: request.ScannedDestinationBarcode), cancellationToken);
     }
 
     [HttpGet("containers/{containerId:guid}/label")]

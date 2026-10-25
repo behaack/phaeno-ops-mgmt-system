@@ -17,23 +17,29 @@ internal static class LabResourceSnapshot
             .Select(x => new { x.Id, x.Name, x.Version }).SingleOrDefaultAsync(ct);
         var product = await db.LabSupplierProducts.AsNoTracking().Where(x => x.Id == lot.SupplierProductId)
             .Select(x => new { x.Id, x.ProductNumber, x.Description, x.Version }).SingleOrDefaultAsync(ct);
-        var components = await (from component in db.LabPreparedReagentComponents.AsNoTracking()
-            join source in db.LabMaterialLots.AsNoTracking() on component.ComponentMaterialLotId equals source.Id
-            where component.PreparedMaterialLotId == lot.Id orderby component.Id
-            select new { component.ComponentMaterialLotId, component.Quantity, component.QuantityUnit,
-                source.LotNumber, source.MaterialDefinitionId, source.SupplierId, source.SupplierProductId,
-                source.ExpirationOrRetestDate, source.QcDisposition, source.QcResultsJson, source.QcApprovedAtUtc }).ToListAsync(ct);
+        var storage = await db.LabStorageLocations.AsNoTracking().Where(x => x.Id == lot.StorageLocationId)
+            .Select(x => new { x.Id, x.Name, x.Version }).SingleAsync(ct);
+        var components = await db.LabPreparedReagentComponents.AsNoTracking().Where(c => c.PreparedMaterialLotId == lot.Id)
+            .OrderBy(c => c.Id).Select(c => new { c.ComponentMaterialLotId, c.Quantity, c.QuantityUnit }).ToListAsync(ct);
+        // Refer to the original withdrawals, never the component's mutable condition at later reagent use.
+        var withdrawals = await (from run in db.LabReagentManufacturingRuns.AsNoTracking()
+            join use in db.LabReagentMaterialUses.AsNoTracking() on run.Id equals use.RunId
+            where run.MaterialLotId == lot.Id orderby use.RecordedAtUtc, use.Id
+            select new { use.Id, use.SourceMaterialLotId }).ToListAsync(ct);
         return JsonSerializer.Serialize(new
         {
-            schemaVersion = 1, capturedAtUtc = DateTime.UtcNow, lot.Id, lot.Kind, lot.LotNumber, lot.Version, definition, supplier, product,
-            lot.ExpirationOrRetestDate, lot.StorageLocationId, lot.QuantityUnit, lot.QcDisposition,
-            lot.QcResultsJson, lot.QcPerformedOn, lot.QcFailureReason, lot.QcApprovedByUserId, lot.QcApprovedAtUtc, components
+            schemaVersion = 2, capturedAtUtc = DateTime.UtcNow, lot.Id, kind = lot.Kind.ToString(), lot.LotNumber, lot.Version, definition, supplier, product, storage,
+            lot.ExpirationOrRetestDate, lot.StorageLocationId, lot.QuantityUnit, lot.AvailableQuantity, qcDisposition = lot.QcDisposition.ToString(),
+            lot.QcResultsJson, lot.QcPerformedOn, lot.QcFailureReason, lot.QcApprovedByUserId, lot.QcApprovedAtUtc,
+            components = components.Select(c => new { c.ComponentMaterialLotId, c.Quantity, c.QuantityUnit,
+                withdrawalIds = withdrawals.Where(u => u.SourceMaterialLotId == c.ComponentMaterialLotId).Select(u => u.Id).ToArray(),
+                historicalCondition = "Use the frozen original withdrawal evidence; current component QC is not preparation evidence." })
         }, JsonOptions);
     }
 
     public static string Equipment(LabEquipment equipment) => JsonSerializer.Serialize(new
     {
-        schemaVersion = 1, capturedAtUtc = DateTime.UtcNow, equipment.Id, equipment.AssetCode, equipment.Name, equipment.EquipmentType,
-        equipment.Location, equipment.Status, equipment.LastCalibrationOn, equipment.CalibrationDueOn, equipment.Version
+        schemaVersion = 2, capturedAtUtc = DateTime.UtcNow, equipment.Id, equipment.AssetCode, equipment.Name, equipment.EquipmentType,
+        equipment.Location, status = equipment.Status.ToString(), equipment.LastCalibrationOn, equipment.CalibrationDueOn, equipment.Version
     }, JsonOptions);
 }

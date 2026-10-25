@@ -35,3 +35,8 @@ Migration `20260919050429_AddLabEvidenceGovernance` adds two restrictive, append
 ## Managed scientific-file follow-up
 
 See [managed scientific files](LAB-MANAGED-SCIENTIFIC-FILES-PLAN.md) for the subsequent staff-upload implementation. POMS now has a managed custody path with automatic actual-byte checksums, scoped file receipts, scan admission, verified retrieval and internal preservation. The external-file limitations above still apply to historical and provider-declared references; those records are never silently represented as uploaded files. Runtime activation and larger-file imports remain explicit boundaries.
+
+
+## Phase 3 capture extension — October 24, 2026
+
+[Physical lifecycle, storage and timing](LAB-PHYSICAL-LIFECYCLE-PLAN.md) adds procedure-specific actual intervals, distinct additional participants and explained per-tube performance overrides. Additional participant attribution remains pending independent review. Master-mix performance decisions are append-only and block readiness until approved. This supersedes the earlier bounded exclusion of multiple performers; original evidence and historical unknowns remain unchanged.

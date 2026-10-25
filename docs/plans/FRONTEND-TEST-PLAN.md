@@ -1,5 +1,37 @@
 # Frontend Test Plan
 
+## Full browser follow-up - October 24, 2026
+
+The specimen investigation History and Processing lists now include retained storage-location context, matching its existing backend/report evidence. Both view assertions pass in the four focused investigation component cases; TypeScript, scoped ESLint, UI guard and help freshness pass. All **16 connected browser variants** across Phases 1-4 pass. Latest visible-location, chronology, equipment and search assertions, visual inspection and artifact cleanup are recorded in the [browser verification report](../testing/runs/2026-10-24-sample-tracking-full-browser-acceptance.md). No visual baseline, dependency or Customer localization change.
+
+## Final sample-tracking review corrections - October 24, 2026
+
+`PhysicalLifecyclePanel.test.tsx` covers departed location context and explicit unknown history. `MasterMixEquipmentEvidence.test.tsx` covers frozen conditions, missing original conditions and no invented equipment requirements. These five new cases join the existing ingredient/investigation selection for 12 focused component checks. TypeScript, scoped ESLint, UI source guards and generated help consistency are the static checkpoint. Physical actual-time input accepts explicit-offset seconds/fractional seconds and optional actual placement time. Shared Actions behavior is unchanged; no new dependency or screenshot baseline is introduced.
+
+## Sample-tracking review corrections — October 24, 2026
+
+This repair changes the backend Trial guard/history projection and engineering cleanup harness. Frontend application source is unchanged; Phaeno Lab help now explains held/closed Trial custody and actual-time box history. Regenerate/check the 62-guide corpus. The existing connected browser matrix is rerun; the prior 15 frontend cases remain dated prior evidence and are not counted as a new unit run. See the [review-fix record](../testing/runs/2026-10-24-sample-tracking-review-fixes.md).
+
+## Phase 4 sample-tracking recovery — October 24, 2026
+
+The initial Phase 4 implementation changed backend verification only. The subsequent requested verification adds connected restored-data browser coverage and repairs scientific-file download feedback: binary error responses now preserve the domain explanation through a shared evidence-download helper, also used by investigation reports/attachments. Successful bytes remain opaque; malformed/non-text envelopes retain the original failure. The Phaeno scientific-approval guide and generated help are updated.
+
+`lab-evidence-download.test.ts` covers integrity explanations, exact successful bytes, saved-report checksum refusal/cause, missing supporting evidence and invalid/empty messages. Together with `SampleInvestigation.test.tsx` and `ScientificFilePicker.test.tsx`, **15 selected cases pass**, zero failures/skips. The initial new integrity test failed before the repair. Browser acceptance separately verifies actual missing/corrupt restored evidence and successful retry; the [Phase 4 runbook](../testing/SAMPLE-TRACKING-PHASE4-RUNBOOK.md) and [crosswalk](SAMPLE-TRACKING-PHASE4-ACCEPTANCE.md) retain hosted/full-navigation/scientific qualification boundaries.
+
+Final connected browser acceptance also passes all four desktop/320px phone × light/dark scenarios. TypeScript, scoped ESLint, UI guard (773 files, two existing exceptions) and generated help freshness (62 guides, `84b6e1ec5070`) pass. See the [requested verification record](../testing/runs/2026-10-24-sample-tracking-phase4-regression-and-browser-verification.md).
+
+## Phase 2 capture at source — October 24, 2026
+
+Seven new focused test cases cover actual acquisition/group serialization and UTC times, required run/time/document fingerprints, preserving unedited scientific evidence during notes edits, frozen ingredient condition presentation, explicit historical unknowns, malformed saved evidence, and successful-receipt refusal until actual-run mapping is entered. Ingredient snapshots are inspectable on mix/reagent records. Vendor results capture and version detail distinguish vendor job, actual acquisition and purchased allocation; form entries and scientific facts remain in saved/restarted drafts. Shared fields, required legend and contextual Actions patterns are retained.
+
+The Owner subsequently requested execution. **16 focused frontend cases and four connected browser scenarios pass**, with zero final failures/skips. The first component run exposed a hidden validation explanation: React Hook Form placed the array-level error under `runCaptures.root`, while the UI read only `message`. Both forms of the error are now displayed; the required-reference and document-fingerprint refusals are verified in the browser. All full matrix scenarios retain precise saved UTC timestamps and original input identities through notes-only edits and stale-draft restart. TypeScript, scoped lint, UI guard (767 files, two unchanged exceptions), help freshness (62 guides, `40fd4cc1d142`), geometry/axe checks and representative screenshot review pass. No reviewed screenshot baseline changed, no deployment or DPS changes. See the [verification record](../testing/runs/2026-10-24-sample-tracking-phase2-verification.md).
+
+## Shared-resource investigation coverage — October 24, 2026
+
+`SampleInvestigation.test.tsx` adds four cases: shared preparation/master-mix/component/vendor/custody evidence in both History and Processing, complete-report refusal on a limited source, and visible unavailable-source behavior with report generation disabled. The existing expandable evidence lists and Actions rules remain unchanged; shared physical totals are explicitly distinct from recorded sample amounts. Phaeno Lab help and its registry/corpus review are updated.
+
+The Owner subsequently requested execution. **All four component cases pass**, as do TypeScript, scoped ESLint, the UI source guard (763 files, two unchanged existing exceptions) and documentation freshness (62 guides, `af2bd575b21f`). Eight Chromium browser scenarios pass across desktop/320 px phone and both themes: four use real local controller/PostgreSQL responses, and four retain the existing intercepted-response regression coverage. Keyboard expansion, Actions focus return, overflow and selected axe WCAG A/AA checks pass. Screenshot review found the header explanation squeezed beside Reload at 320 px; the header now stacks on narrow screens, with a browser geometry assertion for the fix. Engineering-fixture navigation uses shared Buttons. No reviewed image baseline was changed. See the [verification record](../testing/runs/2026-10-24-sample-investigation-phase1.md). No deployment or DPS change.
+
 ## Local DPS native connection — October 23, 2026
 
 The [DPS follow-up](DPS-LOCAL-ASSEMBLY-ENGINEERING-HANDOFF-20261023.md) changes no Portal frontend/API, routes, controls, availability configuration or polling behavior. No frontend test source changed or suite was rerun. Existing quiet-refresh and simulation/scientific separation expectations remain. Hosted scientific selection/admission/QC UI acceptance stays in RA-09 behind scientific/deployment gates.
@@ -4574,3 +4606,13 @@ generation remains paired; no hosted index activation is claimed here.
 
 See [the owning adoption plan](UI-CONSISTENCY-ADOPTION-AND-ILLUSTRATIONS-PLAN.md)
 for final browser/visual/build evidence and the UI-versus-live-acceptance boundary.
+
+
+## Sample tracking Phase 3 — October 24, 2026
+
+Phase 3 adds `step-performance.phase3.test.ts` for configured timing/participant requirements, preserved offsets/roles and invalid intervals/duplicate identities. Authored; execution awaits a Phase 3 verification request. Include existing step forms, accession/StoreAcceptedTubes, master mix and sample investigation regressions for changed capture surfaces.
+
+
+### Phase 3 requested verification result
+
+Requested Phase 3 selection now passes 84 cases across nine files with zero skips/failures. A per-tube override regression verifies selection, explanation and removal. Connected browser checks additionally cover physical forms, retention queue, nested box dialogs, sample/mix review and interval amendment. See [Phase 3 verification](../testing/runs/2026-10-24-sample-tracking-phase3-verification.md).

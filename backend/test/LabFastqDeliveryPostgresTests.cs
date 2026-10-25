@@ -62,7 +62,8 @@ public partial class SampleShippingPostgresTests
                 return id;
             }
             RecordVendorResultsRequest Request(Guid id, Guid set, string note) => new(id, sendout.Version, "SIMULATED-JOB", false, now, now, now,
-                "Success", [], [set], note, DraftId: id, DraftVersion: db.Set<LabVendorResultsDraft>().Single(d => d.Id == id).Version, FilesConfirmed: true);
+                "Success", [], [set], note, DraftId: id, DraftVersion: db.Set<LabVendorResultsDraft>().Single(d => d.Id == id).Version, FilesConfirmed: true,
+                SequencingRuns: [new(set, 1, "SIMULATED-ACTUAL-RUN", new(1, Instrument: "SIMULATED instrument", RunStartedAtUtc: now, RunCompletedAtUtc: now))]);
             async Task<VendorResultsSnapshot> Snapshot() => JsonSerializer.Deserialize<VendorResultsSnapshot>((await db.LabVendorResultsVersions
                 .Where(v => v.LabNgsSendoutId == sendout.Id).OrderByDescending(v => v.ResultVersion).FirstAsync()).SnapshotJson, LabAssemblyService.Json)!;
 
@@ -95,6 +96,10 @@ public partial class SampleShippingPostgresTests
             await Assert.ThrowsAsync<OrderManagementException>(() => api.BeginFastqUpload(zipSet,
                 new(Guid.NewGuid(), "SIMULATED_extra.fastq", r1.Length, FastqFixtureFingerprint(r1), 2, 1, 1, "SIMULATED other lane"), scan, default));
             var first = await Snapshot(); var firstOutputs = first.FastqSets!.Single().Files.Select(f => f.OutputId).ToArray();
+            Assert.All(await db.LabSequencingOutputs.Where(o => firstOutputs.Contains(o.Id)).ToListAsync(), output => {
+                Assert.Equal("SIMULATED-ACTUAL-RUN", output.ProviderRunReference);
+                Assert.Contains("SIMULATED instrument", output.ScientificEvidenceJson);
+            });
             var provider = new FastqFixtureProvider(); var clock = TimeProvider.System; var cache = new LabAssemblyProgress(clock);
             var assembly = new LabAssemblyService(db, provider, cache, Options.Create(new LabAssemblyOptions { WorkerEnabled = true }), Options.Create(new PSeqOrderToCashOptions()), clock, storage);
             var queued = await assembly.StartAsync(fixture.WorkId, new(Guid.NewGuid(), fixture.SpecimenId, 1, "SIMULATED", firstOutputs), actor, default);
@@ -111,7 +116,8 @@ public partial class SampleShippingPostgresTests
             // A note-only revision preserves inputs and does not create correction outputs.
             var orphan = await Draft(); var recoveredSet = await Set(orphan, "SingleEnd"); await Raw(recoveredSet, r1, 1);
             await api.RecordVendorResults(sendout.Id, new(Guid.NewGuid(), sendout.Version, "SIMULATED-JOB", false, now, now, now,
-                "Success", [], [rawSet], "SIMULATED notes-only correction", FilesConfirmed: true), default);
+                "Success", [], [rawSet], "SIMULATED notes-only correction", FilesConfirmed: true,
+                SequencingRuns: [new(rawSet, 1, "SIMULATED-ACTUAL-RUN", new(1, Instrument: "SIMULATED instrument", RunStartedAtUtc: now, RunCompletedAtUtc: now))]), default);
             Assert.Equal(secondOutputs, (await Snapshot()).FastqSets!.Single().Files.Select(f => f.OutputId));
             Assert.Equal(4, await db.LabSequencingOutputs.CountAsync(o => o.LabNgsSendoutId == sendout.Id));
             var currentSource = await db.Set<LabVendorResultsDraft>().SingleAsync(d => d.Id == orphan);

@@ -113,7 +113,9 @@ public sealed partial class LabOperationsController(
                 item.Label, item.LabelPrintCount, item.Location, item.Quantity, item.QuantityUnit,
                 item.Status.ToString(), item.RetainUntilUtc, item.Version, item.BarcodeNamespace,
                 item.IntakeDisposition == null ? null : item.IntakeDisposition.ToString(), item.IntakeReasonCode, item.IntakeNotes,
-                item.IntakeReviewedAtUtc, item.IntakeReviewedByUserId)).ToListAsync(cancellationToken);
+                item.IntakeReviewedAtUtc, item.IntakeReviewedByUserId,
+                item.InitialQuantity, item.InitialQuantityUnit, item.QuantityBasis, item.QuantityHistoryJson,
+                item.StorageBoxId, item.StoragePosition, item.PhysicalHoldReason)).ToListAsync(cancellationToken);
         var executions = await dbContext.LabProtocolExecutions.AsNoTracking().Where(item => item.LabWorkOrderId == work.Id)
             .OrderBy(item => item.CreatedAt).Select(item => new LabExecutionDto(item.Id,
                 item.LabSpecimenId, item.LabProtocolVersionId, item.AssignedToUserId,

@@ -29,7 +29,7 @@ export function stepFormSchema(step: LabExecutionStep['definition'], action: Lab
     }
     if (step.condition && !values.reason) issue(['reason'], 'Record how you assessed the condition.')
     if ((action !== 'correct' || step.operatorConfirmation) && !values.operatorConfirmed) issue(['operatorConfirmed'], action === 'correct' ? 'Confirm that you reviewed this correction.' : values.timing.otherPerformer ? 'Confirm the actual performer and time.' : 'Confirm that you personally performed this step.')
-    if (action !== 'correct') timingIssues(values.timing).forEach(error => issue(['timing', error.field], error.message))
+    if (action !== 'correct') timingIssues(values.timing, Date.now(), step).forEach(error => issue(['timing', error.field], error.message))
     if (hasResourceRequirements(step) && !values.resourcesConfirmed) issue(['resourcesConfirmed'], 'Confirm the listed resources and their job traceability.')
     if (step.qcGate && !values.qcOutcome) issue(['qcOutcome'], 'Choose the QC outcome.')
     if (step.qcGate && ['fail', 'hold'].includes(values.qcOutcome) && !values.reason) issue(['reason'], 'Explain the QC failure or hold.')

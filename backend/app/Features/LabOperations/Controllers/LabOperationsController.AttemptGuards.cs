@@ -37,7 +37,7 @@ public sealed partial class LabOperationsController
                 join destination in dbContext.LabContainers on member.LibraryTubeContainerId equals destination.Id
                 where !member.Removed && member.LabSpecimenAttemptId == attempt.Id && transfer.LabSpecimenAttemptId == attempt.Id
                     && transfer.SourceContainerId == tube.Id && transfer.DestinationContainerId == destination.Id
-                    && destination.LabSpecimenAttemptId == attempt.Id && destination.Status == LabContainerStatus.Available && destination.Quantity > 0
+                    && destination.LabSpecimenAttemptId == attempt.Id && destination.PhysicalHoldReason == null && destination.Status == LabContainerStatus.Available && destination.Quantity > 0
                 select member.Id).AnyAsync(ct)) reason = null;
         if (tube.LabWorkOrderId != attempt.LabWorkOrderId || tube.LabSpecimenId != specimen.Id || reason is not null)
             throw Conflict("attempt_source_unavailable", reason ?? "The selected source does not belong to this specimen.");

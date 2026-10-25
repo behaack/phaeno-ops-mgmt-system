@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Features.LabOperations.DTOs;
+using PhaenoPortal.App.Features.LabOperations.Services;
 using PhaenoPortal.App.Features.OrderManagement.Services;
 
 public sealed partial class LabOperationsController
@@ -18,6 +19,7 @@ public sealed partial class LabOperationsController
         if (request.RequestId == Guid.Empty || string.IsNullOrWhiteSpace(request.VendorJobReference) || request.Exceptions is null || request.FastqSetIds is null
             || !Enum.TryParse<LabVendorOutcome>(request.Outcome, true, out var outcome) || !Enum.IsDefined(outcome))
             throw Invalid("vendor_results_invalid", "Review the library outcomes and results details.");
+        request = LabVendorRunCapture.Normalize(request, DateTime.UtcNow);
         var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(request, JsonOptions))));
         await using var transaction = await SampleShippingPackingData.BeginAsync(dbContext, $"lab-sendout:{sendoutId}", ct);
         var sendout = await dbContext.LabNgsSendouts.SingleOrDefaultAsync(s => s.Id == sendoutId, ct) ?? throw Missing();
@@ -108,7 +110,7 @@ public sealed partial class LabOperationsController
                 return new VendorResultsLibrarySnapshot(member.Id, member.LabLibraryId, member.LibraryKey,
                     (exception?.Outcome ?? outcome).ToString(), exception?.Reason ?? (outcome == LabVendorOutcome.Failure ? sendout.OutcomeNote : null));
             }).ToList(),
-            [], fastqSnapshots);
+            [], fastqSnapshots, request.SequencingRuns);
         var actorName = (actor.User.FirstName + " " + actor.User.LastName).Trim();
         dbContext.LabVendorResultsVersions.Add(new LabVendorResultsVersion(request.RequestId, sendout.Id, resultVersion,
             JsonSerializer.Serialize(snapshot, JsonOptions), request.Notes, actor.User.Id,

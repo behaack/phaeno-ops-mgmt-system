@@ -140,7 +140,7 @@ public sealed partial class LabOperationsController
                     if (member.LibraryTubeContainerId.HasValue)
                     {
                         var tube = await dbContext.LabContainers.SingleAsync(c => c.Id == member.LibraryTubeContainerId, ct);
-                        tube.Move($"Tray {batch.TrayBarcode} · {member.Position}");
+                        MoveToWorkingLocation(tube, $"Tray {batch.TrayBarcode} · {member.Position}", actor.User.Id, "Library tube moved within the preparation tray.", request.RequestId);
                     }
                 }
                 else

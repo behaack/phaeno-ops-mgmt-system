@@ -1583,9 +1583,9 @@
       "slug": "lab-operations",
       "overviewTitle": "Overview",
       "title": "Laboratory operations",
-      "summary": "Find laboratory work, receive purchased kits and stock, assemble Phaeno kits and reagents, record scientific evidence, and trace result delivery.",
+      "summary": "Find laboratory work, receive purchased kits and stock, assemble Phaeno kits and reagents, record scientific evidence, trace shared resources, and review result delivery.",
       "order": 50,
-      "reviewedAt": "2026-10-22",
+      "reviewedAt": "2026-10-24",
       "navigationGroup": "laboratory-operations",
       "contentType": "overview",
       "topicIds": [
@@ -1661,7 +1661,7 @@
       "title": "Service workflows, protocol control, and execution",
       "summary": "Author, review and present complete laboratory procedures; control exact revisions and record scientific execution.",
       "order": 54,
-      "reviewedAt": "2026-10-22",
+      "reviewedAt": "2026-10-24",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1696,7 +1696,7 @@
       "title": "Materials and equipment",
       "summary": "Receive purchased lots, configure Phaeno reagent products and manufacture their lots, qualify stock, and track consumption and storage.",
       "order": 55,
-      "reviewedAt": "2026-10-22",
+      "reviewedAt": "2026-10-24",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1729,7 +1729,7 @@
       "title": "Libraries, batches, and sequencing",
       "summary": "Track library/tube lineage, verify FASTQ inputs, follow scientific or explicitly simulated assembly attempts, record QC and hand off approved Customer packages.",
       "order": 56,
-      "reviewedAt": "2026-10-22",
+      "reviewedAt": "2026-10-24",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1803,7 +1803,7 @@
       "title": "Scientific approval and release readiness",
       "summary": "Review output packages, source-tube lineage and scientific evidence requirements, resolve performer/time reviews, and record independent scientific approval.",
       "order": 58,
-      "reviewedAt": "2026-10-11",
+      "reviewedAt": "2026-10-24",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [

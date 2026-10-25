@@ -1,3 +1,4 @@
+import { Label } from '#/components/ui/label'
 import { EmptyState } from '#/components/ui/content-state'
 import { NativeCheckbox } from '#/components/ui/native-checkbox'
 import { RecordLink } from '#/components/ui/record-link'
@@ -9,7 +10,7 @@ import type { ReactNode } from 'react'
 import { ChevronRight } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Controller, useForm } from 'react-hook-form'
+import { Controller, useForm, useWatch } from 'react-hook-form'
 import { z } from 'zod'
 import { getLabOperationsError } from '#/api/lab-operations'
 import { Button } from '#/components/ui/button'
@@ -29,7 +30,7 @@ import { emptyStepTiming, performanceInput, stepTimingSchema, timingIssues } fro
 import { eligibleResources, emptyResourceCatalog, isResourceField, resourceEntries, stepResourceFields, type ResourceCatalog } from './preparation-resource-fields'
 
 type Step = ProtocolDefinition['steps'][number]
-const baseSchema = z.object({ values: z.record(z.string(), z.string()), covered: z.array(z.string()), outcome: z.enum(['recorded', 'skipped']), operator: z.boolean(), resources: z.boolean(), timing: stepTimingSchema })
+const baseSchema = z.object({ values: z.record(z.string(), z.string()), covered: z.array(z.string()), outcome: z.enum(['recorded', 'skipped']), operator: z.boolean(), resources: z.boolean(), timing: stepTimingSchema, tubeTiming: z.record(z.string(), stepTimingSchema).optional() })
 const failureSchema = z.object({
   code: z.string().refine(value => preparationFailureReasons.some(reason => reason.value === value), 'Choose a failure reason.'),
   reason: z.string().trim().min(1, 'Record the reason and evidence.').max(4000, 'Use 4,000 characters or fewer.'),
@@ -96,7 +97,8 @@ export function PreparationStepDialog({ batch, stage, step: sourceStep, action, 
     if (reportRequired && !qcReport) ctx.addIssue({ code: 'custom', path: ['values', 'qc_report'], message: 'Attach the required report before saving the step record.' })
     if (qcReport && (!qcReport.name.toLowerCase().endsWith('.pdf') || qcReport.size < 5 || qcReport.size > 10 * 1024 * 1024)) ctx.addIssue({ code: 'custom', path: ['values', 'qc_report'], message: 'Choose a nonempty PDF report no larger than 10 MB.' })
     if ((action !== 'correct' || step.operatorConfirmation) && !v.operator) ctx.addIssue({ code: 'custom', path: ['operator'], message: action === 'correct' ? 'Confirm that you reviewed this correction.' : v.timing.otherPerformer ? 'Confirm the actual performer and time.' : 'Confirm that you personally performed this step.' })
-    if (action !== 'correct') timingIssues(v.timing).forEach(error => ctx.addIssue({ code: 'custom', path: ['timing', error.field], message: error.message }))
+    if (action !== 'correct') Object.entries(v.tubeTiming ?? {}).forEach(([id, timing]) => { if (!timing.reason.trim()) ctx.addIssue({ code: 'custom', path: ['tubeTiming', id, 'reason'], message: 'Explain why this tube has different performance evidence.' }); timingIssues(timing, Date.now(), step).forEach(error => ctx.addIssue({ code: 'custom', path: ['tubeTiming', id, error.field], message: error.message })) })
+    if (action !== 'correct') timingIssues(v.timing, Date.now(), step).forEach(error => ctx.addIssue({ code: 'custom', path: ['timing', error.field], message: error.message }))
     if (step.inputMaterials.length + step.equipmentTypes.length + step.preparedOutputs.length > 0 && !v.resources) ctx.addIssue({ code: 'custom', path: ['resources'], message: 'Confirm the listed resources and outputs.' })
     for (const capture of manualCaptures) {
       const keys = capture.scope === 'tube' ? v.covered.map(id => `${id}_${capture.key}`) : [`shared_${capture.key}`, ...(capture.scope === 'shared' && recordException && !isSharedIdentityCheckDate(capture) ? v.covered.map(id => `${id}_${capture.key}`) : [])]
@@ -119,7 +121,8 @@ export function PreparationStepDialog({ batch, stage, step: sourceStep, action, 
         || step.qcGate?.scope === 'tube' && v.values[`${id}_qc`] && v.values[`${id}_qc`] !== 'pass') requiredValue(`${id}_reason`, 'Tube exception or QC reason')
     }
   })
-  const form = useForm<Values>({ resolver: zodResolver(schema), defaultValues: { values: {}, covered: applicable.map(m => m.id), outcome: 'recorded', operator: false, resources: false, timing: { ...emptyStepTiming } } })
+  const form = useForm<Values>({ resolver: zodResolver(schema), defaultValues: { values: {}, covered: applicable.map(m => m.id), outcome: 'recorded', operator: false, resources: false, timing: { ...emptyStepTiming }, tubeTiming: {} } })
+  const tubeTiming = useWatch({ control: form.control, name: 'tubeTiming' }) ?? {}
   const covered = applicable.map(m => m.id)
   const excluded = batch.members.filter(m => !covered.includes(m.id))
   const exclusionReason = (member: PreparationDetail['members'][number]) => {
@@ -193,7 +196,7 @@ export function PreparationStepDialog({ batch, stage, step: sourceStep, action, 
     const captures = (prefix: string, scopes: string[]) => Object.fromEntries(manualCaptures.filter(c => scopes.includes(c.scope ?? '') && (prefix === 'shared' || !isSharedIdentityCheckDate(c) && (c.scope !== 'shared' || recordException)) && v.values[`${prefix}_${c.key}`]?.trim()).map(c => [c.key, c.type === 'number' ? Number(v.values[`${prefix}_${c.key}`]) : v.values[`${prefix}_${c.key}`]]))
     onSubmit({ stageId: stage.id, stepKey: step.key, action, outcome: v.outcome, coveredMemberIds: v.covered,
       sharedCaptures: skipped ? {} : captures('shared', ['batch', 'shared']),
-      tubes: skipped ? [] : v.covered.map(id => ({ memberId: id, captures: captures(id, ['tube', 'shared']), qcOutcome: step.qcGate?.scope === 'tube' || recordException && step.qcGate?.scope === 'shared' ? v.values[`${id}_qc`] || null : null, reason: showTubeReason ? v.values[`${id}_reason`] || null : null })),
+      tubes: skipped ? [] : v.covered.map(id => ({ memberId: id, captures: captures(id, ['tube', 'shared']), qcOutcome: step.qcGate?.scope === 'tube' || recordException && step.qcGate?.scope === 'shared' ? v.values[`${id}_qc`] || null : null, reason: v.tubeTiming?.[id] ? v.tubeTiming[id].reason || v.values[`${id}_reason`] || null : showTubeReason ? v.values[`${id}_reason`] || null : null, ...(action !== 'correct' && v.tubeTiming?.[id] ? { performance: performanceInput(v.tubeTiming[id], v.operator) } : {}) })),
       sharedQcOutcome: skipped ? null : v.values.shared_qc || null,
       reason: !skipped && rationaleSuppliesCondition ? v.values['shared_review-rationale']?.trim() || null : v.values.reason || null, coverageConfirmed: true,
       operatorConfirmed: !skipped && v.operator, resourcesConfirmed: !skipped && v.resources, resourceEntries: skipped || action === 'correct' ? [] : resourceEntries(resources, applicable, v.values, catalog).entries,
@@ -219,7 +222,8 @@ export function PreparationStepDialog({ batch, stage, step: sourceStep, action, 
       {!step.required ? <PreparationField label="Decision" id="prep-decision" required><NativeSelect id="prep-decision" {...form.register('outcome')}><option value="recorded">Performed</option><option value="skipped">Skip with reason</option></NativeSelect></PreparationField> : null}
       {!skipped ? <>
         {catalogError && resources.length && !batchResources.length ? <p role="alert" className="text-sm text-destructive">{catalogError}</p> : null}
-        {action === 'correct' ? <p className="text-sm text-muted-foreground">This correction preserves each tube’s earlier performer and performed time, including any unknowns. It does not record new work.</p> : <Controller name="timing" control={form.control} render={({ field }) => <StepTimingFields value={field.value} onChange={field.onChange} onBlur={field.onBlur} inputRef={field.ref} errors={form.formState.errors.timing} shared preview={Boolean(preview)} />} />}
+        {action === 'correct' ? <p className="text-sm text-muted-foreground">This correction preserves each tube’s earlier performer and performed time, including any unknowns. It does not record new work.</p> : <Controller name="timing" control={form.control} render={({ field }) => <StepTimingFields requirements={step} value={field.value} onChange={field.onChange} onBlur={field.onBlur} inputRef={field.ref} errors={form.formState.errors.timing} shared preview={Boolean(preview)} />} />}
+        {action !== 'correct' && form.watch('outcome') !== 'skipped' ? <details><summary className="cursor-pointer">Different performance for an individual tube</summary><div className="mt-3 space-y-3">{applicable.map(member => <div key={member.id} className="rounded border p-3"><Label className="flex items-center gap-2"><NativeCheckbox checked={Boolean(tubeTiming[member.id])} onChange={event => { const next = { ...form.getValues('tubeTiming') }; if (event.target.checked) next[member.id] = { ...emptyStepTiming }; else delete next[member.id]; form.setValue('tubeTiming', next, { shouldDirty: true }) }} />{member.position} · Use separate actual performance</Label>{tubeTiming[member.id] ? <Controller name={`tubeTiming.${member.id}`} control={form.control} render={({ field }) => <><PreparationField label="Tube performance exception reason" id={`tube-performance-reason-${member.id}`} required error={form.formState.errors.tubeTiming?.[member.id]?.reason?.message}><Input id={`tube-performance-reason-${member.id}`} value={field.value?.reason ?? ''} onChange={event => field.onChange({ ...field.value ?? emptyStepTiming, reason: event.target.value })} /></PreparationField><StepTimingFields requirements={step} value={field.value ?? emptyStepTiming} onChange={field.onChange} onBlur={field.onBlur} inputRef={field.ref} errors={form.formState.errors.tubeTiming?.[member.id]} /></>} /> : null}</div>)}</div></details> : null}
         {manualCaptures.some(c => c.scope !== 'tube') || batchResources.length > 0 || step.qcGate && step.qcGate.scope !== 'tube' ? <div className={`${prepRowClass} space-y-4`}>
           <h3 className="font-medium">Batch entries</h3>
           {manualCaptures.filter(c => c.scope !== 'tube').map(c => captureInput(c, 'shared', c.required))}

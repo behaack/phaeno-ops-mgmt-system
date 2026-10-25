@@ -216,6 +216,7 @@ public partial class SampleShippingPostgresTests
             {
                 var before = await scope.CreatePlatformWorkflowController().ScanTube(packet.Barcode, barcode, default);
                 Assert.False(before.IsReceived);
+                await scope.RegisterTestBoxAsync("SIMULATED-BOX-A");
                 var work = await lab.AccessionShipmentTube(fixture.WorkOrder.Id, shipment.Id,
                     new(packet.Barcode, barcode, "SIMULATED-BOX-A"), default);
                 scope.ClearTrackedState();

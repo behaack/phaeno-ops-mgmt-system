@@ -1,5 +1,5 @@
 import { api } from './client'
-import axios from 'axios'
+import { downloadLabEvidence } from './lab-evidence-download'
 import type { LabExecutionStepRecord } from './lab-operations'
 
 export type EvidenceRow = { id: string; [key: string]: unknown }
@@ -25,21 +25,10 @@ export async function generateInvestigationReport(work: string, specimen: string
   return (await api.post<{ data: InvestigationReport }>(`${base(work, specimen)}/investigation/reports`, { requestId })).data.data
 }
 export async function downloadInvestigationReport(work: string, specimen: string, report: string, format: 'json' | 'html') {
-  return downloadEvidence(`${base(work, specimen)}/investigation/reports/${report}?${new URLSearchParams({ format })}`)
+  return downloadLabEvidence(`${base(work, specimen)}/investigation/reports/${report}?${new URLSearchParams({ format })}`)
 }
 export async function downloadInvestigationAttachment(work: string, specimen: string, record: string, role: string) {
-  return downloadEvidence(`${base(work, specimen)}/investigation/attachments/${record}/${encodeURIComponent(role)}`)
-}
-async function downloadEvidence(url: string) {
-  try {
-    return (await api.get<Blob>(url, { responseType: 'blob' })).data
-  } catch (error) {
-    if (axios.isAxiosError(error) && error.response?.data instanceof Blob) {
-      const data: unknown = await error.response.data.text().then(text => { try { return JSON.parse(text) as unknown } catch { return null } })
-      if (data && typeof data === 'object' && 'error' in data && data.error && typeof data.error === 'object' && 'message' in data.error && typeof data.error.message === 'string') throw new Error(data.error.message, { cause: error })
-    }
-    throw error
-  }
+  return downloadLabEvidence(`${base(work, specimen)}/investigation/attachments/${record}/${encodeURIComponent(role)}`)
 }
 export const relatedInvestigationSamples = (work: string, kind: string, reference: string, page: number) =>
   read<{ id: string; labWorkOrderId: string; accessionNumber: string | null }[]>(`/platform/lab-operations/work-orders/${work}/investigation/related-samples?${new URLSearchParams({ kind, reference, page: String(page) })}`)

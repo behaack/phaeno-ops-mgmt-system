@@ -30,6 +30,14 @@ public sealed class LabInvestigationService(PSeqOperationsDbContext db)
         if (scientificFiles.Count > limit) { limited.Add("scientificFiles"); scientificFiles.RemoveAt(limit); }
         evidence["scientificFiles"] = scientificFiles.Select(LabScientificFiles.Public).ToArray();
         var containers = await Read("containers", db.LabContainers.AsNoTracking().Where(x => x.LabWorkOrderId == workId && x.LabSpecimenId == specimenId).OrderBy(x => x.Id));
+        var allContainerIds = await db.LabContainers.AsNoTracking().Where(x => x.LabWorkOrderId == workId && x.LabSpecimenId == specimenId).Select(x => x.Id).ToArrayAsync(ct);
+        var physicalHistory = await new LabPhysicalHistory(db).ReadAsync(allContainerIds, ct, limit);
+        evidence["physicalLifecycle"] = physicalHistory.Events;
+        evidence["storageBoxMoves"] = physicalHistory.BoxMoves;
+        evidence["storageLocations"] = physicalHistory.Locations;
+        var currentBoxIds = containers.Where(c => c.StorageBoxId.HasValue).Select(c => c.StorageBoxId!.Value).ToArray();
+        evidence["storageBoxes"] = await db.Set<LabStorageBox>().AsNoTracking().Where(b => currentBoxIds.Contains(b.Id)).ToListAsync(ct);
+        if (physicalHistory.Limited) limited.Add("physicalLifecycle");
         var biologicalTransfers = await Read("biologicalMaterialTransfers", db.LabBiologicalMaterialTransfers.AsNoTracking()
             .Where(x => x.LabWorkOrderId == workId && x.LabSpecimenId == specimenId).OrderBy(x => x.RecordedAtUtc).ThenBy(x => x.Id));
         var attempts = await Read("attempts", db.LabSpecimenAttempts.AsNoTracking().Where(x => x.LabWorkOrderId == workId && x.LabSpecimenId == specimenId).OrderBy(x => x.Sequence));
@@ -40,6 +48,12 @@ public sealed class LabInvestigationService(PSeqOperationsDbContext db)
         await Read("protocols", db.LabProtocolVersions.AsNoTracking().Where(x => protocolIds.Contains(x.Id)).OrderBy(x => x.Id));
         var materials = await Read("materials", db.LabMaterialConsumptions.AsNoTracking().Where(x => executionIds.Contains(x.LabProtocolExecutionId)).OrderBy(x => x.RecordedAtUtc).ThenBy(x => x.Id));
         var equipment = await Read("equipment", db.LabEquipmentUsages.AsNoTracking().Where(x => executionIds.Contains(x.LabProtocolExecutionId)).OrderBy(x => x.UsedAtUtc).ThenBy(x => x.Id));
+        var resourceEvidence = await new LabInvestigationResources(db).ReadAsync(workId, specimenId, evidence, limited, limit, ct);
+        // Avoid duplicate shared rows while retaining every original sample-anchored record that cannot be expanded.
+        materials = materials.Where(m => !resourceEvidence.MaterialUseIds.Contains(m.Id)).ToList();
+        equipment = equipment.Where(e => !resourceEvidence.EquipmentUseIds.Contains(e.Id)).ToList();
+        evidence["materials"] = materials;
+        evidence["equipment"] = equipment;
         await Read("libraries", db.LabLibraries.AsNoTracking().Where(x => x.LabWorkOrderId == workId && x.LabSpecimenId == specimenId).OrderBy(x => x.Id));
         var outputs = await Read("sequencingOutputs", db.LabSequencingOutputs.AsNoTracking().Where(x => x.LabWorkOrderId == workId && x.LabSpecimenId == specimenId).OrderBy(x => x.RecordedAtUtc).ThenBy(x => x.Id));
         var runs = await Read("analysisRuns", db.LabAnalysisRuns.AsNoTracking().Where(x => x.LabWorkOrderId == workId && x.LabSpecimenId == specimenId).OrderBy(x => x.RecordedAtUtc).ThenBy(x => x.Id));
@@ -68,19 +82,20 @@ public sealed class LabInvestigationService(PSeqOperationsDbContext db)
             .OrderBy(x => x.Id).Select(x => new { x.Id, x.ReleaseVersion, x.LabAnalysisRunId, x.TraceabilityRequired, x.ResultLocator, x.ReleasedAt }));
         await Read("approvals", db.LabScientificApprovals.AsNoTracking().Where(x => x.LabWorkOrderId == workId && x.ResultOutputPackageId.HasValue && packageIds.Contains(x.ResultOutputPackageId.Value)).OrderBy(x => x.ApprovedAtUtc).ThenBy(x => x.Id));
         await Read("exceptions", db.LabExceptions.AsNoTracking().Where(x => x.LabWorkOrderId == workId && (x.LabSpecimenId == specimenId || x.LabProtocolExecutionId.HasValue && executionIds.Contains(x.LabProtocolExecutionId.Value))).OrderBy(x => x.Id));
-        var containerIds = db.LabContainers.Where(x => x.LabWorkOrderId == workId && x.LabSpecimenId == specimenId).Select(x => x.Id);
-        // Never expose custody for another sample in a shared sendout.
-        await Read("custody", db.LabCustodyEvents.AsNoTracking().Where(x => x.LabContainerId.HasValue && containerIds.Contains(x.LabContainerId.Value)).OrderBy(x => x.OccurredAtUtc).ThenBy(x => x.Id));
+        var sequencingActors = await new LabInvestigationSequencing(db).ReadAsync(workId, specimenId, evidence, limited, limit, ct);
         // Live events have a separate paged endpoint; saved reports include their full bounded source snapshot.
         if (limit > 1000) await Read("events", db.LabWorkEvents.AsNoTracking().Where(x => x.LabWorkOrderId == workId && x.LabSpecimenId == specimenId
             && x.EventCode != "InvestigationReportGenerated" && x.EventCode != "InvestigationReportDownloaded").OrderBy(x => x.OccurredAtUtc).ThenBy(x => x.Id));
         var steps = executions.SelectMany(x => LabProtocolEvidence.Read(x.CapturedResultsJson).Records).ToArray();
         var deliveryActors = await new LabInvestigationDeliveryHistory(db).ReadAsync(work, specimen, evidence, limited, limit, ct);
-        var actorIds = steps.SelectMany(x => new[] { x.RecordedByUserId, x.Performance?.PerformedByUserId ?? x.RecordedByUserId })
+        var actorIds = steps.SelectMany(x => new[] { x.RecordedByUserId, x.Performance?.PerformedByUserId ?? x.RecordedByUserId }.Concat((x.Performance?.Participants ?? []).Select(p => p.UserId)))
             .Concat(performanceProposals.Select(x => x.RequestedByUserId)).Concat(performanceDecisions.Select(x => x.ReviewedByUserId))
             .Concat(performanceProposals.Select(x => System.Text.Json.JsonSerializer.Deserialize<LabStepPerformance>(x.PerformanceJson, new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web))!.PerformedByUserId))
+            .Concat(performanceProposals.SelectMany(x => System.Text.Json.JsonSerializer.Deserialize<LabStepPerformance>(x.PerformanceJson, System.Text.Json.JsonSerializerOptions.Web)?.Participants ?? []).Select(p => p.UserId))
             .Concat(materials.Select(x => x.RecordedByUserId)).Concat(equipment.Select(x => x.UsedByUserId))
-            .Concat(biologicalTransfers.SelectMany(x => new[] { x.PerformedByUserId, x.RecordedByUserId })).Concat(deliveryActors).Distinct().ToArray();
+            .Concat(biologicalTransfers.SelectMany(x => new[] { x.PerformedByUserId, x.RecordedByUserId }))
+            .Concat(physicalHistory.Events.Select(e => e.ActorUserId)).Concat(physicalHistory.BoxMoves.Select(e => e.ActorUserId))
+            .Concat(deliveryActors).Concat(resourceEvidence.Actors).Concat(sequencingActors).Distinct().ToArray();
         evidence["people"] = await db.Users.AsNoTracking().Where(x => actorIds.Contains(x.Id))
             .Select(x => new { x.Id, name = x.FirstName + " " + x.LastName }).ToListAsync(ct);
         var preparationRecordIds = steps.Where(x => x.PreparationRecordId.HasValue).Select(x => x.PreparationRecordId!.Value).Distinct().ToArray();
@@ -103,8 +118,12 @@ public sealed class LabInvestigationService(PSeqOperationsDbContext db)
         var coverage = new List<LabEvidenceCoverageDto>
         {
             new("Source tubes", containers.Count == 0 ? "Missing" : "Recorded", $"{containers.Count} containers; {attempts.Count} attempts. Result-specific attribution is checked separately."),
+            new("Physical storage", containers.Any(c => c.Location is not null && c.StorageBoxId is null) || physicalHistory.Locations.Any(l => l.Location is null) ? "Legacy unknown" : containers.Count == 0 ? "Pending work" : "Recorded", "Registered boxes supply current room/freezer/rack/shelf. Placement context retains the registered location at that time, including departed tubes; missing historical locations remain unknown. Terminal physical status is explicit; dates never dispose material."),
             new("Step performance", steps.Length == 0 ? "Pending work" : steps.Any(x => x.Outcome != "skipped" && x.Performance is null) ? "Legacy unknown" : "Recorded", "Performer/time evidence is distinct from entry time. Skips do not assert performance."),
-            new("Resource snapshots", materials.Any(x => x.ResourceSnapshotJson == null) || equipment.Any(x => x.ResourceSnapshotJson == null) ? "Legacy unknown" : materials.Count + equipment.Count == 0 ? "Pending work" : "Recorded", "Snapshots describe the resource when recorded; late entries do not prove its historical condition."),
+            new("Resource snapshots", materials.Any(x => x.ResourceSnapshotJson == null || x.LabPreparationRecordId.HasValue)
+                || equipment.Any(x => x.ResourceSnapshotJson == null || x.LabPreparationRecordId.HasValue)
+                || resourceEvidence.UnknownSnapshots ? "Legacy unknown" : materials.Count + equipment.Count == 0 && !resourceEvidence.HasResources ? "Pending work" : "Recorded",
+                "Direct and shared preparation resources are separate. Unexpanded sample-anchored records remain visible with unknown shared coverage. Sample amounts and command totals are distinct; ingredient conditions at preparation are not inferred."),
             new("Result attribution", packages.Any(x => x.LabAnalysisRunId == null) || legacy.Any(x => x.LabAnalysisRunId == null) ? "Legacy unknown" : packages.Count + legacy.Count == 0 ? "Pending work" : "Recorded", $"{outputs.Count} sequencing outputs; {runs.Count} analyses. Open a result to check its exact input and tube chain."),
             new("Scientific requirements", runs.Count == 0 ? "Pending work" : runs.Any(x => x.RequirementsSnapshotJson is null) ? "Legacy unknown"
                 : scientificRequirements.Any(x => x.Requirements.Any(r => r.Status == "Missing")) ? "Missing" : "Recorded",

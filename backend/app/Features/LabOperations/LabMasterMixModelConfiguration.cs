@@ -49,6 +49,7 @@ public static class LabMasterMixModelConfiguration
         });
         modelBuilder.Entity<LabMasterMixIngredientUse>(e =>
         {
+            e.Property(x => x.ResourceSnapshotJson).HasColumnType("jsonb");
             e.Property(x => x.FieldKey).HasMaxLength(100);
             e.ToTable("lab_master_mix_ingredients", schema); e.HasKey(x => x.Id);
             e.Property(x => x.Quantity).HasPrecision(28, 12);
