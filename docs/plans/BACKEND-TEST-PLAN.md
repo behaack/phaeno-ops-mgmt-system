@@ -1,5 +1,16 @@
 # Backend Test Plan
 
+## Hosted sample-tracking release containment — October 25, 2026
+
+The authorized preserving release adds an opt-in read-only startup fence to the
+protected deployment script. A real network-isolated PostgreSQL 18.6 rehearsal
+passes fresh-connection write rejection, unchanged reads/rows, duplicate-engage
+refusal and reset/reopened writes. No hosted record was changed for these checks.
+Representative migration/file recovery, final exact-source regression evidence
+and hosted read-only acceptance are recorded in the
+[release plan](SAMPLE-TRACKING-HOSTED-TEST-RELEASE-20261024-PLAN.md); isolated
+synthetic evidence does not certify physical/scientific or external-provider work.
+
 ## Full browser matrix orchestration - October 24, 2026
 
 `FullSampleTrackingBrowserMatrixUsesOwnedDatabasesAndPreservesDevelopment` is opt-in through `verify-sample-tracking-browser-matrix.ps1`. Phases 1-3 each create/migrate/drop an owned loopback database and scope both reference/default targets to it; Phase 4 retains its independently restored database/private-store qualification and cleanup/setup fault probes. Existing held/closed Trial custody/report MVC coverage runs separately from the browser scenario count. All 254 configured-development table fingerprints match before/after both matrix runs. Final connected acceptance is **16 browser passes**; wrapper/recovery/API probes are distinct evidence. See the [report and consolidated receipts](../testing/runs/2026-10-24-sample-tracking-full-browser-acceptance.md). Raw artifacts were removed after verified consolidation.
