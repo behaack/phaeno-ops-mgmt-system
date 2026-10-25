@@ -84,6 +84,8 @@ const stepSchema = z.object({
   condition: z.string().trim().max(1000),
   repeatable: z.boolean(),
   operatorConfirmation: z.boolean(),
+  timingRequired: z.boolean().optional(),
+  minimumParticipants: z.number().int().min(1).max(20).optional(),
   requiredRole: z.enum(protocolRoleTypes),
   inputMaterials: z.string().trim().max(2000),
   preparedOutputs: z.string().trim().max(2000),
@@ -161,6 +163,8 @@ export type ProtocolDefinition = {
     required: boolean
     condition?: string | null
     repeatable: boolean
+    timingRequired?: boolean
+    minimumParticipants?: number
     operatorConfirmation: boolean
     requiredRole?: Exclude<ProtocolStepFormValues['requiredRole'], ''> | null
     captures: Array<{
@@ -217,6 +221,8 @@ const storedProtocolStepSchema = z.object({
   condition: z.string().nullish(),
   repeatable: z.boolean().default(false),
   operatorConfirmation: z.boolean().default(false),
+  timingRequired: z.boolean().optional(),
+  minimumParticipants: z.number().int().min(0).max(20).optional(),
   requiredRole: z.enum(protocolRoleTypes).nullish(),
   captures: z.array(storedProtocolCaptureSchema).default([]),
   inputMaterials: z.array(z.string()).default([]),
@@ -242,6 +248,8 @@ export const createEmptyProtocolStep = (): ProtocolStepFormValues => ({
   condition: '',
   repeatable: false,
   operatorConfirmation: false,
+  timingRequired: false,
+  minimumParticipants: 1,
   requiredRole: '',
   inputMaterials: '',
   preparedOutputs: '',
@@ -339,6 +347,8 @@ export function deserializeProtocolDefinition(value: string): ProtocolDefinition
       condition: step.condition ?? '',
       repeatable: step.repeatable,
       operatorConfirmation: step.operatorConfirmation,
+      timingRequired: step.timingRequired ?? false,
+      minimumParticipants: step.minimumParticipants || 1,
       requiredRole: step.requiredRole ?? '',
       inputMaterials: step.inputMaterials.join(', '),
       preparedOutputs: step.preparedOutputs.join(', '),
@@ -397,6 +407,8 @@ export function serializeProtocolDefinition(values: ProtocolDefinitionFormValues
         ...(step.requirement === 'conditional' ? { condition: step.condition.trim() } : {}),
         repeatable: step.repeatable,
         operatorConfirmation: step.operatorConfirmation,
+        ...(step.timingRequired ? { timingRequired: true } : {}),
+        ...((step.minimumParticipants ?? 1) > 1 ? { minimumParticipants: step.minimumParticipants } : {}),
         ...(step.requiredRole ? { requiredRole: step.requiredRole } : {}),
         captures: step.captures.map((capture) => ({
           key: uniqueKey(capture.key || capture.label, usedCaptureKeys, 'capture'),

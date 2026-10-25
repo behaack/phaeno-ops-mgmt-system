@@ -205,6 +205,7 @@ public sealed partial class LabOperationsController
         : used is not null && !(allowSuccessfulReuse && used.State == LabSpecimenAttemptState.Succeeded) ? "This source is reserved or was already attempted."
         : specimen.IntakeDisposition == LabSpecimenIntakeDisposition.Cancelled || specimen.ReceivedAtUtc is null || specimen.AccessionNumber is null ? "Receipt and accession are required."
         : tube.IntakeDisposition != LabSpecimenIntakeDisposition.Accepted ? $"Tube intake is {tube.IntakeDisposition?.ToString() ?? "not reviewed"}."
+        : tube.PhysicalHoldReason is not null ? "Tube is under a physical preservation hold."
         : tube.Status != LabContainerStatus.Available ? $"Tube is {tube.Status}." : null;
 
     private async Task<LabServiceWorkflowStage?> NextAttemptStageAsync(LabSpecimenAttempt attempt, CancellationToken ct)

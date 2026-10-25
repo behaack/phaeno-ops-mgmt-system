@@ -35,6 +35,7 @@ public static class LabOperationsModelConfiguration
             entity.HasOne<LabScientificFile>().WithMany().HasForeignKey(e => e.CompletedFileId).OnDelete(DeleteBehavior.Restrict);
         });
         LabForecastModelConfiguration.Configure(modelBuilder, laboratorySchema);
+        LabPhysicalModelConfiguration.Configure(modelBuilder, laboratorySchema);
         LabResultLineageModelConfiguration.Configure(modelBuilder, laboratorySchema);
         modelBuilder.Entity<LabJobDeadlineChange>(entity =>
         {
@@ -527,6 +528,7 @@ public static class LabOperationsModelConfiguration
 
         modelBuilder.Entity<LabReagentMaterialUse>(entity =>
         {
+            entity.Property(e => e.ResourceSnapshotJson).HasColumnType("jsonb");
             entity.ToTable("lab_reagent_material_uses", laboratorySchema);
             entity.HasKey(e => e.Id);
             entity.Property(e => e.QuantityUnit).HasMaxLength(50).IsRequired();

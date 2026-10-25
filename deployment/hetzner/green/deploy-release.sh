@@ -32,6 +32,13 @@ readonly PORTAL_ENV="${RUNTIME_DIR}/portal.env"
 readonly CURRENT_LINK="${DEPLOY_ROOT}/current"
 readonly DEPLOYMENT_MANIFEST="${RUNTIME_DIR}/deployment-manifest.txt"
 readonly BACKUP_ROOT="/var/backups/phaeno-portal-deploy"
+readonly RELEASE_READ_ONLY="${PORTAL_RELEASE_READ_ONLY:-false}"
+
+[[ "${RELEASE_READ_ONLY}" == true || "${RELEASE_READ_ONLY}" == false ]] \
+    || fail 'PORTAL_RELEASE_READ_ONLY must be true or false.'
+if [[ "${RELEASE_READ_ONLY}" == true ]]; then
+    [[ "${CUTOVER_CLERK_IDENTITY}" == false ]] || fail 'A contained release cannot include identity cutover.'
+fi
 
 [[ "${SOURCE_REVISION}" =~ ^[0-9a-f]{40}$ ]] \
     || fail "SOURCE_REVISION must be a full lowercase Git commit SHA."
@@ -345,6 +352,12 @@ if [[ "${CUTOVER_CLERK_IDENTITY}" == "true" ]]; then
         --cutover-clerk-bootstrap-identity
 fi
 
+if [[ "${RELEASE_READ_ONLY}" == true ]]; then
+    # Migrations have finished while the API is stopped. All candidate connections
+    # must inherit read-only mode before its hosted services or HTTP listener run.
+    FILE_STORAGE_DEPLOY_LOCK_HELD=true "${SCRIPT_DIR}/release-write-fence.sh" engage
+fi
+
 api_replaced=true
 compose up --detach api
 
@@ -427,6 +440,10 @@ website_fingerprints_after="$(website_intake_fingerprints)"
 [[ "${website_fingerprints_after}" == "${website_fingerprints_before}" ]] \
     || fail "Website intake record contents changed during deployment; investigate before promotion."
 printf 'website_intake_full_contents=UNCHANGED\n'
+if [[ "${RELEASE_READ_ONLY}" == true ]]; then
+    "${SCRIPT_DIR}/release-write-fence.sh" verify
+    printf 'Candidate remains read-only; paired release acceptance and explicit writer reopening are required.\n'
+fi
 
 deployed_image="$(
     docker inspect phaeno-portal-green-api \

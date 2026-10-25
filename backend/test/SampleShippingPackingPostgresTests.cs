@@ -545,6 +545,7 @@ public partial class SampleShippingPostgresTests
         scope.ClearTrackedState();
         for (var index = 0; index < 10; index++)
         {
+            if (index == 9) await scope.RegisterTestBoxAsync("Intake");
             var received = index == 9
                 ? await scope.CreateLabController().AccessionSpecimen(fixture.WorkOrder.Id, fixture.Specimen.Id,
                     new SpecimenAccessionRequest("ACC-PARTIAL-REFERENCE", row.CustomerSampleId, "Intake", row.Quantity, row.QuantityUnit,

@@ -100,7 +100,11 @@ In **Sequencing & analysis**, **Sequencing outputs** and **Analysis runs** link 
 
 In **Results & delivery**, **Delivery and retention history** covers all recorded result versions for this sample: delivery events, download attempts, verified download timing, retention schedules and saved policies, preservation holds and reissues. A started or failed download is not a completed transfer, and a completed transfer does not prove that the recipient read the file. Missing completion or commit timestamps remain unrecorded. A shared Trial release describes the package containing this sample; other samples' files and downloads are omitted. Package-wide holds or retention decisions still apply to the shared package. Saving an investigation report also preserves this history as it stood at that time.
 
-In **History**, **Find related samples** searches an exact tube barcode, material lot number, equipment asset code, sequencing run, library key or preparation-tray barcode within this job’s organization. A shared resource is a starting point for investigation; it does not establish that the samples share a problem.
+In **Processing** and **History**, **Preparation Resources** shows resources that covered this sample in a shared preparation. Sample amounts are shown only when recorded. A shared preparation total can cover several samples; do not treat it as the amount consumed by this sample. **Master Mixes**, **Reagent Components** and **Resource Lots** connect the recorded ingredient identities and preparation amounts. New ingredient withdrawals retain frozen QC, expiry, supplier, product and storage facts. Reagent components point to their original withdrawal evidence rather than their current QC. Earlier withdrawals without snapshots remain unknown. Verified undispensed voids remain in history. If shared coverage is unknown, the original sample-linked resource record stays visible without being assigned to additional samples.
+
+**Sequencing History**, **Vendor Results** and **Custody** include shared shipment events and applicable vendor versions, including failures, corrections and runs not performed. Other samples' library outcomes and files are omitted. Shared vendor notes and original correction explanations remain in the full batch workspace.
+
+In **History**, **Find related samples** searches an exact tube barcode, material lot number, equipment asset code, sequencing run, library key or preparation-tray barcode within this job’s organization. Lot and equipment searches include saved shared preparation coverage; lot searches also follow recorded master-mix ingredients and prepared-reagent components. An uncovered sample or verified undispensed void does not become an exposure. A shared resource is a starting point for investigation; it does not establish that the samples share a problem. If a search exceeds the supported history size, POMS refuses the partial search instead of presenting it as the full set of affected samples.
 
 In **History**, use **Save investigation report** to preserve the evidence available at that time. Each saved report’s **Actions** menu offers a readable report, which can be opened and printed, and a structured evidence manifest. The checksum identifies the exact saved manifest and is checked before download. Later work does not rewrite an earlier report. Customer download expiry does not remove saved investigation reports. These reports capture the sample history; supporting PDF files and external scientific files are not embedded.
 
@@ -195,3 +199,25 @@ physical verification. Historical missing provenance remains unknown.
 The deadline editor shows the selected phase’s saved date. Switching phases or
 leaving a dirty form asks before discarding entries. A conflicting adjustment
 loads current dates while preserving entered values and requires renewed review.
+
+
+## Physical retention and disposition
+
+Jobs includes **Physical retention work** for retained tubes whose due date has passed, preservation holds, and missing retention terms. Open the tube identifier to review its history. A date never disposes material automatically.
+
+From a tube's **Actions**, choose **Record physical action**. Scan the physical tube and record placement, exhaustion, return, transfer or destruction. Final disposition records the actual date/time with its UTC offset, method, reason, and the preceding quantity, including unknown quantity. An optional measured disposition amount is retained separately from the prior recorded balance; leave it blank when it was not measured. Returns and custody transfers also require a destination and shipment or handover tracking reference. Close active processing before final disposition.
+
+Supervisors set paid-work retention from the Job's agreed terms and place or release preservation holds with a reason. There is no standard paid-work retention period. Record the retain-until date before destruction; holds prevent disposition and further material use. Trial tubes follow the approved frozen Trial return/destruction terms, closure date and retention deadline. Complete the Trial material summary only after its tubes are accounted for. Physical material retention is separate from scientific-file retention.
+
+Physical storage and preservation records remain available for held or closed Trials. Return or destruction still requires Trial closure and its frozen terms, elapsed retention where applicable, released holds and no active processing. Authorized Lab staff can also generate a new internal investigation report while a Trial is held or closed; this does not change its hold or status. Closing a Trial does not enable further scientific processing.
+
+## Registered freezer boxes
+
+During accession, confirm the scanned box and its room, freezer, rack and shelf. An unknown box must be registered before storing tubes. From a tube's **Actions**, **Register or move freezer box** records a box's current location or a collective move. Moving the box changes the effective location of all associated tubes without moving their individual records.
+
+**Record physical action** can place a scanned tube in a registered box, optionally at a position such as B4. An occupied position cannot be assigned to another tube. The tube page shows the effective location and its placement and applicable box-movement history. A tray/working-location move ends its box occupancy. Earlier text locations remain visible, with unknown hierarchy until an operator records actual placement; registration does not invent earlier movements.
+
+Applicable box movements follow actual handling times. A late placement or disposition that precedes later recorded handling is refused, leaving current custody unchanged; review the existing evidence before retrying. Include seconds and, when needed, fractional seconds with the actual UTC offset to distinguish actions in the same minute. The separate recording timestamp remains audit history.
+
+Placement history and new investigation reports retain the registered room, freezer, rack and shelf applicable when each tube was placed, including after it leaves the box. Earlier box registration or movement supplies location context; it does not claim the tube was present then. Missing historical location evidence remains unknown. Later box moves do not rewrite that context or previously saved reports.
+Saved investigation reports remain frozen. Save a new report to capture a refreshed history.

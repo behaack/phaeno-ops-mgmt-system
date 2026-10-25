@@ -226,6 +226,7 @@ public partial class SampleShippingPostgresTests
             fixture.WorkOrder.Id, fixture.Shipment.Id,
             new ShipmentTubeAccessionRequest(packet.Barcode, firstTubeBarcode, "  "), CancellationToken.None));
         Assert.Equal("freezer_box_barcode_required", missingBox.ErrorCode);
+        await scope.RegisterTestBoxAsync("BOX-001");
         var accessioned = await lab.AccessionShipmentTube(fixture.WorkOrder.Id, fixture.Shipment.Id,
             new ShipmentTubeAccessionRequest(packet.Barcode, firstTubeBarcode, " BOX-001 "), CancellationToken.None);
         scope.ClearTrackedState();
@@ -761,7 +762,11 @@ public partial class SampleShippingPostgresTests
                 await DbContext.LabOperationsOutboxEvents.Where(item => workOrderIds.Contains(item.LabWorkOrderId)).ExecuteDeleteAsync();
                 await DbContext.LabContainerBarcodes.Where(item => DbContext.LabContainers.Any(container =>
                     container.Id == item.LabContainerId && workOrderIds.Contains(container.LabWorkOrderId))).ExecuteDeleteAsync();
+                await DbContext.Set<LabPhysicalEvent>().Where(e => DbContext.LabContainers.Any(c => c.Id == e.LabContainerId && workOrderIds.Contains(c.LabWorkOrderId))).ExecuteDeleteAsync();
                 await DbContext.LabContainers.Where(item => workOrderIds.Contains(item.LabWorkOrderId)).ExecuteDeleteAsync();
+                var physicalBoxIds = await DbContext.Set<LabStorageBox>().Where(b => physicalFixtureBoxIds.Contains(b.Id) || b.Barcode.Contains(Suffix)).Select(b => b.Id).ToArrayAsync();
+                await DbContext.Set<LabStorageBoxMove>().Where(m => physicalBoxIds.Contains(m.LabStorageBoxId)).ExecuteDeleteAsync();
+                await DbContext.Set<LabStorageBox>().Where(b => physicalBoxIds.Contains(b.Id)).ExecuteDeleteAsync();
                 await DbContext.SampleTubeAssignmentEvents.Where(item => shipmentIds.Contains(item.SampleShipmentId)).ExecuteDeleteAsync();
                 await DbContext.SampleShippingPacketRevisions
                     .Where(item => shipmentIds.Contains(item.SampleShipmentId) && item.ReplacedByPacketRevisionId != null)

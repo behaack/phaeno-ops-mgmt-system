@@ -1,5 +1,27 @@
 # Hetzner Portal green deployment
 
+### Paired release containment
+
+For an approved preserving release that needs API/frontend acceptance before
+writers reopen, use `PORTAL_RELEASE_READ_ONLY=true` with the protected deployment
+path. Establish the public API write-method maintenance rule, drain all work and
+queues, stop the API, verify every writer, and take the final independently
+restore-verified recovery point under the deployment lock before migration.
+The one-off migration process is the sole writer during migration. The deploy
+script then runs `release-write-fence.sh engage` before candidate startup;
+fresh database connections inherit read-only transactions, including workers.
+The normal default is false; provider, identity and cleanup settings are preserved.
+
+Keep the database and HTTP fences closed through paired acceptance. The helper
+refuses to overwrite prior explicit read-only settings and requires the stopped
+Portal API plus the existing deployment-lock contract for changes. A failed
+release keeps its fence for operator review. After acceptance, stop the candidate,
+run the helper's `release` action under the same lock, and restart the same image
+to discard pooled read-only connections. Verify health and preserved connectivity,
+then restore the exact original API proxy configuration before reopening public
+writes. Record the boundary and post-reopening observation. This is temporary
+operational configuration, not an EF migration, identity change or scientific gate.
+
 This stack provisions the production Phaeno Portal API and its isolated
 PostgreSQL database. The Portal API owns the public Website API functionality.
 It does not change Nginx or expose the Portal database on the host.

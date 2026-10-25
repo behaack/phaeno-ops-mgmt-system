@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import type { LabStepPerformanceInput } from '#/api/lab-operations'
 
-export const stepTimingSchema = z.object({ mode: z.enum(['now', 'earlier']), localTime: z.string(), occurrence: z.string(), reason: z.string().max(4000), otherPerformer: z.boolean().optional(), performerId: z.string().optional() })
+export const stepTimingSchema = z.object({ mode: z.enum(['now', 'earlier']), localTime: z.string(), occurrence: z.string(), reason: z.string().max(4000), otherPerformer: z.boolean().optional(), performerId: z.string().optional(), intervalStart: z.string().optional(), intervalEnd: z.string().optional(), participants: z.array(z.object({ userId: z.string(), role: z.string() })).optional() })
 export type StepTimingValues = z.infer<typeof stepTimingSchema>
 export const emptyStepTiming: StepTimingValues = { mode: 'now', localTime: '', occurrence: '', reason: '' }
 const pad = (n: number) => String(n).padStart(2, '0')
@@ -23,10 +23,17 @@ export function localTimeOccurrences(value: string): { value: string; label: str
   }).sort((a, b) => Date.parse(a.value) - Date.parse(b.value))
 }
 
-export function timingIssues(timing: StepTimingValues, now = Date.now()): { field: keyof StepTimingValues; message: string }[] {
+export function timingIssues(timing: StepTimingValues, now = Date.now(), requirements?: { timingRequired?: boolean; minimumParticipants?: number }): { field: keyof StepTimingValues; message: string }[] {
   const issues: ReturnType<typeof timingIssues> = []
   if (timing.otherPerformer && !timing.performerId) issues.push({ field: 'performerId', message: 'Select the actual performer.' })
   if (timing.otherPerformer && !timing.reason.trim()) issues.push({ field: 'reason', message: 'Explain why you are recording another person’s work.' })
+  if (timing.intervalStart || timing.intervalEnd || requirements?.timingRequired) {
+    const valid = (v?: string) => Boolean(v && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}[+-]\d{2}:\d{2}$/.test(v) && Number.isFinite(Date.parse(v)))
+    if (!valid(timing.intervalStart) || !valid(timing.intervalEnd) || Date.parse(timing.intervalEnd!) < Date.parse(timing.intervalStart!) || Date.parse(timing.intervalEnd!) > now) issues.push({ field: 'intervalStart', message: 'Record actual start/end in order, including UTC offsets, no later than now.' })
+  }
+  const participants = timing.participants ?? []
+  if (participants.some(p => !p.userId || !p.role.trim()) || new Set(participants.map(p => p.userId)).size !== participants.length || participants.length > 19 || participants.length + 1 < (requirements?.minimumParticipants ?? 1)) issues.push({ field: 'participants', message: 'Identify distinct participants and their roles, meeting this procedure’s minimum.' })
+  if (participants.length && !timing.reason.trim()) issues.push({ field: 'reason', message: 'Explain the participant attribution for independent review.' })
   if (timing.mode === 'now') return issues
   const choices = localTimeOccurrences(timing.localTime)
   const chosen = choices.length === 1 ? choices[0] : choices.find(c => c.value === timing.occurrence)
@@ -38,10 +45,11 @@ export function timingIssues(timing: StepTimingValues, now = Date.now()): { fiel
 }
 
 export function performanceInput(timing: StepTimingValues, confirmed: boolean): LabStepPerformanceInput {
+  const extra = { ...(timing.intervalStart || timing.intervalEnd ? { interval: { startedAt: timing.intervalStart ?? '', completedAt: timing.intervalEnd ?? '' } } : {}), ...(timing.participants?.length ? { participants: timing.participants, lateEntryReason: timing.reason.trim() } : {}) }
   const performer = timing.otherPerformer ? { performedByUserId: timing.performerId, lateEntryReason: timing.reason.trim() } : {}
-  if (timing.mode === 'now') return { mode: 'now', personallyPerformed: confirmed && !timing.otherPerformer, ...performer }
+  if (timing.mode === 'now') return { mode: 'now', personallyPerformed: confirmed && !timing.otherPerformer, ...extra, ...performer }
   const choices = localTimeOccurrences(timing.localTime)
   const chosen = choices.length === 1 ? choices[0] : choices.find(c => c.value === timing.occurrence)
   if (!chosen) throw new Error('Review the performed time before saving.')
-  return { mode: 'earlier', personallyPerformed: confirmed && !timing.otherPerformer, performedAt: chosen.value, lateEntryReason: timing.reason.trim(), ...performer }
+  return { mode: 'earlier', personallyPerformed: confirmed && !timing.otherPerformer, performedAt: chosen.value, lateEntryReason: timing.reason.trim(), ...extra, ...performer }
 }

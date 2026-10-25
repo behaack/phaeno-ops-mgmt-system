@@ -74,8 +74,10 @@ public partial class SampleShippingPostgresTests
         var storage = new LabStorageLocation($"TEST-PREP-{scope.Suffix}");
         var tubeManufacturer = new LabSupplier($"TEST-CATALOG-{scope.Suffix}-PREP-MFR");
         var lot = new LabMaterialLot(LabMaterialLotKind.PreparedReagent, material.Id, $"TEST-PREP-{scope.Suffix}", null, null, storage.Id, 100, "mL");
+        var componentLot = new LabMaterialLot(LabMaterialLotKind.PreparedReagent, material.Id, $"TEST-COMPONENT-{scope.Suffix}", null, null, storage.Id, 100, "mL");
+        var component = new LabPreparedReagentComponent(lot.Id, componentLot.Id, 1, "mL");
         lot.RecordQc(LabQcDisposition.Passed, DateOnly.FromDateTime(now), null, "{}", scope.PlatformUser.Id, now);
-        db.AddRange(workflow, protocol, pv, wv, stage, format, material, storage, lot, tubeManufacturer);
+        db.AddRange(workflow, protocol, pv, wv, stage, format, material, storage, lot, componentLot, component, tubeManufacturer);
         for (var i = 0; i < 2; i++)
         {
             var order = scope.AddCommercialPhaseOrder($"TEST-PREP-{scope.Suffix}-{i}");
@@ -293,6 +295,26 @@ public partial class SampleShippingPostgresTests
             await lab.ApplyPreparation(id, materialRequest, default); scope.ClearTrackedState(); await lab.ApplyPreparation(id, materialRequest, default);
             Assert.Equal(98, (await db.LabMaterialLots.AsNoTracking().SingleAsync(l => l.Id == lot.Id)).AvailableQuantity);
             Assert.Equal(1, await db.LabMaterialConsumptions.CountAsync(c => c.LabMaterialLotId == lot.Id));
+            // The one physical use covers both Jobs, regardless of the execution used as its storage anchor.
+            foreach (var workId in workIds)
+            {
+                var specimenId = await db.LabSpecimens.Where(s => s.LabWorkOrderId == workId).Select(s => s.Id).SingleAsync();
+                var evidence = Json(await lab.Investigation(workId, specimenId, default));
+                var shared = Assert.Single(evidence.GetProperty("evidence").GetProperty("preparationResources").EnumerateArray());
+                Assert.Equal(lot.Id, shared.GetProperty("resourceId").GetGuid());
+                Assert.Equal(2, shared.GetProperty("physicalQuantity").GetDecimal());
+                Assert.Null(shared.GetProperty("sampleUses")[0].GetProperty("quantity").GetString());
+                Assert.Single(shared.GetProperty("recordedMaterialUses").EnumerateArray());
+                Assert.Empty(evidence.GetProperty("evidence").GetProperty("materials").EnumerateArray());
+                Assert.Equal(componentLot.Id, Assert.Single(evidence.GetProperty("evidence").GetProperty("reagentComponents").EnumerateArray())
+                    .GetProperty("componentMaterialLotId").GetGuid());
+            }
+            var exposure = Json(await lab.RelatedInvestigationSamples(workIds[0], "lot", lot.LotNumber, default));
+            Assert.Equal(2, exposure.GetArrayLength());
+            var indirectExposure = Json(await lab.RelatedInvestigationSamples(workIds[0], "lot", componentLot.LotNumber, default));
+            Assert.Equal(2, indirectExposure.GetArrayLength());
+            Assert.Equal(1, await db.LabMaterialConsumptions.CountAsync(c => c.LabMaterialLotId == lot.Id));
+            Assert.Equal(98, (await db.LabMaterialLots.AsNoTracking().SingleAsync(l => l.Id == lot.Id)).AvailableQuantity);
             var step = new LabPreparationStepInput(stage.Id, "qc", "record", "recorded", [first, second], new Dictionary<string, JsonElement> { ["value"] = JsonSerializer.SerializeToElement(20) },
                 [new(second, new Dictionary<string, JsonElement> { ["value"] = JsonSerializer.SerializeToElement(2) }, "hold", "TEST ONLY hold")], "pass", null, true, true, false,
                 Performance: new("now", true));
@@ -638,6 +660,9 @@ public partial class SampleShippingPostgresTests
             scope.ClearTrackedState();
             var reserve = Json(await lab.ApplyPreparation(otherId, new(Guid.NewGuid(), other.GetProperty("version").GetInt64(), "add", Position: "A1", Barcode: $"TEST-PREP-{scope.Suffix}-1-1"), default));
             Assert.Equal(2, reserve.GetProperty("members")[0].GetProperty("sequence").GetInt32());
+            if (Environment.GetEnvironmentVariable("PSEQ_PHASE1_BROWSER_VERIFICATION") == "1"
+                && !skipFinal && !automaticReview && !bulkOutputs && !inlineFields && !biologicalFields)
+                await VerifyPhase1BrowserAsync(scope, workIds, sequencingId, lot, componentLot);
         }
         finally
         {
@@ -658,12 +683,15 @@ public partial class SampleShippingPostgresTests
             await db.LabExceptions.Where(e => workIds.Contains(e.LabWorkOrderId)).ExecuteDeleteAsync();
             await db.LabSpecimenAttempts.Where(a => attemptIds.Contains(a.Id)).ExecuteUpdateAsync(s => s.SetProperty(a => a.FailedExecutionId, (Guid?)null).SetProperty(a => a.PreviousAttemptId, (Guid?)null));
             await db.LabProtocolExecutions.Where(e => executionIds.Contains(e.Id)).ExecuteDeleteAsync();
+            await db.Set<LabPhysicalEvent>().Where(e => db.LabContainers.Any(c => c.Id == e.LabContainerId
+                && workIds.Contains(c.LabWorkOrderId) && c.LabSpecimenAttemptId != null)).ExecuteDeleteAsync();
             await db.LabContainerBarcodes.Where(b => db.LabContainers.Any(c => c.Id == b.LabContainerId
                 && workIds.Contains(c.LabWorkOrderId) && c.LabSpecimenAttemptId != null)).ExecuteDeleteAsync();
             await db.LabContainers.Where(c => workIds.Contains(c.LabWorkOrderId) && c.LabSpecimenAttemptId != null).ExecuteDeleteAsync();
             await db.LabSpecimenAttempts.Where(a => attemptIds.Contains(a.Id)).ExecuteDeleteAsync();
             await db.LabTrayFormats.Where(f => f.Id == format.Id).ExecuteDeleteAsync();
-            await db.LabMaterialLots.Where(l => l.Id == lot.Id).ExecuteDeleteAsync();
+            await db.LabPreparedReagentComponents.Where(c => c.Id == component.Id).ExecuteDeleteAsync();
+            await db.LabMaterialLots.Where(l => l.Id == lot.Id || l.Id == componentLot.Id).ExecuteDeleteAsync();
             await db.LabMaterialDefinitions.Where(m => m.Id == material.Id).ExecuteDeleteAsync();
             await db.LabStorageLocations.Where(s => s.Id == storage.Id).ExecuteDeleteAsync();
             await db.LabWorkOrders.Where(w => workIds.Contains(w.Id)).ExecuteUpdateAsync(s => s.SetProperty(w => w.LabServiceWorkflowVersionId, (Guid?)null));

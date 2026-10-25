@@ -1,5 +1,60 @@
 # Backend Test Plan
 
+## Hosted sample-tracking release containment — October 25, 2026
+
+The authorized preserving release adds an opt-in read-only startup fence to the
+protected deployment script. A real network-isolated PostgreSQL 18.6 rehearsal
+passes fresh-connection write rejection, unchanged reads/rows, duplicate-engage
+refusal and reset/reopened writes. No hosted record was changed for these checks.
+Representative migration/file recovery, final exact-source regression evidence
+and hosted read-only acceptance are recorded in the
+[release plan](SAMPLE-TRACKING-HOSTED-TEST-RELEASE-20261024-PLAN.md); isolated
+synthetic evidence does not certify physical/scientific or external-provider work.
+
+## Full browser matrix orchestration - October 24, 2026
+
+`FullSampleTrackingBrowserMatrixUsesOwnedDatabasesAndPreservesDevelopment` is opt-in through `verify-sample-tracking-browser-matrix.ps1`. Phases 1-3 each create/migrate/drop an owned loopback database and scope both reference/default targets to it; Phase 4 retains its independently restored database/private-store qualification and cleanup/setup fault probes. Existing held/closed Trial custody/report MVC coverage runs separately from the browser scenario count. All 254 configured-development table fingerprints match before/after both matrix runs. Final connected acceptance is **16 browser passes**; wrapper/recovery/API probes are distinct evidence. See the [report and consolidated receipts](../testing/runs/2026-10-24-sample-tracking-full-browser-acceptance.md). Raw artifacts were removed after verified consolidation.
+
+## Final sample-tracking review corrections - October 24, 2026
+
+The guarded Phase 4 selection now includes 42 cases (the previous 41 plus the expanded shared-mix exposure regression). Real MVC coverage rejects late placement/disposition before later handling without changing custody, version or event count; accepts precise same-minute disposition; retains both departed placement locations after a later box move; and preserves original report bytes. Internal report generation also succeeds through real MVC for a held/closed Trial without changing its hold/status, while Customer access remains denied; the outer Trial transaction retains the report's repeatable-read boundary. Shared-mix coverage uses the actual step writer, freezes equipment conditions, preserves exact replay and original evidence after retirement, scopes downstream exposure by sample/organization, excludes zero/voided dispensing and refuses a complete search when synthetic historical conditions are unknown. Its standalone fixture now creates, migrates and removes its own generated local database.
+
+The connected recovery fact also loses the creation acknowledgement after the server creates the first or second database. It requires persisted creation intent, independently verified cleanup/absence, failed operation receipts, restored environment and unchanged configured-development fingerprints. Existing cleanup-failure and independent-repair probes remain. No application-wide suite or hosted qualification is implied.
+
+## Sample-tracking review corrections — October 24, 2026
+
+The Owner authorized all three review repairs. `ClosedTrialPhysicalCustodyUsesRealMvcGuardAndActualHistoryTimes` creates its own fully migrated disposable database and exercises real MVC/controller/authorization/Trial-filter responses for closed-Trial return/destruction, held storage moves, immutable final events, frozen retention/destination/tracking, physical/Trial holds, active attempts, role denial and rollback of non-custody writes. Four additional projection scenarios cover late return, late destruction, late placement and out-of-order entry, while preserving recording timestamps and excluding unrelated box movements.
+
+Seven `Phase4CleanupTests` cases inject database/file/preservation/receipt/restoration failures, require remaining attempts and receipts, and preserve the original operation exception. The connected recovery fact additionally creates a fresh empty database pair/private root, deliberately fails capture and the first cleanup, checks the actual failed receipts, successful remaining cleanup and restored environment, then independently repairs/verifies the retained fixture. `ownership.json` is persisted before setup. The normal guarded runner includes these regressions alongside its previous selection; browser mode retains the connected matrix and the real cleanup-failure probe. See the [review-fix record](../testing/runs/2026-10-24-sample-tracking-review-fixes.md) for final execution and preservation evidence.
+
+## Phase 4 connected sample tracking and recovery — October 24, 2026
+
+`Phase4ConnectedJourneySurvivesIndependentRestoreAndRecoveryFailures` is explicitly opt-in through the [guarded runner](../../scripts/verification/verify-sample-tracking-phase4.ps1); ordinary suites skip it. It reuses the real commercial handoff commands with current scientific/profile enforcement, then captures a managed FASTQ/actual acquisition, analysis, independent approval/release/customer delivery and investigation report. Synthetic external packaging/scanner observations are declared fixtures. Its source/restore pair is generated and removed; configured development is fingerprinted read-only before/after, including protected Website intake.
+
+Native dump/restore verifies all tables' counts/full-record hashes and migration history, independent copied file hashes and exact report bytes while original files are offline. Restored commands cover physical/vendor/report replay, quantity/identity preservation, conflicting/stale commands, preservation holds, raw/report corruption, missing bytes and result-byte cleanup retaining internal evidence. A 10,007-event fixture covers equal timestamps, complete frozen cursor traversal, independently committed later append, bounded rows/queries, timing and oversized-report refusal. The wrapper additionally selects the original disposable commercial journey and focused physical, lineage, scientific-evidence and investigation-scope regressions. Actual execution receipts and remaining gates are recorded in [Phase 4 verification](../testing/runs/2026-10-24-sample-tracking-phase4-verification.md).
+
+Execution passes **33 selected cases**, zero failures/skips, plus one overlapping final recovery confirmation. Recovery proves 254 tables/940 rows and all three stored objects match; 10,029 frozen events traverse 201 pages of at most 50 rows/four queries. Fixture removal and unchanged configured-development fingerprints pass. The first trial's missing validation transaction was a harness error, corrected without relaxing application guards.
+
+The subsequent requested regression rerun also passes all **33 cases** after correcting the historical journey's export opt-in to ignore an empty environment value. Its first checkpoint had 32 passes/one test-harness failure; generated fixtures were removed and development preserved. `-Browser` additionally runs the same recovery fact with a test-only host on its generated restored database. `SampleTrackingPhase4Browser.cs` verifies actual target identity, unchanged original lot/use bytes, no physical/assembly commands and the original frozen report after Playwright; the normal recovery runner still owns database/file teardown and preservation checks.
+
+The final connected browser wrapper passes all four scenarios and its preservation assertions. The [requested verification record](../testing/runs/2026-10-24-sample-tracking-phase4-regression-and-browser-verification.md) separates the 33 domain/PostgreSQL cases, 15 frontend cases and four browser scenarios, with current isolation/cleanup receipts.
+
+## Phase 2 capture at source — October 24, 2026
+
+`LabVendorRunCaptureTests` adds five domain/service cases: two explicit actual acquisitions under one vendor job with separate file sets; missing/duplicate/foreign/no-run mappings and purchased-allocation separation; actual timing and receipt-window validation; unchanged output retention versus corrected provenance; and sample-specific index/run privacy. The existing FASTQ PostgreSQL journey now supplies actual-run captures and asserts that registered outputs use the acquisition reference and instrument evidence, independently from the vendor job. Existing downstream withdrawal/active-assembly guards remain in the correction path. Master-mix and reagent-manufacturing PostgreSQL sources now assert frozen conditions survive later QC changes; reagent snapshot overwrite is rejected.
+
+The Owner subsequently requested execution. **44 selected backend cases pass, zero failures/skips**, including the expanded reagent ancestry case: two original withdrawals preserve distinct supplier/QC snapshots after later edits, and prepared-reagent use/investigation follows both frozen withdrawals. The separate opt-in real-controller browser wrapper passes all four scenarios and verifies unchanged original vendor bytes, unchanged physical stock and zero new assembly commands. The final test build has zero warnings/errors. See the [verification record](../testing/runs/2026-10-24-sample-tracking-phase2-verification.md).
+
+Verification used a disposable fully migrated loopback database, removed afterward. No configured development/hosted records, migration source, historical backfill or DPS change occurred during verification. The prior local migration remains documented in the [implementation record](../testing/runs/2026-10-24-sample-tracking-phase2-implementation.md).
+
+## Shared-resource investigation coverage — October 24, 2026
+
+Phase 1 of the [traceability follow-up](SAMPLE-TRACEABILITY-AND-INVESTIGATION-PLAN.md#shared-resource-attribution-and-investigation-coverage--october-24-2026) adds seven focused cases in `LabInvestigationScopeTests`: exact covered/excluded members and per-tube exceptions; zero/unknown quantities and shared-total allocation; no new exposure from correction/skip; standalone resource coverage/retry identity; exact master-mix identity; failed/unperformed/corrected vendor versions with unrelated library/file exclusion; and shared custody before-snapshot/exception redaction. The existing mixed-Job PostgreSQL preparation journeys now assert equal applicable resource coverage, one unchanged physical consumption/debit, transitive prepared-reagent lot lookup and sample-scoped component identity. `InvestigationIncludesFrozenFailedVendorHistoryWithoutCurrentMembershipOrOtherSampleDetails` additionally covers frozen membership without current batch rows, all vendor versions, source limits, new report coverage and unchanged earlier report bytes/checksums.
+
+The Owner subsequently requested execution. **23 focused backend cases pass with zero failures/skips**, including actual PostgreSQL preparation, scientific-history and evidence-governance journeys. The added master-mix case checks positive/zero dispensing, voided use, ingredient ancestry and organization boundaries, plus batch/tube instrument runs without leaking another sample's run reference; it also passes a final focused rerun after that equipment assertion was added. The opt-in browser wrapper passes separately, hosting the real controllers/envelope/EF queries on loopback for four browser scenarios. Its read/report journey preserves physical lot/use bytes and creates no assembly command. Compilation has zero warnings/errors. See the [verification record](../testing/runs/2026-10-24-sample-investigation-phase1.md).
+
+Verification used a disposable, fully migrated local database, removed afterward. The configured development and hosted databases were not changed. No model/migration source, scientific producer, DPS source/runtime or deployment changed. Later ingredient-condition capture and real scientific/physical qualification remain separate.
+
 ## Real assembly engineering — October 22, 2026
 
 The [real-assembly plan](REAL-ASSEMBLY-HOSTED-TEST-IMPLEMENTATION-PLAN.md#verification-matrix) owns RA-01–RA-08/11. `DpsAdmissionBudgetTests` adds seven effective scanner/output/set/parameter-budget cases, including a later oversized file rejecting the whole set. `DpsScientificAdmissionRetriesAfterScanFailureWithoutChangingExecutionOrStartingAgain` uses its own loopback PostgreSQL database migrated from empty: a second-file scan failure rolls back the first file, recovery registers exactly one linked analysis, repeat admission is a no-op, and original Succeeded facts, receipt and Run command compare unchanged. It exercises actual admission/verification/lineage services with synthetic pinned S3 transport and scanner verdicts; it is not a real ClamAV/S3 qualification. The focused contract/budget selection and original reconciliation-preservation regression pass; exact results are in the [engineering handoff](../operations/real-assembly-engineering-20261022.md).
@@ -3459,3 +3514,13 @@ phase. Existing backend expectations remain unchanged; no backend test execution
 is claimed. The 62-guide generated API corpus is kept paired with the frontend
 documentation corpus. Hosted index activation and release are outside this scope.
 See [the adoption plan](UI-CONSISTENCY-ADOPTION-AND-ILLUSTRATIONS-PLAN.md).
+
+
+## Sample tracking Phase 3 — October 24, 2026
+
+Phase 3 source coverage: `LabPhysicalLifecycleTests` covers holds, quantities, final custody states, working locations, due dates, offset-aware intervals and participant attribution. `PhysicalBoxOccupancyMovesAndFinalDispositionAreScopedReplayableAndImmutable` covers real EF/PostgreSQL placement, duplicate positions, request replay, departed-tube exclusion, collective movement, holds, immutable events and retention query translation. Authored; execution awaits explicit Phase 3 regression request. Existing accession fixtures now explicitly register boxes and clean up scoped physical events/boxes; include those journeys in the requested regression checkpoint.
+
+
+### Phase 3 requested verification result
+
+Requested Phase 3 selection now passes 99 cases with zero skips/failures. Added `TrialPhysicalLifecyclePostgresTests` for frozen dates/holds, approved return destination/tracking and matching material summaries. Normalized scans include lowercase/whitespace; preparation cleanup respects new event FKs. See [Phase 3 verification](../testing/runs/2026-10-24-sample-tracking-phase3-verification.md).

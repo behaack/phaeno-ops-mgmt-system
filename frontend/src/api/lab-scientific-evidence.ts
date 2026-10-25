@@ -1,5 +1,6 @@
 import { isAxiosError } from 'axios'
 import { api } from './client'
+import { downloadLabEvidence } from './lab-evidence-download'
 
 export type ScientificMetadata = {
   schemaVersion: 1; instrument?: string; flowcell?: string; lane?: string; pool?: string; indexMapping?: string; workflowVersion?: string
@@ -99,6 +100,6 @@ export const uploadScientificFile = async (work: string, specimen: string, file:
   return completed
 }
 export const downloadScientificFile = async (work: string, specimen: string, id: string) =>
-  (await api.get<Blob>(`${base(work, specimen)}/files/${id}`, { responseType: 'blob' })).data
+  downloadLabEvidence(`${base(work, specimen)}/files/${id}`)
 export const scientificFileLabel = (reference: string, files?: ScientificFile[]) =>
   files?.find(f => f.externalFileReference === reference)?.fileName ?? (reference.startsWith('poms-file:') ? 'Uploaded sequencing file' : reference)

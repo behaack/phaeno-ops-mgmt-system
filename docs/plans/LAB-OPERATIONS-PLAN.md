@@ -1899,3 +1899,8 @@ scientific-review-queue-corrected.png. No records or scientific/provider state
 were mutated. Positive completed-package scenarios are covered in compiled
 regression sources but were not executed, and no qualifying live assembly fixture
 exists locally. Dark-theme and automated-suite acceptance remain unperformed.
+
+
+## Phase 3 physical lifecycle and registered storage — October 24, 2026
+
+The Owner authorized implementation of the deferred freezer-box scope. [Physical lifecycle, storage and timing](LAB-PHYSICAL-LIFECYCLE-PLAN.md) supersedes the earlier implementation hold and plain-text-only movement scope. Paid retention uses each Job’s agreed terms without a global default; positions are optional; scientific timing/participant requirements are pinned to approved procedures. Existing raw locations remain historical facts without inferred hierarchy. No deployment or DPS changes.

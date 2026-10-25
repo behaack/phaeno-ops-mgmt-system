@@ -52,6 +52,7 @@ public sealed record LabProtocolDefinition
         foreach (var step in Steps)
         {
             if (step is null) throw new ArgumentException("Every protocol step must contain a definition.");
+            if (step.MinimumParticipants is < 0 or > 20) throw new ArgumentException("A step can require up to 20 named participants.");
             if (step.ProcessType is not (null or "masterMix")) throw new ArgumentException("Choose an existing step process type.");
             ValidateKey(step.Key, keys, "Step");
             if (step.AttachmentKind is not (null or "none" or "qc" or "preparation")) throw new ArgumentException("Choose a QC report, preparation worksheet, or no attachment.");
@@ -182,6 +183,10 @@ public sealed record LabProtocolDefinition
 
 public sealed record LabProtocolStepDefinition
 {
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool TimingRequired { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public int MinimumParticipants { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? ProcessType { get; init; }
     public Guid? LabStepVersionId { get; init; }

@@ -1,3 +1,4 @@
+import { PhysicalRetentionQueue } from './PhysicalRetentionQueue'
 import { LoadingState } from '#/components/ui/content-state'
 import { formatDisplayDate } from '#/lib/display-format'
 import { formatDisplayTimestamp } from '#/lib/display-format'
@@ -138,7 +139,7 @@ export function LabOperationsPage({ section, shipmentId, receiptTab, onReceiptTa
           </section> : null}
           {section === 'transportation-kits' ? <TransportationKitWorkspace apiEnabled={apiEnabled} shipmentId={shipmentId} /> : null}
           {section === 'specimens' ? <SpecimenDiscovery enabled={apiEnabled} /> : null}
-          {section === 'jobs' ? <JobsList enabled={apiEnabled} /> : null}
+          {section === 'jobs' ? <><JobsList enabled={apiEnabled} /><PhysicalRetentionQueue enabled={apiEnabled} /></> : null}
           {dashboard.data && section === 'work' ? <PreparationBatchList /> : null}
           {section === 'results' ? <ResultsWorkQueue enabled={apiEnabled} /> : null}
           {section === 'kits' ? <LabManufacturingQueue workflow="reagent" apiEnabled={apiEnabled} /> : null}

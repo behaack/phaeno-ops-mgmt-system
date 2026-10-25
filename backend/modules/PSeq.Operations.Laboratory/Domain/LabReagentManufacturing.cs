@@ -221,6 +221,7 @@ public sealed class LabReagentRunStep
 
 public sealed class LabReagentMaterialUse
 {
+    public string? ResourceSnapshotJson { get; private set; }
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid RunId { get; private set; }
     public Guid SourceMaterialLotId { get; private set; }
@@ -233,7 +234,7 @@ public sealed class LabReagentMaterialUse
     private LabReagentMaterialUse() { }
 
     public LabReagentMaterialUse(Guid runId, Guid sourceMaterialLotId,
-        decimal quantity, string unit, bool exhausted, Guid actorId, DateTime utcNow)
+        decimal quantity, string unit, bool exhausted, Guid actorId, DateTime utcNow, string resourceSnapshotJson)
     {
         if (runId == Guid.Empty || sourceMaterialLotId == Guid.Empty || actorId == Guid.Empty || quantity <= 0)
             throw new ArgumentException("A run, source lot, operator and positive amount are required.");
@@ -244,5 +245,6 @@ public sealed class LabReagentMaterialUse
         MaterialExhausted = exhausted;
         RecordedByUserId = actorId;
         RecordedAtUtc = utcNow;
+        ResourceSnapshotJson = LabAuditedEntity.Required(resourceSnapshotJson, nameof(resourceSnapshotJson), 1_048_576);
     }
 }

@@ -423,7 +423,7 @@ public sealed partial class LabOperationsController
             throw Conflict("batch_member_duplicate", "This library is already in the selected batch.");
         await RequireLibraryAttemptAsync(library, cancellationToken);
         var libraryContainer = await dbContext.LabContainers.SingleAsync(c => c.Id == library.LibraryContainerId, cancellationToken);
-        if (libraryContainer.Status != LabContainerStatus.Available)
+        if (libraryContainer.PhysicalHoldReason is not null || libraryContainer.Status != LabContainerStatus.Available)
             throw Conflict("library_material_unavailable", "Confirm the library's physical availability before adding it to a sequencing batch.");
         dbContext.Entry(libraryContainer).Property(c => c.UpdatedAt).IsModified = true;
         if (library.Status != LabLibraryStatus.QcPassed)

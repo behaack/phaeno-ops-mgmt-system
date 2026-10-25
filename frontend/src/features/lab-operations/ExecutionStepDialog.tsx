@@ -73,7 +73,7 @@ export function ExecutionStepDialog({ step, action, version, error, pending, onC
           {definition.condition ? <p className="rounded-lg bg-muted p-3 text-sm"><strong>Condition:</strong> {definition.condition}</p> : null}
           {canSkip ? <PortalField ><Label htmlFor="step-outcome"><RequiredFieldName>Step decision</RequiredFieldName></Label><NativeSelect id="step-outcome" className={selectClass} {...form.register('outcome')}><option value="recorded">Record performed step</option><option value="skipped">Skip with reason</option></NativeSelect></PortalField> : null}
           {!skipped ? <>
-            {action === 'correct' ? <p className="text-sm text-muted-foreground">This correction preserves the earlier performer and performed time, including any unknowns. It does not record new work.</p> : <Controller name="timing" control={form.control} render={({ field }) => <StepTimingFields value={field.value} onChange={field.onChange} onBlur={field.onBlur} inputRef={field.ref} errors={errors.timing} />} />}
+            {action === 'correct' ? <p className="text-sm text-muted-foreground">This correction preserves the earlier performer and performed time, including any unknowns. It does not record new work.</p> : <Controller name="timing" control={form.control} render={({ field }) => <StepTimingFields requirements={definition} value={field.value} onChange={field.onChange} onBlur={field.onBlur} inputRef={field.ref} errors={errors.timing} />} />}
             {definition.captures.map(capture => {
               const id = `capture-${capture.key}`
               const message = errors.captures?.[capture.key]?.message

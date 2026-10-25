@@ -1,3 +1,4 @@
+vi.mock('#/api/lab-physical', () => ({ findStorageBoxes: async (barcode: string) => [{ id: `box-${barcode}`, barcode, room: 'TEST room', freezer: 'TEST freezer', rack: 'TEST rack', shelf: 'TEST shelf', version: 1 }], saveStorageBox: vi.fn() }))
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
@@ -302,6 +303,7 @@ describe('LabReceiptAccessionPanel navigation', () => {
     expect(api.batch).not.toHaveBeenCalled()
     fireEvent.change(box, { target: { value: 'BOX-2' } })
     fireEvent.submit(box.closest('form')!)
+    fireEvent.click(await screen.findByRole('button', { name: 'Confirm box and location' }))
     const placement = await screen.findByLabelText(/Supplier tube barcode/)
     fireEvent.change(placement, { target: { value: 'TUBE-2' } })
     fireEvent.submit(placement.closest('form')!)
@@ -334,6 +336,7 @@ describe('LabReceiptAccessionPanel navigation', () => {
     const box = await screen.findByLabelText(/Freezer box barcode/)
     expect(screen.queryByLabelText(/Supplier tube barcode/)).toBeNull()
     fireEvent.change(box, { target: { value: 'BOX-1' } }); fireEvent.submit(box.closest('form')!)
+    fireEvent.click(await screen.findByRole('button', { name: 'Confirm box and location' }))
     const tube = await screen.findByLabelText(/Supplier tube barcode/)
     await waitFor(() => expect(api.work).toHaveBeenCalled())
     fireEvent.change(tube, { target: { value: 'WRONG' } })
@@ -356,6 +359,7 @@ describe('LabReceiptAccessionPanel navigation', () => {
     const box = await screen.findByLabelText(/Freezer box barcode/)
     fireEvent.change(box, { target: { value: 'UNSAVED-BOX' } })
     fireEvent.submit(box.closest('form')!)
+    fireEvent.click(await screen.findByRole('button', { name: 'Confirm box and location' }))
     const tube = await screen.findByLabelText(/Supplier tube barcode/)
     fireEvent.change(tube, { target: { value: 'TUBE-1' } }); fireEvent.submit(tube.closest('form')!)
     await screen.findByText('Placement pending confirmation')

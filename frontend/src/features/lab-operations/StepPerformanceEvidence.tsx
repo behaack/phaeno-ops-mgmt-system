@@ -10,6 +10,8 @@ export function StepPerformanceEvidence({ record, people }: { record: LabExecuti
     {record.outcome === 'skipped' ? <p>Skipped — no performed work claimed.</p> : performance ? <>
       <p>Performed by {name(performance.performedByUserId)} · {originalTime} · {performance.entryMode === 'earlier' ? 'Late entry; minute precision' : 'Confirmed at recording time'}</p>
       {performance.lateEntryReason ? <p className="whitespace-pre-wrap">Late-entry reason: {performance.lateEntryReason}</p> : null}
+      {performance.interval ? <p>Actual interval: <DisplayTimestamp value={performance.interval.startedAtUtc} /> → <DisplayTimestamp value={performance.interval.completedAtUtc} /></p> : null}
+      {performance.participants?.map(person => <p key={person.userId}>Additional participant: {name(person.userId)} · {person.role}</p>)}
       {performance.verificationStatus === 'PendingReview' ? <p>Original on-behalf entry; independent approval and any later changes are shown in Sample history.</p> : null}
     </> : <p>Performed time and performer were not captured separately.</p>}
     <p>Recorded by {name(record.recordedByUserId)} · {<DisplayTimestamp value={record.recordedAtUtc} seconds />}</p>

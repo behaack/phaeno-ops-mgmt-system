@@ -248,7 +248,7 @@
       "title": "Trial Projects",
       "summary": "Review and accept approved Trial scope, submit coded RNA, and download released results.",
       "order": 24,
-      "reviewedAt": "2026-10-22",
+      "reviewedAt": "2026-10-24",
       "navigationGroup": "trial-project",
       "contentType": "guide",
       "topicIds": [
@@ -588,7 +588,7 @@
       "title": "Prepare and ship samples",
       "summary": "Request phase kits, confirm receipt, pair samples and tubes, pack and record shipments, and follow each phase.",
       "order": 35,
-      "reviewedAt": "2026-10-22",
+      "reviewedAt": "2026-10-24",
       "navigationGroup": "laboratory-work",
       "contentType": "guide",
       "topicIds": [
@@ -621,7 +621,7 @@
       "title": "Results and billing",
       "summary": "Download scientifically released PSeq results, review retention, and find invoices independently of result access.",
       "order": 40,
-      "reviewedAt": "2026-10-22",
+      "reviewedAt": "2026-10-24",
       "navigationGroup": "laboratory-work",
       "contentType": "guide",
       "topicIds": [
@@ -797,7 +797,7 @@
       "title": "Prepare included Assembly",
       "summary": "Prepare a purchased Kit case, correct inputs and download governed outputs without another purchase.",
       "order": 40,
-      "reviewedAt": "2026-10-22",
+      "reviewedAt": "2026-10-24",
       "navigationGroup": "partner-work",
       "contentType": "guide",
       "topicIds": [
@@ -1583,9 +1583,9 @@
       "slug": "lab-operations",
       "overviewTitle": "Overview",
       "title": "Laboratory operations",
-      "summary": "Find laboratory work, receive purchased kits and stock, assemble Phaeno kits and reagents, record scientific evidence, and trace result delivery.",
+      "summary": "Find laboratory work, receive purchased kits and stock, assemble Phaeno kits and reagents, record scientific evidence, trace shared resources, and review result delivery.",
       "order": 50,
-      "reviewedAt": "2026-10-22",
+      "reviewedAt": "2026-10-24",
       "navigationGroup": "laboratory-operations",
       "contentType": "overview",
       "topicIds": [
@@ -1661,7 +1661,7 @@
       "title": "Service workflows, protocol control, and execution",
       "summary": "Author, review and present complete laboratory procedures; control exact revisions and record scientific execution.",
       "order": 54,
-      "reviewedAt": "2026-10-22",
+      "reviewedAt": "2026-10-24",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1696,7 +1696,7 @@
       "title": "Materials and equipment",
       "summary": "Receive purchased lots, configure Phaeno reagent products and manufacture their lots, qualify stock, and track consumption and storage.",
       "order": 55,
-      "reviewedAt": "2026-10-22",
+      "reviewedAt": "2026-10-24",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1729,7 +1729,7 @@
       "title": "Libraries, batches, and sequencing",
       "summary": "Track library/tube lineage, verify FASTQ inputs, follow scientific or explicitly simulated assembly attempts, record QC and hand off approved Customer packages.",
       "order": 56,
-      "reviewedAt": "2026-10-22",
+      "reviewedAt": "2026-10-24",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1803,7 +1803,7 @@
       "title": "Scientific approval and release readiness",
       "summary": "Review output packages, source-tube lineage and scientific evidence requirements, resolve performer/time reviews, and record independent scientific approval.",
       "order": 58,
-      "reviewedAt": "2026-10-11",
+      "reviewedAt": "2026-10-24",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1936,7 +1936,7 @@
       "title": "How to place a Customer order",
       "summary": "Enter Customer scope, save a Draft, submit for pricing and understand the quote/acceptance handoff.",
       "order": 40.5,
-      "reviewedAt": "2026-10-22",
+      "reviewedAt": "2026-10-24",
       "navigationGroup": "order-operations",
       "contentType": "how-to",
       "topicIds": [
@@ -1969,7 +1969,7 @@
       "title": "How to configure samples and shipping",
       "summary": "Prepare Shipping procedures, Sample types, Kit specifications and a Default receiving destination.",
       "order": 43,
-      "reviewedAt": "2026-10-22",
+      "reviewedAt": "2026-10-24",
       "navigationGroup": "order-operations",
       "contentType": "how-to",
       "topicIds": [
@@ -2003,7 +2003,7 @@
       "title": "How to create and approve a lab protocol",
       "summary": "Write ordered instructions, review the bench presentation and release a complete protocol revision.",
       "order": 53.5,
-      "reviewedAt": "2026-10-22",
+      "reviewedAt": "2026-10-24",
       "navigationGroup": "laboratory-operations",
       "contentType": "how-to",
       "topicIds": [
@@ -2037,7 +2037,7 @@
       "title": "How to onboard a Customer",
       "summary": "Request and approve online access, invite an administrator, enable the approved service, finish billing and tax review, and close both requests.",
       "order": 15.5,
-      "reviewedAt": "2026-10-22",
+      "reviewedAt": "2026-10-24",
       "navigationGroup": "customer-relationship-management",
       "contentType": "how-to",
       "topicIds": [
@@ -2124,7 +2124,7 @@
       "summary": "Follow an illustrated notebook workflow: projects, experiments, dated notes, tables, files, history, completion and repeat setups.",
       "navigationGroup": "research",
       "order": 59.5,
-      "reviewedAt": "2026-10-22",
+      "reviewedAt": "2026-10-24",
       "contentType": "how-to",
       "topicIds": [
         "research"

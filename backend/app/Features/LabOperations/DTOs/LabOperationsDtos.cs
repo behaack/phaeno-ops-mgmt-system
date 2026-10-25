@@ -111,7 +111,8 @@ public sealed record LabContainerDto(
     string? IntakeDisposition = null, string? IntakeReasonCode = null, string? IntakeNotes = null,
     DateTime? IntakeReviewedAtUtc = null, Guid? IntakeReviewedByUserId = null,
     decimal? InitialQuantity = null, string? InitialQuantityUnit = null,
-    string? QuantityBasis = null, string QuantityHistoryJson = "[]")
+    string? QuantityBasis = null, string QuantityHistoryJson = "[]",
+    Guid? StorageBoxId = null, string? StoragePosition = null, string? PhysicalHoldReason = null)
 {
     public string? QuantityText => Quantity?.ToString(System.Globalization.CultureInfo.InvariantCulture);
     public string? InitialQuantityText => InitialQuantity?.ToString(System.Globalization.CultureInfo.InvariantCulture);
@@ -275,10 +276,13 @@ public sealed record UpdateVendorShipmentRequest(long Version, string? Carrier,
     string? TrackingReference, string? ProviderReference, DateTime? ExpectedCompletionAtUtc, string Evidence,
     Guid? VendorShipmentAddressId = null, long? VendorShipmentAddressVersion = null);
 public sealed record VendorLibraryExceptionRequest(Guid MemberId, string Outcome, string Reason);
+public sealed record VendorSequencingRunCapture(Guid? SetId, int? GroupNumber, string RunReference,
+    LabScientificEvidence ScientificEvidence);
 public sealed record RecordVendorResultsRequest(Guid RequestId, long Version, string VendorJobReference,
     bool RunNotPerformed, DateTime? RunStartedAtUtc, DateTime? RunCompletedAtUtc, DateTime? ResultsReceivedAtUtc,
     string Outcome, IReadOnlyList<VendorLibraryExceptionRequest> Exceptions, IReadOnlyList<Guid> FastqSetIds,
-    string? Notes, Guid? DraftId = null, int? DraftVersion = null, bool FilesConfirmed = false);
+    string? Notes, Guid? DraftId = null, int? DraftVersion = null, bool FilesConfirmed = false,
+    IReadOnlyList<VendorSequencingRunCapture>? SequencingRuns = null);
 public sealed record VendorResultsFastqFileSnapshot(Guid FileId, Guid UploadId, Guid OutputId, string OriginalFileName,
     string FileName, int GroupNumber, int ReadNumber, int PartNumber, string GroupDescription, long SizeBytes, string Sha256, long ReadCount,
     Guid? ArchiveId = null, int? ArchiveEntryIndex = null, string? ArchiveEntryPath = null);
@@ -290,7 +294,8 @@ public sealed record VendorResultsSnapshot(Guid BatchId, string BatchNumber, str
     string ProviderName, string VendorJobReference, bool RunNotPerformed, DateTime? RunStartedAtUtc,
     DateTime? RunCompletedAtUtc, DateTime? ResultsReceivedAtUtc, string Outcome, string? Notes,
     DateTime? BatchCompletedAtUtc, string ManifestJson, IReadOnlyList<VendorResultsLibrarySnapshot> Libraries,
-    IReadOnlyList<VendorResultsLocationSnapshot> Locations, IReadOnlyList<VendorResultsFastqSetSnapshot>? FastqSets = null);
+    IReadOnlyList<VendorResultsLocationSnapshot> Locations, IReadOnlyList<VendorResultsFastqSetSnapshot>? FastqSets = null,
+    IReadOnlyList<VendorSequencingRunCapture>? SequencingRuns = null);
 public sealed record VendorResultsVersionSummary(Guid Id, int ResultVersion, DateTime RecordedAtUtc,
     Guid RecordedByUserId, string RecordedByName, string? Note, bool IsCurrent);
 public sealed record VendorResultsVersionDetail(VendorResultsVersionSummary Version, VendorResultsSnapshot Snapshot);

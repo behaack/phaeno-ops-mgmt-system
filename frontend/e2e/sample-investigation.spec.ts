@@ -60,7 +60,7 @@ for (const theme of ['light', 'dark']) test(`sample investigation distinguishes 
   await expect(page.getByText('The stored report does not match its recorded checksum.', { exact: false })).not.toBeVisible()
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
-  await page.screenshot({ path: `../artifacts/sample-investigation-20260919/investigation-${testInfo.project.name}-${theme}.png`, fullPage: true })
+  await page.screenshot({ path: testInfo.outputPath(`investigation-${theme}.png`), fullPage: true })
   await page.setViewportSize({ width: 320, height: 800 })
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
   fail = true

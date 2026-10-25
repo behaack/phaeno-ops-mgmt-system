@@ -765,7 +765,8 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         }
     }
 
-    private static async Task VerifyAuthorizedOperatorJourney(string connectionString, string? recoveryExportDirectory = null)
+    private static async Task VerifyAuthorizedOperatorJourney(string connectionString, string? recoveryExportDirectory = null,
+        Func<Phase4JourneyContext, Task>? phase4 = null)
     {
         await using var scope = await HandoffTestScope.CreateAsync(isolatedConnection: connectionString);
         scope.RecoveryExportDirectory = recoveryExportDirectory;
@@ -814,8 +815,8 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             await administrator.SetRole(protocolApprover.User.Id, LabRole.ScientificReviewer.ToString(),
                 new SetLabRoleRequest(true, null), CancellationToken.None);
 
-            var lab = scope.CreateLabController(staff.Identity, governed: true);
-            var approvalLab = scope.CreateLabController(protocolApprover.Identity, governed: true);
+            var lab = scope.CreateLabController(staff.Identity, governed: true, requireEvidence: phase4 is not null);
+            var approvalLab = scope.CreateLabController(protocolApprover.Identity, governed: true, requireEvidence: phase4 is not null);
             var protocolName = $"Reference library preparation {Guid.NewGuid():N}";
             var protocol = await lab.CreateProtocol(
                 new CreateProtocolRequest(
@@ -972,6 +973,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 .SingleAsync(item => item.Id == work.WorkOrder.CommercialOrderId);
             Assert.Equal(LabServiceOrderStatus.InProgress, receivedOrder.Status);
             Assert.Equal(LabSampleStatus.Expected, Assert.Single(receivedOrder.Samples).Status);
+            await scope.RegisterTestBoxAsync("Intake rack A");
             work = await lab.AccessionShipmentTube(workOrderId.Value, shipment.Id,
                 new ShipmentTubeAccessionRequest(packetBarcode, tubeBarcode, "Intake rack A"),
                 CancellationToken.None);
@@ -1124,7 +1126,8 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             Assert.Equal("lab_transition_not_allowed", wrongRole.ErrorCode);
             var recorded = await lab.RecordExecutionStep(execution.Id,
                 new RecordLabExecutionStepRequest("prepare-library-final", "record", "recorded",
-                    LabProtocolTestData.Input().Captures, true, false, "hold", "Waiting for supervisor review", execution.Version), CancellationToken.None);
+                    LabProtocolTestData.Input().Captures, true, false, "hold", "Waiting for supervisor review", execution.Version,
+                    Performance: phase4 is null ? null : new("now", true)), CancellationToken.None);
             Assert.Equal("Blocked", recorded.Execution.Status);
             Assert.NotEmpty(recorded.CompletionBlockers);
             var stale = await Assert.ThrowsAsync<OrderManagementException>(() => lab.RecordExecutionStep(execution.Id,
@@ -1363,6 +1366,11 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             Assert.Equal(4, batchWorkspace.GetProperty("custody").GetArrayLength());
             Assert.Equal(1, batchWorkspace.GetProperty("tubes").GetProperty("members").GetArrayLength());
             var received = LabEvidenceTime.UtcNow;
+            if (phase4 is not null)
+            {
+                await phase4(new(scope, lab, approvalLab, fixture.OrderId, workOrderId.Value, specimen.Id, batch.Id, staff.Identity, protocolApprover.Identity));
+                return;
+            }
             var resultsRequest = new RecordVendorResultsRequest(Guid.NewGuid(), batch.SendoutVersion!.Value, "REFERENCE-NGS", false,
                 received, received, received, "Success", [new(sequencingMember.Id, "Failure", "SIMULATED low read yield")], [], "SIMULATED vendor report");
             var foreignException = await Assert.ThrowsAsync<OrderManagementException>(() => lab.RecordVendorResults(batch.SendoutId!.Value,
@@ -1519,7 +1527,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             await scope.VerifyGovernedPublicationAsync(output.Id, artifact.Id, simulatedBytes);
             await scope.VerifyMixedProgressAsync(fixture.OrderId, workOrderId.Value, released: true);
             await scope.VerifyScientificCompletionAndFrozenInvoice(fixture.OrderId, output.Id, artifact.Id, simulatedBytes);
-            if (recoveryExportDirectory is not null) await scope.ExportRecoveryFixtureAsync(fixture.OrderId, output.Id, artifact.Id, simulatedBytes);
+            if (!string.IsNullOrWhiteSpace(recoveryExportDirectory)) await scope.ExportRecoveryFixtureAsync(fixture.OrderId, output.Id, artifact.Id, simulatedBytes);
         }
         var persistedWork = await scope.DbContext.LabWorkOrders
             .AsNoTracking()
@@ -2394,12 +2402,12 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             };
         }
 
-        public async Task VerifyGovernedPublicationAsync(Guid packageId, Guid artifactId, byte[] bytes)
+        public async Task VerifyGovernedPublicationAsync(Guid packageId, Guid artifactId, byte[] bytes, bool requireEvidence = false)
         {
             var package = await DbContext.ResultOutputPackages.SingleAsync(value => value.Id == packageId);
             DbContext.Add(new BusinessRoleAssignment(PlatformUser.Id, BusinessRole.ResultReleaseManager));
             await DbContext.SaveChangesAsync();
-            var options = Options.Create(new PSeqOrderToCashOptions { RequireResultTraceability = false, RequireScientificEvidence = false, GovernedPSeqResults = true, BusinessRoles = true,
+            var options = Options.Create(new PSeqOrderToCashOptions { RequireResultTraceability = requireEvidence, RequireScientificEvidence = requireEvidence, GovernedPSeqResults = true, BusinessRoles = true,
                 DualControlEnforced = true, PipelineServiceSecret = new string('s', 24), PipelineProviderKey = "simulated",
                 ObjectStorageTransferBaseUrl = "https://example.test/simulated" });
             var release = new PSeqResultReleaseController(DbContext, new(DbContext, new FixedIdentityContext(platformIdentity)),
@@ -2440,15 +2448,15 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         }
 
         // Historical handoff fixtures deliberately retain the pre-enforcement policy; current guards have separate enforcement coverage.
-        public LabOperationsController CreateLabController(ExternalIdentity identity, bool governed = false) =>
+        public LabOperationsController CreateLabController(ExternalIdentity identity, bool governed = false, bool requireEvidence = false) =>
             new(
                 DbContext,
                 new LabOperationsRequestContext(
                     DbContext,
                     new FixedIdentityContext(identity),
-                    Options.Create(new PSeqOrderToCashOptions { RequireResultTraceability = false, RequireScientificEvidence = false, GovernedPSeqResults = governed, DualControlEnforced = governed }),
+                    Options.Create(new PSeqOrderToCashOptions { RequireResultTraceability = requireEvidence, RequireScientificEvidence = requireEvidence, GovernedPSeqResults = governed, DualControlEnforced = governed }),
                     NullLogger<LabOperationsRequestContext>.Instance),
-                Options.Create(new PSeqOrderToCashOptions { RequireResultTraceability = false, RequireScientificEvidence = false }))
+                Options.Create(new PSeqOrderToCashOptions { RequireResultTraceability = requireEvidence, RequireScientificEvidence = requireEvidence }))
             {
                 ControllerContext = new ControllerContext
                 {

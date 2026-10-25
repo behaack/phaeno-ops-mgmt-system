@@ -1,3 +1,4 @@
+vi.mock('#/api/lab-physical', () => ({ findStorageBoxes: async (barcode: string) => [{ id: `box-${barcode}`, barcode, room: 'TEST room', freezer: 'TEST freezer', rack: 'TEST rack', shelf: 'TEST shelf', version: 1 }], saveStorageBox: vi.fn() }))
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { useState } from 'react'
@@ -23,6 +24,7 @@ function App({ initial = initialWork }: { initial?: LabWorkOrderDetail }) {
 async function openBox(barcode: string) {
   const input = await screen.findByLabelText(/freezer box barcode/i)
   fireEvent.change(input, { target: { value: barcode } }); fireEvent.submit(input.closest('form')!)
+  fireEvent.click(await screen.findByRole('button', { name: 'Confirm box and location' }))
   await screen.findByLabelText(/Supplier tube barcode/)
 }
 async function place(barcode: string) {

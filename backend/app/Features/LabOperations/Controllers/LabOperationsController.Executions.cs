@@ -37,6 +37,8 @@ public sealed partial class LabOperationsController
         var utcNow = LabEvidenceTime.UtcNow;
         if (request.Performance?.PerformedByUserId is { } performerId)
             await new LabPerformanceReviewService(dbContext).RequirePerformerAsync(performerId, cancellationToken);
+        foreach (var participant in request.Performance?.Participants ?? [])
+            await new LabPerformanceReviewService(dbContext).RequirePerformerAsync(participant.UserId, cancellationToken);
         var reportStep = RequireProtocolDefinition(protocol.DefinitionJson).Steps.SingleOrDefault(s => s.Key == request.StepKey);
         if (reportStep?.Captures.Any(c => c.IsResource) == true) throw Invalid("preparation_fields_required", "Record linked material, equipment and output fields in Library prep.");
         if (reportStep?.AttachmentRequired == true && request.Outcome == "recorded")
@@ -132,7 +134,7 @@ public sealed partial class LabOperationsController
                 !workOpen ? "The laboratory job is held or finished. Resume a held job before recording work."
                     : !permitted ? $"Requires {step.RequiredRole ?? "Operator or Supervisor"}." : precedingBlocker);
         }).ToList();
-        var actorIds = evidence?.Records.SelectMany(record => new[] { record.RecordedByUserId, record.Performance?.PerformedByUserId ?? record.RecordedByUserId }).Distinct().ToList() ?? [];
+        var actorIds = evidence?.Records.SelectMany(record => new[] { record.RecordedByUserId, record.Performance?.PerformedByUserId ?? record.RecordedByUserId }.Concat((record.Performance?.Participants ?? []).Select(p => p.UserId))).Distinct().ToList() ?? [];
         var actors = await dbContext.Users.AsNoTracking().Where(user => actorIds.Contains(user.Id))
             .Select(user => new LabExecutionRecorderDto(user.Id, user.FirstName + " " + user.LastName)).ToListAsync(cancellationToken);
         var materialUse = await (
@@ -170,7 +172,7 @@ public sealed partial class LabOperationsController
         && await dbContext.LabContainers.AnyAsync(tube => tube.LabWorkOrderId == specimen.LabWorkOrderId
             && tube.LabSpecimenId == specimen.Id && tube.Kind == LabContainerKind.SubmittedSpecimen
             && tube.IntakeDisposition == LabSpecimenIntakeDisposition.Accepted
-            && tube.Status == LabContainerStatus.Available, cancellationToken);
+            && tube.PhysicalHoldReason == null && tube.Status == LabContainerStatus.Available, cancellationToken);
 
     private static HashSet<LabRole> EffectiveExecutionRoles(LabOperationsActor actor) =>
         Enum.GetValues<LabRole>().Where(role => actor.HasAny(role)).ToHashSet();

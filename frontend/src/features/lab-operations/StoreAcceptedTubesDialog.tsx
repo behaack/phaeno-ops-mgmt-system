@@ -1,3 +1,4 @@
+import { StorageBoxDialog } from './StorageBoxDialog'
 import { FieldError } from '#/components/ui/field'
 import { RecordTableHeader } from '#/components/ui/record-list'
 import { NativeCheckbox } from '#/components/ui/native-checkbox'
@@ -191,7 +192,13 @@ export function StoreAcceptedTubesDialog({ rows, packet, work, available = true,
     setNotice(`Exception saved for ${barcode}. ${nextGroup.length ? 'Reconcile the remaining box contents and rescan its barcode before continuing.' : 'Scan the box before continuing with acceptable tubes.'}`)
   }
 
+  const [confirmBox, setConfirmBox] = useState<string | null>(null)
   function openBox(barcode: string) {
+    if (!canPlace || busy) return
+    if (expectedBox && barcode !== expectedBox) { boxForm.setError('barcode', { message: `This group belongs to ${expectedBox}. Rescan that box; finish it before opening another.` }); return }
+    setConfirmBox(barcode)
+  }
+  function openConfirmedBox(barcode: string) {
     if (!canPlace || busy) return
     if (expectedBox && barcode !== expectedBox) {
       boxForm.setError('barcode', { message: `This group belongs to ${expectedBox}. Rescan that box; finish it before opening another.` })
@@ -222,7 +229,8 @@ export function StoreAcceptedTubesDialog({ rows, packet, work, available = true,
   }
 
   return <>
-    <Dialog open onOpenChange={open => { if (!open) close() }}>
+    {confirmBox ? <StorageBoxDialog barcode={confirmBox} onClose={() => setConfirmBox(null)} onConfirmed={() => { const barcode = confirmBox; setConfirmBox(null); openConfirmedBox(barcode) }} /> : null}
+    <Dialog open onOpenChange={open => { if (!open && !confirmBox) close() }}>
       <DialogContent className="sm:max-w-4xl" onOpenAutoFocus={event => { event.preventDefault(); focusBox() }}>
         <DialogHeader><DialogTitle>{reviewing || submitted ? 'Review and finish box' : `Accession tubes in ${packet.shipmentNumber}`}</DialogTitle><DialogDescription>{reviewing || submitted ? `Check ${tubeCount(group.length)} against the contents of ${groupBox} before confirming.` : `${packet.organizationName} · ${packet.authorizationReference} · ${packet.packetNumber}. Inspect each tube, scan it once, then place it in the open box after its identity check succeeds. Record exceptions separately.`}</DialogDescription></DialogHeader>
         <div className="min-w-0 space-y-4">

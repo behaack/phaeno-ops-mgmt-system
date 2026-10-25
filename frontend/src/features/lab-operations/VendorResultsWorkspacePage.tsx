@@ -25,10 +25,13 @@ import { FastqBatchZipUpload } from './FastqBatchZipUpload'
 import { PillToggle } from '#/components/ui/pill-toggle'
 import { FastqLibraryUpload } from './FastqLibraryUpload'
 import { canRecordVendorResults } from './vendor-workflow'
+import { VendorRunCaptureFields } from './VendorRunCaptureFields'
+import { captureRun, runCaptureIssue, runCaptureSchema, runCaptureValues } from './vendor-run-capture'
 
 const localTime = (v?: string | null) => v ? new Date(new Date(v).getTime() - new Date(v).getTimezoneOffset() * 60_000).toISOString().slice(0, 19) : ''
 const toUtc = (value: string, stored?: string | null) => stored && value === localTime(stored) ? stored : new Date(value).toISOString()
 const valuesSchema = z.object({ jobReference: z.string().trim().min(1, 'Enter the vendor job reference.').max(255), start: z.string(), end: z.string(), receipt: z.string(),
+  runCaptures: z.array(runCaptureSchema).max(256),
   notPerformed: z.boolean(), uploadMethod: z.enum(['Zip', 'Files']), zipArchiveId: z.string(), zipConfirmed: z.boolean(), zipRows: z.array(z.object({ index: z.number(), memberId: z.string(), read: z.string(), group: z.string(), part: z.string(), description: z.string(), excluded: z.boolean(), exclusionReason: z.string(), uploadId: z.string() })), outcome: z.enum(['', 'Success', 'Failure']), notes: z.string().trim().max(4000), confirmedFiles: z.boolean(),
   files: z.array(z.object({ memberId: z.string(), setId: z.string(), layout: z.string(), run: z.string(), preparation: z.string(), group: z.string(), part: z.string(), read: z.string(), description: z.string() })),
   exceptions: z.array(z.object({ memberId: z.string(), reason: z.string().trim().min(1, 'Record the library exception reason.').max(4000) })) })
@@ -78,17 +81,30 @@ function VendorResultsForm({ workspace, intake, refreshFiles, onRestarted, close
       if (successful.some(m => !v.files.find(f => f.memberId === m.id)?.setId)) issue('files', 'Select a complete verified file set for every successful library.')
       for (const member of successful) {
         const set = intake.sets.find(s => s.id === v.files.find(f => f.memberId === member.id)?.setId)
+        if (new Set(v.runCaptures.filter(r => r.setId === set?.id).map(r => r.runReference)).size > 1) issue('runCaptures', 'One file set belongs to one purchased run and actual acquisition. Distinct acquisitions require separately authorized purchased runs.')
         if (!set || set.files.length === 0 || set.files.some(f => !f.fileId)) { issue('files', 'Finish uploading and verifying every selected file set.'); break }
       }
       if (successful.length && !v.confirmedFiles) issue('confirmedFiles', 'Confirm the vendor files and library/run mapping are complete.')
+      for (const member of successful) {
+        const set = intake.sets.find(s => s.id === v.files.find(f => f.memberId === member.id)?.setId)
+        for (const group of new Set(set?.files.map(f => f.groupNumber) ?? [])) {
+          const row = v.runCaptures.find(r => r.setId === set?.id && r.groupNumber === group)
+          const error = row ? runCaptureIssue(row) : 'Map the actual sequencing run for each selected file group.'
+          if (error) issue('runCaptures', error)
+        }
+      }
+    }
+    if (!v.notPerformed && v.outcome === 'Failure') for (const row of v.runCaptures.filter(r => r.setId === null && r.runReference)) {
+      const error = runCaptureIssue(row); if (error) issue('runCaptures', error)
     }
   })
   const initial: Values = { jobReference: sendout?.providerReference ?? '', start: localTime(sendout?.sequencingStartedAtUtc), end: localTime(sendout?.sequencingCompletedAtUtc),
+    runCaptures: (intake.sequencingRuns ?? []).map(r => runCaptureValues(r.setId, r.groupNumber, r)),
     receipt: localTime(sendout?.resultsReceivedAtUtc), uploadMethod: 'Zip', zipArchiveId: '', zipConfirmed: false, zipRows: [], notPerformed: sendout?.runNotPerformed === true, outcome: sendout?.outcome ?? '', notes: '', confirmedFiles: false,
     files: tubes.members.map(m => ({ memberId: m.id, setId: intake.sets.find(s => s.memberId === m.id && s.sealedSet)?.id ?? '', layout: '', run: '', preparation: '', group: '1', part: '1', read: '', description: '' })),
     exceptions: reviewed.libraryExceptions.map(e => ({ memberId: e.memberId, reason: e.reason })) }
   const draftShape = valuesSchema.extend({ jobReference: z.string(), exceptions: z.array(z.object({ memberId: z.string(), reason: z.string() })) })
-  const parsedDraft = draftShape.safeParse(intake.draft?.payload)
+  const parsedDraft = draftShape.safeParse({ ...initial, ...intake.draft?.payload })
   const form = useForm<Values>({ resolver: zodResolver(schema), defaultValues: parsedDraft.success ? parsedDraft.data : initial, mode: 'onBlur' })
   const { isDirty: __formDraftDirty } = form.formState
 
@@ -97,6 +113,11 @@ function VendorResultsForm({ workspace, intake, refreshFiles, onRestarted, close
   const selectedFiles = form.watch('files')
   const noRun = form.watch('notPerformed')
   const outcome = form.watch('outcome')
+  const groups = selectedFiles.flatMap(f => {
+    if (form.getValues('exceptions').some(e => e.memberId === f.memberId)) return []
+    const set = intake.sets.find(s => s.id === f.setId)
+    return [...new Set(set?.files.map(file => file.groupNumber) ?? [])].map(groupNumber => ({ setId: f.setId, groupNumber, label: `${tubes.members.find(m => m.id === f.memberId)?.libraryKey} · Group ${groupNumber}` }))
+  })
   const client = useQueryClient()
   async function persistDraft() {
     if (needsRestart) throw new Error('Restart this draft after reviewing the latest submission. Completed files and your entries are preserved.')
@@ -119,7 +140,9 @@ function VendorResultsForm({ workspace, intake, refreshFiles, onRestarted, close
     const body: Parameters<typeof recordVendorResults>[1] = { requestId: savedDraft.id, version: batch.sendoutVersion!, vendorJobReference: v.jobReference, runNotPerformed: v.notPerformed,
       runStartedAtUtc: v.notPerformed ? null : toUtc(v.start, sendout?.sequencingStartedAtUtc), runCompletedAtUtc: v.notPerformed ? null : toUtc(v.end, sendout?.sequencingCompletedAtUtc), resultsReceivedAtUtc: v.notPerformed ? null : toUtc(v.receipt, sendout?.resultsReceivedAtUtc),
       outcome: v.notPerformed ? 'Failure' : v.outcome as 'Success' | 'Failure', exceptions: v.notPerformed || v.outcome === 'Failure' ? [] : v.exceptions.map(e => ({ ...e, outcome: 'Failure' })),
-      fastqSetIds: sets, notes: v.notes || null, draftId: savedDraft.id, draftVersion: savedDraft.version, filesConfirmed: v.confirmedFiles }
+      fastqSetIds: sets, notes: v.notes || null, draftId: savedDraft.id, draftVersion: savedDraft.version, filesConfirmed: v.confirmedFiles,
+      sequencingRuns: v.notPerformed ? [] : v.runCaptures.filter(r => v.outcome === 'Failure' ? r.setId === null && Boolean(r.runReference)
+        : groups.some(g => g.setId === r.setId && g.groupNumber === r.groupNumber)).map(captureRun) }
     finalRequest.current = { fingerprint, body }
     return recordVendorResults(sendout!.id, body)
   }, onError: error => { if (isAxiosError(error) && error.response && error.response.status < 500) finalRequest.current = null }, onSuccess: async () => { dismissal.allowNavigation(); form.reset(form.getValues()); await Promise.all([client.invalidateQueries({ queryKey: ['lab-batch', batch.id] }), client.invalidateQueries({ queryKey: ['lab-batches'] }), client.invalidateQueries({ queryKey: ['vendor-results-versions', batch.id] }), client.invalidateQueries({ queryKey: ['assembly-inputs'] }), client.invalidateQueries({ queryKey: ['lab-operations'] })]); close() } })
@@ -140,7 +163,7 @@ function VendorResultsForm({ workspace, intake, refreshFiles, onRestarted, close
     <form noValidate className="space-y-5" onSubmit={form.handleSubmit(v => save.mutate(v))}>
       <SectionPanel heading={<h2 >Vendor run</h2>}><PreparationField id="results-reference" label="Vendor job reference" required error={form.formState.errors.jobReference?.message}><Input id="results-reference" disabled={busy} {...form.register('jobReference')} /></PreparationField>
         <label className="flex cursor-pointer items-start gap-2 text-sm"><NativeCheckbox   disabled={busy} {...form.register('notPerformed', { onChange: e => { if (e.target.checked) { form.setValue('outcome', 'Failure', { shouldDirty: true }); exceptions.replace([]) } } })} />Run not performed</label>
-        {noRun ? <PreparationField id="results-notes" label="Reason run not performed" required error={form.formState.errors.notes?.message}><Textarea id="results-notes" disabled={busy} {...form.register('notes')} /></PreparationField> : <><div className="grid gap-3 sm:grid-cols-2">{clock('start', 'Run started')}{clock('end', 'Run completed')}</div>{clock('receipt', 'Results received')}</>}
+        {noRun ? <PreparationField id="results-notes" label="Reason run not performed" required error={form.formState.errors.notes?.message}><Textarea id="results-notes" disabled={busy} {...form.register('notes')} /></PreparationField> : <><div className="grid gap-3 sm:grid-cols-2">{clock('start', 'Run started')}{clock('end', 'Run completed')}</div>{clock('receipt', 'Results received')}<p className="text-xs text-muted-foreground">For multiple acquisitions, use the earliest actual start and latest completion as this overall run window. Record each group's exact acquisition below.</p></>}
       </SectionPanel>
       {!noRun ? <><SectionPanel heading={<h2 >Library results</h2>}><PreparationField id="results-outcome" label="Batch outcome" required error={form.formState.errors.outcome?.message}><NativeSelect id="results-outcome" disabled={busy} {...form.register('outcome', { onChange: () => exceptions.replace([]) })}><option value="">Choose outcome</option><option value="Success">Success</option><option value="Failure">Fail</option></NativeSelect></PreparationField>
         {outcome === 'Failure' ? <p className="text-sm text-muted-foreground">All libraries are marked Fail. FASTQ uploads are not required.</p> : outcome === 'Success' ? <fieldset className="space-y-2"><legend className="mb-2 text-sm font-medium">Library exceptions · Fail</legend>{tubes.members.map(member => { const index = exceptions.fields.findIndex(e => e.memberId === member.id); return <div key={member.id} className="space-y-2 border-b pb-2"><label className="flex cursor-pointer items-start gap-2 text-sm"><NativeCheckbox  disabled={busy} checked={index >= 0} onChange={e => e.target.checked ? exceptions.append({ memberId: member.id, reason: '' }) : exceptions.remove(index)} /><span className="break-words">{member.libraryKey} · {index >= 0 ? 'Fail' : 'Success'}</span></label>{index >= 0 ? <PreparationField id={`exception-${member.id}`} label="Exception reason" required error={form.formState.errors.exceptions?.[index]?.reason?.message}><Input id={`exception-${member.id}`} disabled={busy} {...form.register(`exceptions.${index}.reason`)} /></PreparationField> : null}</div> })}</fieldset> : null}
@@ -154,6 +177,7 @@ function VendorResultsForm({ workspace, intake, refreshFiles, onRestarted, close
         </>}
         <p role="alert" className="text-sm text-destructive">{form.formState.errors.files?.message}</p><PreparationField id="results-confirm-files" label="Upload completeness" required error={form.formState.errors.confirmedFiles?.message}><label className="flex cursor-pointer items-start gap-2 text-sm"><NativeCheckbox id="results-confirm-files"  disabled={busy} {...form.register('confirmedFiles')} />I confirm all required vendor files are present and mapped to the correct library and purchased run.</label></PreparationField>
       </SectionPanel> : null}
+      <VendorRunCaptureFields form={form} groups={outcome === 'Success' ? groups : []} failed={outcome === 'Failure'} disabled={busy} />
       {sendout?.outcomeNote ? <p className="text-sm text-muted-foreground">Previous note: {sendout.outcomeNote}</p> : null}<PreparationField id="results-notes" label="Results notes" required={recorded || outcome === 'Failure'} error={form.formState.errors.notes?.message}><Textarea id="results-notes" disabled={busy} {...form.register('notes')} /></PreparationField></> : null}
       {save.error || draftSave.error ? <p role="alert" className="text-sm text-destructive">{getLabOperationsError(save.error ?? draftSave.error, 'Saving failed. Your draft and files remain available for review.')}</p> : null}
       {draftSave.isSuccess ? <p role="status" className="text-sm">Draft saved. It does not record receipt or create a results version.</p> : null}
