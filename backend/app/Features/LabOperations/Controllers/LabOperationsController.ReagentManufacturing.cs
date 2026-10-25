@@ -26,7 +26,7 @@ public sealed record LabReagentRunStepDto(int Sequence, string StepKey, string N
     string Instructions, string Notes, Guid PerformedByUserId, DateTime PerformedAtUtc);
 public sealed record LabReagentUseDto(Guid Id, Guid SourceMaterialLotId, string SourceName,
     string SourceLotNumber, decimal Quantity, string QuantityUnit, bool MaterialExhausted,
-    Guid RecordedByUserId, DateTime RecordedAtUtc);
+    Guid RecordedByUserId, DateTime RecordedAtUtc, string? ResourceSnapshotJson);
 public sealed record LabReagentRunDto(Guid Id, Guid WorkflowId, int WorkflowRevision,
     string WorkflowName, Guid MaterialLotId, string MaterialName, string LotNumber,
     Guid StorageLocationId, string StorageLocation, string QuantityUnit,
@@ -300,7 +300,7 @@ public sealed partial class LabOperationsController
         try
         {
             use = new(run.Id, source.Id, request.Quantity, source.QuantityUnit,
-                request.MaterialExhausted, actor.User.Id, now);
+                request.MaterialExhausted, actor.User.Id, now, await LabResourceSnapshot.MaterialAsync(dbContext, source, ct));
             source.Consume(request.Quantity, request.MaterialExhausted, use.Id, actor.User.Id, now);
             run.RecordMaterialUse();
         }
@@ -457,7 +457,7 @@ public sealed partial class LabOperationsController
                     return new LabReagentUseDto(item.Id, source.Id,
                         definitions[source.MaterialDefinitionId].Name, source.LotNumber,
                         item.Quantity, item.QuantityUnit, item.MaterialExhausted,
-                        item.RecordedByUserId, item.RecordedAtUtc);
+                        item.RecordedByUserId, item.RecordedAtUtc, item.ResourceSnapshotJson);
                 }).ToList(), run.StartedByUserId, run.StartedAtUtc,
                 run.FinishedByUserId, run.FinishedAtUtc, run.AbandonmentReason, run.Version,
                 lot.SupplierProductId is Guid productId && outputProducts.GetValueOrDefault(productId)?.CanExpire == true);

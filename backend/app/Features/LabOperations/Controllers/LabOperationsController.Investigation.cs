@@ -110,6 +110,9 @@ public sealed partial class LabOperationsController
         // Explicit organization boundary applies before projection, paging or names. Authorization above requires active internal Lab staff.
         var permittedWorkIds = dbContext.LabWorkOrders.Where(x => x.SubmittingOrganizationId == work.SubmittingOrganizationId).Select(x => x.Id);
         var permittedSpecimens = dbContext.LabSpecimens.Where(x => permittedWorkIds.Contains(x.LabWorkOrderId));
+        var resourceMatches = kind is "lot" or "equipment"
+            ? await new LabInvestigationResources(dbContext).RelatedAsync(work.SubmittingOrganizationId, kind, reference, ct)
+            : [];
         IQueryable<Guid> specimens = kind switch
         {
             "tube" => dbContext.LabContainers.Where(x => permittedWorkIds.Contains(x.LabWorkOrderId) && x.Barcode == reference && x.LabSpecimenId.HasValue).Select(x => x.LabSpecimenId!.Value),
@@ -124,7 +127,7 @@ public sealed partial class LabOperationsController
                 where permittedWorkIds.Contains(attempt.LabWorkOrderId) && batch.TrayBarcode == reference select attempt.LabSpecimenId,
             _ => throw Conflict("reference_kind_invalid", "Choose a tube, lot, equipment, sequencing run, library or preparation tray.")
         };
-        return await permittedSpecimens.AsNoTracking().Where(x => specimens.Contains(x.Id)).OrderBy(x => x.Id)
+        return await permittedSpecimens.AsNoTracking().Where(x => specimens.Contains(x.Id) || resourceMatches.Contains(x.Id)).OrderBy(x => x.Id)
             .Skip(Math.Clamp(page, 0, 10000) * 25).Take(26).Select(x => new { x.Id, x.LabWorkOrderId, x.AccessionNumber }).ToListAsync(ct);
     }
 }

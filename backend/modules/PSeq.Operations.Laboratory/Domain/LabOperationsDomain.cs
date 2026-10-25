@@ -109,7 +109,9 @@ public enum LabContainerStatus
     Consumed,
     Failed,
     Disposed,
-    LabelPending
+    LabelPending,
+    Returned,
+    Transferred
 }
 
 public enum LabContainerBarcodeSource
@@ -153,6 +155,39 @@ public sealed class LabContainer : LabAuditedEntity
     public LabContainerStatus Status { get; private set; } = LabContainerStatus.Available;
     public string? DispositionReason { get; private set; }
     public DateTime? RetainUntilUtc { get; private set; }
+    public Guid? StorageBoxId { get; private set; }
+    public string? StoragePosition { get; private set; }
+    public string? PhysicalHoldReason { get; private set; }
+
+    public void SetPhysicalHold(string? reason) => PhysicalHoldReason = Optional(reason, 2000);
+    public void SetPhysicalRetention(DateTime? until)
+    {
+        if (until.HasValue && until.Value.Kind != DateTimeKind.Utc) throw new ArgumentException("Use a UTC retain-until date.");
+        RetainUntilUtc = until;
+    }
+    public void PlaceInBox(LabStorageBox box, string? position)
+    {
+        if (Status is LabContainerStatus.Disposed or LabContainerStatus.Returned or LabContainerStatus.Transferred)
+            throw new InvalidOperationException("This container is no longer in laboratory custody.");
+        StorageBoxId = box.Id; StoragePosition = Optional(position?.ToUpperInvariant(), 30);
+        if (StoragePosition?.Any(c => !char.IsAsciiLetterOrDigit(c) && c != '-') == true)
+            throw new ArgumentException("Use letters, numbers or a hyphen for the tube position.");
+        Location = box.Barcode;
+    }
+    public void RecordPhysicalDisposition(string kind, string reason)
+    {
+        if (PhysicalHoldReason is not null) throw new InvalidOperationException("Release the physical preservation hold before disposition.");
+        if (Status is LabContainerStatus.Disposed or LabContainerStatus.Returned or LabContainerStatus.Transferred)
+            throw new InvalidOperationException("A final physical disposition has already been recorded.");
+        if (kind == "Exhausted" && Status == LabContainerStatus.Consumed) throw new InvalidOperationException("Exhaustion is already recorded.");
+        Status = kind switch { "Exhausted" => LabContainerStatus.Consumed, "Destroyed" => LabContainerStatus.Disposed,
+            "Returned" => LabContainerStatus.Returned, "Transferred" => LabContainerStatus.Transferred,
+            _ => throw new ArgumentException("Choose exhaustion, return, transfer or destruction.") };
+        DispositionReason = Required(reason, nameof(reason), 1000);
+        // Quantity at disposition is frozen on the event. Return/transfer is not consumption.
+        if (kind is "Exhausted" or "Destroyed") Quantity = 0;
+        if (kind != "Exhausted") { StorageBoxId = null; StoragePosition = null; Location = null; }
+    }
 
     public LabSpecimenIntakeDisposition? IntakeDisposition { get; private set; }
     public string? IntakeReasonCode { get; private set; }
@@ -234,6 +269,7 @@ public sealed class LabContainer : LabAuditedEntity
 
     public void ConsumeBiologicalMaterial(decimal quantity, string unit, bool exhausted, Guid transferId, Guid actorId, DateTime now, string? exhaustionReason = null)
     {
+        if (PhysicalHoldReason is not null) throw new InvalidOperationException("This tube is under a physical preservation hold.");
         if (Status != LabContainerStatus.Available) throw new InvalidOperationException("This tube has no available material for another transfer.");
         unit = Required(unit, nameof(unit), 50);
         if (quantity <= 0 || Quantity.HasValue && quantity > Quantity.Value) throw new ArgumentException("Enter a positive transfer amount no greater than the recorded remaining amount.");
@@ -253,6 +289,7 @@ public sealed class LabContainer : LabAuditedEntity
 
     internal void ReceiveBiologicalMaterial(decimal quantity, string unit, Guid transferId, Guid actorId, DateTime now)
     {
+        if (PhysicalHoldReason is not null) throw new InvalidOperationException("This tube is under a physical preservation hold.");
         if (Status != LabContainerStatus.Available || Quantity.HasValue && (QuantityBasis != "Transferred" || QuantityUnit != unit))
             throw new InvalidOperationException("Additional material can only enter the same pre-yield tube in its recorded unit.");
         var before = Quantity;
@@ -266,6 +303,7 @@ public sealed class LabContainer : LabAuditedEntity
 
     public void RecordPreparedQuantity(decimal quantity, string unit, Guid recordId, Guid actorId, DateTime now)
     {
+        if (PhysicalHoldReason is not null) throw new InvalidOperationException("This tube is under a physical preservation hold.");
         if (Kind != LabContainerKind.Library || quantity <= 0
             || Status != LabContainerStatus.Available && !(Status == LabContainerStatus.LabelPending && Quantity is null))
             throw new InvalidOperationException("Record a positive prepared-library amount in its available library tube.");
@@ -293,10 +331,15 @@ public sealed class LabContainer : LabAuditedEntity
             Status = LabContainerStatus.Available;
     }
 
-    public void Move(string location) => Location = Required(location, nameof(location), 255);
+    public void Move(string location)
+    {
+        Location = Required(location, nameof(location), 255);
+        StorageBoxId = null; StoragePosition = null;
+    }
 
     public void Dispose(string reason)
     {
+        if (PhysicalHoldReason is not null) throw new InvalidOperationException("Release the physical preservation hold before disposition.");
         if (Status == LabContainerStatus.Disposed) throw new InvalidOperationException("The container is already disposed.");
         Status = LabContainerStatus.Disposed;
         DispositionReason = Required(reason, nameof(reason), 1000);

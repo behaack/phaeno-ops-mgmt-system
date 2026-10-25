@@ -96,7 +96,7 @@ public sealed partial class LabOperationsController
                 if (request.CatalogVersion is null) throw Invalid("sequencing_catalog_version_required", "Refresh the Catalog requirement before preparing the tube.");
                 EnsureVersion(catalog.Version, request.CatalogVersion.Value);
                 if (member.SequencingContainerId.HasValue) throw Conflict("sequencing_tube_exists", "A sequencing tube is already assigned to this library in the batch.");
-                if (source.Status != LabContainerStatus.Available) throw Conflict("library_material_unavailable", "This library has no available material for a new transfer.");
+                if (source.PhysicalHoldReason is not null || source.Status != LabContainerStatus.Available) throw Conflict("library_material_unavailable", "This library has no available material for a new transfer.");
                 if (request.SourceVersion is null) throw Invalid("source_version_required", "Refresh the library before assigning a tube.");
                 EnsureVersion(source.Version, request.SourceVersion.Value);
                 if (!BarcodeMatches(request.ConfirmedSourceBarcode, source.Barcode))

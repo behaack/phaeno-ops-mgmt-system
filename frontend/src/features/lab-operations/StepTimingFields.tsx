@@ -4,6 +4,7 @@ import { useId } from 'react'
 import type { FieldErrors } from 'react-hook-form'
 import { FieldDescription, FieldError } from '#/components/ui/field'
 import { Input } from '#/components/ui/input'
+import { Button } from '#/components/ui/button'
 import { Label } from '#/components/ui/label'
 import { RequiredFieldName } from '#/components/ui/required-field'
 import { Textarea } from '#/components/ui/textarea'
@@ -11,8 +12,8 @@ import { localTimeOccurrences, type StepTimingValues } from './step-performance'
 import { PerformerPicker } from './PerformerPicker'
 
 const selectClass = "w-full"
-export function StepTimingFields({ value, onChange, onBlur, inputRef, errors, shared = false, preview = false, allowOnBehalf = true }: {
-  value: StepTimingValues; onChange: (value: StepTimingValues) => void; onBlur: () => void
+export function StepTimingFields({ value, onChange, onBlur, inputRef, errors, shared = false, preview = false, allowOnBehalf = true, requirements }: {
+  requirements?: { timingRequired?: boolean; minimumParticipants?: number }; value: StepTimingValues; onChange: (value: StepTimingValues) => void; onBlur: () => void
   inputRef: (element: HTMLSelectElement | null) => void; errors?: FieldErrors<StepTimingValues>; shared?: boolean; preview?: boolean; allowOnBehalf?: boolean
 }) {
   const id = useId()
@@ -42,6 +43,22 @@ export function StepTimingFields({ value, onChange, onBlur, inputRef, errors, sh
         <FieldError id={`${id}-occurrence-error`}>{errors?.occurrence?.message}</FieldError>
       </PortalField> : null}
     </> : null}
-    {value.mode === 'earlier' || value.otherPerformer ? <PortalField ><Label htmlFor={`${id}-reason`}><RequiredFieldName>{value.otherPerformer ? 'Entry reason' : 'Late-entry reason'}</RequiredFieldName></Label><Textarea id={`${id}-reason`} required maxLength={4000} value={value.reason} onBlur={onBlur} onChange={e => onChange({ ...value, reason: e.target.value })} aria-invalid={Boolean(errors?.reason)} aria-describedby={`${id}-reason-error`} /><FieldError id={`${id}-reason-error`}>{errors?.reason?.message}</FieldError></PortalField> : null}
+    <StepPerformanceExtras value={value} onChange={onChange} onBlur={onBlur} errors={errors} allowOnBehalf={allowOnBehalf} requirements={requirements} />
+    {value.mode === 'earlier' || value.otherPerformer || value.participants?.length ? <PortalField ><Label htmlFor={`${id}-reason`}><RequiredFieldName>Entry / participant attribution reason</RequiredFieldName></Label><Textarea id={`${id}-reason`} required maxLength={4000} value={value.reason} onBlur={onBlur} onChange={e => onChange({ ...value, reason: e.target.value })} aria-invalid={Boolean(errors?.reason)} aria-describedby={`${id}-reason-error`} /><FieldError id={`${id}-reason-error`}>{errors?.reason?.message}</FieldError></PortalField> : null}
   </fieldset>
+}
+
+export function StepPerformanceExtras({ value, onChange, onBlur = () => {}, errors, allowOnBehalf = true, requirements }: { requirements?: { timingRequired?: boolean; minimumParticipants?: number }; value: StepTimingValues; onChange: (value: StepTimingValues) => void; onBlur?: () => void; errors?: FieldErrors<StepTimingValues>; allowOnBehalf?: boolean }) {
+  const id = useId()
+  return <details open={Boolean(value.intervalStart || value.intervalEnd || value.participants?.length || errors?.intervalStart || errors?.participants || requirements?.timingRequired || (requirements?.minimumParticipants ?? 1) > 1)}><summary className="cursor-pointer">Actual duration and additional participants</summary><div className="mt-3 space-y-3">
+      <p className="text-xs text-muted-foreground">{requirements?.timingRequired ? 'This procedure requires start and end times. ' : ''}{(requirements?.minimumParticipants ?? 1) > 1 ? `At least ${requirements!.minimumParticipants} named people, including the primary performer, are required. ` : ''}Record only actual observations required by the approved procedure. Times use minute precision and explicit UTC offsets, for example 2026-10-24T09:15-07:00. Additional participants require independent supervisor review.</p>
+      {(['intervalStart', 'intervalEnd'] as const).map(key => <PortalField key={key}><Label htmlFor={`${id}-${key}`}>{key === 'intervalStart' ? 'Actual step start' : 'Actual step end'}</Label><Input id={`${id}-${key}`} value={value[key] ?? ''} onBlur={onBlur} onChange={e => onChange({ ...value, [key]: e.target.value })} aria-invalid={Boolean(errors?.[key])} /><FieldError>{errors?.[key]?.message}</FieldError></PortalField>)}
+      {(value.participants ?? []).map((person, index) => <div key={index} className="space-y-2 rounded border p-3">
+        <PerformerPicker id={`${id}-participant-${index}`} value={person.userId} onChange={userId => onChange({ ...value, participants: value.participants!.map((p, i) => i === index ? { ...p, userId } : p) })} />
+        <PortalField><Label htmlFor={`${id}-role-${index}`}><RequiredFieldName>Participant role in this step</RequiredFieldName></Label><Input id={`${id}-role-${index}`} maxLength={100} value={person.role} onChange={e => onChange({ ...value, participants: value.participants!.map((p, i) => i === index ? { ...p, role: e.target.value } : p) })} /></PortalField>
+        <Button type="button" variant="outline" onClick={() => onChange({ ...value, participants: value.participants!.filter((_, i) => i !== index) })}>Remove participant</Button>
+      </div>)}
+      <FieldError>{errors?.participants?.message}</FieldError>
+      {allowOnBehalf ? <Button type="button" variant="outline" disabled={(value.participants?.length ?? 0) >= 19} onClick={() => onChange({ ...value, participants: [...value.participants ?? [], { userId: '', role: '' }] })}>Add participant</Button> : null}
+    </div></details>
 }

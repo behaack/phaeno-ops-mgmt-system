@@ -60,8 +60,14 @@ public sealed class LabPerformanceReviewService(PSeqOperationsDbContext db)
         var execution = await RequireExecutionAsync(workId, specimenId, request.ExecutionId, ct);
         var root = RootRecord(execution, request.StepRecordId);
         await RequirePerformerAsync(request.PerformedByUserId, ct);
+        foreach (var participant in request.Participants ?? []) await RequirePerformerAsync(participant.UserId, ct);
         LabStepPerformance performance;
-        try { performance = LabStepPerformance.Capture(new("earlier", true, request.PerformedAt, request.Reason), request.PerformedByUserId, LabEvidenceTime.UtcNow); }
+        try
+        {
+            performance = LabStepPerformance.Capture(new("earlier", true, request.PerformedAt, request.Reason, Interval: request.Interval, Participants: request.Participants), request.PerformedByUserId, LabEvidenceTime.UtcNow);
+            var protocol = await db.LabProtocolVersions.AsNoTracking().SingleAsync(p => p.Id == execution.LabProtocolVersionId, ct);
+            performance.ValidateRequirements(LabProtocolDefinition.Parse(protocol.DefinitionJson).Steps.Single(s => s.Key == root.StepKey));
+        }
         catch (ArgumentException e) { throw Invalid(e.Message); }
         var current = await CurrentApprovedAsync(execution.Id, root.Id, ct);
         var proposal = new LabPerformanceProposal(request.RequestId, workId, specimenId, execution.Id, root.Id, request.BasedOnProposalId,
@@ -72,7 +78,7 @@ public sealed class LabPerformanceReviewService(PSeqOperationsDbContext db)
         {
             if (existing.LabProtocolExecutionId != execution.Id || existing.StepRecordId != root.Id || existing.RequestedByUserId != actorId
                 || existing.BasedOnProposalId != proposal.BasedOnProposalId || existing.Reason != proposal.Reason
-                || JsonSerializer.Deserialize<LabStepPerformance>(existing.PerformanceJson, JsonOptions) != JsonSerializer.Deserialize<LabStepPerformance>(proposal.PerformanceJson, JsonOptions))
+                || !JsonElement.DeepEquals(JsonSerializer.Deserialize<JsonElement>(existing.PerformanceJson), JsonSerializer.Deserialize<JsonElement>(proposal.PerformanceJson)))
                 throw Invalid("This request identity was already used for different performance evidence.");
             return existing;
         }

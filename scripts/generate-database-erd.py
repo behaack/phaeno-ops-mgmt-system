@@ -44,11 +44,19 @@ for name, body in blocks:
 # Keep existing readable feature groups where possible; newly discovered tables
 # are grouped by their owning namespace.
 groups_by_table = {}
+field_notes = {}
 schema = group = None
+current_table = None
 for line in target.read_text(encoding='utf-8').splitlines():
     if line.startswith('## `'): schema = line.split('`')[1].split(' ')[0]
     elif line.startswith('### '): group = line[4:]
-    elif re.match(r'    \w+ \{', line) and schema and group: groups_by_table[(schema, line.strip().split()[0])] = group
+    elif re.match(r'    \w+ \{', line) and schema and group:
+        current_table = line.strip().split()[0]
+        groups_by_table[(schema, current_table)] = group
+    elif schema and current_table:
+        annotated = re.match(r'\s+\w+ (\w+).*"(?:nullable|not null)(;[^\"]+)"', line)
+        if annotated:
+            field_notes[(schema, current_table, annotated[1])] = annotated[2]
 schemas = defaultdict(lambda: defaultdict(list))
 for name, entity in entities.items():
     group = groups_by_table.get((entity['schema'], entity['table']))
@@ -64,7 +72,7 @@ lines = ['# `phaeno_ops` database ERD', '',
 'The [DPS 1.0 contract](plans/POMS-DPS-DEVELOPER-CONTRACT.md) describes assembly submission metadata in inputs_json, command/lifecycle receipts and verified scientific outputs. Its messaging work does not change persisted fields; see that contract for the exact logical JSON and receipt mappings.', '',
 'The [material tracking contract](plans/LAB-OPERATIONS-CONTRACT.md#material-transfers-and-expiration--september-23-2026) describes per-tube declarations, quantity history and immutable transfer evidence. `sample_shipping_stock_kits.product_expiry_snapshot_json` and `sample_return_kits.product_expiry_snapshot_json` retain arrays of `{supplierProductId, supplierName, productNumber, canExpire, expirationDate}` objects; dates are date-only strings or null. A null historical snapshot means unknown, and later product edits do not rewrite it.', '',
 'The [protocol-first procedure contract](plans/LAB-SETUP-VISUAL-AUTHORING-PLAN.md) defines owned instruction occurrences, copied-source metadata, protected illustration receipts and the original kit-definition archive. Kit step_key is an application-validated identity within its pinned run, not a catalog foreign key.', '',
-'The [master-mix step assembly contract](plans/MASTER-MIX-PREPARATION-PLAN.md#assemble-approved-lab-steps--october-3-2026) describes owned instruction snapshots, optional historical source attribution, batch process fields and exact planned reagent amounts in steps_json, the derived ingredients_json recipe, typed preparation evidence_json, and step_sequence/field_key links on source withdrawals. Step input_json supports exact replay; per-entry evidence_json preserves lot and equipment snapshots, QC, repeats and corrections. JSON identities are application-validated references rather than database foreign keys.', '', '## Legend and totals', '', '- `PK` = primary key; `FK` = database-enforced foreign key; `UK` = a column participating in a unique key/index. Filtered uniqueness remains subject to its model predicate.', '- Field comments state nullability. Relationship labels identify the child foreign-key columns.', '- Logical identifiers without database foreign keys are ordinary fields. PostgreSQL system schemas are excluded.', '',
+'The [master-mix step assembly contract](plans/MASTER-MIX-PREPARATION-PLAN.md#assemble-approved-lab-steps--october-3-2026) describes owned instruction snapshots, optional historical source attribution, batch process fields and exact planned reagent amounts in steps_json, the derived ingredients_json recipe, typed preparation evidence_json, and step_sequence/field_key links on source withdrawals. Step input_json supports exact replay; per-entry evidence_json preserves lot and equipment snapshots, QC, repeats and corrections. JSON identities are application-validated references rather than database foreign keys.', '', '## Legend and totals', '', 'New master-mix step receipts extend the existing `evidence_json` with `equipmentUses` entries: `fieldKey`, `equipmentId` and `resourceSnapshotJson` (asset identity/version, entry time, status, location and calibration dates). These are application-validated JSON references, without a new column, relationship or migration. Missing historical equipment conditions remain unknown; no backfill is performed.', '', '- `PK` = primary key; `FK` = database-enforced foreign key; `UK` = a column participating in a unique key/index. Filtered uniqueness remains subject to its model predicate.', '- Field comments state nullability. Relationship labels identify the child foreign-key columns.', '- Logical identifiers without database foreign keys are ordinary fields. PostgreSQL system schemas are excluded.', '',
 '| Schema | Entities | Fields | Foreign keys |', '| --- | ---: | ---: | ---: |', '| `public` | 1 | 2 | 0 |']
 for schema in sorted(counts):
     a,b,c=counts[schema]; lines.append(f'| `{schema}` | {a} | {b} | {c} |')
@@ -84,6 +92,7 @@ for schema, groups in sorted(schemas.items()):
                     kind = re.sub(r'[^a-zA-Z0-9_]', '_', p['datatype'].replace('[]', '_array')).strip('_')
                     keys = ','.join(k for k in ['PK','FK','UK'] if k in p['keys'])
                     nullable = 'nullable' if p['nullable'] else 'not null'
+                    nullable += field_notes.get((e['schema'], e['table'], p['column']), '')
                     lines.append(f"        {kind} {p['column']} {keys} \"{nullable}\"".replace('  "', ' "'))
                 lines.append('    }')
             for name in chunk:

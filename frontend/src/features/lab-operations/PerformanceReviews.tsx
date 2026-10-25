@@ -1,3 +1,5 @@
+import { StepPerformanceExtras } from './StepTimingFields'
+import { emptyStepTiming, stepTimingSchema, offsetLabel } from './step-performance'
 import { LoadingState, EmptyState } from '#/components/ui/content-state'
 import { Field as PortalField } from '#/components/ui/field'
 import { NativeSelect } from '#/components/ui/native-select'
@@ -22,11 +24,11 @@ import { EvidenceError, EvidencePages, evidenceDate } from './InvestigationEvide
 import { PerformerPicker } from './PerformerPicker'
 import { localTimeOccurrences } from './step-performance'
 
-type Target = { executionId: string; recordId: string; label: string }
+type Target = { executionId: string; recordId: string; label: string; performance?: LabStepPerformance | null }
 const selectClass = "w-full"
 function stepTargets(executions: EvidenceRow[]): Target[] {
   return executions.flatMap(execution => executionSteps(execution).filter(record => record.outcome !== 'skipped' && !record.correctsRecordId)
-    .map(record => ({ executionId: execution.id, recordId: record.id, label: `${record.stepKey} · ${evidenceDate(record.recordedAtUtc)} · ${execution.id.slice(0, 8)}` })))
+    .map(record => ({ executionId: execution.id, recordId: record.id, performance: record.performance, label: `${record.stepKey} · ${evidenceDate(record.recordedAtUtc)} · ${execution.id.slice(0, 8)}` })))
 }
 export function PerformanceReviews({ workOrderId, specimenId, executions, people }: { workOrderId: string; specimenId: string; executions: EvidenceRow[]; people: ReadonlyMap<string, string> }) {
   const query = useQuery({ queryKey: ['performance-reviews', workOrderId, specimenId], queryFn: () => getPerformanceReviews(workOrderId, specimenId) })
@@ -62,19 +64,24 @@ export function PerformanceReviews({ workOrderId, specimenId, executions, people
   </section>
 }
 
-const proposalSchema = z.object({ target: z.string().min(1, 'Choose a step.'), performerId: z.string().min(1, 'Choose the actual performer.'), localTime: z.string(), occurrence: z.string(), reason: z.string().trim().min(1, 'Explain the proposed change.').max(4000), baseline: z.string().nullable() }).superRefine((value, context) => {
+const proposalSchema = z.object({ target: z.string().min(1, 'Choose a step.'), performerId: z.string().min(1, 'Choose the actual performer.'), localTime: z.string(), occurrence: z.string(), reason: z.string().trim().min(1, 'Explain the proposed change.').max(4000), baseline: z.string().nullable(), details: stepTimingSchema }).superRefine((value, context) => {
   const choices = localTimeOccurrences(value.localTime)
   const selected = choices.length === 1 ? choices[0] : choices.find(c => c.value === value.occurrence)
   if (!choices.length) context.addIssue({ code: 'custom', path: ['localTime'], message: 'Enter a valid local time; daylight-saving gaps cannot be used.' })
   else if (!selected) context.addIssue({ code: 'custom', path: ['occurrence'], message: 'Choose which occurrence of this repeated time you mean.' })
   else if (Date.parse(selected.value) > Date.now()) context.addIssue({ code: 'custom', path: ['localTime'], message: 'The performed time cannot be in the future.' })
 })
+const extrasFrom = (performance?: LabStepPerformance | null) => {
+  const minute = (time: string, offset: number) => `${new Date(Date.parse(time) + offset * 60000).toISOString().slice(0, 16)}${offsetLabel(offset)}`
+  return { ...emptyStepTiming, intervalStart: performance?.interval ? minute(performance.interval.startedAtUtc, performance.interval.startUtcOffsetMinutes) : '', intervalEnd: performance?.interval ? minute(performance.interval.completedAtUtc, performance.interval.endUtcOffsetMinutes) : '', participants: performance?.participants ?? [] }
+}
 function ProposalDialog({ work, specimen, targets, data, close, refresh }: { work: string; specimen: string; targets: Target[]; data: ReviewData; close: () => void; refresh: () => Promise<void> }) {
   const baseline = (record: string) => {
     const approved = data.proposals.filter(p => p.stepRecordId === record && data.decisions.some(d => d.id === p.id && d.approved))
     return approved.find(p => approved.every(other => other.basedOnProposalId !== p.id))?.id ?? null
   }
-  const form = useForm<z.infer<typeof proposalSchema>>({ resolver: zodResolver(proposalSchema), defaultValues: { target: targets[0]?.recordId ?? '', baseline: baseline(targets[0]?.recordId ?? ''), performerId: '', localTime: '', occurrence: '', reason: '' } })
+  const evidenceFor = (id: string) => { const approved = data.proposals.find(p => p.id === baseline(id)); return approved ? JSON.parse(approved.performanceJson) as LabStepPerformance : targets.find(t => t.recordId === id)?.performance }
+  const form = useForm<z.infer<typeof proposalSchema>>({ resolver: zodResolver(proposalSchema), defaultValues: { target: targets[0]?.recordId ?? '', baseline: baseline(targets[0]?.recordId ?? ''), performerId: '', localTime: '', occurrence: '', reason: '', details: extrasFrom(evidenceFor(targets[0]?.recordId ?? '')) } })
   const { isDirty: __formDraftDirty } = form.formState
 
   const request = useRef<{ hash: string; id: string } | null>(null)
@@ -82,7 +89,7 @@ function ProposalDialog({ work, specimen, targets, data, close, refresh }: { wor
     const target = targets.find(t => t.recordId === value.target)!
     const occurrences = localTimeOccurrences(value.localTime)
     const actual = occurrences.length === 1 ? occurrences[0].value : value.occurrence
-    const input = { executionId: target.executionId, stepRecordId: target.recordId, performedByUserId: value.performerId, performedAt: actual, reason: value.reason, basedOnProposalId: value.baseline }
+    const input = { executionId: target.executionId, stepRecordId: target.recordId, performedByUserId: value.performerId, performedAt: actual, reason: value.reason, basedOnProposalId: value.baseline, ...(value.details.intervalStart || value.details.intervalEnd ? { interval: { startedAt: value.details.intervalStart ?? '', completedAt: value.details.intervalEnd ?? '' } } : {}), participants: value.details.participants ?? [] }
     const hash = JSON.stringify(input)
     if (request.current?.hash !== hash) request.current = { hash, id: crypto.randomUUID() }
     return proposePerformance(work, specimen, { ...input, requestId: request.current.id })
@@ -91,10 +98,11 @@ function ProposalDialog({ work, specimen, targets, data, close, refresh }: { wor
   const occurrences = localTimeOccurrences(form.watch('localTime'))
   return <Dialog open onOpenChange={open => { if (!open) safeClose() }}><DialogContent className="max-w-2xl"><DialogHeader><DialogTitle>Propose performer/time change</DialogTitle><DialogDescription>Identify the actual work and explain the change. The original entry is retained; another supervisor must approve this proposal.</DialogDescription></DialogHeader>
     <form id="performance-proposal" className="space-y-4" noValidate onSubmit={form.handleSubmit(value => mutation.mutate(value))}>
-      <PortalField ><Label htmlFor="performance-target"><RequiredFieldName>Original step</RequiredFieldName></Label><NativeSelect id="performance-target" className={selectClass} {...form.register('target', { onChange: event => form.setValue('baseline', baseline(event.target.value)) })}>{targets.map(target => <option key={target.recordId} value={target.recordId}>{target.label}</option>)}</NativeSelect></PortalField>
+      <PortalField ><Label htmlFor="performance-target"><RequiredFieldName>Original step</RequiredFieldName></Label><NativeSelect id="performance-target" className={selectClass} {...form.register('target', { onChange: event => { form.setValue('baseline', baseline(event.target.value)); form.setValue('details', extrasFrom(evidenceFor(event.target.value)), { shouldDirty: true }) } })}>{targets.map(target => <option key={target.recordId} value={target.recordId}>{target.label}</option>)}</NativeSelect></PortalField>
       <Controller control={form.control} name="performerId" render={({ field }) => <PerformerPicker id="proposal-performer" value={field.value} onChange={field.onChange} error={form.formState.errors.performerId?.message} />} />
       <PortalField ><Label htmlFor="proposal-time"><RequiredFieldName>Actual date and time</RequiredFieldName></Label><p className="text-xs text-muted-foreground">Time zone: {Intl.DateTimeFormat().resolvedOptions().timeZone.replaceAll('_', ' ')}. Recorded to the minute.</p><Input id="proposal-time" type="datetime-local" step={60} {...form.register('localTime')} aria-invalid={Boolean(form.formState.errors.localTime)} aria-describedby="proposal-time-error" /><FieldError id="proposal-time-error">{form.formState.errors.localTime?.message}</FieldError></PortalField>
       {occurrences.length > 1 ? <PortalField><Label htmlFor="proposal-occurrence"><RequiredFieldName>Which occurrence?</RequiredFieldName></Label><NativeSelect id="proposal-occurrence" className={selectClass} {...form.register('occurrence')}><option value="">Choose an occurrence</option>{occurrences.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</NativeSelect><FieldError>{form.formState.errors.occurrence?.message}</FieldError></PortalField> : null}
+      <Controller name="details" control={form.control} render={({ field }) => <StepPerformanceExtras value={field.value} onChange={field.onChange} errors={form.formState.errors.details} />} />
       <PortalField ><Label htmlFor="proposal-reason"><RequiredFieldName>Reason and supporting evidence</RequiredFieldName></Label><Textarea id="proposal-reason" maxLength={4000} {...form.register('reason')} aria-invalid={Boolean(form.formState.errors.reason)} aria-describedby="proposal-reason-error" /><FieldError id="proposal-reason-error">{form.formState.errors.reason?.message}</FieldError></PortalField>
       {mutation.isError ? <EvidenceError error={mutation.error} /> : null}
     </form><RequiredDialogFooter><Button variant="outline" disabled={mutation.isPending} onClick={safeClose}>Cancel</Button><Button type="submit" form="performance-proposal" disabled={mutation.isPending}>{mutation.isPending ? 'Submitting…' : 'Submit for review'}</Button></RequiredDialogFooter>
@@ -119,6 +127,6 @@ function Attribution({ json, people }: { json: string; people: ReadonlyMap<strin
   try {
     const value = JSON.parse(json) as LabStepPerformance | null
     if (!value) return <EmptyState  kind="empty" title={<>No earlier verified attribution recorded.</>} />
-    return <div className="space-y-1 text-sm"><p>Performed by {people.get(value.performedByUserId) ?? `User ${value.performedByUserId}`}</p><p>{evidenceDate(value.performedAtUtc)} · {value.precision === 'minute' ? 'Minute precision' : 'Recorded time'}</p>{value.lateEntryReason ? <p className="whitespace-pre-wrap">Entry reason: {value.lateEntryReason}</p> : null}</div>
+    return <div className="space-y-1 text-sm"><p>Performed by {people.get(value.performedByUserId) ?? `User ${value.performedByUserId}`}</p><p>{evidenceDate(value.performedAtUtc)} · {value.precision === 'minute' ? 'Minute precision' : 'Recorded time'}</p>{value.interval ? <p>Actual interval: {evidenceDate(value.interval.startedAtUtc)} → {evidenceDate(value.interval.completedAtUtc)}</p> : null}{value.participants?.map(p => <p key={p.userId}>Participant: {people.get(p.userId) ?? p.userId} · {p.role}</p>)}{value.lateEntryReason ? <p className="whitespace-pre-wrap">Entry reason: {value.lateEntryReason}</p> : null}</div>
   } catch { return <EvidenceError error={new Error('The saved attribution could not be read. Investigate the original record.')} /> }
 }

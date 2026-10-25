@@ -23,7 +23,7 @@ export type PreparationDetail = PreparationSummary & { recorders?: { id: string;
 export type PreparationTube = { id: string; barcode: string; location: string | null; specimenId: string; specimenName: string; jobName: string }
 export type PreparationTubePage = { items: PreparationTube[]; totalCount: number; page: number; pageSize: number; totalPages: number }
 export type PreparationStepInput = { stageId: string; stepKey: string; action: 'record' | 'repeat' | 'correct'; outcome: 'recorded' | 'skipped'; coveredMemberIds: string[]; sharedCaptures: Record<string, unknown>;
-  tubes: { memberId: string; captures: Record<string, unknown>; qcOutcome: string | null; reason: string | null }[];
+  tubes: { memberId: string; captures: Record<string, unknown>; qcOutcome: string | null; reason: string | null; performance?: LabStepPerformanceInput }[];
   sharedQcOutcome: string | null; reason: string | null; coverageConfirmed: boolean; operatorConfirmed: boolean; resourcesConfirmed: boolean; resourceEntries?: PreparationResourceInput[]; performance?: LabStepPerformanceInput }
 export type PreparationResourceInput = { fieldKey: string; memberId?: string; resourceId?: string; resourceVersion?: number; productId?: string; name?: string; vendor?: string; quantity?: number; quantityText?: string; quantityUnit?: string; location?: string; runReference?: string; amountUnknown?: boolean; exceptionReason?: string; disposition?: 'continue' | 'hold' | 'fail'; barcode?: string; sourceBarcode?: string; mixBarcode?: string; materialExhausted?: boolean; exhaustionReason?: string }
 export type PreparationOutputInput = { memberId: string; quantity: number; quantityUnit: string; location: string }

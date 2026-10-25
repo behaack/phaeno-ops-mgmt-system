@@ -4,7 +4,6 @@ import { DomainStatusBadge } from '#/components/ui/domain-status-badge'
 import { materialTones } from '#/features/lab-operations/lab-status'
 import { FieldError } from '#/components/ui/field'
 import { Field as PortalField } from '#/components/ui/field'
-import { NativeCheckbox } from '#/components/ui/native-checkbox'
 import { PageTitle } from '#/components/ui/page-header'
 import { RecordLink } from '#/components/ui/record-link'
 import { BackLink } from '#/components/ui/back-link'
@@ -16,7 +15,7 @@ import { Link, useBlocker } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
-import { getLabAttempts, getLabContainerMoves, getLabOperationsError, getLabWorkOrder, moveLabContainer, reviewLabTubeIntake, type LabContainer } from '#/api/lab-operations'
+import { getLabAttempts, getLabContainerMoves, getLabOperationsError, getLabWorkOrder, reviewLabTubeIntake, type LabContainer } from '#/api/lab-operations'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
@@ -28,6 +27,7 @@ import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/require
 import { usePhaenoSession } from '#/features/auth/session-context'
 import { IntakeReviewFields } from './IntakeReviewFields'
 import { LabLabelDialog } from './LabLabelDialog'
+import { PhysicalLifecyclePanel } from './PhysicalLifecyclePanel'
 import { BiologicalMaterialHistory } from './BiologicalMaterialHistory'
 import { PreparationActions } from './preparation-ui'
 
@@ -39,54 +39,30 @@ export function LabTubePage({ workOrderId, containerId }: { workOrderId: string;
   const work = useQuery({ queryKey: ['lab-work-order', workOrderId], queryFn: () => getLabWorkOrder(workOrderId), enabled })
   const attempts = useQuery({ queryKey: ['lab-attempts', workOrderId], queryFn: () => getLabAttempts(workOrderId), enabled })
   const moves = useQuery({ queryKey: ['lab-container-moves', containerId], queryFn: () => getLabContainerMoves(containerId), enabled })
-  const [action, setAction] = useState<'correct' | 'label' | 'move' | null>(null)
+  const [action, setAction] = useState<'correct' | 'label' | 'physical' | 'box' | null>(null)
   const tube = work.data?.containers.find(t => t.id === containerId)
-  const refresh = async () => { await Promise.all(['lab-work-order', 'lab-attempts', 'lab-execution', 'accession-packet', 'lab-operations', 'lab-container-moves'].map(key => client.invalidateQueries({ queryKey: [key] }))) }
+  const refresh = async () => { await Promise.all(['lab-work-order', 'lab-attempts', 'lab-execution', 'accession-packet', 'lab-operations', 'lab-container-moves', 'lab-physical', 'storage-box'].map(key => client.invalidateQueries({ queryKey: [key] }))) }
   if (!enabled || !tube || !work.data) return <main className="page-wrap p-6"><p role="status">{!enabled ? 'An assigned laboratory role and a connected session are required.' : work.isPending ? 'Loading tube details…' : getLabOperationsError(work.error, 'This tube could not be loaded.')}</p>{enabled ? <Button variant="outline" onClick={() => void work.refetch()}>Reload</Button> : null}</main>
   const specimen = attempts.data?.specimens.find(s => s.id === tube.labSpecimenId)
   const used = specimen?.attempts.some(a => a.sourceContainerId === tube.id && a.startedAtUtc)
     || work.data.executions.some(e => e.labSpecimenId === tube.labSpecimenId && e.startedAtUtc && !specimen?.attempts.some(a => a.executionIds.includes(e.id)))
   const canCorrect = Boolean(session?.capabilities.canSuperviseLabWork && attempts.data && tube.kind === 'SubmittedSpecimen' && !used && ['Available', 'Rejected', 'LabelPending'].includes(tube.status) && !['Cancelled', 'ReadyForRelease'].includes(work.data.workOrder.status) && specimen?.intakeDisposition !== 'Cancelled')
   const canPrint = session?.capabilities.canOperateLabWork && tube.barcodeSource === 'PhaenoGenerated' && tube.status !== 'Rejected'
-  const canMove = Boolean(session?.capabilities.canOperateLabWork && (tube.status !== 'Rejected' || tube.location))
+  const canMove = Boolean((session?.capabilities.canOperateLabWork || session?.capabilities.canSuperviseLabWork) && !['Disposed', 'Returned', 'Transferred'].includes(tube.status) && (tube.status !== 'Rejected' || tube.location))
   const parent = work.data.containers.find(t => t.id === tube.parentContainerId)
   const children = work.data.containers.filter(t => t.parentContainerId === tube.id)
   const tubeLink = (t: LabContainer) => <span className="font-mono break-all"><RecordLink asChild><Link to="/lab-operations/$workOrderId/containers/$containerId" params={{ workOrderId, containerId: t.id }} >{t.barcode}</Link></RecordLink></span>
   return <main className="page-wrap space-y-5 px-4 py-8">
     <BackLink asChild><Link to="/lab-operations/$workOrderId" params={{ workOrderId }} search={previous => ({ ...previous, section: parseLabSection(previous.section) ?? 'jobs', tab: 'lineage' })}>Back to tubes</Link></BackLink>
-    <header className="flex flex-wrap items-start justify-between gap-4"><div><PageTitle className="break-all font-mono">{tube.barcode}</PageTitle><p className="mt-1 text-sm text-muted-foreground">{tube.label} · {human(tube.kind)}</p><div className="mt-2 flex flex-wrap gap-2"><DomainStatusBadge status={tube.status} tones={materialTones}>{human(tube.status)}</DomainStatusBadge>{tube.kind === 'SubmittedSpecimen' ? <Badge variant="secondary">Intake: {human(tube.intakeDisposition ?? 'Not recorded')}</Badge> : null}</div></div><PreparationActions triggerId="lab-tube-actions" items={[...(canCorrect ? [{ label: 'Correct intake decision', onClick: () => setAction('correct') }] : []), ...(canMove ? [{ label: 'Move to scanned location', onClick: () => setAction('move') }] : []), ...(canPrint ? [{ label: tube.labelPrintCount ? 'Reprint label' : 'Print label', onClick: () => setAction('label') }] : [])]} /></header>
+    <header className="flex flex-wrap items-start justify-between gap-4"><div><PageTitle className="break-all font-mono">{tube.barcode}</PageTitle><p className="mt-1 text-sm text-muted-foreground">{tube.label} · {human(tube.kind)}</p><div className="mt-2 flex flex-wrap gap-2"><DomainStatusBadge status={tube.status} tones={materialTones}>{human(tube.status)}</DomainStatusBadge>{tube.kind === 'SubmittedSpecimen' ? <Badge variant="secondary">Intake: {human(tube.intakeDisposition ?? 'Not recorded')}</Badge> : null}</div></div><PreparationActions triggerId="lab-tube-actions" items={[...(canCorrect ? [{ label: 'Correct intake decision', onClick: () => setAction('correct') }] : []), ...(canMove ? [{ label: 'Record physical action', onClick: () => setAction('physical') }, { label: 'Register or move freezer box', onClick: () => setAction('box') }] : []), ...(canPrint ? [{ label: tube.labelPrintCount ? 'Reprint label' : 'Print label', onClick: () => setAction('label') }] : [])]} /></header>
     <Card className="gap-0 py-0"><CardHeader ><CardTitle>Receipt and storage</CardTitle></CardHeader><CardContent className="space-y-3 p-4"><dl className="grid gap-4 sm:grid-cols-2"><div><dt className="text-sm text-muted-foreground">Storage location</dt><dd className="break-all">{tube.location ?? 'Not stored'}</dd></div><div><dt className="text-sm text-muted-foreground">Barcode source</dt><dd>{human(tube.barcodeSource)}</dd></div>{tube.intakeReviewedAtUtc ? <div><dt className="text-sm text-muted-foreground">Intake recorded</dt><dd>{<DisplayTimestamp value={tube.intakeReviewedAtUtc} seconds />}</dd></div> : null}{tube.intakeReasonCode ? <div><dt className="text-sm text-muted-foreground">Intake reason</dt><dd>{human(tube.intakeReasonCode)}</dd></div> : null}{tube.retainUntilUtc ? <div><dt className="text-sm text-muted-foreground">Retain until</dt><dd>{<DisplayTimestamp value={tube.retainUntilUtc} seconds />}</dd></div> : null}</dl>{tube.intakeNotes ? <p className="whitespace-pre-wrap text-sm">{tube.intakeNotes}</p> : null}{tube.intakeDisposition === 'Rejected' ? <p className="text-sm">This rejected receipt is retained against its expected tube. It is unavailable for processing.</p> : null}{tube.kind === 'SubmittedSpecimen' && !tube.intakeDisposition ? <p className="text-sm">Intake has not been recorded. Complete it during accessioning with the shipping insert and the identified tube. A supervisor can document a correction to this earlier record.</p> : null}</CardContent></Card>
     <Card className="gap-0 py-0"><CardHeader ><CardTitle>Location history</CardTitle></CardHeader><CardContent className="p-4">{moves.isPending ? <LoadingState  label={<>Loading moves…</>} /> : moves.isError ? <div className="space-y-2"><p role="alert" className="text-sm">{getLabOperationsError(moves.error, 'Location history could not be loaded.')}</p><Button type="button" variant="outline" size="sm" onClick={() => void moves.refetch()}>Retry</Button></div> : moves.data?.length ? <ol className="space-y-2">{moves.data.map(move => <li key={move.id} className="rounded-md border p-3 text-sm"><p className="break-all">{move.previousLocation ?? 'No previous location'} → {move.destinationBarcode}</p><p className="text-xs text-muted-foreground">Recorded {<DisplayTimestamp value={move.occurredAtUtc} seconds />}</p></li>)}</ol> : <EmptyState  kind="empty" title={<>No moves recorded after accession.</>} />}</CardContent></Card>
     <Card className="gap-0 py-0"><CardHeader ><CardTitle>Lineage</CardTitle></CardHeader><CardContent className="space-y-3 p-4">{specimen ? <p className="text-sm">Specimen: <RecordLink asChild><Link to="/lab-operations/$workOrderId/specimens/$specimenId" params={{ workOrderId, specimenId: specimen.id }} search={previous => ({ ...previous, section: parseLabSection(previous.section) ?? 'jobs' })}>{specimen.name}</Link></RecordLink></p> : null}<p className="text-sm">Parent: {parent ? tubeLink(parent) : 'No parent container'}</p>{children.length ? <ul className="space-y-2">{children.map(t => <li className="rounded-lg border bg-muted/30 p-3" key={t.id}>{tubeLink(t)}<p className="mt-1 text-xs text-muted-foreground">{human(t.kind)} · {human(t.status)}</p></li>)}</ul> : <EmptyState  kind="empty" title={<>No derived containers recorded.</>} />}{used ? <p className="text-sm">This tube has processing history. Record later problems through the specimen attempt hold or failure actions; the intake decision is retained.</p> : null}</CardContent></Card>
     {['SubmittedSpecimen', 'Library', 'Sequencing'].includes(tube.kind) ? <BiologicalMaterialHistory workOrderId={workOrderId} tube={tube} /> : null}
     {action === 'correct' ? <IntakeCorrectionDialog tube={tube} workOrderId={workOrderId} onClose={() => setAction(null)} onSaved={async () => { setAction(null); await refresh() }} /> : null}
     {action === 'label' ? <LabLabelDialog returnFocusId="lab-tube-actions" container={tube} onClose={() => setAction(null)} onRecorded={refresh} /> : null}
-    {action === 'move' ? <MoveContainerDialog tube={tube} onClose={() => setAction(null)} onSaved={async () => { setAction(null); await refresh() }} /> : null}
+    <PhysicalLifecyclePanel tube={tube} action={action === 'physical' || action === 'box' ? action : null} supervise={Boolean(session?.capabilities.canSuperviseLabWork)} onClose={() => setAction(null)} onSaved={refresh} />
   </main>
-}
-
-const moveSchema = z.object({ scannedContainerBarcode: z.string().trim().min(1, 'Scan the selected container.'), scannedDestinationBarcode: z.string().trim().min(1, 'Scan the destination barcode.').max(255, 'Use 255 characters or fewer.'), confirmed: z.boolean() })
-  .superRefine((value, context) => {
-    if (!value.confirmed) context.addIssue({ code: 'custom', path: ['confirmed'], message: 'Confirm the scanned object and destination.' })
-    if (value.scannedDestinationBarcode === value.scannedContainerBarcode) context.addIssue({ code: 'custom', path: ['scannedDestinationBarcode'], message: 'Scan the destination location, not the tube again.' })
-  })
-
-function MoveContainerDialog({ tube, onClose, onSaved }: { tube: LabContainer; onClose: () => void; onSaved: () => Promise<void> }) {
-  const form = useForm<z.infer<typeof moveSchema>>({ resolver: zodResolver(moveSchema), defaultValues: { scannedContainerBarcode: '', scannedDestinationBarcode: '', confirmed: false } })
-  const { isDirty: __formDraftDirty } = form.formState
-
-  const save = useMutation({ mutationFn: (value: z.infer<typeof moveSchema>) => moveLabContainer(tube.id, { version: tube.version, ...value }), onSuccess: onSaved })
-  const dirty = __formDraftDirty
-  const close = async () => { if (!save.isPending && (!dirty || (await confirmPortal('Discard the unsaved move?')))) onClose() }
-  useBlocker({ shouldBlockFn: async () => save.isPending || dirty && !(await confirmPortal('Discard the unsaved move?')), enableBeforeUnload: () => save.isPending || dirty })
-  return <Dialog open onOpenChange={open => { if (!open) close() }}><DialogContent><DialogHeader><DialogTitle>Move container</DialogTitle><DialogDescription>Scan the physical container, then the destination freezer box or storage location barcode. Confirm both scans to record its new location.</DialogDescription></DialogHeader>
-    <form id="move-container" className="space-y-4" noValidate onSubmit={form.handleSubmit(value => save.mutate(value))}>
-      <PortalField><Label htmlFor="move-container-scan"><RequiredFieldName>Scan container</RequiredFieldName></Label><Input id="move-container-scan"  autoComplete="off" spellCheck={false} aria-invalid={Boolean(form.formState.errors.scannedContainerBarcode)} {...form.register('scannedContainerBarcode')} />{form.formState.errors.scannedContainerBarcode ? <FieldError role="alert" >{form.formState.errors.scannedContainerBarcode.message}</FieldError> : null}</PortalField>
-      <PortalField><Label htmlFor="move-destination-scan"><RequiredFieldName>Scan destination barcode</RequiredFieldName></Label><Input id="move-destination-scan"  autoComplete="off" spellCheck={false} maxLength={255} aria-invalid={Boolean(form.formState.errors.scannedDestinationBarcode)} {...form.register('scannedDestinationBarcode')} />{form.formState.errors.scannedDestinationBarcode ? <FieldError role="alert" >{form.formState.errors.scannedDestinationBarcode.message}</FieldError> : null}</PortalField>
-      <p className="text-sm">Current location: {tube.location ?? 'Not recorded'}</p>
-      <label className="flex cursor-pointer items-start gap-2 text-sm"><NativeCheckbox   aria-invalid={Boolean(form.formState.errors.confirmed)} {...form.register('confirmed')} /><RequiredFieldName>I confirmed the physical container and destination.</RequiredFieldName></label>{form.formState.errors.confirmed ? <p role="alert" className="text-sm text-destructive">{form.formState.errors.confirmed.message}</p> : null}
-    </form>{save.error ? <p role="alert" className="text-sm text-destructive">{getLabOperationsError(save.error, 'The move could not be saved. Review both scans and retry.')}</p> : null}<RequiredDialogFooter><Button type="button" variant="outline" disabled={save.isPending} onClick={close}>Cancel</Button><Button type="submit" form="move-container" disabled={save.isPending}>{save.isPending ? 'Saving…' : 'Record move'}</Button></RequiredDialogFooter>
-  </DialogContent></Dialog>
 }
 
 const correctionSchema = z.object({ location: z.string().trim().max(255) })

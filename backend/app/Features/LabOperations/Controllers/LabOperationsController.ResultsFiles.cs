@@ -44,6 +44,7 @@ public sealed partial class LabOperationsController
             var uploads = await dbContext.Set<LabFastqUpload>().AsNoTracking().Where(u => u.LabFastqSetId == set.Id).OrderBy(u => u.GroupNumber).ThenBy(u => u.PartNumber).ThenBy(u => u.ReadNumber).ToListAsync(ct);
             var policy = JsonSerializer.Deserialize<LabFastqOptions>(set.PolicyJson, JsonOptions)!;
             LabFastqValidation.RequireComplete(set, uploads, policy);
+            LabVendorRunCapture.RequireGroups(request.SequencingRuns, set.Id, uploads.Select(u => u.GroupNumber));
             if (uploads.Where(u => u.LabFastqArchiveId.HasValue).Any(u => !u.ArchiveEntryIndex.HasValue
                 || !archiveEntries.Add((u.LabFastqArchiveId!.Value, u.ArchiveEntryIndex!.Value))))
                 throw Invalid("fastq_archive_duplicate_mapping", "A ZIP entry cannot supply two selected libraries or file sets. Review the batch mappings.");
@@ -78,15 +79,15 @@ public sealed partial class LabOperationsController
             var set = await dbContext.Set<LabFastqSet>().SingleAsync(s => s.Id == snapshot.SetId, ct);
             foreach (var file in snapshot.Files) {
                 if (await dbContext.LabSequencingOutputs.AnyAsync(o => o.Id == file.OutputId, ct)) continue;
+                var run = request.SequencingRuns!.Single(r => r.SetId == set.Id && r.GroupNumber == file.GroupNumber);
                 var prior = await dbContext.LabSequencingOutputs.AsNoTracking().Where(o => o.LabNgsSendoutId == sendout.Id
                     && o.LabLibraryId == set.LabLibraryId && o.SampleMappingReference == $"{set.LabBatchMemberId:N}:G{file.GroupNumber}:R{file.ReadNumber}:P{file.PartNumber}"
                     && !dbContext.LabSequencingOutputs.Any(c => c.CorrectsOutputId == o.Id)).OrderByDescending(o => o.RecordedAtUtc).FirstOrDefaultAsync(ct);
                 await lineage.RegisterOutputAsync(new RegisterSequencingOutputRequest(file.OutputId, set.LabWorkOrderId, set.LabSpecimenId,
-                    set.LabLibraryId, sendout.Id, "vendor-fastq", request.VendorJobReference,
+                    set.LabLibraryId, sendout.Id, "vendor-fastq", run.RunReference,
                     $"{set.LabBatchMemberId:N}:G{file.GroupNumber}:R{file.ReadNumber}:P{file.PartNumber}", LabScientificFiles.Prefix + file.FileId,
                     file.Sha256, file.SizeBytes, prior?.Id, prior is null ? null : request.Notes,
-                    new LabScientificEvidence(1, RunStartedAtUtc: request.RunStartedAtUtc, RunCompletedAtUtc: request.RunCompletedAtUtc,
-                        ReceivedAtUtc: request.ResultsReceivedAtUtc), set.SequencingRunNumber, set.LibraryPreparationChoice), actor, "staff-fastq-intake", ct);
+                    run.ScientificEvidence, set.SequencingRunNumber, set.LibraryPreparationChoice), actor, "staff-fastq-intake", ct);
             }
         }
     }

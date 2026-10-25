@@ -1,12 +1,15 @@
 namespace PhaenoPortal.App.Features.Trials.Services;
 
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.AspNetCore.Mvc.Controllers;
+using System.Data;
 using Microsoft.EntityFrameworkCore;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PSeq.Operations.Commercial.Trials.Domain;
 using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Features.OrderManagement.Services;
 using PhaenoPortal.App.Infrastructure.Persistence;
+using PhaenoPortal.App.Features.LabOperations.Controllers;
 
 // The shared operator paths keep their own authorization. This filter serializes Trial
 // scientific/shipping mutations with scope and hold changes using the parent row.
@@ -43,8 +46,15 @@ public sealed class TrialWorkGuard(PSeqOperationsDbContext db, OrderRequestConte
         var custodyOnly = path.EndsWith("/receipt") || path.EndsWith("/custody-events") || path.EndsWith("/label-print") || path.EndsWith("/exceptions") || path.Contains("/exceptions/");
         // Stopping an assembly remains possible while its parent is held. The controller still enforces Lab permissions and exact job scope.
         custodyOnly |= path.Contains("/assembly-jobs/", StringComparison.Ordinal) && path.EndsWith("/cancel", StringComparison.Ordinal);
+        bool IsLabAction(string name) => action.ActionDescriptor is ControllerActionDescriptor lab
+            && lab.ControllerTypeInfo.AsType() == typeof(LabOperationsController) && lab.MethodInfo.Name == name;
+        var reportOnly = IsLabAction(nameof(LabOperationsController.GenerateInvestigationReport));
+        // Custody and internal investigations remain recordable after closure/while held. Physical
+        // commands retain their own Trial terms, hold, retention and active-work disposition guards.
+        custodyOnly |= reportOnly || IsLabAction(nameof(LabOperationsController.RecordPhysicalContainer)) || IsLabAction(nameof(LabOperationsController.MoveContainer));
         var resultOnly = path.Contains("/pseq-results/") || path.EndsWith("/scientific-approval");
-        await using var transaction = db.Database.CurrentTransaction is null ? await db.Database.BeginTransactionAsync(token) : null;
+        await using var transaction = db.Database.CurrentTransaction is null
+            ? await db.Database.BeginTransactionAsync(reportOnly ? IsolationLevel.RepeatableRead : IsolationLevel.ReadCommitted, token) : null;
         var parents = new List<TrialProject>();
         foreach (var id in trialIds.Order())
         {

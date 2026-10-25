@@ -268,6 +268,18 @@ public sealed class TrialWorkflowService(PSeqOperationsDbContext db, ILabOperati
                 break;
             case "material":
                 await access.RequireAuthorityAsync(actor, TrialApprovalDomain.ScientificOperations, token);
+                var trialWorkIds = trial.Samples.Where(s => s.LabWorkOrderId.HasValue).Select(s => s.LabWorkOrderId!.Value).ToArray();
+                var retainedTubes = await db.LabContainers.Where(c => trialWorkIds.Contains(c.LabWorkOrderId)).ToListAsync(token);
+                var disposedIds = await db.Set<LabPhysicalEvent>().Where(e => e.Kind == "Destroyed" || e.Kind == "Returned" || e.Kind == "Exhausted")
+                    .Select(e => e.LabContainerId).Distinct().ToListAsync(token);
+                if (retainedTubes.Count == 0 || retainedTubes.Any(c => c.PhysicalHoldReason != null
+                    || c.Status is not (LabContainerStatus.Disposed or LabContainerStatus.Returned or LabContainerStatus.Consumed)
+                    || !disposedIds.Contains(c.Id) && c.Status != LabContainerStatus.Consumed))
+                    throw Error("trial_tube_disposition_required", "Record the actual physical disposition of each Trial tube in Lab operations before closing the material summary.", 409);
+                var actualDisposition = retainedTubes.Any(c => c.Status == LabContainerStatus.Returned) ? "Returned"
+                    : retainedTubes.Any(c => c.Status == LabContainerStatus.Disposed) ? "Destroyed" : "Exhausted";
+                if (request.MaterialDisposition != actualDisposition || retainedTubes.Any(c => c.Status == LabContainerStatus.Returned) && retainedTubes.Any(c => c.Status == LabContainerStatus.Disposed))
+                    throw Error("trial_tube_disposition_mismatch", "The Trial material summary must match the recorded tube dispositions.", 409);
                 trial.RecordMaterialDisposition(request.MaterialDisposition ?? "", actor.User.Id, now); break;
             case "commercial-outcome":
                 await access.RequireCommercialAsync(actor, token);

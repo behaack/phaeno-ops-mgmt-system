@@ -61,7 +61,8 @@ public sealed partial class LabOperationsController
         var draft = await dbContext.Set<LabVendorResultsDraft>().AsNoTracking().Where(d => d.LabNgsSendoutId == sendoutId && d.UserId == actor.User.Id
             && d.SavedAtUtc == null && !EF.Functions.JsonExists(d.PayloadJson, "restartedAsDraftId")).OrderByDescending(d => d.CreatedAtUtc).FirstOrDefaultAsync(ct);
         var latest = await dbContext.LabVendorResultsVersions.AsNoTracking().Where(v => v.LabNgsSendoutId == sendoutId).OrderByDescending(v => v.ResultVersion).FirstOrDefaultAsync(ct);
-        var retained = latest is null ? [] : JsonSerializer.Deserialize<DTOs.VendorResultsSnapshot>(latest.SnapshotJson, JsonOptions)!.FastqSets;
+        var savedResult = latest is null ? null : JsonSerializer.Deserialize<DTOs.VendorResultsSnapshot>(latest.SnapshotJson, JsonOptions);
+        var retained = savedResult?.FastqSets;
         var ids = retained?.Select(s => s.SetId).ToArray() ?? [];
         var recovered = draft is null ? [] : ResultsDraftRecoveryIds(draft.PayloadJson);
         var sets = await dbContext.Set<LabFastqSet>().AsNoTracking().Where(s => ids.Contains(s.Id) || recovered.Contains(s.Id) || draft != null && s.LabVendorResultsDraftId == draft.Id).ToListAsync(ct);
@@ -82,6 +83,7 @@ public sealed partial class LabOperationsController
                 expired = draft.ExpiresAtUtc <= DateTime.UtcNow,
                 payload = JsonSerializer.Deserialize<JsonElement>(draft.PayloadJson) },
             sendoutVersion = sendout.Version,
+            sequencingRuns = savedResult?.SequencingRuns,
             protectedPackages = await new LabVendorResultSafety(dbContext).ProtectedPackagesAsync(retained?.SelectMany(s => s.Files).Select(f => f.OutputId).ToArray() ?? [], ct),
             tentative = true, s3Available = s3?.Available == true, policy = limits.Value, effectiveMaximumFileBytes = Math.Min(limits.Value.MaximumFileBytes, scanning.Value.MaximumStreamBytes),
             effectiveMaximumArchiveBytes = Math.Min(limits.Value.MaximumBatchArchiveBytes, scanning.Value.MaximumStreamBytes),

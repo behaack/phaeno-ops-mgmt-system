@@ -14,6 +14,13 @@ public sealed partial class LabOperationsController
         var input = request.Step ?? throw new ArgumentException("Enter the preparation step evidence.");
         if (input.Performance?.PerformedByUserId is { } performerId)
             await new LabPerformanceReviewService(dbContext).RequirePerformerAsync(performerId, ct);
+        foreach (var participant in input.Performance?.Participants ?? [])
+            await new LabPerformanceReviewService(dbContext).RequirePerformerAsync(participant.UserId, ct);
+        foreach (var tubePerformance in input.Tubes.Where(t => t.Performance is not null).Select(t => t.Performance!))
+        {
+            if (tubePerformance.PerformedByUserId is { } tubePerformer) await new LabPerformanceReviewService(dbContext).RequirePerformerAsync(tubePerformer, ct);
+            foreach (var participant in tubePerformance.Participants ?? []) await new LabPerformanceReviewService(dbContext).RequirePerformerAsync(participant.UserId, ct);
+        }
         var recordedAtUtc = recordedAt ?? LabEvidenceTime.UtcNow;
         if (input.CoveredMemberIds.Count == 0 || input.CoveredMemberIds.Any(id => members.All(m => m.Id != id))) throw new ArgumentException("Select tubes in this batch.");
         var stage = await dbContext.LabServiceWorkflowStages.SingleOrDefaultAsync(s => s.Id == input.StageId && s.LabServiceWorkflowVersionId == batch.LabServiceWorkflowVersionId, ct) ?? throw Missing();
@@ -149,7 +156,7 @@ public sealed partial class LabOperationsController
                 throw new ArgumentException("Prepared yield belongs to the library tube already occupying this tray position.");
             output = await dbContext.LabContainers.SingleAsync(c => c.Id == member.LibraryTubeContainerId && c.LabSpecimenAttemptId == attempt.Id, ct);
             output.RecordPreparedQuantity(request.Quantity.Value, request.QuantityUnit, request.RequestId, actorId, LabEvidenceTime.UtcNow);
-            output.Move(request.Location ?? "");
+            MoveToWorkingLocation(output, request.Location ?? "", actorId, "Prepared output placed in its working location.", request.RequestId);
             member.SetOutput(output.Id);
         }
         else if (request.OutputContainerId.HasValue)
@@ -217,7 +224,7 @@ public sealed partial class LabOperationsController
     {
         if (!member.OutputConfirmed || !member.OutputContainerId.HasValue) throw new InvalidOperationException($"{member.Position}: create the library output and confirm its barcode before completing preparation.");
         var output = await dbContext.LabContainers.SingleAsync(c => c.Id == member.OutputContainerId, ct);
-        if (output.Status != LabContainerStatus.Available) throw new InvalidOperationException($"{member.Position}: the output is not available.");
+        if (output.PhysicalHoldReason is not null || output.Status != LabContainerStatus.Available) throw new InvalidOperationException($"{member.Position}: the output is not available.");
         var executions = await dbContext.LabProtocolExecutions.Where(e => e.LabSpecimenAttemptId == attempt.Id && e.Status != LabExecutionStatus.Abandoned).ToListAsync(ct);
         var qc = executions.SelectMany(e => LabProtocolEvidence.Read(e.CapturedResultsJson).Records.GroupBy(r => r.StepKey).Select(g => g.Last())
             .Where(r => r.QcOutcome is not null).Select(r => new { executionId = e.Id, record = r })).ToList();

@@ -1,0 +1,25 @@
+# Phase 2 procedure capture review — October 24, 2026
+
+> Raw sample-tracking test outputs linked in this dated record were removed at the Owner's request after consolidation. The archived links now open the retained result/cleanup ledger; screenshots and raw files are no longer retained.
+
+Read-only inventory of the configured loopback development database for the [Phase 2 capture work](SAMPLE-TRACEABILITY-AND-INVESTIGATION-PLAN.md#phase-2--capture-at-source-october-24-2026). No approved procedure or workflow definition was changed. This is an engineering review of declared capture, not a scientific SOP approval.
+
+## Approved procedures found
+
+| Procedure / revision | Required measurements and units | Resource attribution | Attachments / scientific review items |
+| --- | --- | --- | --- |
+| DEMO PSeq library preparation / 1 | Required per-tube biological transfer; required master-mix amount in µL, per sample; required identified library output and concentration in ng/µL | Transfer retains source/destination tubes and measured quantity; exact approved mix revision and recorded preparation; mixing-time source conditions now come from frozen withdrawals | All three steps declare no report attachment and no equipment field. QC wording mentions positive yield but there is no separate structured yield measurement in the definition. Review whether output amount alone meets the real procedure, and specify actual instrument/run evidence and a supporting QC report if scientifically required. |
+| DEMO Master Mix — 100 µL / 1 | Two required tracked numbered reagents in µL, planned totals 80 and 20; required mixing duration in seconds; QC Pass/Fail/Hold | Explicit supplier/products, exact step occurrence and withdrawal amounts; new frozen lot/QC/expiry/catalog/storage snapshots | No equipment or attachment field. The example QC wording calls for positive duration; a numeric field's existence is not an independently validated positive-duration acceptance rule. Review actual mixing equipment, duration criteria, temperature and evidence needs before a real SOP is approved. |
+| Reagent manufacturing | No approved workflow exists locally | The manufacturing writer now snapshots each withdrawal and retains it after abandonment; completed component lineage refers to the original withdrawals | The existing reagent-step model stores instructions, notes, performer and time. It has no typed scientific measurement/unit or required-report fields. Do not describe it as providing structured manufacturing QC measurements. A real procedure needing those fields requires a domain-approved procedure revision/model slice before use. |
+
+All inventoried procedures identify themselves as fictional DEMO configuration, without a validated scientific formulation or scientific release criteria. There are no actual approved scientific procedures in this database against which to certify measurement sufficiency. A protocol field's presence establishes capture capability, not scientific adequacy.
+
+## Capture rules and review boundary
+
+Master-mix/material quantities remain exact decimal quantities with source units. New withdrawal snapshots are facts available at recording, not a reconstruction at a backdated physical time. Prepared-reagent component lists retain identities and aggregate quantities while their original per-withdrawal snapshots retain distinct conditions. No current component QC is presented as historical preparation QC. Old missing snapshots remain unknown.
+
+Normal FASTQ intake now requires explicit actual-run identity and actual UTC times per selected file group. Instrument, flowcell, lane, pool, index mapping, demultiplexing software/settings and checksummed vendor evidence can be recorded. Existing scientific profiles/release requirements remain authoritative; entering these fields does not qualify a scientific run or waive QC. One file set retains one actual acquisition and purchased allocation; different sets under one vendor job can identify distinct acquisitions. Unmapped failed-run declarations do not establish per-library exposure. No-run retains no actual-run declaration.
+
+Before real scientific acceptance, the domain reviewer must identify the approved non-demo SOPs and confirm each required measurement, precision/unit, equipment identity, acceptance rule and attachment in its complete revision. Those product/scientific requirements cannot be inferred from these demo instructions. No commercial retention rule, physical disposition/storage hierarchy, additional participant/timing policy or DPS behavior is introduced here.
+
+Source inventory: [Archived receipt: approved procedure definitions and affected counts](../testing/runs/2026-10-24-sample-tracking-browser-acceptance-ledger.json). The inventory contains no customer sample records or runtime credentials. Local inventory: six master-mix withdrawals, zero reagent withdrawals/components, two vendor versions, zero sequencing outputs or saved reports. The additive migration preserves the six old withdrawals as unknown and retains the two vendor snapshots unchanged.

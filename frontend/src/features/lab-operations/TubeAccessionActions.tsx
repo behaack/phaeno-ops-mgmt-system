@@ -1,3 +1,4 @@
+import { StorageBoxDialog } from './StorageBoxDialog'
 import { FieldError } from '#/components/ui/field'
 import { Field as PortalField } from '#/components/ui/field'
 import { NativeCheckbox } from '#/components/ui/native-checkbox'
@@ -25,6 +26,7 @@ const initialException: IntakeReviewValues = { disposition: 'Rejected', reasonCo
 
 export function TubeIntakeExceptionDialog({ row, packet, existing, pendingBox, available = true, onClose, onSaved }: { row: SampleShippingCrosswalkItem; packet: SampleShippingPacketScan; existing?: LabContainer; pendingBox?: string | null; available?: boolean; onClose: () => void; onSaved: (work: LabWorkOrderDetail) => Promise<void> }) {
   const [intake, setIntake] = useState(initialException)
+  const [confirmBox, setConfirmBox] = useState<string | null>(null)
   const form = useForm<ExceptionValues>({ resolver: zodResolver(exceptionSchema.superRefine((v, ctx) => {
     if (intake.disposition !== 'Rejected' && !v.freezerBoxBarcode) ctx.addIssue({ code: 'custom', path: ['freezerBoxBarcode'], message: 'Record the real storage location for the retained tube.' })
   })), defaultValues: { freezerBoxBarcode: existing?.location ?? '', confirmed: false } })
@@ -34,17 +36,18 @@ export function TubeIntakeExceptionDialog({ row, packet, existing, pendingBox, a
   const dirty = __formDraftDirty || intake !== initialException
   const dismissal = useOrderDecisionDismissal(dirty, save.isPending, onClose, { scope: 'intake exception', description: 'This unsaved intake exception will be discarded. Previously saved decisions and storage records will be kept.' })
   const close = () => dismissal.close()
-  return <><Dialog open onOpenChange={open => { if (!open) close() }}><DialogContent onCloseAutoFocus={event => event.preventDefault()}>
+  return <><Dialog open onOpenChange={open => { if (!open && !confirmBox) close() }}><DialogContent onCloseAutoFocus={event => event.preventDefault()}>
     <DialogHeader><DialogTitle>Record tube exception</DialogTitle><DialogDescription>{row.customerSampleId} · {row.supplierTubeBarcode}. Match the received tube or damaged remains to this expected shipment tube.</DialogDescription></DialogHeader>
     <form id="tube-exception" className="space-y-4" onSubmit={form.handleSubmit(v => { if (available && !save.isPending) save.mutate(v) })}>
       {pendingBox ? <p className="text-sm">This tube is in the unsaved {pendingBox} group. Reconcile its physical location before saving the exception. It will be excluded from that box’s accepted contents; record its actual location if retained.</p> : null}
       {!available ? <p role="status" className="text-sm text-destructive">Intake is unavailable. Keep these entries and return to an authorized, connected session before saving.</p> : null}
       <IntakeReviewFields value={intake} onChange={setIntake} exceptionsOnly disabled={save.isPending} />
       <PortalField><Label htmlFor="exception-storage">{intake.disposition === 'Rejected' ? 'Storage location (only if retained)' : <RequiredFieldName>Storage location</RequiredFieldName>}</Label><Input id="exception-storage" className="font-mono" {...form.register('freezerBoxBarcode')} readOnly={Boolean(existing?.location) || save.isPending} required={intake.disposition !== 'Rejected'} aria-invalid={Boolean(form.formState.errors.freezerBoxBarcode)} aria-describedby="exception-storage-help" /><p id="exception-storage-help" className="mt-2 text-xs text-muted-foreground">{existing?.location ? 'The existing storage location is retained.' : 'A broken or destroyed tube needs no storage location. Rejected material is never available for processing.'}</p>{form.formState.errors.freezerBoxBarcode ? <FieldError role="alert" >{form.formState.errors.freezerBoxBarcode.message}</FieldError> : null}</PortalField>
+      {!existing?.location ? <Button type="button" variant="outline" disabled={!form.watch('freezerBoxBarcode').trim()} onClick={() => setConfirmBox(form.getValues('freezerBoxBarcode').trim())}>Confirm or register storage box</Button> : null}
       <Label className="flex cursor-pointer items-start gap-2 leading-snug"><NativeCheckbox  required disabled={save.isPending} {...form.register('confirmed')} className="shrink-0" /><RequiredFieldName>I have identified the received tube or damaged remains and recorded the observed condition.</RequiredFieldName></Label>
       {form.formState.errors.confirmed ? <p role="alert">{form.formState.errors.confirmed.message}</p> : null}
     </form>
     {save.error ? <Alert variant="destructive"><AlertTitle>Exception was not saved</AlertTitle><AlertDescription>{getLabOperationsError(save.error, 'Review the details and retry. Your entries are preserved.')}</AlertDescription></Alert> : null}
     <RequiredDialogFooter><Button variant="outline" disabled={save.isPending} onClick={close}>Cancel</Button><Button type="submit" form="tube-exception" disabled={!available || save.isPending}>{save.isPending ? 'Saving…' : 'Save exception'}</Button></RequiredDialogFooter>
-  </DialogContent></Dialog>{dismissal.confirmation}</>
+  </DialogContent></Dialog>{confirmBox ? <StorageBoxDialog barcode={confirmBox} onClose={() => setConfirmBox(null)} onConfirmed={() => setConfirmBox(null)} /> : null}{dismissal.confirmation}</>
 }

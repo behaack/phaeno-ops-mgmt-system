@@ -37,6 +37,19 @@ const batch: PreparationDetail = {
 }
 
 describe('progressive sample entry disclosure', () => {
+  it('keeps a selected per-tube performance override open and requires its explanation', async () => {
+    render(<PreparationStepDialog batch={batch} stage={stage} step={step} action="record" onClose={vi.fn()} onSubmit={vi.fn()} pending={false} />)
+    fireEvent.click(screen.getByText('Different performance for an individual tube'))
+    const toggle = screen.getByRole('checkbox', { name: /A2 · Use separate actual performance/ })
+    fireEvent.click(toggle)
+    expect(toggle).toHaveProperty('checked', true)
+    const reason = screen.getByLabelText(/Tube performance exception reason/)
+    fireEvent.change(reason, { target: { value: 'Actual work differed for this tube' } })
+    expect(reason).toHaveProperty('value', 'Actual work differed for this tube')
+    fireEvent.click(toggle)
+    expect(toggle).toHaveProperty('checked', false)
+    expect(screen.queryByLabelText(/Tube performance exception reason/)).toBeNull()
+  })
   it('requires a reason and outcome for material exceptions and clears them when disabled', async () => {
     const submit = vi.fn()
     render(<PreparationStepDialog batch={{ ...batch, inlineResourceFields: true, configuredMaterials: true }} stage={stage} step={{ ...step, operatorConfirmation: false, captures: [{ key: 'material', label: 'Reagent used', type: 'material', scope: 'shared', required: true, unit: 'µL', quantityBasis: 'perSample', material: { name: 'Configured reagent' } }] }} action="record" onClose={vi.fn()} onSubmit={submit} pending={false} />)

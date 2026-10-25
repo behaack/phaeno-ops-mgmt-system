@@ -28,6 +28,22 @@ it('blocks successful receipt before file-set completion and does not request an
   fireEvent.change(screen.getByLabelText(/Batch outcome/), { target: { value: 'Success' } }); fireEvent.click(screen.getByRole('button', { name: 'Record results' }))
   await screen.findByText(/Select a complete verified file set/); expect(mocked.record).not.toHaveBeenCalled(); expect(screen.queryByPlaceholderText('Sequencing data location')).toBeNull()
 })
+it('requires actual group provenance separately from the vendor job before successful receipt', async () => {
+  mocked.intake.mockResolvedValue({ ...intake, sets: [{ id: 'set', memberId: 'member', sequencingRunNumber: 1, libraryPreparationChoice: 'NewPreparation', readLayout: 'SingleEnd', setVersion: 1, sealedSet: true,
+    files: [{ id: 'upload', fileId: 'file', originalFileName: 'sample.fastq', fileName: 'sample.fastq', groupNumber: 1, readNumber: 1, partNumber: 1, groupDescription: 'Lane 1', sizeBytes: 100, readCount: 1 }] }] })
+  await show()
+  fireEvent.change(screen.getByLabelText(/Vendor job reference/), { target: { value: 'VENDOR-JOB' } })
+  for (const label of ['Run started', 'Run completed', 'Results received']) fireEvent.change(screen.getByLabelText(new RegExp(`^${label}`)), { target: { value: '2026-10-20T12:00:00' } })
+  fireEvent.change(screen.getByLabelText(/Batch outcome/), { target: { value: 'Success' } })
+  fireEvent.click(screen.getByRole('checkbox', { name: /I confirm all required vendor files/ }))
+  fireEvent.click(screen.getByRole('button', { name: 'Record results' }))
+  await screen.findByText(/Enter the actual sequencing run reference/)
+  expect(mocked.record).not.toHaveBeenCalled()
+  fireEvent.change(screen.getByLabelText(/^Actual sequencing run reference/), { target: { value: 'INSTRUMENT-RUN-42' } })
+  for (const label of ['Actual run started', 'Actual run completed']) fireEvent.change(screen.getByLabelText(new RegExp(`^${label}`)), { target: { value: '2026-10-20T12:00:00' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Record results' }))
+  await waitFor(() => expect(mocked.record).toHaveBeenCalledWith('sendout', expect.objectContaining({ vendorJobReference: 'VENDOR-JOB', sequencingRuns: [expect.objectContaining({ setId: 'set', groupNumber: 1, runReference: 'INSTRUMENT-RUN-42' })] })))
+})
 it('saves an incomplete draft without recording receipt', async () => {
   await show(); fireEvent.change(screen.getByLabelText(/Vendor job reference/), { target: { value: 'PARTIAL-VENDOR' } }); fireEvent.click(screen.getByRole('button', { name: 'Save draft' }))
   await screen.findByText(/Draft saved/); expect(mocked.draft).toHaveBeenCalledWith('sendout', expect.objectContaining({ payload: expect.objectContaining({ jobReference: 'PARTIAL-VENDOR' }) })); expect(mocked.record).not.toHaveBeenCalled()

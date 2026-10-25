@@ -152,7 +152,8 @@ public sealed class LabPreparationRecord
     { Id = id; LabPreparationBatchId = batchId; ActorUserId = actorId; Action = action; RequestHash = hash; DetailsJson = details; RecordedAtUtc = now; }
 }
 
-public sealed record LabPreparationTubeInput(Guid MemberId, IReadOnlyDictionary<string, JsonElement> Captures, string? QcOutcome, string? Reason);
+public sealed record LabPreparationTubeInput(Guid MemberId, IReadOnlyDictionary<string, JsonElement> Captures, string? QcOutcome, string? Reason,
+    LabStepPerformanceInput? Performance = null);
 public sealed record LabPreparationStepInput(Guid StageId, string StepKey, string Action, string Outcome,
     IReadOnlyList<Guid> CoveredMemberIds, IReadOnlyDictionary<string, JsonElement> SharedCaptures,
     IReadOnlyList<LabPreparationTubeInput> Tubes, string? SharedQcOutcome, string? Reason,
@@ -184,7 +185,7 @@ public static class LabPreparationEvidence
         var tube = input.Tubes.SingleOrDefault(t => t.MemberId == memberId);
         if (input.Outcome == "skipped")
         {
-            if (input.Performance is not null) throw new ArgumentException("A skipped step cannot claim performed work.");
+            if (input.Performance is not null || input.Tubes.Any(t => t.Performance is not null)) throw new ArgumentException("A skipped step cannot claim performed work.");
             if (input.SharedCaptures.Count > 0 || input.Tubes.Any(t => t.Captures.Count > 0 || t.QcOutcome is not null) || input.SharedQcOutcome is not null)
                 throw new ArgumentException("A skipped step cannot contain performed work or QC.");
             return new(step.Key, input.Action, input.Outcome, new Dictionary<string, JsonElement>(), false, false, null, tube?.Reason ?? input.Reason, recordId);
@@ -213,6 +214,7 @@ public static class LabPreparationEvidence
             throw new ArgumentException("QC must use the scope defined by the approved protocol.");
         if (step.QcGate?.Scope == "shared" && tube?.QcOutcome is not null) LabProtocolDefinition.RequiredText(tube.Reason, 4000, "Tube QC exception reason");
         var qc = step.QcGate?.Scope == "tube" ? tube?.QcOutcome : tube?.QcOutcome ?? input.SharedQcOutcome;
-        return new(step.Key, input.Action, input.Outcome, values, input.OperatorConfirmed, input.ResourcesConfirmed, qc, tube?.Reason ?? input.Reason, recordId, input.Performance);
+        if (tube?.Performance is not null) LabProtocolDefinition.RequiredText(tube.Reason, 4000, "Tube performance exception reason");
+        return new(step.Key, input.Action, input.Outcome, values, input.OperatorConfirmed, input.ResourcesConfirmed, qc, tube?.Reason ?? input.Reason, recordId, tube?.Performance ?? input.Performance);
     }
 }

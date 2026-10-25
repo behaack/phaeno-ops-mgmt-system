@@ -18,7 +18,12 @@ public sealed class LabVendorResultSafety(PSeqOperationsDbContext db)
             && previous.RunStartedAtUtc == request.RunStartedAtUtc
             && previous.RunCompletedAtUtc == request.RunCompletedAtUtc
             && previous.ResultsReceivedAtUtc == request.ResultsReceivedAtUtc
+            && SameRunEvidence(previous.SequencingRuns, request.SequencingRuns, setId)
             ? previous.FastqSets?.SingleOrDefault(s => s.SetId == setId) : null;
+
+    private static bool SameRunEvidence(IReadOnlyList<VendorSequencingRunCapture>? left, IReadOnlyList<VendorSequencingRunCapture>? right, Guid setId)
+        => JsonSerializer.Serialize((left ?? []).Where(r => r.SetId == setId).OrderBy(r => r.GroupNumber), JsonSerializerOptions.Web)
+            == JsonSerializer.Serialize((right ?? []).Where(r => r.SetId == setId).OrderBy(r => r.GroupNumber), JsonSerializerOptions.Web);
 
     public async Task<IReadOnlyList<ProtectedVendorPackage>> ProtectedPackagesAsync(IReadOnlyList<Guid> outputIds, CancellationToken ct)
     {

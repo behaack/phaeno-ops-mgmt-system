@@ -16,6 +16,8 @@ The [master-mix step assembly contract](plans/MASTER-MIX-PREPARATION-PLAN.md#ass
 
 ## Legend and totals
 
+New master-mix step receipts extend the existing `evidence_json` with `equipmentUses` entries: `fieldKey`, `equipmentId` and `resourceSnapshotJson` (asset identity/version, entry time, status, location and calibration dates). These are application-validated JSON references, without a new column, relationship or migration. Missing historical equipment conditions remain unknown; no backfill is performed.
+
 - `PK` = primary key; `FK` = database-enforced foreign key; `UK` = a column participating in a unique key/index. Filtered uniqueness remains subject to its model predicate.
 - Field comments state nullability. Relationship labels identify the child foreign-key columns.
 - Logical identifiers without database foreign keys are ordinary fields. PostgreSQL system schemas are excluded.
@@ -23,11 +25,11 @@ The [master-mix step assembly contract](plans/MASTER-MIX-PREPARATION-PLAN.md#ass
 | Schema | Entities | Fields | Foreign keys |
 | --- | ---: | ---: | ---: |
 | `public` | 1 | 2 | 0 |
-| `commercial_ops` | 149 | 2438 | 404 |
-| `lab_ops` | 90 | 1108 | 189 |
+| `commercial_ops` | 149 | 2440 | 404 |
+| `lab_ops` | 94 | 1146 | 194 |
 | `research` | 5 | 53 | 3 |
 | `website` | 5 | 51 | 4 |
-| **Total** | **250** | **3652** | **600** |
+| **Total** | **254** | **3692** | **605** |
 
 ## `public` schema
 
@@ -1306,11 +1308,11 @@ erDiagram
         timestamp_with_time_zone placed_at "nullable"
         jsonb placement_snapshot_json "nullable"
         character_varying_1000 price_proposal_note "nullable"
-        character_varying_16000 private_notes "nullable; formatted text; Phaeno only"
-        character_varying_16000 public_notes "nullable; formatted text; Customer Order review"
         timestamp_with_time_zone price_proposed_at "nullable"
         uuid price_proposed_by_user_id FK "nullable"
+        character_varying_16000 private_notes "nullable; formatted text; Phaeno only"
         numeric_18_2 proposed_unit_price "nullable"
+        character_varying_16000 public_notes "nullable; formatted text; Customer Order review"
         integer request_revision "not null"
         uuid requested_catalog_item_id FK "nullable"
         integer requested_specimen_count "not null"
@@ -3313,7 +3315,7 @@ erDiagram
 
 ## `lab_ops` schema
 
-### Domain
+### Domain (1)
 
 ```mermaid
 erDiagram
@@ -3400,6 +3402,76 @@ erDiagram
         uuid user_id FK "not null"
         integer version "not null"
     }
+    lab_master_mix_performance_decisions {
+        uuid id PK,FK "not null"
+        boolean approved "not null"
+        character_varying_2000 reason "not null"
+        timestamp_with_time_zone reviewed_at_utc "not null"
+        uuid reviewed_by_user_id "not null"
+    }
+    lab_physical_events {
+        uuid id PK "not null"
+        uuid actor_user_id "not null"
+        jsonb details_json "not null"
+        character_varying_40 kind "not null"
+        uuid lab_container_id FK "not null"
+        timestamp_with_time_zone occurred_at_utc "not null"
+        character_varying_2000 reason "not null"
+        timestamp_with_time_zone recorded_at_utc "not null"
+        character_varying_64 request_hash "not null"
+        uuid storage_box_id FK "nullable"
+    }
+    lab_storage_box_moves {
+        uuid id PK "not null"
+        uuid actor_user_id "not null"
+        jsonb details_json "not null"
+        uuid lab_storage_box_id FK "not null"
+        character_varying_2000 reason "not null"
+        timestamp_with_time_zone recorded_at_utc "not null"
+        character_varying_64 request_hash "not null"
+    }
+    lab_storage_boxes {
+        uuid id PK "not null"
+        character_varying_255 barcode UK "not null"
+        timestamp_with_time_zone created_at "not null"
+        uuid created_by_user_id "nullable"
+        character_varying_100 freezer "not null"
+        character_varying_100 rack "not null"
+        character_varying_100 room "not null"
+        character_varying_100 shelf "not null"
+        timestamp_with_time_zone updated_at "not null"
+        uuid updated_by_user_id "nullable"
+        bigint version "not null"
+    }
+    lab_analysis_runs ||--o{ lab_assembly_qc : "lab_analysis_run_id"
+    lab_assembly_jobs ||--o{ lab_assembly_qc : "lab_assembly_job_id"
+    lab_scientific_files ||--o{ lab_assembly_qc : "lab_scientific_file_id"
+    users ||--o{ lab_assembly_qc : "recorded_by_user_id"
+    result_output_packages ||--o{ lab_assembly_qc : "result_output_package_id"
+    users ||--o{ lab_configuration_assets : "recorded_by_user_id"
+    lab_vendor_results_drafts ||--o{ lab_fastq_archives : "lab_vendor_results_draft_id"
+    users ||--o{ lab_fastq_archives : "user_id"
+    lab_batch_members ||--o{ lab_fastq_sets : "lab_batch_member_id"
+    lab_libraries ||--o{ lab_fastq_sets : "lab_library_id"
+    lab_specimens ||--o{ lab_fastq_sets : "lab_specimen_id"
+    lab_vendor_results_drafts ||--o{ lab_fastq_sets : "lab_vendor_results_draft_id"
+    lab_vendor_results_versions o|--o{ lab_fastq_sets : "lab_vendor_results_version_id"
+    lab_work_orders ||--o{ lab_fastq_sets : "lab_work_order_id"
+    users ||--o{ lab_fastq_sets : "recorded_by_user_id"
+    lab_fastq_archives o|--o{ lab_fastq_uploads : "lab_fastq_archive_id"
+    lab_fastq_sets ||--o{ lab_fastq_uploads : "lab_fastq_set_id"
+    lab_scientific_files o|--o{ lab_fastq_uploads : "lab_scientific_file_id"
+    users ||--o{ lab_fastq_uploads : "user_id"
+    lab_master_mix_steps ||--o| lab_master_mix_performance_decisions : "id"
+    lab_containers ||--o{ lab_physical_events : "lab_container_id"
+    lab_storage_boxes o|--o{ lab_physical_events : "storage_box_id"
+    lab_storage_boxes ||--o{ lab_storage_box_moves : "lab_storage_box_id"
+```
+
+### Domain (2)
+
+```mermaid
+erDiagram
     lab_supplier_shipment_addresses {
         uuid id PK "not null"
         character_varying_200 address_line1 "not null"
@@ -3442,25 +3514,6 @@ erDiagram
         integer result_version UK "not null"
         jsonb snapshot_json "not null"
     }
-    lab_analysis_runs ||--o{ lab_assembly_qc : "lab_analysis_run_id"
-    lab_assembly_jobs ||--o{ lab_assembly_qc : "lab_assembly_job_id"
-    lab_scientific_files ||--o{ lab_assembly_qc : "lab_scientific_file_id"
-    users ||--o{ lab_assembly_qc : "recorded_by_user_id"
-    result_output_packages ||--o{ lab_assembly_qc : "result_output_package_id"
-    users ||--o{ lab_configuration_assets : "recorded_by_user_id"
-    lab_vendor_results_drafts ||--o{ lab_fastq_archives : "lab_vendor_results_draft_id"
-    users ||--o{ lab_fastq_archives : "user_id"
-    lab_batch_members ||--o{ lab_fastq_sets : "lab_batch_member_id"
-    lab_libraries ||--o{ lab_fastq_sets : "lab_library_id"
-    lab_specimens ||--o{ lab_fastq_sets : "lab_specimen_id"
-    lab_vendor_results_drafts ||--o{ lab_fastq_sets : "lab_vendor_results_draft_id"
-    lab_vendor_results_versions o|--o{ lab_fastq_sets : "lab_vendor_results_version_id"
-    lab_work_orders ||--o{ lab_fastq_sets : "lab_work_order_id"
-    users ||--o{ lab_fastq_sets : "recorded_by_user_id"
-    lab_fastq_archives o|--o{ lab_fastq_uploads : "lab_fastq_archive_id"
-    lab_fastq_sets ||--o{ lab_fastq_uploads : "lab_fastq_set_id"
-    lab_scientific_files o|--o{ lab_fastq_uploads : "lab_scientific_file_id"
-    users ||--o{ lab_fastq_uploads : "user_id"
     lab_suppliers ||--o{ lab_supplier_shipment_addresses : "supplier_id"
     lab_ngs_sendouts ||--o{ lab_vendor_results_drafts : "lab_ngs_sendout_id"
     users ||--o{ lab_vendor_results_drafts : "user_id"
@@ -4097,6 +4150,7 @@ erDiagram
         character_varying_50 quantity_unit "not null"
         timestamp_with_time_zone recorded_at_utc "not null"
         uuid recorded_by_user_id "not null"
+        jsonb resource_snapshot_json "nullable"
         uuid source_material_lot_id FK "not null"
         integer step_sequence "not null"
         timestamp_with_time_zone voided_at_utc "nullable"
@@ -4283,6 +4337,7 @@ erDiagram
         character_varying_50 quantity_unit "not null"
         timestamp_with_time_zone recorded_at_utc "not null"
         uuid recorded_by_user_id "not null"
+        jsonb resource_snapshot_json "nullable"
         uuid run_id FK "not null"
         uuid source_material_lot_id FK "not null"
     }
@@ -4671,12 +4726,15 @@ erDiagram
         uuid last_label_printed_by_user_id "nullable"
         character_varying_255 location "nullable"
         uuid parent_container_id FK "nullable"
+        character_varying_2000 physical_hold_reason "nullable"
         numeric quantity "nullable"
         character_varying_50 quantity_basis "nullable"
         jsonb quantity_history_json "not null"
         character_varying_50 quantity_unit "nullable"
         timestamp_with_time_zone retain_until_utc "nullable"
         character_varying_50 status "not null"
+        uuid storage_box_id FK,UK "nullable"
+        character_varying_30 storage_position UK "nullable"
         timestamp_with_time_zone updated_at "not null"
         uuid updated_by_user_id "nullable"
         bigint version "not null"
@@ -4803,6 +4861,7 @@ erDiagram
     lab_specimens o|--o{ lab_containers : "lab_specimen_id"
     lab_work_orders ||--o{ lab_containers : "lab_work_order_id"
     lab_containers o|--o{ lab_containers : "parent_container_id"
+    lab_storage_boxes o|--o{ lab_containers : "storage_box_id"
     lab_containers o|--o{ lab_custody_events : "lab_container_id"
     lab_ngs_sendouts ||--o{ lab_custody_events : "lab_ngs_sendout_id"
     lab_protocol_executions o|--o{ lab_exceptions : "lab_protocol_execution_id"

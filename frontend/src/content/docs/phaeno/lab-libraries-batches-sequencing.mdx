@@ -206,6 +206,12 @@ FASTQ uploads. Enter the vendor job reference, actual run start/completion and
 results-receipt times. Receipt may be later than completion; times use your
 browser’s timezone and are saved as UTC. Future or out-of-order times are rejected.
 
+After selecting the verified file sets, complete **Actual sequencing runs** for every FASTQ group. Enter the instrument acquisition reference separately from **Vendor job reference** and the purchased run number. Enter each group's actual start and completion in the explicitly labeled UTC fields, within the overall run window above. Groups in one file set must belong to the same purchased run and actual acquisition. Separate file sets under one vendor job can name distinct actual acquisitions; do not merge different purchased runs into one file set.
+
+Expand **Instrument, sample mapping and supporting evidence** to record the vendor-supplied instrument, flowcell, lane, pool, index/demultiplexing mapping, demultiplexing software/version/checksum and settings checksum. A supporting vendor file reference requires its SHA-256 and byte size. These references retain evidence identity without retrieving an external file or proving its availability. Leave unavailable optional details blank for scientific review; do not copy the vendor job number into the actual-run field as a substitute.
+
+The saved results version and sample investigation retain these group mappings. Notes-only edits preserve unchanged output identities. Changing actual-run provenance creates corrected outputs and uses the existing protections for approved/released results and active assembly. Older result versions without this capture remain explicitly unknown. A performed failed run may retain optional vendor run evidence without a FASTQ mapping; **Run not performed** has none.
+
 Choose **Batch outcome** Success or Fail. Success applies to every library unless
 selected as a failed exception with its required reason. Fail marks all libraries
 failed and hides uploads and exceptions; record the common failure reason in
