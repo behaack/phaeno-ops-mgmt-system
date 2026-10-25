@@ -1,6 +1,6 @@
 # Phaeno how-to screenshots
 
-These are actual local application captures refreshed October 22, 2026. Stable
+These are actual local application captures refreshed October 24, 2026. Stable
 filenames retain their original asset identities; current provenance and review
 are in `frontend/ui-gallery/documentation-captures.json`.
 

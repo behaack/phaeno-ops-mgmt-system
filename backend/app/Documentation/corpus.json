@@ -506,7 +506,7 @@
       "title": "Results and billing",
       "summary": "Download scientifically released PSeq results, review retention, and find invoices independently of result access.",
       "order": 40,
-      "reviewedAt": "2026-10-22",
+      "reviewedAt": "2026-10-24",
       "navigationGroup": "laboratory-work",
       "contentType": "guide",
       "topicIds": [
@@ -584,7 +584,7 @@
       "title": "Prepare and ship samples",
       "summary": "Request phase kits, confirm receipt, pair samples and tubes, pack and record shipments, and follow each phase.",
       "order": 35,
-      "reviewedAt": "2026-10-22",
+      "reviewedAt": "2026-10-24",
       "navigationGroup": "laboratory-work",
       "contentType": "guide",
       "topicIds": [
@@ -909,7 +909,7 @@
       "title": "Prepare included Assembly",
       "summary": "Prepare a purchased Kit case, correct inputs and download governed outputs without another purchase.",
       "order": 40,
-      "reviewedAt": "2026-10-22",
+      "reviewedAt": "2026-10-24",
       "navigationGroup": "partner-work",
       "contentType": "guide",
       "topicIds": [
@@ -2410,7 +2410,7 @@
       "title": "How to configure samples and shipping",
       "summary": "Prepare Shipping procedures, Sample types, Kit specifications and a Default receiving destination.",
       "order": 43,
-      "reviewedAt": "2026-10-22",
+      "reviewedAt": "2026-10-24",
       "navigationGroup": "order-operations",
       "contentType": "how-to",
       "topicIds": [
@@ -2436,12 +2436,12 @@
       "publicationStatus": "published",
       "id": "phaeno/how-to-configure-samples-shipping",
       "route": "/docs/phaeno/how-to-configure-samples-shipping",
-      "contentHash": "9747bd8682706b0a7e28ff4366efdc98a83a9a520a730554a77cafca26bc2759",
+      "contentHash": "27a6f0047a6d62bc9174ad49e3d1d9fafaa2d7d50a76bb24d42821a14605991f",
       "sections": [
         {
           "heading": "How to configure samples and shipping",
           "anchor": "how-to-configure-samples-and-shipping",
-          "text": "Illustrations refreshed and reviewed October 22, 2026, from current components with fictional records. Use this guide to prepare the reusable configuration for new laboratory orders. Work in the Phaeno organization with samples/shipping configuration access. Open Samples & shipping settings from the user menu. On narrow layouts, expand Settings first. This setup defines what Customers may submit and how it reaches Phaeno; it does not record a shipment or assemble a physical kit."
+          "text": "Illustrations refreshed and reviewed October 24, 2026, from current components with fictional records. Use this guide to prepare the reusable configuration for new laboratory orders. Work in the Phaeno organization with samples/shipping configuration access. Open Samples & shipping settings from the user menu. On narrow layouts, expand Settings first. This setup defines what Customers may submit and how it reaches Phaeno; it does not record a shipment or assemble a physical kit."
         },
         {
           "heading": "Understand the four records",
@@ -2488,7 +2488,7 @@
       "title": "How to create and approve a lab protocol",
       "summary": "Write ordered instructions, review the bench presentation and release a complete protocol revision.",
       "order": 53.5,
-      "reviewedAt": "2026-10-22",
+      "reviewedAt": "2026-10-24",
       "navigationGroup": "laboratory-operations",
       "contentType": "how-to",
       "topicIds": [
@@ -2514,12 +2514,12 @@
       "publicationStatus": "published",
       "id": "phaeno/how-to-lab-protocol",
       "route": "/docs/phaeno/how-to-lab-protocol",
-      "contentHash": "554f1ece470d6e9bccbeffff7c437413fc613cf71af353eec790646694ca8d85",
+      "contentHash": "f136b8ee9f266633cbc0999b79ea5a728b06ec00ce6159fbf8f4d260b701dd7d",
       "sections": [
         {
           "heading": "How to create and approve a lab protocol",
           "anchor": "how-to-create-and-approve-a-lab-protocol",
-          "text": "Illustrations refreshed and reviewed October 22, 2026, from current components with fictional records. Use this guide to author a complete library protocol in Lab settings → Protocols. Work in the Phaeno organization with protocol-management access. The approved protocol is a configuration reference; it does not record performed laboratory work."
+          "text": "Illustrations refreshed and reviewed October 24, 2026, from current components with fictional records. Use this guide to author a complete library protocol in Lab settings → Protocols. Work in the Phaeno organization with protocol-management access. The approved protocol is a configuration reference; it does not record performed laboratory work."
         },
         {
           "heading": "1. Start a protocol or a revision",
@@ -2529,7 +2529,7 @@
         {
           "heading": "2. Write the complete procedure",
           "anchor": "2-write-the-complete-procedure",
-          "text": "Top of the protocol editor showing the ordered instruction outline, selected instruction fields and Configuration preview button. Ordered outline: select an instruction to work on it. Use Add step for another instruction. Drag its handle, or choose Move up / Move down in its Actions menu, to put the procedure in execution order. Selected instruction: write the instruction directly and configure its required confirmations, recording fields, resources, QC criteria and handoffs. Each occurrence belongs to this protocol; a separate Lab-step approval is not required. Configuration preview: try the recording controls with fictional examples. The preview does not create laboratory records. Separately, expand Review overview and bench instructions below the editor to inspect the complete procedure and its recording requirements before saving. Use Insert from an approved procedure when reviewed source instructions can be reused. The copied instructions become independent content in this Draft and retain their source attribution. Review them in the receiving protocol's context; later edits to the source do not update this copy. Add optional illustrations where they clarify an instruction. Supply meaningful alternative text and any necessary caption. Use the supported static image types and review the uploaded image before approval. Do not place confidential data in a reusable procedure illustration."
+          "text": "Top of the protocol editor showing the ordered instruction outline, selected instruction fields and Configuration preview button. Ordered outline: select an instruction to work on it. Use Add step for another instruction. Drag its handle, or choose Move up / Move down in its Actions menu, to put the procedure in execution order. Selected instruction: write the instruction directly and configure its required confirmations, recording fields, resources, QC criteria and handoffs. Review Require actual start and end times and Minimum named participants (including primary performer) against the scientifically reviewed procedure. Each occurrence belongs to this protocol; a separate Lab-step approval is not required. Configuration preview: try the recording controls with fictional examples. The preview does not create laboratory records. Separately, expand Review overview and bench instructions below the editor to inspect the complete procedure and its recording requirements before saving. Use Insert from an approved procedure when reviewed source instructions can be reused. The copied instructions become independent content in this Draft and retain their source attribution. Review them in the receiving protocol's context; later edits to the source do not update this copy. Add optional illustrations where they clarify an instruction. Supply meaningful alternative text and any necessary caption. Use the supported static image types and review the uploaded image before approval. Do not place confidential data in a reusable procedure illustration."
         },
         {
           "heading": "3. Save and review the Draft",
@@ -2556,7 +2556,7 @@
       "title": "How to onboard a Customer",
       "summary": "Request and approve online access, invite an administrator, enable the approved service, finish billing and tax review, and close both requests.",
       "order": 15.5,
-      "reviewedAt": "2026-10-22",
+      "reviewedAt": "2026-10-24",
       "navigationGroup": "customer-relationship-management",
       "contentType": "how-to",
       "topicIds": [
@@ -2595,7 +2595,7 @@
       "publicationStatus": "published",
       "id": "phaeno/how-to-onboard-customer",
       "route": "/docs/phaeno/how-to-onboard-customer",
-      "contentHash": "8bb7d90be852f13e87687ce0ffdf08a899ea72a4bd1de9bfc9e8f000cdc41825",
+      "contentHash": "959489c4c761cfdd962ba53ae16a8b99fa491ba7ccde9975e1818f3ae54ff09b",
       "sections": [
         {
           "heading": "How to onboard a Customer",
@@ -2605,7 +2605,7 @@
         {
           "heading": "Before you start",
           "anchor": "before-you-start",
-          "text": "Work in the Phaeno organization. A platform administrator creates and reviews Company access/service requests and manages invitations. Commercial staff can prepare the Company and contact information within their permissions; involve an administrator for the controlled access steps. Finance staff with billing access own the billing profile and tax approval. The invited Customer administrator accepts their own access. Have the correct Company, intended administrator's name and email, Department scope, approved service and dates, billing contact/address, agreed payment terms and Finance's tax decision. Check for existing Companies, people, access and service permissions before adding records. Illustrations were refreshed and reviewed on October 22, 2026. They show focused parts of the workflow; surrounding navigation may be outside the image. Every screenshot below renders actual application components with explicitly fictional demonstration records. The numbered markers correspond to the written explanations immediately below each image. No invitation or email was sent and no Customer records were changed to make these illustrations. Example names, dates, terms and tax choices are illustrations, not values to copy into real work."
+          "text": "Work in the Phaeno organization. A platform administrator creates and reviews Company access/service requests and manages invitations. Commercial staff can prepare the Company and contact information within their permissions; involve an administrator for the controlled access steps. Finance staff with billing access own the billing profile and tax approval. The invited Customer administrator accepts their own access. Have the correct Company, intended administrator's name and email, Department scope, approved service and dates, billing contact/address, agreed payment terms and Finance's tax decision. Check for existing Companies, people, access and service permissions before adding records. Illustrations were refreshed and reviewed on October 24, 2026. They show focused parts of the workflow; surrounding navigation may be outside the image. Every screenshot below renders actual application components with explicitly fictional demonstration records. The numbered markers correspond to the written explanations immediately below each image. No invitation or email was sent and no Customer records were changed to make these illustrations. Example names, dates, terms and tax choices are illustrations, not values to copy into real work."
         },
         {
           "heading": "1. Prepare the Company, people and Departments",
@@ -2682,7 +2682,7 @@
       "title": "How to place a Customer order",
       "summary": "Enter Customer scope, save a Draft, submit for pricing and understand the quote/acceptance handoff.",
       "order": 40.5,
-      "reviewedAt": "2026-10-22",
+      "reviewedAt": "2026-10-24",
       "navigationGroup": "order-operations",
       "contentType": "how-to",
       "topicIds": [
@@ -2707,7 +2707,7 @@
       "publicationStatus": "published",
       "id": "phaeno/how-to-place-customer-order",
       "route": "/docs/phaeno/how-to-place-customer-order",
-      "contentHash": "c5fffffe2703e5173808ce0946afeeedf9da9329cfed7a76450d0c86cc9dc34b",
+      "contentHash": "1a89bcc961f82ff69bce2e81de1bda84835135c58368a6d86d69344e4bae0972",
       "sections": [
         {
           "heading": "How to place a Customer order",
@@ -2754,7 +2754,7 @@
       "summary": "Follow an illustrated notebook workflow: projects, experiments, dated notes, tables, files, history, completion and repeat setups.",
       "navigationGroup": "research",
       "order": 59.5,
-      "reviewedAt": "2026-10-22",
+      "reviewedAt": "2026-10-24",
       "contentType": "how-to",
       "topicIds": [
         "research"
@@ -2785,12 +2785,12 @@
       "parentSlug": "research-notebooks",
       "id": "phaeno/how-to-record-research",
       "route": "/docs/phaeno/how-to-record-research",
-      "contentHash": "bef7d920e2eecd24b5f99138066a8a279ba9a8d61bf9af1a641daa8f1271615e",
+      "contentHash": "3de5775886aa4ade1dad353c172aa6c0df742119e2c4b1c851f17462e55498e6",
       "sections": [
         {
           "heading": "How to record an R&D experiment",
           "anchor": "how-to-record-an-rd-experiment",
-          "text": "Illustrations refreshed and reviewed October 22, 2026, from current components with fictional records. Use this walkthrough to organize exploratory work, capture dated notes and measurements, and retain the history of an experiment. R&D is a shared electronic notebook. You can adapt its sections as the work develops."
+          "text": "Illustrations refreshed and reviewed October 24, 2026, from current components with fictional records. Use this walkthrough to organize exploratory work, capture dated notes and measurements, and retain the history of an experiment. R&D is a shared electronic notebook. You can adapt its sections as the work develops."
         },
         {
           "heading": "Before you start",
@@ -4864,7 +4864,7 @@
       "title": "Trial Projects",
       "summary": "Review and accept approved Trial scope, submit coded RNA, and download released results.",
       "order": 24,
-      "reviewedAt": "2026-10-22",
+      "reviewedAt": "2026-10-24",
       "navigationGroup": "trial-project",
       "contentType": "guide",
       "topicIds": [
@@ -4929,5 +4929,5 @@
       ]
     }
   ],
-  "corpusHash": "c6b4c67bd74a4db371a0b8a804310808cbd7bd663a294d342ca2942d28a81c98"
+  "corpusHash": "a09e0c7aefa9f46daac35aac3c0e05651cab1df84ca9bf7a57f119ba2ae9f278"
 }

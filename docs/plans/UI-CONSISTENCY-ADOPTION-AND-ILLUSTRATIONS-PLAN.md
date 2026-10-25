@@ -142,3 +142,39 @@ holds, the orphan fence and S3 recovery deferral remain. The
 [preserving release plan](PORTAL-UI-ADOPTION-HOSTED-TEST-RELEASE-20261022-PLAN.md)
 and [release receipt](../operations/portal-ui-adoption-test-release-20261022.md)
 record exact identities and acceptance limits.
+
+## Sample-tracking capture freshness repair — October 24, 2026
+
+The Owner requested repair and verification of the documentation-capture CI
+failure on sample-tracking source `6c2dd3dd`. Run `40147398564` passed
+`visual-baselines` and `workflow-behavior`; `ui-quality` stopped because 14
+feature/catalog source fingerprints had changed since the guide images were
+reviewed. Keep the freshness guard and its review requirement intact.
+
+Regenerate all 43 registered illustrations from the independent gallery using
+fictional records, inspect the images and their written callouts, update reviewed
+guide dates and regenerate the paired help corpus. The protocol-editor callout
+also identifies the current per-instruction timing and named-participant controls;
+the reviewed scientific procedure determines their settings. Record deliberate
+review only after checking the final captures. Existing image identities,
+audience/locale paths, annotations and visual-reference tolerances stay governed
+by their existing registries.
+
+Verify capture freshness, guide/corpus consistency, coverage registration,
+capture-guard regressions and the nine illustrated guides across the four
+desktop/phone and light/dark browser projects. Publish only the documentation
+repair on the existing sample-tracking branch for the required CI checks. This
+follow-up does not authorize hosted migrations, deployment, DPS activity or
+changes to the unrelated billing/release-preparation work already in the tree.
+
+Local verification passes: 43 deliberately reviewed images, 169 callouts and 346
+current source fingerprints; all four capture-guard regressions; guide/corpus
+and coverage consistency; and all 36 illustrated-guide browser cases across
+desktop/phone and light/dark, with no failures, skips or retries. The regenerated
+62-guide API/UI corpus is `a09e0c7aefa9`. Only the protocol-editor JPEG changes
+from the prior image set; the other 42 final captures retain their original
+bytes. Its crop and callout coordinates include the new controls.
+
+Required GitHub checks rerun on the published follow-up commit. Their exact-source
+results are attached to that commit in GitHub; local checks do not replace them.
+No hosted migration or deployment is performed by this repair.

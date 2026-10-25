@@ -857,22 +857,22 @@
   },
   "/docs/phaeno/screenshots/protocol-editor-20261015.jpg": {
     "width": 1280,
-    "height": 702,
+    "height": 810,
     "points": [
       {
         "number": 1,
         "x": 26.8,
-        "y": 55.14
+        "y": 47.79
       },
       {
         "number": 2,
         "x": 38.27,
-        "y": 63.97
+        "y": 68.78
       },
       {
         "number": 3,
         "x": 98.75,
-        "y": 10.82
+        "y": 9.38
       }
     ]
   },

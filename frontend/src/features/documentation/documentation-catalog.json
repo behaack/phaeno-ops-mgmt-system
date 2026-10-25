@@ -248,7 +248,7 @@
       "title": "Trial Projects",
       "summary": "Review and accept approved Trial scope, submit coded RNA, and download released results.",
       "order": 24,
-      "reviewedAt": "2026-10-22",
+      "reviewedAt": "2026-10-24",
       "navigationGroup": "trial-project",
       "contentType": "guide",
       "topicIds": [
@@ -588,7 +588,7 @@
       "title": "Prepare and ship samples",
       "summary": "Request phase kits, confirm receipt, pair samples and tubes, pack and record shipments, and follow each phase.",
       "order": 35,
-      "reviewedAt": "2026-10-22",
+      "reviewedAt": "2026-10-24",
       "navigationGroup": "laboratory-work",
       "contentType": "guide",
       "topicIds": [
@@ -621,7 +621,7 @@
       "title": "Results and billing",
       "summary": "Download scientifically released PSeq results, review retention, and find invoices independently of result access.",
       "order": 40,
-      "reviewedAt": "2026-10-22",
+      "reviewedAt": "2026-10-24",
       "navigationGroup": "laboratory-work",
       "contentType": "guide",
       "topicIds": [
@@ -797,7 +797,7 @@
       "title": "Prepare included Assembly",
       "summary": "Prepare a purchased Kit case, correct inputs and download governed outputs without another purchase.",
       "order": 40,
-      "reviewedAt": "2026-10-22",
+      "reviewedAt": "2026-10-24",
       "navigationGroup": "partner-work",
       "contentType": "guide",
       "topicIds": [
@@ -1936,7 +1936,7 @@
       "title": "How to place a Customer order",
       "summary": "Enter Customer scope, save a Draft, submit for pricing and understand the quote/acceptance handoff.",
       "order": 40.5,
-      "reviewedAt": "2026-10-22",
+      "reviewedAt": "2026-10-24",
       "navigationGroup": "order-operations",
       "contentType": "how-to",
       "topicIds": [
@@ -1969,7 +1969,7 @@
       "title": "How to configure samples and shipping",
       "summary": "Prepare Shipping procedures, Sample types, Kit specifications and a Default receiving destination.",
       "order": 43,
-      "reviewedAt": "2026-10-22",
+      "reviewedAt": "2026-10-24",
       "navigationGroup": "order-operations",
       "contentType": "how-to",
       "topicIds": [
@@ -2003,7 +2003,7 @@
       "title": "How to create and approve a lab protocol",
       "summary": "Write ordered instructions, review the bench presentation and release a complete protocol revision.",
       "order": 53.5,
-      "reviewedAt": "2026-10-22",
+      "reviewedAt": "2026-10-24",
       "navigationGroup": "laboratory-operations",
       "contentType": "how-to",
       "topicIds": [
@@ -2037,7 +2037,7 @@
       "title": "How to onboard a Customer",
       "summary": "Request and approve online access, invite an administrator, enable the approved service, finish billing and tax review, and close both requests.",
       "order": 15.5,
-      "reviewedAt": "2026-10-22",
+      "reviewedAt": "2026-10-24",
       "navigationGroup": "customer-relationship-management",
       "contentType": "how-to",
       "topicIds": [
@@ -2124,7 +2124,7 @@
       "summary": "Follow an illustrated notebook workflow: projects, experiments, dated notes, tables, files, history, completion and repeat setups.",
       "navigationGroup": "research",
       "order": 59.5,
-      "reviewedAt": "2026-10-22",
+      "reviewedAt": "2026-10-24",
       "contentType": "how-to",
       "topicIds": [
         "research"
