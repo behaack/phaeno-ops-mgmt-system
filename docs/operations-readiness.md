@@ -1,5 +1,11 @@
 # Operations and production-readiness boundary
 
+## Sample tracking — hosted-test deployment October 25, 2026
+
+Qualified source `9ca7faf614bea5d6bee7a9c57e6af98ea12bfa3b` is live as the matching API/frontend/help after Owner-approved PR #8 merge and the two preserving sample-tracking migrations. The merge tree is identical. Writers reopened at 11:17:55 UTC; full comparisons preserve all 250 old tables, complete Website intake and all unrelated runtime/document/Local files. Fresh encrypted recovery is independently restored and verified off-server. See the [release receipt](operations/sample-tracking-hosted-test-release-20261025.md) and [executed plan](plans/SAMPLE-TRACKING-HOSTED-TEST-RELEASE-20261024-PLAN.md).
+
+Technical pairing, the full 15-minute post-reopening error observation and exact-source isolated capture/permission checks pass. Fresh signed-in hosted acceptance remains **not run**, pending normal Owner sign-in/MFA; first legitimate new activity, physical/scientific/business acceptance and populated-S3/scheduled recovery remain separate gates. No synthetic hosted data, DPS change or commercial activation occurred. Automatic deployment holds, orphan quarantine and hosted-test S3 recovery deferral remain in force.
+
 ## Portal-only DPS admission release — authorized October 22, 2026
 
 The Owner authorized publishing the reviewed engineering work and deploying only the Portal API and matching frontend/help. The [preserving release plan](plans/DPS-ADMISSION-PORTAL-TEST-RELEASE-20261023-PLAN.md) retains the existing database, receipts/history, Website intake, DPS installation, deployment holds, orphan quarantine and scientific-pilot hold. Hosted activation and acceptance will be recorded separately; publication of the saved DPS source patch does not activate it.

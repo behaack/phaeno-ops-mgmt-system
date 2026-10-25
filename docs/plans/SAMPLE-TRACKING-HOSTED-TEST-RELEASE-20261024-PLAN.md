@@ -1,5 +1,11 @@
 # Sample-tracking hosted-test deployment plan
 
+## Executed release — October 25, 2026
+
+The Owner-approved protected merge, two preserving migrations and paired hosted-test API/frontend activation are complete. Qualified source `9ca7faf614bea5d6bee7a9c57e6af98ea12bfa3b` and merge `1655f4cc9515bb690101c4b97d7700736201d445` have identical trees. Writers reopened at 11:17:55 UTC after technical acceptance. The 15-minute observation through 11:32:55 UTC passes with zero API/frontend error/fatal markers, zero frontend 5xx records and all 16 health/database probe pairs at 200/204. All 250 old table records and complete Website intake are preserved, with independent isolated/off-server recovery verification and owned restore-resource cleanup. See the [release receipt](../operations/sample-tracking-hosted-test-release-20261025.md) for exact identities, backup hashes and acceptance limits.
+
+Fresh signed-in hosted acceptance remains not run because the available browser is signed out. Exact-source isolated capture/permission checks pass; normal Owner sign-in/MFA is needed for the hosted read-only follow-up. No synthetic hosted record or authentication bypass was used. Physical/scientific/provider, first legitimate new activity, populated-S3/scheduled recovery and business acceptance remain distinct. The operational sequence below is retained as the execution and recovery contract, rather than evidence that those remaining gates passed.
+
 Prepared October 24, 2026. The Owner subsequently instructed **"Finish."** after the screenshot/CI repair and the explicit remaining hosted-migration/deployment boundary. This authorizes completing this preserving hosted-test release, including its two named additive migrations, scoped Git publication/protected merge, backups/rehearsal, bounded maintenance, paired API/frontend activation and verification. It does not authorize deletion/reset, scientific or Customer release, DPS changes, provider/identity conversion or unrelated billing work. Automatic deployment holds stay in force.
 
 ## Product outcome and release boundary
